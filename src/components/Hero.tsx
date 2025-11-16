@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Shield, Truck, Clock } from "lucide-react";
+import { Check } from "lucide-react";
 import pillow from "@/assets/optisleep-pillow.png";
 
 export const Hero = () => {
@@ -14,43 +14,55 @@ export const Hero = () => {
         <div className="grid md:grid-cols-2 gap-8 items-center">
           <div className="space-y-6">
             <Badge variant="secondary" className="w-fit">
-              Limited Time Offer
+              LIMITED TIME - 33% OFF
             </Badge>
             <h1 className="text-4xl md:text-6xl font-bold leading-tight">
-              Sleep Better, Wake Refreshed
+              Transform Your Sleep with OptiSleep
             </h1>
             <p className="text-lg text-muted-foreground">
-              Experience the ultimate in sleep comfort with OptiSleep. Ergonomically designed 
-              to support your neck and shoulders for a perfect night's rest.
+              Experience the perfect balance of comfort and support with our 
+              ergonomic memory foam pillow designed by sleep experts.
             </p>
-            <div className="flex items-center gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <Shield className="w-4 h-4" />
-                <span>2-Year Warranty</span>
+            
+            <div className="mb-4">
+              <div className="flex items-baseline gap-2 mb-2">
+                <span className="text-4xl font-bold text-primary">$49.99</span>
+                <span className="text-2xl text-muted-foreground line-through">$74.99</span>
+                <Badge variant="destructive">SAVE $25</Badge>
               </div>
-              <div className="flex items-center gap-2">
-                <Truck className="w-4 h-4" />
-                <span>Free Shipping</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4" />
-                <span>100-Night Trial</span>
-              </div>
+              <p className="text-sm text-muted-foreground">Free shipping on orders over $50</p>
             </div>
-            <div className="flex gap-4">
-              <Button size="lg" onClick={scrollToProducts}>
-                Shop Now
-              </Button>
-              <Button size="lg" variant="outline" onClick={scrollToProducts}>
-                Learn More
-              </Button>
+            
+            <div className="space-y-3 mb-6">
+              {[
+                "Ergonomic neck support - Perfect alignment",
+                "Premium memory foam - Pressure relief",
+                "Reduces snoring naturally",
+                "Hypoallergenic & breathable",
+                "Temperature regulating design",
+                "Improves sleep quality by 40%"
+              ].map((benefit) => (
+                <div key={benefit} className="flex items-center gap-3">
+                  <div className="bg-primary/10 rounded-full p-1 flex-shrink-0">
+                    <Check className="w-5 h-5 text-primary" />
+                  </div>
+                  <span className="text-base">{benefit}</span>
+                </div>
+              ))}
             </div>
+
+            <Button size="lg" className="text-lg px-8 w-full sm:w-auto" onClick={scrollToProducts}>
+              Buy Now - Limited Stock
+            </Button>
+            <p className="text-sm text-muted-foreground mt-2">
+              ✓ 90-Day Money Back Guarantee
+            </p>
           </div>
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent rounded-3xl" />
             <img
               src={pillow}
-              alt="OptiSleep Pillow"
+              alt="OptiSleep Ergonomic Memory Foam Pillow - Perfect neck support"
               className="relative z-10 w-full h-auto"
             />
           </div>
