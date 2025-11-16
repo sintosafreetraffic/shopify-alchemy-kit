@@ -4,6 +4,10 @@ import { Hero } from "@/components/Hero";
 import { UrgencyBanner } from "@/components/UrgencyBanner";
 import { ProductCard } from "@/components/ProductCard";
 import { SocialProof } from "@/components/SocialProof";
+import { Benefits } from "@/components/Benefits";
+import { Comparison } from "@/components/Comparison";
+import { VideoSection } from "@/components/VideoSection";
+import { Guarantee } from "@/components/Guarantee";
 import { Badge } from "@/components/ui/badge";
 import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
@@ -33,11 +37,13 @@ const Index = () => {
       <UrgencyBanner />
       <Header />
       <Hero />
+      <Benefits />
+      <Comparison />
       
       <section id="products" className="py-12">
         <div className="container mx-auto px-4">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold mb-2">Shop OptiSleep</h2>
+            <h2 className="text-3xl font-bold mb-2">Choose Your Perfect Size</h2>
             <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
               <Package className="w-4 h-4" />
               <span>Only 23 left in stock</span>
@@ -63,7 +69,9 @@ const Index = () => {
         </div>
       </section>
 
+      <VideoSection />
       <SocialProof />
+      <Guarantee />
 
       <footer className="border-t py-8">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
