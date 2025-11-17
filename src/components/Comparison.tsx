@@ -12,7 +12,7 @@ export const Comparison = () => {
           </p>
         </div>
         
-        <div className="rounded-xl overflow-hidden shadow-2xl mb-12 max-w-3xl mx-auto">
+        <div className="rounded-xl overflow-hidden shadow-2xl mb-12 max-w-2xl mx-auto">
           <img 
             src={comparisonImage} 
             alt="OptiSleep pillow comparison showing ergonomic neck support vs regular pillows that cause stiffness" 
@@ -74,7 +74,7 @@ export const Comparison = () => {
           </div>
         </div>
 
-        <div className="rounded-xl overflow-hidden shadow-2xl max-w-4xl mx-auto">
+        <div className="rounded-xl overflow-hidden shadow-2xl max-w-3xl mx-auto">
           <img 
             src={comparisonChart} 
             alt="OptiSleep vs regular pillows detailed comparison chart" 
