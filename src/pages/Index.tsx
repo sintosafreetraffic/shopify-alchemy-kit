@@ -43,15 +43,6 @@ const Index = () => {
       
       <section id="products" className="py-12">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold mb-2">Choose Your Perfect Size</h2>
-            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-              <Package className="w-4 h-4" />
-              <span>Only 23 left in stock</span>
-              <Badge variant="destructive">Selling Fast!</Badge>
-            </div>
-          </div>
-
           {loading ? (
             <div className="flex justify-center items-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
