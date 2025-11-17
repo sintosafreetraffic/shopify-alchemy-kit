@@ -5,7 +5,7 @@ import { UrgencyBanner } from "@/components/UrgencyBanner";
 import { ProductCard } from "@/components/ProductCard";
 import { SocialProof } from "@/components/SocialProof";
 import { Benefits } from "@/components/Benefits";
-import { Comparison } from "@/components/Comparison";
+
 import { VideoSection } from "@/components/VideoSection";
 import { Guarantee } from "@/components/Guarantee";
 import { Features } from "@/components/Features";
@@ -40,7 +40,6 @@ const Index = () => {
       <Hero />
       <Features />
       <Benefits />
-      <Comparison />
       
       <section id="products" className="py-12">
         <div className="container mx-auto px-4">
