@@ -11,8 +11,17 @@ export const Hero = () => {
   return (
     <section className="py-12 md:py-20">
       <div className="container mx-auto px-4">
-        <div className="grid md:grid-cols-2 gap-8 items-center">
-          <div className="space-y-6">
+        <div className="grid md:grid-cols-2 gap-12 items-center">
+          <div className="relative order-2 md:order-1">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent rounded-3xl" />
+            <img
+              src={pillow}
+              alt="OptiSleep Ergonomic Memory Foam Pillow - Perfect neck support"
+              className="relative z-10 w-full h-auto"
+            />
+          </div>
+          
+          <div className="space-y-6 order-1 md:order-2">
             <Badge variant="secondary" className="w-fit">
               LIMITED TIME - 33% OFF
             </Badge>
@@ -57,14 +66,6 @@ export const Hero = () => {
             <p className="text-sm text-muted-foreground mt-2">
               ✓ 90-Day Money Back Guarantee
             </p>
-          </div>
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent rounded-3xl" />
-            <img
-              src={pillow}
-              alt="OptiSleep Ergonomic Memory Foam Pillow - Perfect neck support"
-              className="relative z-10 w-full h-auto"
-            />
           </div>
         </div>
       </div>

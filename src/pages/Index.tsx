@@ -8,6 +8,8 @@ import { Benefits } from "@/components/Benefits";
 import { Comparison } from "@/components/Comparison";
 import { VideoSection } from "@/components/VideoSection";
 import { Guarantee } from "@/components/Guarantee";
+import { TestimonialHero } from "@/components/TestimonialHero";
+import { OfferBundle } from "@/components/OfferBundle";
 import { Badge } from "@/components/ui/badge";
 import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
@@ -37,6 +39,8 @@ const Index = () => {
       <UrgencyBanner />
       <Header />
       <Hero />
+      <TestimonialHero />
+      <OfferBundle />
       <Benefits />
       <Comparison />
       
