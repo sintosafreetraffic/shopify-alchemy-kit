@@ -1,12 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Shield, RotateCcw, Truck, Loader2 } from "lucide-react";
+import { Check, Shield, RotateCcw, Truck, Loader2, Package, Clock, CreditCard, Wind, Snowflake, Heart, Award } from "lucide-react";
 import { ProductImageCarousel } from "./ProductImageCarousel";
 import { useState, useEffect } from "react";
 import { useCartStore } from "@/stores/cartStore";
 import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
+import testimonialAvatar from "@/assets/testimonial.png";
 
 export const Hero = () => {
   const [selectedBundle, setSelectedBundle] = useState<"1" | "2">("2");
@@ -138,12 +139,15 @@ export const Hero = () => {
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <button
                   onClick={() => setSelectedBundle("1")}
-                  className={`border-2 rounded-lg p-4 text-center transition-all ${
+                  className={`border-2 rounded-lg p-4 text-center transition-all relative ${
                     selectedBundle === "1"
                       ? "border-primary bg-primary/5"
                       : "border-border hover:border-primary/50"
                   }`}
                 >
+                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground">
+                    SAVE $${bundles["1"].savings.toFixed(2)}
+                  </Badge>
                   <div className="flex items-center justify-center mb-2">
                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                       selectedBundle === "1" ? "border-primary" : "border-border"
@@ -172,7 +176,7 @@ export const Hero = () => {
                   }`}
                 >
                   <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-destructive text-destructive-foreground">
-                    SAVE EXTRA $90
+                    SAVE $${bundles["2"].savings.toFixed(2)}
                   </Badge>
                   <div className="flex items-center justify-center mb-2">
                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
@@ -196,7 +200,68 @@ export const Hero = () => {
               </div>
             </div>
 
-            <Button 
+            {/* Trust Badges */}
+            <div className="flex flex-wrap items-center justify-center gap-3 py-3 border-y bg-secondary/10">
+              <div className="flex items-center gap-2 text-sm">
+                <Package className="w-4 h-4 text-green-600" />
+                <span className="font-medium">In Stock, Ready to Ship</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Clock className="w-4 h-4 text-primary" />
+                <span className="font-medium">120-Day Money-Back</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <CreditCard className="w-4 h-4 text-primary" />
+                <span className="font-medium">Secure Checkout</span>
+              </div>
+            </div>
+
+            {/* Customer Testimonial */}
+            <div className="bg-secondary/20 rounded-lg p-4 border-l-4 border-primary">
+              <div className="flex items-start gap-3">
+                <img 
+                  src={testimonialAvatar} 
+                  alt="Customer testimonial" 
+                  className="w-12 h-12 rounded-full object-cover"
+                />
+                <div className="flex-1">
+                  <p className="text-sm italic mb-2">
+                    "The OptiSleep pillow has <strong>completely transformed</strong> my sleep quality. I wake up without neck pain for the first time in years!"
+                  </p>
+                  <p className="text-xs text-muted-foreground font-medium">— Sarah M., Verified Buyer</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Product Features Icons */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex items-center gap-2 text-sm">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Heart className="w-5 h-5 text-primary" />
+                </div>
+                <span className="font-medium">Ergonomic Design</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Snowflake className="w-5 h-5 text-primary" />
+                </div>
+                <span className="font-medium">Cooling Technology</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Award className="w-5 h-5 text-primary" />
+                </div>
+                <span className="font-medium">Medical Grade</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Wind className="w-5 h-5 text-primary" />
+                </div>
+                <span className="font-medium">Breathable Fabric</span>
+              </div>
+            </div>
+
+            <Button
               size="lg" 
               className="w-full text-lg py-6 font-bold" 
               onClick={handleAddToCart}
