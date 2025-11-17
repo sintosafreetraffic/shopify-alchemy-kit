@@ -1,8 +1,13 @@
-import { Check } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import testimonial from "@/assets/testimonial.png";
 import offerBundle from "@/assets/offer-bundle.png";
 import comparisonChart from "@/assets/comparison-chart.png";
+import { useState, useEffect } from "react";
+import { useCartStore } from "@/stores/cartStore";
+import { fetchProducts } from "@/lib/shopify";
+import type { ShopifyProduct } from "@/lib/shopify";
+import { toast } from "sonner";
 
 const features = [
   {
@@ -41,8 +46,57 @@ const features = [
 ];
 
 export const Features = () => {
-  const scrollToProducts = () => {
-    document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
+  const [product, setProduct] = useState<ShopifyProduct | null>(null);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const { addItem, createCheckout, checkoutUrl, setCheckoutUrl } = useCartStore();
+
+  useEffect(() => {
+    const loadProduct = async () => {
+      try {
+        const products = await fetchProducts(1);
+        if (products.length > 0) {
+          setProduct(products[0]);
+        }
+      } catch (error) {
+        console.error("Error loading product:", error);
+      }
+    };
+    loadProduct();
+  }, []);
+
+  const handleBuyNow = async () => {
+    if (!product) {
+      toast.error("Product not available");
+      return;
+    }
+
+    setIsCheckingOut(true);
+    try {
+      const variant = product.node.variants.edges[0].node;
+      
+      const cartItem = {
+        product,
+        variantId: variant.id,
+        variantTitle: variant.title,
+        price: variant.price,
+        quantity: 1,
+        selectedOptions: variant.selectedOptions || []
+      };
+      
+      addItem(cartItem);
+      await createCheckout();
+      
+      const url = useCartStore.getState().checkoutUrl;
+      if (url) {
+        window.open(url, '_blank');
+        setCheckoutUrl(null);
+      }
+    } catch (error) {
+      console.error('Checkout failed:', error);
+      toast.error("Failed to start checkout");
+    } finally {
+      setIsCheckingOut(false);
+    }
   };
 
   return (
@@ -96,8 +150,20 @@ export const Features = () => {
                 ))}
               </div>
 
-              <Button size="lg" className="mt-4" onClick={scrollToProducts}>
-                Get Your OptiSleep Now
+              <Button 
+                size="lg" 
+                className="mt-4" 
+                onClick={handleBuyNow}
+                disabled={isCheckingOut || !product}
+              >
+                {isCheckingOut ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  'Get Your OptiSleep Now'
+                )}
               </Button>
             </div>
           </div>

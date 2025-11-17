@@ -1,14 +1,67 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Shield, RotateCcw, Truck } from "lucide-react";
+import { Check, Shield, RotateCcw, Truck, Loader2 } from "lucide-react";
 import { ProductImageCarousel } from "./ProductImageCarousel";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useCartStore } from "@/stores/cartStore";
+import { fetchProducts } from "@/lib/shopify";
+import type { ShopifyProduct } from "@/lib/shopify";
+import { toast } from "sonner";
 
 export const Hero = () => {
   const [selectedBundle, setSelectedBundle] = useState<"1" | "2">("2");
-  
-  const scrollToProducts = () => {
-    document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
+  const [product, setProduct] = useState<ShopifyProduct | null>(null);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const { addItem, createCheckout, checkoutUrl, setCheckoutUrl } = useCartStore();
+
+  useEffect(() => {
+    const loadProduct = async () => {
+      try {
+        const products = await fetchProducts(1);
+        if (products.length > 0) {
+          setProduct(products[0]);
+        }
+      } catch (error) {
+        console.error("Error loading product:", error);
+      }
+    };
+    loadProduct();
+  }, []);
+
+  const handleAddToCart = async () => {
+    if (!product) {
+      toast.error("Product not available");
+      return;
+    }
+
+    setIsCheckingOut(true);
+    try {
+      const variant = product.node.variants.edges[0].node;
+      const quantity = selectedBundle === "1" ? 1 : 2;
+      
+      const cartItem = {
+        product,
+        variantId: variant.id,
+        variantTitle: variant.title,
+        price: variant.price,
+        quantity,
+        selectedOptions: variant.selectedOptions || []
+      };
+      
+      addItem(cartItem);
+      await createCheckout();
+      
+      const url = useCartStore.getState().checkoutUrl;
+      if (url) {
+        window.open(url, '_blank');
+        setCheckoutUrl(null);
+      }
+    } catch (error) {
+      console.error('Checkout failed:', error);
+      toast.error("Failed to start checkout");
+    } finally {
+      setIsCheckingOut(false);
+    }
   };
 
   const bundles = {
@@ -146,9 +199,17 @@ export const Hero = () => {
             <Button 
               size="lg" 
               className="w-full text-lg py-6 font-bold" 
-              onClick={scrollToProducts}
+              onClick={handleAddToCart}
+              disabled={isCheckingOut || !product}
             >
-              ADD TO CART
+              {isCheckingOut ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                'ADD TO CART'
+              )}
             </Button>
 
             <div className="grid grid-cols-3 gap-4 py-4 border-t">
