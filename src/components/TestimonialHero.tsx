@@ -3,7 +3,7 @@ import testimonial from "@/assets/testimonial.png";
 export const TestimonialHero = () => {
   return (
     <section className="py-12 px-4">
-      <div className="container mx-auto max-w-3xl">
+      <div className="container mx-auto max-w-2xl">
         <div className="rounded-xl overflow-hidden shadow-2xl">
           <img 
             src={testimonial} 

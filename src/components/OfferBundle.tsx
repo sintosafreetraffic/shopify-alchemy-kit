@@ -8,7 +8,7 @@ export const OfferBundle = () => {
 
   return (
     <section className="py-16 px-4">
-      <div className="container mx-auto max-w-4xl">
+      <div className="container mx-auto max-w-3xl">
         <div className="rounded-xl overflow-hidden shadow-2xl">
           <img 
             src={offerBundle} 

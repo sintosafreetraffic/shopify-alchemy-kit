@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, Shield, RotateCcw, Truck } from "lucide-react";
-import pillow from "@/assets/optisleep-pillow.png";
+import { ProductImageCarousel } from "./ProductImageCarousel";
 import { useState } from "react";
 
 export const Hero = () => {
@@ -39,15 +39,10 @@ export const Hero = () => {
       <div className="container mx-auto px-4">
         <div className="grid md:grid-cols-2 gap-12 items-start">
           <div className="relative order-2 md:order-1">
-            <Badge variant="secondary" className="absolute top-4 left-4 z-20">
+            <Badge variant="secondary" className="mb-4">
               USERS' CHOICE 2025
             </Badge>
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent rounded-3xl" />
-            <img
-              src={pillow}
-              alt="OptiSleep Ergonomic Memory Foam Pillow - Perfect neck support"
-              className="relative z-10 w-full h-auto"
-            />
+            <ProductImageCarousel />
           </div>
           
           <div className="space-y-6 order-1 md:order-2">
