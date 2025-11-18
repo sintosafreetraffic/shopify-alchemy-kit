@@ -53,7 +53,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             ))}
             <span className="text-sm text-muted-foreground ml-1">(500+ reviews)</span>
           </div>
-          <h3 className="font-semibold text-lg mb-2">{product.node.title}</h3>
+          <h3 className="font-semibold text-lg mb-2">{product.node.title.replace(/OptiSleep\s*/gi, '')}</h3>
           <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
             {product.node.description}
           </p>
