@@ -92,14 +92,18 @@ export const Hero = () => {
   return (
     <section className="py-8 md:py-16">
       <div className="container mx-auto px-4 max-w-7xl">
-        <div className="grid md:grid-cols-2 gap-8 lg:gap-16 items-start">
-          <div className="relative order-2 md:order-1">
+        <div className="grid md:grid-cols-2 gap-8 lg:gap-16">
+          {/* Sticky Product Images Column */}
+          <div className="relative order-2 md:order-1 md:sticky md:top-24 md:self-start md:h-screen md:overflow-hidden">
             <Badge variant="secondary" className="mb-6 text-xs font-semibold tracking-wide">
               USERS' CHOICE 2025
             </Badge>
-            <ProductImageCarousel />
+            <div className="md:h-[calc(100vh-12rem)] md:overflow-y-auto">
+              <ProductImageCarousel />
+            </div>
           </div>
           
+          {/* Scrollable Product Details Column */}
           <div className="space-y-5 order-1 md:order-2">
 
             <div className="flex flex-col gap-3">
