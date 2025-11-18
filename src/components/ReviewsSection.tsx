@@ -84,41 +84,41 @@ export const ReviewsSection = () => {
             align: "start",
             loop: true,
           }}
-          className="w-full max-w-4xl mx-auto"
+          className="w-full"
         >
-          <CarouselContent>
+          <CarouselContent className="-ml-2 md:-ml-4">
             {reviews.map((review, index) => (
-              <CarouselItem key={index}>
-                <div className="bg-secondary/20 rounded-xl p-8 border h-full">
-                  <div className="flex flex-col items-center text-center mb-6">
+              <CarouselItem key={index} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/3">
+                <div className="bg-secondary/20 rounded-xl p-6 border h-full">
+                  <div className="flex flex-col items-center text-center mb-4">
                     <img 
                       src={review.avatar} 
                       alt={review.name}
-                      className="w-32 h-32 rounded-full object-cover mb-4 ring-4 ring-primary/10"
+                      className="w-20 h-20 rounded-full object-cover mb-3 ring-4 ring-primary/10"
                     />
                     <div>
                       <div className="flex items-center justify-center gap-2 mb-1">
-                        <p className="font-semibold text-lg">{review.name}</p>
+                        <p className="font-semibold">{review.name}</p>
                         {review.verified && (
                           <Badge variant="secondary" className="text-xs">Verified</Badge>
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground font-medium">{review.role}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{review.date}</p>
+                      <p className="text-xs text-muted-foreground font-medium">{review.role}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{review.date}</p>
                     </div>
                   </div>
-                  <div className="flex justify-center mb-4">
+                  <div className="flex justify-center mb-3">
                     {[...Array(review.rating)].map((_, i) => (
-                      <Star key={i} className="w-5 h-5 fill-yellow-500 text-yellow-500" />
+                      <Star key={i} className="w-4 h-4 fill-yellow-500 text-yellow-500" />
                     ))}
                   </div>
-                  <p className="text-muted-foreground leading-relaxed max-w-2xl mx-auto">{review.review}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{review.review}</p>
                 </div>
               </CarouselItem>
             ))}
           </CarouselContent>
-          <CarouselPrevious className="left-0" />
-          <CarouselNext className="right-0" />
+          <CarouselPrevious />
+          <CarouselNext />
         </Carousel>
       </div>
     </section>
