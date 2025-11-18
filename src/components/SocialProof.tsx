@@ -40,7 +40,7 @@ export const SocialProof = () => {
   }, []);
 
   return (
-    <section className="py-16 px-4">
+    <section className="py-8 px-4">
       <div className="container mx-auto max-w-6xl">
         {/* Customer Testimonial Carousel */}
         <div className="bg-secondary/20 p-8 rounded-lg mb-12 relative overflow-hidden">
