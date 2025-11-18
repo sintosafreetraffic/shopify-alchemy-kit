@@ -1,5 +1,5 @@
 import comparisonImage from "@/assets/comparison.png";
-import comparisonChart from "@/assets/comparison-chart.png";
+import comparisonChart from "@/assets/comparison-chart-new.png";
 
 export const Comparison = () => {
   return (
@@ -25,7 +25,6 @@ export const Comparison = () => {
             src={comparisonChart} 
             alt="OptiSleep vs regular pillows detailed comparison chart" 
             className="w-full"
-            style={{ filter: 'hue-rotate(240deg)' }}
           />
         </div>
       </div>
