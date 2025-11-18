@@ -94,7 +94,7 @@ export const ReviewsSection = () => {
                     <img 
                       src={review.avatar} 
                       alt={review.name}
-                      className="w-20 h-20 rounded-full object-cover mb-3 ring-4 ring-primary/10"
+                      className="w-28 h-28 rounded-full object-cover mb-3 ring-4 ring-primary/10"
                     />
                     <div>
                       <div className="flex items-center justify-center gap-2 mb-1">
