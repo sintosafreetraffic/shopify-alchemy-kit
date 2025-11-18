@@ -100,13 +100,19 @@ export const Hero = () => {
           </div>
           
           <div className="space-y-5 order-1 md:order-2">
-            <div className="flex items-center gap-2">
-              <div className="flex">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Star key={star} className="w-5 h-5 fill-yellow-500 text-yellow-500" />
-                ))}
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <div className="flex">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star key={star} className="w-5 h-5 fill-yellow-500 text-yellow-500" />
+                  ))}
+                </div>
+                <span className="text-sm font-medium">Rated 4.8/5 by 12,500+ customers</span>
               </div>
-              <span className="text-sm font-medium">Rated 4.8/5 by 12,500+ customers</span>
+              
+              <div className="inline-flex items-center gap-2 bg-warning/10 text-warning-foreground px-3 py-1.5 rounded-md text-sm font-medium w-fit">
+                🔥 This product is frequently viewed
+              </div>
             </div>
 
             <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tight">

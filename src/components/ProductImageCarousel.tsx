@@ -1,11 +1,4 @@
 import { useState } from "react";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
 import optisleepPillow from "@/assets/optisleep-pillow-main.png";
 
 export const ProductImageCarousel = () => {
@@ -30,36 +23,26 @@ export const ProductImageCarousel = () => {
         />
       </div>
 
-      {/* Thumbnail Carousel */}
-      <Carousel
-        opts={{
-          align: "start",
-        }}
-        className="w-full"
-      >
-        <CarouselContent>
-          {images.map((image, index) => (
-            <CarouselItem key={index} className="basis-1/4">
-              <button
-                onClick={() => setSelectedImage(index)}
-                className={`rounded-lg overflow-hidden border-2 transition-all ${
-                  selectedImage === index
-                    ? "border-primary ring-2 ring-primary/20"
-                    : "border-border hover:border-primary/50"
-                }`}
-              >
-                <img
-                  src={image.url}
-                  alt={image.alt}
-                  className="w-full h-auto object-cover"
-                />
-              </button>
-            </CarouselItem>
-          ))}
-        </CarouselContent>
-        <CarouselPrevious />
-        <CarouselNext />
-      </Carousel>
+      {/* Thumbnail Grid */}
+      <div className="grid grid-cols-4 gap-3">
+        {images.map((image, index) => (
+          <button
+            key={index}
+            onClick={() => setSelectedImage(index)}
+            className={`rounded-lg overflow-hidden border-2 transition-all ${
+              selectedImage === index
+                ? "border-primary ring-2 ring-primary/20"
+                : "border-border hover:border-primary/50"
+            }`}
+          >
+            <img
+              src={image.url}
+              alt={image.alt}
+              className="w-full h-auto object-cover"
+            />
+          </button>
+        ))}
+      </div>
     </div>
   );
 };
