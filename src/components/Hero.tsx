@@ -95,8 +95,16 @@ export const Hero = () => {
         <div className="grid md:grid-cols-2 gap-8 lg:gap-16">
           {/* Scrollable Product Images Column */}
           <div className="relative order-2 md:order-1">
-            <Badge variant="secondary" className="mb-6 text-xs font-semibold tracking-wide">
-              USERS' CHOICE 2025
+            <Badge variant="secondary" className="mb-6 text-xs font-semibold tracking-wide flex items-center gap-1.5">
+              <span className="text-base">←</span>
+              <Star className="w-3.5 h-3.5 fill-yellow-500 text-yellow-500" />
+              <Star className="w-3.5 h-3.5 fill-yellow-500 text-yellow-500" />
+              <Star className="w-3.5 h-3.5 fill-yellow-500 text-yellow-500" />
+              CONSUMER CHOICE
+              <Star className="w-3.5 h-3.5 fill-yellow-500 text-yellow-500" />
+              <Star className="w-3.5 h-3.5 fill-yellow-500 text-yellow-500" />
+              <Star className="w-3.5 h-3.5 fill-yellow-500 text-yellow-500" />
+              <span className="text-base">→</span>
             </Badge>
             <ProductImageCarousel />
           </div>
