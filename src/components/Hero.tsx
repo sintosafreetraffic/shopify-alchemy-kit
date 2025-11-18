@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Shield, RotateCcw, Truck, Loader2, Package, Clock, CreditCard, Wind, Snowflake, Heart, Award } from "lucide-react";
+import { Check, Shield, RotateCcw, Truck, Loader2, Package, Clock, CreditCard, Wind, Snowflake, Heart, Award, Star } from "lucide-react";
 import { ProductImageCarousel } from "./ProductImageCarousel";
 import { useState, useEffect } from "react";
 import { useCartStore } from "@/stores/cartStore";
@@ -89,52 +89,52 @@ export const Hero = () => {
   const selectedOption = bundles[selectedBundle];
 
   return (
-    <section className="py-12 md:py-20">
-      <div className="container mx-auto px-4">
-        <div className="grid md:grid-cols-2 gap-12 items-start">
+    <section className="py-8 md:py-16">
+      <div className="container mx-auto px-4 max-w-7xl">
+        <div className="grid md:grid-cols-2 gap-8 lg:gap-16 items-start">
           <div className="relative order-2 md:order-1">
-            <Badge variant="secondary" className="mb-4">
+            <Badge variant="secondary" className="mb-6 text-xs font-semibold tracking-wide">
               USERS' CHOICE 2025
             </Badge>
             <ProductImageCarousel />
           </div>
           
-          <div className="space-y-6 order-1 md:order-2">
-            <div className="flex items-center gap-2 text-sm">
+          <div className="space-y-5 order-1 md:order-2">
+            <div className="flex items-center gap-2">
               <div className="flex">
                 {[1, 2, 3, 4, 5].map((star) => (
-                  <span key={star} className="text-yellow-500">★</span>
+                  <Star key={star} className="w-5 h-5 fill-yellow-500 text-yellow-500" />
                 ))}
               </div>
-              <span className="text-muted-foreground">Rated 4.8/5 by 12,500+ customers</span>
+              <span className="text-sm font-medium">Rated 4.8/5 by 12,500+ customers</span>
             </div>
 
-            <h1 className="text-4xl md:text-5xl font-bold leading-tight">
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tight">
               OptiSleep™ Sleep Apnea Pillow
             </h1>
             
-            <p className="text-lg font-medium">
+            <p className="text-base md:text-lg text-muted-foreground">
               The #1 Rated Orthopedic Pillow for Sleep Apnea in the U.S.
             </p>
 
-            <div className="space-y-3">
-              <p className="text-base font-medium">The only scientifically designed pillow that:</p>
+            <div className="space-y-3 py-2">
+              <p className="text-sm font-semibold text-foreground/80">The only scientifically designed pillow that:</p>
               {[
                 "Eliminates sleep apnea episodes by 86%*",
                 "Stops dangerous breathing interruptions",
                 "Ends marriage-threatening snoring instantly"
               ].map((benefit) => (
-                <div key={benefit} className="flex items-center gap-3">
-                  <div className="bg-primary/10 rounded-full p-1 flex-shrink-0">
-                    <Check className="w-5 h-5 text-primary" />
+                <div key={benefit} className="flex items-start gap-3">
+                  <div className="bg-primary/10 rounded-full p-1.5 flex-shrink-0 mt-0.5">
+                    <Check className="w-4 h-4 text-primary" />
                   </div>
-                  <span className="text-base">{benefit}</span>
+                  <span className="text-sm md:text-base">{benefit}</span>
                 </div>
               ))}
             </div>
 
-            <div className="border-t border-b py-4 my-6">
-              <p className="text-center font-bold text-lg mb-4">LIMITED-TIME ANNIVERSARY OFFER</p>
+            <div className="border-t border-b py-5 my-4">
+              <p className="text-center font-bold text-base md:text-lg mb-4 tracking-wide">LIMITED-TIME ANNIVERSARY OFFER</p>
               
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <button
@@ -201,31 +201,31 @@ export const Hero = () => {
             </div>
 
             {/* Trust Badges */}
-            <div className="flex flex-wrap items-center justify-center gap-3 py-3 border-y bg-secondary/10">
-              <div className="flex items-center gap-2 text-sm">
-                <Package className="w-4 h-4 text-green-600" />
+            <div className="flex flex-wrap items-center justify-center gap-4 py-4 border-y bg-secondary/5 rounded-lg">
+              <div className="flex items-center gap-2 text-xs md:text-sm">
+                <Package className="w-4 h-4 text-success" />
                 <span className="font-medium">In Stock, Ready to Ship</span>
               </div>
-              <div className="flex items-center gap-2 text-sm">
+              <div className="flex items-center gap-2 text-xs md:text-sm">
                 <Clock className="w-4 h-4 text-primary" />
                 <span className="font-medium">120-Day Money-Back</span>
               </div>
-              <div className="flex items-center gap-2 text-sm">
+              <div className="flex items-center gap-2 text-xs md:text-sm">
                 <CreditCard className="w-4 h-4 text-primary" />
                 <span className="font-medium">Secure Checkout</span>
               </div>
             </div>
 
             {/* Customer Testimonial */}
-            <div className="bg-secondary/20 rounded-lg p-4 border-l-4 border-primary">
+            <div className="bg-secondary/10 rounded-xl p-5 border border-border/50">
               <div className="flex items-start gap-3">
                 <img 
                   src={testimonialAvatar} 
                   alt="Customer testimonial" 
-                  className="w-12 h-12 rounded-full object-cover"
+                  className="w-11 h-11 rounded-full object-cover flex-shrink-0"
                 />
                 <div className="flex-1">
-                  <p className="text-sm italic mb-2">
+                  <p className="text-xs md:text-sm italic mb-2 leading-relaxed">
                     "The OptiSleep pillow has <strong>completely transformed</strong> my sleep quality. I wake up without neck pain for the first time in years!"
                   </p>
                   <p className="text-xs text-muted-foreground font-medium">— Sarah M., Verified Buyer</p>
@@ -234,28 +234,28 @@ export const Hero = () => {
             </div>
 
             {/* Product Features Icons */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex items-center gap-2 text-sm">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Heart className="w-5 h-5 text-primary" />
+            <div className="grid grid-cols-2 gap-3 py-2">
+              <div className="flex items-center gap-2.5 text-xs md:text-sm">
+                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Heart className="w-4 h-4 text-primary" />
                 </div>
                 <span className="font-medium">Ergonomic Design</span>
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Snowflake className="w-5 h-5 text-primary" />
+              <div className="flex items-center gap-2.5 text-xs md:text-sm">
+                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Snowflake className="w-4 h-4 text-primary" />
                 </div>
                 <span className="font-medium">Cooling Technology</span>
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Award className="w-5 h-5 text-primary" />
+              <div className="flex items-center gap-2.5 text-xs md:text-sm">
+                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Award className="w-4 h-4 text-primary" />
                 </div>
                 <span className="font-medium">Medical Grade</span>
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Wind className="w-5 h-5 text-primary" />
+              <div className="flex items-center gap-2.5 text-xs md:text-sm">
+                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Wind className="w-4 h-4 text-primary" />
                 </div>
                 <span className="font-medium">Breathable Fabric</span>
               </div>
@@ -263,7 +263,7 @@ export const Hero = () => {
 
             <Button
               size="lg" 
-              className="w-full text-lg py-6 font-bold" 
+              className="w-full text-base md:text-lg py-6 font-bold shadow-lg hover:shadow-xl transition-shadow" 
               onClick={handleAddToCart}
               disabled={isCheckingOut || !product}
             >
@@ -277,24 +277,24 @@ export const Hero = () => {
               )}
             </Button>
 
-            <div className="grid grid-cols-3 gap-4 py-4 border-t">
+            <div className="grid grid-cols-3 gap-3 py-4 border-t">
               <div className="text-center">
-                <Shield className="w-6 h-6 mx-auto mb-2 text-primary" />
-                <p className="text-xs font-medium">2-Year Warranty</p>
+                <Shield className="w-5 h-5 mx-auto mb-1.5 text-primary" />
+                <p className="text-xs font-medium leading-tight">2-Year Warranty</p>
               </div>
               <div className="text-center">
-                <RotateCcw className="w-6 h-6 mx-auto mb-2 text-primary" />
-                <p className="text-xs font-medium">120 Night Money-Back</p>
+                <RotateCcw className="w-5 h-5 mx-auto mb-1.5 text-primary" />
+                <p className="text-xs font-medium leading-tight">120 Night Money-Back</p>
               </div>
               <div className="text-center">
-                <Truck className="w-6 h-6 mx-auto mb-2 text-primary" />
-                <p className="text-xs font-medium">Easy Returns</p>
+                <Truck className="w-5 h-5 mx-auto mb-1.5 text-primary" />
+                <p className="text-xs font-medium leading-tight">Easy Returns</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Truck className="w-4 h-4" />
-              <span>Arrives on <strong>November 22nd</strong>, if you order before <strong>11:50 PM EST</strong></span>
+            <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground bg-secondary/5 p-3 rounded-lg">
+              <Truck className="w-4 h-4 flex-shrink-0" />
+              <span>Arrives on <strong className="text-foreground">November 22nd</strong>, if you order before <strong className="text-foreground">11:50 PM EST</strong></span>
             </div>
           </div>
         </div>

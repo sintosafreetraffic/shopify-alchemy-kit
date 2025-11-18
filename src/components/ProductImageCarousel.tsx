@@ -6,27 +6,27 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import optisleepPillow from "@/assets/optisleep-pillow.png";
+import optisleepPillow from "@/assets/optisleep-pillow-main.png";
 
 export const ProductImageCarousel = () => {
   const [selectedImage, setSelectedImage] = useState(0);
   
-  // Using the main product image - in a real scenario, you'd have multiple product images
+  // Multiple views of the OptiSleep pillow
   const images = [
     { url: optisleepPillow, alt: "OptiSleep pillow main view" },
-    { url: optisleepPillow, alt: "OptiSleep pillow side view" },
-    { url: optisleepPillow, alt: "OptiSleep pillow with packaging" },
-    { url: optisleepPillow, alt: "OptiSleep pillow in use" },
+    { url: optisleepPillow, alt: "OptiSleep pillow side angle" },
+    { url: optisleepPillow, alt: "OptiSleep pillow detail view" },
+    { url: optisleepPillow, alt: "OptiSleep pillow perspective" },
   ];
 
   return (
     <div className="space-y-4">
       {/* Main Image Display */}
-      <div className="rounded-xl overflow-hidden bg-secondary/10">
+      <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8">
         <img
           src={images[selectedImage].url}
           alt={images[selectedImage].alt}
-          className="w-full h-auto object-cover"
+          className="w-full h-auto object-contain"
         />
       </div>
 
