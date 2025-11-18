@@ -5,10 +5,13 @@ import { UrgencyBanner } from "@/components/UrgencyBanner";
 import { ProductCard } from "@/components/ProductCard";
 import { SocialProof } from "@/components/SocialProof";
 import { Benefits } from "@/components/Benefits";
-
 import { VideoSection } from "@/components/VideoSection";
 import { Guarantee } from "@/components/Guarantee";
 import { Features } from "@/components/Features";
+import { FAQ } from "@/components/FAQ";
+import { PolicyAccordion } from "@/components/PolicyAccordion";
+import { ReviewsSection } from "@/components/ReviewsSection";
+import { LookInside } from "@/components/LookInside";
 import { Badge } from "@/components/ui/badge";
 import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
@@ -38,8 +41,11 @@ const Index = () => {
       <UrgencyBanner />
       <Header />
       <Hero />
+      <PolicyAccordion />
       <Features />
       <Benefits />
+      <LookInside />
+      <ReviewsSection />
       
       <section id="products" className="py-12">
         <div className="container mx-auto px-4">
@@ -58,6 +64,7 @@ const Index = () => {
       </section>
 
       <VideoSection />
+      <FAQ />
       <SocialProof />
       <Guarantee />
 
