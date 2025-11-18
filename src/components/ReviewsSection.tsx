@@ -1,5 +1,12 @@
 import { Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 import erikAvatar from "@/assets/reviewer-erik.jpg";
 import sofieAvatar from "@/assets/reviewer-sofie.jpg";
 import coupleAvatar from "@/assets/reviewer-couple.jpg";
@@ -72,37 +79,47 @@ export const ReviewsSection = () => {
           <p className="text-muted-foreground">Read the reviews and see what others think of their experience with us.</p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          {reviews.map((review, index) => (
-            <div key={index} className="bg-secondary/20 rounded-xl p-6 border">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <img 
-                    src={review.avatar} 
-                    alt={review.name}
-                    className="w-12 h-12 rounded-full object-cover"
-                  />
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold">{review.name}</p>
-                      {review.verified && (
-                        <Badge variant="secondary" className="text-xs">Verified</Badge>
-                      )}
+        <Carousel
+          opts={{
+            align: "start",
+            loop: true,
+          }}
+          className="w-full"
+        >
+          <CarouselContent>
+            {reviews.map((review, index) => (
+              <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/2">
+                <div className="bg-secondary/20 rounded-xl p-8 border h-full">
+                  <div className="flex flex-col items-center text-center mb-6">
+                    <img 
+                      src={review.avatar} 
+                      alt={review.name}
+                      className="w-24 h-24 rounded-full object-cover mb-4 ring-4 ring-primary/10"
+                    />
+                    <div>
+                      <div className="flex items-center justify-center gap-2 mb-1">
+                        <p className="font-semibold text-lg">{review.name}</p>
+                        {review.verified && (
+                          <Badge variant="secondary" className="text-xs">Verified</Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground font-medium">{review.role}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{review.date}</p>
                     </div>
-                    <p className="text-xs text-muted-foreground">{review.role}</p>
-                    <p className="text-xs text-muted-foreground">{review.date}</p>
                   </div>
+                  <div className="flex justify-center mb-4">
+                    {[...Array(review.rating)].map((_, i) => (
+                      <Star key={i} className="w-5 h-5 fill-yellow-500 text-yellow-500" />
+                    ))}
+                  </div>
+                  <p className="text-muted-foreground leading-relaxed">{review.review}</p>
                 </div>
-                <div className="flex">
-                  {[...Array(review.rating)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-yellow-500 text-yellow-500" />
-                  ))}
-                </div>
-              </div>
-              <p className="text-muted-foreground leading-relaxed">{review.review}</p>
-            </div>
-          ))}
-        </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <CarouselPrevious />
+          <CarouselNext />
+        </Carousel>
       </div>
     </section>
   );
