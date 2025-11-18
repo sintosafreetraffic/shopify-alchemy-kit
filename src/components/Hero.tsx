@@ -166,19 +166,19 @@ export const Hero = () => {
             <div className="space-y-2 my-4">
               <div className="flex items-start gap-2">
                 <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                <p className="text-sm">Clinically proven to reduce neck pain and improve sleep quality</p>
+                <p className="text-sm">Scientifically proven to reduce neck pain and improve sleep quality</p>
               </div>
               <div className="flex items-start gap-2">
                 <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                <p className="text-sm">Ergonomic design supports natural spine alignment</p>
+                <p className="text-sm">Ergonomic contour design supports natural spinal alignment</p>
               </div>
               <div className="flex items-start gap-2">
                 <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                <p className="text-sm">Premium memory foam maintains shape for 3-5 years</p>
+                <p className="text-sm">High-density memory foam maintains its shape for 3–5 years</p>
               </div>
               <div className="flex items-start gap-2">
                 <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                <p className="text-sm">Cooling gel technology prevents night sweats</p>
+                <p className="text-sm">Cooling gel layer prevents overheating and night sweats</p>
               </div>
             </div>
 
