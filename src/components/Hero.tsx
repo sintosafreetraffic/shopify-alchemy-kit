@@ -127,93 +127,67 @@ export const Hero = () => {
               </div>
             </div>
 
-            <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold leading-tight tracking-tight">
+            <h1 className="text-xl md:text-3xl lg:text-4xl font-bold leading-tight tracking-tight">
               OptiSleep™ Sleep Apnea Pillow
             </h1>
             
-            <p className="text-sm md:text-base text-muted-foreground">
+            <p className="text-xs md:text-sm text-muted-foreground">
               The #1 Rated Orthopedic Pillow for Sleep Apnea in the U.S.
             </p>
 
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-foreground/80">The only scientifically designed pillow that:</p>
-              {[
-                "Eliminates sleep apnea episodes by 86%*",
-                "Stops dangerous breathing interruptions",
-                "Ends marriage-threatening snoring instantly"
-              ].map((benefit) => (
-                <div key={benefit} className="flex items-start gap-2">
-                  <div className="bg-primary/10 rounded-full p-1 flex-shrink-0 mt-0.5">
-                    <Check className="w-3 h-3 text-primary" />
-                  </div>
-                  <span className="text-xs md:text-sm">{benefit}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="border-t border-b py-2 my-1.5">
-              <p className="text-center font-bold text-sm md:text-base mb-2 tracking-wide">LIMITED-TIME ANNIVERSARY OFFER</p>
+            <div className="border-t border-b py-1.5 my-1">
+              <p className="text-center font-bold text-xs md:text-sm mb-1.5 tracking-wide">LIMITED-TIME OFFER</p>
               
-              <div className="grid grid-cols-2 gap-4 mb-3">
+              <div className="grid grid-cols-2 gap-2 mb-2">
                 <button
                   onClick={() => setSelectedBundle("1")}
-                  className={`border-2 rounded-lg p-4 text-center transition-all relative ${
+                  className={`border-2 rounded-lg p-2 text-center transition-all relative ${
                     selectedBundle === "1"
                       ? "border-primary bg-primary/5"
                       : "border-border hover:border-primary/50"
                   }`}
                 >
-                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground">
-                    SAVE $${bundles["1"].savings.toFixed(2)}
+                  <Badge className="absolute -top-2 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-[10px] px-1 py-0">
+                    {bundles["1"].discount}
                   </Badge>
-                  <div className="flex items-center justify-center mb-2">
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                  <div className="flex items-center justify-center mb-1">
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
                       selectedBundle === "1" ? "border-primary" : "border-border"
                     }`}>
                       {selectedBundle === "1" && (
-                        <div className="w-3 h-3 rounded-full bg-primary" />
+                        <div className="w-2 h-2 rounded-full bg-primary" />
                       )}
                     </div>
                   </div>
-                  <p className="font-bold text-lg">1 Pillow</p>
-                  <p className="text-sm text-primary font-bold">{bundles["1"].discount}</p>
-                  <p className="text-2xl font-bold mt-2">${bundles["1"].price}</p>
-                  <p className="text-sm text-muted-foreground line-through">${bundles["1"].originalPrice}</p>
-                  <div className="mt-2 bg-muted rounded px-2 py-1">
-                    <p className="text-xs font-medium">{bundles["1"].freeGift}</p>
-                    <p className="text-xs text-muted-foreground">{bundles["1"].freeGiftValue}</p>
-                  </div>
+                  <p className="font-bold text-sm">1 Pillow</p>
+                  <p className="text-lg font-bold">${bundles["1"].price}</p>
+                  <p className="text-xs text-muted-foreground line-through">${bundles["1"].originalPrice}</p>
                 </button>
 
                 <button
                   onClick={() => setSelectedBundle("2")}
-                  className={`border-2 rounded-lg p-4 text-center transition-all relative ${
+                  className={`border-2 rounded-lg p-2 text-center transition-all relative ${
                     selectedBundle === "2"
                       ? "border-primary bg-primary/5"
                       : "border-border hover:border-primary/50"
                   }`}
                 >
-                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-destructive text-destructive-foreground">
-                    SAVE $${bundles["2"].savings.toFixed(2)}
+                  <Badge className="absolute -top-2 left-1/2 -translate-x-1/2 bg-destructive text-destructive-foreground text-[10px] px-1 py-0">
+                    {bundles["2"].discount}
                   </Badge>
-                  <div className="flex items-center justify-center mb-2">
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                  <div className="flex items-center justify-center mb-1">
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
                       selectedBundle === "2" ? "border-primary" : "border-border"
                     }`}>
                       {selectedBundle === "2" && (
-                        <div className="w-3 h-3 rounded-full bg-primary" />
+                        <div className="w-2 h-2 rounded-full bg-primary" />
                       )}
                     </div>
                   </div>
-                  <p className="font-bold text-lg">2 Pillows</p>
-                  <p className="text-sm text-primary font-bold">{bundles["2"].discount}</p>
-                  <p className="text-2xl font-bold mt-2">${bundles["2"].price}</p>
-                  <p className="text-sm text-muted-foreground line-through">${bundles["2"].originalPrice}</p>
-                  <div className="mt-2 bg-black text-white rounded px-2 py-1">
-                    <p className="text-xs font-medium">{bundles["2"].freeGifts}</p>
-                    <p className="text-xs">{bundles["2"].freeGiftValue}</p>
-                    <p className="text-xs font-medium">+ FREE Shipping</p>
-                  </div>
+                  <p className="font-bold text-sm">2 Pillows</p>
+                  <p className="text-lg font-bold">${bundles["2"].price}</p>
+                  <p className="text-xs text-muted-foreground line-through">${bundles["2"].originalPrice}</p>
+                  <p className="text-[10px] font-medium mt-1">+ FREE Shipping</p>
                 </button>
               </div>
             </div>
@@ -234,54 +208,9 @@ export const Hero = () => {
               </div>
             </div>
 
-            {/* Customer Testimonial */}
-            <div className="bg-secondary/10 rounded-lg p-2 border border-border/50">
-              <div className="flex items-start gap-3">
-                <img 
-                  src={testimonialAvatar} 
-                  alt="Customer testimonial" 
-                  className="w-11 h-11 rounded-full object-cover flex-shrink-0"
-                />
-                <div className="flex-1">
-                  <p className="text-xs md:text-sm italic mb-2 leading-relaxed">
-                    "The OptiSleep pillow has <strong>completely transformed</strong> my sleep quality. I wake up without neck pain for the first time in years!"
-                  </p>
-                  <p className="text-xs text-muted-foreground font-medium">— Sarah M., Verified Buyer</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Product Features Icons */}
-            <div className="grid grid-cols-2 gap-2">
-              <div className="flex items-center gap-2.5 text-xs md:text-sm">
-                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Heart className="w-4 h-4 text-primary" />
-                </div>
-                <span className="font-medium">Ergonomic Design</span>
-              </div>
-              <div className="flex items-center gap-2.5 text-xs md:text-sm">
-                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Snowflake className="w-4 h-4 text-primary" />
-                </div>
-                <span className="font-medium">Cooling Technology</span>
-              </div>
-              <div className="flex items-center gap-2.5 text-xs md:text-sm">
-                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Award className="w-4 h-4 text-primary" />
-                </div>
-                <span className="font-medium">Medical Grade</span>
-              </div>
-              <div className="flex items-center gap-2.5 text-xs md:text-sm">
-                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Wind className="w-4 h-4 text-primary" />
-                </div>
-                <span className="font-medium">Breathable Fabric</span>
-              </div>
-            </div>
-
             <Button
               size="lg" 
-              className="w-full text-base md:text-lg py-5 font-bold shadow-lg hover:shadow-xl transition-shadow" 
+              className="w-full text-base md:text-lg py-4 font-bold shadow-lg hover:shadow-xl transition-shadow" 
               onClick={handleAddToCart}
               disabled={isCheckingOut || !product}
             >
@@ -295,24 +224,19 @@ export const Hero = () => {
               )}
             </Button>
 
-            <div className="grid grid-cols-3 gap-3 py-3 border-t">
-              <div className="text-center">
-                <Shield className="w-5 h-5 mx-auto mb-1.5 text-primary" />
-                <p className="text-xs font-medium leading-tight">2-Year Warranty</p>
+            <div className="grid grid-cols-3 gap-2 py-2 border-t text-center">
+              <div className="flex flex-col items-center">
+                <Shield className="w-4 h-4 mb-1 text-primary" />
+                <p className="text-[10px] font-medium leading-tight">2-Year Warranty</p>
               </div>
-              <div className="text-center">
-                <RotateCcw className="w-5 h-5 mx-auto mb-1.5 text-primary" />
-                <p className="text-xs font-medium leading-tight">120 Night Money-Back</p>
+              <div className="flex flex-col items-center">
+                <RotateCcw className="w-4 h-4 mb-1 text-primary" />
+                <p className="text-[10px] font-medium leading-tight">120 Night Money-Back</p>
               </div>
-              <div className="text-center">
-                <Truck className="w-5 h-5 mx-auto mb-1.5 text-primary" />
-                <p className="text-xs font-medium leading-tight">Easy Returns</p>
+              <div className="flex flex-col items-center">
+                <Truck className="w-4 h-4 mb-1 text-primary" />
+                <p className="text-[10px] font-medium leading-tight">Easy Returns</p>
               </div>
-            </div>
-
-            <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground bg-secondary/5 p-2 rounded-lg">
-              <Truck className="w-4 h-4 flex-shrink-0" />
-              <span>Arrives on <strong className="text-foreground">November 22nd</strong>, if you order before <strong className="text-foreground">11:50 PM EST</strong></span>
             </div>
           </div>
         </div>
