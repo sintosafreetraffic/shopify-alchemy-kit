@@ -4,13 +4,13 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Shield, Truck, RotateCcw } from "lucide-react";
+import { Moon, Truck, RotateCcw } from "lucide-react";
 
 const policies = [
   {
-    icon: Shield,
-    title: "120 Night Sleep Trial",
-    content: "We're confident you'll love your OptiSleep pillow, which is why we offer a generous 120-night trial period. If you're not completely satisfied, return it for a full refund - no questions asked. We'll even arrange free pickup."
+    icon: Moon,
+    title: "100 nights risk free trial",
+    content: "We're confident you'll love your OptiSleep pillow, which is why we offer a generous 100-night trial period. If you're not completely satisfied, return it for a full refund - no questions asked. We'll even arrange free pickup."
   },
   {
     icon: Truck,
@@ -26,9 +26,9 @@ const policies = [
 
 export const PolicyAccordion = () => {
   return (
-    <section className="py-12 bg-background">
-      <div className="container mx-auto px-4 max-w-4xl">
-        <Accordion type="single" collapsible className="space-y-3">
+    <section className="py-6 bg-background">
+      <div className="container mx-auto px-4 max-w-3xl">
+        <Accordion type="single" collapsible className="space-y-2">
           {policies.map((policy, index) => {
             const Icon = policy.icon;
             return (
@@ -37,15 +37,15 @@ export const PolicyAccordion = () => {
                 value={`policy-${index}`}
                 className="bg-secondary/20 rounded-lg border-none"
               >
-                <AccordionTrigger className="px-6 py-4 hover:no-underline">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <Icon className="w-5 h-5 text-primary" />
+                <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Icon className="w-4 h-4 text-primary" />
                     </div>
-                    <span className="font-semibold text-left">{policy.title}</span>
+                    <span className="font-semibold text-left text-sm">{policy.title}</span>
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="px-6 pb-4 text-muted-foreground">
+                <AccordionContent className="px-4 pb-3 text-muted-foreground text-sm">
                   {policy.content}
                 </AccordionContent>
               </AccordionItem>
