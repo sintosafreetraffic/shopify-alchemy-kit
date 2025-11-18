@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, Shield, RotateCcw, Truck, Loader2, Package, Clock, CreditCard, Wind, Snowflake, Heart, Award, Star } from "lucide-react";
 import { ProductImageCarousel } from "./ProductImageCarousel";
+import { PolicyAccordion } from "./PolicyAccordion";
 import { useState, useEffect } from "react";
 import { useCartStore } from "@/stores/cartStore";
 import { fetchProducts } from "@/lib/shopify";
@@ -110,7 +111,7 @@ export const Hero = () => {
                 <span className="text-sm font-medium">Rated 4.8/5 by 12,500+ customers</span>
               </div>
               
-              <div className="inline-flex items-center gap-2 bg-warning/10 text-warning-foreground px-3 py-1.5 rounded-md text-sm font-medium w-fit">
+              <div className="inline-flex items-center gap-2 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 px-3 py-1.5 rounded-md text-sm font-medium w-fit">
                 🔥 This product is frequently viewed
               </div>
             </div>
@@ -305,6 +306,8 @@ export const Hero = () => {
           </div>
         </div>
       </div>
+      
+      <PolicyAccordion />
     </section>
   );
 };

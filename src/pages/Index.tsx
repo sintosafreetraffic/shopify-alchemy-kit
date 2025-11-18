@@ -9,7 +9,6 @@ import { VideoSection } from "@/components/VideoSection";
 import { Guarantee } from "@/components/Guarantee";
 import { Features } from "@/components/Features";
 import { FAQ } from "@/components/FAQ";
-import { PolicyAccordion } from "@/components/PolicyAccordion";
 import { ReviewsSection } from "@/components/ReviewsSection";
 import { LookInside } from "@/components/LookInside";
 import { Badge } from "@/components/ui/badge";
@@ -41,7 +40,6 @@ const Index = () => {
       <UrgencyBanner />
       <Header />
       <Hero />
-      <PolicyAccordion />
       <Features />
       <Benefits />
       <LookInside />
