@@ -110,49 +110,49 @@ export const Hero = () => {
           </div>
           
           {/* Sticky Product Details Column */}
-          <div className="space-y-5 order-1 md:order-2 md:sticky md:top-24 md:self-start md:h-fit">
+          <div className="space-y-3 order-1 md:order-2 md:sticky md:top-24 md:self-start md:h-fit">
 
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
                 <div className="flex">
                   {[1, 2, 3, 4, 5].map((star) => (
-                    <Star key={star} className="w-5 h-5 fill-yellow-500 text-yellow-500" />
+                    <Star key={star} className="w-4 h-4 fill-yellow-500 text-yellow-500" />
                   ))}
                 </div>
-                <span className="text-sm font-medium">Rated 4.8/5 by 12,500+ customers</span>
+                <span className="text-xs font-medium">Rated 4.8/5 by 12,500+ customers</span>
               </div>
               
-              <div className="inline-flex items-center gap-2 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 px-3 py-1.5 rounded-md text-sm font-medium w-fit">
+              <div className="inline-flex items-center gap-2 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded-md text-xs font-medium w-fit">
                 🔥 This product is frequently viewed
               </div>
             </div>
 
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tight">
+            <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold leading-tight tracking-tight">
               OptiSleep™ Sleep Apnea Pillow
             </h1>
             
-            <p className="text-base md:text-lg text-muted-foreground">
+            <p className="text-sm md:text-base text-muted-foreground">
               The #1 Rated Orthopedic Pillow for Sleep Apnea in the U.S.
             </p>
 
-            <div className="space-y-3 py-2">
-              <p className="text-sm font-semibold text-foreground/80">The only scientifically designed pillow that:</p>
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-foreground/80">The only scientifically designed pillow that:</p>
               {[
                 "Eliminates sleep apnea episodes by 86%*",
                 "Stops dangerous breathing interruptions",
                 "Ends marriage-threatening snoring instantly"
               ].map((benefit) => (
-                <div key={benefit} className="flex items-start gap-3">
-                  <div className="bg-primary/10 rounded-full p-1.5 flex-shrink-0 mt-0.5">
-                    <Check className="w-4 h-4 text-primary" />
+                <div key={benefit} className="flex items-start gap-2">
+                  <div className="bg-primary/10 rounded-full p-1 flex-shrink-0 mt-0.5">
+                    <Check className="w-3 h-3 text-primary" />
                   </div>
-                  <span className="text-sm md:text-base">{benefit}</span>
+                  <span className="text-xs md:text-sm">{benefit}</span>
                 </div>
               ))}
             </div>
 
-            <div className="border-t border-b py-5 my-4">
-              <p className="text-center font-bold text-base md:text-lg mb-4 tracking-wide">LIMITED-TIME ANNIVERSARY OFFER</p>
+            <div className="border-t border-b py-3 my-2">
+              <p className="text-center font-bold text-sm md:text-base mb-3 tracking-wide">LIMITED-TIME ANNIVERSARY OFFER</p>
               
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <button
@@ -219,7 +219,7 @@ export const Hero = () => {
             </div>
 
             {/* Trust Badges */}
-            <div className="flex flex-wrap items-center justify-center gap-4 py-4 border-y bg-secondary/5 rounded-lg">
+            <div className="flex flex-wrap items-center justify-center gap-3 py-2 border-y bg-secondary/5 rounded-lg">
               <div className="flex items-center gap-2 text-xs md:text-sm">
                 <Package className="w-4 h-4 text-success" />
                 <span className="font-medium">In Stock, Ready to Ship</span>
@@ -235,7 +235,7 @@ export const Hero = () => {
             </div>
 
             {/* Customer Testimonial */}
-            <div className="bg-secondary/10 rounded-xl p-5 border border-border/50">
+            <div className="bg-secondary/10 rounded-lg p-3 border border-border/50">
               <div className="flex items-start gap-3">
                 <img 
                   src={testimonialAvatar} 
@@ -252,7 +252,7 @@ export const Hero = () => {
             </div>
 
             {/* Product Features Icons */}
-            <div className="grid grid-cols-2 gap-3 py-2">
+            <div className="grid grid-cols-2 gap-2">
               <div className="flex items-center gap-2.5 text-xs md:text-sm">
                 <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                   <Heart className="w-4 h-4 text-primary" />
