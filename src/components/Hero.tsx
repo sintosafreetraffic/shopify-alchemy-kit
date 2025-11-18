@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Shield, RotateCcw, Truck, Loader2, Package, Clock, CreditCard, Wind, Snowflake, Heart, Award, Star } from "lucide-react";
+import { Check, Shield, Moon, Truck, Loader2, Star } from "lucide-react";
 import { ProductImageCarousel } from "./ProductImageCarousel";
 import { PolicyAccordion } from "./PolicyAccordion";
 import { useState, useEffect } from "react";
@@ -192,22 +192,6 @@ export const Hero = () => {
               </div>
             </div>
 
-            {/* Trust Badges */}
-            <div className="flex flex-wrap items-center justify-center gap-3 py-1.5 border-y bg-secondary/5 rounded-lg my-2">
-              <div className="flex items-center gap-2 text-xs md:text-sm">
-                <Package className="w-4 h-4 text-success" />
-                <span className="font-medium">In Stock, Ready to Ship</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs md:text-sm">
-                <Clock className="w-4 h-4 text-primary" />
-                <span className="font-medium">120-Day Money-Back</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs md:text-sm">
-                <CreditCard className="w-4 h-4 text-primary" />
-                <span className="font-medium">Secure Checkout</span>
-              </div>
-            </div>
-
             <Button
               size="lg" 
               className="w-full text-lg md:text-xl py-6 font-bold shadow-lg hover:shadow-xl transition-shadow touch-manipulation" 
@@ -230,8 +214,8 @@ export const Hero = () => {
                 <p className="text-xs font-medium leading-tight">2-Year Warranty</p>
               </div>
               <div className="flex flex-col items-center">
-                <RotateCcw className="w-5 h-5 mb-1.5 text-primary" />
-                <p className="text-xs font-medium leading-tight">120 Night Money-Back</p>
+                <Moon className="w-5 h-5 mb-1.5 text-primary" />
+                <p className="text-xs font-medium leading-tight">100 nights risk free trial</p>
               </div>
               <div className="flex flex-col items-center">
                 <Truck className="w-5 h-5 mb-1.5 text-primary" />
