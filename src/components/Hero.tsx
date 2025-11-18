@@ -92,9 +92,35 @@ export const Hero = () => {
   return (
     <section className="py-4 md:py-6">
       <div className="container mx-auto px-4 max-w-7xl">
+        {/* Mobile Layout: Carousel at top, then title */}
+        <div className="md:hidden space-y-4 mb-6">
+          <ProductImageCarousel />
+          
+          {/* Mobile Title Section */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="flex">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star key={star} className="w-4 h-4 fill-yellow-500 text-yellow-500" />
+                ))}
+              </div>
+              <span className="text-xs font-medium">Rated 4.8/5 by 12,500+ customers</span>
+            </div>
+            
+            <h1 className="text-2xl font-bold leading-tight tracking-tight">
+              OptiSleep™ Sleep Apnea Pillow
+            </h1>
+            
+            <p className="text-sm text-muted-foreground">
+              The #1 Rated Orthopedic Pillow for Sleep Apnea in the U.S.
+            </p>
+          </div>
+        </div>
+
+        {/* Desktop Grid Layout */}
         <div className="grid md:grid-cols-2 gap-6 lg:gap-10">
-          {/* Scrollable Product Images Column */}
-          <div className="relative order-2 md:order-1">
+          {/* Scrollable Product Images Column - Desktop Only */}
+          <div className="hidden md:block relative order-2 md:order-1">
             <Badge variant="secondary" className="mb-3 text-xs font-semibold tracking-wide flex items-center gap-1.5">
               <span className="text-base">←</span>
               <Star className="w-3.5 h-3.5 fill-yellow-500 text-yellow-500" />
@@ -112,7 +138,8 @@ export const Hero = () => {
           {/* Sticky Product Details Column */}
           <div className="space-y-2 order-1 md:order-2 md:sticky md:top-16 md:self-start md:h-fit">
 
-            <div className="flex flex-col gap-2">
+            {/* Desktop Title Section */}
+            <div className="hidden md:flex flex-col gap-2">
               <div className="flex items-center gap-2">
                 <div className="flex">
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -127,11 +154,11 @@ export const Hero = () => {
               </div>
             </div>
 
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold leading-tight tracking-tight">
+            <h1 className="hidden md:block text-2xl md:text-3xl lg:text-4xl font-bold leading-tight tracking-tight">
               OptiSleep™ Sleep Apnea Pillow
             </h1>
             
-            <p className="text-sm md:text-base text-muted-foreground">
+            <p className="hidden md:block text-sm md:text-base text-muted-foreground">
               The #1 Rated Orthopedic Pillow for Sleep Apnea in the U.S.
             </p>
 
