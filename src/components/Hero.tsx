@@ -219,7 +219,7 @@ export const Hero = () => {
             </div>
 
             {/* Trust Badges */}
-            <div className="flex flex-wrap items-center justify-center gap-3 py-2 border-y bg-secondary/5 rounded-lg">
+            <div className="flex flex-wrap items-center justify-center gap-3 py-1.5 border-y bg-secondary/5 rounded-lg my-2">
               <div className="flex items-center gap-2 text-xs md:text-sm">
                 <Package className="w-4 h-4 text-success" />
                 <span className="font-medium">In Stock, Ready to Ship</span>
