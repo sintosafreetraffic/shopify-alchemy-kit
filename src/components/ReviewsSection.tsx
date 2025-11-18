@@ -63,9 +63,9 @@ const reviews = [
 
 export const ReviewsSection = () => {
   return (
-    <section className="py-16 bg-background">
+    <section className="py-10 bg-background">
       <div className="container mx-auto px-4 max-w-6xl">
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-4">
             <div className="flex">
               {[1, 2, 3, 4, 5].map((star) => (
