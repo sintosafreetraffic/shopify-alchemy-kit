@@ -2,7 +2,6 @@ import { useState } from "react";
 import optisleepPillow from "@/assets/optisleep-pillow-main.png";
 
 export const ProductImageCarousel = () => {
-  const [selectedImage, setSelectedImage] = useState(0);
   
   // Multiple views of the OptiSleep pillow
   const images = [
@@ -13,35 +12,41 @@ export const ProductImageCarousel = () => {
   ];
 
   return (
-    <div className="space-y-4">
-      {/* Main Image Display */}
-      <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8">
+    <div className="space-y-3">
+      {/* First large image */}
+      <div className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8">
         <img
-          src={images[selectedImage].url}
-          alt={images[selectedImage].alt}
+          src={images[0].url}
+          alt={images[0].alt}
           className="w-full h-auto object-contain"
         />
       </div>
 
-      {/* Thumbnail Grid */}
-      <div className="grid grid-cols-4 gap-3">
-        {images.map((image, index) => (
-          <button
-            key={index}
-            onClick={() => setSelectedImage(index)}
-            className={`rounded-lg overflow-hidden border-2 transition-all ${
-              selectedImage === index
-                ? "border-primary ring-2 ring-primary/20"
-                : "border-border hover:border-primary/50"
-            }`}
-          >
-            <img
-              src={image.url}
-              alt={image.alt}
-              className="w-full h-auto object-cover"
-            />
-          </button>
-        ))}
+      {/* Two images side by side */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8">
+          <img
+            src={images[1].url}
+            alt={images[1].alt}
+            className="w-full h-auto object-contain"
+          />
+        </div>
+        <div className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8">
+          <img
+            src={images[2].url}
+            alt={images[2].alt}
+            className="w-full h-auto object-contain"
+          />
+        </div>
+      </div>
+
+      {/* Second large image */}
+      <div className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8">
+        <img
+          src={images[3].url}
+          alt={images[3].alt}
+          className="w-full h-auto object-contain"
+        />
       </div>
     </div>
   );
