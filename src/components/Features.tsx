@@ -120,7 +120,7 @@ export const Features = () => {
                 className="w-full h-auto"
                 style={
                   feature.image === comparisonChart
-                    ? { filter: "hue-rotate(200deg)" }
+                    ? { filter: "hue-rotate(240deg)" }
                     : undefined
                 }
               />
