@@ -90,12 +90,12 @@ export const Hero = () => {
   const selectedOption = bundles[selectedBundle];
 
   return (
-    <section className="py-8 md:py-16">
+    <section className="py-4 md:py-6">
       <div className="container mx-auto px-4 max-w-7xl">
-        <div className="grid md:grid-cols-2 gap-8 lg:gap-16">
+        <div className="grid md:grid-cols-2 gap-6 lg:gap-10">
           {/* Scrollable Product Images Column */}
           <div className="relative order-2 md:order-1">
-            <Badge variant="secondary" className="mb-6 text-xs font-semibold tracking-wide flex items-center gap-1.5">
+            <Badge variant="secondary" className="mb-3 text-xs font-semibold tracking-wide flex items-center gap-1.5">
               <span className="text-base">←</span>
               <Star className="w-3.5 h-3.5 fill-yellow-500 text-yellow-500" />
               <Star className="w-3.5 h-3.5 fill-yellow-500 text-yellow-500" />
@@ -110,7 +110,7 @@ export const Hero = () => {
           </div>
           
           {/* Sticky Product Details Column */}
-          <div className="space-y-3 order-1 md:order-2 md:sticky md:top-24 md:self-start md:h-fit">
+          <div className="space-y-2 order-1 md:order-2 md:sticky md:top-16 md:self-start md:h-fit">
 
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
@@ -151,10 +151,10 @@ export const Hero = () => {
               ))}
             </div>
 
-            <div className="border-t border-b py-3 my-2">
-              <p className="text-center font-bold text-sm md:text-base mb-3 tracking-wide">LIMITED-TIME ANNIVERSARY OFFER</p>
+            <div className="border-t border-b py-2 my-1.5">
+              <p className="text-center font-bold text-sm md:text-base mb-2 tracking-wide">LIMITED-TIME ANNIVERSARY OFFER</p>
               
-              <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="grid grid-cols-2 gap-4 mb-3">
                 <button
                   onClick={() => setSelectedBundle("1")}
                   className={`border-2 rounded-lg p-4 text-center transition-all relative ${
@@ -235,7 +235,7 @@ export const Hero = () => {
             </div>
 
             {/* Customer Testimonial */}
-            <div className="bg-secondary/10 rounded-lg p-3 border border-border/50">
+            <div className="bg-secondary/10 rounded-lg p-2 border border-border/50">
               <div className="flex items-start gap-3">
                 <img 
                   src={testimonialAvatar} 
@@ -281,7 +281,7 @@ export const Hero = () => {
 
             <Button
               size="lg" 
-              className="w-full text-base md:text-lg py-6 font-bold shadow-lg hover:shadow-xl transition-shadow" 
+              className="w-full text-base md:text-lg py-5 font-bold shadow-lg hover:shadow-xl transition-shadow" 
               onClick={handleAddToCart}
               disabled={isCheckingOut || !product}
             >
@@ -295,7 +295,7 @@ export const Hero = () => {
               )}
             </Button>
 
-            <div className="grid grid-cols-3 gap-3 py-4 border-t">
+            <div className="grid grid-cols-3 gap-3 py-3 border-t">
               <div className="text-center">
                 <Shield className="w-5 h-5 mx-auto mb-1.5 text-primary" />
                 <p className="text-xs font-medium leading-tight">2-Year Warranty</p>
@@ -310,7 +310,7 @@ export const Hero = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground bg-secondary/5 p-3 rounded-lg">
+            <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground bg-secondary/5 p-2 rounded-lg">
               <Truck className="w-4 h-4 flex-shrink-0" />
               <span>Arrives on <strong className="text-foreground">November 22nd</strong>, if you order before <strong className="text-foreground">11:50 PM EST</strong></span>
             </div>
