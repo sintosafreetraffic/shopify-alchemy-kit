@@ -162,6 +162,26 @@ export const Hero = () => {
               The #1 Rated Orthopedic Pillow for Sleep Apnea in the U.S.
             </p>
 
+            {/* USPs Section */}
+            <div className="space-y-2 my-4">
+              <div className="flex items-start gap-2">
+                <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                <p className="text-sm">Clinically proven to reduce neck pain and improve sleep quality</p>
+              </div>
+              <div className="flex items-start gap-2">
+                <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                <p className="text-sm">Ergonomic design supports natural spine alignment</p>
+              </div>
+              <div className="flex items-start gap-2">
+                <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                <p className="text-sm">Premium memory foam maintains shape for 3-5 years</p>
+              </div>
+              <div className="flex items-start gap-2">
+                <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                <p className="text-sm">Cooling gel technology prevents night sweats</p>
+              </div>
+            </div>
+
             <div className="border-t border-b py-2 my-1.5">
               <p className="text-center font-bold text-sm md:text-base mb-2 tracking-wide">LIMITED-TIME OFFER</p>
               
