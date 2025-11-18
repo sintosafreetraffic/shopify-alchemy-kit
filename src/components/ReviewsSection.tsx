@@ -84,17 +84,17 @@ export const ReviewsSection = () => {
             align: "start",
             loop: true,
           }}
-          className="w-full"
+          className="w-full max-w-4xl mx-auto"
         >
           <CarouselContent>
             {reviews.map((review, index) => (
-              <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/2">
+              <CarouselItem key={index}>
                 <div className="bg-secondary/20 rounded-xl p-8 border h-full">
                   <div className="flex flex-col items-center text-center mb-6">
                     <img 
                       src={review.avatar} 
                       alt={review.name}
-                      className="w-24 h-24 rounded-full object-cover mb-4 ring-4 ring-primary/10"
+                      className="w-32 h-32 rounded-full object-cover mb-4 ring-4 ring-primary/10"
                     />
                     <div>
                       <div className="flex items-center justify-center gap-2 mb-1">
@@ -112,13 +112,13 @@ export const ReviewsSection = () => {
                       <Star key={i} className="w-5 h-5 fill-yellow-500 text-yellow-500" />
                     ))}
                   </div>
-                  <p className="text-muted-foreground leading-relaxed">{review.review}</p>
+                  <p className="text-muted-foreground leading-relaxed max-w-2xl mx-auto">{review.review}</p>
                 </div>
               </CarouselItem>
             ))}
           </CarouselContent>
-          <CarouselPrevious />
-          <CarouselNext />
+          <CarouselPrevious className="left-0" />
+          <CarouselNext className="right-0" />
         </Carousel>
       </div>
     </section>
