@@ -9,6 +9,8 @@ export const ProductImageCarousel = () => {
     { url: optisleepPillow, alt: "OptiSleep pillow side angle" },
     { url: optisleepPillow, alt: "OptiSleep pillow detail view" },
     { url: optisleepPillow, alt: "OptiSleep pillow perspective" },
+    { url: optisleepPillow, alt: "OptiSleep pillow lifestyle view" },
+    { url: optisleepPillow, alt: "OptiSleep pillow comfort view" },
   ];
 
   return (
@@ -22,17 +24,15 @@ export const ProductImageCarousel = () => {
         />
       </div>
 
-      {/* Second large image */}
-      <div className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8">
-        <img
-          src={images[1].url}
-          alt={images[1].alt}
-          className="w-full h-auto object-contain"
-        />
-      </div>
-
-      {/* Two images side by side at the bottom */}
+      {/* Two images side by side */}
       <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8">
+          <img
+            src={images[1].url}
+            alt={images[1].alt}
+            className="w-full h-auto object-contain"
+          />
+        </div>
         <div className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8">
           <img
             src={images[2].url}
@@ -40,10 +40,30 @@ export const ProductImageCarousel = () => {
             className="w-full h-auto object-contain"
           />
         </div>
+      </div>
+
+      {/* Second large image */}
+      <div className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8">
+        <img
+          src={images[3].url}
+          alt={images[3].alt}
+          className="w-full h-auto object-contain"
+        />
+      </div>
+
+      {/* Two more images side by side at the bottom */}
+      <div className="grid grid-cols-2 gap-3">
         <div className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8">
           <img
-            src={images[3].url}
-            alt={images[3].alt}
+            src={images[4].url}
+            alt={images[4].alt}
+            className="w-full h-auto object-contain"
+          />
+        </div>
+        <div className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8">
+          <img
+            src={images[5].url}
+            alt={images[5].alt}
             className="w-full h-auto object-contain"
           />
         </div>
