@@ -1,5 +1,5 @@
 import comparisonImage from "@/assets/comparison.png";
-import comparisonChart from "@/assets/comparison-chart-new.png";
+import comparisonChart from "@/assets/comparison-chart.png";
 
 export const Comparison = () => {
   return (
