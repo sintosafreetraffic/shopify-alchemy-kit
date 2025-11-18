@@ -1,34 +1,55 @@
 import { Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import testimonialAvatar from "@/assets/testimonial.png";
+import erikAvatar from "@/assets/reviewer-erik.jpg";
+import sofieAvatar from "@/assets/reviewer-sofie.jpg";
+import coupleAvatar from "@/assets/reviewer-couple.jpg";
+import lunaAvatar from "@/assets/reviewer-luna.jpg";
+import hannahAvatar from "@/assets/reviewer-hannah.jpg";
 
 const reviews = [
   {
-    name: "Sarah Johnson",
+    name: "Erik Thompson",
+    role: "Office Worker",
+    avatar: erikAvatar,
     rating: 5,
     date: "2 weeks ago",
-    review: "This pillow has completely transformed my sleep! I used to wake up with neck pain every morning, but that's completely gone now. The cooling gel really works too - no more flipping the pillow to find the cool side!",
+    review: "After sitting at a desk all day, my neck used to feel like concrete. I've tried six pillows in three years and this is the first one that actually works. The contour supports exactly where my neck needs it most. No more waking up grimacing and stretching!",
     verified: true
   },
   {
-    name: "Michael Chen",
-    rating: 5,
-    date: "1 month ago",
-    review: "My wife says I've stopped snoring! I was skeptical at first, but the ergonomic design really does keep your airways open. Best investment in my health I've made this year.",
-    verified: true
-  },
-  {
-    name: "Emma Rodriguez",
+    name: "Sofie Martinez",
+    role: "Side Sleeper",
+    avatar: sofieAvatar,
     rating: 5,
     date: "3 weeks ago",
-    review: "I have chronic neck issues and have tried countless pillows. The OptiSleep is the only one that provides proper support throughout the night. Worth every penny!",
+    review: "Finally found one that works! I'm a side sleeper and always had issues with my pillow being too flat or causing pressure on my ear. This pillow fills the gap perfectly and I don't wake up with shoulder pain anymore. No more readjusting during the night!",
     verified: true
   },
   {
-    name: "David Thompson",
-    rating: 4,
+    name: "Mark & Maria Chen",
+    role: "Happy Couple",
+    avatar: coupleAvatar,
+    rating: 5,
+    date: "1 month ago",
+    review: "Maria says I've stopped snoring! I was skeptical a pillow could help, but the ergonomic design really does open your airways. We both wake up refreshed now. Best investment in our sleep we've made together.",
+    verified: true
+  },
+  {
+    name: "Luna Rodriguez",
+    role: "Wellness Enthusiast",
+    avatar: lunaAvatar,
+    rating: 5,
+    date: "2 weeks ago",
+    review: "As someone who does yoga daily, sleep quality is crucial for recovery. This pillow is the perfect blend of science and wellness - the memory foam and cooling cover are premium quality. My upper back tension is gone and I wake up ready for my morning practice!",
+    verified: true
+  },
+  {
+    name: "Hannah Wilson",
+    role: "Busy Mom",
+    avatar: hannahAvatar,
+    rating: 5,
     date: "1 week ago",
-    review: "Great pillow overall. Took about a week to get used to the shape, but now I can't sleep without it. The quality is outstanding and it's still like new after a month of use.",
+    review: "With two kids, I don't get many hours of sleep, so the quality matters even more. This pillow just works - relief tonight, wake up refreshed tomorrow. Even when I only get 5 hours, I wake up with way less neck tension. Worth every penny!",
     verified: true
   }
 ];
@@ -57,7 +78,7 @@ export const ReviewsSection = () => {
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <img 
-                    src={testimonialAvatar} 
+                    src={review.avatar} 
                     alt={review.name}
                     className="w-12 h-12 rounded-full object-cover"
                   />
@@ -68,7 +89,8 @@ export const ReviewsSection = () => {
                         <Badge variant="secondary" className="text-xs">Verified</Badge>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground">{review.date}</p>
+                    <p className="text-xs text-muted-foreground">{review.role}</p>
+                    <p className="text-xs text-muted-foreground">{review.date}</p>
                   </div>
                 </div>
                 <div className="flex">
