@@ -31,19 +31,21 @@ export const PolicyAccordion = () => {
         <div className="grid md:grid-cols-2 gap-8 items-start">
           {/* Left side - Images */}
           <div className="space-y-4">
-            <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8">
-              <img 
-                src="/src/assets/optisleep-pillow-main.png" 
-                alt="OptiSleep pillow comfort view" 
-                className="w-full h-auto object-contain"
-              />
-            </div>
-            <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8">
-              <img 
-                src="/src/assets/optisleep-pillow.png" 
-                alt="OptiSleep pillow detail view" 
-                className="w-full h-auto object-contain"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8">
+                <img 
+                  src="/src/assets/optisleep-pillow.png" 
+                  alt="OptiSleep pillow detail view" 
+                  className="w-full h-auto object-contain"
+                />
+              </div>
+              <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8">
+                <img 
+                  src="/src/assets/optisleep-pillow-main.png" 
+                  alt="OptiSleep pillow comfort view" 
+                  className="w-full h-auto object-contain"
+                />
+              </div>
             </div>
           </div>
           
