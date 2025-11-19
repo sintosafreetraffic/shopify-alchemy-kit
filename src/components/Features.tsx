@@ -9,7 +9,13 @@ import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 
-const features = [
+const features: Array<{
+  image: string;
+  title: string;
+  description: string;
+  benefits: string[];
+  imagePosition: "left" | "right";
+}> = [
   {
     image: testimonial,
     title: "Join 29,931+ Happy Sleepers",
@@ -19,18 +25,7 @@ const features = [
       "Fall asleep faster every night",
       "Verified 5-star customer reviews"
     ],
-    imagePosition: "left" as const
-  },
-  {
-    image: offerBundle,
-    title: "Complete Sleep Solution Bundle",
-    description: "Get everything you need for the perfect night's sleep. Our exclusive bundle includes premium accessories designed to complement your RiseByNight pillow for maximum comfort.",
-    benefits: [
-      "Premium sleep mask included",
-      "Luxury pillowcase for cooling comfort",
-      "Bonus neck roll for extra support"
-    ],
-    imagePosition: "right" as const
+    imagePosition: "left"
   },
   {
     image: comparisonChart,
@@ -41,7 +36,7 @@ const features = [
       "Cooling gel prevents night sweats",
       "Clinically tested spinal alignment"
     ],
-    imagePosition: "left" as const
+    imagePosition: "left"
   }
 ];
 
