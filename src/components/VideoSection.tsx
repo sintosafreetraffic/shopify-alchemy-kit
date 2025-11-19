@@ -28,7 +28,7 @@ export const VideoSection = () => {
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold mb-4">See It In Action</h2>
           <p className="text-xl text-muted-foreground">
-            Watch real customers experience the OptiSleep difference
+            Watch real customers experience the RiseByNight difference
           </p>
         </div>
 
