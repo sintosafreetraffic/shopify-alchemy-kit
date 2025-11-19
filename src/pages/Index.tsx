@@ -11,6 +11,7 @@ import { LookInside } from "@/components/LookInside";
 import { PainReliefSection } from "@/components/PainReliefSection";
 import { ChiropractorEndorsement } from "@/components/ChiropractorEndorsement";
 import { StickyAddToCart } from "@/components/StickyAddToCart";
+import { Footer } from "@/components/Footer";
 
 const Index = () => {
   return (
@@ -28,11 +29,7 @@ const Index = () => {
       <FAQ />
       <Guarantee />
 
-      <footer className="border-t py-8">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>&copy; 2025 OptiSleep. All rights reserved.</p>
-        </div>
-      </footer>
+      <Footer />
 
       <StickyAddToCart />
     </div>
