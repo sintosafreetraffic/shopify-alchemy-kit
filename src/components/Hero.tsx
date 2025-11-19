@@ -9,7 +9,7 @@ import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import testimonialAvatar from "@/assets/testimonial.png";
-import eyeMaskGift from "@/assets/eye-mask-gift-new.jpg";
+import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
 
 export const Hero = () => {
   const [selectedBundle, setSelectedBundle] = useState<"1" | "2">("2");
