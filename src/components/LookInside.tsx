@@ -205,30 +205,33 @@ export const LookInside = () => {
                 >
                   5
                 </button>
-              </div>
-              {/* Button 3 - Black mesh sides (bottom layer) */}
-              <div className="absolute bottom-[15%] left-[3%] z-20">
-                <svg className="absolute top-3 left-10 w-48 h-28 pointer-events-none" viewBox="0 0 200 110">
-                  <line
-                    x1="0"
-                    y1="30" // same origin
-                    x2="200"
-                    y2="-5" // steeper upward slope
-                    stroke="hsl(var(--primary))"
-                    strokeWidth="2"
-                    strokeOpacity="0.6"
-                    strokeDasharray="4,4"
-                  />
-                </svg>
+             {/* Button 3 - Black mesh sides (bottom layer) */}
+<div className="absolute bottom-[15%] left-[3%] z-20">
+  <svg
+    className="absolute top-3 left-10 w-48 h-28 pointer-events-none"
+    viewBox="0 0 200 110"
+  >
+    <line
+      x1="0"
+      y1="28"   // slightly higher origin
+      x2="200"
+      y2="-12"  // more upward slope
+      stroke="hsl(var(--primary))"
+      strokeWidth="2"
+      strokeOpacity="0.6"
+      strokeDasharray="4,4"
+    />
+  </svg>
 
-                <button
-                  onClick={() => setExpandedMobile(expandedMobile === 4 ? null : 4)}
-                  className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
-                  aria-label="Show Pressure-Relief Cloud Foam Core details"
-                >
-                  3
-                </button>
-              </div>
+  <button
+    onClick={() => setExpandedMobile(expandedMobile === 4 ? null : 4)}
+    className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
+    aria-label="Show Pressure-Relief Cloud Foam Core details"
+  >
+    3
+  </button>
+</div>
+
 
               {/* Information overlay */}
               {expandedMobile !== null && (
