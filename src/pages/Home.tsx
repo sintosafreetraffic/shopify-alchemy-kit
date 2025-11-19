@@ -122,10 +122,68 @@ export default function Home() {
 
               <div className="bg-background p-8 rounded-lg border">
                 <Shield className="w-12 h-12 text-primary mb-4" />
-                <h3 className="text-2xl font-bold mb-3">2-Year Warranty</h3>
+                <h3 className="text-2xl font-bold mb-3">Guaranteed sleep improvement</h3>
                 <p className="text-muted-foreground text-lg">
-                  We stand behind our products with a comprehensive warranty because we build them to last.
+                  Experience better sleep quality from night one, or your money back—no questions asked.
                 </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Customer Experience Statistics */}
+      <section className="py-16 md:py-24 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-5xl font-bold mb-4">
+                What Our Customers Have Experienced
+              </h2>
+              <p className="text-lg text-muted-foreground">
+                Based on our survey of 1,750 people, both men and women.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="bg-card p-8 rounded-lg border text-center hover:shadow-lg transition-shadow">
+                <div className="mb-4">
+                  <div className="text-6xl font-bold text-primary mb-2">86%</div>
+                  <h3 className="text-xl font-bold mb-3">Reduced Snoring & Disruptions</h3>
+                  <p className="text-muted-foreground">
+                    Reported less frequent snoring or nighttime disruptions.*
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-card p-8 rounded-lg border text-center hover:shadow-lg transition-shadow">
+                <div className="mb-4">
+                  <div className="text-6xl font-bold text-primary mb-2">93%</div>
+                  <h3 className="text-xl font-bold mb-3">Improved Sleep Quality</h3>
+                  <p className="text-muted-foreground">
+                    Experienced deeper, more restful sleep each night, without sleep apnea.
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-card p-8 rounded-lg border text-center hover:shadow-lg transition-shadow">
+                <div className="mb-4">
+                  <div className="text-6xl font-bold text-primary mb-2">96%</div>
+                  <h3 className="text-xl font-bold mb-3">Relieved Chronic Neck Pain</h3>
+                  <p className="text-muted-foreground">
+                    Felt significant relief from chronic neck pain after just the first night.
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-card p-8 rounded-lg border text-center hover:shadow-lg transition-shadow">
+                <div className="mb-4">
+                  <div className="text-6xl font-bold text-primary mb-2">89%</div>
+                  <h3 className="text-xl font-bold mb-3">Enhanced Daily Focus</h3>
+                  <p className="text-muted-foreground">
+                    Noticed a remarkable boost in focus and productivity throughout their day.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
