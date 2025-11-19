@@ -162,8 +162,8 @@ export const LookInside = () => {
 
               {/* Button 3 - Black mesh sides (bottom layer) */}
               <div className="absolute bottom-[15%] left-[3%] z-20">
-                <svg className="absolute top-5 left-10 w-32 h-28 pointer-events-none" style={{ transform: 'rotate(25deg)' }}>
-                  <line x1="0" y1="0" x2="128" y2="70" stroke="hsl(var(--primary))" strokeWidth="2" strokeOpacity="0.6" strokeDasharray="4,4" />
+                <svg className="absolute top-5 left-10 w-36 h-20 pointer-events-none">
+                  <line x1="0" y1="0" x2="144" y2="40" stroke="hsl(var(--primary))" strokeWidth="2" strokeOpacity="0.6" strokeDasharray="4,4" />
                 </svg>
                 <button 
                   onClick={() => setExpandedMobile(expandedMobile === 4 ? null : 4)}
