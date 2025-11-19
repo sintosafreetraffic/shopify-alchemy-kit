@@ -9,7 +9,7 @@ import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import testimonialAvatar from "@/assets/testimonial.png";
-import eyeMaskGift from "@/assets/eye-mask-gift.png";
+import eyeMaskGift from "@/assets/eye-mask-gift.webp";
 
 export const Hero = () => {
   const [selectedBundle, setSelectedBundle] = useState<"1" | "2">("2");
@@ -234,8 +234,8 @@ export const Hero = () => {
                   <p className="text-xl font-bold">${bundles["2"].price.toFixed(2)}</p>
                   <p className="text-sm text-muted-foreground line-through">${bundles["2"].originalPrice.toFixed(2)}</p>
                   <div className="flex items-center justify-center gap-1 mt-1">
-                    <p className="text-xs font-medium">+ FREE</p>
-                    <img src={eyeMaskGift} alt="Free eye mask gift" className="w-5 h-5" />
+                    <p className="text-xs font-medium">+</p>
+                    <img src={eyeMaskGift} alt="Free eye mask gift" className="w-6 h-6 object-contain" />
                   </div>
                 </button>
               </div>
