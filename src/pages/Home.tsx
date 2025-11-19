@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { ArrowRight, Moon, Heart, Sparkles, Shield, Users, Award } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ProductGallery } from "@/components/ProductGallery";
@@ -135,7 +136,7 @@ export default function Home() {
       {/* Customer Experience Statistics */}
       <section className="py-16 md:py-24 bg-background">
         <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto">
+          <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-5xl font-bold mb-4">
                 What Our Customers Have Experienced
@@ -145,45 +146,49 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="bg-card p-8 rounded-lg border text-center hover:shadow-lg transition-shadow">
-                <div className="mb-4">
-                  <div className="text-6xl font-bold text-primary mb-2">86%</div>
-                  <h3 className="text-xl font-bold mb-3">Reduced Snoring & Disruptions</h3>
-                  <p className="text-muted-foreground">
-                    Reported less frequent snoring or nighttime disruptions.*
-                  </p>
+            <div className="space-y-8">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xl font-bold">Reduced Snoring & Disruptions</h3>
+                  <span className="text-2xl font-bold text-primary">86%</span>
                 </div>
+                <Progress value={86} className="h-3" />
+                <p className="text-sm text-muted-foreground">
+                  Reported less frequent snoring or nighttime disruptions.*
+                </p>
               </div>
 
-              <div className="bg-card p-8 rounded-lg border text-center hover:shadow-lg transition-shadow">
-                <div className="mb-4">
-                  <div className="text-6xl font-bold text-primary mb-2">93%</div>
-                  <h3 className="text-xl font-bold mb-3">Improved Sleep Quality</h3>
-                  <p className="text-muted-foreground">
-                    Experienced deeper, more restful sleep each night, without sleep apnea.
-                  </p>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xl font-bold">Improved Sleep Quality</h3>
+                  <span className="text-2xl font-bold text-primary">93%</span>
                 </div>
+                <Progress value={93} className="h-3" />
+                <p className="text-sm text-muted-foreground">
+                  Experienced deeper, more restful sleep each night, without sleep apnea.
+                </p>
               </div>
 
-              <div className="bg-card p-8 rounded-lg border text-center hover:shadow-lg transition-shadow">
-                <div className="mb-4">
-                  <div className="text-6xl font-bold text-primary mb-2">96%</div>
-                  <h3 className="text-xl font-bold mb-3">Relieved Chronic Neck Pain</h3>
-                  <p className="text-muted-foreground">
-                    Felt significant relief from chronic neck pain after just the first night.
-                  </p>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xl font-bold">Relieved Chronic Neck Pain</h3>
+                  <span className="text-2xl font-bold text-primary">96%</span>
                 </div>
+                <Progress value={96} className="h-3" />
+                <p className="text-sm text-muted-foreground">
+                  Felt significant relief from chronic neck pain after just the first night.
+                </p>
               </div>
 
-              <div className="bg-card p-8 rounded-lg border text-center hover:shadow-lg transition-shadow">
-                <div className="mb-4">
-                  <div className="text-6xl font-bold text-primary mb-2">89%</div>
-                  <h3 className="text-xl font-bold mb-3">Enhanced Daily Focus</h3>
-                  <p className="text-muted-foreground">
-                    Noticed a remarkable boost in focus and productivity throughout their day.
-                  </p>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xl font-bold">Enhanced Daily Focus</h3>
+                  <span className="text-2xl font-bold text-primary">89%</span>
                 </div>
+                <Progress value={89} className="h-3" />
+                <p className="text-sm text-muted-foreground">
+                  Noticed a remarkable boost in focus and productivity throughout their day.
+                </p>
               </div>
             </div>
           </div>
