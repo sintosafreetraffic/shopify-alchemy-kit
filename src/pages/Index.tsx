@@ -12,6 +12,7 @@ import { ReviewsSection } from "@/components/ReviewsSection";
 import { LookInside } from "@/components/LookInside";
 import { PainReliefSection } from "@/components/PainReliefSection";
 import { ChiropractorEndorsement } from "@/components/ChiropractorEndorsement";
+import { StickyAddToCart } from "@/components/StickyAddToCart";
 import { Badge } from "@/components/ui/badge";
 import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
@@ -73,6 +74,8 @@ const Index = () => {
           <p>&copy; 2025 OptiSleep. All rights reserved.</p>
         </div>
       </footer>
+
+      <StickyAddToCart />
     </div>
   );
 };
