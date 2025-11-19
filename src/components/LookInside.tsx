@@ -206,15 +206,14 @@ export const LookInside = () => {
                   5
                 </button>
               </div>
-
               {/* Button 3 - Black mesh sides (bottom layer) */}
               <div className="absolute bottom-[15%] left-[3%] z-20">
-                <svg className="absolute top-5 left-10 w-36 h-24 pointer-events-none" viewBox="0 0 144 96">
+                <svg className="absolute top-3 left-10 w-48 h-28 pointer-events-none" viewBox="0 0 200 110">
                   <line
                     x1="0"
-                    y1="32" // origin higher (closer to button)
-                    x2="144"
-                    y2="4" // end even higher → line goes upwards
+                    y1="24" // moved higher
+                    x2="200" // extended line further to the right
+                    y2="0" // raised end point more upward
                     stroke="hsl(var(--primary))"
                     strokeWidth="2"
                     strokeOpacity="0.6"
