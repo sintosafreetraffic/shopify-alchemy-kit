@@ -1,4 +1,3 @@
-import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
 import { UrgencyBanner } from "@/components/UrgencyBanner";
 import { Benefits } from "@/components/Benefits";
@@ -11,13 +10,11 @@ import { LookInside } from "@/components/LookInside";
 import { PainReliefSection } from "@/components/PainReliefSection";
 import { ChiropractorEndorsement } from "@/components/ChiropractorEndorsement";
 import { StickyAddToCart } from "@/components/StickyAddToCart";
-import { Footer } from "@/components/Footer";
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <UrgencyBanner />
-      <Header />
       <Hero />
       <Features />
       <Benefits />
@@ -28,9 +25,6 @@ const Index = () => {
       <VideoSection />
       <FAQ />
       <Guarantee />
-
-      <Footer />
-
       <StickyAddToCart />
     </div>
   );
