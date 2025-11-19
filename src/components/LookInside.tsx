@@ -106,8 +106,8 @@ export const LookInside = () => {
               {/* Number indicators with connecting lines */}
               {/* Button 1 - Top white layer */}
               <div className="absolute top-[8%] left-[5%] z-20">
-                <svg className="absolute top-5 left-10 w-24 h-12 pointer-events-none" style={{ transform: 'rotate(-10deg)' }}>
-                  <line x1="0" y1="0" x2="96" y2="24" stroke="hsl(var(--primary))" strokeWidth="2" strokeOpacity="0.6" strokeDasharray="4,4" />
+                <svg className="absolute top-5 left-10 w-40 h-16 pointer-events-none" style={{ transform: 'rotate(5deg)' }}>
+                  <line x1="0" y1="0" x2="160" y2="32" stroke="hsl(var(--primary))" strokeWidth="2" strokeOpacity="0.6" strokeDasharray="4,4" />
                 </svg>
                 <button 
                   onClick={() => setExpandedMobile(expandedMobile === 0 ? null : 0)}
@@ -134,8 +134,8 @@ export const LookInside = () => {
 
               {/* Button 3 - Black mesh sides */}
               <div className="absolute bottom-[18%] left-[8%] z-20">
-                <svg className="absolute top-5 left-10 w-20 h-12 pointer-events-none" style={{ transform: 'rotate(15deg)' }}>
-                  <line x1="0" y1="0" x2="80" y2="24" stroke="hsl(var(--primary))" strokeWidth="2" strokeOpacity="0.6" strokeDasharray="4,4" />
+                <svg className="absolute top-5 left-10 w-24 h-20 pointer-events-none" style={{ transform: 'rotate(40deg)' }}>
+                  <line x1="0" y1="0" x2="96" y2="48" stroke="hsl(var(--primary))" strokeWidth="2" strokeOpacity="0.6" strokeDasharray="4,4" />
                 </svg>
                 <button 
                   onClick={() => setExpandedMobile(expandedMobile === 2 ? null : 2)}
