@@ -213,7 +213,7 @@ export const LookInside = () => {
                     x1="0"
                     y1="18" // origin stays
                     x2="390" // 150% longer
-                    y2="-50" // 30% more upward slope
+                    y2="-80" // 30% more upward slope
                     stroke="hsl(var(--primary))"
                     strokeWidth="2"
                     strokeOpacity="0.6"
