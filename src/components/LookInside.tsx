@@ -9,8 +9,8 @@ const components = [
   },
   {
     position: "left-middle",
-    title: "ComfortWave Memory Foam™ Layer",
-    description: "Sculpted beige foam layer that adapts to your unique head and neck contours, providing personalized support and pressure relief."
+    title: "Dual-Contour Sleep Channels™",
+    description: "Curved channels engineered into the top foam layer guide your head into the optimal sleeping position for perfect spinal alignment."
   },
   {
     position: "left-bottom",
@@ -19,8 +19,8 @@ const components = [
   },
   {
     position: "right-top",
-    title: "Dual-Contour Sleep Channels™",
-    description: "Curved channels engineered into the top foam layer guide your head into the optimal sleeping position for perfect spinal alignment."
+    title: "ComfortWave Memory Foam™ Layer",
+    description: "Sculpted beige foam layer that adapts to your unique head and neck contours, providing personalized support and pressure relief."
   },
   {
     position: "right-middle",
