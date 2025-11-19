@@ -264,8 +264,8 @@ export const LookInside = () => {
                     strokeDasharray="4,4"
                   />
                 </svg>
-                <button
-                  onClick={() => setExpandedMobile(expandedMobile === 2 ? null : 2)}
+              <button
+                  onClick={() => setExpandedMobile(expandedMobile === 3 ? null : 3)}
                   className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
                   aria-label="Show Dual-Contour Sleep Channels details"
                 >
@@ -287,8 +287,8 @@ export const LookInside = () => {
                     strokeDasharray="4,4"
                   />
                 </svg>
-                <button
-                  onClick={() => setExpandedMobile(expandedMobile === 3 ? null : 3)}
+              <button
+                  onClick={() => setExpandedMobile(expandedMobile === 4 ? null : 4)}
                   className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
                   aria-label="Show AirFlow Mesh Side Panels details"
                 >
@@ -310,8 +310,8 @@ export const LookInside = () => {
                   />
                 </svg>
 
-                <button
-                  onClick={() => setExpandedMobile(expandedMobile === 4 ? null : 4)}
+              <button
+                  onClick={() => setExpandedMobile(expandedMobile === 2 ? null : 2)}
                   className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
                   aria-label="Show Pressure-Relief Cloud Foam Core details"
                 >
