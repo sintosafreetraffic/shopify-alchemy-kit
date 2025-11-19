@@ -56,9 +56,9 @@ export const Footer = () => {
                 </Link>
               </li>
               <li>
-                <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/return-policy" className="text-muted-foreground hover:text-primary transition-colors">
                   Return Policy
-                </a>
+                </Link>
               </li>
               <li>
                 <Link to="/terms" className="text-muted-foreground hover:text-primary transition-colors">
