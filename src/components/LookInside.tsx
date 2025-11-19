@@ -46,68 +46,8 @@ export const LookInside = () => {
           </p>
         </div>
         <div className="relative max-w-6xl mx-auto">
-          {/* Desktop Layout */}
-          <div className="hidden lg:grid lg:grid-cols-[1fr_2fr_1fr] gap-8 items-center">
-            {/* Left Column */}
-            <div className="space-y-12">
-              {components
-                .filter((c) => c.position.startsWith("left"))
-                .map((component, idx) => (
-                  <div key={idx} className="relative">
-                    <div className="bg-background border-2 border-primary/20 rounded-xl p-6 shadow-lg hover:border-primary/40 transition-colors">
-                      <h3 className="font-bold text-lg mb-2">{component.title}</h3>
-                      <p className="text-sm text-muted-foreground">{component.description}</p>
-                    </div>
-                    {/* Connecting dot */}
-                    <div className="absolute -right-3 top-1/2 -translate-y-1/2 w-3 h-3 bg-primary rounded-full z-10"></div>
-                    {/* Connecting line */}
-                    <div
-                      className="absolute -right-8 top-1/2 w-8 h-0.5 bg-primary/40"
-                      style={{
-                        background:
-                          "repeating-linear-gradient(to right, hsl(var(--primary)) 0, hsl(var(--primary)) 4px, transparent 4px, transparent 8px)",
-                      }}
-                    ></div>
-                  </div>
-                ))}
-            </div>
-
-            {/* Center Image */}
-            <div className="relative flex items-center justify-center py-8">
-              <img
-                src={pillowLayers}
-                alt="RiseByNight pillow exploded view showing all internal layers and materials"
-                className="w-full max-w-md mx-auto"
-              />
-            </div>
-
-            {/* Right Column */}
-            <div className="space-y-20">
-              {components
-                .filter((c) => c.position.startsWith("right"))
-                .map((component, idx) => (
-                  <div key={idx} className="relative">
-                    <div className="bg-background border-2 border-primary/20 rounded-xl p-6 shadow-lg hover:border-primary/40 transition-colors">
-                      <h3 className="font-bold text-lg mb-2">{component.title}</h3>
-                      <p className="text-sm text-muted-foreground">{component.description}</p>
-                    </div>
-                    {/* Connecting dot */}
-                    <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-3 h-3 bg-primary rounded-full z-10"></div>
-                    {/* Connecting line */}
-                    <div
-                      className="absolute -left-8 top-1/2 w-8 h-0.5 bg-primary/40"
-                      style={{
-                        background:
-                          "repeating-linear-gradient(to left, hsl(var(--primary)) 0, hsl(var(--primary)) 4px, transparent 4px, transparent 8px)",
-                      }}
-                    ></div>
-                  </div>
-                ))}
-            </div>
-          </div>
-
-          {/* Mobile Layout */}
-          <div className="lg:hidden space-y-8">
+          {/* Numbered Button Layout */}
+          <div className="space-y-8">
             <div className="max-w-md mx-auto mb-8 relative">
               <img
                 src={pillowLayers}
