@@ -18,7 +18,7 @@ export const UrgencyBanner = () => {
   }, []);
 
   return (
-    <div className="bg-destructive text-destructive-foreground py-2 text-center text-sm font-medium">
+    <div className="bg-destructive text-destructive-foreground py-2 text-center text-sm font-medium sticky top-0 z-50">
       <div className="container mx-auto px-4 transition-all duration-500">
         {messages[currentIndex]}
       </div>
