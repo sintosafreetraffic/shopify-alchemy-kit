@@ -12,14 +12,19 @@ const components = [
     description: "High-density memory foam conforms to your head and neck, providing personalized support that maintains proper spinal alignment."
   },
   {
-    position: "right-middle",
+    position: "left-bottom",
     title: "Cooling Gel Layer",
     description: "Advanced cooling gel technology regulates temperature all night long, preventing heat buildup."
   },
   {
-    position: "right-bottom",
+    position: "right-top",
     title: "Breathable Base Support",
     description: "Strategically placed ventilation channels promote airflow, keeping the pillow fresh and preventing moisture buildup."
+  },
+  {
+    position: "right-middle",
+    title: "CertiPUR-US Certified Foam",
+    description: "Premium materials certified for safety and performance. Free from harmful chemicals, ensuring healthy sleep for you and your family."
   }
 ];
 
@@ -38,7 +43,7 @@ export const LookInside = () => {
           {/* Desktop Layout */}
           <div className="hidden lg:grid lg:grid-cols-[1fr_2fr_1fr] gap-8 items-center">
             {/* Left Column */}
-            <div className="space-y-16">
+            <div className="space-y-12">
               {components.filter(c => c.position.startsWith('left')).map((component, idx) => (
                 <div key={idx} className="relative">
                   <div className="bg-background border-2 border-primary/20 rounded-xl p-6 shadow-lg hover:border-primary/40 transition-colors">
@@ -67,7 +72,7 @@ export const LookInside = () => {
             </div>
 
             {/* Right Column */}
-            <div className="space-y-16">
+            <div className="space-y-20">
               {components.filter(c => c.position.startsWith('right')).map((component, idx) => (
                 <div key={idx} className="relative">
                   <div className="bg-background border-2 border-primary/20 rounded-xl p-6 shadow-lg hover:border-primary/40 transition-colors">
