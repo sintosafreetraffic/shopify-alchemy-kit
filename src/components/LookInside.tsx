@@ -112,8 +112,9 @@ export const LookInside = () => {
               <img
                 src={pillowLayers}
                 alt="RiseByNight pillow exploded view showing all internal layers and materials"
-                className="w-full"
+                className="w-full relative z-0"
               />
+
               {/* Number indicators with connecting lines */}
               {/* Button 1 - Beige foam layer */}
               <div className="absolute top-[32%] left-[3%] z-20">
