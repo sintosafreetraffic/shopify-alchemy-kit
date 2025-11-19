@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { ShoppingCart, Loader2 } from "lucide-react";
 
 export const StickyAddToCart = () => {
-  const [isVisible, setIsVisible] = useState(false);
   const [selectedBundle, setSelectedBundle] = useState<"1" | "2">("2");
   const [product, setProduct] = useState<ShopifyProduct | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -25,16 +24,6 @@ export const StickyAddToCart = () => {
       }
     };
     loadProduct();
-  }, []);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      // Show button after scrolling 200px down
-      setIsVisible(window.scrollY > 200);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const handleAddToCart = async () => {
@@ -88,7 +77,7 @@ export const StickyAddToCart = () => {
 
   const selectedOption = bundles[selectedBundle];
 
-  if (!isVisible || !product) return null;
+  if (!product) return null;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t shadow-lg animate-slide-in-bottom">
