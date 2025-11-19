@@ -11,6 +11,7 @@ import { FAQ } from "@/components/FAQ";
 import { ReviewsSection } from "@/components/ReviewsSection";
 import { LookInside } from "@/components/LookInside";
 import { PainReliefSection } from "@/components/PainReliefSection";
+import { ChiropractorEndorsement } from "@/components/ChiropractorEndorsement";
 import { Badge } from "@/components/ui/badge";
 import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
@@ -43,6 +44,7 @@ const Index = () => {
       <Features />
       <Benefits />
       <PainReliefSection />
+      <ChiropractorEndorsement />
       <LookInside />
       <ReviewsSection />
       
