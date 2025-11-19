@@ -1,0 +1,108 @@
+import logo from "@/assets/logo.png";
+import { Mail, Phone, MapPin } from "lucide-react";
+
+export const Footer = () => {
+  return (
+    <footer className="border-t bg-background">
+      <div className="container mx-auto px-4 py-12">
+        <div className="grid md:grid-cols-4 gap-8">
+          {/* Brand Column */}
+          <div className="space-y-4">
+            <img 
+              src={logo} 
+              alt="RiseByNight" 
+              className="h-12 w-auto"
+            />
+            <p className="text-sm text-muted-foreground">
+              The #1 Rated Ergonomic Sleep Pillow in the U.S. Experience better sleep and wake up pain-free.
+            </p>
+          </div>
+
+          {/* Quick Links */}
+          <div>
+            <h3 className="font-semibold mb-4">Quick Links</h3>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <a href="#benefits" className="text-muted-foreground hover:text-primary transition-colors">
+                  Benefits
+                </a>
+              </li>
+              <li>
+                <a href="#reviews" className="text-muted-foreground hover:text-primary transition-colors">
+                  Reviews
+                </a>
+              </li>
+              <li>
+                <a href="#faq" className="text-muted-foreground hover:text-primary transition-colors">
+                  FAQ
+                </a>
+              </li>
+              <li>
+                <a href="#guarantee" className="text-muted-foreground hover:text-primary transition-colors">
+                  Guarantee
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Customer Service */}
+          <div>
+            <h3 className="font-semibold mb-4">Customer Service</h3>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                  Shipping Information
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                  Return Policy
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                  Terms & Conditions
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                  Privacy Policy
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Contact Info */}
+          <div>
+            <h3 className="font-semibold mb-4">Contact Us</h3>
+            <ul className="space-y-3 text-sm">
+              <li className="flex items-start gap-2">
+                <Mail className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                <a href="mailto:support@risebynight.com" className="text-muted-foreground hover:text-primary transition-colors">
+                  support@risebynight.com
+                </a>
+              </li>
+              <li className="flex items-start gap-2">
+                <Phone className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                <a href="tel:+1234567890" className="text-muted-foreground hover:text-primary transition-colors">
+                  +1 (234) 567-890
+                </a>
+              </li>
+              <li className="flex items-start gap-2">
+                <MapPin className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                <span className="text-muted-foreground">
+                  123 Sleep Street, Dream City, NY 10001
+                </span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Bottom Bar */}
+        <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
+          <p>&copy; 2025 RiseByNight. All rights reserved.</p>
+        </div>
+      </div>
+    </footer>
+  );
+};
