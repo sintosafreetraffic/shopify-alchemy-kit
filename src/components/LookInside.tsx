@@ -103,42 +103,66 @@ export const LookInside = () => {
                 alt="RiseByNight pillow exploded view showing all internal layers and materials"
                 className="w-full"
               />
-              {/* Number indicators positioned near image bullet points */}
-              <button 
-                onClick={() => setExpandedMobile(expandedMobile === 0 ? null : 0)}
-                className="absolute top-[8%] left-[5%] w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform z-20"
-                aria-label="Show Quilted IceSoft Cover details"
-              >
-                1
-              </button>
-              <button 
-                onClick={() => setExpandedMobile(expandedMobile === 1 ? null : 1)}
-                className="absolute top-[32%] left-[3%] w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform z-20"
-                aria-label="Show ComfortWave Memory Foam details"
-              >
-                2
-              </button>
-              <button 
-                onClick={() => setExpandedMobile(expandedMobile === 2 ? null : 2)}
-                className="absolute bottom-[18%] left-[8%] w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform z-20"
-                aria-label="Show AirFlow Mesh Side Panels details"
-              >
-                3
-              </button>
-              <button 
-                onClick={() => setExpandedMobile(expandedMobile === 3 ? null : 3)}
-                className="absolute top-[22%] right-[8%] w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform z-20"
-                aria-label="Show Dual-Contour Sleep Channels details"
-              >
-                4
-              </button>
-              <button 
-                onClick={() => setExpandedMobile(expandedMobile === 4 ? null : 4)}
-                className="absolute bottom-[25%] right-[12%] w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform z-20"
-                aria-label="Show Pressure-Relief Cloud Foam Core details"
-              >
-                5
-              </button>
+              {/* Number indicators with connecting lines */}
+              {/* Button 1 - Top white layer */}
+              <div className="absolute top-[8%] left-[5%] z-20">
+                <div className="absolute top-5 left-5 w-16 h-0.5 bg-primary/60" />
+                <button 
+                  onClick={() => setExpandedMobile(expandedMobile === 0 ? null : 0)}
+                  className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
+                  aria-label="Show Quilted IceSoft Cover details"
+                >
+                  1
+                </button>
+              </div>
+
+              {/* Button 2 - Beige foam layer */}
+              <div className="absolute top-[32%] left-[3%] z-20">
+                <div className="absolute top-5 left-5 w-20 h-0.5 bg-primary/60" />
+                <button 
+                  onClick={() => setExpandedMobile(expandedMobile === 1 ? null : 1)}
+                  className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
+                  aria-label="Show ComfortWave Memory Foam details"
+                >
+                  2
+                </button>
+              </div>
+
+              {/* Button 3 - Black mesh sides */}
+              <div className="absolute bottom-[18%] left-[8%] z-20">
+                <div className="absolute top-5 left-5 w-12 h-0.5 bg-primary/60" />
+                <button 
+                  onClick={() => setExpandedMobile(expandedMobile === 2 ? null : 2)}
+                  className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
+                  aria-label="Show AirFlow Mesh Side Panels details"
+                >
+                  3
+                </button>
+              </div>
+
+              {/* Button 4 - Top curves */}
+              <div className="absolute top-[22%] right-[8%] z-20">
+                <div className="absolute top-5 right-5 w-16 h-0.5 bg-primary/60" />
+                <button 
+                  onClick={() => setExpandedMobile(expandedMobile === 3 ? null : 3)}
+                  className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
+                  aria-label="Show Dual-Contour Sleep Channels details"
+                >
+                  4
+                </button>
+              </div>
+
+              {/* Button 5 - Blue base */}
+              <div className="absolute bottom-[25%] right-[12%] z-20">
+                <div className="absolute top-5 right-5 w-20 h-0.5 bg-primary/60" />
+                <button 
+                  onClick={() => setExpandedMobile(expandedMobile === 4 ? null : 4)}
+                  className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
+                  aria-label="Show Pressure-Relief Cloud Foam Core details"
+                >
+                  5
+                </button>
+              </div>
 
               {/* Information overlay */}
               {expandedMobile !== null && (
