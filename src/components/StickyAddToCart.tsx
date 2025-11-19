@@ -63,16 +63,18 @@ export const StickyAddToCart = () => {
     }
   };
 
+  const productPrice = product ? parseFloat(product.node.variants.edges[0].node.price.amount) : 79.99;
+
   const bundles = {
     "1": {
       quantity: 1,
-      price: 58.99,
-      discount: "60% OFF"
+      price: productPrice,
+      discount: "Save 0%"
     },
     "2": {
       quantity: 2,
-      price: 97.99,
-      discount: "73% OFF"
+      price: 119.99,
+      discount: "25% OFF"
     }
   };
 
@@ -148,7 +150,7 @@ export const StickyAddToCart = () => {
                 ) : (
                   <>
                     <ShoppingCart className="w-4 h-4 mr-2" />
-                    ${selectedOption.price}
+                    ${selectedOption.price.toFixed(2)}
                   </>
                 )}
               </Button>

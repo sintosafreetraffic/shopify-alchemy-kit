@@ -67,22 +67,24 @@ export const Hero = () => {
     }
   };
 
+  const productPrice = product ? parseFloat(product.node.variants.edges[0].node.price.amount) : 79.99;
+  
   const bundles = {
     "1": {
       quantity: 1,
-      price: 58.99,
-      originalPrice: 129.98,
-      discount: "60% OFF",
-      savings: 70.99,
+      price: productPrice,
+      originalPrice: productPrice * 2,
+      discount: "Save 0%",
+      savings: 0,
       freeGift: "+ FREE Gift",
       freeGiftValue: "$29.99"
     },
     "2": {
       quantity: 2,
-      price: 97.99,
-      originalPrice: 259.96,
-      discount: "73% OFF",
-      savings: 161.97,
+      price: 119.99,
+      originalPrice: productPrice * 2,
+      discount: "25% OFF",
+      savings: (productPrice * 2) - 119.99,
       freeGifts: "+2 FREE Gifts",
       freeGiftValue: "$59.98"
     }
@@ -195,10 +197,7 @@ export const Hero = () => {
                       : "border-border hover:border-primary/50"
                   }`}
                 >
-                  <Badge className="absolute -top-2 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs px-2 py-0.5">
-                    {bundles["1"].discount}
-                  </Badge>
-                  <div className="flex items-center justify-center mb-2">
+                  <div className="flex items-center justify-center mb-2 mt-2">
                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                       selectedBundle === "1" ? "border-primary" : "border-border"
                     }`}>
@@ -208,8 +207,7 @@ export const Hero = () => {
                     </div>
                   </div>
                   <p className="font-bold text-base">1 Pillow</p>
-                  <p className="text-xl font-bold">${bundles["1"].price}</p>
-                  <p className="text-sm text-muted-foreground line-through">${bundles["1"].originalPrice}</p>
+                  <p className="text-xl font-bold">${bundles["1"].price.toFixed(2)}</p>
                 </button>
 
                 <button
@@ -233,8 +231,8 @@ export const Hero = () => {
                     </div>
                   </div>
                   <p className="font-bold text-base">2 Pillows</p>
-                  <p className="text-xl font-bold">${bundles["2"].price}</p>
-                  <p className="text-sm text-muted-foreground line-through">${bundles["2"].originalPrice}</p>
+                  <p className="text-xl font-bold">${bundles["2"].price.toFixed(2)}</p>
+                  <p className="text-sm text-muted-foreground line-through">${bundles["2"].originalPrice.toFixed(2)}</p>
                   <div className="flex items-center justify-center gap-1 mt-1">
                     <p className="text-xs font-medium">+ FREE</p>
                     <img src={eyeMaskGift} alt="Free eye mask gift" className="w-5 h-5" />
