@@ -50,10 +50,16 @@ export const VideoSection = () => {
             </p>
           </div>
 
-          <Carousel className="w-full max-w-5xl mx-auto">
-            <CarouselContent>
+          <Carousel 
+            className="w-full max-w-5xl mx-auto"
+            opts={{
+              align: "start",
+              loop: true,
+            }}
+          >
+            <CarouselContent className="-ml-2 md:-ml-4">
               {videos.map((video) => (
-                <CarouselItem key={video.id} className="md:basis-1/3">
+                <CarouselItem key={video.id} className="pl-2 md:pl-4 basis-full md:basis-1/3">
                   <div 
                     className="relative group cursor-pointer overflow-hidden rounded-xl"
                     onClick={() => video.src && setSelectedVideo(video.src)}
