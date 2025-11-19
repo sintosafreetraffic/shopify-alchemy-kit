@@ -3,28 +3,28 @@ import pillowLayers from "@/assets/pillow-layers.png";
 const components = [
   {
     position: "left-top",
-    title: "Premium Bamboo Cover",
-    description: "Ultra-soft, hypoallergenic bamboo fabric is naturally antibacterial and moisture-wicking. Removable and machine washable."
+    title: "Quilted IceSoft Cover™",
+    description: "Premium quilted top fabric layer with cooling properties. Ultra-soft and breathable, designed to keep you comfortable all night long."
   },
   {
     position: "left-middle",
-    title: "Ergonomic Memory Foam Core",
-    description: "High-density memory foam conforms to your head and neck, providing personalized support that maintains proper spinal alignment."
+    title: "ComfortWave Memory Foam™ Layer",
+    description: "Sculpted beige foam layer that adapts to your unique head and neck contours, providing personalized support and pressure relief."
   },
   {
     position: "left-bottom",
-    title: "Cooling Gel Layer",
-    description: "Advanced cooling gel technology regulates temperature all night long, preventing heat buildup."
+    title: "AirFlow Mesh Side Panels™",
+    description: "Breathable black mesh fabric on the sides promotes optimal air circulation, preventing heat buildup and moisture retention."
   },
   {
     position: "right-top",
-    title: "Breathable Base Support",
-    description: "Strategically placed ventilation channels promote airflow, keeping the pillow fresh and preventing moisture buildup."
+    title: "Dual-Contour Sleep Channels™",
+    description: "Curved channels engineered into the top foam layer guide your head into the optimal sleeping position for perfect spinal alignment."
   },
   {
     position: "right-middle",
-    title: "CertiPUR-US Certified Foam",
-    description: "Premium materials certified for safety and performance. Free from harmful chemicals, ensuring healthy sleep for you and your family."
+    title: "Pressure-Relief Cloud Foam™ Core",
+    description: "Thick blue support base provides foundational stability while cushioning pressure points for a cloud-like sleeping experience."
   }
 ];
 
