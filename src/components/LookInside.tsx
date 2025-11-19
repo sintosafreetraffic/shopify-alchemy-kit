@@ -47,164 +47,63 @@ export const LookInside = () => {
         </div>
         <div className="relative max-w-6xl mx-auto">
           {/* Desktop Layout */}
-          <div className="hidden lg:block">
-            <div className="max-w-4xl mx-auto mb-8 relative">
+          <div className="hidden lg:grid lg:grid-cols-[1fr_2fr_1fr] gap-8 items-center">
+            {/* Left Column */}
+            <div className="space-y-12">
+              {components
+                .filter((c) => c.position.startsWith("left"))
+                .map((component, idx) => (
+                  <div key={idx} className="relative">
+                    <div className="bg-background border-2 border-primary/20 rounded-xl p-6 shadow-lg hover:border-primary/40 transition-colors">
+                      <h3 className="font-bold text-lg mb-2">{component.title}</h3>
+                      <p className="text-sm text-muted-foreground">{component.description}</p>
+                    </div>
+                    {/* Connecting dot */}
+                    <div className="absolute -right-3 top-1/2 -translate-y-1/2 w-3 h-3 bg-primary rounded-full z-10"></div>
+                    {/* Connecting line */}
+                    <div
+                      className="absolute -right-8 top-1/2 w-8 h-0.5 bg-primary/40"
+                      style={{
+                        background:
+                          "repeating-linear-gradient(to right, hsl(var(--primary)) 0, hsl(var(--primary)) 4px, transparent 4px, transparent 8px)",
+                      }}
+                    ></div>
+                  </div>
+                ))}
+            </div>
+
+            {/* Center Image */}
+            <div className="relative flex items-center justify-center py-8">
               <img
                 src={pillowLayers}
                 alt="RiseByNight pillow exploded view showing all internal layers and materials"
-                className="w-full relative z-0"
+                className="w-full max-w-md mx-auto"
               />
-
-              {/* Number indicators with connecting lines - Desktop positioning */}
-              {/* Button 1 - ComfortWave Memory Foam */}
-              <div className="absolute top-[32%] left-[8%] z-20">
-                <svg className="absolute top-6 left-12 w-40 h-12 pointer-events-none">
-                  <line
-                    x1="0"
-                    y1="0"
-                    x2="160"
-                    y2="24"
-                    stroke="hsl(var(--primary))"
-                    strokeWidth="2"
-                    strokeOpacity="0.6"
-                    strokeDasharray="4,4"
-                  />
-                </svg>
-                <button
-                  onClick={() => setExpandedMobile(expandedMobile === 0 ? null : 0)}
-                  className="relative w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
-                  aria-label="Show ComfortWave Memory Foam details"
-                >
-                  1
-                </button>
-              </div>
-
-              {/* Button 2 - Quilted IceSoft Cover */}
-              <div className="absolute top-[40%] left-[10%] z-20">
-                <svg className="absolute top-6 left-12 w-40 h-16 pointer-events-none">
-                  <line
-                    x1="0"
-                    y1="0"
-                    x2="160"
-                    y2="32"
-                    stroke="hsl(var(--primary))"
-                    strokeWidth="2"
-                    strokeOpacity="0.6"
-                    strokeDasharray="4,4"
-                  />
-                </svg>
-                <button
-                  onClick={() => setExpandedMobile(expandedMobile === 1 ? null : 1)}
-                  className="relative w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
-                  aria-label="Show Quilted IceSoft Cover details"
-                >
-                  2
-                </button>
-              </div>
-
-              {/* Button 3 - Pressure-Relief Cloud Foam Core */}
-              <div className="absolute bottom-[18%] left-[8%] z-20">
-                <svg className="absolute top-2 left-12 w-[500px] h-32 pointer-events-none z-30" viewBox="0 0 500 130">
-                  <line
-                    x1="0"
-                    y1="20"
-                    x2="460"
-                    y2="-90"
-                    stroke="hsl(var(--primary))"
-                    strokeWidth="2"
-                    strokeOpacity="0.6"
-                    strokeDasharray="4,4"
-                  />
-                </svg>
-                <button
-                  onClick={() => setExpandedMobile(expandedMobile === 4 ? null : 4)}
-                  className="relative w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
-                  aria-label="Show Pressure-Relief Cloud Foam Core details"
-                >
-                  3
-                </button>
-              </div>
-
-              {/* Button 4 - Dual-Contour Sleep Channels */}
-              <div className="absolute top-[32%] right-[12%] z-20">
-                <svg className="absolute top-6 right-12 w-32 h-16 pointer-events-none">
-                  <line
-                    x1="128"
-                    y1="0"
-                    x2="0"
-                    y2="32"
-                    stroke="hsl(var(--primary))"
-                    strokeWidth="2"
-                    strokeOpacity="0.6"
-                    strokeDasharray="4,4"
-                  />
-                </svg>
-                <button
-                  onClick={() => setExpandedMobile(expandedMobile === 2 ? null : 2)}
-                  className="relative w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
-                  aria-label="Show Dual-Contour Sleep Channels details"
-                >
-                  4
-                </button>
-              </div>
-
-              {/* Button 5 - AirFlow Mesh Side Panels */}
-              <div className="absolute top-[50%] right-[10%] z-20">
-                <svg className="absolute top-6 right-12 w-24 h-20 pointer-events-none">
-                  <line
-                    x1="96"
-                    y1="0"
-                    x2="0"
-                    y2="40"
-                    stroke="hsl(var(--primary))"
-                    strokeWidth="2"
-                    strokeOpacity="0.6"
-                    strokeDasharray="4,4"
-                  />
-                </svg>
-                <button
-                  onClick={() => setExpandedMobile(expandedMobile === 3 ? null : 3)}
-                  className="relative w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
-                  aria-label="Show AirFlow Mesh Side Panels details"
-                >
-                  5
-                </button>
-              </div>
-
-              {/* Information overlay - Desktop */}
-              {expandedMobile !== null && (
-                <>
-                  {/* Backdrop */}
-                  <div
-                    className="absolute inset-0 bg-black/60 z-30 animate-fade-in"
-                    onClick={() => setExpandedMobile(null)}
-                  />
-                  {/* Info card */}
-                  <div className="absolute inset-x-8 top-1/2 -translate-y-1/2 bg-background border-2 border-primary rounded-xl p-8 shadow-2xl z-40 animate-scale-in max-w-2xl mx-auto">
-                    <button
-                      onClick={() => setExpandedMobile(null)}
-                      className="absolute top-4 right-4 w-10 h-10 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors"
-                      aria-label="Close"
-                    >
-                      ✕
-                    </button>
-                    <div className="flex items-start gap-4 pr-12">
-                      <div className="flex-shrink-0 w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-md text-lg">
-                        {expandedMobile + 1}
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-xl mb-3">{components[expandedMobile].title}</h3>
-                        <p className="text-base text-muted-foreground">{components[expandedMobile].description}</p>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
             </div>
 
-            <p className="text-center text-sm text-muted-foreground px-4">
-              Click the numbered buttons to learn about each layer
-            </p>
+            {/* Right Column */}
+            <div className="space-y-20">
+              {components
+                .filter((c) => c.position.startsWith("right"))
+                .map((component, idx) => (
+                  <div key={idx} className="relative">
+                    <div className="bg-background border-2 border-primary/20 rounded-xl p-6 shadow-lg hover:border-primary/40 transition-colors">
+                      <h3 className="font-bold text-lg mb-2">{component.title}</h3>
+                      <p className="text-sm text-muted-foreground">{component.description}</p>
+                    </div>
+                    {/* Connecting dot */}
+                    <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-3 h-3 bg-primary rounded-full z-10"></div>
+                    {/* Connecting line */}
+                    <div
+                      className="absolute -left-8 top-1/2 w-8 h-0.5 bg-primary/40"
+                      style={{
+                        background:
+                          "repeating-linear-gradient(to left, hsl(var(--primary)) 0, hsl(var(--primary)) 4px, transparent 4px, transparent 8px)",
+                      }}
+                    ></div>
+                  </div>
+                ))}
+            </div>
           </div>
 
           {/* Mobile Layout */}
@@ -309,16 +208,17 @@ export const LookInside = () => {
                 </button>
               </div>
               {/* Button 3 - Black mesh sides (bottom layer) */}
-              <div className="absolute bottom-[15%] left-[3%] z-20">
-                <svg className="absolute top-1 left-10 w-[420px] h-28 pointer-events-none z-30" viewBox="0 0 420 110">
+              {/* Button 3 - Black mesh sides (bottom layer) */}
+              <div className="absolute bottom-[22%] left-[3%] z-30">
+                <svg className="absolute top-1 left-10 w-64 h-20 pointer-events-none" viewBox="0 0 260 80">
                   <line
                     x1="0"
-                    y1="18" // origin stays
-                    x2="390" // 150% longer
-                    y2="-80" // 30% more upward slope
+                    y1="8" // moved up
+                    x2="260" // long line to the right
+                    y2="0" // clear upward slope
                     stroke="hsl(var(--primary))"
-                    strokeWidth="2"
-                    strokeOpacity="0.6"
+                    strokeWidth="2.5"
+                    strokeOpacity="0.8"
                     strokeDasharray="4,4"
                   />
                 </svg>
