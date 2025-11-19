@@ -243,7 +243,7 @@ export const Hero = () => {
 
             <Button
               size="lg" 
-              className="w-full text-lg md:text-xl py-6 font-bold shadow-lg hover:shadow-xl transition-shadow touch-manipulation" 
+              className="w-full text-lg md:text-xl py-6 font-bold shadow-lg hover:shadow-xl transition-shadow touch-manipulation animate-subtle-bounce" 
               onClick={handleAddToCart}
               disabled={isCheckingOut || !product}
             >
