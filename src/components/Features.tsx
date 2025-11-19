@@ -13,7 +13,7 @@ const features = [
   {
     image: testimonial,
     title: "Join 29,931+ Happy Sleepers",
-    description: "Don't just take our word for it. Thousands of customers have transformed their sleep quality with OptiSleep. Experience the difference that proper neck alignment and ergonomic support can make.",
+    description: "Don't just take our word for it. Thousands of customers have transformed their sleep quality with RiseByNight. Experience the difference that proper neck alignment and ergonomic support can make.",
     benefits: [
       "Wake up pain-free and refreshed",
       "Fall asleep faster every night",
@@ -24,7 +24,7 @@ const features = [
   {
     image: offerBundle,
     title: "Complete Sleep Solution Bundle",
-    description: "Get everything you need for the perfect night's sleep. Our exclusive bundle includes premium accessories designed to complement your OptiSleep pillow for maximum comfort.",
+    description: "Get everything you need for the perfect night's sleep. Our exclusive bundle includes premium accessories designed to complement your RiseByNight pillow for maximum comfort.",
     benefits: [
       "Premium sleep mask included",
       "Luxury pillowcase for cooling comfort",
@@ -35,7 +35,7 @@ const features = [
   {
     image: comparisonChart,
     title: "Scientifically Proven Superior",
-    description: "OptiSleep isn't just another pillow - it's engineered with advanced ergonomic design and cooling technology that outperforms traditional pillows in every way.",
+    description: "RiseByNight isn't just another pillow - it's engineered with advanced ergonomic design and cooling technology that outperforms traditional pillows in every way.",
     benefits: [
       "Maintains shape 5x longer than regular pillows",
       "Cooling gel prevents night sweats",

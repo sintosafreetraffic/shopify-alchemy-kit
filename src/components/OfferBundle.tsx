@@ -12,7 +12,7 @@ export const OfferBundle = () => {
         <div className="rounded-xl overflow-hidden shadow-lg">
           <img 
             src={offerBundle} 
-            alt="Buy OptiSleep pillow and get free sleep mask, pillowcase, and neck roll" 
+            alt="Buy RiseByNight pillow and get free sleep mask, pillowcase, and neck roll"
             className="w-full"
           />
         </div>
