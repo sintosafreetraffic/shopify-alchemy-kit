@@ -106,7 +106,9 @@ export const LookInside = () => {
               {/* Number indicators with connecting lines */}
               {/* Button 1 - Top white layer */}
               <div className="absolute top-[8%] left-[5%] z-20">
-                <div className="absolute top-5 left-5 w-16 h-0.5 bg-primary/60" />
+                <svg className="absolute top-5 left-10 w-24 h-12 pointer-events-none" style={{ transform: 'rotate(-10deg)' }}>
+                  <line x1="0" y1="0" x2="96" y2="24" stroke="hsl(var(--primary))" strokeWidth="2" strokeOpacity="0.6" strokeDasharray="4,4" />
+                </svg>
                 <button 
                   onClick={() => setExpandedMobile(expandedMobile === 0 ? null : 0)}
                   className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
@@ -118,7 +120,9 @@ export const LookInside = () => {
 
               {/* Button 2 - Beige foam layer */}
               <div className="absolute top-[32%] left-[3%] z-20">
-                <div className="absolute top-5 left-5 w-20 h-0.5 bg-primary/60" />
+                <svg className="absolute top-5 left-10 w-28 h-8 pointer-events-none">
+                  <line x1="0" y1="0" x2="112" y2="16" stroke="hsl(var(--primary))" strokeWidth="2" strokeOpacity="0.6" strokeDasharray="4,4" />
+                </svg>
                 <button 
                   onClick={() => setExpandedMobile(expandedMobile === 1 ? null : 1)}
                   className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
@@ -130,7 +134,9 @@ export const LookInside = () => {
 
               {/* Button 3 - Black mesh sides */}
               <div className="absolute bottom-[18%] left-[8%] z-20">
-                <div className="absolute top-5 left-5 w-12 h-0.5 bg-primary/60" />
+                <svg className="absolute top-5 left-10 w-20 h-12 pointer-events-none" style={{ transform: 'rotate(15deg)' }}>
+                  <line x1="0" y1="0" x2="80" y2="24" stroke="hsl(var(--primary))" strokeWidth="2" strokeOpacity="0.6" strokeDasharray="4,4" />
+                </svg>
                 <button 
                   onClick={() => setExpandedMobile(expandedMobile === 2 ? null : 2)}
                   className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
@@ -142,7 +148,9 @@ export const LookInside = () => {
 
               {/* Button 4 - Top curves */}
               <div className="absolute top-[22%] right-[8%] z-20">
-                <div className="absolute top-5 right-5 w-16 h-0.5 bg-primary/60" />
+                <svg className="absolute top-5 right-10 w-24 h-12 pointer-events-none" style={{ transform: 'rotate(10deg)' }}>
+                  <line x1="96" y1="0" x2="0" y2="24" stroke="hsl(var(--primary))" strokeWidth="2" strokeOpacity="0.6" strokeDasharray="4,4" />
+                </svg>
                 <button 
                   onClick={() => setExpandedMobile(expandedMobile === 3 ? null : 3)}
                   className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
@@ -154,7 +162,9 @@ export const LookInside = () => {
 
               {/* Button 5 - Blue base */}
               <div className="absolute bottom-[25%] right-[12%] z-20">
-                <div className="absolute top-5 right-5 w-20 h-0.5 bg-primary/60" />
+                <svg className="absolute top-5 right-10 w-28 h-8 pointer-events-none">
+                  <line x1="112" y1="0" x2="0" y2="16" stroke="hsl(var(--primary))" strokeWidth="2" strokeOpacity="0.6" strokeDasharray="4,4" />
+                </svg>
                 <button 
                   onClick={() => setExpandedMobile(expandedMobile === 4 ? null : 4)}
                   className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
