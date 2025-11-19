@@ -32,7 +32,7 @@ export const ChiropractorEndorsement = () => {
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="w-6 h-6 text-primary shrink-0 mt-1" />
                 <p className="text-foreground">
-                  <strong>Clinically Proven Design:</strong> Supports optimal cervical spine alignment during sleep
+                  <strong>Scientifically Proven Design:</strong> Supports optimal cervical spine alignment during sleep
                 </p>
               </div>
               
@@ -49,11 +49,6 @@ export const ChiropractorEndorsement = () => {
                   <strong>Proven Results:</strong> Patients report significant reduction in neck pain and improved sleep quality
                 </p>
               </div>
-            </div>
-            
-            <div className="pt-4 border-t">
-              <p className="font-semibold text-foreground">Dr. Michael Thompson, DC</p>
-              <p className="text-sm text-muted-foreground">Board Certified Chiropractor • 15+ Years Experience</p>
             </div>
           </div>
         </div>
