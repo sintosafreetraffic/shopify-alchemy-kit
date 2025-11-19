@@ -118,10 +118,10 @@ export const LookInside = () => {
                 </button>
               </div>
 
-              {/* Button 2 - White quilted cover (top layer) */}
-              <div className="absolute top-[8%] left-[12%] z-20">
-                <svg className="absolute top-5 left-10 w-24 h-10 pointer-events-none">
-                  <line x1="0" y1="0" x2="96" y2="20" stroke="hsl(var(--primary))" strokeWidth="2" strokeOpacity="0.6" strokeDasharray="4,4" />
+              {/* Button 2 - Beige foam layer (second layer) */}
+              <div className="absolute top-[38%] left-[5%] z-20">
+                <svg className="absolute top-5 left-10 w-28 h-12 pointer-events-none">
+                  <line x1="0" y1="0" x2="112" y2="24" stroke="hsl(var(--primary))" strokeWidth="2" strokeOpacity="0.6" strokeDasharray="4,4" />
                 </svg>
                 <button 
                   onClick={() => setExpandedMobile(expandedMobile === 1 ? null : 1)}
@@ -161,9 +161,9 @@ export const LookInside = () => {
               </div>
 
               {/* Button 3 - Black mesh sides (bottom layer) */}
-              <div className="absolute bottom-[18%] left-[5%] z-20">
-                <svg className="absolute top-5 left-10 w-28 h-24 pointer-events-none" style={{ transform: 'rotate(30deg)' }}>
-                  <line x1="0" y1="0" x2="112" y2="60" stroke="hsl(var(--primary))" strokeWidth="2" strokeOpacity="0.6" strokeDasharray="4,4" />
+              <div className="absolute bottom-[15%] left-[3%] z-20">
+                <svg className="absolute top-5 left-10 w-32 h-28 pointer-events-none" style={{ transform: 'rotate(25deg)' }}>
+                  <line x1="0" y1="0" x2="128" y2="70" stroke="hsl(var(--primary))" strokeWidth="2" strokeOpacity="0.6" strokeDasharray="4,4" />
                 </svg>
                 <button 
                   onClick={() => setExpandedMobile(expandedMobile === 4 ? null : 4)}
