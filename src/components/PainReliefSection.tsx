@@ -1,4 +1,10 @@
 import { Check } from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 const painTypes = [
   {
@@ -43,30 +49,38 @@ export const PainReliefSection = () => {
           </h2>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8">
+        <Accordion type="single" collapsible className="space-y-4">
           {painTypes.map((pain, index) => (
-            <div key={index} className="bg-secondary/10 rounded-xl p-6 border border-border/50">
-              <div className="flex items-start gap-3 mb-4">
-                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-1">
-                  <Check className="w-4 h-4 text-primary" />
+            <AccordionItem 
+              key={index} 
+              value={`pain-${index}`}
+              className="bg-secondary/10 rounded-xl border border-border/50 px-6"
+            >
+              <AccordionTrigger className="hover:no-underline py-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Check className="w-4 h-4 text-primary" />
+                  </div>
+                  <span className="font-bold text-lg text-left">{pain.title}</span>
                 </div>
-                <h3 className="text-xl font-bold">{pain.title}</h3>
-              </div>
+              </AccordionTrigger>
               
-              <div className="space-y-4 ml-9">
-                <div>
-                  <p className="font-semibold text-sm mb-2">What Causes It:</p>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{pain.cause}</p>
+              <AccordionContent className="pt-2 pb-5">
+                <div className="space-y-4 ml-9">
+                  <div>
+                    <p className="font-semibold text-sm mb-2">What Causes It:</p>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{pain.cause}</p>
+                  </div>
+                  
+                  <div>
+                    <p className="font-semibold text-sm mb-2">How RiseByNight Helps:</p>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{pain.solution}</p>
+                  </div>
                 </div>
-                
-                <div>
-                  <p className="font-semibold text-sm mb-2">How RiseByNight Helps:</p>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{pain.solution}</p>
-                </div>
-              </div>
-            </div>
+              </AccordionContent>
+            </AccordionItem>
           ))}
-        </div>
+        </Accordion>
       </div>
     </section>
   );
