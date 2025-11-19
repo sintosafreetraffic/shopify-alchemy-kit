@@ -10,15 +10,15 @@ export const Header = () => {
           <img 
             src={logo} 
             alt="RiseByNight - Ergonomic Sleep Pillow" 
-            className="h-24 w-auto"
+            className="h-20 w-auto"
           />
           <span className="text-3xl font-bold text-foreground">RiseByNight</span>
         </div>
         
         <nav className="hidden md:flex items-center gap-8">
-          <NavLink to="/" className="text-foreground hover:text-primary transition-colors">Home</NavLink>
-          <NavLink to="/about" className="text-foreground hover:text-primary transition-colors">About Us</NavLink>
-          <NavLink to="/track" className="text-foreground hover:text-primary transition-colors">Track Your Order</NavLink>
+          <NavLink to="/" className="text-lg text-foreground hover:text-primary transition-colors">Home</NavLink>
+          <NavLink to="/about" className="text-lg text-foreground hover:text-primary transition-colors">About Us</NavLink>
+          <NavLink to="/track" className="text-lg text-foreground hover:text-primary transition-colors">Track Your Order</NavLink>
         </nav>
         
         <div className="flex items-center">
