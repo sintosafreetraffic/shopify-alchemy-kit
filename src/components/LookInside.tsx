@@ -4,28 +4,13 @@ import { useState } from "react";
 const components = [
   {
     position: "left-top",
-    title: "Quilted IceSoft Cover™",
-    description: "Premium quilted top fabric layer with cooling properties. Ultra-soft and breathable, designed to keep you comfortable all night long."
-  },
-  {
-    position: "left-middle",
-    title: "Dual-Contour Sleep Channels™",
-    description: "Curved channels engineered into the top foam layer guide your head into the optimal sleeping position for perfect spinal alignment."
-  },
-  {
-    position: "left-bottom",
-    title: "Pressure-Relief Cloud Foam™ Core",
-    description: "Thick blue support base provides foundational stability while cushioning pressure points for a cloud-like sleeping experience."
-  },
-  {
-    position: "right-top",
     title: "ComfortWave Memory Foam™ Layer",
     description: "Sculpted beige foam layer that adapts to your unique head and neck contours, providing personalized support and pressure relief."
   },
   {
-    position: "right-middle",
-    title: "AirFlow Mesh Side Panels™",
-    description: "Breathable black mesh fabric on the sides promotes optimal air circulation, preventing heat buildup and moisture retention."
+    position: "right-top",
+    title: "Pressure-Relief Cloud Foam™ Core",
+    description: "Thick blue support base provides foundational stability while cushioning pressure points for a cloud-like sleeping experience."
   }
 ];
 
@@ -104,73 +89,31 @@ export const LookInside = () => {
                 className="w-full"
               />
               {/* Number indicators with connecting lines */}
-              {/* Button 1 - Top white layer */}
-              <div className="absolute top-[8%] left-[5%] z-20">
-                <svg className="absolute top-5 left-10 w-40 h-16 pointer-events-none" style={{ transform: 'rotate(5deg)' }}>
-                  <line x1="0" y1="0" x2="160" y2="32" stroke="hsl(var(--primary))" strokeWidth="2" strokeOpacity="0.6" strokeDasharray="4,4" />
-                </svg>
-                <button 
-                  onClick={() => setExpandedMobile(expandedMobile === 0 ? null : 0)}
-                  className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
-                  aria-label="Show Quilted IceSoft Cover details"
-                >
-                  1
-                </button>
-              </div>
-
-              {/* Button 2 - Beige foam layer */}
+              {/* Button 1 - Beige foam layer */}
               <div className="absolute top-[32%] left-[3%] z-20">
                 <svg className="absolute top-5 left-10 w-28 h-8 pointer-events-none">
                   <line x1="0" y1="0" x2="112" y2="16" stroke="hsl(var(--primary))" strokeWidth="2" strokeOpacity="0.6" strokeDasharray="4,4" />
                 </svg>
                 <button 
-                  onClick={() => setExpandedMobile(expandedMobile === 1 ? null : 1)}
+                  onClick={() => setExpandedMobile(expandedMobile === 0 ? null : 0)}
                   className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
                   aria-label="Show ComfortWave Memory Foam details"
                 >
-                  2
+                  1
                 </button>
               </div>
 
-              {/* Button 3 - Black mesh sides */}
-              <div className="absolute bottom-[18%] left-[8%] z-20">
+              {/* Button 2 - Blue foam base */}
+              <div className="absolute bottom-[25%] left-[8%] z-20">
                 <svg className="absolute top-5 left-10 w-24 h-20 pointer-events-none" style={{ transform: 'rotate(40deg)' }}>
                   <line x1="0" y1="0" x2="96" y2="48" stroke="hsl(var(--primary))" strokeWidth="2" strokeOpacity="0.6" strokeDasharray="4,4" />
                 </svg>
                 <button 
-                  onClick={() => setExpandedMobile(expandedMobile === 2 ? null : 2)}
-                  className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
-                  aria-label="Show AirFlow Mesh Side Panels details"
-                >
-                  3
-                </button>
-              </div>
-
-              {/* Button 4 - Top curves */}
-              <div className="absolute top-[22%] right-[8%] z-20">
-                <svg className="absolute top-5 right-10 w-24 h-12 pointer-events-none" style={{ transform: 'rotate(10deg)' }}>
-                  <line x1="96" y1="0" x2="0" y2="24" stroke="hsl(var(--primary))" strokeWidth="2" strokeOpacity="0.6" strokeDasharray="4,4" />
-                </svg>
-                <button 
-                  onClick={() => setExpandedMobile(expandedMobile === 3 ? null : 3)}
-                  className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
-                  aria-label="Show Dual-Contour Sleep Channels details"
-                >
-                  4
-                </button>
-              </div>
-
-              {/* Button 5 - Blue base */}
-              <div className="absolute bottom-[25%] right-[12%] z-20">
-                <svg className="absolute top-5 right-10 w-28 h-8 pointer-events-none">
-                  <line x1="112" y1="0" x2="0" y2="16" stroke="hsl(var(--primary))" strokeWidth="2" strokeOpacity="0.6" strokeDasharray="4,4" />
-                </svg>
-                <button 
-                  onClick={() => setExpandedMobile(expandedMobile === 4 ? null : 4)}
+                  onClick={() => setExpandedMobile(expandedMobile === 1 ? null : 1)}
                   className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
                   aria-label="Show Pressure-Relief Cloud Foam Core details"
                 >
-                  5
+                  2
                 </button>
               </div>
 
