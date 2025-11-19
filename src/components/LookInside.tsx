@@ -208,7 +208,7 @@ export const LookInside = () => {
               </div>
               {/* Button 3 - Black mesh sides (bottom layer) */}
               <div className="absolute bottom-[15%] left-[3%] z-20">
-                <svg className="absolute top-1 left-10 w-[420px] h-28 pointer-events-none" viewBox="0 0 420 110">
+                <svg className="absolute top-1 left-10 w-[420px] h-28 pointer-events-none z-30" viewBox="0 0 420 110">
                   <line
                     x1="0"
                     y1="18" // origin stays
