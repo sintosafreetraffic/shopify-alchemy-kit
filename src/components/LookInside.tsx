@@ -207,6 +207,7 @@ export const LookInside = () => {
                 </button>
               </div>
               {/* Button 3 - Black mesh sides (bottom layer) */}
+              {/* Button 3 - Black mesh sides (bottom layer) */}
               <div className="absolute bottom-[15%] left-[3%] z-20">
                 <svg className="absolute top-3 left-10 w-48 h-28 pointer-events-none" viewBox="0 0 200 110">
                   <line
