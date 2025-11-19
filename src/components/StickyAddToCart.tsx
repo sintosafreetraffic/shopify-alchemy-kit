@@ -29,8 +29,8 @@ export const StickyAddToCart = () => {
 
   useEffect(() => {
     const handleScroll = () => {
-      // Show button after scrolling 500px down
-      setIsVisible(window.scrollY > 500);
+      // Show button after scrolling 200px down
+      setIsVisible(window.scrollY > 200);
     };
 
     window.addEventListener("scroll", handleScroll);
