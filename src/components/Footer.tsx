@@ -1,5 +1,5 @@
 import logo from "@/assets/logo.png";
-import { Mail, Phone, MapPin } from "lucide-react";
+import { Mail, MapPin } from "lucide-react";
 
 export const Footer = () => {
   return (
@@ -14,7 +14,7 @@ export const Footer = () => {
               className="h-12 w-auto"
             />
             <p className="text-sm text-muted-foreground">
-              The #1 Rated Ergonomic Sleep Pillow in the U.S. Experience better sleep and wake up pain-free.
+              Transform your sleep with the #1 rated ergonomic pillow. Clinically proven to reduce neck pain and help you wake up refreshed every morning.
             </p>
           </div>
 
@@ -83,15 +83,9 @@ export const Footer = () => {
                 </a>
               </li>
               <li className="flex items-start gap-2">
-                <Phone className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                <a href="tel:+1234567890" className="text-muted-foreground hover:text-primary transition-colors">
-                  +1 (234) 567-890
-                </a>
-              </li>
-              <li className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                 <span className="text-muted-foreground">
-                  123 Sleep Street, Dream City, NY 10001
+                  Loofdakstraat 10, 3036JN, ROTTERDAM
                 </span>
               </li>
             </ul>
