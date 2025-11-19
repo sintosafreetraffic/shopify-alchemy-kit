@@ -1,4 +1,5 @@
 import { CartDrawer } from "./CartDrawer";
+import { NavLink } from "./NavLink";
 import logo from "@/assets/logo.png";
 
 export const Header = () => {
@@ -12,6 +13,13 @@ export const Header = () => {
             className="h-16 w-auto"
           />
         </div>
+        
+        <nav className="hidden md:flex items-center gap-8">
+          <NavLink to="/" className="text-foreground hover:text-primary transition-colors">Home</NavLink>
+          <NavLink to="/about" className="text-foreground hover:text-primary transition-colors">About Us</NavLink>
+          <NavLink to="/track" className="text-foreground hover:text-primary transition-colors">Track Your Order</NavLink>
+        </nav>
+        
         <CartDrawer />
       </div>
     </header>
