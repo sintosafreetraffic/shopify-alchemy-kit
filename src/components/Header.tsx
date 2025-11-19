@@ -15,7 +15,7 @@ export const Header = () => {
           <span className="text-3xl font-bold text-foreground">RiseByNight</span>
         </div>
         
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden md:flex items-center gap-8 mt-2">
           <NavLink to="/" className="text-lg text-foreground hover:text-primary transition-colors">Home</NavLink>
           <NavLink to="/about" className="text-lg text-foreground hover:text-primary transition-colors">About Us</NavLink>
           <NavLink to="/track" className="text-lg text-foreground hover:text-primary transition-colors">Track Your Order</NavLink>
