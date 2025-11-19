@@ -25,7 +25,7 @@ export const Benefits = () => {
   ];
 
   return (
-    <section className="py-10 px-4">
+    <section className="py-10 px-4 bg-background">
       <div className="container mx-auto max-w-6xl">
         <div className="text-center mb-8">
           <h2 className="text-4xl font-bold mb-4">Why Choose RiseByNight?</h2>

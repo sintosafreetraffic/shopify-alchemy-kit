@@ -3,7 +3,7 @@ import comparisonChart from "@/assets/comparison-them.png";
 
 export const Comparison = () => {
   return (
-    <section className="py-16 px-4 bg-secondary/20">
+    <section className="py-16 px-4 bg-primary/5">
       <div className="container mx-auto max-w-6xl">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold mb-4">RiseByNight vs. Regular Pillows</h2>

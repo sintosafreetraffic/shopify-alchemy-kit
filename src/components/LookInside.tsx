@@ -36,7 +36,7 @@ export const LookInside = () => {
   const [expandedMobile, setExpandedMobile] = useState<number | null>(null);
 
   return (
-    <section className="py-16 bg-secondary/30">
+    <section className="py-16 bg-primary/5">
       <div className="container mx-auto px-4 max-w-7xl">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Let's take a look inside the pillow</h2>
