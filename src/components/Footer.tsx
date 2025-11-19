@@ -1,5 +1,6 @@
 import logo from "@/assets/logo.png";
 import { Mail, MapPin } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export const Footer = () => {
   return (
@@ -50,9 +51,9 @@ export const Footer = () => {
             <h3 className="font-semibold mb-4">Customer Service</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/shipping" className="text-muted-foreground hover:text-primary transition-colors">
                   Shipping Information
-                </a>
+                </Link>
               </li>
               <li>
                 <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
