@@ -1,19 +1,20 @@
 import { CartDrawer } from "./CartDrawer";
 import { NavLink } from "./NavLink";
+import { Link } from "react-router-dom";
 import logo from "@/assets/new-logo.png";
 
 export const Header = () => {
   return (
     <header className="border-b bg-background">
       <div className="container mx-auto px-4 py-2 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <Link to="/product" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
           <img 
             src={logo} 
             alt="RiseByNight - Ergonomic Sleep Pillow" 
             className="h-20 w-auto"
           />
           <span className="text-3xl font-bold text-foreground -mt-2">RiseByNight</span>
-        </div>
+        </Link>
         
         <nav className="hidden md:flex items-center gap-8 mt-3">
           <NavLink to="/" className="text-lg text-foreground hover:text-primary transition-colors">Home</NavLink>
