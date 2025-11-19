@@ -211,9 +211,9 @@ export const LookInside = () => {
                 <svg className="absolute top-3 left-10 w-48 h-28 pointer-events-none" viewBox="0 0 200 110">
                   <line
                     x1="0"
-                    y1="26" // moved higher
+                    y1="30" // moved higher
                     x2="200" // extended line further to the right
-                    y2="2" // raised end point more upward
+                    y2="10" // raised end point more upward
                     stroke="hsl(var(--primary))"
                     strokeWidth="2"
                     strokeOpacity="0.6"
