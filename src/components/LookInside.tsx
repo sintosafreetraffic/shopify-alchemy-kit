@@ -106,68 +106,74 @@ export const LookInside = () => {
               {/* Number indicators positioned near image bullet points */}
               <button 
                 onClick={() => setExpandedMobile(expandedMobile === 0 ? null : 0)}
-                className="absolute top-[8%] left-[5%] w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
+                className="absolute top-[8%] left-[5%] w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform z-20"
                 aria-label="Show Quilted IceSoft Cover details"
               >
                 1
               </button>
               <button 
                 onClick={() => setExpandedMobile(expandedMobile === 1 ? null : 1)}
-                className="absolute top-[32%] left-[3%] w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
+                className="absolute top-[32%] left-[3%] w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform z-20"
                 aria-label="Show ComfortWave Memory Foam details"
               >
                 2
               </button>
               <button 
                 onClick={() => setExpandedMobile(expandedMobile === 2 ? null : 2)}
-                className="absolute bottom-[18%] left-[8%] w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
+                className="absolute bottom-[18%] left-[8%] w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform z-20"
                 aria-label="Show AirFlow Mesh Side Panels details"
               >
                 3
               </button>
               <button 
                 onClick={() => setExpandedMobile(expandedMobile === 3 ? null : 3)}
-                className="absolute top-[22%] right-[8%] w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
+                className="absolute top-[22%] right-[8%] w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform z-20"
                 aria-label="Show Dual-Contour Sleep Channels details"
               >
                 4
               </button>
               <button 
                 onClick={() => setExpandedMobile(expandedMobile === 4 ? null : 4)}
-                className="absolute bottom-[25%] right-[12%] w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
+                className="absolute bottom-[25%] right-[12%] w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform z-20"
                 aria-label="Show Pressure-Relief Cloud Foam Core details"
               >
                 5
               </button>
+
+              {/* Information overlay */}
+              {expandedMobile !== null && (
+                <>
+                  {/* Backdrop */}
+                  <div 
+                    className="absolute inset-0 bg-black/60 z-30 animate-fade-in"
+                    onClick={() => setExpandedMobile(null)}
+                  />
+                  {/* Info card */}
+                  <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 bg-background border-2 border-primary rounded-xl p-6 shadow-2xl z-40 animate-scale-in">
+                    <button
+                      onClick={() => setExpandedMobile(null)}
+                      className="absolute top-3 right-3 w-8 h-8 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors"
+                      aria-label="Close"
+                    >
+                      ✕
+                    </button>
+                    <div className="flex items-start gap-3 pr-8">
+                      <div className="flex-shrink-0 w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-md">
+                        {expandedMobile + 1}
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-lg mb-2">{components[expandedMobile].title}</h3>
+                        <p className="text-sm text-muted-foreground">{components[expandedMobile].description}</p>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
             
-            <div className="space-y-4">
-              {components.map((component, idx) => (
-                <div 
-                  key={idx} 
-                  className={`bg-background border-2 rounded-xl shadow-lg transition-all duration-300 ${
-                    expandedMobile === idx 
-                      ? 'border-primary p-5 animate-scale-in' 
-                      : 'border-primary/20 p-4 max-h-16 overflow-hidden'
-                  }`}
-                >
-                  <button
-                    onClick={() => setExpandedMobile(expandedMobile === idx ? null : idx)}
-                    className="w-full text-left flex items-start gap-3"
-                  >
-                    <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-md">
-                      {idx + 1}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-bold text-lg mb-2">{component.title}</h3>
-                      {expandedMobile === idx && (
-                        <p className="text-sm text-muted-foreground animate-fade-in">{component.description}</p>
-                      )}
-                    </div>
-                  </button>
-                </div>
-              ))}
-            </div>
+            <p className="text-center text-sm text-muted-foreground px-4">
+              Tap the numbered buttons to learn about each layer
+            </p>
           </div>
         </div>
 
