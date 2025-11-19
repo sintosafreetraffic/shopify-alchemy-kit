@@ -3,7 +3,6 @@ import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
 import { UrgencyBanner } from "@/components/UrgencyBanner";
 import { ProductCard } from "@/components/ProductCard";
-import { SocialProof } from "@/components/SocialProof";
 import { Benefits } from "@/components/Benefits";
 import { VideoSection } from "@/components/VideoSection";
 import { Guarantee } from "@/components/Guarantee";
@@ -63,7 +62,6 @@ const Index = () => {
 
       <VideoSection />
       <FAQ />
-      <SocialProof />
       <Guarantee />
 
       <footer className="border-t py-8">
