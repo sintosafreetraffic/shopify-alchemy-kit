@@ -131,7 +131,7 @@ export const StickyAddToCart = () => {
                   }`}
                 >
                   <span>2 Pillows +</span>
-                  <img src={eyeMaskGift} alt="Free gift" className="w-4 h-4 object-contain" />
+                  <img src={eyeMaskGift} alt="Free gift" className="w-6 h-6 object-contain" />
                 </button>
               </div>
 
