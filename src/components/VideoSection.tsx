@@ -1,6 +1,7 @@
 import { Play } from "lucide-react";
 import { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 export const VideoSection = () => {
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
@@ -20,9 +21,15 @@ export const VideoSection = () => {
     },
     {
       id: 3,
-      thumbnail: "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=400&h=600&fit=crop",
+      src: "/videos/video_3.mp4",
       title: "Wake up refreshed",
       views: "3.1M"
+    },
+    {
+      id: 4,
+      src: "/videos/video_4.mp4",
+      title: "Real customer results",
+      views: "2.7M"
     }
   ];
 
@@ -37,49 +44,39 @@ export const VideoSection = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            {videos.map((video) => (
-              <div 
-                key={video.id} 
-                className="relative group cursor-pointer overflow-hidden rounded-xl"
-                onClick={() => video.src && setSelectedVideo(video.src)}
-              >
-                <div className="aspect-[9/16] relative">
-                  {video.src ? (
-                    <video 
-                      src={video.src}
-                      className="w-full h-full object-cover"
-                      loop
-                      muted
-                      playsInline
-                      onMouseEnter={(e) => e.currentTarget.play()}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.pause();
-                        e.currentTarget.currentTime = 0;
-                      }}
-                    />
-                  ) : (
-                    <>
-                      <img 
-                        src={video.thumbnail} 
-                        alt={video.title}
-                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
+          <Carousel className="w-full max-w-5xl mx-auto">
+            <CarouselContent>
+              {videos.map((video) => (
+                <CarouselItem key={video.id} className="md:basis-1/3">
+                  <div 
+                    className="relative group cursor-pointer overflow-hidden rounded-xl"
+                    onClick={() => video.src && setSelectedVideo(video.src)}
+                  >
+                    <div className="aspect-[9/16] relative">
+                      <video 
+                        src={video.src}
+                        className="w-full h-full object-cover"
+                        loop
+                        muted
+                        playsInline
+                        onMouseEnter={(e) => e.currentTarget.play()}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.pause();
+                          e.currentTarget.currentTime = 0;
+                        }}
                       />
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                        <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center group-hover:scale-110 transition-transform">
-                          <Play className="w-8 h-8 text-primary ml-1" />
-                        </div>
+                      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+                        <p className="text-white font-semibold">{video.title}</p>
+                        <p className="text-white/80 text-sm">{video.views} views</p>
                       </div>
-                    </>
-                  )}
-                  <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
-                    <p className="text-white font-semibold">{video.title}</p>
-                    <p className="text-white/80 text-sm">{video.views} views</p>
+                    </div>
                   </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious />
+            <CarouselNext />
+          </Carousel>
 
           <div className="text-center mt-8">
             <p className="text-muted-foreground">
