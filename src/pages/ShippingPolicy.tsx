@@ -37,7 +37,7 @@ export default function ShippingPolicy() {
             <div className="bg-card p-6 rounded-lg border space-y-4">
               <h3 className="text-lg font-semibold">Do you ship worldwide?</h3>
               <p className="text-muted-foreground">
-                Yes! We ship worldwide from our facility in Rotterdam, Netherlands. We offer free shipping 
+                Yes! We ship worldwide from our facility. We offer free shipping 
                 to all international destinations with full tracking included. There are NO shipping fees 
                 and NO sales tax charged at checkout. Enjoy stress-free shopping!
               </p>
@@ -111,36 +111,52 @@ export default function ShippingPolicy() {
             <h2 className="text-2xl font-bold mb-4">Delivery Times</h2>
             <div className="bg-card p-6 rounded-lg border space-y-4">
               <p className="text-muted-foreground mb-4">
-                Once your order ships, estimated delivery times range from 7 to 21 business days depending 
-                on your country or region. Specific delivery dates are not provided or guaranteed.
+                Once your order ships, estimated delivery times are typically 5-7 business days depending 
+                on your location. Specific delivery dates are not provided or guaranteed.
               </p>
+              
+              <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-900 mb-4">
+                <div className="flex gap-3">
+                  <span className="text-2xl">🇺🇸</span>
+                  <div className="text-sm">
+                    <p className="font-medium text-blue-900 dark:text-blue-200 mb-1">Priority US Delivery</p>
+                    <p className="text-blue-800 dark:text-blue-300">
+                      Thanks to our strategic partnerships, shipments to the United States enjoy the 
+                      fastest delivery times, typically arriving within 5 business days.
+                    </p>
+                  </div>
+                </div>
+              </div>
               
               <div className="space-y-2">
                 <h3 className="font-semibold mb-3">Estimated Delivery by Region:</h3>
                 <div className="grid gap-2">
-                  <div className="flex justify-between py-2 border-b">
-                    <span className="font-medium">United States</span>
-                    <span className="text-muted-foreground">7-21 business days</span>
+                  <div className="flex justify-between py-2 border-b items-center">
+                    <span className="font-medium flex items-center gap-2">
+                      United States
+                      <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">Fastest</span>
+                    </span>
+                    <span className="text-muted-foreground">5 business days</span>
                   </div>
                   <div className="flex justify-between py-2 border-b">
                     <span className="font-medium">Canada</span>
-                    <span className="text-muted-foreground">7-21 business days</span>
+                    <span className="text-muted-foreground">5-7 business days</span>
                   </div>
                   <div className="flex justify-between py-2 border-b">
                     <span className="font-medium">United Kingdom</span>
-                    <span className="text-muted-foreground">7-21 business days</span>
+                    <span className="text-muted-foreground">5-7 business days</span>
                   </div>
                   <div className="flex justify-between py-2 border-b">
                     <span className="font-medium">Australia</span>
-                    <span className="text-muted-foreground">7-21 business days</span>
+                    <span className="text-muted-foreground">5-7 business days</span>
                   </div>
                   <div className="flex justify-between py-2 border-b">
                     <span className="font-medium">Europe</span>
-                    <span className="text-muted-foreground">7-15 business days</span>
+                    <span className="text-muted-foreground">5-7 business days</span>
                   </div>
                   <div className="flex justify-between py-2">
                     <span className="font-medium">Rest of World</span>
-                    <span className="text-muted-foreground">10-21 business days</span>
+                    <span className="text-muted-foreground">5-7 business days</span>
                   </div>
                 </div>
               </div>
