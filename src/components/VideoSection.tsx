@@ -30,6 +30,12 @@ export const VideoSection = () => {
       src: "/videos/video_4.mp4",
       title: "Real customer results",
       views: "2.7M"
+    },
+    {
+      id: 5,
+      src: "/videos/video_5.mp4",
+      title: "Customer experience",
+      views: "1.9M"
     }
   ];
 
