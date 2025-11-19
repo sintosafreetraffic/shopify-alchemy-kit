@@ -5,28 +5,31 @@ const components = [
   {
     position: "left-top",
     title: "ComfortWave Memory Foam™ Layer",
-    description: "Sculpted beige foam layer that adapts to your unique head and neck contours, providing personalized support and pressure relief."
+    description:
+      "Sculpted beige foam layer that adapts to your unique head and neck contours, providing personalized support and pressure relief.",
   },
   {
     position: "left-middle",
     title: "Quilted IceSoft Cover™",
-    description: "Premium cooling fabric cover with temperature-regulating technology to prevent overheating during sleep."
+    description:
+      "Premium cooling fabric cover with temperature-regulating technology to prevent overheating during sleep.",
   },
   {
     position: "right-top",
     title: "Dual-Contour Sleep Channels™",
-    description: "Ergonomically designed curves that cradle your head while maintaining proper cervical alignment."
+    description: "Ergonomically designed curves that cradle your head while maintaining proper cervical alignment.",
   },
   {
     position: "right-middle",
     title: "AirFlow Mesh Side Panels™",
-    description: "Breathable mesh construction promotes air circulation, keeping you cool throughout the night."
+    description: "Breathable mesh construction promotes air circulation, keeping you cool throughout the night.",
   },
   {
     position: "right-bottom",
     title: "Pressure-Relief Cloud Foam™ Core",
-    description: "Thick blue support base provides foundational stability while cushioning pressure points for a cloud-like sleeping experience."
-  }
+    description:
+      "Thick blue support base provides foundational stability while cushioning pressure points for a cloud-like sleeping experience.",
+  },
 ];
 
 export const LookInside = () => {
@@ -38,36 +41,40 @@ export const LookInside = () => {
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Let's take a look inside the pillow</h2>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-            The RiseByNight pillow is made up of several components that work together to help you wake up happy and refreshed every day.
+            The RiseByNight pillow is made up of several components that work together to help you wake up happy and
+            refreshed every day.
           </p>
         </div>
-
         <div className="relative max-w-6xl mx-auto">
           {/* Desktop Layout */}
           <div className="hidden lg:grid lg:grid-cols-[1fr_2fr_1fr] gap-8 items-center">
             {/* Left Column */}
             <div className="space-y-12">
-              {components.filter(c => c.position.startsWith('left')).map((component, idx) => (
-                <div key={idx} className="relative">
-                  <div className="bg-background border-2 border-primary/20 rounded-xl p-6 shadow-lg hover:border-primary/40 transition-colors">
-                    <h3 className="font-bold text-lg mb-2">{component.title}</h3>
-                    <p className="text-sm text-muted-foreground">{component.description}</p>
+              {components
+                .filter((c) => c.position.startsWith("left"))
+                .map((component, idx) => (
+                  <div key={idx} className="relative">
+                    <div className="bg-background border-2 border-primary/20 rounded-xl p-6 shadow-lg hover:border-primary/40 transition-colors">
+                      <h3 className="font-bold text-lg mb-2">{component.title}</h3>
+                      <p className="text-sm text-muted-foreground">{component.description}</p>
+                    </div>
+                    {/* Connecting dot */}
+                    <div className="absolute -right-3 top-1/2 -translate-y-1/2 w-3 h-3 bg-primary rounded-full z-10"></div>
+                    {/* Connecting line */}
+                    <div
+                      className="absolute -right-8 top-1/2 w-8 h-0.5 bg-primary/40"
+                      style={{
+                        background:
+                          "repeating-linear-gradient(to right, hsl(var(--primary)) 0, hsl(var(--primary)) 4px, transparent 4px, transparent 8px)",
+                      }}
+                    ></div>
                   </div>
-                  {/* Connecting dot */}
-                  <div className="absolute -right-3 top-1/2 -translate-y-1/2 w-3 h-3 bg-primary rounded-full z-10"></div>
-                  {/* Connecting line */}
-                  <div className="absolute -right-8 top-1/2 w-8 h-0.5 bg-primary/40" 
-                       style={{
-                         background: 'repeating-linear-gradient(to right, hsl(var(--primary)) 0, hsl(var(--primary)) 4px, transparent 4px, transparent 8px)'
-                       }}>
-                  </div>
-                </div>
-              ))}
+                ))}
             </div>
 
             {/* Center Image */}
             <div className="relative flex items-center justify-center py-8">
-              <img 
+              <img
                 src={pillowLayers}
                 alt="RiseByNight pillow exploded view showing all internal layers and materials"
                 className="w-full max-w-md mx-auto"
@@ -76,29 +83,33 @@ export const LookInside = () => {
 
             {/* Right Column */}
             <div className="space-y-20">
-              {components.filter(c => c.position.startsWith('right')).map((component, idx) => (
-                <div key={idx} className="relative">
-                  <div className="bg-background border-2 border-primary/20 rounded-xl p-6 shadow-lg hover:border-primary/40 transition-colors">
-                    <h3 className="font-bold text-lg mb-2">{component.title}</h3>
-                    <p className="text-sm text-muted-foreground">{component.description}</p>
+              {components
+                .filter((c) => c.position.startsWith("right"))
+                .map((component, idx) => (
+                  <div key={idx} className="relative">
+                    <div className="bg-background border-2 border-primary/20 rounded-xl p-6 shadow-lg hover:border-primary/40 transition-colors">
+                      <h3 className="font-bold text-lg mb-2">{component.title}</h3>
+                      <p className="text-sm text-muted-foreground">{component.description}</p>
+                    </div>
+                    {/* Connecting dot */}
+                    <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-3 h-3 bg-primary rounded-full z-10"></div>
+                    {/* Connecting line */}
+                    <div
+                      className="absolute -left-8 top-1/2 w-8 h-0.5 bg-primary/40"
+                      style={{
+                        background:
+                          "repeating-linear-gradient(to left, hsl(var(--primary)) 0, hsl(var(--primary)) 4px, transparent 4px, transparent 8px)",
+                      }}
+                    ></div>
                   </div>
-                  {/* Connecting dot */}
-                  <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-3 h-3 bg-primary rounded-full z-10"></div>
-                  {/* Connecting line */}
-                  <div className="absolute -left-8 top-1/2 w-8 h-0.5 bg-primary/40"
-                       style={{
-                         background: 'repeating-linear-gradient(to left, hsl(var(--primary)) 0, hsl(var(--primary)) 4px, transparent 4px, transparent 8px)'
-                       }}>
-                  </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
 
           {/* Mobile Layout */}
           <div className="lg:hidden space-y-8">
             <div className="max-w-md mx-auto mb-8 relative">
-              <img 
+              <img
                 src={pillowLayers}
                 alt="RiseByNight pillow exploded view showing all internal layers and materials"
                 className="w-full"
@@ -107,9 +118,18 @@ export const LookInside = () => {
               {/* Button 1 - Beige foam layer */}
               <div className="absolute top-[32%] left-[3%] z-20">
                 <svg className="absolute top-5 left-10 w-28 h-8 pointer-events-none">
-                  <line x1="0" y1="0" x2="112" y2="16" stroke="hsl(var(--primary))" strokeWidth="2" strokeOpacity="0.6" strokeDasharray="4,4" />
+                  <line
+                    x1="0"
+                    y1="0"
+                    x2="112"
+                    y2="16"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth="2"
+                    strokeOpacity="0.6"
+                    strokeDasharray="4,4"
+                  />
                 </svg>
-                <button 
+                <button
                   onClick={() => setExpandedMobile(expandedMobile === 0 ? null : 0)}
                   className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
                   aria-label="Show ComfortWave Memory Foam details"
@@ -121,9 +141,18 @@ export const LookInside = () => {
               {/* Button 2 - Beige foam layer (second layer) */}
               <div className="absolute top-[38%] left-[5%] z-20">
                 <svg className="absolute top-5 left-10 w-28 h-12 pointer-events-none">
-                  <line x1="0" y1="0" x2="112" y2="24" stroke="hsl(var(--primary))" strokeWidth="2" strokeOpacity="0.6" strokeDasharray="4,4" />
+                  <line
+                    x1="0"
+                    y1="0"
+                    x2="112"
+                    y2="24"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth="2"
+                    strokeOpacity="0.6"
+                    strokeDasharray="4,4"
+                  />
                 </svg>
-                <button 
+                <button
                   onClick={() => setExpandedMobile(expandedMobile === 1 ? null : 1)}
                   className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
                   aria-label="Show Quilted IceSoft Cover details"
@@ -135,9 +164,18 @@ export const LookInside = () => {
               {/* Button 4 - Beige/tan smooth foam layer */}
               <div className="absolute top-[32%] right-[8%] z-20">
                 <svg className="absolute top-5 right-10 w-24 h-12 pointer-events-none">
-                  <line x1="96" y1="0" x2="0" y2="24" stroke="hsl(var(--primary))" strokeWidth="2" strokeOpacity="0.6" strokeDasharray="4,4" />
+                  <line
+                    x1="96"
+                    y1="0"
+                    x2="0"
+                    y2="24"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth="2"
+                    strokeOpacity="0.6"
+                    strokeDasharray="4,4"
+                  />
                 </svg>
-                <button 
+                <button
                   onClick={() => setExpandedMobile(expandedMobile === 2 ? null : 2)}
                   className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
                   aria-label="Show Dual-Contour Sleep Channels details"
@@ -149,9 +187,18 @@ export const LookInside = () => {
               {/* Button 5 - Mesh panels */}
               <div className="absolute top-[50%] right-[5%] z-20">
                 <svg className="absolute top-5 right-10 w-16 h-16 pointer-events-none">
-                  <line x1="64" y1="0" x2="0" y2="32" stroke="hsl(var(--primary))" strokeWidth="2" strokeOpacity="0.6" strokeDasharray="4,4" />
+                  <line
+                    x1="64"
+                    y1="0"
+                    x2="0"
+                    y2="32"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth="2"
+                    strokeOpacity="0.6"
+                    strokeDasharray="4,4"
+                  />
                 </svg>
-                <button 
+                <button
                   onClick={() => setExpandedMobile(expandedMobile === 3 ? null : 3)}
                   className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
                   aria-label="Show AirFlow Mesh Side Panels details"
@@ -163,9 +210,18 @@ export const LookInside = () => {
               {/* Button 3 - Black mesh sides (bottom layer) */}
               <div className="absolute bottom-[15%] left-[3%] z-20">
                 <svg className="absolute top-5 left-10 w-36 h-20 pointer-events-none">
-                  <line x1="0" y1="0" x2="144" y2="40" stroke="hsl(var(--primary))" strokeWidth="2" strokeOpacity="0.6" strokeDasharray="4,4" />
+                  <line
+                    x1="0"
+                    y1="0"
+                    x2="144"
+                    y2="-40"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth="2"
+                    strokeOpacity="0.6"
+                    strokeDasharray="4,4"
+                  />
                 </svg>
-                <button 
+                <button
                   onClick={() => setExpandedMobile(expandedMobile === 4 ? null : 4)}
                   className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
                   aria-label="Show Pressure-Relief Cloud Foam Core details"
@@ -178,7 +234,7 @@ export const LookInside = () => {
               {expandedMobile !== null && (
                 <>
                   {/* Backdrop */}
-                  <div 
+                  <div
                     className="absolute inset-0 bg-black/60 z-30 animate-fade-in"
                     onClick={() => setExpandedMobile(null)}
                   />
@@ -204,19 +260,19 @@ export const LookInside = () => {
                 </>
               )}
             </div>
-            
+
             <p className="text-center text-sm text-muted-foreground px-4">
               Tap the numbered buttons to learn about each layer
             </p>
           </div>
         </div>
-
-...
-
+        ...
         <div className="mt-16 bg-primary/5 border border-primary/20 rounded-xl p-8 text-center">
           <h3 className="text-2xl font-bold mb-3">Medical-Grade Materials</h3>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Every component of the RiseByNight pillow is crafted from certified medical-grade materials, ensuring safety, durability, and optimal performance for years to come. Our pillows are rigorously tested to meet the highest quality standards.
+            Every component of the RiseByNight pillow is crafted from certified medical-grade materials, ensuring
+            safety, durability, and optimal performance for years to come. Our pillows are rigorously tested to meet the
+            highest quality standards.
           </p>
         </div>
       </div>
