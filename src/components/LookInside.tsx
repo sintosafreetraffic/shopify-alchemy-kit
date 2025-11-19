@@ -8,7 +8,22 @@ const components = [
     description: "Sculpted beige foam layer that adapts to your unique head and neck contours, providing personalized support and pressure relief."
   },
   {
+    position: "left-middle",
+    title: "Quilted IceSoft Cover™",
+    description: "Premium cooling fabric cover with temperature-regulating technology to prevent overheating during sleep."
+  },
+  {
     position: "right-top",
+    title: "Dual-Contour Sleep Channels™",
+    description: "Ergonomically designed curves that cradle your head while maintaining proper cervical alignment."
+  },
+  {
+    position: "right-middle",
+    title: "AirFlow Mesh Side Panels™",
+    description: "Breathable mesh construction promotes air circulation, keeping you cool throughout the night."
+  },
+  {
+    position: "right-bottom",
     title: "Pressure-Relief Cloud Foam™ Core",
     description: "Thick blue support base provides foundational stability while cushioning pressure points for a cloud-like sleeping experience."
   }
@@ -103,17 +118,59 @@ export const LookInside = () => {
                 </button>
               </div>
 
-              {/* Button 2 - Blue foam base */}
+              {/* Button 2 - Quilted cover */}
+              <div className="absolute top-[12%] left-[15%] z-20">
+                <svg className="absolute top-5 left-10 w-20 h-12 pointer-events-none">
+                  <line x1="0" y1="0" x2="80" y2="24" stroke="hsl(var(--primary))" strokeWidth="2" strokeOpacity="0.6" strokeDasharray="4,4" />
+                </svg>
+                <button 
+                  onClick={() => setExpandedMobile(expandedMobile === 1 ? null : 1)}
+                  className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
+                  aria-label="Show Quilted IceSoft Cover details"
+                >
+                  2
+                </button>
+              </div>
+
+              {/* Button 4 - Dual contour curves */}
+              <div className="absolute top-[18%] right-[8%] z-20">
+                <svg className="absolute top-5 right-10 w-20 h-12 pointer-events-none">
+                  <line x1="80" y1="0" x2="0" y2="24" stroke="hsl(var(--primary))" strokeWidth="2" strokeOpacity="0.6" strokeDasharray="4,4" />
+                </svg>
+                <button 
+                  onClick={() => setExpandedMobile(expandedMobile === 2 ? null : 2)}
+                  className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
+                  aria-label="Show Dual-Contour Sleep Channels details"
+                >
+                  4
+                </button>
+              </div>
+
+              {/* Button 5 - Mesh panels */}
+              <div className="absolute top-[50%] right-[5%] z-20">
+                <svg className="absolute top-5 right-10 w-16 h-16 pointer-events-none">
+                  <line x1="64" y1="0" x2="0" y2="32" stroke="hsl(var(--primary))" strokeWidth="2" strokeOpacity="0.6" strokeDasharray="4,4" />
+                </svg>
+                <button 
+                  onClick={() => setExpandedMobile(expandedMobile === 3 ? null : 3)}
+                  className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
+                  aria-label="Show AirFlow Mesh Side Panels details"
+                >
+                  5
+                </button>
+              </div>
+
+              {/* Button 3 - Blue foam base */}
               <div className="absolute bottom-[25%] left-[8%] z-20">
                 <svg className="absolute top-5 left-10 w-24 h-20 pointer-events-none" style={{ transform: 'rotate(40deg)' }}>
                   <line x1="0" y1="0" x2="96" y2="48" stroke="hsl(var(--primary))" strokeWidth="2" strokeOpacity="0.6" strokeDasharray="4,4" />
                 </svg>
                 <button 
-                  onClick={() => setExpandedMobile(expandedMobile === 1 ? null : 1)}
+                  onClick={() => setExpandedMobile(expandedMobile === 4 ? null : 4)}
                   className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
                   aria-label="Show Pressure-Relief Cloud Foam Core details"
                 >
-                  2
+                  3
                 </button>
               </div>
 
