@@ -14,6 +14,12 @@ const components = [
       "Sculpted beige foam layer that adapts to your unique head and neck contours, providing personalized support and pressure relief.",
   },
   {
+    position: "left-bottom",
+    title: "Pressure-Relief Cloud Foam™ Core",
+    description:
+      "High-density foam base that distributes weight evenly, reducing pressure points and providing stable foundation support throughout the night.",
+  },
+  {
     position: "right-top",
     title: "Quilted IceSoft Cover™",
     description:
@@ -21,8 +27,9 @@ const components = [
   },
   {
     position: "right-middle",
-    title: "",
-    description: "",
+    title: "Adaptive Cervical Support Zone",
+    description:
+      "Specially engineered center region that maintains optimal neck curvature and provides targeted support for the cervical spine.",
   },
 ];
 
