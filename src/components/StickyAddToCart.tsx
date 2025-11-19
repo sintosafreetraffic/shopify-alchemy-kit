@@ -5,6 +5,7 @@ import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import { ShoppingCart, Loader2 } from "lucide-react";
+import eyeMaskGift from "@/assets/eye-mask-gift.png";
 
 export const StickyAddToCart = () => {
   const [selectedBundle, setSelectedBundle] = useState<"1" | "2">("2");
@@ -121,13 +122,15 @@ export const StickyAddToCart = () => {
                 </button>
                 <button
                   onClick={() => setSelectedBundle("2")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${
                     selectedBundle === "2"
                       ? "bg-primary text-primary-foreground"
                       : "bg-secondary/50 hover:bg-secondary"
                   }`}
                 >
-                  2 Pillows
+                  <span>2 Pillows</span>
+                  <span className="text-[10px]">+ FREE</span>
+                  <img src={eyeMaskGift} alt="Free gift" className="w-3 h-3" />
                 </button>
               </div>
 
