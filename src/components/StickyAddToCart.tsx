@@ -77,79 +77,81 @@ export const StickyAddToCart = () => {
 
   const selectedOption = bundles[selectedBundle];
 
-  if (!product) return null;
-
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t shadow-lg animate-slide-in-bottom">
+    <div className="fixed bottom-0 left-0 right-0 z-[100] bg-background/95 backdrop-blur-md border-t shadow-lg">
       <div className="container mx-auto px-4 py-3">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-          {/* Product Info */}
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-secondary/30 rounded-lg overflow-hidden flex-shrink-0">
-              {product.node.images?.edges?.[0]?.node && (
-                <img
-                  src={product.node.images.edges[0].node.url}
-                  alt={product.node.title}
-                  className="w-full h-full object-cover"
-                />
-              )}
-            </div>
-            <div className="text-left">
-              <h3 className="font-semibold text-sm line-clamp-1">
-                {product.node.title}
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                {selectedOption.quantity} {selectedOption.quantity === 1 ? "Pillow" : "Pillows"} • {selectedOption.discount}
-              </p>
-            </div>
-          </div>
-
-          {/* Bundle Selection & Add to Cart */}
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            {/* Bundle Selector */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => setSelectedBundle("1")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                  selectedBundle === "1"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary/50 hover:bg-secondary"
-                }`}
-              >
-                1 Pillow
-              </button>
-              <button
-                onClick={() => setSelectedBundle("2")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                  selectedBundle === "2"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary/50 hover:bg-secondary"
-                }`}
-              >
-                2 Pillows
-              </button>
+        {!product ? (
+          <div className="text-center text-sm text-muted-foreground">Loading...</div>
+        ) : (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+            {/* Product Info */}
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-secondary/30 rounded-lg overflow-hidden flex-shrink-0">
+                {product.node.images?.edges?.[0]?.node && (
+                  <img
+                    src={product.node.images.edges[0].node.url}
+                    alt={product.node.title}
+                    className="w-full h-full object-cover"
+                  />
+                )}
+              </div>
+              <div className="text-left">
+                <h3 className="font-semibold text-sm line-clamp-1">
+                  {product.node.title}
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  {selectedOption.quantity} {selectedOption.quantity === 1 ? "Pillow" : "Pillows"} • {selectedOption.discount}
+                </p>
+              </div>
             </div>
 
-            {/* Add to Cart Button */}
-            <Button 
-              onClick={handleAddToCart}
-              disabled={isCheckingOut}
-              className="flex-1 sm:flex-initial"
-            >
-              {isCheckingOut ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <ShoppingCart className="w-4 h-4 mr-2" />
-                  ${selectedOption.price}
-                </>
-              )}
-            </Button>
+            {/* Bundle Selection & Add to Cart */}
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              {/* Bundle Selector */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setSelectedBundle("1")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    selectedBundle === "1"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary/50 hover:bg-secondary"
+                  }`}
+                >
+                  1 Pillow
+                </button>
+                <button
+                  onClick={() => setSelectedBundle("2")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    selectedBundle === "2"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary/50 hover:bg-secondary"
+                  }`}
+                >
+                  2 Pillows
+                </button>
+              </div>
+
+              {/* Add to Cart Button */}
+              <Button 
+                onClick={handleAddToCart}
+                disabled={isCheckingOut}
+                className="flex-1 sm:flex-initial"
+              >
+                {isCheckingOut ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <ShoppingCart className="w-4 h-4 mr-2" />
+                    ${selectedOption.price}
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
