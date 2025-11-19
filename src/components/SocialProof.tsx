@@ -1,4 +1,4 @@
-import { Star, Users, Truck, RotateCcw } from "lucide-react";
+import { Star } from "lucide-react";
 import { useState, useEffect } from "react";
 
 const testimonials = [
@@ -82,25 +82,6 @@ export const SocialProof = () => {
                 }`}
               />
             ))}
-          </div>
-        </div>
-
-        {/* Social Proof Stats */}
-        <div className="grid md:grid-cols-3 gap-8 text-center">
-          <div className="space-y-2">
-            <Users className="w-12 h-12 mx-auto text-primary" />
-            <p className="text-3xl font-bold">12,732+</p>
-            <p className="text-muted-foreground">Customers</p>
-          </div>
-          <div className="space-y-2">
-            <Truck className="w-12 h-12 mx-auto text-primary" />
-            <p className="text-2xl font-bold">Fast Shipping</p>
-            <p className="text-muted-foreground">Within the U.S.</p>
-          </div>
-          <div className="space-y-2">
-            <RotateCcw className="w-12 h-12 mx-auto text-primary" />
-            <p className="text-2xl font-bold">120 Night</p>
-            <p className="text-muted-foreground">Risk-Free Trial</p>
           </div>
         </div>
       </div>
