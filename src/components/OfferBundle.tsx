@@ -7,7 +7,7 @@ export const OfferBundle = () => {
   };
 
   return (
-    <section className="py-4 px-4">
+    <section className="py-4 px-4 bg-background">
       <div className="container mx-auto max-w-2xl">
         <div className="rounded-xl overflow-hidden shadow-lg">
           <img 
