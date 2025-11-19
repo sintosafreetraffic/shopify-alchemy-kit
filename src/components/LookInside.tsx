@@ -14,8 +14,8 @@ const components = [
   },
   {
     position: "left-bottom",
-    title: "AirFlow Mesh Side Panels™",
-    description: "Breathable black mesh fabric on the sides promotes optimal air circulation, preventing heat buildup and moisture retention."
+    title: "Pressure-Relief Cloud Foam™ Core",
+    description: "Thick blue support base provides foundational stability while cushioning pressure points for a cloud-like sleeping experience."
   },
   {
     position: "right-top",
@@ -24,8 +24,8 @@ const components = [
   },
   {
     position: "right-middle",
-    title: "Pressure-Relief Cloud Foam™ Core",
-    description: "Thick blue support base provides foundational stability while cushioning pressure points for a cloud-like sleeping experience."
+    title: "AirFlow Mesh Side Panels™",
+    description: "Breathable black mesh fabric on the sides promotes optimal air circulation, preventing heat buildup and moisture retention."
   }
 ];
 
