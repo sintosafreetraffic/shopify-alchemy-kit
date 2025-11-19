@@ -218,9 +218,9 @@ export const LookInside = () => {
                     strokeDasharray="4,4"
                   />
                 </svg>
-                <button
+              <button
                   onClick={() => setExpandedMobile(expandedMobile === 0 ? null : 0)}
-                  className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
+                  className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform animate-pulse"
                   aria-label="Show ComfortWave Memory Foam details"
                 >
                   1
@@ -241,9 +241,9 @@ export const LookInside = () => {
                     strokeDasharray="4,4"
                   />
                 </svg>
-                <button
+              <button
                   onClick={() => setExpandedMobile(expandedMobile === 1 ? null : 1)}
-                  className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
+                  className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform animate-pulse"
                   aria-label="Show Quilted IceSoft Cover details"
                 >
                   2
@@ -266,7 +266,7 @@ export const LookInside = () => {
                 </svg>
               <button
                   onClick={() => setExpandedMobile(expandedMobile === 3 ? null : 3)}
-                  className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
+                  className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform animate-pulse"
                   aria-label="Show Dual-Contour Sleep Channels details"
                 >
                   4
@@ -289,7 +289,7 @@ export const LookInside = () => {
                 </svg>
               <button
                   onClick={() => setExpandedMobile(expandedMobile === 4 ? null : 4)}
-                  className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
+                  className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform animate-pulse"
                   aria-label="Show AirFlow Mesh Side Panels details"
                 >
                   5
@@ -312,7 +312,7 @@ export const LookInside = () => {
 
               <button
                   onClick={() => setExpandedMobile(expandedMobile === 2 ? null : 2)}
-                  className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
+                  className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform animate-pulse"
                   aria-label="Show Pressure-Relief Cloud Foam Core details"
                 >
                   3
