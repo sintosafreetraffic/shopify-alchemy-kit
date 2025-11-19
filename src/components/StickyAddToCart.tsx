@@ -63,18 +63,18 @@ export const StickyAddToCart = () => {
     }
   };
 
-  const productPrice = product ? parseFloat(product.node.variants.edges[0].node.price.amount) : 79.99;
+  const productPrice = product ? parseFloat(product.node.variants.edges[0].node.price.amount) : 89.99;
 
   const bundles = {
     "1": {
       quantity: 1,
       price: productPrice,
-      discount: "Save 0%"
+      discount: "BLACK FRIDAY"
     },
     "2": {
       quantity: 2,
-      price: 119.99,
-      discount: "25% OFF"
+      price: productPrice,
+      discount: "1+1 FREE"
     }
   };
 

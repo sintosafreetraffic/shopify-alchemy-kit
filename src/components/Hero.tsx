@@ -67,24 +67,24 @@ export const Hero = () => {
     }
   };
 
-  const productPrice = product ? parseFloat(product.node.variants.edges[0].node.price.amount) : 79.99;
+  const productPrice = product ? parseFloat(product.node.variants.edges[0].node.price.amount) : 89.99;
   
   const bundles = {
     "1": {
       quantity: 1,
       price: productPrice,
       originalPrice: productPrice * 2,
-      discount: "Save 0%",
+      discount: "BLACK FRIDAY",
       savings: 0,
       freeGift: "+ FREE Gift",
       freeGiftValue: "$29.99"
     },
     "2": {
       quantity: 2,
-      price: 119.99,
+      price: productPrice,
       originalPrice: productPrice * 2,
-      discount: "25% OFF",
-      savings: (productPrice * 2) - 119.99,
+      discount: "1+1 FREE",
+      savings: productPrice,
       freeGifts: "+2 FREE Gifts",
       freeGiftValue: "$59.98"
     }
@@ -186,7 +186,7 @@ export const Hero = () => {
             </div>
 
             <div className="border-t border-b py-2 my-1.5">
-              <p className="text-center font-bold text-sm md:text-base mb-2 tracking-wide">LIMITED-TIME OFFER</p>
+              <p className="text-center font-bold text-sm md:text-base mb-2 tracking-wide">🎉 BLACK FRIDAY OFFER 🎉</p>
               
               <div className="grid grid-cols-2 gap-3 mb-2">
                 <button
