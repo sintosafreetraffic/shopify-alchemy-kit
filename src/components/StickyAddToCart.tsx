@@ -130,7 +130,7 @@ export const StickyAddToCart = () => {
                       : "bg-secondary/50 hover:bg-secondary"
                   }`}
                 >
-                  <span>2 Pillows • FREE GIFT +</span>
+                  <span>2 Pillows • + FREE GIFT</span>
                   <img src={eyeMaskGift} alt="Free gift" className="w-6 h-6 object-contain" />
                 </button>
               </div>
