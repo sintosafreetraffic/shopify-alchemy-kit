@@ -10,7 +10,7 @@ export const Header = () => {
           <img 
             src={logo} 
             alt="RiseByNight - Ergonomic Sleep Pillow" 
-            className="h-12 w-auto"
+            className="h-16 w-auto"
           />
           <span className="text-2xl font-bold text-foreground">RiseByNight</span>
         </div>
