@@ -4,8 +4,8 @@ import { useState } from "react";
 const components = [
   {
     position: "left-top",
-    title: "",
-    description: "",
+    title: "Dual-Contour Sleep Channels™",
+    description: "Ergonomically designed curves that cradle your head while maintaining proper cervical alignment.",
   },
   {
     position: "left-middle",
@@ -15,17 +15,12 @@ const components = [
   },
   {
     position: "right-top",
-    title: "Dual-Contour Sleep Channels™",
-    description: "Ergonomically designed curves that cradle your head while maintaining proper cervical alignment.",
-  },
-  {
-    position: "right-middle",
     title: "Quilted IceSoft Cover™",
     description:
       "Premium cooling fabric cover with temperature-regulating technology to prevent overheating during sleep.",
   },
   {
-    position: "right-bottom",
+    position: "right-middle",
     title: "",
     description: "",
   },
