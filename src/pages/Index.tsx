@@ -10,6 +10,7 @@ import { Features } from "@/components/Features";
 import { FAQ } from "@/components/FAQ";
 import { ReviewsSection } from "@/components/ReviewsSection";
 import { LookInside } from "@/components/LookInside";
+import { PainReliefSection } from "@/components/PainReliefSection";
 import { Badge } from "@/components/ui/badge";
 import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
@@ -41,6 +42,7 @@ const Index = () => {
       <Hero />
       <Features />
       <Benefits />
+      <PainReliefSection />
       <LookInside />
       <ReviewsSection />
       
