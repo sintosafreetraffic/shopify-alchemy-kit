@@ -2,7 +2,7 @@ import testimonial from "@/assets/testimonial.png";
 
 export const TestimonialHero = () => {
   return (
-    <section className="py-12 px-4">
+    <section className="py-12 px-4 bg-primary/5">
       <div className="container mx-auto max-w-2xl">
         <div className="rounded-xl overflow-hidden shadow-2xl">
           <img 

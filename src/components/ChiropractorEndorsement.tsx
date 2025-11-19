@@ -3,7 +3,7 @@ import { CheckCircle2 } from "lucide-react";
 
 export const ChiropractorEndorsement = () => {
   return (
-    <section className="py-16 px-4 bg-secondary/10">
+    <section className="py-16 px-4 bg-background">
       <div className="container mx-auto max-w-6xl">
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <div className="order-2 md:order-1">

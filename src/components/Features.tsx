@@ -100,7 +100,7 @@ export const Features = () => {
   };
 
   return (
-    <section className="py-10 px-4">
+    <section className="py-10 px-4 bg-primary/5">
       <div className="container mx-auto max-w-6xl space-y-16">
         {features.map((feature, index) => (
           <div

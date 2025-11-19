@@ -93,7 +93,7 @@ export const Hero = () => {
   const selectedOption = bundles[selectedBundle];
 
   return (
-    <section className="py-4 md:py-6">
+    <section className="py-4 md:py-6 bg-background">
       <div className="container mx-auto px-4 max-w-7xl">
         {/* Mobile Layout: Carousel at top, then title */}
         <div className="md:hidden space-y-4 mb-6">

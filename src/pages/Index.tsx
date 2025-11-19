@@ -49,7 +49,7 @@ const Index = () => {
       <LookInside />
       <ReviewsSection />
       
-      <section id="products" className="py-6">
+      <section id="products" className="py-6 bg-primary/5">
         <div className="container mx-auto px-4">
           {loading ? (
             <div className="flex justify-center items-center py-12">
