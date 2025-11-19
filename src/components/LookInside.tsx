@@ -46,8 +46,95 @@ export const LookInside = () => {
           </p>
         </div>
         <div className="relative max-w-6xl mx-auto">
-          {/* Numbered Button Layout */}
-          <div className="space-y-8">
+          {/* Desktop Layout with Text Cards and Numbered Buttons */}
+          <div className="hidden lg:grid lg:grid-cols-[1fr_2fr_1fr] gap-8 items-center">
+            {/* Left Column - Text Cards */}
+            <div className="space-y-12">
+              {components
+                .filter((c) => c.position.startsWith("left"))
+                .map((component, idx) => (
+                  <div key={idx} className="relative">
+                    <div className="bg-background border-2 border-primary/20 rounded-xl p-6 shadow-lg hover:border-primary/40 transition-colors">
+                      <div className="flex items-start gap-3 mb-2">
+                        <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold text-sm">
+                          {idx + 1}
+                        </div>
+                        <h3 className="font-bold text-lg flex-1">{component.title}</h3>
+                      </div>
+                      <p className="text-sm text-muted-foreground ml-11">{component.description}</p>
+                    </div>
+                  </div>
+                ))}
+            </div>
+
+            {/* Center Column - Image with Numbered Buttons */}
+            <div className="relative flex items-center justify-center py-8">
+              <div className="max-w-md mx-auto relative">
+              <img
+                src={pillowLayers}
+                alt="RiseByNight pillow exploded view showing all internal layers and materials"
+                className="w-full relative z-0"
+              />
+
+              {/* Number indicators with connecting lines */}
+              {/* Button 1 - Beige foam layer */}
+              <div className="absolute top-[32%] left-[3%] z-20">
+                <div className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg">
+                  1
+                </div>
+              </div>
+
+              {/* Button 2 - Beige foam layer (second layer) */}
+              <div className="absolute top-[38%] left-[5%] z-20">
+                <div className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg">
+                  2
+                </div>
+              </div>
+
+              {/* Button 4 - Beige/tan smooth foam layer */}
+              <div className="absolute top-[32%] right-[8%] z-20">
+                <div className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg">
+                  4
+                </div>
+              </div>
+
+              {/* Button 5 - Mesh panels */}
+              <div className="absolute top-[50%] right-[5%] z-20">
+                <div className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg">
+                  5
+                </div>
+              </div>
+              {/* Button 3 - Black mesh sides (bottom layer) */}
+              <div className="absolute bottom-[22%] left-[3%] z-30">
+                <div className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg">
+                  3
+                </div>
+              </div>
+              </div>
+            </div>
+
+            {/* Right Column - Text Cards */}
+            <div className="space-y-20">
+              {components
+                .filter((c) => c.position.startsWith("right"))
+                .map((component, idx) => (
+                  <div key={idx} className="relative">
+                    <div className="bg-background border-2 border-primary/20 rounded-xl p-6 shadow-lg hover:border-primary/40 transition-colors">
+                      <div className="flex items-start gap-3 mb-2">
+                        <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold text-sm">
+                          {idx + 4}
+                        </div>
+                        <h3 className="font-bold text-lg flex-1">{component.title}</h3>
+                      </div>
+                      <p className="text-sm text-muted-foreground ml-11">{component.description}</p>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+
+          {/* Mobile Layout with Interactive Buttons */}
+          <div className="lg:hidden space-y-8">
             <div className="max-w-md mx-auto mb-8 relative">
               <img
                 src={pillowLayers}
@@ -152,9 +239,9 @@ export const LookInside = () => {
                 <svg className="absolute top-1 left-10 w-64 h-20 pointer-events-none" viewBox="0 0 260 80">
                   <line
                     x1="0"
-                    y1="8" // moved up
-                    x2="200" // long line to the right
-                    y2="0" // clear upward slope
+                    y1="8"
+                    x2="200"
+                    y2="0"
                     stroke="hsl(var(--primary))"
                     strokeWidth="2.5"
                     strokeOpacity="0.8"
@@ -207,7 +294,6 @@ export const LookInside = () => {
             </p>
           </div>
         </div>
-        ...
         <div className="mt-16 bg-primary/5 border border-primary/20 rounded-xl p-8 text-center">
           <h3 className="text-2xl font-bold mb-3">Medical-Grade Materials</h3>
           <p className="text-muted-foreground max-w-2xl mx-auto">
