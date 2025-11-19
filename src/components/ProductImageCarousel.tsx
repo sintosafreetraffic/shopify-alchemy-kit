@@ -10,14 +10,14 @@ import {
 
 export const ProductImageCarousel = () => {
   
-  // Multiple views of the OptiSleep pillow
+  // Multiple views of the RiseByNight pillow
   const images = [
-    { url: optisleepPillow, alt: "OptiSleep pillow main view" },
-    { url: optisleepPillow, alt: "OptiSleep pillow side angle" },
-    { url: optisleepPillow, alt: "OptiSleep pillow detail view" },
-    { url: optisleepPillow, alt: "OptiSleep pillow perspective" },
-    { url: optisleepPillow, alt: "OptiSleep pillow lifestyle view" },
-    { url: optisleepPillow, alt: "OptiSleep pillow comfort view" },
+    { url: optisleepPillow, alt: "RiseByNight pillow main view" },
+    { url: optisleepPillow, alt: "RiseByNight pillow side angle" },
+    { url: optisleepPillow, alt: "RiseByNight pillow detail view" },
+    { url: optisleepPillow, alt: "RiseByNight pillow perspective" },
+    { url: optisleepPillow, alt: "RiseByNight pillow lifestyle view" },
+    { url: optisleepPillow, alt: "RiseByNight pillow comfort view" },
   ];
 
   return (

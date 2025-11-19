@@ -28,7 +28,7 @@ export const Benefits = () => {
     <section className="py-10 px-4">
       <div className="container mx-auto max-w-6xl">
         <div className="text-center mb-8">
-          <h2 className="text-4xl font-bold mb-4">Why Choose OptiSleep?</h2>
+          <h2 className="text-4xl font-bold mb-4">Why Choose RiseByNight?</h2>
           <p className="text-xl text-muted-foreground">
             Backed by sleep science and loved by thousands
           </p>

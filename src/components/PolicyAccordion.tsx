@@ -10,7 +10,7 @@ const policies = [
   {
     icon: Moon,
     title: "100 nights risk free trial",
-    content: "We're confident you'll love your OptiSleep pillow, which is why we offer a generous 100-night trial period. If you're not completely satisfied, return it for a full refund - no questions asked. We'll even arrange free pickup."
+    content: "We're confident you'll love your RiseByNight pillow, which is why we offer a generous 100-night trial period. If you're not completely satisfied, return it for a full refund - no questions asked. We'll even arrange free pickup."
   },
   {
     icon: Truck,

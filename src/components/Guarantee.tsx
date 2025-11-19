@@ -10,7 +10,7 @@ export const Guarantee = () => {
           </div>
           <h2 className="text-4xl font-bold mb-4">90-Day Money Back Guarantee</h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Try OptiSleep risk-free for 90 nights. If you don't experience the best sleep of your life, 
+            Try RiseByNight risk-free for 90 nights. If you don't experience the best sleep of your life, 
             we'll refund every penny. No questions asked.
           </p>
         </div>

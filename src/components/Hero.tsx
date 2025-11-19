@@ -108,7 +108,7 @@ export const Hero = () => {
             </div>
             
             <h1 className="text-2xl font-bold leading-tight tracking-tight">
-              OptiSleep™ Sleep Apnea Pillow
+              RiseByNight™ Sleep Apnea Pillow
             </h1>
             
             <p className="text-sm text-muted-foreground">
@@ -155,7 +155,7 @@ export const Hero = () => {
             </div>
 
             <h1 className="hidden md:block text-2xl md:text-3xl lg:text-4xl font-bold leading-tight tracking-tight">
-              OptiSleep™ Sleep Apnea Pillow
+              RiseByNight™ Sleep Apnea Pillow
             </h1>
             
             <p className="hidden md:block text-sm md:text-base text-muted-foreground">
