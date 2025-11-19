@@ -1,4 +1,5 @@
 import pillowLayers from "@/assets/pillow-layers.png";
+import { useState } from "react";
 
 const components = [
   {
@@ -29,6 +30,8 @@ const components = [
 ];
 
 export const LookInside = () => {
+  const [expandedMobile, setExpandedMobile] = useState<number | null>(null);
+
   return (
     <section className="py-16 bg-secondary/30">
       <div className="container mx-auto px-4 max-w-7xl">
@@ -100,22 +103,68 @@ export const LookInside = () => {
                 alt="RiseByNight pillow exploded view showing all internal layers and materials"
                 className="w-full"
               />
-              {/* Number indicators positioned on image */}
-              <div className="absolute top-[15%] left-[10%] w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg animate-pulse">1</div>
-              <div className="absolute top-[35%] left-[8%] w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg animate-pulse">2</div>
-              <div className="absolute top-[55%] left-[12%] w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg animate-pulse">3</div>
-              <div className="absolute top-[28%] right-[15%] w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg animate-pulse">4</div>
-              <div className="absolute bottom-[20%] right-[18%] w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg animate-pulse">5</div>
+              {/* Number indicators positioned near image bullet points */}
+              <button 
+                onClick={() => setExpandedMobile(expandedMobile === 0 ? null : 0)}
+                className="absolute top-[8%] left-[5%] w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
+                aria-label="Show Quilted IceSoft Cover details"
+              >
+                1
+              </button>
+              <button 
+                onClick={() => setExpandedMobile(expandedMobile === 1 ? null : 1)}
+                className="absolute top-[32%] left-[3%] w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
+                aria-label="Show ComfortWave Memory Foam details"
+              >
+                2
+              </button>
+              <button 
+                onClick={() => setExpandedMobile(expandedMobile === 2 ? null : 2)}
+                className="absolute bottom-[18%] left-[8%] w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
+                aria-label="Show AirFlow Mesh Side Panels details"
+              >
+                3
+              </button>
+              <button 
+                onClick={() => setExpandedMobile(expandedMobile === 3 ? null : 3)}
+                className="absolute top-[22%] right-[8%] w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
+                aria-label="Show Dual-Contour Sleep Channels details"
+              >
+                4
+              </button>
+              <button 
+                onClick={() => setExpandedMobile(expandedMobile === 4 ? null : 4)}
+                className="absolute bottom-[25%] right-[12%] w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
+                aria-label="Show Pressure-Relief Cloud Foam Core details"
+              >
+                5
+              </button>
             </div>
             
             <div className="space-y-4">
               {components.map((component, idx) => (
-                <div key={idx} className="bg-background border-2 border-primary/20 rounded-xl p-5 shadow-lg relative">
-                  <div className="absolute -left-3 top-5 w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-md">
-                    {idx + 1}
-                  </div>
-                  <h3 className="font-bold text-lg mb-2 pl-6">{component.title}</h3>
-                  <p className="text-sm text-muted-foreground pl-6">{component.description}</p>
+                <div 
+                  key={idx} 
+                  className={`bg-background border-2 rounded-xl shadow-lg transition-all duration-300 ${
+                    expandedMobile === idx 
+                      ? 'border-primary p-5 animate-scale-in' 
+                      : 'border-primary/20 p-4 max-h-16 overflow-hidden'
+                  }`}
+                >
+                  <button
+                    onClick={() => setExpandedMobile(expandedMobile === idx ? null : idx)}
+                    className="w-full text-left flex items-start gap-3"
+                  >
+                    <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-md">
+                      {idx + 1}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-lg mb-2">{component.title}</h3>
+                      {expandedMobile === idx && (
+                        <p className="text-sm text-muted-foreground animate-fade-in">{component.description}</p>
+                      )}
+                    </div>
+                  </button>
                 </div>
               ))}
             </div>
