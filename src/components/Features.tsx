@@ -36,7 +36,7 @@ const features: Array<{
       "Cooling gel prevents night sweats",
       "Clinically tested spinal alignment"
     ],
-    imagePosition: "left"
+    imagePosition: "right"
   }
 ];
 
