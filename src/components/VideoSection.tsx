@@ -4,13 +4,13 @@ export const VideoSection = () => {
   const videos = [
     {
       id: 1,
-      thumbnail: "https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?w=400&h=600&fit=crop",
+      src: "/videos/video_1.mp4",
       title: "See the difference",
       views: "2.3M"
     },
     {
       id: 2,
-      thumbnail: "https://images.unsplash.com/photo-1615799998603-7c6270a45196?w=400&h=600&fit=crop",
+      src: "/videos/video_2.mp4",
       title: "Perfect support",
       views: "1.8M"
     },
@@ -36,16 +36,33 @@ export const VideoSection = () => {
           {videos.map((video) => (
             <div key={video.id} className="relative group cursor-pointer overflow-hidden rounded-xl">
               <div className="aspect-[9/16] relative">
-                <img 
-                  src={video.thumbnail} 
-                  alt={video.title}
-                  className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                  <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Play className="w-8 h-8 text-primary ml-1" />
-                  </div>
-                </div>
+                {video.src ? (
+                  <video 
+                    src={video.src}
+                    className="w-full h-full object-cover"
+                    loop
+                    muted
+                    playsInline
+                    onMouseEnter={(e) => e.currentTarget.play()}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.pause();
+                      e.currentTarget.currentTime = 0;
+                    }}
+                  />
+                ) : (
+                  <>
+                    <img 
+                      src={video.thumbnail} 
+                      alt={video.title}
+                      className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                      <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Play className="w-8 h-8 text-primary ml-1" />
+                      </div>
+                    </div>
+                  </>
+                )}
                 <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
                   <p className="text-white font-semibold">{video.title}</p>
                   <p className="text-white/80 text-sm">{video.views} views</p>
