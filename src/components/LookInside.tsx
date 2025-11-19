@@ -4,15 +4,14 @@ import { useState } from "react";
 const components = [
   {
     position: "left-top",
-    title: "ComfortWave Memory Foam™ Layer",
-    description:
-      "Sculpted beige foam layer that adapts to your unique head and neck contours, providing personalized support and pressure relief.",
+    title: "",
+    description: "",
   },
   {
     position: "left-middle",
-    title: "Quilted IceSoft Cover™",
+    title: "ComfortWave Memory Foam™ Layer",
     description:
-      "Premium cooling fabric cover with temperature-regulating technology to prevent overheating during sleep.",
+      "Sculpted beige foam layer that adapts to your unique head and neck contours, providing personalized support and pressure relief.",
   },
   {
     position: "right-top",
@@ -21,14 +20,14 @@ const components = [
   },
   {
     position: "right-middle",
-    title: "AirFlow Mesh Side Panels™",
-    description: "Breathable mesh construction promotes air circulation, keeping you cool throughout the night.",
+    title: "Quilted IceSoft Cover™",
+    description:
+      "Premium cooling fabric cover with temperature-regulating technology to prevent overheating during sleep.",
   },
   {
     position: "right-bottom",
-    title: "Pressure-Relief Cloud Foam™ Core",
-    description:
-      "Thick blue support base provides foundational stability while cushioning pressure points for a cloud-like sleeping experience.",
+    title: "",
+    description: "",
   },
 ];
 
