@@ -1,4 +1,4 @@
-import testimonial from "@/assets/testimonial.png";
+import testimonial from "@/assets/testimonial-new.png";
 
 export const TestimonialHero = () => {
   return (
