@@ -211,9 +211,9 @@ export const LookInside = () => {
                 <svg className="absolute top-3 left-10 w-48 h-28 pointer-events-none" viewBox="0 0 200 110">
                   <line
                     x1="0"
-                    y1="30" // same origin
+                    y1="28" // slightly higher origin
                     x2="200"
-                    y2="-5" // steeper upward slope
+                    y2="-12" // more upward slope
                     stroke="hsl(var(--primary))"
                     strokeWidth="2"
                     strokeOpacity="0.6"
