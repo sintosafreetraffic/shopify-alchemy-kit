@@ -144,22 +144,6 @@ export const Features = () => {
                   </div>
                 ))}
               </div>
-
-              <Button 
-                size="lg" 
-                className="mt-4" 
-                onClick={handleBuyNow}
-                disabled={isCheckingOut || !product}
-              >
-                {isCheckingOut ? (
-                  <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  'Get Your OptiSleep Now'
-                )}
-              </Button>
             </div>
           </div>
         ))}
