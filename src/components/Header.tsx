@@ -1,6 +1,6 @@
 import { CartDrawer } from "./CartDrawer";
 import { NavLink } from "./NavLink";
-import logo from "@/assets/moon-logo.png";
+import logo from "@/assets/new-logo.png";
 
 export const Header = () => {
   return (
