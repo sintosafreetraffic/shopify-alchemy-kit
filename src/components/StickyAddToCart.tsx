@@ -5,7 +5,7 @@ import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import { ShoppingCart, Loader2 } from "lucide-react";
-import eyeMaskGift from "@/assets/eye-mask-gift-new.jpg";
+import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
 
 export const StickyAddToCart = () => {
   const [selectedBundle, setSelectedBundle] = useState<"1" | "2">("2");
