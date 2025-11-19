@@ -209,18 +209,22 @@ export const LookInside = () => {
 
               {/* Button 3 - Black mesh sides (bottom layer) */}
               <div className="absolute bottom-[15%] left-[3%] z-20">
-                <svg className="absolute top-5 left-10 w-36 h-20 pointer-events-none">
+                <svg
+                  className="absolute top-5 left-10 w-36 h-24 pointer-events-none border border-red-500"
+                  viewBox="0 0 144 96"
+                >
                   <line
                     x1="0"
-                    y1="0"
+                    y1="72" // start lower
                     x2="144"
-                    y2="-40"
-                    stroke="hsl(var(--primary))"
+                    y2="16" // end higher → line goes upward
+                    stroke="red" // TEST COLOR so we see it for sure
                     strokeWidth="2"
-                    strokeOpacity="0.6"
+                    strokeOpacity="0.9"
                     strokeDasharray="4,4"
                   />
                 </svg>
+
                 <button
                   onClick={() => setExpandedMobile(expandedMobile === 4 ? null : 4)}
                   className="relative w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition-transform"
