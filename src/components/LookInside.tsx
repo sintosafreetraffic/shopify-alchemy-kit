@@ -79,11 +79,11 @@ export const LookInside = () => {
               {/* Number indicators with connecting lines */}
               {/* Button 1 - Beige foam layer */}
               <div className="absolute top-[32%] left-[3%] z-20">
-                <svg className="absolute top-5 -left-16 w-20 h-8 pointer-events-none">
+                <svg className="absolute top-5 left-10 w-28 h-8 pointer-events-none">
                   <line
-                    x1="80"
+                    x1="0"
                     y1="0"
-                    x2="0"
+                    x2="112"
                     y2="16"
                     stroke="hsl(var(--primary))"
                     strokeWidth="2"
@@ -98,11 +98,11 @@ export const LookInside = () => {
 
               {/* Button 2 - Beige foam layer (second layer) */}
               <div className="absolute top-[38%] left-[5%] z-20">
-                <svg className="absolute top-5 -left-16 w-20 h-12 pointer-events-none">
+                <svg className="absolute top-5 left-10 w-28 h-12 pointer-events-none">
                   <line
-                    x1="80"
+                    x1="0"
                     y1="0"
-                    x2="0"
+                    x2="112"
                     y2="24"
                     stroke="hsl(var(--primary))"
                     strokeWidth="2"
@@ -117,11 +117,11 @@ export const LookInside = () => {
 
               {/* Button 4 - Beige/tan smooth foam layer */}
               <div className="absolute top-[32%] right-[8%] z-20">
-                <svg className="absolute top-5 -right-16 w-20 h-12 pointer-events-none">
+                <svg className="absolute top-5 right-10 w-24 h-12 pointer-events-none">
                   <line
-                    x1="0"
+                    x1="96"
                     y1="0"
-                    x2="80"
+                    x2="0"
                     y2="24"
                     stroke="hsl(var(--primary))"
                     strokeWidth="2"
@@ -136,11 +136,11 @@ export const LookInside = () => {
 
               {/* Button 5 - Mesh panels */}
               <div className="absolute top-[50%] right-[5%] z-20">
-                <svg className="absolute top-5 -right-12 w-16 h-16 pointer-events-none">
+                <svg className="absolute top-5 right-10 w-16 h-16 pointer-events-none">
                   <line
-                    x1="0"
+                    x1="64"
                     y1="0"
-                    x2="64"
+                    x2="0"
                     y2="32"
                     stroke="hsl(var(--primary))"
                     strokeWidth="2"
@@ -154,11 +154,11 @@ export const LookInside = () => {
               </div>
               {/* Button 3 - Black mesh sides (bottom layer) */}
               <div className="absolute bottom-[22%] left-[3%] z-30">
-                <svg className="absolute -top-2 -left-32 w-36 h-16 pointer-events-none" viewBox="0 0 144 64">
+                <svg className="absolute top-1 left-10 w-64 h-20 pointer-events-none" viewBox="0 0 260 80">
                   <line
-                    x1="144"
-                    y1="56"
-                    x2="0"
+                    x1="0"
+                    y1="8"
+                    x2="200"
                     y2="0"
                     stroke="hsl(var(--primary))"
                     strokeWidth="2.5"
