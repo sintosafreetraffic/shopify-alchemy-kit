@@ -1,4 +1,4 @@
-import pillowLayers from "@/assets/pillow-layers.png";
+import pillowLayers from "@/assets/pillow-layers-new.png";
 import { useState } from "react";
 
 const components = [
