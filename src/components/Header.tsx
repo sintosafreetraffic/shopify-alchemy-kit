@@ -21,7 +21,9 @@ export const Header = () => {
           <NavLink to="/track" className="text-foreground hover:text-primary transition-colors">Track Your Order</NavLink>
         </nav>
         
-        <CartDrawer />
+        <div className="flex items-center">
+          <CartDrawer />
+        </div>
       </div>
     </header>
   );
