@@ -94,19 +94,28 @@ export const LookInside = () => {
 
           {/* Mobile Layout */}
           <div className="lg:hidden space-y-8">
-            <div className="max-w-md mx-auto mb-8">
+            <div className="max-w-md mx-auto mb-8 relative">
               <img 
                 src={pillowLayers}
                 alt="RiseByNight pillow exploded view showing all internal layers and materials"
                 className="w-full"
               />
+              {/* Number indicators positioned on image */}
+              <div className="absolute top-[15%] left-[10%] w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg animate-pulse">1</div>
+              <div className="absolute top-[35%] left-[8%] w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg animate-pulse">2</div>
+              <div className="absolute top-[55%] left-[12%] w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg animate-pulse">3</div>
+              <div className="absolute top-[28%] right-[15%] w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg animate-pulse">4</div>
+              <div className="absolute bottom-[20%] right-[18%] w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg animate-pulse">5</div>
             </div>
             
-            <div className="space-y-6">
+            <div className="space-y-4">
               {components.map((component, idx) => (
-                <div key={idx} className="bg-background border-2 border-primary/20 rounded-xl p-6 shadow-lg">
-                  <h3 className="font-bold text-lg mb-2">{component.title}</h3>
-                  <p className="text-sm text-muted-foreground">{component.description}</p>
+                <div key={idx} className="bg-background border-2 border-primary/20 rounded-xl p-5 shadow-lg relative">
+                  <div className="absolute -left-3 top-5 w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold shadow-md">
+                    {idx + 1}
+                  </div>
+                  <h3 className="font-bold text-lg mb-2 pl-6">{component.title}</h3>
+                  <p className="text-sm text-muted-foreground pl-6">{component.description}</p>
                 </div>
               ))}
             </div>
