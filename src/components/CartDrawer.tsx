@@ -128,10 +128,10 @@ export const CartDrawer = () => {
               return (
                 <div 
                   key={product.node.id} 
-                  className="bg-card border rounded-lg p-4 hover:shadow-lg transition-shadow"
+                  className="bg-card border rounded-lg p-3 hover:shadow-lg transition-shadow"
                 >
                   {image && (
-                    <div className="w-full aspect-square bg-secondary/20 rounded-lg overflow-hidden mb-4">
+                    <div className="w-full aspect-square bg-secondary/20 rounded-lg overflow-hidden mb-3">
                       <img
                         src={image.url}
                         alt={product.node.title}
@@ -139,20 +139,22 @@ export const CartDrawer = () => {
                       />
                     </div>
                   )}
-                  <div className="space-y-3">
-                    <h4 className="font-semibold text-base line-clamp-2 leading-tight min-h-[2.5rem]">{product.node.title}</h4>
-                    {variant && (
-                      <p className="text-2xl font-bold">
-                        ${parseFloat(variant.price.amount).toFixed(2)}
-                      </p>
-                    )}
-                    <Button
-                      size="lg"
-                      className="w-full"
-                      onClick={() => handleAddRecommendation(product)}
-                    >
-                      Add to Cart
-                    </Button>
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-sm line-clamp-2 leading-tight min-h-[2.5rem]">{product.node.title}</h4>
+                    <div className="flex items-center gap-2">
+                      {variant && (
+                        <p className="text-lg font-bold whitespace-nowrap">
+                          ${parseFloat(variant.price.amount).toFixed(2)}
+                        </p>
+                      )}
+                      <Button
+                        size="sm"
+                        className="flex-1 h-8 text-xs"
+                        onClick={() => handleAddRecommendation(product)}
+                      >
+                        Add to Cart
+                      </Button>
+                    </div>
                   </div>
                 </div>
               );
