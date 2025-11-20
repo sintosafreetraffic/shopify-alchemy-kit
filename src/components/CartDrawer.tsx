@@ -124,12 +124,18 @@ export const CartDrawer = () => {
             {recommendedProducts.map((product) => {
               const variant = product.node.variants.edges[0]?.node;
               const image = product.node.images.edges[0]?.node;
+              const isPillow = product.node.title.toLowerCase().includes('pillow');
               
               return (
                 <div 
                   key={product.node.id} 
-                  className="bg-card border rounded-lg p-3 hover:shadow-lg transition-shadow"
+                  className="bg-card border rounded-lg p-3 hover:shadow-lg transition-shadow relative"
                 >
+                  {isPillow && (
+                    <div className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs font-bold px-2 py-1 rounded z-10">
+                      1+1 DEAL
+                    </div>
+                  )}
                   {image && (
                     <div className="w-full aspect-square bg-secondary/20 rounded-lg overflow-hidden mb-3">
                       <img
