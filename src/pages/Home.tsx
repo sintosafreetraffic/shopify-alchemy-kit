@@ -13,7 +13,7 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center space-y-8">
             <div className="inline-flex items-center justify-center w-24 h-24 mb-4">
-              <img src={heroLogo} alt="RiseByNight" className="w-full h-full" />
+              <img src={heroLogo} alt="RiseByNight" className="w-full h-full object-contain" />
             </div>
             
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight">
