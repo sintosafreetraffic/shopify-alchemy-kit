@@ -7,7 +7,11 @@ import { toast } from "sonner";
 import { ShoppingCart, Loader2 } from "lucide-react";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
 
-export const StickyAddToCart = () => {
+interface StickyAddToCartProps {
+  productType: "ergonomic-pillow" | "knee-pillow";
+}
+
+export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
   const [selectedBundle, setSelectedBundle] = useState<"1" | "2">("2");
   const [product, setProduct] = useState<ShopifyProduct | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -16,16 +20,27 @@ export const StickyAddToCart = () => {
   useEffect(() => {
     const loadProduct = async () => {
       try {
-        const products = await fetchProducts(1);
-        if (products.length > 0) {
-          setProduct(products[0]);
+        const products = await fetchProducts(10);
+        let selectedProduct: ShopifyProduct | undefined;
+        
+        if (productType === "knee-pillow") {
+          selectedProduct = products.find(p => p.node.title.toLowerCase().includes('knee'));
+        } else {
+          selectedProduct = products.find(p => 
+            p.node.title.toLowerCase().includes('ergonomic') && 
+            !p.node.title.toLowerCase().includes('knee')
+          );
+        }
+        
+        if (selectedProduct) {
+          setProduct(selectedProduct);
         }
       } catch (error) {
         console.error("Error loading product:", error);
       }
     };
     loadProduct();
-  }, []);
+  }, [productType]);
 
   const handleAddToCart = async () => {
     if (!product) {
