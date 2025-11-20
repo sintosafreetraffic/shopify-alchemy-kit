@@ -216,17 +216,18 @@ export async function createStorefrontCheckout(
 
     // Add free sleep masks if applicable
     if (freeMasks > 0) {
-      // Fetch sleep mask product to get variant ID
+      // Fetch the free gift sleep mask product specifically
       try {
         const products = await fetchProducts(10);
-        const sleepMaskProduct = products.find(p => 
+        const freeGiftMask = products.find(p => 
+          p.node.title.toLowerCase().includes('free gift') && 
           p.node.title.toLowerCase().includes('mask')
         );
         
-        if (sleepMaskProduct && sleepMaskProduct.node.variants.edges[0]?.node) {
+        if (freeGiftMask && freeGiftMask.node.variants.edges[0]?.node) {
           lines.push({
             quantity: freeMasks,
-            merchandiseId: sleepMaskProduct.node.variants.edges[0].node.id,
+            merchandiseId: freeGiftMask.node.variants.edges[0].node.id,
           });
         }
       } catch (error) {
