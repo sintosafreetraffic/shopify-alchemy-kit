@@ -148,8 +148,24 @@ const CART_CREATE_MUTATION = `
         id
         checkoutUrl
         totalQuantity
+        discountCodes {
+          code
+          applicable
+        }
         cost {
           totalAmount {
+            amount
+            currencyCode
+          }
+          subtotalAmount {
+            amount
+            currencyCode
+          }
+          totalTaxAmount {
+            amount
+            currencyCode
+          }
+          totalDutyAmount {
             amount
             currencyCode
           }
@@ -219,10 +235,17 @@ export async function createStorefrontCheckout(
       }
     }
 
+    const cartInput: any = {
+      lines,
+    };
+
+    // Apply free masks discount if applicable
+    if (freeMasks > 0) {
+      cartInput.discountCodes = ['FREEMASKS'];
+    }
+
     const cartData = await storefrontApiRequest(CART_CREATE_MUTATION, {
-      input: {
-        lines,
-      },
+      input: cartInput,
     });
 
     if (cartData.data.cartCreate.userErrors.length > 0) {
