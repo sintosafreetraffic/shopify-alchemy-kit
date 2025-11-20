@@ -17,7 +17,7 @@ const KneePillowProduct = () => {
       <ReviewsSection />
       <KneePillowFAQ />
       <Guarantee />
-      <StickyAddToCart />
+      <StickyAddToCart productType="knee-pillow" />
     </div>
   );
 };

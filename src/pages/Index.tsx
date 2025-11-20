@@ -25,7 +25,7 @@ const Index = () => {
       <VideoSection />
       <FAQ />
       <Guarantee />
-      <StickyAddToCart />
+      <StickyAddToCart productType="ergonomic-pillow" />
     </div>
   );
 };
