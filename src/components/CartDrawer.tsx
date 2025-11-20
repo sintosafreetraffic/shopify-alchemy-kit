@@ -224,7 +224,7 @@ export const CartDrawer = () => {
                   {recommendedProducts.length > 0 && (
                     <div className="pt-4 border-t mt-4">
                       <h3 className="font-semibold mb-3 text-sm">You may also like</h3>
-                      <div className="grid grid-cols-1 gap-3">
+                      <div className="grid grid-cols-2 gap-2">
                         {recommendedProducts.map((product) => {
                           const variant = product.node.variants.edges[0]?.node;
                           const image = product.node.images.edges[0]?.node;
@@ -232,11 +232,11 @@ export const CartDrawer = () => {
                           return (
                             <div 
                               key={product.node.id} 
-                              className="border rounded-lg p-3"
+                              className="border rounded-lg p-2"
                             >
-                              <div className="flex gap-3">
+                              <div className="flex flex-col gap-2">
                                 {image && (
-                                  <div className="w-20 h-20 bg-secondary/20 rounded-md overflow-hidden flex-shrink-0">
+                                  <div className="w-full aspect-square bg-secondary/20 rounded-md overflow-hidden">
                                     <img
                                       src={image.url}
                                       alt={product.node.title}
@@ -244,19 +244,17 @@ export const CartDrawer = () => {
                                     />
                                   </div>
                                 )}
-                                <div className="flex-1 min-w-0 flex flex-col justify-between">
-                                  <div>
-                                    <h4 className="font-medium text-sm truncate">{product.node.title}</h4>
-                                    {variant && (
-                                      <p className="text-base font-semibold mt-1">
-                                        {variant.price.currencyCode} ${parseFloat(variant.price.amount).toFixed(2)}
-                                      </p>
-                                    )}
-                                  </div>
+                                <div className="flex flex-col gap-1">
+                                  <h4 className="font-medium text-xs line-clamp-2 leading-tight">{product.node.title}</h4>
+                                  {variant && (
+                                    <p className="text-sm font-semibold">
+                                      {variant.price.currencyCode} ${parseFloat(variant.price.amount).toFixed(2)}
+                                    </p>
+                                  )}
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    className="w-full mt-2"
+                                    className="w-full h-8 text-xs"
                                     onClick={() => handleAddRecommendation(product)}
                                   >
                                     Add to Cart
