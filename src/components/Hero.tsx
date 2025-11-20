@@ -125,7 +125,7 @@ export const Hero = () => {
               </div>
             </div>
             
-            <h1 className="text-2xl font-bold leading-tight tracking-tight">
+            <h1 className="text-lg font-bold leading-tight tracking-tight truncate">
               RiseByNight™ Ergonomic Sleep Pillow
             </h1>
             
@@ -169,7 +169,7 @@ export const Hero = () => {
               </div>
             </div>
 
-            <h1 className="hidden md:block text-2xl md:text-3xl lg:text-4xl font-bold leading-tight tracking-tight">
+            <h1 className="hidden md:block text-lg md:text-xl lg:text-2xl font-bold leading-tight tracking-tight truncate">
               RiseByNight™ Ergonomic Sleep Pillow
             </h1>
             
