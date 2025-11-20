@@ -13,7 +13,11 @@ export const Header = () => {
             alt="RiseByNight - Ergonomic Sleep Pillow" 
             className="h-14 w-auto"
           />
-          <span className="text-3xl font-bold text-foreground -mt-2">RiseByNight</span>
+          <span className="text-3xl text-foreground -mt-2 leading-tight flex flex-col items-start">
+            <span>Rise</span>
+            <span>by</span>
+            <span>Night</span>
+          </span>
         </Link>
         
         <nav className="hidden md:flex items-center gap-8 mt-3">
