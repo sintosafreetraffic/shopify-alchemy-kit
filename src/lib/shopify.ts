@@ -185,15 +185,39 @@ const CART_CREATE_MUTATION = `
   }
 `;
 
-export async function createStorefrontCheckout(items: Array<{
-  variantId: string;
-  quantity: number;
-}>): Promise<string> {
+export async function createStorefrontCheckout(
+  items: Array<{
+    variantId: string;
+    quantity: number;
+  }>,
+  freeMasks: number = 0
+): Promise<string> {
   try {
     const lines = items.map(item => ({
       quantity: item.quantity,
       merchandiseId: item.variantId,
     }));
+
+    // Add free sleep masks if applicable
+    if (freeMasks > 0) {
+      // Fetch sleep mask product to get variant ID
+      try {
+        const products = await fetchProducts(10);
+        const sleepMaskProduct = products.find(p => 
+          p.node.title.toLowerCase().includes('mask')
+        );
+        
+        if (sleepMaskProduct && sleepMaskProduct.node.variants.edges[0]?.node) {
+          lines.push({
+            quantity: freeMasks,
+            merchandiseId: sleepMaskProduct.node.variants.edges[0].node.id,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to add free gift to checkout:', error);
+        // Continue with checkout even if free gift addition fails
+      }
+    }
 
     const cartData = await storefrontApiRequest(CART_CREATE_MUTATION, {
       input: {

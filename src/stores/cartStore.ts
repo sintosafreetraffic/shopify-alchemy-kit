@@ -96,11 +96,19 @@ export const useCartStore = create<CartStore>()(
 
         setLoading(true);
         try {
+          // Calculate total items (pillows only)
+          const totalPillows = items.reduce((sum, item) => sum + item.quantity, 0);
+          
+          // Calculate free masks: 1 pillow = 1 mask, pairs of 2 = 2 masks each
+          const freeMasks = totalPillows === 1 ? 1 : Math.floor(totalPillows / 2) * 2;
+          
+          // Create checkout with items and free masks info
           const checkoutUrl = await createStorefrontCheckout(
             items.map(item => ({
               variantId: item.variantId,
               quantity: item.quantity,
-            }))
+            })),
+            freeMasks
           );
           setCheckoutUrl(checkoutUrl);
         } catch (error) {
