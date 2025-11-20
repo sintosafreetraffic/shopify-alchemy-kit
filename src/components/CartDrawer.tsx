@@ -63,15 +63,13 @@ export const CartDrawer = () => {
   // Free gifts logic: Only for 2+ pillows - pairs of 2 = 2 masks each
   const freeGifts = totalPillows >= 2 ? Math.floor(totalPillows / 2) * 2 : 0;
 
-  // Fetch recommended products (excluding items already in cart and free gift product)
+  // Fetch recommended products (excluding free gift product only)
   useEffect(() => {
     const loadRecommendations = async () => {
       try {
         const products = await fetchProducts(10);
-        // Filter out products already in cart and the free gift product
-        const cartProductIds = items.map(item => item.product.node.id);
+        // Filter out only the free gift product
         const filtered = products.filter(p => 
-          !cartProductIds.includes(p.node.id) && 
           !p.node.title.toLowerCase().includes('free gift')
         );
         setRecommendedProducts(filtered.slice(0, 2));
@@ -83,7 +81,7 @@ export const CartDrawer = () => {
     if (isOpen) {
       loadRecommendations();
     }
-  }, [isOpen, items]);
+  }, [isOpen]);
 
   const handleAddRecommendation = (product: ShopifyProduct) => {
     const variant = product.node.variants.edges[0]?.node;
