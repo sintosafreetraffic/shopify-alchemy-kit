@@ -119,11 +119,13 @@ export const CartDrawer = () => {
 
   return (
     <>
-      {/* Desktop: Recommendations on the left side of the cart */}
+      {/* Desktop: Recommendations on the left side of the cart - Full Height */}
       {isOpen && recommendedProducts.length > 0 && (
-        <div className="hidden lg:block fixed right-[32rem] top-1/2 -translate-y-1/2 z-[99] w-72 space-y-3 pr-0">
-          <h3 className="font-semibold text-base mb-3">You may also like</h3>
-          <div className="space-y-3">
+        <div className="hidden lg:flex fixed right-[32rem] top-0 bottom-0 z-[99] w-80 bg-background border-r border-border shadow-xl flex-col">
+          <div className="p-6 border-b">
+            <h3 className="font-semibold text-xl">You may also like</h3>
+          </div>
+          <div className="flex-1 overflow-y-auto p-6 space-y-4">
             {recommendedProducts.map((product) => {
               const variant = product.node.variants.edges[0]?.node;
               const image = product.node.images.edges[0]?.node;
@@ -131,34 +133,32 @@ export const CartDrawer = () => {
               return (
                 <div 
                   key={product.node.id} 
-                  className="bg-background border-2 border-border rounded-lg p-3 shadow-xl"
+                  className="bg-card border rounded-lg p-4 hover:shadow-lg transition-shadow"
                 >
-                  <div className="flex gap-3 items-center">
-                    {image && (
-                      <div className="w-20 h-20 bg-secondary/20 rounded-md overflow-hidden flex-shrink-0">
-                        <img
-                          src={image.url}
-                          alt={product.node.title}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-sm mb-1 line-clamp-2 leading-tight">{product.node.title}</h4>
-                      {variant && (
-                        <p className="text-base font-bold mb-2">
-                          ${parseFloat(variant.price.amount).toFixed(2)}
-                        </p>
-                      )}
+                  {image && (
+                    <div className="w-full aspect-square bg-secondary/20 rounded-lg overflow-hidden mb-4">
+                      <img
+                        src={image.url}
+                        alt={product.node.title}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
+                  )}
+                  <div className="space-y-3">
+                    <h4 className="font-semibold text-base line-clamp-2 leading-tight min-h-[2.5rem]">{product.node.title}</h4>
+                    {variant && (
+                      <p className="text-2xl font-bold">
+                        ${parseFloat(variant.price.amount).toFixed(2)}
+                      </p>
+                    )}
+                    <Button
+                      size="lg"
+                      className="w-full"
+                      onClick={() => handleAddRecommendation(product)}
+                    >
+                      Add to Cart
+                    </Button>
                   </div>
-                  <Button
-                    size="sm"
-                    className="w-full mt-3"
-                    onClick={() => handleAddRecommendation(product)}
-                  >
-                    Add to Cart
-                  </Button>
                 </div>
               );
             })}
