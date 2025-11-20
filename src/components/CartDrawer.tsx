@@ -9,7 +9,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { ShoppingCart, Minus, Plus, Trash2, ExternalLink, Loader2, Moon, RotateCcw, Shield, Gift } from "lucide-react";
+import { ShoppingCart, Minus, Plus, Trash2, ExternalLink, Loader2, Moon, RotateCcw, Shield, Gift, Truck } from "lucide-react";
 import { useCartStore } from "@/stores/cartStore";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
 import { fetchProducts, ShopifyProduct } from "@/lib/shopify";
@@ -128,6 +128,33 @@ export const CartDrawer = () => {
         </SheetHeader>
         
         <div className="flex flex-col flex-1 pt-6 min-h-0">
+          {/* Free Shipping Progress Bar */}
+          {items.length > 0 && (
+            <div className="mb-4 px-1">
+              {totalPrice >= 50 ? (
+                <div className="flex items-center gap-2 text-green-600 dark:text-green-400 font-semibold text-sm">
+                  <Truck className="w-4 h-4" />
+                  <span>You have got free shipping!</span>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      Add ${(50 - totalPrice).toFixed(2)} more for free shipping
+                    </span>
+                    <Truck className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                  <div className="w-full bg-secondary rounded-full h-2">
+                    <div 
+                      className="bg-primary h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${Math.min((totalPrice / 50) * 100, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          
           {items.length === 0 ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
