@@ -4,8 +4,9 @@ import { useCartStore } from "@/stores/cartStore";
 import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
-import { ShoppingCart, Loader2 } from "lucide-react";
+import { ShoppingCart, Loader2, Plus } from "lucide-react";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
+import { Badge } from "@/components/ui/badge";
 
 interface StickyAddToCartProps {
   productType: "ergonomic-pillow" | "knee-pillow" | "sleep-mask";
@@ -15,7 +16,11 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
   const [selectedBundle, setSelectedBundle] = useState<"1" | "2">("2");
   const [product, setProduct] = useState<ShopifyProduct | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const { addItem, createCheckout, setCheckoutUrl, isCartOpen } = useCartStore();
+  const { addItem, createCheckout, setCheckoutUrl, isCartOpen, items } = useCartStore();
+  
+  // Calculate cart totals
+  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+  const cartTotal = items.reduce((sum, item) => sum + (parseFloat(item.price.amount) * item.quantity), 0);
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -133,12 +138,13 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
               <div className="flex gap-2">
                 <button
                   onClick={() => setSelectedBundle("1")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${
                     selectedBundle === "1"
                       ? "bg-primary text-primary-foreground"
                       : "bg-secondary/50 hover:bg-secondary"
                   }`}
                 >
+                  <Plus className="w-3 h-3" />
                   1 Pillow
                 </button>
                 <button
@@ -149,12 +155,13 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                       : "bg-secondary/50 hover:bg-secondary"
                   }`}
                 >
+                  <Plus className="w-3 h-3" />
                   <span>2 Pillows • + FREE GIFT 2X</span>
                   <img src={eyeMaskGift} alt="Free gift" className="w-6 h-6 object-contain" />
                 </button>
               </div>
 
-              {/* Add to Cart Button */}
+              {/* Cart Button with Totals */}
               <Button 
                 onClick={handleAddToCart}
                 disabled={isCheckingOut}
@@ -167,13 +174,33 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                   </>
                 ) : (
                   <>
-                    <span className="inline-flex items-center transition-all duration-300 group-hover:-translate-y-12 group-hover:opacity-0">
-                      <ShoppingCart className="w-4 h-4 mr-2" />
-                      ${selectedOption.price.toFixed(2)}
+                    <span className="inline-flex items-center gap-2 transition-all duration-300 group-hover:-translate-y-12 group-hover:opacity-0">
+                      <div className="relative">
+                        <ShoppingCart className="w-4 h-4" />
+                        {totalItems > 0 && (
+                          <Badge className="absolute -top-2 -right-2 h-4 w-4 rounded-full p-0 flex items-center justify-center text-[10px]">
+                            {totalItems}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex flex-col items-start">
+                        <span className="text-xs leading-none">Cart Total</span>
+                        <span className="font-bold leading-none">${cartTotal.toFixed(2)}</span>
+                      </div>
                     </span>
-                    <span className="absolute inset-0 flex items-center justify-center translate-y-12 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                      <ShoppingCart className="w-4 h-4 mr-2" />
-                      ${selectedOption.price.toFixed(2)}
+                    <span className="absolute inset-0 flex items-center justify-center gap-2 translate-y-12 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                      <div className="relative">
+                        <ShoppingCart className="w-4 h-4" />
+                        {totalItems > 0 && (
+                          <Badge className="absolute -top-2 -right-2 h-4 w-4 rounded-full p-0 flex items-center justify-center text-[10px]">
+                            {totalItems}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex flex-col items-start">
+                        <span className="text-xs leading-none">Cart Total</span>
+                        <span className="font-bold leading-none">${cartTotal.toFixed(2)}</span>
+                      </div>
                     </span>
                   </>
                 )}
