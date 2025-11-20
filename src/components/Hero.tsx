@@ -233,8 +233,7 @@ export const Hero = () => {
 
             <Button
               size="lg"
-              variant="destructive"
-              className="w-full text-lg md:text-xl py-6 font-bold shadow-lg hover:shadow-xl transition-shadow touch-manipulation animate-subtle-bounce" 
+              className="w-full text-lg md:text-xl py-6 font-bold shadow-lg hover:shadow-xl transition-shadow touch-manipulation animate-subtle-bounce bg-black text-white hover:bg-black/90" 
               onClick={handleAddToCart}
               disabled={isCheckingOut || !product}
             >
