@@ -1,4 +1,4 @@
-import logo from "@/assets/moon-logo-yellow.png";
+import logo from "@/assets/moon-logo-yellow-transparent.png";
 import { Mail, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 

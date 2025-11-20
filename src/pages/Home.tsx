@@ -3,7 +3,7 @@ import { Progress } from "@/components/ui/progress";
 import { ArrowRight, Moon, Heart, Sparkles, Shield, Users, Award } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ProductGallery } from "@/components/ProductGallery";
-import heroLogo from "@/assets/moon-logo-yellow.png";
+import heroLogo from "@/assets/moon-logo-yellow-transparent.png";
 
 export default function Home() {
   return (
