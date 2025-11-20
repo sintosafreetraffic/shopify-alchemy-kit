@@ -4,6 +4,7 @@ import { ArrowRight, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import pillowMain from "@/assets/optisleep-pillow-main.png";
 import kneePillowMain from "@/assets/knee-pillow-main.jpg";
+import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
 
 export const ProductGallery = () => {
   const products = [
@@ -22,7 +23,8 @@ export const ProductGallery = () => {
         "High-density memory foam",
         "3-5 year lifespan"
       ],
-      badge: "Black Friday 1+1 Deal"
+      badge: "Black Friday 1+1 Deal",
+      link: "/product/ergonomic-pillow"
     },
     {
       id: 2,
@@ -39,7 +41,26 @@ export const ProductGallery = () => {
         "Memory foam comfort",
         "Adjustable strap included"
       ],
-      badge: "Black Friday 1+1 Deal"
+      badge: "Black Friday 1+1 Deal",
+      link: "/product/knee-pillow"
+    },
+    {
+      id: 3,
+      name: "RiseByNight Silk Sleep Mask",
+      tagline: "100% Pure Mulberry Silk",
+      price: "$29.99",
+      originalPrice: "$59.99",
+      rating: 4.9,
+      reviews: "3,200+",
+      image: eyeMaskGift,
+      features: [
+        "Blocks 100% of light",
+        "Gentle on skin & eyelashes",
+        "Contoured eye design",
+        "Hypoallergenic silk"
+      ],
+      badge: "Special Offer",
+      link: "/product/sleep-mask"
     }
   ];
 
@@ -110,7 +131,7 @@ export const ProductGallery = () => {
                   ))}
                 </ul>
 
-                <Link to={product.id === 1 ? "/product/ergonomic-pillow" : "/product/knee-pillow"}>
+                <Link to={product.link}>
                   <Button className="w-full" size="lg">
                     Improve your sleep <ArrowRight className="ml-2 w-4 h-4" />
                   </Button>

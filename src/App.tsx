@@ -9,6 +9,7 @@ import { ScrollToTop } from "./components/ScrollToTop";
 import Home from "./pages/Home";
 import Index from "./pages/Index";
 import KneePillowProduct from "./pages/KneePillowProduct";
+import SleepMaskProduct from "./pages/SleepMaskProduct";
 import ShippingPolicy from "./pages/ShippingPolicy";
 import TermsConditions from "./pages/TermsConditions";
 import ReturnPolicy from "./pages/ReturnPolicy";
@@ -31,6 +32,7 @@ const App = () => (
               <Route path="/" element={<Home />} />
               <Route path="/product/ergonomic-pillow" element={<Index />} />
               <Route path="/product/knee-pillow" element={<KneePillowProduct />} />
+              <Route path="/product/sleep-mask" element={<SleepMaskProduct />} />
               <Route path="/product" element={<Index />} />
               <Route path="/shipping" element={<ShippingPolicy />} />
               <Route path="/terms" element={<TermsConditions />} />

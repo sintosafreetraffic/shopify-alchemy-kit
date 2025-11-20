@@ -8,7 +8,7 @@ import { ShoppingCart, Loader2 } from "lucide-react";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
 
 interface StickyAddToCartProps {
-  productType: "ergonomic-pillow" | "knee-pillow";
+  productType: "ergonomic-pillow" | "knee-pillow" | "sleep-mask";
 }
 
 export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
@@ -25,6 +25,8 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
         
         if (productType === "knee-pillow") {
           selectedProduct = products.find(p => p.node.title.toLowerCase().includes('knee'));
+        } else if (productType === "sleep-mask") {
+          selectedProduct = products.find(p => p.node.title.toLowerCase().includes('mask'));
         } else {
           selectedProduct = products.find(p => 
             p.node.title.toLowerCase().includes('ergonomic') && 
