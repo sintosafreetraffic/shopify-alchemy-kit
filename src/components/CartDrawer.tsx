@@ -13,13 +13,11 @@ import { ShoppingCart, Minus, Plus, Trash2, ExternalLink, Loader2, Moon, RotateC
 import { useCartStore } from "@/stores/cartStore";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
 import { fetchProducts, ShopifyProduct } from "@/lib/shopify";
-import useEmblaCarousel from "embla-carousel-react";
 import { toast } from "sonner";
 
 export const CartDrawer = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [recommendedProducts, setRecommendedProducts] = useState<ShopifyProduct[]>([]);
-  const [emblaRef] = useEmblaCarousel({ loop: false, align: "start" });
   
   const { 
     items, 
@@ -222,8 +220,8 @@ export const CartDrawer = () => {
                   {recommendedProducts.length > 0 && (
                     <div className="pt-4 border-t mt-4">
                       <h3 className="font-semibold mb-3 text-sm">You may also like</h3>
-                      <div className="overflow-hidden" ref={emblaRef}>
-                        <div className="flex gap-3">
+                      <div className="overflow-x-auto overflow-y-hidden -mx-6 px-6 scrollbar-hide">
+                        <div className="flex gap-3 pb-2">
                           {recommendedProducts.map((product) => {
                             const variant = product.node.variants.edges[0]?.node;
                             const image = product.node.images.edges[0]?.node;
@@ -231,7 +229,7 @@ export const CartDrawer = () => {
                             return (
                               <div 
                                 key={product.node.id} 
-                                className="flex-[0_0_70%] min-w-0 border rounded-lg p-2"
+                                className="flex-shrink-0 w-[240px] border rounded-lg p-2"
                               >
                                 <div className="flex gap-2">
                                   {image && (
