@@ -98,7 +98,7 @@ export const ProductImageCarousel = () => {
       <div className="hidden md:block">
         {/* First large image */}
         <div 
-          className="overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 relative cursor-pointer hover:opacity-90 transition-opacity"
+          className="overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 relative cursor-pointer hover:opacity-90 transition-opacity"
           onClick={() => setExpandedMedia(images[0])}
         >
           {images[0]?.type === "video" ? (
@@ -123,7 +123,7 @@ export const ProductImageCarousel = () => {
         {/* Two images side by side */}
         <div className="grid grid-cols-2">
           <div 
-            className="overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 cursor-pointer hover:opacity-90 transition-opacity border-r border-background"
+            className="overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 cursor-pointer hover:opacity-90 transition-opacity border-r border-background"
             onClick={() => setExpandedMedia(images[1])}
           >
             {images[1]?.type === "video" ? (
@@ -145,7 +145,7 @@ export const ProductImageCarousel = () => {
             )}
           </div>
           <div 
-            className="overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 cursor-pointer hover:opacity-90 transition-opacity"
+            className="overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 cursor-pointer hover:opacity-90 transition-opacity"
             onClick={() => setExpandedMedia(images[2])}
           >
             <img
@@ -158,7 +158,7 @@ export const ProductImageCarousel = () => {
 
         {/* Second large image */}
         <div 
-          className="overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 cursor-pointer hover:opacity-90 transition-opacity"
+          className="overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 cursor-pointer hover:opacity-90 transition-opacity"
           onClick={() => setExpandedMedia(images[3])}
         >
           <img
@@ -171,7 +171,7 @@ export const ProductImageCarousel = () => {
         {/* Last two images side by side */}
         <div className="grid grid-cols-2">
           <div 
-            className="overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 cursor-pointer hover:opacity-90 transition-opacity border-r border-background"
+            className="overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 cursor-pointer hover:opacity-90 transition-opacity border-r border-background"
             onClick={() => setExpandedMedia(images[4])}
           >
             <img
@@ -181,7 +181,7 @@ export const ProductImageCarousel = () => {
             />
           </div>
           <div 
-            className="overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 cursor-pointer hover:opacity-90 transition-opacity"
+            className="overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 cursor-pointer hover:opacity-90 transition-opacity"
             onClick={() => setExpandedMedia(images[5])}
           >
             <img
