@@ -95,10 +95,10 @@ export const ProductImageCarousel = () => {
       </div>
 
       {/* Desktop Static Gallery */}
-      <div className="hidden md:block space-y-3">
+      <div className="hidden md:block">
         {/* First large image */}
         <div 
-          className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 relative cursor-pointer hover:opacity-90 transition-opacity"
+          className="overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 relative cursor-pointer hover:opacity-90 transition-opacity"
           onClick={() => setExpandedMedia(images[0])}
         >
           {images[0]?.type === "video" ? (
@@ -120,34 +120,32 @@ export const ProductImageCarousel = () => {
           )}
         </div>
 
-        {/* Video in second position */}
-        <div 
-          className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 relative cursor-pointer hover:opacity-90 transition-opacity"
-          onClick={() => setExpandedMedia(images[1])}
-        >
-          {images[1]?.type === "video" ? (
-            <video
-              src={images[1].url}
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="w-full h-auto object-cover"
-              aria-label={images[1].alt}
-            />
-          ) : (
-            <img
-              src={images[1]?.url}
-              alt={images[1]?.alt}
-              className="w-full h-auto object-cover"
-            />
-          )}
-        </div>
-
         {/* Two images side by side */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2">
           <div 
-            className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 cursor-pointer hover:opacity-90 transition-opacity"
+            className="overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 cursor-pointer hover:opacity-90 transition-opacity"
+            onClick={() => setExpandedMedia(images[1])}
+          >
+            {images[1]?.type === "video" ? (
+              <video
+                src={images[1].url}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-auto object-cover"
+                aria-label={images[1].alt}
+              />
+            ) : (
+              <img
+                src={images[1]?.url}
+                alt={images[1]?.alt}
+                className="w-full h-auto object-cover"
+              />
+            )}
+          </div>
+          <div 
+            className="overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 cursor-pointer hover:opacity-90 transition-opacity"
             onClick={() => setExpandedMedia(images[2])}
           >
             <img
@@ -156,34 +154,34 @@ export const ProductImageCarousel = () => {
               className="w-full h-auto object-cover"
             />
           </div>
-          <div 
-            className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 cursor-pointer hover:opacity-90 transition-opacity"
-            onClick={() => setExpandedMedia(images[3])}
-          >
-            <img
-              src={images[3]?.url}
-              alt={images[3]?.alt}
-              className="w-full h-auto object-cover"
-            />
-          </div>
         </div>
 
         {/* Second large image */}
         <div 
-          className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 cursor-pointer hover:opacity-90 transition-opacity"
-          onClick={() => setExpandedMedia(images[4])}
+          className="overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 cursor-pointer hover:opacity-90 transition-opacity"
+          onClick={() => setExpandedMedia(images[3])}
         >
           <img
-            src={images[4]?.url}
-            alt={images[4]?.alt}
+            src={images[3]?.url}
+            alt={images[3]?.alt}
             className="w-full h-auto object-cover"
           />
         </div>
 
-        {/* Last image */}
-        <div className="grid grid-cols-1 gap-3">
+        {/* Last two images side by side */}
+        <div className="grid grid-cols-2">
           <div 
-            className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 cursor-pointer hover:opacity-90 transition-opacity"
+            className="overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 cursor-pointer hover:opacity-90 transition-opacity"
+            onClick={() => setExpandedMedia(images[4])}
+          >
+            <img
+              src={images[4]?.url}
+              alt={images[4]?.alt}
+              className="w-full h-auto object-cover"
+            />
+          </div>
+          <div 
+            className="overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 cursor-pointer hover:opacity-90 transition-opacity"
             onClick={() => setExpandedMedia(images[5])}
           >
             <img
