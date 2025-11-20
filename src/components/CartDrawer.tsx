@@ -121,7 +121,7 @@ export const CartDrawer = () => {
     <>
       {/* Desktop: Recommendations on the left side of the cart - Full Height */}
       {isOpen && recommendedProducts.length > 0 && (
-        <div className="hidden lg:flex fixed right-[32rem] top-0 bottom-0 z-[100] w-80 bg-background border-r border-border shadow-xl flex-col animate-in slide-in-from-right duration-500 pointer-events-auto">
+        <div data-recommendations-panel className="hidden lg:flex fixed right-[32rem] top-0 bottom-0 z-[100] w-80 bg-background border-r border-border shadow-xl flex-col animate-in slide-in-from-right duration-500 pointer-events-auto">
           <div className="p-6 border-b">
             <h3 className="font-semibold text-xl">You may also like</h3>
           </div>
@@ -178,7 +178,16 @@ export const CartDrawer = () => {
         </Button>
       </SheetTrigger>
       
-      <SheetContent className="w-full sm:max-w-lg flex flex-col h-full">
+      <SheetContent 
+        className="w-full sm:max-w-lg flex flex-col h-full"
+        onInteractOutside={(e) => {
+          // Prevent closing when clicking on recommendations panel
+          const target = e.target as HTMLElement;
+          if (target.closest('[data-recommendations-panel]')) {
+            e.preventDefault();
+          }
+        }}
+      >
         <SheetHeader className="flex-shrink-0">
           <SheetTitle>Shopping Cart</SheetTitle>
           <SheetDescription>
