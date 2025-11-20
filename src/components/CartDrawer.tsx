@@ -418,21 +418,87 @@ export const CartDrawer = () => {
                     </div>
                   </div>
                   
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-muted-foreground">Shipping</span>
-                    <span className="text-muted-foreground">$0.00</span>
+                  <div className="text-xs text-muted-foreground text-center">
+                    Including taxes
                   </div>
                   
                   {discount > 0 && (
                     <div className="flex justify-between items-center text-sm bg-green-50 dark:bg-green-950/20 px-3 py-2 rounded">
                       <span className="text-green-600 dark:text-green-400 font-semibold">
-                        Black Friday Savings
+                        TOTAL SAVINGS
                       </span>
                       <span className="text-green-600 dark:text-green-400 font-semibold">
-                        -${discount.toFixed(2)}
+                        ${discount.toFixed(2)}
                       </span>
                     </div>
                   )}
+                </div>
+                
+                {/* Customer Reviews Section */}
+                <div className="border-t pt-4 space-y-3 max-h-64 overflow-y-auto">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-sm">Customer Reviews</h3>
+                    <div className="flex items-center gap-1">
+                      <span className="text-yellow-500">★★★★★</span>
+                      <span className="text-xs text-muted-foreground">Excellent</span>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="text-xs bg-secondary/30 p-2 rounded">
+                      <p className="font-medium mb-1">Love it</p>
+                      <p className="text-muted-foreground mb-1">The pillow is super comfortable and provides amazing neck support. I wake up without any pain now!</p>
+                      <p className="text-muted-foreground italic">Sarah, Oct 7, 2025</p>
+                    </div>
+                    
+                    <div className="text-xs bg-secondary/30 p-2 rounded">
+                      <p className="font-medium mb-1">Great customer service</p>
+                      <p className="text-muted-foreground mb-1">My international order arrived in 10 days. Customer service was excellent and helped track everything.</p>
+                      <p className="text-muted-foreground italic">Mark M, Sep 8, 2025</p>
+                    </div>
+                    
+                    <div className="text-xs bg-secondary/30 p-2 rounded">
+                      <p className="font-medium mb-1">Best sleep ever</p>
+                      <p className="text-muted-foreground mb-1">After struggling with neck pain for years, this pillow has been life-changing. The ergonomic design really works!</p>
+                      <p className="text-muted-foreground italic">Thomas, Sep 23, 2025</p>
+                    </div>
+                    
+                    <div className="text-xs bg-secondary/30 p-2 rounded">
+                      <p className="font-medium mb-1">Super comfortable</p>
+                      <p className="text-muted-foreground mb-1">The memory foam maintains its shape perfectly. No more flattened pillows!</p>
+                      <p className="text-muted-foreground italic">Emma, Dec 12, 2024</p>
+                    </div>
+                  </div>
+                  
+                  <p className="text-xs text-center text-muted-foreground italic mt-2">Verified Reviews from Trustpilot</p>
+                </div>
+                
+                {/* Why Buy From Us */}
+                <div className="border-t pt-4 space-y-2">
+                  <h3 className="font-semibold text-sm mb-2">Why buy from us?</h3>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex items-start gap-2">
+                      <Truck className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-medium">Worldwide Shipping</p>
+                        <p className="text-muted-foreground">We ship to you, wherever you are</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <RotateCcw className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-medium">100-Night Returns</p>
+                        <p className="text-muted-foreground">Not satisfied? Return within 100 nights, hassle-free</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Shield className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-medium">Dedicated Support Team</p>
+                        <p className="text-muted-foreground">Our expert team is here to assist you</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 
                 <Button 
