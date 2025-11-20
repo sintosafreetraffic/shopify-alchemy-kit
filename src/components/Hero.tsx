@@ -161,7 +161,7 @@ export const Hero = () => {
                 
                 <div className="flex items-center gap-2 text-sm">
                   <Users className="w-5 h-5 text-primary" />
-                  <span className="font-semibold">Join 12,500+ customers who transformed their sleep</span>
+                  <span className="font-semibold">Join 30,000+ customers who transformed their sleep</span>
                 </div>
                 
                 <div className="flex gap-2 flex-wrap">
