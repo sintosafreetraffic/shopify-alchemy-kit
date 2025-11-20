@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 const messages = [
-  "Free gift over $80",
+  "Free gift - limited BLACK FRIDAY offer",
   "Fast delivery within the U.S.",
   "120 Day Risk-Free Trial"
 ];
