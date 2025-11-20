@@ -243,35 +243,33 @@ export const CartDrawer = () => {
                           return (
                             <div 
                               key={product.node.id} 
-                              className="border rounded-md p-2"
+                              className="border rounded-md p-2 flex flex-col h-full"
                             >
-                              <div className="flex flex-col gap-2">
-                                {image && (
-                                  <div className="w-20 h-20 mx-auto bg-secondary/20 rounded-sm overflow-hidden">
-                                    <img
-                                      src={image.url}
-                                      alt={product.node.title}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  </div>
-                                )}
-                                <div className="flex flex-col gap-1">
-                                  <h4 className="font-medium text-xs line-clamp-2 leading-tight">{product.node.title}</h4>
-                                  {variant && (
-                                    <p className="text-sm font-semibold">
-                                      ${parseFloat(variant.price.amount).toFixed(2)}
-                                    </p>
-                                  )}
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="w-full h-7 text-xs mt-1"
-                                    onClick={() => handleAddRecommendation(product)}
-                                  >
-                                    Add to Cart
-                                  </Button>
+                              {image && (
+                                <div className="w-20 h-20 mx-auto bg-secondary/20 rounded-sm overflow-hidden mb-2">
+                                  <img
+                                    src={image.url}
+                                    alt={product.node.title}
+                                    className="w-full h-full object-cover"
+                                  />
                                 </div>
+                              )}
+                              <div className="flex flex-col gap-1 flex-grow">
+                                <h4 className="font-medium text-xs line-clamp-2 leading-tight">{product.node.title}</h4>
+                                {variant && (
+                                  <p className="text-sm font-semibold">
+                                    ${parseFloat(variant.price.amount).toFixed(2)}
+                                  </p>
+                                )}
                               </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="w-full h-7 text-xs mt-2"
+                                onClick={() => handleAddRecommendation(product)}
+                              >
+                                Add to Cart
+                              </Button>
                             </div>
                           );
                         })}
