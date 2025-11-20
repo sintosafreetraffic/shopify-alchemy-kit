@@ -15,7 +15,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
   const [selectedBundle, setSelectedBundle] = useState<"1" | "2">("2");
   const [product, setProduct] = useState<ShopifyProduct | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const { addItem, createCheckout, setCheckoutUrl } = useCartStore();
+  const { addItem, createCheckout, setCheckoutUrl, isCartOpen } = useCartStore();
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -96,6 +96,8 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
   };
 
   const selectedOption = bundles[selectedBundle];
+
+  if (isCartOpen) return null;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-[100] bg-background/95 backdrop-blur-md border-t shadow-lg">
