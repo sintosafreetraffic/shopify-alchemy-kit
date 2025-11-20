@@ -17,7 +17,7 @@ export const Hero = () => {
   const [selectedBundle, setSelectedBundle] = useState<"1" | "2">("2");
   const [product, setProduct] = useState<ShopifyProduct | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const { addItem, createCheckout, checkoutUrl, setCheckoutUrl } = useCartStore();
+  const { addItem, setCartOpen } = useCartStore();
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -54,16 +54,13 @@ export const Hero = () => {
       };
       
       addItem(cartItem);
-      await createCheckout();
-      
-      const url = useCartStore.getState().checkoutUrl;
-      if (url) {
-        window.open(url, '_blank');
-        setCheckoutUrl(null);
-      }
+      toast.success("Added to cart!", {
+        description: `${quantity} ${quantity === 1 ? 'pillow' : 'pillows'} added to your cart.`
+      });
+      setCartOpen(true);
     } catch (error) {
-      console.error('Checkout failed:', error);
-      toast.error("Failed to start checkout");
+      console.error('Failed to add to cart:', error);
+      toast.error("Failed to add to cart");
     } finally {
       setIsCheckingOut(false);
     }
@@ -263,7 +260,7 @@ export const Hero = () => {
               {isCheckingOut ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Processing...
+                  Adding...
                 </>
               ) : (
                 <>

@@ -17,7 +17,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
   const [selectedBundle, setSelectedBundle] = useState<"1" | "2">(isPillowProduct ? "2" : "1");
   const [product, setProduct] = useState<ShopifyProduct | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const { addItem, createCheckout, setCheckoutUrl, isCartOpen, items } = useCartStore();
+  const { addItem, setCartOpen, isCartOpen, items } = useCartStore();
   
   // Calculate cart totals
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -71,16 +71,16 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
       };
       
       addItem(cartItem);
-      await createCheckout();
-      
-      const url = useCartStore.getState().checkoutUrl;
-      if (url) {
-        window.open(url, '_blank');
-        setCheckoutUrl(null);
-      }
+      const itemName = isPillowProduct 
+        ? `${quantity} ${quantity === 1 ? 'pillow' : 'pillows'}`
+        : product.node.title;
+      toast.success("Added to cart!", {
+        description: `${itemName} added to your cart.`
+      });
+      setCartOpen(true);
     } catch (error) {
-      console.error('Checkout failed:', error);
-      toast.error("Failed to start checkout");
+      console.error('Failed to add to cart:', error);
+      toast.error("Failed to add to cart");
     } finally {
       setIsCheckingOut(false);
     }
@@ -180,7 +180,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                 {isCheckingOut ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Processing...
+                    Adding...
                   </>
                 ) : (
                   <>
