@@ -10,7 +10,7 @@ import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import testimonialAvatar from "@/assets/testimonial.png";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
-import consumerChoiceBadge from "@/assets/consumer-choice-badge-updated.png";
+import consumerChoiceBadge from "@/assets/consumer-choice-badge-ergonomic.png";
 
 export const Hero = () => {
   const [selectedBundle, setSelectedBundle] = useState<"1" | "2">("2");
