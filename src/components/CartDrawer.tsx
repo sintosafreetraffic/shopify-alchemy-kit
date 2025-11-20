@@ -236,7 +236,7 @@ export const CartDrawer = () => {
                             >
                               <div className="flex flex-col gap-1.5">
                                 {image && (
-                                  <div className="w-full aspect-square bg-secondary/20 rounded-sm overflow-hidden">
+                                  <div className="w-16 h-16 mx-auto bg-secondary/20 rounded-sm overflow-hidden">
                                     <img
                                       src={image.url}
                                       alt={product.node.title}
@@ -245,9 +245,9 @@ export const CartDrawer = () => {
                                   </div>
                                 )}
                                 <div className="flex flex-col gap-0.5">
-                                  <h4 className="font-medium text-[10px] line-clamp-2 leading-tight">{product.node.title}</h4>
+                                  <h4 className="font-medium text-xs line-clamp-2 leading-tight">{product.node.title}</h4>
                                   {variant && (
-                                    <p className="text-xs font-semibold">
+                                    <p className="text-sm font-semibold">
                                       ${parseFloat(variant.price.amount).toFixed(2)}
                                     </p>
                                   )}
