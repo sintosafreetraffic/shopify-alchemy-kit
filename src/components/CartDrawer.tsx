@@ -38,14 +38,20 @@ export const CartDrawer = () => {
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = items.reduce((sum, item) => sum + (parseFloat(item.price.amount) * item.quantity), 0);
   
+  // Calculate pillow items only (exclude sleep mask for free gift calculation)
+  const pillowItems = items.filter(item => 
+    item.product.node.title.toLowerCase().includes('pillow')
+  );
+  const totalPillows = pillowItems.reduce((sum, item) => sum + item.quantity, 0);
+  
   // Black Friday pricing logic
   const regularPrice = 89.99;
   const originalTotal = regularPrice * totalItems;
   const discount = totalItems >= 2 ? regularPrice : 0;
   const totalPrice = originalTotal - discount;
   
-  // Free gifts logic: 1 pillow = 1 mask, pairs of 2 = 2 masks each
-  const freeGifts = totalItems === 1 ? 1 : Math.floor(totalItems / 2) * 2;
+  // Free gifts logic: Only for pillows - 1 pillow = 1 mask, pairs of 2 = 2 masks each
+  const freeGifts = totalPillows === 1 ? 1 : Math.floor(totalPillows / 2) * 2;
 
   // Fetch recommended products (excluding items already in cart)
   useEffect(() => {
