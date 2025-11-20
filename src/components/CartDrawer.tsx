@@ -26,9 +26,16 @@ export const CartDrawer = () => {
     removeItem, 
     createCheckout,
     addItem,
-    setCartOpen
+    setCartOpen,
+    isCartOpen
   } = useCartStore();
 
+  // Sync local state with store state
+  useEffect(() => {
+    setIsOpen(isCartOpen);
+  }, [isCartOpen]);
+
+  // Update store when local state changes
   useEffect(() => {
     setCartOpen(isOpen);
   }, [isOpen, setCartOpen]);
