@@ -10,6 +10,7 @@ import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import testimonialAvatar from "@/assets/testimonial.png";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
+import consumerChoiceBadge from "@/assets/consumer-choice-badge.jpg";
 
 export const Hero = () => {
   const [selectedBundle, setSelectedBundle] = useState<"1" | "2">("2");
@@ -124,17 +125,11 @@ export const Hero = () => {
         <div className="grid md:grid-cols-2 gap-6 lg:gap-10">
           {/* Scrollable Product Images Column - Desktop Only */}
           <div className="hidden md:block relative order-2 md:order-1">
-            <Badge variant="secondary" className="mb-3 text-xs font-semibold tracking-wide flex items-center gap-1.5">
-              <span className="text-base">←</span>
-              <Star className="w-3.5 h-3.5 fill-yellow-500 text-yellow-500" />
-              <Star className="w-3.5 h-3.5 fill-yellow-500 text-yellow-500" />
-              <Star className="w-3.5 h-3.5 fill-yellow-500 text-yellow-500" />
-              CONSUMER CHOICE
-              <Star className="w-3.5 h-3.5 fill-yellow-500 text-yellow-500" />
-              <Star className="w-3.5 h-3.5 fill-yellow-500 text-yellow-500" />
-              <Star className="w-3.5 h-3.5 fill-yellow-500 text-yellow-500" />
-              <span className="text-base">→</span>
-            </Badge>
+            <img 
+              src={consumerChoiceBadge} 
+              alt="Consumer Choice Badge" 
+              className="mb-3 w-24 h-auto"
+            />
             <ProductImageCarousel />
           </div>
           
