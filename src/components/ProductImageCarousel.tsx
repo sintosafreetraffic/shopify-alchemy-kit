@@ -195,6 +195,18 @@ export const ProductImageCarousel = () => {
             />
           </div>
         </div>
+
+        {/* Third large image */}
+        <div 
+          className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+          onClick={() => setExpandedMedia(images[6])}
+        >
+          <img
+            src={images[6]?.url}
+            alt={images[6]?.alt}
+            className="w-full h-full object-cover"
+          />
+        </div>
       </div>
     </>
   );
