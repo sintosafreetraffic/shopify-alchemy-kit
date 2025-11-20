@@ -414,6 +414,11 @@ export const CartDrawer = () => {
                     </div>
                   </div>
                   
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Shipping</span>
+                    <span className="text-muted-foreground">$0.00</span>
+                  </div>
+                  
                   {discount > 0 && (
                     <div className="flex justify-between items-center text-sm bg-green-50 dark:bg-green-950/20 px-3 py-2 rounded">
                       <span className="text-green-600 dark:text-green-400 font-semibold">
