@@ -75,14 +75,14 @@ export const ProductImageCarousel = () => {
                       loop
                       muted
                       playsInline
-                      className="w-full h-auto object-contain"
+                      className="w-full h-auto object-cover"
                       aria-label={item.alt}
                     />
                   ) : (
                     <img
                       src={item.url}
                       alt={item.alt}
-                      className="w-full h-auto object-contain"
+                      className="w-full h-auto object-cover"
                     />
                   )}
                 </div>
@@ -108,14 +108,14 @@ export const ProductImageCarousel = () => {
               loop
               muted
               playsInline
-              className="w-full h-auto object-contain"
+              className="w-full h-auto object-cover"
               aria-label={images[0].alt}
             />
           ) : (
             <img
               src={images[0]?.url}
               alt={images[0]?.alt}
-              className="w-full h-auto object-contain"
+              className="w-full h-auto object-cover"
             />
           )}
         </div>
@@ -132,14 +132,14 @@ export const ProductImageCarousel = () => {
               loop
               muted
               playsInline
-              className="w-full h-auto object-contain"
+              className="w-full h-auto object-cover"
               aria-label={images[1].alt}
             />
           ) : (
             <img
               src={images[1]?.url}
               alt={images[1]?.alt}
-              className="w-full h-auto object-contain"
+              className="w-full h-auto object-cover"
             />
           )}
         </div>
@@ -153,7 +153,7 @@ export const ProductImageCarousel = () => {
             <img
               src={images[2]?.url}
               alt={images[2]?.alt}
-              className="w-full h-auto object-contain"
+              className="w-full h-auto object-cover"
             />
           </div>
           <div 
@@ -163,7 +163,7 @@ export const ProductImageCarousel = () => {
             <img
               src={images[3]?.url}
               alt={images[3]?.alt}
-              className="w-full h-auto object-contain"
+              className="w-full h-auto object-cover"
             />
           </div>
         </div>
@@ -176,7 +176,7 @@ export const ProductImageCarousel = () => {
           <img
             src={images[4]?.url}
             alt={images[4]?.alt}
-            className="w-full h-auto object-contain"
+            className="w-full h-auto object-cover"
           />
         </div>
 
@@ -189,7 +189,7 @@ export const ProductImageCarousel = () => {
             <img
               src={images[5]?.url}
               alt={images[5]?.alt}
-              className="w-full h-auto object-contain"
+              className="w-full h-auto object-cover"
             />
           </div>
         </div>
