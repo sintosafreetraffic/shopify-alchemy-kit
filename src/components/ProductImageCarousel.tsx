@@ -30,8 +30,8 @@ export const ProductImageCarousel = () => {
     { url: pillowBenefitsHero, alt: "RiseByNight pillow benefits - relieves neck pain, reduces sleep apnea, reduces acid reflux, relieves shoulders", type: "image" },
     { url: neckPainSpine, alt: "RiseByNight pillow - neck pain and spine alignment relief", type: "image" },
     { url: lifestyleExcellent, alt: "RiseByNight pillow lifestyle views - rated excellent", type: "image" },
-    { url: optisleepPillow, alt: "RiseByNight pillow comfort view", type: "image" },
     { url: pillowLifestyleSleep, alt: "RiseByNight pillow - person sleeping comfortably with ergonomic support", type: "image" },
+    { url: optisleepPillow, alt: "RiseByNight pillow comfort view", type: "image" },
   ];
 
   return (
