@@ -72,7 +72,7 @@ export const CartDrawer = () => {
         const filtered = products.filter(p => 
           !p.node.title.toLowerCase().includes('free gift')
         );
-        setRecommendedProducts(filtered.slice(0, 2));
+        setRecommendedProducts(filtered.slice(0, 3));
       } catch (error) {
         console.error('Failed to fetch recommendations:', error);
       }
