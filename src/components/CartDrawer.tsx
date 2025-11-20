@@ -120,10 +120,7 @@ export const CartDrawer = () => {
       {/* Desktop: Recommendations on the left side of the cart - Full Height */}
       {isOpen && recommendedProducts.length > 0 && (
         <div data-recommendations-panel className="hidden lg:flex fixed right-[32rem] top-0 bottom-0 z-[100] w-80 bg-background border-r border-border shadow-xl flex-col animate-in slide-in-from-right duration-500 pointer-events-auto">
-          <div className="p-6 border-b">
-            <h3 className="font-semibold text-xl">You may also like</h3>
-          </div>
-          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          <div className="flex-1 overflow-y-auto p-6 pt-8 space-y-4">
             {recommendedProducts.map((product) => {
               const variant = product.node.variants.edges[0]?.node;
               const image = product.node.images.edges[0]?.node;
@@ -339,10 +336,9 @@ export const CartDrawer = () => {
                     </div>
                   )}
                   
-                  {/* You May Also Like Section - Mobile Only */}
+                  {/* Mobile Recommendations */}
                   {recommendedProducts.length > 0 && (
                     <div className="pt-4 border-t mt-4 lg:hidden">
-                      <h3 className="font-semibold mb-2 text-sm">You may also like</h3>
                       <div className="grid grid-cols-2 gap-2">
                         {recommendedProducts.map((product) => {
                           const variant = product.node.variants.edges[0]?.node;
