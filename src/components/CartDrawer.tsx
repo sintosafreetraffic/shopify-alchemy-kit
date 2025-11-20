@@ -118,7 +118,53 @@ export const CartDrawer = () => {
   };
 
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+    <>
+      {/* Desktop: Recommendations on the left side of the cart */}
+      {isOpen && recommendedProducts.length > 0 && (
+        <div className="hidden lg:block fixed left-4 top-1/2 -translate-y-1/2 z-[99] w-80 space-y-3">
+          <h3 className="font-semibold text-lg mb-3">You may also like</h3>
+          <div className="space-y-3">
+            {recommendedProducts.map((product) => {
+              const variant = product.node.variants.edges[0]?.node;
+              const image = product.node.images.edges[0]?.node;
+              
+              return (
+                <div 
+                  key={product.node.id} 
+                  className="bg-background border rounded-lg p-4 shadow-lg flex gap-4 items-center"
+                >
+                  {image && (
+                    <div className="w-24 h-24 bg-secondary/20 rounded-md overflow-hidden flex-shrink-0">
+                      <img
+                        src={image.url}
+                        alt={product.node.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium text-sm mb-2 line-clamp-2">{product.node.title}</h4>
+                    {variant && (
+                      <p className="text-lg font-bold mb-3">
+                        ${parseFloat(variant.price.amount).toFixed(2)}
+                      </p>
+                    )}
+                    <Button
+                      size="sm"
+                      className="w-full"
+                      onClick={() => handleAddRecommendation(product)}
+                    >
+                      Add to Cart
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
         <Button variant="outline" size="icon" className="relative">
           <ShoppingCart className="h-5 w-5" />
@@ -284,9 +330,9 @@ export const CartDrawer = () => {
                     </div>
                   )}
                   
-                  {/* You May Also Like Section */}
+                  {/* You May Also Like Section - Mobile Only */}
                   {recommendedProducts.length > 0 && (
-                    <div className="pt-4 border-t mt-4">
+                    <div className="pt-4 border-t mt-4 lg:hidden">
                       <h3 className="font-semibold mb-2 text-sm">You may also like</h3>
                       <div className="grid grid-cols-2 gap-2">
                         {recommendedProducts.map((product) => {
@@ -404,7 +450,8 @@ export const CartDrawer = () => {
             </>
           )}
         </div>
-      </SheetContent>
-    </Sheet>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 };
