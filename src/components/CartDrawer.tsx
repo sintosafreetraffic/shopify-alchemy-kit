@@ -197,20 +197,17 @@ export const CartDrawer = () => {
                   
                   {/* Free Gifts Section */}
                   {freeGifts > 0 && (
-                    <div className="bg-primary/5 border-2 border-primary rounded-lg p-3 mt-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Gift className="w-5 h-5 text-primary" />
-                        <span className="font-bold text-primary">FREE GIFT{freeGifts > 1 ? 'S' : ''} INCLUDED!</span>
-                      </div>
-                      <div className="flex items-center gap-3">
+                    <div className="bg-primary/5 border border-primary rounded-md p-2 mt-4">
+                      <div className="flex items-center gap-2">
+                        <Gift className="w-4 h-4 text-primary flex-shrink-0" />
                         <img 
                           src={eyeMaskGift} 
                           alt="Free Sleep Mask" 
-                          className="w-16 h-16 object-contain"
+                          className="w-10 h-10 object-contain flex-shrink-0"
                         />
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold">
-                            {freeGifts}x RiseByNight™ Silk Sleep Mask
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold text-primary">
+                            FREE GIFT{freeGifts > 1 ? 'S' : ''}: {freeGifts}x Sleep Mask
                           </p>
                           <p className="text-xs text-muted-foreground">
                             Value: ${(freeGifts * 29.99).toFixed(2)}
