@@ -43,7 +43,7 @@ export default function Home() {
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-5xl font-bold mb-4">Our Mission</h2>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                We believe everyone deserves a good night's sleep. That's why we're committed to creating innovative sleep solutions backed by science and loved by thousands.
+                Poor sleep doesn't just leave you tired—it affects your health, productivity, mood, and overall quality of life. Millions struggle with chronic pain, restless nights, and wake up exhausted every morning. We believe this has to change. That's why we're urgently committed to creating innovative, science-backed sleep solutions that help everyone achieve the restorative sleep they desperately need.
               </p>
             </div>
 
