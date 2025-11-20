@@ -1,5 +1,6 @@
 import { useState } from "react";
 import optisleepPillow from "@/assets/optisleep-pillow-main.png";
+import ergonomicPillowHero from "@/assets/ergonomic-pillow-hero.png";
 import consumerChoiceBadge from "@/assets/consumer-choice-badge-new.jpg";
 import {
   Carousel,
@@ -19,7 +20,7 @@ export const ProductImageCarousel = () => {
   
   // Multiple views of the RiseByNight pillow
   const images = [
-    { url: optisleepPillow, alt: "RiseByNight pillow main view", type: "image" },
+    { url: ergonomicPillowHero, alt: "RiseByNight pillow main view", type: "image" },
     { url: "/videos/product-demo.mp4", alt: "RiseByNight pillow demonstration", type: "video" },
     { url: optisleepPillow, alt: "RiseByNight pillow detail view", type: "image" },
     { url: optisleepPillow, alt: "RiseByNight pillow perspective", type: "image" },
