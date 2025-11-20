@@ -24,24 +24,24 @@ export const Footer = () => {
             <h3 className="font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="#benefits" className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link to="/benefits" className="text-muted-foreground hover:text-foreground transition-colors">
                   Benefits
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#reviews" className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link to="/reviews" className="text-muted-foreground hover:text-foreground transition-colors">
                   Reviews
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#faq" className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link to="/faq" className="text-muted-foreground hover:text-foreground transition-colors">
                   FAQ
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#guarantee" className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link to="/guarantee" className="text-muted-foreground hover:text-foreground transition-colors">
                   Guarantee
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
