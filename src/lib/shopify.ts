@@ -161,14 +161,6 @@ const CART_CREATE_MUTATION = `
             amount
             currencyCode
           }
-          totalTaxAmount {
-            amount
-            currencyCode
-          }
-          totalDutyAmount {
-            amount
-            currencyCode
-          }
         }
         lines(first: 100) {
           edges {
@@ -191,6 +183,25 @@ const CART_CREATE_MUTATION = `
               }
             }
           }
+        }
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+
+const CART_DISCOUNT_CODES_UPDATE = `
+  mutation cartDiscountCodesUpdate($cartId: ID!, $discountCodes: [String!]) {
+    cartDiscountCodesUpdate(cartId: $cartId, discountCodes: $discountCodes) {
+      cart {
+        id
+        checkoutUrl
+        discountCodes {
+          code
+          applicable
         }
       }
       userErrors {
@@ -240,11 +251,6 @@ export async function createStorefrontCheckout(
       lines,
     };
 
-    // Apply free masks discount if applicable
-    if (freeMasks > 0) {
-      cartInput.discountCodes = ['FREEMASKSFORYOU'];
-    }
-
     const cartData = await storefrontApiRequest(CART_CREATE_MUTATION, {
       input: cartInput,
     });
@@ -253,7 +259,22 @@ export async function createStorefrontCheckout(
       throw new Error(`Cart creation failed: ${cartData.data.cartCreate.userErrors.map((e: any) => e.message).join(', ')}`);
     }
 
-    const cart = cartData.data.cartCreate.cart;
+    let cart = cartData.data.cartCreate.cart;
+
+    // Apply discount code after cart creation if free masks are included
+    if (freeMasks > 0) {
+      const discountData = await storefrontApiRequest(CART_DISCOUNT_CODES_UPDATE, {
+        cartId: cart.id,
+        discountCodes: ['FREEMASKSFORYOU'],
+      });
+
+      if (discountData.data.cartDiscountCodesUpdate.userErrors.length > 0) {
+        console.error('Discount code application failed:', discountData.data.cartDiscountCodesUpdate.userErrors);
+        // Continue with checkout even if discount fails
+      } else {
+        cart = discountData.data.cartDiscountCodesUpdate.cart;
+      }
+    }
     
     if (!cart.checkoutUrl) {
       throw new Error('No checkout URL returned from Shopify');
