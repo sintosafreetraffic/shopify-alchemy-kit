@@ -11,7 +11,7 @@ export const Header = () => {
           <img 
             src={logo} 
             alt="RiseByNight - Ergonomic Sleep Pillow" 
-            className="h-20 w-auto"
+            className="h-14 w-auto"
           />
           <span className="text-3xl font-bold text-foreground -mt-2">RiseByNight</span>
         </Link>
