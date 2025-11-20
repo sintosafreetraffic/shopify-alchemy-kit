@@ -119,7 +119,7 @@ export const KneePillowHero = () => {
             {/* Product Title and Rating */}
             <div className="space-y-3">
               <h1 className="text-3xl md:text-5xl font-bold leading-tight">
-                RiseByNight Ergonomic Knee Pillow
+                RiseByNight™ Ergonomic Knee Pillow
               </h1>
               <div className="flex items-center gap-2">
                 <div className="flex">
