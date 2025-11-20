@@ -268,18 +268,18 @@ export const CartDrawer = () => {
               )}
 
               {/* Trust Badges */}
-              <div className="space-y-2 py-2 border-y">
-                  <div className="flex items-center gap-2 text-sm">
+              <div className="grid grid-cols-3 gap-2 py-2 border-y">
+                  <div className="flex flex-col items-center gap-1 text-center">
                     <Moon className="w-4 h-4 text-primary" />
-                    <span className="font-medium">100-Night Risk-Free Trial</span>
+                    <span className="text-xs font-medium">100-Night Trial</span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm">
+                  <div className="flex flex-col items-center gap-1 text-center">
                     <RotateCcw className="w-4 h-4 text-primary" />
-                    <span className="font-medium">Free & Easy Returns</span>
+                    <span className="text-xs font-medium">Easy Returns</span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm">
+                  <div className="flex flex-col items-center gap-1 text-center">
                     <Shield className="w-4 h-4 text-primary" />
-                    <span className="font-medium">2-Year Warranty</span>
+                    <span className="text-xs font-medium">2-Year Warranty</span>
                   </div>
                 </div>
 
