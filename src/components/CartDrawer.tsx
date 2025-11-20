@@ -121,8 +121,8 @@ export const CartDrawer = () => {
     <>
       {/* Desktop: Recommendations on the left side of the cart */}
       {isOpen && recommendedProducts.length > 0 && (
-        <div className="hidden lg:block fixed left-4 top-1/2 -translate-y-1/2 z-[99] w-80 space-y-3">
-          <h3 className="font-semibold text-lg mb-3">You may also like</h3>
+        <div className="hidden lg:block fixed right-[calc(33.333333%+1rem)] top-1/2 -translate-y-1/2 z-[99] w-72 space-y-3">
+          <h3 className="font-semibold text-base mb-3">You may also like</h3>
           <div className="space-y-3">
             {recommendedProducts.map((product) => {
               const variant = product.node.variants.edges[0]?.node;
@@ -131,32 +131,34 @@ export const CartDrawer = () => {
               return (
                 <div 
                   key={product.node.id} 
-                  className="bg-background border rounded-lg p-4 shadow-lg flex gap-4 items-center"
+                  className="bg-background border-2 border-border rounded-lg p-3 shadow-xl"
                 >
-                  {image && (
-                    <div className="w-24 h-24 bg-secondary/20 rounded-md overflow-hidden flex-shrink-0">
-                      <img
-                        src={image.url}
-                        alt={product.node.title}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-sm mb-2 line-clamp-2">{product.node.title}</h4>
-                    {variant && (
-                      <p className="text-lg font-bold mb-3">
-                        ${parseFloat(variant.price.amount).toFixed(2)}
-                      </p>
+                  <div className="flex gap-3 items-center">
+                    {image && (
+                      <div className="w-20 h-20 bg-secondary/20 rounded-md overflow-hidden flex-shrink-0">
+                        <img
+                          src={image.url}
+                          alt={product.node.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
                     )}
-                    <Button
-                      size="sm"
-                      className="w-full"
-                      onClick={() => handleAddRecommendation(product)}
-                    >
-                      Add to Cart
-                    </Button>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-sm mb-1 line-clamp-2 leading-tight">{product.node.title}</h4>
+                      {variant && (
+                        <p className="text-base font-bold mb-2">
+                          ${parseFloat(variant.price.amount).toFixed(2)}
+                        </p>
+                      )}
+                    </div>
                   </div>
+                  <Button
+                    size="sm"
+                    className="w-full mt-3"
+                    onClick={() => handleAddRecommendation(product)}
+                  >
+                    Add to Cart
+                  </Button>
                 </div>
               );
             })}
