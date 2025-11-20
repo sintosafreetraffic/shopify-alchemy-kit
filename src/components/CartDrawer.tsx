@@ -198,7 +198,7 @@ export const CartDrawer = () => {
           </SheetDescription>
         </SheetHeader>
         
-        <div className="flex flex-col flex-1 pt-6 min-h-0">
+        <div className="flex flex-col flex-1 pt-3 min-h-0">
           {/* Free Shipping Progress Bar - Always Visible */}
           {items.length > 0 && (
             <div className="mb-4 px-1">
