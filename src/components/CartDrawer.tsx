@@ -410,21 +410,21 @@ export const CartDrawer = () => {
                 </div>
 
                 {/* Price Summary */}
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <div className="flex justify-between items-center pt-2">
-                    <span className="text-lg font-bold">Total</span>
-                    <div className="text-xl font-bold">
+                    <span className="text-base font-bold">Total</span>
+                    <div className="text-lg font-bold">
                       ${totalPrice.toFixed(2)}
                     </div>
                   </div>
                   
-                  <div className="flex justify-between items-center text-sm">
+                  <div className="flex justify-between items-center text-xs">
                     <span className="text-muted-foreground">Shipping</span>
                     <span className="text-muted-foreground">$0.00</span>
                   </div>
                   
                   {discount > 0 && (
-                    <div className="flex justify-between items-center text-sm bg-green-50 dark:bg-green-950/20 px-3 py-2 rounded">
+                    <div className="flex justify-between items-center text-xs bg-green-50 dark:bg-green-950/20 px-2 py-1.5 rounded">
                       <span className="text-green-600 dark:text-green-400 font-semibold">
                         Black Friday Savings
                       </span>
@@ -438,7 +438,7 @@ export const CartDrawer = () => {
                 <Button 
                   onClick={handleCheckout}
                   className="w-full" 
-                  size="lg"
+                  size="default"
                   disabled={items.length === 0 || isLoading}
                 >
                   {isLoading ? (
