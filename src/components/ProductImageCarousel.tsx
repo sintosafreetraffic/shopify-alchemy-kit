@@ -4,6 +4,8 @@ import pillowHeroImage from "@/assets/pillow-hero-main.png";
 import pillowHeroNew from "@/assets/pillow-hero-new.png";
 import pillowBenefitsHero from "@/assets/pillow-benefits-hero.png";
 import consumerChoiceBadge from "@/assets/consumer-choice-badge-new.jpg";
+import neckPainSpine from "@/assets/neck-pain-spine.png";
+import lifestyleExcellent from "@/assets/lifestyle-excellent-rating.png";
 import {
   Carousel,
   CarouselContent,
@@ -25,8 +27,8 @@ export const ProductImageCarousel = () => {
     { url: pillowHeroNew, alt: "RiseByNight ergonomic pillow main view", type: "image" },
     { url: "/videos/product-demo.mp4", alt: "RiseByNight pillow demonstration", type: "video" },
     { url: pillowBenefitsHero, alt: "RiseByNight pillow benefits - relieves neck pain, reduces sleep apnea, reduces acid reflux, relieves shoulders", type: "image" },
-    { url: optisleepPillow, alt: "RiseByNight pillow perspective", type: "image" },
-    { url: optisleepPillow, alt: "RiseByNight pillow lifestyle view", type: "image" },
+    { url: neckPainSpine, alt: "RiseByNight pillow - neck pain and spine alignment relief", type: "image" },
+    { url: lifestyleExcellent, alt: "RiseByNight pillow lifestyle views - rated excellent", type: "image" },
     { url: optisleepPillow, alt: "RiseByNight pillow comfort view", type: "image" },
   ];
 
