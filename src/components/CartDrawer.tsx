@@ -121,7 +121,7 @@ export const CartDrawer = () => {
     <>
       {/* Desktop: Recommendations on the left side of the cart */}
       {isOpen && recommendedProducts.length > 0 && (
-        <div className="hidden lg:block fixed right-[calc(33.333333%+1rem)] top-1/2 -translate-y-1/2 z-[99] w-72 space-y-3">
+        <div className="hidden lg:block fixed right-[32rem] top-1/2 -translate-y-1/2 z-[99] w-72 space-y-3 pr-0">
           <h3 className="font-semibold text-base mb-3">You may also like</h3>
           <div className="space-y-3">
             {recommendedProducts.map((product) => {
