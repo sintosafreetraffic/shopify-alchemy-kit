@@ -411,15 +411,8 @@ export const CartDrawer = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between items-center pt-2">
                     <span className="text-lg font-bold">Total</span>
-                    <div className="text-right">
-                      {discount > 0 && (
-                        <div className="text-base text-muted-foreground line-through mb-1">
-                          ${originalTotal.toFixed(2)}
-                        </div>
-                      )}
-                      <div className="text-xl font-bold">
-                        ${totalPrice.toFixed(2)}
-                      </div>
+                    <div className="text-xl font-bold">
+                      ${totalPrice.toFixed(2)}
                     </div>
                   </div>
                   
