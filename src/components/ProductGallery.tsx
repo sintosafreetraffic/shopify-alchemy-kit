@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { ArrowRight, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import pillowMain from "@/assets/optisleep-pillow-main.png";
+import kneePillowMain from "@/assets/knee-pillow-main.jpg";
 
 export const ProductGallery = () => {
   const products = [
@@ -20,6 +21,23 @@ export const ProductGallery = () => {
         "Cooling gel technology",
         "High-density memory foam",
         "3-5 year lifespan"
+      ],
+      badge: "Black Friday 1+1 Deal"
+    },
+    {
+      id: 2,
+      name: "RiseByNight Ergonomic Knee Pillow",
+      tagline: "Perfect Support for Side Sleepers",
+      price: "$69.99",
+      originalPrice: "$109.99",
+      rating: 4.7,
+      reviews: "8,500+",
+      image: kneePillowMain,
+      features: [
+        "Aligns hips and spine",
+        "Reduces lower back pain",
+        "Memory foam comfort",
+        "Adjustable strap included"
       ],
       badge: "Black Friday 1+1 Deal"
     }
