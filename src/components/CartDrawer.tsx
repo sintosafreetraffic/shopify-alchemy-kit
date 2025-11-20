@@ -164,7 +164,7 @@ export const CartDrawer = () => {
                                 {item.price.currencyCode} ${(parseFloat(item.price.amount) * item.quantity).toFixed(2)}
                               </p>
                               <p className="font-semibold">
-                                {item.price.currencyCode} ${parseFloat(item.price.amount).toFixed(2)}
+                                {item.price.currencyCode} ${(parseFloat(item.price.amount) * item.quantity - discount).toFixed(2)}
                               </p>
                             </div>
                           ) : (
