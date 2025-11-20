@@ -116,7 +116,7 @@ export const Hero = () => {
             </h1>
             
             <p className="text-sm text-muted-foreground">
-              The #1 Rated Orthopedic Pillow in the U.S.
+              The #1 Rated Ergonomic Pillow in the U.S.
             </p>
           </div>
         </div>
@@ -152,7 +152,7 @@ export const Hero = () => {
             </h1>
             
             <p className="hidden md:block text-sm md:text-base text-muted-foreground">
-              The #1 Rated Orthopedic Pillow in the U.S.
+              The #1 Rated Ergonomic Pillow in the U.S.
             </p>
 
             {/* USPs Section */}
