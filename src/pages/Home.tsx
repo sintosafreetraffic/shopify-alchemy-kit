@@ -146,7 +146,7 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="space-y-8">
+            <div className="grid md:grid-cols-2 gap-8">
               <div className="space-y-3">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-xl font-bold">Reduced Snoring & Disruptions</h3>
