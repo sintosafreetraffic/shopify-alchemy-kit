@@ -65,13 +65,6 @@ export const ProductImageCarousel = () => {
                   className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 relative cursor-pointer hover:opacity-90 transition-opacity"
                   onClick={() => setExpandedMedia(item)}
                 >
-                  {index === 0 && (
-                    <img
-                      src={consumerChoiceBadge}
-                      alt="Consumer Choice Badge"
-                      className="absolute top-4 right-4 w-20 h-auto z-10 pointer-events-none"
-                    />
-                  )}
                   {item.type === "video" ? (
                     <video
                       src={item.url}
@@ -105,11 +98,6 @@ export const ProductImageCarousel = () => {
           className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 relative cursor-pointer hover:opacity-90 transition-opacity"
           onClick={() => setExpandedMedia(images[0])}
         >
-          <img
-            src={consumerChoiceBadge}
-            alt="Consumer Choice Badge"
-            className="absolute top-4 right-4 w-24 h-auto z-10 pointer-events-none"
-          />
           {images[0]?.type === "video" ? (
             <video
               src={images[0].url}
