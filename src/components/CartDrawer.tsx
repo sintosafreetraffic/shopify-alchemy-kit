@@ -121,7 +121,7 @@ export const CartDrawer = () => {
     <>
       {/* Desktop: Recommendations on the left side of the cart - Full Height */}
       {isOpen && recommendedProducts.length > 0 && (
-        <div className="hidden lg:flex fixed right-[32rem] top-0 bottom-0 z-[99] w-80 bg-background border-r border-border shadow-xl flex-col animate-in slide-in-from-right duration-500">
+        <div className="hidden lg:flex fixed right-[32rem] top-0 bottom-0 z-[100] w-80 bg-background border-r border-border shadow-xl flex-col animate-in slide-in-from-right duration-500 pointer-events-auto">
           <div className="p-6 border-b">
             <h3 className="font-semibold text-xl">You may also like</h3>
           </div>
