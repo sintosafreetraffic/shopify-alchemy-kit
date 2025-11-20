@@ -6,6 +6,7 @@ import pillowBenefitsHero from "@/assets/pillow-benefits-hero.png";
 import consumerChoiceBadge from "@/assets/consumer-choice-badge-new.jpg";
 import neckPainSpine from "@/assets/neck-pain-spine.png";
 import lifestyleExcellent from "@/assets/lifestyle-excellent-rating.png";
+import pillowLifestyleSleep from "@/assets/pillow-lifestyle-sleep.jpg";
 import {
   Carousel,
   CarouselContent,
@@ -30,6 +31,7 @@ export const ProductImageCarousel = () => {
     { url: neckPainSpine, alt: "RiseByNight pillow - neck pain and spine alignment relief", type: "image" },
     { url: lifestyleExcellent, alt: "RiseByNight pillow lifestyle views - rated excellent", type: "image" },
     { url: optisleepPillow, alt: "RiseByNight pillow comfort view", type: "image" },
+    { url: pillowLifestyleSleep, alt: "RiseByNight pillow - person sleeping comfortably with ergonomic support", type: "image" },
   ];
 
   return (
