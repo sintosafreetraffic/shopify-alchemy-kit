@@ -8,8 +8,14 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 export const ProductImageCarousel = () => {
+  const [expandedMedia, setExpandedMedia] = useState<{ url: string; alt: string; type: string } | null>(null);
   
   // Multiple views of the RiseByNight pillow
   const images = [
@@ -23,18 +29,47 @@ export const ProductImageCarousel = () => {
 
   return (
     <>
+      {/* Expanded Media Dialog */}
+      <Dialog open={!!expandedMedia} onOpenChange={(open) => !open && setExpandedMedia(null)}>
+        <DialogContent className="max-w-4xl w-full">
+          {expandedMedia && (
+            <div className="w-full">
+              {expandedMedia.type === "video" ? (
+                <video
+                  src={expandedMedia.url}
+                  controls
+                  autoPlay
+                  loop
+                  className="w-full h-auto"
+                  aria-label={expandedMedia.alt}
+                />
+              ) : (
+                <img
+                  src={expandedMedia.url}
+                  alt={expandedMedia.alt}
+                  className="w-full h-auto"
+                />
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Mobile Carousel */}
       <div className="md:hidden">
         <Carousel className="w-full">
           <CarouselContent>
             {images.map((item, index) => (
               <CarouselItem key={index}>
-                <div className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 relative">
+                <div 
+                  className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 relative cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={() => setExpandedMedia(item)}
+                >
                   {index === 0 && (
                     <img
                       src={consumerChoiceBadge}
                       alt="Consumer Choice Badge"
-                      className="absolute top-4 right-4 w-20 h-auto z-10"
+                      className="absolute top-4 right-4 w-20 h-auto z-10 pointer-events-none"
                     />
                   )}
                   {item.type === "video" ? (
@@ -66,11 +101,14 @@ export const ProductImageCarousel = () => {
       {/* Desktop Static Gallery */}
       <div className="hidden md:block space-y-3">
         {/* First large image */}
-        <div className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 relative">
+        <div 
+          className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 relative cursor-pointer hover:opacity-90 transition-opacity"
+          onClick={() => setExpandedMedia(images[0])}
+        >
           <img
             src={consumerChoiceBadge}
             alt="Consumer Choice Badge"
-            className="absolute top-4 right-4 w-24 h-auto z-10"
+            className="absolute top-4 right-4 w-24 h-auto z-10 pointer-events-none"
           />
           <img
             src={images[0].url}
@@ -81,7 +119,10 @@ export const ProductImageCarousel = () => {
 
         {/* Two images side by side */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8">
+          <div 
+            className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 cursor-pointer hover:opacity-90 transition-opacity"
+            onClick={() => setExpandedMedia(images[1])}
+          >
             {images[1].type === "video" ? (
               <video
                 src={images[1].url}
@@ -100,7 +141,10 @@ export const ProductImageCarousel = () => {
               />
             )}
           </div>
-          <div className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8">
+          <div 
+            className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 cursor-pointer hover:opacity-90 transition-opacity"
+            onClick={() => setExpandedMedia(images[2])}
+          >
             {images[2].type === "video" ? (
               <video
                 src={images[2].url}
@@ -122,7 +166,10 @@ export const ProductImageCarousel = () => {
         </div>
 
         {/* Second large image */}
-        <div className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8">
+        <div 
+          className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 cursor-pointer hover:opacity-90 transition-opacity"
+          onClick={() => setExpandedMedia(images[3])}
+        >
           <img
             src={images[3].url}
             alt={images[3].alt}
@@ -132,14 +179,20 @@ export const ProductImageCarousel = () => {
 
         {/* Two more images side by side at the bottom */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8">
+          <div 
+            className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 cursor-pointer hover:opacity-90 transition-opacity"
+            onClick={() => setExpandedMedia(images[4])}
+          >
             <img
               src={images[4].url}
               alt={images[4].alt}
               className="w-full h-auto object-contain"
             />
           </div>
-          <div className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8">
+          <div 
+            className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 cursor-pointer hover:opacity-90 transition-opacity"
+            onClick={() => setExpandedMedia(images[5])}
+          >
             <img
               src={images[5].url}
               alt={images[5].alt}
