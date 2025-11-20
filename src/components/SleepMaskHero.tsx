@@ -8,7 +8,7 @@ import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
-import consumerChoiceBadge from "@/assets/consumer-choice-badge-updated.png";
+import consumerChoiceBadge from "@/assets/consumer-choice-badge-transparent.png";
 
 export const SleepMaskHero = () => {
   const [selectedBundle, setSelectedBundle] = useState<"1" | "2">("1");
