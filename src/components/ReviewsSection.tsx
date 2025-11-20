@@ -74,7 +74,7 @@ export const ReviewsSection = () => {
             </div>
             <span className="text-2xl font-bold">4.8/5</span>
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold mb-3">12,500+ reviews on RiseByNight</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-3">30,000+ reviews on RiseByNight</h2>
           <p className="text-lg text-muted-foreground mb-2">What do our customers say?</p>
           <p className="text-muted-foreground">Read the reviews and see what others think of their experience with us.</p>
         </div>
