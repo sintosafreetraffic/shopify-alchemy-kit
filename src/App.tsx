@@ -10,6 +10,10 @@ import Home from "./pages/Home";
 import Index from "./pages/Index";
 import KneePillowProduct from "./pages/KneePillowProduct";
 import SleepMaskProduct from "./pages/SleepMaskProduct";
+import Benefits from "./pages/Benefits";
+import Reviews from "./pages/Reviews";
+import FAQ from "./pages/FAQ";
+import Guarantee from "./pages/Guarantee";
 import ShippingPolicy from "./pages/ShippingPolicy";
 import TermsConditions from "./pages/TermsConditions";
 import ReturnPolicy from "./pages/ReturnPolicy";
@@ -34,6 +38,10 @@ const App = () => (
               <Route path="/product/knee-pillow" element={<KneePillowProduct />} />
               <Route path="/product/sleep-mask" element={<SleepMaskProduct />} />
               <Route path="/product" element={<Index />} />
+              <Route path="/benefits" element={<Benefits />} />
+              <Route path="/reviews" element={<Reviews />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/guarantee" element={<Guarantee />} />
               <Route path="/shipping" element={<ShippingPolicy />} />
               <Route path="/terms" element={<TermsConditions />} />
               <Route path="/return-policy" element={<ReturnPolicy />} />
