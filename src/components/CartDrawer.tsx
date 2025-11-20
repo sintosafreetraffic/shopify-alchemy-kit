@@ -62,7 +62,7 @@ export const CartDrawer = () => {
           !cartProductIds.includes(p.node.id) && 
           !p.node.title.toLowerCase().includes('free gift')
         );
-        setRecommendedProducts(filtered.slice(0, 3));
+        setRecommendedProducts(filtered.slice(0, 2));
       } catch (error) {
         console.error('Failed to fetch recommendations:', error);
       }
@@ -224,48 +224,48 @@ export const CartDrawer = () => {
                   {recommendedProducts.length > 0 && (
                     <div className="pt-4 border-t mt-4">
                       <h3 className="font-semibold mb-3 text-sm">You may also like</h3>
-                      <div className="overflow-x-auto overflow-y-hidden -mx-6 px-6 scrollbar-hide">
-                        <div className="flex gap-3 pb-2">
-                          {recommendedProducts.map((product) => {
-                            const variant = product.node.variants.edges[0]?.node;
-                            const image = product.node.images.edges[0]?.node;
-                            
-                            return (
-                              <div 
-                                key={product.node.id} 
-                                className="flex-shrink-0 w-[240px] border rounded-lg p-2"
-                              >
-                                <div className="flex gap-2">
-                                  {image && (
-                                    <div className="w-16 h-16 bg-secondary/20 rounded-md overflow-hidden flex-shrink-0">
-                                      <img
-                                        src={image.url}
-                                        alt={product.node.title}
-                                        className="w-full h-full object-cover"
-                                      />
-                                    </div>
-                                  )}
-                                  <div className="flex-1 min-w-0">
-                                    <h4 className="font-medium text-xs truncate">{product.node.title}</h4>
+                      <div className="grid grid-cols-1 gap-3">
+                        {recommendedProducts.map((product) => {
+                          const variant = product.node.variants.edges[0]?.node;
+                          const image = product.node.images.edges[0]?.node;
+                          
+                          return (
+                            <div 
+                              key={product.node.id} 
+                              className="border rounded-lg p-3"
+                            >
+                              <div className="flex gap-3">
+                                {image && (
+                                  <div className="w-20 h-20 bg-secondary/20 rounded-md overflow-hidden flex-shrink-0">
+                                    <img
+                                      src={image.url}
+                                      alt={product.node.title}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                )}
+                                <div className="flex-1 min-w-0 flex flex-col justify-between">
+                                  <div>
+                                    <h4 className="font-medium text-sm truncate">{product.node.title}</h4>
                                     {variant && (
-                                      <p className="text-sm font-semibold">
+                                      <p className="text-base font-semibold mt-1">
                                         {variant.price.currencyCode} ${parseFloat(variant.price.amount).toFixed(2)}
                                       </p>
                                     )}
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="w-full mt-2 h-7 text-xs"
-                                      onClick={() => handleAddRecommendation(product)}
-                                    >
-                                      Add to Cart
-                                    </Button>
                                   </div>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="w-full mt-2"
+                                    onClick={() => handleAddRecommendation(product)}
+                                  >
+                                    Add to Cart
+                                  </Button>
                                 </div>
                               </div>
-                            );
-                          })}
-                        </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
