@@ -8,6 +8,7 @@ import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
+import consumerChoiceBadge from "@/assets/consumer-choice-badge-updated.png";
 
 export const SleepMaskHero = () => {
   const [selectedBundle, setSelectedBundle] = useState<"1" | "2">("1");
@@ -93,12 +94,19 @@ export const SleepMaskHero = () => {
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-start">
           {/* Left Column - Product Images */}
           <div className="lg:sticky lg:top-24">
-            <div className="bg-gradient-to-b from-primary/5 to-background p-12 rounded-lg">
-              <img
-                src={eyeMaskGift}
-                alt="RiseByNight Silk Sleep Mask"
-                className="w-full h-auto"
+            <div className="relative">
+              <img 
+                src={consumerChoiceBadge} 
+                alt="Consumer Choice" 
+                className="absolute top-4 right-4 z-10 w-20 h-20 md:w-24 md:h-24"
               />
+              <div className="bg-gradient-to-b from-primary/5 to-background p-12 rounded-lg">
+                <img
+                  src={eyeMaskGift}
+                  alt="RiseByNight Silk Sleep Mask"
+                  className="w-full h-auto"
+                />
+              </div>
             </div>
             <PolicyAccordion />
           </div>

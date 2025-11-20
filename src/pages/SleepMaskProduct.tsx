@@ -4,6 +4,7 @@ import { StickyAddToCart } from "@/components/StickyAddToCart";
 import { SleepMaskHero } from "@/components/SleepMaskHero";
 import { SleepMaskFeatures } from "@/components/SleepMaskFeatures";
 import { SleepMaskBenefits } from "@/components/SleepMaskBenefits";
+import { SleepMaskTestimonials } from "@/components/SleepMaskTestimonials";
 import { ReviewsSection } from "@/components/ReviewsSection";
 
 const SleepMaskProduct = () => {
@@ -13,7 +14,7 @@ const SleepMaskProduct = () => {
       <SleepMaskHero />
       <SleepMaskFeatures />
       <SleepMaskBenefits />
-      <ReviewsSection />
+      <SleepMaskTestimonials />
       <Guarantee />
       <StickyAddToCart productType="sleep-mask" />
     </div>
