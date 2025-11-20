@@ -13,7 +13,8 @@ interface StickyAddToCartProps {
 }
 
 export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
-  const [selectedBundle, setSelectedBundle] = useState<"1" | "2">("2");
+  const isPillowProduct = productType === "ergonomic-pillow" || productType === "knee-pillow";
+  const [selectedBundle, setSelectedBundle] = useState<"1" | "2">(isPillowProduct ? "2" : "1");
   const [product, setProduct] = useState<ShopifyProduct | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { addItem, createCheckout, setCheckoutUrl, isCartOpen, items } = useCartStore();
@@ -58,7 +59,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
     setIsCheckingOut(true);
     try {
       const variant = product.node.variants.edges[0].node;
-      const quantity = selectedBundle === "1" ? 1 : 2;
+      const quantity = isPillowProduct ? (selectedBundle === "1" ? 1 : 2) : 1;
       
       const cartItem = {
         product,
@@ -86,6 +87,11 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
   };
 
   const productPrice = product ? parseFloat(product.node.variants.edges[0].node.price.amount) : 89.99;
+  
+  // Calculate the value being added to cart (not current cart total)
+  const addToCartValue = isPillowProduct 
+    ? (selectedBundle === "2" ? productPrice : productPrice) // 1+1 deal: pay for 1, get 1 free
+    : productPrice; // Sleep mask: regular price
 
   const bundles = {
     "1": {
@@ -127,39 +133,43 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                   {product.node.title}
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  {selectedOption.quantity} {selectedOption.quantity === 1 ? "Pillow" : "Pillows"} • {selectedOption.discount}
+                  {isPillowProduct 
+                    ? `${selectedOption.quantity} ${selectedOption.quantity === 1 ? "Pillow" : "Pillows"} • ${selectedOption.discount}`
+                    : "Sleep Mask"}
                 </p>
               </div>
             </div>
 
             {/* Bundle Selection & Add to Cart */}
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              {/* Bundle Selector */}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setSelectedBundle("1")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${
-                    selectedBundle === "1"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-secondary/50 hover:bg-secondary"
-                  }`}
-                >
-                  <Plus className="w-3 h-3" />
-                  1 Pillow
-                </button>
-                <button
-                  onClick={() => setSelectedBundle("2")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${
-                    selectedBundle === "2"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-secondary/50 hover:bg-secondary"
-                  }`}
-                >
-                  <Plus className="w-3 h-3" />
-                  <span>2 Pillows • + FREE GIFT 2X</span>
-                  <img src={eyeMaskGift} alt="Free gift" className="w-6 h-6 object-contain" />
-                </button>
-              </div>
+              {/* Bundle Selector - Only show for pillow products */}
+              {isPillowProduct && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setSelectedBundle("1")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${
+                      selectedBundle === "1"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-secondary/50 hover:bg-secondary"
+                    }`}
+                  >
+                    <Plus className="w-3 h-3" />
+                    1 Pillow
+                  </button>
+                  <button
+                    onClick={() => setSelectedBundle("2")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${
+                      selectedBundle === "2"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-secondary/50 hover:bg-secondary"
+                    }`}
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>2 Pillows • + FREE GIFT 2X</span>
+                    <img src={eyeMaskGift} alt="Free gift" className="w-6 h-6 object-contain" />
+                  </button>
+                </div>
+              )}
 
               {/* Cart Button with Totals */}
               <Button 
@@ -184,8 +194,8 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                         )}
                       </div>
                       <div className="flex flex-col items-start">
-                        <span className="text-xs leading-none">Cart Total</span>
-                        <span className="font-bold leading-none">${cartTotal.toFixed(2)}</span>
+                        <span className="text-xs leading-none">Add to Cart</span>
+                        <span className="font-bold leading-none">${addToCartValue.toFixed(2)}</span>
                       </div>
                     </span>
                     <span className="absolute inset-0 flex items-center justify-center gap-2 translate-y-12 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
@@ -198,8 +208,8 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                         )}
                       </div>
                       <div className="flex flex-col items-start">
-                        <span className="text-xs leading-none">Cart Total</span>
-                        <span className="font-bold leading-none">${cartTotal.toFixed(2)}</span>
+                        <span className="text-xs leading-none">Add to Cart</span>
+                        <span className="font-bold leading-none">${addToCartValue.toFixed(2)}</span>
                       </div>
                     </span>
                   </>
