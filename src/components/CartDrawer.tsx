@@ -223,7 +223,7 @@ export const CartDrawer = () => {
                   {/* You May Also Like Section */}
                   {recommendedProducts.length > 0 && (
                     <div className="pt-4 border-t mt-4">
-                      <h3 className="font-semibold mb-2 text-xs">You may also like</h3>
+                      <h3 className="font-semibold mb-2 text-sm">You may also like</h3>
                       <div className="grid grid-cols-2 gap-2">
                         {recommendedProducts.map((product) => {
                           const variant = product.node.variants.edges[0]?.node;
@@ -232,11 +232,11 @@ export const CartDrawer = () => {
                           return (
                             <div 
                               key={product.node.id} 
-                              className="border rounded-md p-1.5"
+                              className="border rounded-md p-2"
                             >
-                              <div className="flex flex-col gap-1.5">
+                              <div className="flex flex-col gap-2">
                                 {image && (
-                                  <div className="w-16 h-16 mx-auto bg-secondary/20 rounded-sm overflow-hidden">
+                                  <div className="w-20 h-20 mx-auto bg-secondary/20 rounded-sm overflow-hidden">
                                     <img
                                       src={image.url}
                                       alt={product.node.title}
@@ -244,7 +244,7 @@ export const CartDrawer = () => {
                                     />
                                   </div>
                                 )}
-                                <div className="flex flex-col gap-0.5">
+                                <div className="flex flex-col gap-1">
                                   <h4 className="font-medium text-xs line-clamp-2 leading-tight">{product.node.title}</h4>
                                   {variant && (
                                     <p className="text-sm font-semibold">
@@ -254,10 +254,10 @@ export const CartDrawer = () => {
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    className="w-full h-6 text-[10px] mt-1"
+                                    className="w-full h-7 text-xs mt-1"
                                     onClick={() => handleAddRecommendation(product)}
                                   >
-                                    Add
+                                    Add to Cart
                                   </Button>
                                 </div>
                               </div>
