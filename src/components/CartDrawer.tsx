@@ -45,7 +45,8 @@ export const CartDrawer = () => {
   // Black Friday pricing logic
   const regularPrice = 89.99;
   const originalTotal = regularPrice * totalItems;
-  const discount = totalItems >= 2 ? regularPrice : 0;
+  // For 1+1 deal: every 2 items = pay for 1, get 1 free
+  const discount = Math.floor(totalItems / 2) * regularPrice;
   const totalPrice = originalTotal - discount;
   
   // Free gifts logic: Only for 2+ pillows - pairs of 2 = 2 masks each
@@ -158,13 +159,13 @@ export const CartDrawer = () => {
                           {item.selectedOptions.map(option => option.value).join(' • ')}
                         </p>
                         <div className="mt-1">
-                          {discount > 0 && item.quantity >= 2 ? (
+                          {item.quantity >= 2 ? (
                             <div className="space-y-0.5">
                               <p className="text-sm text-muted-foreground line-through">
                                 {item.price.currencyCode} ${(parseFloat(item.price.amount) * item.quantity).toFixed(2)}
                               </p>
                               <p className="font-semibold">
-                                {item.price.currencyCode} ${(parseFloat(item.price.amount) * item.quantity - discount).toFixed(2)}
+                                {item.price.currencyCode} ${((parseFloat(item.price.amount) * item.quantity) - (Math.floor(item.quantity / 2) * parseFloat(item.price.amount))).toFixed(2)}
                               </p>
                             </div>
                           ) : (
