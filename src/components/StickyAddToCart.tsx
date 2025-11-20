@@ -139,6 +139,7 @@ export const StickyAddToCart = () => {
               <Button 
                 onClick={handleAddToCart}
                 disabled={isCheckingOut}
+                variant="destructive"
                 className="flex-1 sm:flex-initial"
               >
                 {isCheckingOut ? (
