@@ -48,8 +48,8 @@ export const CartDrawer = () => {
   const discount = totalItems >= 2 ? regularPrice : 0;
   const totalPrice = originalTotal - discount;
   
-  // Free gifts logic: Only for pillows - 1 pillow = 1 mask, pairs of 2 = 2 masks each
-  const freeGifts = totalPillows === 1 ? 1 : Math.floor(totalPillows / 2) * 2;
+  // Free gifts logic: Only for 2+ pillows - pairs of 2 = 2 masks each
+  const freeGifts = totalPillows >= 2 ? Math.floor(totalPillows / 2) * 2 : 0;
 
   // Fetch recommended products (excluding items already in cart and free gift product)
   useEffect(() => {
