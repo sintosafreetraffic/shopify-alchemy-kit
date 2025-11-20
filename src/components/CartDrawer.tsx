@@ -286,39 +286,31 @@ export const CartDrawer = () => {
                 </div>
 
                 {/* Price Summary */}
-                <div className="space-y-1">
-                  {discount > 0 && (
-                    <>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-muted-foreground">Original Price</span>
-                        <span className="text-muted-foreground line-through">
-                          ${originalTotal.toFixed(2)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-green-600 dark:text-green-400 font-semibold">
-                          Black Friday Savings
-                        </span>
-                        <span className="text-green-600 dark:text-green-400 font-semibold">
-                          -${discount.toFixed(2)}
-                        </span>
-                      </div>
-                    </>
-                  )}
-                  
-                  <div className="flex justify-between items-center pt-2 border-t">
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center pt-2">
                     <span className="text-lg font-bold">Total</span>
                     <div className="text-right">
+                      {discount > 0 && (
+                        <div className="text-base text-muted-foreground line-through mb-1">
+                          ${originalTotal.toFixed(2)}
+                        </div>
+                      )}
                       <div className="text-xl font-bold">
                         ${totalPrice.toFixed(2)}
                       </div>
-                      {discount > 0 && (
-                        <div className="text-xs text-green-600 dark:text-green-400 font-semibold">
-                          You save ${discount.toFixed(2)}!
-                        </div>
-                      )}
                     </div>
                   </div>
+                  
+                  {discount > 0 && (
+                    <div className="flex justify-between items-center text-sm bg-green-50 dark:bg-green-950/20 px-3 py-2 rounded">
+                      <span className="text-green-600 dark:text-green-400 font-semibold">
+                        Black Friday Savings
+                      </span>
+                      <span className="text-green-600 dark:text-green-400 font-semibold">
+                        -${discount.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
                 </div>
                 
                 <Button 
