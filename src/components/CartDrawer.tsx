@@ -42,7 +42,7 @@ export const CartDrawer = () => {
   const regularPrice = 89.99;
   const originalTotal = regularPrice * totalItems;
   const discount = totalItems >= 2 ? regularPrice : 0;
-  const totalPrice = subtotal;
+  const totalPrice = originalTotal - discount;
   
   // Free gifts logic
   const freeGifts = totalItems >= 2 ? 2 : (totalItems >= 1 ? 1 : 0);
