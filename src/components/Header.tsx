@@ -14,7 +14,7 @@ export const Header = () => {
             className="h-14 w-auto"
           />
           <span className="text-lg text-foreground -mt-2 leading-tight flex flex-col items-start">
-            <span>Rise</span>
+            <span className="pl-2">Rise</span>
             <span className="self-center">by</span>
             <span>Night</span>
           </span>
