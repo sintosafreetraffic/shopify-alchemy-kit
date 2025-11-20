@@ -27,8 +27,13 @@ export const CartDrawer = () => {
     updateQuantity, 
     removeItem, 
     createCheckout,
-    addItem 
+    addItem,
+    setCartOpen
   } = useCartStore();
+
+  useEffect(() => {
+    setCartOpen(isOpen);
+  }, [isOpen, setCartOpen]);
   
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = items.reduce((sum, item) => sum + (parseFloat(item.price.amount) * item.quantity), 0);
