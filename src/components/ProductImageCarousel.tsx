@@ -1,6 +1,6 @@
 import { useState } from "react";
 import optisleepPillow from "@/assets/optisleep-pillow-main.png";
-import pillowHeroImage from "@/assets/ergonomic-pillow-hero.png";
+import pillowHeroImage from "@/assets/pillow-hero-main.png";
 import consumerChoiceBadge from "@/assets/consumer-choice-badge-new.jpg";
 import {
   Carousel,
