@@ -155,8 +155,7 @@ export const Hero = () => {
                       <Star key={star} className="w-5 h-5 fill-yellow-500 text-yellow-500" />
                     ))}
                   </div>
-                  <span className="text-base font-bold">4.8/5</span>
-                  <span className="text-sm text-muted-foreground">(1,247 verified reviews)</span>
+                  <span className="text-base font-semibold">6,247 verified product reviews</span>
                 </div>
                 
                 <div className="flex items-center gap-2 text-sm">
