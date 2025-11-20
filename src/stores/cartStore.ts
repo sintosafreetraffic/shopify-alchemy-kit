@@ -96,10 +96,13 @@ export const useCartStore = create<CartStore>()(
 
         setLoading(true);
         try {
-          // Calculate total items (pillows only)
-          const totalPillows = items.reduce((sum, item) => sum + item.quantity, 0);
+          // Calculate pillow items only (exclude sleep mask for free gift calculation)
+          const pillowItems = items.filter(item => 
+            item.product.node.title.toLowerCase().includes('pillow')
+          );
+          const totalPillows = pillowItems.reduce((sum, item) => sum + item.quantity, 0);
           
-          // Calculate free masks: 1 pillow = 1 mask, pairs of 2 = 2 masks each
+          // Calculate free masks: Only for pillows - 1 pillow = 1 mask, pairs of 2 = 2 masks each
           const freeMasks = totalPillows === 1 ? 1 : Math.floor(totalPillows / 2) * 2;
           
           // Create checkout with items and free masks info
