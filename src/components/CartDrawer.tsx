@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -12,15 +12,22 @@ import {
 import { ShoppingCart, Minus, Plus, Trash2, ExternalLink, Loader2, Moon, RotateCcw, Shield, Gift } from "lucide-react";
 import { useCartStore } from "@/stores/cartStore";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
+import { fetchProducts, ShopifyProduct } from "@/lib/shopify";
+import useEmblaCarousel from "embla-carousel-react";
+import { toast } from "sonner";
 
 export const CartDrawer = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [recommendedProducts, setRecommendedProducts] = useState<ShopifyProduct[]>([]);
+  const [emblaRef] = useEmblaCarousel({ loop: false, align: "start" });
+  
   const { 
     items, 
     isLoading, 
     updateQuantity, 
     removeItem, 
-    createCheckout 
+    createCheckout,
+    addItem 
   } = useCartStore();
   
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -34,6 +41,41 @@ export const CartDrawer = () => {
   
   // Free gifts logic
   const freeGifts = totalItems >= 2 ? 2 : (totalItems >= 1 ? 1 : 0);
+
+  // Fetch recommended products (knee pillow)
+  useEffect(() => {
+    const loadRecommendations = async () => {
+      try {
+        const products = await fetchProducts(3, 'title:knee');
+        setRecommendedProducts(products);
+      } catch (error) {
+        console.error('Failed to fetch recommendations:', error);
+      }
+    };
+    
+    if (isOpen) {
+      loadRecommendations();
+    }
+  }, [isOpen]);
+
+  const handleAddRecommendation = (product: ShopifyProduct) => {
+    const variant = product.node.variants.edges[0]?.node;
+    if (!variant) return;
+
+    const cartItem = {
+      product,
+      variantId: variant.id,
+      variantTitle: variant.title,
+      price: variant.price,
+      quantity: 1,
+      selectedOptions: variant.selectedOptions || []
+    };
+    
+    addItem(cartItem);
+    toast.success("Added to cart!", {
+      description: `${product.node.title} has been added to your cart.`
+    });
+  };
 
   const handleCheckout = async () => {
     try {
@@ -137,6 +179,56 @@ export const CartDrawer = () => {
                   ))}
                 </div>
               </div>
+
+              {/* You May Also Like Section */}
+              {recommendedProducts.length > 0 && (
+                <div className="flex-shrink-0 py-4 border-t">
+                  <h3 className="font-semibold mb-3 text-sm">You may also like</h3>
+                  <div className="overflow-hidden" ref={emblaRef}>
+                    <div className="flex gap-3">
+                      {recommendedProducts.map((product) => {
+                        const variant = product.node.variants.edges[0]?.node;
+                        const image = product.node.images.edges[0]?.node;
+                        
+                        return (
+                          <div 
+                            key={product.node.id} 
+                            className="flex-[0_0_70%] min-w-0 border rounded-lg p-2"
+                          >
+                            <div className="flex gap-2">
+                              {image && (
+                                <div className="w-16 h-16 bg-secondary/20 rounded-md overflow-hidden flex-shrink-0">
+                                  <img
+                                    src={image.url}
+                                    alt={product.node.title}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-medium text-xs truncate">{product.node.title}</h4>
+                                {variant && (
+                                  <p className="text-sm font-semibold">
+                                    {variant.price.currencyCode} ${parseFloat(variant.price.amount).toFixed(2)}
+                                  </p>
+                                )}
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="w-full mt-2 h-7 text-xs"
+                                  onClick={() => handleAddRecommendation(product)}
+                                >
+                                  Add to Cart
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
               
               <div className="flex-shrink-0 space-y-4 pt-4 border-t bg-background">
                 {/* Free Gifts Section */}
