@@ -187,6 +187,31 @@ export const CartDrawer = () => {
                     </div>
                   ))}
                   
+                  {/* Free Gifts Section */}
+                  {freeGifts > 0 && (
+                    <div className="bg-primary/5 border-2 border-primary rounded-lg p-3 mt-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Gift className="w-5 h-5 text-primary" />
+                        <span className="font-bold text-primary">FREE GIFT{freeGifts > 1 ? 'S' : ''} INCLUDED!</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <img 
+                          src={eyeMaskGift} 
+                          alt="Free Sleep Mask" 
+                          className="w-16 h-16 object-contain"
+                        />
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold">
+                            {freeGifts}x RiseByNight™ Silk Sleep Mask
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Value: ${(freeGifts * 29.99).toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
                   {/* You May Also Like Section */}
                   {recommendedProducts.length > 0 && (
                     <div className="pt-4 border-t mt-4">
@@ -238,34 +263,9 @@ export const CartDrawer = () => {
                   )}
                 </div>
               
-              {/* Fixed Bottom Section: Free Gifts + Checkout */}
+              {/* Bottom Section: Trust Badges + Checkout */}
               <div className="flex-shrink-0 space-y-3 pt-4 border-t bg-background">
-                {/* Free Gifts Section */}
-                {freeGifts > 0 && (
-                  <div className="bg-primary/5 border-2 border-primary rounded-lg p-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Gift className="w-5 h-5 text-primary" />
-                      <span className="font-bold text-primary">FREE GIFT{freeGifts > 1 ? 'S' : ''} INCLUDED!</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <img 
-                        src={eyeMaskGift} 
-                        alt="Free Sleep Mask" 
-                        className="w-16 h-16 object-contain"
-                      />
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold">
-                          {freeGifts}x RiseByNight™ Silk Sleep Mask
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Value: ${(freeGifts * 29.99).toFixed(2)}
-                        </p>
-                      </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Trust Badges */}
+                {/* Trust Badges */}
               <div className="grid grid-cols-3 gap-2 py-2 border-y">
                   <div className="flex flex-col items-center gap-1 text-center">
                     <Moon className="w-4 h-4 text-primary" />
