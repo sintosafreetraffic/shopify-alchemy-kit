@@ -125,11 +125,6 @@ export const Hero = () => {
         <div className="grid md:grid-cols-2 gap-6 lg:gap-10">
           {/* Scrollable Product Images Column - Desktop Only */}
           <div className="hidden md:block relative order-2 md:order-1">
-            <img 
-              src={consumerChoiceBadge} 
-              alt="Consumer Choice Badge" 
-              className="mb-3 w-24 h-auto"
-            />
             <ProductImageCarousel />
           </div>
           

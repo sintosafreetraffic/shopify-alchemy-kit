@@ -1,5 +1,6 @@
 import { useState } from "react";
 import optisleepPillow from "@/assets/optisleep-pillow-main.png";
+import consumerChoiceBadge from "@/assets/consumer-choice-badge.jpg";
 import {
   Carousel,
   CarouselContent,
@@ -28,7 +29,14 @@ export const ProductImageCarousel = () => {
           <CarouselContent>
             {images.map((image, index) => (
               <CarouselItem key={index}>
-                <div className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8">
+                <div className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 relative">
+                  {index === 0 && (
+                    <img
+                      src={consumerChoiceBadge}
+                      alt="Consumer Choice Badge"
+                      className="absolute top-4 right-4 w-20 h-auto z-10"
+                    />
+                  )}
                   <img
                     src={image.url}
                     alt={image.alt}
@@ -46,7 +54,12 @@ export const ProductImageCarousel = () => {
       {/* Desktop Static Gallery */}
       <div className="hidden md:block space-y-3">
         {/* First large image */}
-        <div className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8">
+        <div className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 relative">
+          <img
+            src={consumerChoiceBadge}
+            alt="Consumer Choice Badge"
+            className="absolute top-4 right-4 w-24 h-auto z-10"
+          />
           <img
             src={images[0].url}
             alt={images[0].alt}
