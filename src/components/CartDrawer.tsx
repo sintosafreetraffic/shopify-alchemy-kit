@@ -155,9 +155,14 @@ export const CartDrawer = () => {
                       
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium truncate">{item.product.node.title}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {item.selectedOptions.map(option => option.value).join(' • ')}
-                        </p>
+                        {item.selectedOptions.filter(option => option.value.toLowerCase() !== 'default title').length > 0 && (
+                          <p className="text-sm text-muted-foreground">
+                            {item.selectedOptions
+                              .filter(option => option.value.toLowerCase() !== 'default title')
+                              .map(option => option.value)
+                              .join(' • ')}
+                          </p>
+                        )}
                         <div className="mt-1">
                           {item.quantity >= 2 ? (
                             <div className="space-y-0.5">
