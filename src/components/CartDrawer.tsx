@@ -126,7 +126,7 @@ export const CartDrawer = () => {
           </SheetDescription>
         </SheetHeader>
         
-        <div className="flex flex-col flex-1 pt-6">
+        <div className="flex flex-col flex-1 pt-6 min-h-0">
           {items.length === 0 ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
@@ -136,8 +136,9 @@ export const CartDrawer = () => {
             </div>
           ) : (
             <>
-              {/* Cart Items + Recommendations - No scroll */}
-              <div className="space-y-4">
+              {/* Scrollable Cart Items + Recommendations */}
+              <div className="flex-1 overflow-y-auto pr-2 min-h-0">
+                <div className="space-y-4">
                 {/* Cart Items */}
                 {items.map((item) => (
                     <div key={item.variantId} className="flex gap-4 p-2 border rounded-lg">
@@ -269,9 +270,10 @@ export const CartDrawer = () => {
                     </div>
                   )}
                 </div>
+              </div>
               
-              {/* Bottom Section: Trust Badges + Checkout */}
-              <div className="flex-shrink-0 space-y-3 pt-4 border-t bg-background">
+              {/* Fixed Bottom Section: Trust Badges + Checkout */}
+              <div className="flex-shrink-0 space-y-3 pt-4 border-t bg-background mt-4">
                 {/* Trust Badges */}
               <div className="grid grid-cols-3 gap-2 py-2 border-y">
                   <div className="flex flex-col items-center gap-1 text-center">
