@@ -110,7 +110,7 @@ export const ProductGallery = () => {
                   ))}
                 </ul>
 
-                <Link to="/product">
+                <Link to={product.id === 1 ? "/product/ergonomic-pillow" : "/product/knee-pillow"}>
                   <Button className="w-full" size="lg">
                     View Details <ArrowRight className="ml-2 w-4 h-4" />
                   </Button>

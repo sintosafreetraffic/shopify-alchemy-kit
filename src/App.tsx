@@ -5,8 +5,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Header } from "./components/Header";
 import { Footer } from "./components/Footer";
+import { ScrollToTop } from "./components/ScrollToTop";
 import Home from "./pages/Home";
 import Index from "./pages/Index";
+import KneePillowProduct from "./pages/KneePillowProduct";
 import ShippingPolicy from "./pages/ShippingPolicy";
 import TermsConditions from "./pages/TermsConditions";
 import ReturnPolicy from "./pages/ReturnPolicy";
@@ -21,11 +23,14 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <ScrollToTop />
         <div className="flex flex-col min-h-screen">
           <Header />
           <main className="flex-1">
             <Routes>
               <Route path="/" element={<Home />} />
+              <Route path="/product/ergonomic-pillow" element={<Index />} />
+              <Route path="/product/knee-pillow" element={<KneePillowProduct />} />
               <Route path="/product" element={<Index />} />
               <Route path="/shipping" element={<ShippingPolicy />} />
               <Route path="/terms" element={<TermsConditions />} />
