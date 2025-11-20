@@ -158,11 +158,6 @@ export const Hero = () => {
                   <span className="text-base font-semibold">6,247 verified product reviews</span>
                 </div>
                 
-                <div className="flex items-center gap-2 text-sm">
-                  <Users className="w-5 h-5 text-primary" />
-                  <span className="font-semibold">Join 30,000+ customers who transformed their sleep</span>
-                </div>
-                
                 <div className="flex gap-2 flex-wrap">
                   <div className="inline-flex items-center gap-2 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 px-3 py-1.5 rounded-md text-xs font-bold">
                     ✓ 98% Customer Satisfaction

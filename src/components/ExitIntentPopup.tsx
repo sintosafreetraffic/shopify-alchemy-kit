@@ -51,9 +51,6 @@ export const ExitIntentPopup = () => {
             <p className="text-lg font-semibold text-foreground">
               Your 100-Night Risk-Free Trial is Waiting!
             </p>
-            <p className="text-base">
-              Join 30,000+ customers who transformed their sleep with RiseByNight™
-            </p>
             <div className="bg-primary/10 border-2 border-primary rounded-lg p-4 space-y-2">
               <p className="font-bold text-primary text-lg">
                 ✓ 100 Nights Risk-Free Trial
