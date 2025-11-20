@@ -202,7 +202,7 @@ export const CartDrawer = () => {
                       </div>
                       
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-medium truncate">{item.product.node.title}</h4>
+                        <h4 className="font-medium text-sm leading-tight">{item.product.node.title}</h4>
                         {item.selectedOptions.filter(option => option.value.toLowerCase() !== 'default title').length > 0 && (
                           <p className="text-sm text-muted-foreground">
                             {item.selectedOptions
