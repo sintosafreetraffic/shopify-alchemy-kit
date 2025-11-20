@@ -145,13 +145,13 @@ export const CartDrawer = () => {
               <div className="space-y-2">
                 {totalPrice >= 50 ? (
                   <>
-                    <div className="flex items-center gap-2 text-green-600 dark:text-green-400 font-semibold text-sm justify-center">
+                    <div className="flex items-center gap-2 text-primary font-semibold text-sm justify-center">
                       <Truck className="w-4 h-4" />
                       <span>You have got free shipping!</span>
                     </div>
                     <div className="w-full bg-secondary rounded-full h-2">
                       <div 
-                        className="bg-green-600 dark:bg-green-400 h-2 rounded-full transition-all duration-300"
+                        className="bg-primary h-2 rounded-full transition-all duration-300"
                         style={{ width: '100%' }}
                       />
                     </div>
