@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 const messages = [
-  "Fast delivery within the U.S.",
+  "Free delivery within the U.S.",
   "120 Day Risk-Free Trial"
 ];
 
