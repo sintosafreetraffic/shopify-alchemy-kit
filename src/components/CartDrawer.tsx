@@ -47,12 +47,15 @@ export const CartDrawer = () => {
   // Free gifts logic
   const freeGifts = totalItems >= 2 ? 2 : (totalItems >= 1 ? 1 : 0);
 
-  // Fetch recommended products (knee pillow)
+  // Fetch recommended products (excluding items already in cart)
   useEffect(() => {
     const loadRecommendations = async () => {
       try {
-        const products = await fetchProducts(3, 'title:knee');
-        setRecommendedProducts(products);
+        const products = await fetchProducts(10);
+        // Filter out products already in cart
+        const cartProductIds = items.map(item => item.product.node.id);
+        const filtered = products.filter(p => !cartProductIds.includes(p.node.id));
+        setRecommendedProducts(filtered.slice(0, 3));
       } catch (error) {
         console.error('Failed to fetch recommendations:', error);
       }
@@ -61,7 +64,7 @@ export const CartDrawer = () => {
     if (isOpen) {
       loadRecommendations();
     }
-  }, [isOpen]);
+  }, [isOpen, items]);
 
   const handleAddRecommendation = (product: ShopifyProduct) => {
     const variant = product.node.variants.edges[0]?.node;
@@ -184,10 +187,36 @@ export const CartDrawer = () => {
                   ))}
                 </div>
               </div>
+              
+              <div className="flex-shrink-0 space-y-4 pt-4 border-t bg-background">
+                {/* Free Gifts Section */}
+                {freeGifts > 0 && (
+                  <div className="bg-primary/5 border-2 border-primary rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Gift className="w-5 h-5 text-primary" />
+                      <span className="font-bold text-primary">FREE GIFT{freeGifts > 1 ? 'S' : ''} INCLUDED!</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <img 
+                        src={eyeMaskGift} 
+                        alt="Free Sleep Mask" 
+                        className="w-16 h-16 object-contain"
+                      />
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold">
+                          {freeGifts}x RiseByNight™ Silk Sleep Mask
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Value: ${(freeGifts * 29.99).toFixed(2)}
+                        </p>
+                      </div>
+                  </div>
+                </div>
+              )}
 
               {/* You May Also Like Section */}
               {recommendedProducts.length > 0 && (
-                <div className="flex-shrink-0 py-4 border-t">
+                <div className="py-4 border-t">
                   <h3 className="font-semibold mb-3 text-sm">You may also like</h3>
                   <div className="overflow-hidden" ref={emblaRef}>
                     <div className="flex gap-3">
@@ -234,35 +263,9 @@ export const CartDrawer = () => {
                   </div>
                 </div>
               )}
-              
-              <div className="flex-shrink-0 space-y-4 pt-4 border-t bg-background">
-                {/* Free Gifts Section */}
-                {freeGifts > 0 && (
-                  <div className="bg-primary/5 border-2 border-primary rounded-lg p-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Gift className="w-5 h-5 text-primary" />
-                      <span className="font-bold text-primary">FREE GIFT{freeGifts > 1 ? 'S' : ''} INCLUDED!</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <img 
-                        src={eyeMaskGift} 
-                        alt="Free Sleep Mask" 
-                        className="w-16 h-16 object-contain"
-                      />
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold">
-                          {freeGifts}x RiseByNight™ Silk Sleep Mask
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Value: ${(freeGifts * 29.99).toFixed(2)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
 
-                {/* Trust Badges */}
-                <div className="space-y-2 py-3 border-y">
+              {/* Trust Badges */}
+              <div className="space-y-2 py-3 border-y">
                   <div className="flex items-center gap-2 text-sm">
                     <Moon className="w-4 h-4 text-primary" />
                     <span className="font-medium">100-Night Risk-Free Trial</span>
