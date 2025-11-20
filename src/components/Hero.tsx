@@ -231,9 +231,9 @@ export const Hero = () => {
               </div>
             </div>
 
-            <Button
+            <Button 
               size="lg"
-              className="w-full text-lg md:text-xl py-6 font-bold shadow-lg hover:shadow-xl transition-shadow touch-manipulation animate-subtle-bounce bg-black text-white hover:bg-black/90" 
+              className="w-full text-lg md:text-xl py-6 font-bold shadow-lg hover:shadow-xl transition-all touch-manipulation animate-subtle-bounce bg-black text-white hover:bg-primary relative overflow-hidden group" 
               onClick={handleAddToCart}
               disabled={isCheckingOut || !product}
             >
@@ -243,7 +243,14 @@ export const Hero = () => {
                   Processing...
                 </>
               ) : (
-                'ADD TO CART'
+                <>
+                  <span className="inline-block transition-all duration-300 group-hover:-translate-y-12 group-hover:opacity-0">
+                    ADD TO CART
+                  </span>
+                  <span className="absolute inset-0 flex items-center justify-center translate-y-12 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                    ADD TO CART
+                  </span>
+                </>
               )}
             </Button>
 
