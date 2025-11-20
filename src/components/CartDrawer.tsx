@@ -157,9 +157,22 @@ export const CartDrawer = () => {
                         <p className="text-sm text-muted-foreground">
                           {item.selectedOptions.map(option => option.value).join(' • ')}
                         </p>
-                        <p className="font-semibold">
-                          {item.price.currencyCode} ${parseFloat(item.price.amount).toFixed(2)}
-                        </p>
+                        <div className="mt-1">
+                          {discount > 0 && item.quantity >= 2 ? (
+                            <div className="space-y-0.5">
+                              <p className="text-sm text-muted-foreground line-through">
+                                {item.price.currencyCode} ${(parseFloat(item.price.amount) * item.quantity).toFixed(2)}
+                              </p>
+                              <p className="font-semibold">
+                                {item.price.currencyCode} ${parseFloat(item.price.amount).toFixed(2)}
+                              </p>
+                            </div>
+                          ) : (
+                            <p className="font-semibold">
+                              {item.price.currencyCode} ${(parseFloat(item.price.amount) * item.quantity).toFixed(2)}
+                            </p>
+                          )}
+                        </div>
                       </div>
                       
                       <div className="flex flex-col items-end gap-2 flex-shrink-0">
