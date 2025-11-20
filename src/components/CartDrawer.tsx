@@ -119,7 +119,7 @@ export const CartDrawer = () => {
     <>
       {/* Desktop: Recommendations on the left side of the cart - Full Height */}
       {isOpen && recommendedProducts.length > 0 && (
-        <div data-recommendations-panel className="hidden lg:flex fixed right-[32rem] top-0 bottom-0 z-[100] w-80 bg-background border-r border-border shadow-xl flex-col animate-in slide-in-from-right duration-500 pointer-events-auto">
+        <div data-recommendations-panel className="hidden lg:flex fixed right-[32rem] top-0 bottom-0 z-[100] w-80 bg-blue-50 dark:bg-blue-950/20 border-r border-border shadow-xl flex-col animate-in slide-in-from-right duration-500 pointer-events-auto">
           <div className="flex-1 overflow-y-auto p-6 pt-8 space-y-4">
             {recommendedProducts.map((product) => {
               const variant = product.node.variants.edges[0]?.node;
