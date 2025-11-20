@@ -3,7 +3,7 @@ import { Progress } from "@/components/ui/progress";
 import { ArrowRight, Moon, Heart, Sparkles, Shield, Users, Award } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ProductGallery } from "@/components/ProductGallery";
-import moonLogo from "@/assets/moon-logo.png";
+import heroLogo from "@/assets/home-hero-logo.png";
 
 export default function Home() {
   return (
@@ -13,7 +13,7 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center space-y-8">
             <div className="inline-flex items-center justify-center w-24 h-24 mb-4">
-              <img src={moonLogo} alt="RiseByNight" className="w-full h-full" />
+              <img src={heroLogo} alt="RiseByNight" className="w-full h-full" />
             </div>
             
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight">
