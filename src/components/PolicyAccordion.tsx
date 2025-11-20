@@ -15,7 +15,7 @@ const policies = [
   {
     icon: Truck,
     title: "Free Delivery",
-    content: "Enjoy free shipping on all orders within the United States. Orders are typically processed within 1-2 business days and delivered within 3-5 business days. Track your order every step of the way with our real-time tracking system."
+    content: "Enjoy free shipping on all orders within the United States. Orders are typically processed within 1-2 business days and delivered within 5-7 days. Track your order every step of the way with our real-time tracking system."
   },
   {
     icon: RotateCcw,
