@@ -129,8 +129,10 @@ export const CartDrawer = () => {
             </div>
           ) : (
             <>
+              {/* Scrollable Content: Cart Items + Recommendations */}
               <div className="flex-1 overflow-y-auto pr-2 min-h-0">
                 <div className="space-y-4">
+                  {/* Cart Items */}
                   {items.map((item) => (
                     <div key={item.variantId} className="flex gap-4 p-2 border rounded-lg">
                       <div className="w-16 h-16 bg-secondary/20 rounded-md overflow-hidden flex-shrink-0">
@@ -185,10 +187,61 @@ export const CartDrawer = () => {
                       </div>
                     </div>
                   ))}
+                  
+                  {/* You May Also Like Section - Inside Scrollable Area */}
+                  {recommendedProducts.length > 0 && (
+                    <div className="pt-4 border-t mt-4">
+                      <h3 className="font-semibold mb-3 text-sm">You may also like</h3>
+                      <div className="overflow-hidden" ref={emblaRef}>
+                        <div className="flex gap-3">
+                          {recommendedProducts.map((product) => {
+                            const variant = product.node.variants.edges[0]?.node;
+                            const image = product.node.images.edges[0]?.node;
+                            
+                            return (
+                              <div 
+                                key={product.node.id} 
+                                className="flex-[0_0_70%] min-w-0 border rounded-lg p-2"
+                              >
+                                <div className="flex gap-2">
+                                  {image && (
+                                    <div className="w-16 h-16 bg-secondary/20 rounded-md overflow-hidden flex-shrink-0">
+                                      <img
+                                        src={image.url}
+                                        alt={product.node.title}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    </div>
+                                  )}
+                                  <div className="flex-1 min-w-0">
+                                    <h4 className="font-medium text-xs truncate">{product.node.title}</h4>
+                                    {variant && (
+                                      <p className="text-sm font-semibold">
+                                        {variant.price.currencyCode} ${parseFloat(variant.price.amount).toFixed(2)}
+                                      </p>
+                                    )}
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="w-full mt-2 h-7 text-xs"
+                                      onClick={() => handleAddRecommendation(product)}
+                                    >
+                                      Add to Cart
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
               
-              <div className="flex-shrink-0 space-y-4 pt-4 border-t bg-background">
+              {/* Fixed Bottom Section: Free Gifts + Checkout */}
+              <div className="flex-shrink-0 space-y-3 pt-4 border-t bg-background">
                 {/* Free Gifts Section */}
                 {freeGifts > 0 && (
                   <div className="bg-primary/5 border-2 border-primary rounded-lg p-3">
@@ -214,58 +267,8 @@ export const CartDrawer = () => {
                 </div>
               )}
 
-              {/* You May Also Like Section */}
-              {recommendedProducts.length > 0 && (
-                <div className="py-4 border-t">
-                  <h3 className="font-semibold mb-3 text-sm">You may also like</h3>
-                  <div className="overflow-hidden" ref={emblaRef}>
-                    <div className="flex gap-3">
-                      {recommendedProducts.map((product) => {
-                        const variant = product.node.variants.edges[0]?.node;
-                        const image = product.node.images.edges[0]?.node;
-                        
-                        return (
-                          <div 
-                            key={product.node.id} 
-                            className="flex-[0_0_70%] min-w-0 border rounded-lg p-2"
-                          >
-                            <div className="flex gap-2">
-                              {image && (
-                                <div className="w-16 h-16 bg-secondary/20 rounded-md overflow-hidden flex-shrink-0">
-                                  <img
-                                    src={image.url}
-                                    alt={product.node.title}
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-                              )}
-                              <div className="flex-1 min-w-0">
-                                <h4 className="font-medium text-xs truncate">{product.node.title}</h4>
-                                {variant && (
-                                  <p className="text-sm font-semibold">
-                                    {variant.price.currencyCode} ${parseFloat(variant.price.amount).toFixed(2)}
-                                  </p>
-                                )}
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="w-full mt-2 h-7 text-xs"
-                                  onClick={() => handleAddRecommendation(product)}
-                                >
-                                  Add to Cart
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {/* Trust Badges */}
-              <div className="space-y-2 py-3 border-y">
+              <div className="space-y-2 py-2 border-y">
                   <div className="flex items-center gap-2 text-sm">
                     <Moon className="w-4 h-4 text-primary" />
                     <span className="font-medium">100-Night Risk-Free Trial</span>
@@ -281,7 +284,7 @@ export const CartDrawer = () => {
                 </div>
 
                 {/* Price Summary */}
-                <div className="space-y-2">
+                <div className="space-y-1">
                   {discount > 0 && (
                     <>
                       <div className="flex justify-between items-center text-sm">
