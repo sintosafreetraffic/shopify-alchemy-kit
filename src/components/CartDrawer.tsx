@@ -9,8 +9,9 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { ShoppingCart, Minus, Plus, Trash2, ExternalLink, Loader2 } from "lucide-react";
+import { ShoppingCart, Minus, Plus, Trash2, ExternalLink, Loader2, Moon, RotateCcw, Shield, Gift } from "lucide-react";
 import { useCartStore } from "@/stores/cartStore";
+import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
 
 export const CartDrawer = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -23,7 +24,16 @@ export const CartDrawer = () => {
   } = useCartStore();
   
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = items.reduce((sum, item) => sum + (parseFloat(item.price.amount) * item.quantity), 0);
+  const subtotal = items.reduce((sum, item) => sum + (parseFloat(item.price.amount) * item.quantity), 0);
+  
+  // Black Friday pricing logic
+  const regularPrice = 89.99;
+  const originalTotal = regularPrice * totalItems;
+  const discount = totalItems >= 2 ? regularPrice : 0;
+  const totalPrice = subtotal;
+  
+  // Free gifts logic
+  const freeGifts = totalItems >= 2 ? 2 : (totalItems >= 1 ? 1 : 0);
 
   const handleCheckout = async () => {
     try {
@@ -129,11 +139,81 @@ export const CartDrawer = () => {
               </div>
               
               <div className="flex-shrink-0 space-y-4 pt-4 border-t bg-background">
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-semibold">Total</span>
-                  <span className="text-xl font-bold">
-                    {items[0]?.price.currencyCode || 'USD'} ${totalPrice.toFixed(2)}
-                  </span>
+                {/* Free Gifts Section */}
+                {freeGifts > 0 && (
+                  <div className="bg-primary/5 border-2 border-primary rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Gift className="w-5 h-5 text-primary" />
+                      <span className="font-bold text-primary">FREE GIFT{freeGifts > 1 ? 'S' : ''} INCLUDED!</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <img 
+                        src={eyeMaskGift} 
+                        alt="Free Sleep Mask" 
+                        className="w-16 h-16 object-contain"
+                      />
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold">
+                          {freeGifts}x RiseByNight™ Silk Sleep Mask
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Value: ${(freeGifts * 29.99).toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Trust Badges */}
+                <div className="space-y-2 py-3 border-y">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Moon className="w-4 h-4 text-primary" />
+                    <span className="font-medium">100-Night Risk-Free Trial</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <RotateCcw className="w-4 h-4 text-primary" />
+                    <span className="font-medium">Free & Easy Returns</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Shield className="w-4 h-4 text-primary" />
+                    <span className="font-medium">2-Year Warranty</span>
+                  </div>
+                </div>
+
+                {/* Price Summary */}
+                <div className="space-y-2">
+                  {discount > 0 && (
+                    <>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">Original Price</span>
+                        <span className="text-muted-foreground line-through">
+                          ${originalTotal.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-green-600 dark:text-green-400 font-semibold">
+                          Black Friday Savings
+                        </span>
+                        <span className="text-green-600 dark:text-green-400 font-semibold">
+                          -${discount.toFixed(2)}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                  
+                  <div className="flex justify-between items-center pt-2 border-t">
+                    <span className="text-lg font-bold">Total</span>
+                    <div className="text-right">
+                      <div className="text-xl font-bold">
+                        ${totalPrice.toFixed(2)}
+                      </div>
+                      {discount > 0 && (
+                        <div className="text-xs text-green-600 dark:text-green-400 font-semibold">
+                          You save ${discount.toFixed(2)}!
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
                 
                 <Button 
@@ -150,10 +230,14 @@ export const CartDrawer = () => {
                   ) : (
                     <>
                       <ExternalLink className="w-4 h-4 mr-2" />
-                      Checkout
+                      Secure Checkout
                     </>
                   )}
                 </Button>
+                
+                <p className="text-xs text-center text-muted-foreground">
+                  Free shipping • Secure payment • Money-back guarantee
+                </p>
               </div>
             </>
           )}
