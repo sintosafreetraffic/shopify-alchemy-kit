@@ -242,7 +242,7 @@ export async function createStorefrontCheckout(
 
     // Apply free masks discount if applicable
     if (freeMasks > 0) {
-      cartInput.discountCodes = ['FREEMASKS'];
+      cartInput.discountCodes = ['FREEMASKSFORYOU'];
     }
 
     const cartData = await storefrontApiRequest(CART_CREATE_MUTATION, {
