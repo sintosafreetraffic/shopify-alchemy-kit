@@ -18,9 +18,10 @@ import {
 export const ProductImageCarousel = () => {
   const [expandedMedia, setExpandedMedia] = useState<{ url: string; alt: string; type: string } | null>(null);
   
-  // Multiple views of the RiseByNight pillow
+  // Multiple views of the RiseByNight pillow - using timestamp to bust cache
+  const cacheKey = new Date().getTime();
   const images = [
-    { url: pillowHeroImage, alt: "RiseByNight pillow main view", type: "image" },
+    { url: `/images/pillow-main-new.png?v=${cacheKey}`, alt: "RiseByNight pillow main view", type: "image" },
     { url: "/videos/product-demo.mp4", alt: "RiseByNight pillow demonstration", type: "video" },
     { url: optisleepPillow, alt: "RiseByNight pillow detail view", type: "image" },
     { url: optisleepPillow, alt: "RiseByNight pillow perspective", type: "image" },
