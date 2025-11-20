@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 
 export const Footer = () => {
   return (
-    <footer className="border-t bg-black text-white">
+    <footer className="border-t bg-white text-foreground">
       <div className="container mx-auto px-4 py-12">
         <div className="grid md:grid-cols-4 gap-8">
           {/* Brand Column */}
@@ -14,7 +14,7 @@ export const Footer = () => {
               alt="RiseByNight" 
               className="h-12 w-auto"
             />
-            <p className="text-sm text-gray-300">
+            <p className="text-sm text-muted-foreground">
               Transform your sleep with the #1 rated ergonomic pillow. Clinically proven to reduce neck pain and help you wake up refreshed every morning.
             </p>
           </div>
@@ -24,22 +24,22 @@ export const Footer = () => {
             <h3 className="font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="#benefits" className="text-gray-300 hover:text-white transition-colors">
+                <a href="#benefits" className="text-muted-foreground hover:text-foreground transition-colors">
                   Benefits
                 </a>
               </li>
               <li>
-                <a href="#reviews" className="text-gray-300 hover:text-white transition-colors">
+                <a href="#reviews" className="text-muted-foreground hover:text-foreground transition-colors">
                   Reviews
                 </a>
               </li>
               <li>
-                <a href="#faq" className="text-gray-300 hover:text-white transition-colors">
+                <a href="#faq" className="text-muted-foreground hover:text-foreground transition-colors">
                   FAQ
                 </a>
               </li>
               <li>
-                <a href="#guarantee" className="text-gray-300 hover:text-white transition-colors">
+                <a href="#guarantee" className="text-muted-foreground hover:text-foreground transition-colors">
                   Guarantee
                 </a>
               </li>
@@ -51,22 +51,22 @@ export const Footer = () => {
             <h3 className="font-semibold mb-4">Customer Service</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link to="/shipping" className="text-gray-300 hover:text-white transition-colors">
+                <Link to="/shipping" className="text-muted-foreground hover:text-foreground transition-colors">
                   Shipping Information
                 </Link>
               </li>
               <li>
-                <Link to="/return-policy" className="text-gray-300 hover:text-white transition-colors">
+                <Link to="/return-policy" className="text-muted-foreground hover:text-foreground transition-colors">
                   Return Policy
                 </Link>
               </li>
               <li>
-                <Link to="/terms" className="text-gray-300 hover:text-white transition-colors">
+                <Link to="/terms" className="text-muted-foreground hover:text-foreground transition-colors">
                   Terms & Conditions
                 </Link>
               </li>
               <li>
-                <Link to="/privacy-policy" className="text-gray-300 hover:text-white transition-colors">
+                <Link to="/privacy-policy" className="text-muted-foreground hover:text-foreground transition-colors">
                   Privacy Policy
                 </Link>
               </li>
@@ -78,14 +78,14 @@ export const Footer = () => {
             <h3 className="font-semibold mb-4">Contact Us</h3>
             <ul className="space-y-3 text-sm">
               <li className="flex items-start gap-2">
-                <Mail className="w-4 h-4 text-white shrink-0 mt-0.5" />
-                <a href="mailto:support@risebynight.com" className="text-gray-300 hover:text-white transition-colors">
+                <Mail className="w-4 h-4 text-foreground shrink-0 mt-0.5" />
+                <a href="mailto:support@risebynight.com" className="text-muted-foreground hover:text-foreground transition-colors">
                   support@risebynight.com
                 </a>
               </li>
               <li className="flex items-start gap-2">
-                <MapPin className="w-4 h-4 text-white shrink-0 mt-0.5" />
-                <span className="text-gray-300">
+                <MapPin className="w-4 h-4 text-foreground shrink-0 mt-0.5" />
+                <span className="text-muted-foreground">
                   Loofdakstraat 10, 3036JN, ROTTERDAM
                 </span>
               </li>
@@ -94,7 +94,7 @@ export const Footer = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-gray-700 mt-8 pt-8 text-center text-sm text-gray-400">
+        <div className="border-t border-border mt-8 pt-8 text-center text-sm text-muted-foreground">
           <p>&copy; 2025 RiseByNight. All rights reserved.</p>
         </div>
       </div>
