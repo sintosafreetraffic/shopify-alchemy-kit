@@ -51,14 +51,17 @@ export const CartDrawer = () => {
   // Free gifts logic: Only for pillows - 1 pillow = 1 mask, pairs of 2 = 2 masks each
   const freeGifts = totalPillows === 1 ? 1 : Math.floor(totalPillows / 2) * 2;
 
-  // Fetch recommended products (excluding items already in cart)
+  // Fetch recommended products (excluding items already in cart and free gift product)
   useEffect(() => {
     const loadRecommendations = async () => {
       try {
         const products = await fetchProducts(10);
-        // Filter out products already in cart
+        // Filter out products already in cart and the free gift product
         const cartProductIds = items.map(item => item.product.node.id);
-        const filtered = products.filter(p => !cartProductIds.includes(p.node.id));
+        const filtered = products.filter(p => 
+          !cartProductIds.includes(p.node.id) && 
+          !p.node.title.toLowerCase().includes('free gift')
+        );
         setRecommendedProducts(filtered.slice(0, 3));
       } catch (error) {
         console.error('Failed to fetch recommendations:', error);
