@@ -223,7 +223,7 @@ export const CartDrawer = () => {
                   {/* You May Also Like Section */}
                   {recommendedProducts.length > 0 && (
                     <div className="pt-4 border-t mt-4">
-                      <h3 className="font-semibold mb-3 text-sm">You may also like</h3>
+                      <h3 className="font-semibold mb-2 text-xs">You may also like</h3>
                       <div className="grid grid-cols-2 gap-2">
                         {recommendedProducts.map((product) => {
                           const variant = product.node.variants.edges[0]?.node;
@@ -232,11 +232,11 @@ export const CartDrawer = () => {
                           return (
                             <div 
                               key={product.node.id} 
-                              className="border rounded-lg p-2"
+                              className="border rounded-md p-1.5"
                             >
-                              <div className="flex flex-col gap-2">
+                              <div className="flex flex-col gap-1.5">
                                 {image && (
-                                  <div className="w-full aspect-square bg-secondary/20 rounded-md overflow-hidden">
+                                  <div className="w-full aspect-square bg-secondary/20 rounded-sm overflow-hidden">
                                     <img
                                       src={image.url}
                                       alt={product.node.title}
@@ -244,20 +244,20 @@ export const CartDrawer = () => {
                                     />
                                   </div>
                                 )}
-                                <div className="flex flex-col gap-1">
-                                  <h4 className="font-medium text-xs line-clamp-2 leading-tight">{product.node.title}</h4>
+                                <div className="flex flex-col gap-0.5">
+                                  <h4 className="font-medium text-[10px] line-clamp-2 leading-tight">{product.node.title}</h4>
                                   {variant && (
-                                    <p className="text-sm font-semibold">
-                                      {variant.price.currencyCode} ${parseFloat(variant.price.amount).toFixed(2)}
+                                    <p className="text-xs font-semibold">
+                                      ${parseFloat(variant.price.amount).toFixed(2)}
                                     </p>
                                   )}
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    className="w-full h-8 text-xs"
+                                    className="w-full h-6 text-[10px] mt-1"
                                     onClick={() => handleAddRecommendation(product)}
                                   >
-                                    Add to Cart
+                                    Add
                                   </Button>
                                 </div>
                               </div>
