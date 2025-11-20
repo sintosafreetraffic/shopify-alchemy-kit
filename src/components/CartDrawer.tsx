@@ -42,12 +42,16 @@ export const CartDrawer = () => {
   );
   const totalPillows = pillowItems.reduce((sum, item) => sum + item.quantity, 0);
   
-  // Black Friday pricing logic
-  const regularPrice = 89.99;
-  const originalTotal = regularPrice * totalItems;
-  // For 1+1 deal: every 2 items = pay for 1, get 1 free
-  const discount = Math.floor(totalItems / 2) * regularPrice;
-  const totalPrice = originalTotal - discount;
+  // Black Friday pricing logic - only apply to pillow items
+  const pillowItemsTotal = pillowItems.reduce((sum, item) => sum + (parseFloat(item.price.amount) * item.quantity), 0);
+  const pillowDiscount = Math.floor(totalPillows / 2) * 89.99; // Each pair of pillows gets one free
+  const otherItemsTotal = items
+    .filter(item => !item.product.node.title.toLowerCase().includes('pillow'))
+    .reduce((sum, item) => sum + (parseFloat(item.price.amount) * item.quantity), 0);
+  
+  const originalTotal = subtotal; // Total before discount
+  const discount = pillowDiscount;
+  const totalPrice = pillowItemsTotal - pillowDiscount + otherItemsTotal;
   
   // Free gifts logic: Only for 2+ pillows - pairs of 2 = 2 masks each
   const freeGifts = totalPillows >= 2 ? Math.floor(totalPillows / 2) * 2 : 0;
@@ -191,7 +195,7 @@ export const CartDrawer = () => {
                           </p>
                         )}
                         <div className="mt-1">
-                          {item.quantity >= 2 ? (
+                          {item.product.node.title.toLowerCase().includes('pillow') && item.quantity >= 2 ? (
                             <div className="space-y-0.5">
                               <p className="text-sm text-muted-foreground line-through">
                                 {item.price.currencyCode} ${(parseFloat(item.price.amount) * item.quantity).toFixed(2)}
