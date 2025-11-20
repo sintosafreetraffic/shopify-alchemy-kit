@@ -10,7 +10,7 @@ export const ProductGallery = () => {
   const products = [
     {
       id: 1,
-      name: "RiseByNight Ergonomic Pillow",
+      name: "RiseByNight™ Ergonomic Pillow",
       tagline: "The #1 Rated Orthopedic Pillow",
       price: "$89.99",
       originalPrice: "$179.98",
@@ -28,7 +28,7 @@ export const ProductGallery = () => {
     },
     {
       id: 2,
-      name: "RiseByNight Ergonomic Knee Pillow",
+      name: "RiseByNight™ Ergonomic Knee Pillow",
       tagline: "Perfect Support for Side Sleepers",
       price: "$69.99",
       originalPrice: "$109.99",
@@ -46,7 +46,7 @@ export const ProductGallery = () => {
     },
     {
       id: 3,
-      name: "RiseByNight Silk Sleep Mask",
+      name: "RiseByNight™ Silk Sleep Mask",
       tagline: "100% Pure Mulberry Silk",
       price: "$29.99",
       originalPrice: "$59.99",
