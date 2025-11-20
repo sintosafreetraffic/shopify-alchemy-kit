@@ -31,7 +31,6 @@ export const ProductImageCarousel = () => {
     { url: neckPainSpine, alt: "RiseByNight pillow - neck pain and spine alignment relief", type: "image" },
     { url: lifestyleExcellent, alt: "RiseByNight pillow lifestyle views - rated excellent", type: "image" },
     { url: pillowLifestyleSleep, alt: "RiseByNight pillow - person sleeping comfortably with ergonomic support", type: "image" },
-    { url: optisleepPillow, alt: "RiseByNight pillow comfort view", type: "image" },
   ];
 
   return (
@@ -194,18 +193,6 @@ export const ProductImageCarousel = () => {
               className="w-full h-full object-cover"
             />
           </div>
-        </div>
-
-        {/* Third large image */}
-        <div 
-          className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-          onClick={() => setExpandedMedia(images[6])}
-        >
-          <img
-            src={images[6]?.url}
-            alt={images[6]?.alt}
-            className="w-full h-full object-cover"
-          />
         </div>
       </div>
     </>
