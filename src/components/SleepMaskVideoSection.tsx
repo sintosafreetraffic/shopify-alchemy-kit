@@ -1,3 +1,4 @@
+import { Play } from "lucide-react";
 import { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
@@ -63,20 +64,29 @@ export const SleepMaskVideoSection = () => {
                     className="relative group cursor-pointer overflow-hidden rounded-xl"
                     onClick={() => video.src && setSelectedVideo(video.src)}
                   >
-                    <div className="aspect-[9/16] relative">
+                    <div className="aspect-[9/16] relative bg-muted">
                       <video 
                         src={video.src}
                         className="w-full h-full object-cover"
                         loop
                         muted
                         playsInline
-                        preload="metadata"
+                        preload="auto"
                         onMouseEnter={(e) => e.currentTarget.play()}
                         onMouseLeave={(e) => {
                           e.currentTarget.pause();
                           e.currentTarget.currentTime = 0;
                         }}
+                        onLoadedData={(e) => {
+                          // Ensure first frame is visible
+                          e.currentTarget.currentTime = 0.1;
+                        }}
                       />
+                      <div className="absolute inset-0 flex items-center justify-center bg-primary/10 group-hover:bg-transparent transition-colors">
+                        <div className="w-16 h-16 rounded-full bg-primary/80 flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <Play className="w-8 h-8 text-white ml-1" fill="white" />
+                        </div>
+                      </div>
                       <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
                         <p className="text-white font-semibold">{video.title}</p>
                         <p className="text-white/80 text-sm">{video.views} views</p>
