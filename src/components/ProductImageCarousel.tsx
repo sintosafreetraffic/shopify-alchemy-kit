@@ -105,7 +105,7 @@ export const ProductImageCarousel = () => {
         console.log("Dialog onOpenChange:", open, "expandedMedia:", expandedMedia);
         if (!open) handleCloseModal();
       }}>
-        <DialogContent className="max-w-4xl w-full p-2 md:p-6 relative">
+        <DialogContent className="max-w-4xl w-full p-2 md:p-6 relative bg-background">
           {/* Dedicated Close Button */}
           <button
             onClick={handleCloseModal}
@@ -123,11 +123,11 @@ export const ProductImageCarousel = () => {
                   controls
                   autoPlay
                   loop
-                  className="w-full h-auto rounded-lg"
+                  className="w-full h-auto rounded-lg bg-black"
                   aria-label={expandedMedia.alt}
                 />
               ) : (
-                <div className="relative overflow-hidden rounded-lg bg-secondary/10">
+                <div className="relative overflow-hidden rounded-lg bg-background">
                   {/* Zoom Controls */}
                   <div className="absolute top-2 right-2 z-10 flex gap-2">
                     <button

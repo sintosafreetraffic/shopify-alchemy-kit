@@ -154,11 +154,11 @@ export const Hero = () => {
                   <span className="text-base font-semibold">6,247 verified product reviews</span>
                 </div>
                 
-                <div className="flex gap-2 flex-wrap">
-                  <div className="inline-flex items-center gap-2 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 px-3 py-1.5 rounded-md text-xs font-bold">
+                <div className="flex gap-2 flex-nowrap">
+                  <div className="inline-flex items-center gap-2 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap">
                     ✓ 98% Customer Satisfaction
                   </div>
-                  <div className="inline-flex items-center gap-2 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 px-3 py-1.5 rounded-md text-xs font-bold">
+                  <div className="inline-flex items-center gap-2 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap">
                     🔥 Frequently Purchased
                   </div>
                 </div>
