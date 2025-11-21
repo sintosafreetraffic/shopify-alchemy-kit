@@ -485,15 +485,8 @@ export const CartDrawer = () => {
                   
                   {totalDiscount > 0 && (
                     <div className="flex justify-between items-center text-sm">
-                      <span className="text-green-600 dark:text-green-400">Black Friday Savings</span>
+                      <span className="text-green-600 dark:text-green-400">Savings</span>
                       <span className="text-green-600 dark:text-green-400 font-semibold">-${totalDiscount.toFixed(2)}</span>
-                    </div>
-                  )}
-                  
-                  {freeGifts > 0 && (
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-green-600 dark:text-green-400">Free Gifts</span>
-                      <span className="text-green-600 dark:text-green-400 font-semibold">-${freeGiftValue.toFixed(2)}</span>
                     </div>
                   )}
                   
