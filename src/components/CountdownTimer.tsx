@@ -42,8 +42,9 @@ export const CountdownTimer = () => {
       <div className="flex items-center gap-1">
         {timeLeft.days > 0 && (
           <>
-            <span className="font-bold">{timeLeft.days} day{timeLeft.days !== 1 ? 's' : ''}</span>
-            <span>,</span>
+            <div className="bg-black dark:bg-white text-white dark:text-black px-2 py-1 rounded font-bold text-center">
+              {timeLeft.days}d
+            </div>
           </>
         )}
         <div className="bg-black dark:bg-white text-white dark:text-black px-2 py-1 rounded font-bold min-w-[32px] text-center">
