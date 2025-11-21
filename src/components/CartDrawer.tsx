@@ -77,13 +77,15 @@ export const CartDrawer = () => {
   // Fetch recommended products (excluding free gift product only)
   useEffect(() => {
     const loadRecommendations = async () => {
+      console.log('Cart opened, loading recommendations...');
       try {
         const products = await fetchProducts(10);
+        console.log('Fetched products:', products.length);
         // Filter out only the free gift product
         const filtered = products.filter(p => 
           !p.node.title.toLowerCase().includes('free gift')
         );
-        console.log('Loaded recommendations:', filtered.length);
+        console.log('Filtered recommendations:', filtered.length, filtered.map(p => p.node.title));
         setRecommendedProducts(filtered.slice(0, 3));
       } catch (error) {
         console.error('Failed to fetch recommendations:', error);
@@ -130,62 +132,66 @@ export const CartDrawer = () => {
   return (
     <>
       {/* Desktop: Recommendations on the left side of the cart - Full Height */}
-      {isOpen && recommendedProducts.length > 0 && (
+      {isOpen && (
         <div 
           data-recommendations-panel 
-          className="hidden lg:block fixed left-0 top-0 bottom-0 z-[90] w-80 bg-primary/5 border-r border-border shadow-xl"
+          className="fixed left-0 top-0 bottom-0 z-[110] w-80 bg-card border-r border-border shadow-2xl hidden xl:block"
         >
-          <div className="h-full overflow-y-auto p-6 pt-8 space-y-4">
-            <h3 className="text-lg font-bold mb-4">You may also like</h3>
-            {recommendedProducts.map((product) => {
-              const variant = product.node.variants.edges[0]?.node;
-              const image = product.node.images.edges[0]?.node;
-              const isPillow = product.node.title.toLowerCase().includes('pillow');
-              
-              return (
-                <div 
-                  key={product.node.id} 
-                  className="bg-card border rounded-lg p-3 hover:shadow-lg transition-shadow relative"
-                >
-                  {isPillow && (
-                    <div className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs font-bold px-2 py-1 rounded z-10">
-                      1+1 DEAL
-                    </div>
-                  )}
-                  {image && (
-                    <div className="w-full aspect-square bg-secondary/20 rounded-lg overflow-hidden mb-3">
-                      <img
-                        src={image.url}
-                        alt={product.node.title}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
-                  <div className="space-y-2">
-                    <h4 className="font-semibold text-sm line-clamp-2 leading-tight min-h-[2.5rem]">{product.node.title}</h4>
-                    <div className="flex items-center gap-2">
-                      {variant && (
-                        <p className="text-lg font-bold whitespace-nowrap">
-                          ${parseFloat(variant.price.amount).toFixed(2)}
-                        </p>
-                      )}
-                      <Button
-                        size="sm"
-                        className="flex-1 h-8 text-xs relative overflow-hidden group"
-                        onClick={() => handleAddRecommendation(product)}
-                      >
-                        <span className="inline-block transition-all duration-300 group-hover:-translate-y-8 group-hover:opacity-0">
-                          ADD TO CART
-                        </span>
-                        <span className="absolute inset-0 flex items-center justify-center translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                          ADD TO CART
-                        </span>
-                      </Button>
+          <div className="h-full overflow-y-auto p-6 space-y-4">
+            <h3 className="text-xl font-bold mb-4">You may also like</h3>
+            {recommendedProducts.length === 0 ? (
+              <p className="text-muted-foreground text-sm">Loading recommendations...</p>
+            ) : (
+              recommendedProducts.map((product) => {
+                const variant = product.node.variants.edges[0]?.node;
+                const image = product.node.images.edges[0]?.node;
+                const isPillow = product.node.title.toLowerCase().includes('pillow');
+                
+                return (
+                  <div 
+                    key={product.node.id} 
+                    className="bg-card border rounded-lg p-3 hover:shadow-lg transition-shadow relative"
+                  >
+                    {isPillow && (
+                      <div className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs font-bold px-2 py-1 rounded z-10">
+                        1+1 DEAL
+                      </div>
+                    )}
+                    {image && (
+                      <div className="w-full aspect-square bg-secondary/20 rounded-lg overflow-hidden mb-3">
+                        <img
+                          src={image.url}
+                          alt={product.node.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-sm line-clamp-2 leading-tight min-h-[2.5rem]">{product.node.title}</h4>
+                      <div className="flex items-center gap-2">
+                        {variant && (
+                          <p className="text-lg font-bold whitespace-nowrap">
+                            ${parseFloat(variant.price.amount).toFixed(2)}
+                          </p>
+                        )}
+                        <Button
+                          size="sm"
+                          className="flex-1 h-8 text-xs relative overflow-hidden group"
+                          onClick={() => handleAddRecommendation(product)}
+                        >
+                          <span className="inline-block transition-all duration-300 group-hover:-translate-y-8 group-hover:opacity-0">
+                            ADD TO CART
+                          </span>
+                          <span className="absolute inset-0 flex items-center justify-center translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                            ADD TO CART
+                          </span>
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
       )}
