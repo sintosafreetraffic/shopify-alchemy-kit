@@ -120,7 +120,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
               {/* Product Info */}
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-secondary/30 rounded-lg overflow-hidden flex-shrink-0">
+                <div className="hidden sm:block w-12 h-12 bg-secondary/30 rounded-lg overflow-hidden flex-shrink-0">
                   {product.node.images?.edges?.[0]?.node && (
                     <img
                       src={product.node.images.edges[0].node.url}
