@@ -71,15 +71,21 @@ export const KneePillowVideoSection = () => {
                         loop
                         muted
                         playsInline
-                        preload="auto"
+                        preload="metadata"
                         onMouseEnter={(e) => e.currentTarget.play()}
                         onMouseLeave={(e) => {
                           e.currentTarget.pause();
                           e.currentTarget.currentTime = 0;
                         }}
-                        onLoadedData={(e) => {
+                        onLoadedMetadata={(e) => {
                           // Ensure first frame is visible
                           e.currentTarget.currentTime = 0.1;
+                        }}
+                        onCanPlay={(e) => {
+                          // Fallback to ensure first frame shows
+                          if (e.currentTarget.currentTime === 0) {
+                            e.currentTarget.currentTime = 0.1;
+                          }
                         }}
                       />
                       <div className="absolute inset-0 flex items-center justify-center bg-primary/10 group-hover:bg-transparent transition-colors">
