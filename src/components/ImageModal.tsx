@@ -37,7 +37,10 @@ export const ImageModal = ({ imageUrl, onClose }: ImageModalProps) => {
       {/* Control buttons fixed to top right of viewport */}
       <div className="fixed top-4 right-4 md:top-8 md:right-8 flex gap-2 z-[310]">
         <button
-          onClick={() => setIsZoomed(!isZoomed)}
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsZoomed(!isZoomed);
+          }}
           className="bg-white/90 rounded-full p-2 md:p-3 shadow-lg hover:bg-white transition-colors"
           aria-label={isZoomed ? "Zoom out" : "Zoom in"}
         >
@@ -48,7 +51,10 @@ export const ImageModal = ({ imageUrl, onClose }: ImageModalProps) => {
           )}
         </button>
         <button
-          onClick={onClose}
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+          }}
           className="bg-white/90 rounded-full p-2 md:p-3 shadow-lg hover:bg-white transition-colors"
           aria-label="Close"
         >
