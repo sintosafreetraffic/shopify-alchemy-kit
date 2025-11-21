@@ -28,7 +28,7 @@ export default function Home() {
             <div className="flex flex-wrap justify-center gap-4 pt-4">
               <Link to="/product">
                 <Button size="lg" className="text-lg px-8">
-                  Explore Our Products <ArrowRight className="ml-2 w-5 h-5" />
+                  Explore Our Bestseller <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
             </div>
@@ -208,7 +208,7 @@ export default function Home() {
             
             <Link to="/product">
               <Button size="lg" variant="secondary" className="text-lg px-8">
-                Shop Our Products <ArrowRight className="ml-2 w-5 h-5" />
+                Shop Our Bestseller <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </Link>
             
