@@ -10,22 +10,18 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { ShoppingCart, Minus, Plus, Trash2, Lock, Loader2, Moon, RotateCcw, Shield, Gift, Truck, X } from "lucide-react";
+import { ShoppingCart, Minus, Plus, Trash2, Lock, Loader2, Moon, RotateCcw, Shield, Gift, Truck } from "lucide-react";
 import { useCartStore } from "@/stores/cartStore";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
 import { fetchProducts, ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
+import { ImageModal } from "./ImageModal";
 
 export const CartDrawer = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [recommendedProducts, setRecommendedProducts] = useState<ShopifyProduct[]>([]);
   const [shouldBounce, setShouldBounce] = useState(false);
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
-  
-  // Debug logging for expandedImage state
-  useEffect(() => {
-    console.log("expandedImage state changed:", expandedImage);
-  }, [expandedImage]);
   
   const { 
     items, 
@@ -139,25 +135,13 @@ export const CartDrawer = () => {
   return (
     <>
       {/* Recommendations Panel - Attached to cart */}
-      {isOpen && (
-        <>
-          {console.log("Rendering recommendations panel, isOpen:", isOpen)}
-          {createPortal(
-            <div 
-              className="fixed top-0 bottom-0 right-[512px] w-80 bg-blue-100 border-r border-border z-[150] hidden lg:flex flex-col pointer-events-auto"
-              data-recommendations-panel
-              onClick={(e) => {
-                console.log("Panel clicked");
-                e.stopPropagation();
-              }}
-              onMouseDown={(e) => {
-                console.log("Panel mouse down");
-                e.stopPropagation();
-              }}
-            >
+      {isOpen && createPortal(
+        <div 
+          className="fixed top-0 bottom-0 right-[512px] w-80 bg-blue-100 border-r border-border z-[150] hidden lg:flex flex-col pointer-events-auto"
+          data-recommendations-panel
+        >
           <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
             {recommendedProducts.map((product) => {
-              console.log("Rendering product:", product.node.title);
               const variant = product.node.variants.edges[0]?.node;
               const image = product.node.images.edges[0]?.node;
               
@@ -169,17 +153,12 @@ export const CartDrawer = () => {
                   {image && (
                     <div 
                       className="w-full aspect-square bg-secondary/20 rounded-md overflow-hidden mb-3 cursor-pointer hover:opacity-80 transition-opacity"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        console.log("Image clicked:", image.url);
-                        toast.success("Image clicked! Opening modal...");
-                        setExpandedImage(image.url);
-                      }}
+                      onClick={() => setExpandedImage(image.url)}
                     >
                       <img
                         src={image.url}
                         alt={product.node.title}
-                        className="w-full h-full object-cover pointer-events-none"
+                        className="w-full h-full object-cover"
                       />
                     </div>
                   )}
@@ -193,10 +172,7 @@ export const CartDrawer = () => {
                     <Button
                       size="sm"
                       className="relative overflow-hidden group"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleAddRecommendation(product);
-                      }}
+                      onClick={() => handleAddRecommendation(product)}
                     >
                       <span className="inline-block transition-all duration-300 group-hover:-translate-y-8 group-hover:opacity-0">
                         ADD TO CART
@@ -212,8 +188,6 @@ export const CartDrawer = () => {
           </div>
         </div>,
         document.body
-      )}
-        </>
       )}
 
       <Sheet open={isOpen} onOpenChange={setIsOpen} modal={false}>
@@ -532,45 +506,7 @@ export const CartDrawer = () => {
         </SheetContent>
       </Sheet>
 
-      {/* Image Expansion Modal - Custom implementation */}
-      {expandedImage && (
-        <>
-          {console.log("Rendering modal with image:", expandedImage)}
-          {createPortal(
-            <div 
-              className="fixed inset-0 z-[250] flex items-center justify-center bg-black/90 p-4 animate-in fade-in duration-200"
-              onClick={() => {
-                console.log("Overlay clicked, closing modal");
-                setExpandedImage(null);
-              }}
-            >
-              <div 
-                className="relative max-w-4xl w-full bg-white rounded-lg shadow-2xl p-2"
-                onClick={(e) => {
-                  console.log("Content clicked, preventing close");
-                  e.stopPropagation();
-                }}
-              >
-                <button
-                  onClick={() => {
-                    console.log("Close button clicked");
-                    setExpandedImage(null);
-                  }}
-                  className="absolute -top-4 -right-4 z-[260] bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 transition-colors border-2 border-gray-200"
-                >
-                  <X className="h-6 w-6 text-black" />
-                </button>
-                <img
-                  src={expandedImage}
-                  alt="Expanded product"
-                  className="w-full h-auto rounded-lg"
-                />
-              </div>
-            </div>,
-            document.body
-          )}
-        </>
-      )}
+      <ImageModal imageUrl={expandedImage} onClose={() => setExpandedImage(null)} />
     </>
   );
 };
