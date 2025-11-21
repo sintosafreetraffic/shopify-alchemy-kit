@@ -104,7 +104,7 @@ export const ProductImageCarousel = () => {
 
         {/* Two images side by side */}
         <div className="grid grid-cols-2 gap-0">
-          <div className="overflow-hidden">
+          <div className="overflow-hidden aspect-square">
             {images[1]?.type === "video" ? (
               <video
                 src={images[1].url}
@@ -125,7 +125,7 @@ export const ProductImageCarousel = () => {
               />
             )}
           </div>
-          <div className="overflow-hidden">
+          <div className="overflow-hidden aspect-square">
             <img
               src={images[2]?.url}
               alt={images[2]?.alt}
