@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -131,8 +132,8 @@ export const CartDrawer = () => {
 
   return (
     <>
-      {/* Recommendations Panel - Same level as cart */}
-      {isOpen && (
+      {/* Recommendations Panel - Portal to match Sheet stacking context */}
+      {isOpen && createPortal(
         <div 
           className="fixed top-0 bottom-0 left-0 w-96 bg-background border-r shadow-xl z-[100] hidden lg:flex flex-col"
         >
@@ -142,61 +143,10 @@ export const CartDrawer = () => {
           </div>
           
           <div className="flex-1 overflow-y-auto p-6">
-            {recommendedProducts.length === 0 ? (
-              <div className="text-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
-                <p className="text-muted-foreground">Loading recommendations...</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {recommendedProducts.map((product) => {
-                  const variant = product.node.variants.edges[0]?.node;
-                  const image = product.node.images.edges[0]?.node;
-                  const isPillow = product.node.title.toLowerCase().includes('pillow');
-                  
-                  return (
-                    <div 
-                      key={product.node.id} 
-                      className="bg-secondary/10 rounded-lg p-4 hover:bg-secondary/20 transition-all border"
-                    >
-                      {isPillow && (
-                        <div className="mb-2">
-                          <Badge className="bg-primary text-primary-foreground">1+1 DEAL</Badge>
-                        </div>
-                      )}
-                      
-                      {image && (
-                        <div className="w-full aspect-square rounded-md overflow-hidden mb-3">
-                          <img
-                            src={image.url}
-                            alt={product.node.title}
-                            className="w-full h-full object-contain"
-                          />
-                        </div>
-                      )}
-                      
-                      <h3 className="font-semibold mb-2 leading-tight text-sm">{product.node.title}</h3>
-                      
-                      {variant && (
-                        <p className="text-xl font-bold text-primary mb-3">
-                          €{parseFloat(variant.price.amount).toFixed(2)}
-                        </p>
-                      )}
-                      
-                      <Button
-                        size="sm"
-                        className="w-full"
-                        onClick={() => handleAddRecommendation(product)}
-                      >
-                        Add to Cart
-                      </Button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+...
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
