@@ -224,6 +224,8 @@ export const ProductImageCarousel = () => {
                       src={item.url}
                       alt={item.alt}
                       className="w-full h-auto object-cover"
+                      loading={index === 0 ? "eager" : "lazy"}
+                      decoding="async"
                     />
                   )}
                 </div>
@@ -260,6 +262,8 @@ export const ProductImageCarousel = () => {
               src={images[0]?.url}
               alt={images[0]?.alt}
               className="w-full h-full object-cover"
+              loading="eager"
+              decoding="async"
             />
           )}
         </div>
@@ -285,6 +289,8 @@ export const ProductImageCarousel = () => {
                 src={images[1]?.url}
                 alt={images[1]?.alt}
                 className="w-full h-full object-cover"
+                loading="lazy"
+                decoding="async"
               />
             )}
           </div>
@@ -296,6 +302,8 @@ export const ProductImageCarousel = () => {
               src={images[2]?.url}
               alt={images[2]?.alt}
               className="w-full h-full object-cover"
+              loading="lazy"
+              decoding="async"
             />
           </div>
         </div>
@@ -309,6 +317,8 @@ export const ProductImageCarousel = () => {
             src={images[3]?.url}
             alt={images[3]?.alt}
             className="w-full h-full object-cover"
+            loading="lazy"
+            decoding="async"
           />
         </div>
 
@@ -322,6 +332,8 @@ export const ProductImageCarousel = () => {
               src={images[4]?.url}
               alt={images[4]?.alt}
               className="w-full h-full object-cover"
+              loading="lazy"
+              decoding="async"
             />
           </div>
           <div 
@@ -332,6 +344,8 @@ export const ProductImageCarousel = () => {
               src={images[5]?.url}
               alt={images[5]?.alt}
               className="w-full h-full object-cover"
+              loading="lazy"
+              decoding="async"
             />
           </div>
         </div>
