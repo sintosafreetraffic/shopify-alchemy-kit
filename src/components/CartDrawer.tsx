@@ -135,7 +135,7 @@ export const CartDrawer = () => {
       {isOpen && (
         <div 
           data-recommendations-panel 
-          className="fixed left-0 top-0 bottom-0 z-[110] w-80 bg-card border-r border-border shadow-2xl hidden xl:block"
+          className="fixed left-0 top-0 bottom-0 z-[110] w-80 bg-card border-r border-border shadow-2xl hidden lg:block"
         >
           <div className="h-full overflow-y-auto p-6 space-y-4">
             <h3 className="text-xl font-bold mb-4">You may also like</h3>
