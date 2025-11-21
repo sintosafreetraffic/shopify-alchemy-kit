@@ -131,18 +131,17 @@ export const CartDrawer = () => {
 
   return (
     <>
-      {/* Desktop: Recommendations on the left side of the cart - Full Height */}
-      {isOpen && (
-        <div 
-          data-recommendations-panel 
-          className="fixed left-0 top-0 bottom-0 z-[110] w-80 bg-card border-r border-border shadow-2xl hidden lg:block"
-        >
-          <div className="h-full overflow-y-auto p-6 space-y-4">
-            <h3 className="text-xl font-bold mb-4">You may also like</h3>
-            {recommendedProducts.length === 0 ? (
-              <p className="text-muted-foreground text-sm">Loading recommendations...</p>
-            ) : (
-              recommendedProducts.map((product) => {
+      {/* Recommendations Panel - Desktop Only */}
+      {isOpen && recommendedProducts.length > 0 && (
+        <div className="fixed inset-y-0 left-0 w-96 bg-background border-r shadow-xl z-[200] hidden lg:flex flex-col">
+          <div className="p-6 border-b">
+            <h2 className="text-2xl font-bold">You may also like</h2>
+            <p className="text-sm text-muted-foreground mt-1">Complete your sleep solution</p>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="space-y-4">
+              {recommendedProducts.map((product) => {
                 const variant = product.node.variants.edges[0]?.node;
                 const image = product.node.images.edges[0]?.node;
                 const isPillow = product.node.title.toLowerCase().includes('pillow');
@@ -150,48 +149,42 @@ export const CartDrawer = () => {
                 return (
                   <div 
                     key={product.node.id} 
-                    className="bg-card border rounded-lg p-3 hover:shadow-lg transition-shadow relative"
+                    className="bg-secondary/10 rounded-lg p-4 hover:bg-secondary/20 transition-all border"
                   >
                     {isPillow && (
-                      <div className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs font-bold px-2 py-1 rounded z-10">
-                        1+1 DEAL
+                      <div className="mb-2">
+                        <Badge className="bg-primary text-primary-foreground">1+1 BLACK FRIDAY DEAL</Badge>
                       </div>
                     )}
+                    
                     {image && (
-                      <div className="w-full aspect-square bg-secondary/20 rounded-lg overflow-hidden mb-3">
+                      <div className="w-full aspect-square rounded-md overflow-hidden mb-3 bg-white">
                         <img
                           src={image.url}
                           alt={product.node.title}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-contain"
                         />
                       </div>
                     )}
-                    <div className="space-y-2">
-                      <h4 className="font-semibold text-sm line-clamp-2 leading-tight min-h-[2.5rem]">{product.node.title}</h4>
-                      <div className="flex items-center gap-2">
-                        {variant && (
-                          <p className="text-lg font-bold whitespace-nowrap">
-                            ${parseFloat(variant.price.amount).toFixed(2)}
-                          </p>
-                        )}
-                        <Button
-                          size="sm"
-                          className="flex-1 h-8 text-xs relative overflow-hidden group"
-                          onClick={() => handleAddRecommendation(product)}
-                        >
-                          <span className="inline-block transition-all duration-300 group-hover:-translate-y-8 group-hover:opacity-0">
-                            ADD TO CART
-                          </span>
-                          <span className="absolute inset-0 flex items-center justify-center translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                            ADD TO CART
-                          </span>
-                        </Button>
-                      </div>
-                    </div>
+                    
+                    <h3 className="font-semibold mb-2 leading-tight">{product.node.title}</h3>
+                    
+                    {variant && (
+                      <p className="text-2xl font-bold text-primary mb-3">
+                        €{parseFloat(variant.price.amount).toFixed(2)}
+                      </p>
+                    )}
+                    
+                    <Button
+                      className="w-full"
+                      onClick={() => handleAddRecommendation(product)}
+                    >
+                      Add to Cart
+                    </Button>
                   </div>
                 );
-              })
-            )}
+              })}
+            </div>
           </div>
         </div>
       )}
