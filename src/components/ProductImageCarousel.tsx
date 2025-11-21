@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { ZoomIn, ZoomOut, Maximize2, X } from "lucide-react";
 import optisleepPillow from "@/assets/optisleep-pillow-main.png";
 import pillowHeroImage from "@/assets/pillow-hero-main.png";
 import pillowHeroNew from "@/assets/pillow-hero-new.png";
@@ -18,9 +17,6 @@ import {
 } from "@/components/ui/carousel";
 
 export const ProductImageCarousel = () => {
-  const [expandedMedia, setExpandedMedia] = useState<{ url: string; alt: string; type: string } | null>(null);
-  const [zoomLevel, setZoomLevel] = useState(1);
-  
   // Multiple views of the RiseByNight pillow (desktop order)
   const images = [
     { url: pillowHeroNew, alt: "RiseByNight ergonomic pillow main view", type: "image" },
@@ -41,106 +37,8 @@ export const ProductImageCarousel = () => {
     images[5], // pillowLifestyleSleep
   ];
 
-  const handleZoomIn = () => {
-    setZoomLevel(prev => Math.min(prev + 0.5, 3));
-  };
-
-  const handleZoomOut = () => {
-    setZoomLevel(prev => Math.max(prev - 0.5, 1));
-  };
-
-  const handleResetZoom = () => {
-    setZoomLevel(1);
-  };
-
-  const handleCloseModal = () => {
-    setExpandedMedia(null);
-    setZoomLevel(1);
-  };
-
   return (
     <>
-      {/* Simple Modal Overlay */}
-      {expandedMedia && (
-        <div 
-          className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center p-4"
-          onClick={handleCloseModal}
-        >
-          <div className="relative max-w-6xl w-full h-full flex items-center justify-center">
-            {/* Close Button */}
-            <button
-              onClick={handleCloseModal}
-              className="absolute top-4 right-4 z-[10000] rounded-full bg-white text-black p-3 hover:bg-gray-200 transition-all shadow-xl"
-              aria-label="Close"
-            >
-              <X className="w-6 h-6" />
-            </button>
-
-            {/* Content */}
-            <div className="relative max-h-[90vh] max-w-full" onClick={(e) => e.stopPropagation()}>
-              {expandedMedia.type === "video" ? (
-                <video
-                  src={expandedMedia.url}
-                  controls
-                  autoPlay
-                  loop
-                  className="max-h-[90vh] w-auto rounded-lg"
-                  aria-label={expandedMedia.alt}
-                />
-              ) : (
-                <div className="relative">
-                  {/* Zoom Controls */}
-                  <div className="absolute top-4 right-4 z-10 flex gap-2">
-                    <button
-                      onClick={handleZoomOut}
-                      disabled={zoomLevel <= 1}
-                      className="p-2 rounded-full bg-white text-black shadow-lg hover:bg-gray-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                      aria-label="Zoom out"
-                    >
-                      <ZoomOut className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={handleResetZoom}
-                      className="p-2 rounded-full bg-white text-black shadow-lg hover:bg-gray-200 transition-all"
-                      aria-label="Reset zoom"
-                    >
-                      <Maximize2 className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={handleZoomIn}
-                      disabled={zoomLevel >= 3}
-                      className="p-2 rounded-full bg-white text-black shadow-lg hover:bg-gray-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                      aria-label="Zoom in"
-                    >
-                      <ZoomIn className="w-5 h-5" />
-                    </button>
-                  </div>
-
-                  {/* Zoom Level Indicator */}
-                  {zoomLevel > 1 && (
-                    <div className="absolute top-4 left-4 z-10 px-3 py-1 rounded-full bg-white text-black shadow-lg text-sm font-medium">
-                      {Math.round(zoomLevel * 100)}%
-                    </div>
-                  )}
-
-                  {/* Image */}
-                  <img
-                    src={expandedMedia.url}
-                    alt={expandedMedia.alt}
-                    className="max-h-[90vh] w-auto rounded-lg"
-                    style={{
-                      transform: `scale(${zoomLevel})`,
-                      transformOrigin: 'center center',
-                      transition: 'transform 0.2s'
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Mobile Carousel */}
       <div className="md:hidden">
         <Carousel className="w-full">
@@ -148,8 +46,7 @@ export const ProductImageCarousel = () => {
             {mobileImages.map((item, index) => (
               <CarouselItem key={index}>
                 <div 
-                  className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 relative cursor-pointer hover:opacity-90 transition-opacity"
-                  onClick={() => setExpandedMedia(item)}
+                  className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 relative"
                 >
                   {item.type === "video" ? (
                     <video
@@ -182,10 +79,7 @@ export const ProductImageCarousel = () => {
       {/* Desktop Static Gallery */}
       <div className="hidden md:block">
         {/* First large image */}
-        <div 
-          className="overflow-hidden relative cursor-pointer hover:opacity-90 transition-opacity"
-          onClick={() => setExpandedMedia(images[0])}
-        >
+        <div className="overflow-hidden relative">
           {images[0]?.type === "video" ? (
             <video
               src={images[0].url}
@@ -209,10 +103,7 @@ export const ProductImageCarousel = () => {
 
         {/* Two images side by side */}
         <div className="grid grid-cols-2 gap-0">
-          <div 
-            className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-            onClick={() => setExpandedMedia(images[1])}
-          >
+          <div className="overflow-hidden">
             {images[1]?.type === "video" ? (
               <video
                 src={images[1].url}
@@ -233,10 +124,7 @@ export const ProductImageCarousel = () => {
               />
             )}
           </div>
-          <div 
-            className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-            onClick={() => setExpandedMedia(images[2])}
-          >
+          <div className="overflow-hidden">
             <img
               src={images[2]?.url}
               alt={images[2]?.alt}
@@ -248,10 +136,7 @@ export const ProductImageCarousel = () => {
         </div>
 
         {/* Second large image */}
-        <div 
-          className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-          onClick={() => setExpandedMedia(images[3])}
-        >
+        <div className="overflow-hidden">
           <img
             src={images[3]?.url}
             alt={images[3]?.alt}
@@ -263,16 +148,16 @@ export const ProductImageCarousel = () => {
 
         {/* Last two images side by side */}
         <div className="grid grid-cols-2 gap-0">
-          <div 
-            className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-            onClick={() => setExpandedMedia(images[4])}
-          >
-...
+          <div className="overflow-hidden">
+            <img
+              src={images[4]?.url}
+              alt={images[4]?.alt}
+              className="w-full h-full object-cover"
+              loading="lazy"
+              decoding="async"
+            />
           </div>
-          <div 
-            className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-            onClick={() => setExpandedMedia(images[5])}
-          >
+          <div className="overflow-hidden">
             <img
               src={images[5]?.url}
               alt={images[5]?.alt}
