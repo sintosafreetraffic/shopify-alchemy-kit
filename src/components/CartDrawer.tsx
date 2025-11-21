@@ -156,13 +156,14 @@ export const CartDrawer = () => {
                       className="w-full aspect-square bg-secondary/20 rounded-md overflow-hidden mb-3 cursor-pointer hover:opacity-80 transition-opacity"
                       onClick={(e) => {
                         e.stopPropagation();
+                        console.log("Image clicked:", image.url);
                         setExpandedImage(image.url);
                       }}
                     >
                       <img
                         src={image.url}
                         alt={product.node.title}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover pointer-events-none"
                       />
                     </div>
                   )}
@@ -514,29 +515,43 @@ export const CartDrawer = () => {
       </Sheet>
 
       {/* Image Expansion Modal - Custom implementation */}
-      {expandedImage && createPortal(
-        <div 
-          className="fixed inset-0 z-[250] flex items-center justify-center bg-black/80 p-4"
-          onClick={() => setExpandedImage(null)}
-        >
-          <div 
-            className="relative max-w-4xl w-full bg-background rounded-lg shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={() => setExpandedImage(null)}
-              className="absolute -top-4 -right-4 z-[260] bg-background rounded-full p-2 shadow-lg hover:bg-secondary transition-colors"
+      {expandedImage && (
+        <>
+          {console.log("Rendering modal with image:", expandedImage)}
+          {createPortal(
+            <div 
+              className="fixed inset-0 z-[250] flex items-center justify-center bg-black/90 p-4 animate-in fade-in duration-200"
+              onClick={() => {
+                console.log("Overlay clicked, closing modal");
+                setExpandedImage(null);
+              }}
             >
-              <X className="h-6 w-6" />
-            </button>
-            <img
-              src={expandedImage}
-              alt="Expanded product"
-              className="w-full h-auto rounded-lg"
-            />
-          </div>
-        </div>,
-        document.body
+              <div 
+                className="relative max-w-4xl w-full bg-white rounded-lg shadow-2xl p-2"
+                onClick={(e) => {
+                  console.log("Content clicked, preventing close");
+                  e.stopPropagation();
+                }}
+              >
+                <button
+                  onClick={() => {
+                    console.log("Close button clicked");
+                    setExpandedImage(null);
+                  }}
+                  className="absolute -top-4 -right-4 z-[260] bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 transition-colors border-2 border-gray-200"
+                >
+                  <X className="h-6 w-6 text-black" />
+                </button>
+                <img
+                  src={expandedImage}
+                  alt="Expanded product"
+                  className="w-full h-auto rounded-lg"
+                />
+              </div>
+            </div>,
+            document.body
+          )}
+        </>
       )}
     </>
   );
