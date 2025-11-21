@@ -131,7 +131,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                     />
                   )}
                 </div>
-                <div className="text-left">
+                <div className="text-left hidden sm:block">
                   <h3 className="font-semibold text-sm line-clamp-1">
                     {product.node.title}
                   </h3>
