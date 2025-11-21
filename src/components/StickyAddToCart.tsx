@@ -166,7 +166,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                       }`}
                     >
                       <Plus className="w-3 h-3" />
-                      <span>2 Pillows • + FREE GIFT 2X</span>
+                      <span>2 Pillows + FREE GIFT 2X</span>
                       <img src={eyeMaskGift} alt="Free gift" className="w-6 h-6 object-contain" />
                     </button>
                   </div>
