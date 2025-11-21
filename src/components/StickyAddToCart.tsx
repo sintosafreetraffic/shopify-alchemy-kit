@@ -176,12 +176,12 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                 <Button 
                   onClick={handleAddToCart}
                   disabled={isCheckingOut}
-                  className="flex-1 sm:flex-initial bg-black text-white hover:bg-primary transition-all relative overflow-hidden group"
+                  className="min-w-[140px] sm:flex-initial bg-black text-white hover:bg-primary transition-all relative overflow-hidden group"
                 >
                   {isCheckingOut ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Adding...
+                      <span className="whitespace-nowrap">Adding...</span>
                     </>
                   ) : (
                     <>
@@ -195,8 +195,8 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                           )}
                         </div>
                         <div className="flex flex-col items-start">
-                          <span className="text-xs leading-none">Add to Cart</span>
-                          <span className="font-bold leading-none">${addToCartValue.toFixed(2)}</span>
+                          <span className="text-xs leading-none whitespace-nowrap">Add to Cart</span>
+                          <span className="font-bold leading-none whitespace-nowrap">${addToCartValue.toFixed(2)}</span>
                         </div>
                       </span>
                       <span className="absolute inset-0 flex items-center justify-center gap-2 translate-y-12 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
@@ -209,8 +209,8 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                           )}
                         </div>
                         <div className="flex flex-col items-start">
-                          <span className="text-xs leading-none">Add to Cart</span>
-                          <span className="font-bold leading-none">${addToCartValue.toFixed(2)}</span>
+                          <span className="text-xs leading-none whitespace-nowrap">Add to Cart</span>
+                          <span className="font-bold leading-none whitespace-nowrap">${addToCartValue.toFixed(2)}</span>
                         </div>
                       </span>
                     </>
