@@ -300,13 +300,7 @@ export const CartDrawer = () => {
                                          item.quantity >= 2;
                     
                     return (
-                    <div key={item.variantId} className="flex gap-4 p-2 border rounded-lg relative">
-                      {hasActiveDeal && (
-                        <div className="absolute -top-2 -right-2 bg-gradient-to-r from-red-600 to-red-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg z-10 flex items-center gap-1 animate-pulse">
-                          <Gift className="w-3 h-3" />
-                          <span>1+1</span>
-                        </div>
-                      )}
+                    <div key={item.variantId} className="flex gap-4 p-2 border rounded-lg">
                       <div className="w-16 h-16 bg-secondary/20 rounded-md overflow-hidden flex-shrink-0">
                         {item.product.node.images?.edges?.[0]?.node && (
                           <img
@@ -318,9 +312,17 @@ export const CartDrawer = () => {
                       </div>
                       
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-sm leading-tight">
-                          {item.product.node.title.replace('RiseByNight', 'RiseByNight™')}
-                        </h4>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-medium text-sm leading-tight">
+                            {item.product.node.title.replace('RiseByNight', 'RiseByNight™')}
+                          </h4>
+                          {hasActiveDeal && (
+                            <div className="bg-gradient-to-r from-red-600 to-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1 flex-shrink-0">
+                              <Gift className="w-3 h-3" />
+                              <span>1+1</span>
+                            </div>
+                          )}
+                        </div>
                         {item.selectedOptions.filter(option => option.value.toLowerCase() !== 'default title').length > 0 && (
                           <p className="text-sm text-muted-foreground">
                             {item.selectedOptions
