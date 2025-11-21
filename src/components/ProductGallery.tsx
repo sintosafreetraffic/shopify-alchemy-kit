@@ -12,7 +12,7 @@ export const ProductGallery = () => {
     {
       id: 1,
       name: "RiseByNight™ Complete Sleep Bundle",
-      tagline: "Everything You Need for Perfect Sleep",
+      tagline: "Everything for Perfect Sleep",
       price: "$149.99",
       originalPrice: "$189.97",
       rating: 4.9,
