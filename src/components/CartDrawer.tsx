@@ -184,7 +184,9 @@ export const CartDrawer = () => {
                       )}
                     </div>
                   )}
-                  <h4 className="font-semibold text-sm leading-tight mb-3">{product.node.title}</h4>
+                  <h4 className="font-semibold text-sm leading-tight mb-3">
+                    {product.node.title.replace('RiseByNight', 'RiseByNight™')}
+                  </h4>
                   <div className="flex items-center justify-between gap-2">
                     {variant && (
                       <p className="text-lg font-bold text-primary">
@@ -305,7 +307,9 @@ export const CartDrawer = () => {
                       </div>
                       
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-sm leading-tight">{item.product.node.title}</h4>
+                        <h4 className="font-medium text-sm leading-tight">
+                          {item.product.node.title.replace('RiseByNight', 'RiseByNight™')}
+                        </h4>
                         {item.selectedOptions.filter(option => option.value.toLowerCase() !== 'default title').length > 0 && (
                           <p className="text-sm text-muted-foreground">
                             {item.selectedOptions
@@ -424,7 +428,9 @@ export const CartDrawer = () => {
                                 </div>
                               )}
                               <div className="flex flex-col gap-1 flex-grow">
-                                <h4 className="font-medium text-xs line-clamp-2 leading-tight">{product.node.title}</h4>
+                                <h4 className="font-medium text-xs line-clamp-2 leading-tight">
+                                  {product.node.title.replace('RiseByNight', 'RiseByNight™')}
+                                </h4>
                                 {variant && (
                                   <p className="text-sm font-semibold">
                                     ${parseFloat(variant.price.amount).toFixed(2)}
