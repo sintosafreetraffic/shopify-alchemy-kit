@@ -254,7 +254,8 @@ export async function createStorefrontCheckout(
     variantId: string;
     quantity: number;
   }>,
-  freeMasks: number = 0
+  freeMasks: number = 0,
+  discountCodes: string[] = []
 ): Promise<string> {
   try {
     const lines = items.map(item => ({
@@ -298,11 +299,11 @@ export async function createStorefrontCheckout(
 
     let cart = cartData.data.cartCreate.cart;
 
-    // Apply discount code after cart creation if free masks are included
-    if (freeMasks > 0) {
+    // Apply discount codes after cart creation if any are provided
+    if (discountCodes.length > 0) {
       const discountData = await storefrontApiRequest(CART_DISCOUNT_CODES_UPDATE, {
         cartId: cart.id,
-        discountCodes: ['FREEMASKSFORYOU'],
+        discountCodes: discountCodes,
       });
 
       if (discountData.data.cartDiscountCodesUpdate.userErrors.length > 0) {
