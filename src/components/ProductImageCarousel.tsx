@@ -101,7 +101,10 @@ export const ProductImageCarousel = () => {
   return (
     <>
       {/* Expanded Media Dialog */}
-      <Dialog open={!!expandedMedia} onOpenChange={(open) => !open && handleCloseModal()}>
+      <Dialog open={!!expandedMedia} onOpenChange={(open) => {
+        console.log("Dialog onOpenChange:", open, "expandedMedia:", expandedMedia);
+        if (!open) handleCloseModal();
+      }}>
         <DialogContent className="max-w-4xl w-full p-2 md:p-6 relative">
           {/* Dedicated Close Button */}
           <button
@@ -201,7 +204,10 @@ export const ProductImageCarousel = () => {
               <CarouselItem key={index}>
                 <div 
                   className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 relative cursor-pointer hover:opacity-90 transition-opacity"
-                  onClick={() => setExpandedMedia(item)}
+                  onClick={() => {
+                    console.log("Image clicked:", item);
+                    setExpandedMedia(item);
+                  }}
                 >
                   {item.type === "video" ? (
                     <video
@@ -234,7 +240,10 @@ export const ProductImageCarousel = () => {
         {/* First large image */}
         <div 
           className="overflow-hidden relative cursor-pointer hover:opacity-90 transition-opacity"
-          onClick={() => setExpandedMedia(images[0])}
+          onClick={() => {
+            console.log("Desktop image clicked:", images[0]);
+            setExpandedMedia(images[0]);
+          }}
         >
           {images[0]?.type === "video" ? (
             <video
