@@ -1,12 +1,8 @@
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
 import { Package, RotateCcw, Mail, AlertCircle } from "lucide-react";
 
 export default function ReturnPolicy() {
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      
       <main className="container mx-auto px-4 py-16 max-w-4xl">
         <div className="space-y-8">
           {/* Header */}
@@ -211,8 +207,6 @@ export default function ReturnPolicy() {
           </section>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }
