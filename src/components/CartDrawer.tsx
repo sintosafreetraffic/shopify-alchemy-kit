@@ -137,19 +137,6 @@ export const CartDrawer = () => {
 
   return (
     <>
-      {/* Image Expansion Dialog */}
-      <Dialog open={!!expandedImage} onOpenChange={() => setExpandedImage(null)}>
-        <DialogContent className="max-w-3xl">
-          {expandedImage && (
-            <img
-              src={expandedImage}
-              alt="Expanded product"
-              className="w-full h-auto"
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
       {/* Recommendations Panel - Attached to cart */}
       {isOpen && createPortal(
         <div 
@@ -529,6 +516,19 @@ export const CartDrawer = () => {
         </div>
         </SheetContent>
       </Sheet>
+
+      {/* Image Expansion Dialog - Moved outside Sheet for proper rendering */}
+      <Dialog open={!!expandedImage} onOpenChange={() => setExpandedImage(null)}>
+        <DialogContent className="max-w-3xl p-2">
+          {expandedImage && (
+            <img
+              src={expandedImage}
+              alt="Expanded product"
+              className="w-full h-auto rounded-lg"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
