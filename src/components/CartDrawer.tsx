@@ -135,19 +135,18 @@ export const CartDrawer = () => {
       {/* Recommendations Panel - Attached to cart */}
       {isOpen && createPortal(
         <div 
-          className="fixed top-0 bottom-0 right-[512px] w-80 bg-blue-50/30 border-r border-border z-[100] hidden lg:flex flex-col"
+          className="fixed top-0 bottom-0 right-[512px] w-80 bg-blue-100 border-r border-border z-[100] hidden lg:flex flex-col"
           data-recommendations-panel
         >
           <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
-            {recommendedProducts.slice(0, 2).map((product) => {
+            {recommendedProducts.map((product) => {
               const variant = product.node.variants.edges[0]?.node;
               const image = product.node.images.edges[0]?.node;
               
               return (
-                <button
+                <div
                   key={product.node.id}
-                  onClick={() => handleAddRecommendation(product)}
-                  className="border border-border rounded-lg p-3 bg-background hover:shadow-md transition-all cursor-pointer text-left w-full"
+                  className="border border-border rounded-lg p-3 bg-background hover:shadow-md transition-all"
                 >
                   {image && (
                     <div className="w-full aspect-square bg-secondary/20 rounded-md overflow-hidden mb-3">
@@ -160,11 +159,23 @@ export const CartDrawer = () => {
                   )}
                   <h4 className="font-semibold text-sm leading-tight mb-2">{product.node.title}</h4>
                   {variant && (
-                    <p className="text-lg font-bold text-primary">
+                    <p className="text-lg font-bold text-primary mb-3">
                       ${parseFloat(variant.price.amount).toFixed(2)}
                     </p>
                   )}
-                </button>
+                  <Button
+                    size="sm"
+                    className="w-full relative overflow-hidden group"
+                    onClick={() => handleAddRecommendation(product)}
+                  >
+                    <span className="inline-block transition-all duration-300 group-hover:-translate-y-8 group-hover:opacity-0">
+                      ADD TO CART
+                    </span>
+                    <span className="absolute inset-0 flex items-center justify-center translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                      ADD TO CART
+                    </span>
+                  </Button>
+                </div>
               );
             })}
           </div>
