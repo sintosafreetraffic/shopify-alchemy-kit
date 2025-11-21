@@ -132,18 +132,41 @@ export const CartDrawer = () => {
 
   return (
     <>
-      {/* Recommendations Panel - Portal to match Sheet stacking context */}
+      {/* Recommendations Panel - Attached to cart */}
       {isOpen && createPortal(
         <div 
-          className="fixed top-0 bottom-0 left-0 w-96 bg-background border-r shadow-xl z-[100] hidden lg:flex flex-col"
+          className="fixed top-0 bottom-0 right-[448px] w-80 bg-blue-50/30 border-r border-border z-[100] hidden lg:flex flex-col"
+          data-recommendations-panel
         >
-          <div className="p-6 border-b">
-            <h2 className="text-2xl font-bold">You may also like</h2>
-            <p className="text-sm text-muted-foreground mt-1">Complete your sleep solution</p>
-          </div>
-          
-          <div className="flex-1 overflow-y-auto p-6">
-...
+          <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
+            {recommendedProducts.slice(0, 2).map((product) => {
+              const variant = product.node.variants.edges[0]?.node;
+              const image = product.node.images.edges[0]?.node;
+              
+              return (
+                <button
+                  key={product.node.id}
+                  onClick={() => handleAddRecommendation(product)}
+                  className="border border-border rounded-lg p-3 bg-background hover:shadow-md transition-all cursor-pointer text-left w-full"
+                >
+                  {image && (
+                    <div className="w-full aspect-square bg-secondary/20 rounded-md overflow-hidden mb-3">
+                      <img
+                        src={image.url}
+                        alt={product.node.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <h4 className="font-semibold text-sm leading-tight mb-2">{product.node.title}</h4>
+                  {variant && (
+                    <p className="text-lg font-bold text-primary">
+                      ${parseFloat(variant.price.amount).toFixed(2)}
+                    </p>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>,
         document.body
