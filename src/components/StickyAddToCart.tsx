@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { useCartStore } from "@/stores/cartStore";
+import { useUIStore } from "@/stores/uiStore";
 import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
@@ -18,6 +19,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
   const [product, setProduct] = useState<ShopifyProduct | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { addItem, setCartOpen, isCartOpen, items } = useCartStore();
+  const { isMobileMenuOpen } = useUIStore();
   
   // Calculate cart totals
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -108,7 +110,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
 
   const selectedOption = bundles[selectedBundle];
 
-  if (isCartOpen) return null;
+  if (isCartOpen || isMobileMenuOpen) return null;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-[100] bg-background/95 backdrop-blur-md border-t shadow-lg">
