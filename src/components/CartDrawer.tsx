@@ -63,19 +63,12 @@ export const CartDrawer = () => {
   );
   const totalPillows = pillowItems.reduce((sum, item) => sum + item.quantity, 0);
   
-  // Black Friday pricing logic - only apply to pillow items
-  const pillowItemsTotal = pillowItems.reduce((sum, item) => sum + (parseFloat(item.price.amount) * item.quantity), 0);
-  const pillowDiscount = Math.floor(totalPillows / 2) * 89.99; // Each pair of pillows gets one free
-  const otherItemsTotal = items
-    .filter(item => !item.product.node.title.toLowerCase().includes('pillow'))
-    .reduce((sum, item) => sum + (parseFloat(item.price.amount) * item.quantity), 0);
-  
-  const originalTotal = subtotal; // Total before discount
-  const discount = pillowDiscount;
-  const totalPrice = pillowItemsTotal - pillowDiscount + otherItemsTotal;
-  
   // Free gifts logic: Only for 2+ pillows - pairs of 2 = 2 masks each
   const freeGifts = totalPillows >= 2 ? Math.floor(totalPillows / 2) * 2 : 0;
+  
+  // Use actual subtotal without manual discount calculations
+  // Discounts are applied via Shopify discount codes at checkout
+  const totalPrice = subtotal;
 
   // Fetch recommended products (excluding free gift product only)
   useEffect(() => {
@@ -292,20 +285,9 @@ export const CartDrawer = () => {
                           </p>
                         )}
                         <div className="mt-1">
-                          {item.product.node.title.toLowerCase().includes('pillow') && item.quantity >= 2 ? (
-                            <div className="space-y-0.5">
-                              <p className="text-sm text-muted-foreground line-through">
-                                {item.price.currencyCode} ${(parseFloat(item.price.amount) * item.quantity).toFixed(2)}
-                              </p>
-                              <p className="font-semibold">
-                                {item.price.currencyCode} ${((parseFloat(item.price.amount) * item.quantity) - (Math.floor(item.quantity / 2) * parseFloat(item.price.amount))).toFixed(2)}
-                              </p>
-                            </div>
-                          ) : (
-                            <p className="font-semibold">
-                              {item.price.currencyCode} ${(parseFloat(item.price.amount) * item.quantity).toFixed(2)}
-                            </p>
-                          )}
+                          <p className="font-semibold">
+                            {item.price.currencyCode} ${(parseFloat(item.price.amount) * item.quantity).toFixed(2)}
+                          </p>
                         </div>
                       </div>
                       
@@ -437,27 +419,15 @@ export const CartDrawer = () => {
                 {/* Price Summary */}
                 <div className="space-y-1.5">
                   <div className="flex justify-between items-center pt-2">
-                    <span className="text-base font-bold">Total</span>
+                    <span className="text-base font-bold">Subtotal</span>
                     <div className="text-lg font-bold">
-                      ${totalPrice.toFixed(2)}
+                      ${subtotal.toFixed(2)}
                     </div>
                   </div>
                   
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-muted-foreground">Shipping</span>
-                    <span className="text-muted-foreground">$0.00</span>
+                  <div className="text-sm text-muted-foreground text-center py-2 border-t">
+                    Discounts will be applied at checkout
                   </div>
-                  
-                  {discount > 0 && (
-                    <div className="flex justify-between items-center text-xs bg-green-50 dark:bg-green-950/20 px-2 py-1.5 rounded">
-                      <span className="text-green-600 dark:text-green-400 font-semibold">
-                        Black Friday Savings
-                      </span>
-                      <span className="text-green-600 dark:text-green-400 font-semibold">
-                        -${discount.toFixed(2)}
-                      </span>
-                    </div>
-                  )}
                 </div>
                 
                 <Button 
