@@ -11,19 +11,34 @@ export default function Home() {
   return (
     <div className="min-h-screen">
       {/* Lifestyle Hero Image */}
-      <section className="w-full">
+      <section className="relative w-full">
         {/* Desktop Image */}
-        <img 
-          src={lifestyleHero} 
-          alt="Peaceful sleep with RiseByNight" 
-          className="hidden md:block w-full h-[60vh] md:h-[70vh] object-cover"
-        />
+        <div className="hidden md:block relative">
+          <img 
+            src={lifestyleHero} 
+            alt="Peaceful sleep with RiseByNight" 
+            className="w-full h-[60vh] md:h-[70vh] object-cover"
+          />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <h2 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white drop-shadow-2xl text-center px-4">
+              Black Friday: Buy 1 Get 1 Free
+            </h2>
+          </div>
+        </div>
+        
         {/* Mobile Image */}
-        <img 
-          src={lifestyleHeroMobile} 
-          alt="Peaceful sleep with RiseByNight" 
-          className="block md:hidden w-full h-[60vh] object-cover"
-        />
+        <div className="block md:hidden relative">
+          <img 
+            src={lifestyleHeroMobile} 
+            alt="Peaceful sleep with RiseByNight" 
+            className="w-full h-[60vh] object-cover"
+          />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <h2 className="text-3xl font-bold text-white drop-shadow-2xl text-center px-4">
+              Black Friday: Buy 1 Get 1 Free
+            </h2>
+          </div>
+        </div>
       </section>
 
       {/* Hero Section */}
