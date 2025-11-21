@@ -3,11 +3,15 @@ import { NavLink } from "./NavLink";
 import { Link } from "react-router-dom";
 import logo from "@/assets/risebynight-logo-full.png";
 import { useState, useEffect } from "react";
+import { Menu } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 
 export const Header = () => {
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [isAtTop, setIsAtTop] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -43,21 +47,63 @@ export const Header = () => {
         !isAtTop && !isVisible ? "-translate-y-full" : "translate-y-0"
       }`}
     >
-      <div className="container mx-auto px-4 py-2 grid grid-cols-3 items-center">
-        <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
+      <div className="container mx-auto px-4 py-2 flex md:grid md:grid-cols-3 items-center justify-between">
+        {/* Mobile Menu Button - Left */}
+        <div className="flex items-center md:hidden">
+          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="mr-2">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[280px]">
+              <SheetHeader>
+                <SheetTitle>Menu</SheetTitle>
+              </SheetHeader>
+              <nav className="flex flex-col gap-4 mt-6">
+                <NavLink 
+                  to="/" 
+                  className="text-lg text-foreground hover:text-primary transition-colors py-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Home
+                </NavLink>
+                <NavLink 
+                  to="/about" 
+                  className="text-lg text-foreground hover:text-primary transition-colors py-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  About Us
+                </NavLink>
+                <NavLink 
+                  to="/track" 
+                  className="text-lg text-foreground hover:text-primary transition-colors py-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Track Your Order
+                </NavLink>
+              </nav>
+            </SheetContent>
+          </Sheet>
+        </div>
+
+        {/* Logo - Center on mobile, left on desktop */}
+        <Link to="/" className="flex items-center hover:opacity-80 transition-opacity md:justify-start justify-center flex-1 md:flex-none">
           <img 
             src={logo} 
             alt="RiseByNight - Ergonomic Sleep Pillow" 
-            className="h-12 w-auto"
+            className="h-10 md:h-12 w-auto"
           />
         </Link>
         
+        {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center justify-center gap-4 lg:gap-8 mt-3 whitespace-nowrap">
           <NavLink to="/" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors whitespace-nowrap">Home</NavLink>
           <NavLink to="/about" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors whitespace-nowrap">About Us</NavLink>
           <NavLink to="/track" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors whitespace-nowrap">Track Your Order</NavLink>
         </nav>
         
+        {/* Cart - Right */}
         <div className="flex items-center justify-end">
           <CartDrawer />
         </div>
