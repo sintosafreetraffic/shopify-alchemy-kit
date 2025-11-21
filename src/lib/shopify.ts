@@ -141,6 +141,43 @@ export async function fetchProducts(limit = 50, query?: string) {
   return data?.data?.products?.edges || [];
 }
 
+// Page fetching interface
+export interface ShopifyPage {
+  id: string;
+  title: string;
+  body: string;
+  bodySummary: string;
+  handle: string;
+}
+
+const PAGE_QUERY = `
+  query getPage($handle: String!) {
+    page(handle: $handle) {
+      id
+      title
+      body
+      bodySummary
+      handle
+    }
+  }
+`;
+
+export async function fetchPageByHandle(handle: string): Promise<ShopifyPage | null> {
+  try {
+    const data = await storefrontApiRequest(PAGE_QUERY, { handle });
+    
+    if (!data?.data?.page) {
+      console.warn(`Page with handle "${handle}" not found in Shopify`);
+      return null;
+    }
+    
+    return data.data.page;
+  } catch (error) {
+    console.error(`Error fetching page "${handle}":`, error);
+    return null;
+  }
+}
+
 const CART_CREATE_MUTATION = `
   mutation cartCreate($input: CartInput!) {
     cartCreate(input: $input) {
