@@ -460,7 +460,7 @@ export const CartDrawer = () => {
                   ) : (
                     <>
                       <ExternalLink className="w-4 h-4 mr-2" />
-                      Secure Checkout
+                      PROCEED TO CHECKOUT
                     </>
                   )}
                 </Button>
