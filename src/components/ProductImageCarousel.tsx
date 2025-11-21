@@ -16,8 +16,10 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import { ImageModal } from "./ImageModal";
 
 export const ProductImageCarousel = () => {
+  const [expandedImage, setExpandedImage] = useState<string | null>(null);
   // Multiple views of the RiseByNight pillow (desktop order)
   const images = [
     { url: pillowHeroNew, alt: "RiseByNight ergonomic pillow main view", type: "image" },
@@ -47,7 +49,8 @@ export const ProductImageCarousel = () => {
             {mobileImages.map((item, index) => (
               <CarouselItem key={index}>
                 <div 
-                  className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 relative"
+                  className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 relative cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={() => item.type === "image" && setExpandedImage(item.url)}
                 >
                   {item.type === "video" ? (
                     <video
@@ -80,7 +83,7 @@ export const ProductImageCarousel = () => {
       {/* Desktop Static Gallery */}
       <div className="hidden md:block">
         {/* First large image */}
-        <div className="overflow-hidden relative">
+        <div className="overflow-hidden relative cursor-pointer hover:opacity-90 transition-opacity" onClick={() => images[0]?.type === "image" && setExpandedImage(images[0].url)}>
           {images[0]?.type === "video" ? (
             <video
               src={images[0].url}
@@ -104,7 +107,7 @@ export const ProductImageCarousel = () => {
 
         {/* Two images side by side */}
         <div className="grid grid-cols-2 gap-0">
-          <div className="overflow-hidden aspect-square">
+          <div className="overflow-hidden aspect-square cursor-pointer hover:opacity-90 transition-opacity" onClick={() => images[1]?.type === "image" && setExpandedImage(images[1].url)}>
             {images[1]?.type === "video" ? (
               <video
                 src={images[1].url}
@@ -125,7 +128,7 @@ export const ProductImageCarousel = () => {
               />
             )}
           </div>
-          <div className="overflow-hidden aspect-square">
+          <div className="overflow-hidden aspect-square cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setExpandedImage(images[2]?.url)}>
             <img
               src={images[2]?.url}
               alt={images[2]?.alt}
@@ -137,7 +140,7 @@ export const ProductImageCarousel = () => {
         </div>
 
         {/* Second large image */}
-        <div className="overflow-hidden">
+        <div className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setExpandedImage(images[3]?.url)}>
           <img
             src={images[3]?.url}
             alt={images[3]?.alt}
@@ -149,7 +152,7 @@ export const ProductImageCarousel = () => {
 
         {/* Last two images side by side */}
         <div className="grid grid-cols-2 gap-0">
-          <div className="overflow-hidden">
+          <div className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setExpandedImage(images[4]?.url)}>
             <img
               src={images[4]?.url}
               alt={images[4]?.alt}
@@ -158,7 +161,7 @@ export const ProductImageCarousel = () => {
               decoding="async"
             />
           </div>
-          <div className="overflow-hidden">
+          <div className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setExpandedImage(images[5]?.url)}>
             <img
               src={images[5]?.url}
               alt={images[5]?.alt}
@@ -169,6 +172,8 @@ export const ProductImageCarousel = () => {
           </div>
         </div>
       </div>
+
+      <ImageModal imageUrl={expandedImage} onClose={() => setExpandedImage(null)} />
     </>
   );
 };
