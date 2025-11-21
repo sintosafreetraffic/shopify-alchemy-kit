@@ -111,7 +111,7 @@ export const Hero = () => {
                 <span className="text-sm font-semibold">6,247 verified product reviews</span>
               </div>
               
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex gap-2 flex-nowrap">
                 <div className="inline-flex items-center gap-2 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 px-3 py-1.5 rounded-md text-xs font-bold">
                   ✓ 98% Customer Satisfaction
                 </div>
@@ -174,7 +174,7 @@ export const Hero = () => {
             </p>
 
             {/* Benefit-Focused USPs Section */}
-            <div className="space-y-2 my-4">
+            <div className="space-y-2 my-2 md:my-4">
               <div className="flex items-start gap-2">
                 <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
                 <p className="text-sm"><span className="font-semibold">Wake up pain-free</span> - Scientifically proven to eliminate neck & shoulder pain</p>
