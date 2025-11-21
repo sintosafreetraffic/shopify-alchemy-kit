@@ -115,7 +115,7 @@ export const ProductGallery = () => {
                 </div>
 
                 <p className="text-sm text-primary font-medium mb-1">{product.tagline}</p>
-                <h3 className="text-2xl font-bold mb-3">{product.name}</h3>
+                <h3 className="text-lg font-bold mb-3">{product.name}</h3>
 
                 <div className="flex items-center gap-2 mb-4">
                   <span className="text-2xl font-bold text-primary">{product.price}</span>
