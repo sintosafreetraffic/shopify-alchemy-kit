@@ -159,27 +159,29 @@ export const CartDrawer = () => {
                       />
                     </div>
                   )}
-                  <h4 className="font-semibold text-sm leading-tight mb-2">{product.node.title}</h4>
-                  {variant && (
-                    <p className="text-lg font-bold text-primary mb-3">
-                      ${parseFloat(variant.price.amount).toFixed(2)}
-                    </p>
-                  )}
-                  <Button
-                    size="sm"
-                    className="w-full relative overflow-hidden group"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleAddRecommendation(product);
-                    }}
-                  >
-                    <span className="inline-block transition-all duration-300 group-hover:-translate-y-8 group-hover:opacity-0">
-                      ADD TO CART
-                    </span>
-                    <span className="absolute inset-0 flex items-center justify-center translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                      ADD TO CART
-                    </span>
-                  </Button>
+                  <h4 className="font-semibold text-sm leading-tight mb-3">{product.node.title}</h4>
+                  <div className="flex items-center justify-between gap-2">
+                    {variant && (
+                      <p className="text-lg font-bold text-primary">
+                        ${parseFloat(variant.price.amount).toFixed(2)}
+                      </p>
+                    )}
+                    <Button
+                      size="sm"
+                      className="relative overflow-hidden group"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAddRecommendation(product);
+                      }}
+                    >
+                      <span className="inline-block transition-all duration-300 group-hover:-translate-y-8 group-hover:opacity-0">
+                        ADD TO CART
+                      </span>
+                      <span className="absolute inset-0 flex items-center justify-center translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                        ADD TO CART
+                      </span>
+                    </Button>
+                  </div>
                 </div>
               );
             })}
