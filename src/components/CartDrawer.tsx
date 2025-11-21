@@ -10,11 +10,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import {
-  Dialog,
-  DialogContent,
-} from "@/components/ui/dialog";
-import { ShoppingCart, Minus, Plus, Trash2, Lock, Loader2, Moon, RotateCcw, Shield, Gift, Truck } from "lucide-react";
+import { ShoppingCart, Minus, Plus, Trash2, Lock, Loader2, Moon, RotateCcw, Shield, Gift, Truck, X } from "lucide-react";
 import { useCartStore } from "@/stores/cartStore";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
 import { fetchProducts, ShopifyProduct } from "@/lib/shopify";
@@ -517,18 +513,31 @@ export const CartDrawer = () => {
         </SheetContent>
       </Sheet>
 
-      {/* Image Expansion Dialog - Moved outside Sheet for proper rendering */}
-      <Dialog open={!!expandedImage} onOpenChange={() => setExpandedImage(null)}>
-        <DialogContent className="max-w-3xl p-2">
-          {expandedImage && (
+      {/* Image Expansion Modal - Custom implementation */}
+      {expandedImage && createPortal(
+        <div 
+          className="fixed inset-0 z-[250] flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setExpandedImage(null)}
+        >
+          <div 
+            className="relative max-w-4xl w-full bg-background rounded-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setExpandedImage(null)}
+              className="absolute -top-4 -right-4 z-[260] bg-background rounded-full p-2 shadow-lg hover:bg-secondary transition-colors"
+            >
+              <X className="h-6 w-6" />
+            </button>
             <img
               src={expandedImage}
               alt="Expanded product"
               className="w-full h-auto rounded-lg"
             />
-          )}
-        </DialogContent>
-      </Dialog>
+          </div>
+        </div>,
+        document.body
+      )}
     </>
   );
 };
