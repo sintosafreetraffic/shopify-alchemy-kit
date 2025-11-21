@@ -15,10 +15,10 @@ export const Header = () => {
           />
         </Link>
         
-        <nav className="hidden md:flex items-center justify-center gap-8 mt-3">
-          <NavLink to="/" className="text-lg text-foreground hover:text-primary transition-colors">Home</NavLink>
-          <NavLink to="/about" className="text-lg text-foreground hover:text-primary transition-colors">About Us</NavLink>
-          <NavLink to="/track" className="text-lg text-foreground hover:text-primary transition-colors">Track Your Order</NavLink>
+        <nav className="hidden md:flex items-center justify-center gap-4 lg:gap-8 mt-3 whitespace-nowrap">
+          <NavLink to="/" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors whitespace-nowrap">Home</NavLink>
+          <NavLink to="/about" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors whitespace-nowrap">About Us</NavLink>
+          <NavLink to="/track" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors whitespace-nowrap">Track Your Order</NavLink>
         </nav>
         
         <div className="flex items-center justify-end">
