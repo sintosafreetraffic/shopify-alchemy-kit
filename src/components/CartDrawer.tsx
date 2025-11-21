@@ -83,6 +83,7 @@ export const CartDrawer = () => {
         const filtered = products.filter(p => 
           !p.node.title.toLowerCase().includes('free gift')
         );
+        console.log('Loaded recommendations:', filtered.length);
         setRecommendedProducts(filtered.slice(0, 3));
       } catch (error) {
         console.error('Failed to fetch recommendations:', error);
@@ -132,17 +133,10 @@ export const CartDrawer = () => {
       {isOpen && recommendedProducts.length > 0 && (
         <div 
           data-recommendations-panel 
-          className="hidden md:flex fixed right-[28rem] top-0 bottom-0 z-[100] w-72 bg-primary/5 border-r border-border shadow-xl flex-col animate-in slide-in-from-right duration-500 pointer-events-auto"
-          onWheel={(e) => e.stopPropagation()}
+          className="hidden lg:block fixed left-0 top-0 bottom-0 z-[90] w-80 bg-primary/5 border-r border-border shadow-xl"
         >
-          <div 
-            className="flex-1 overflow-y-scroll p-6 pt-8 space-y-4" 
-            style={{ 
-              WebkitOverflowScrolling: 'touch', 
-              scrollBehavior: 'smooth',
-              overscrollBehavior: 'contain'
-            }}
-          >
+          <div className="h-full overflow-y-auto p-6 pt-8 space-y-4">
+            <h3 className="text-lg font-bold mb-4">You may also like</h3>
             {recommendedProducts.map((product) => {
               const variant = product.node.variants.edges[0]?.node;
               const image = product.node.images.edges[0]?.node;
