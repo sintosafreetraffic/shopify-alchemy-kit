@@ -34,7 +34,7 @@ export default function ReturnPolicy() {
             <div className="bg-primary/5 p-4 rounded-lg mt-4">
               <p className="text-sm font-medium text-primary">
                 ✓ Full 100 nights to try your pillow<br/>
-                ✓ Free return pickup arranged by us<br/>
+                ✓ Easy return pickup arranged by us<br/>
                 ✓ Full refund processed within 5 business days<br/>
                 ✓ No questions asked
               </p>
