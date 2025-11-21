@@ -47,7 +47,7 @@ export const Header = () => {
         !isAtTop && !isVisible ? "-translate-y-full" : "translate-y-0"
       }`}
     >
-      <div className="container mx-auto px-4 py-2 flex md:grid md:grid-cols-3 items-center justify-between">
+      <div className="container mx-auto px-4 py-2 flex md:grid md:grid-cols-3 items-center">
         {/* Mobile Menu Button - Left */}
         <div className="flex items-center md:hidden">
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
@@ -87,12 +87,12 @@ export const Header = () => {
           </Sheet>
         </div>
 
-        {/* Logo - Center on mobile, left on desktop */}
-        <Link to="/" className="flex items-center hover:opacity-80 transition-opacity md:justify-start justify-center flex-1 md:flex-none">
+        {/* Logo - Left on desktop, after menu button on mobile */}
+        <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
           <img 
             src={logo} 
             alt="RiseByNight - Ergonomic Sleep Pillow" 
-            className="h-10 md:h-12 w-auto"
+            className="h-10 md:h-12 w-auto object-contain"
           />
         </Link>
         
@@ -104,7 +104,7 @@ export const Header = () => {
         </nav>
         
         {/* Cart - Right */}
-        <div className="flex items-center justify-end">
+        <div className="flex items-center justify-end ml-auto">
           <CartDrawer />
         </div>
       </div>
