@@ -18,6 +18,7 @@ import { toast } from "sonner";
 export const CartDrawer = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [recommendedProducts, setRecommendedProducts] = useState<ShopifyProduct[]>([]);
+  const [shouldBounce, setShouldBounce] = useState(false);
   
   const { 
     items, 
@@ -39,6 +40,16 @@ export const CartDrawer = () => {
   useEffect(() => {
     setCartOpen(isOpen);
   }, [isOpen, setCartOpen]);
+
+  // Bounce animation every 10 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setShouldBounce(true);
+      setTimeout(() => setShouldBounce(false), 600); // Duration of bounce animation
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, []);
   
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = items.reduce((sum, item) => sum + (parseFloat(item.price.amount) * item.quantity), 0);
@@ -458,7 +469,7 @@ export const CartDrawer = () => {
                 
                 <Button 
                   onClick={handleCheckout}
-                  className="w-full" 
+                  className={`w-full transition-transform ${shouldBounce ? 'animate-bounce' : ''}`}
                   size="default"
                   disabled={items.length === 0 || isLoading}
                 >
