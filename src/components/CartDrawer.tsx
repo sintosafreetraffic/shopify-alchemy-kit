@@ -57,7 +57,7 @@ export const CartDrawer = () => {
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = items.reduce((sum, item) => sum + (parseFloat(item.price.amount) * item.quantity), 0);
   
-  // Calculate pillow items only (exclude sleep mask for free gift calculation)
+  // Calculate pillow items for free gift logic
   const pillowItems = items.filter(item => 
     item.product.node.title.toLowerCase().includes('pillow')
   );
@@ -66,9 +66,32 @@ export const CartDrawer = () => {
   // Free gifts logic: Only for 2+ pillows - pairs of 2 = 2 masks each
   const freeGifts = totalPillows >= 2 ? Math.floor(totalPillows / 2) * 2 : 0;
   
-  // Use actual subtotal without manual discount calculations
-  // Discounts are applied via Shopify discount codes at checkout
-  const totalPrice = subtotal;
+  // Calculate discounts based on Shopify discount codes that will be applied
+  let totalDiscount = 0;
+  
+  // FREESLEEPPILLOW discount: Buy 1 get 1 free for Ergonomic Sleep Pillow
+  const sleepPillowItems = items.filter(item => 
+    item.product.node.title.toLowerCase().includes('ergonomic sleep pillow')
+  );
+  sleepPillowItems.forEach(item => {
+    const freePillows = Math.floor(item.quantity / 2);
+    totalDiscount += freePillows * parseFloat(item.price.amount);
+  });
+  
+  // FREEKNEEPILLOW discount: Buy 1 get 1 free for Knee Pillow
+  const kneePillowItems = items.filter(item => 
+    item.product.node.title.toLowerCase().includes('knee pillow') && 
+    !item.product.node.title.toLowerCase().includes('free gift')
+  );
+  kneePillowItems.forEach(item => {
+    const freePillows = Math.floor(item.quantity / 2);
+    totalDiscount += freePillows * parseFloat(item.price.amount);
+  });
+  
+  // FREEMASKSFORYOU discount: 100% off free gift masks (already calculated)
+  const freeGiftValue = freeGifts * 29.99;
+  
+  const totalPrice = subtotal - totalDiscount;
 
   // Fetch recommended products (excluding free gift product only)
   useEffect(() => {
@@ -285,9 +308,26 @@ export const CartDrawer = () => {
                           </p>
                         )}
                         <div className="mt-1">
-                          <p className="font-semibold">
-                            {item.price.currencyCode} ${(parseFloat(item.price.amount) * item.quantity).toFixed(2)}
-                          </p>
+                          {/* Show discounted price for pillows with 1+1 deal */}
+                          {(item.product.node.title.toLowerCase().includes('ergonomic sleep pillow') || 
+                            item.product.node.title.toLowerCase().includes('knee pillow')) && 
+                           item.quantity >= 2 ? (
+                            <div className="space-y-0.5">
+                              <p className="text-sm text-muted-foreground line-through">
+                                {item.price.currencyCode} ${(parseFloat(item.price.amount) * item.quantity).toFixed(2)}
+                              </p>
+                              <p className="font-semibold">
+                                {item.price.currencyCode} ${(
+                                  (parseFloat(item.price.amount) * item.quantity) - 
+                                  (Math.floor(item.quantity / 2) * parseFloat(item.price.amount))
+                                ).toFixed(2)}
+                              </p>
+                            </div>
+                          ) : (
+                            <p className="font-semibold">
+                              {item.price.currencyCode} ${(parseFloat(item.price.amount) * item.quantity).toFixed(2)}
+                            </p>
+                          )}
                         </div>
                       </div>
                       
@@ -418,15 +458,35 @@ export const CartDrawer = () => {
 
                 {/* Price Summary */}
                 <div className="space-y-1.5">
-                  <div className="flex justify-between items-center pt-2">
-                    <span className="text-base font-bold">Subtotal</span>
-                    <div className="text-lg font-bold">
-                      ${subtotal.toFixed(2)}
-                    </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span className="text-muted-foreground">${subtotal.toFixed(2)}</span>
                   </div>
                   
-                  <div className="text-sm text-muted-foreground text-center py-2 border-t">
-                    Discounts will be applied at checkout
+                  {totalDiscount > 0 && (
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-green-600 dark:text-green-400">Black Friday Savings</span>
+                      <span className="text-green-600 dark:text-green-400 font-semibold">-${totalDiscount.toFixed(2)}</span>
+                    </div>
+                  )}
+                  
+                  {freeGifts > 0 && (
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-green-600 dark:text-green-400">Free Gifts</span>
+                      <span className="text-green-600 dark:text-green-400 font-semibold">-${freeGiftValue.toFixed(2)}</span>
+                    </div>
+                  )}
+                  
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Shipping</span>
+                    <span className="text-primary font-semibold">FREE</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center pt-2 border-t">
+                    <span className="text-base font-bold">Total</span>
+                    <div className="text-lg font-bold">
+                      ${totalPrice.toFixed(2)}
+                    </div>
                   </div>
                 </div>
                 
