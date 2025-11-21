@@ -6,7 +6,7 @@ import logo from "@/assets/risebynight-logo-full.png";
 export const Header = () => {
   return (
     <header className="border-b bg-background">
-      <div className="container mx-auto px-4 py-2 flex items-center justify-between">
+      <div className="container mx-auto px-4 py-2 grid grid-cols-3 items-center">
         <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
           <img 
             src={logo} 
@@ -15,13 +15,13 @@ export const Header = () => {
           />
         </Link>
         
-        <nav className="hidden md:flex items-center gap-8 mt-3">
+        <nav className="hidden md:flex items-center justify-center gap-8 mt-3">
           <NavLink to="/" className="text-lg text-foreground hover:text-primary transition-colors">Home</NavLink>
           <NavLink to="/about" className="text-lg text-foreground hover:text-primary transition-colors">About Us</NavLink>
           <NavLink to="/track" className="text-lg text-foreground hover:text-primary transition-colors">Track Your Order</NavLink>
         </nav>
         
-        <div className="flex items-center">
+        <div className="flex items-center justify-end">
           <CartDrawer />
         </div>
       </div>
