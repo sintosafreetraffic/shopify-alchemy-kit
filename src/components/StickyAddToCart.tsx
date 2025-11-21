@@ -126,6 +126,8 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                       src={product.node.images.edges[0].node.url}
                       alt={product.node.title}
                       className="w-full h-full object-cover"
+                      loading="lazy"
+                      decoding="async"
                     />
                   )}
                 </div>
