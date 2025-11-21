@@ -90,7 +90,7 @@ export const SleepMaskHero = () => {
 
   return (
     <section className="bg-background">
-      <div className="container mx-auto px-4 py-8 md:py-12">
+      <div className="container mx-auto px-4 pt-0 pb-8 md:pb-12">
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-start">
           {/* Left Column - Product Images */}
           <div className="lg:sticky lg:top-24">
