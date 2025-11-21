@@ -1,12 +1,8 @@
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
 import { Shield, Cookie, Lock, Eye, Mail, FileText } from "lucide-react";
 
 export default function PrivacyPolicy() {
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      
       <main className="container mx-auto px-4 py-16 max-w-4xl">
         <div className="space-y-8">
           {/* Header */}
@@ -340,8 +336,6 @@ export default function PrivacyPolicy() {
           </section>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }
