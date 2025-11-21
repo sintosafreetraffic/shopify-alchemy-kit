@@ -131,15 +131,19 @@ export const CartDrawer = () => {
 
   return (
     <>
-      {/* Recommendations Panel - Shows immediately when cart opens */}
+      {/* DEBUG: Bright visible panel on left side */}
       {isOpen && (
-        <div className="fixed inset-y-0 left-0 w-96 bg-background border-r shadow-xl z-[200] lg:flex flex-col hidden">
-          <div className="p-6 border-b">
-            <h2 className="text-2xl font-bold">You may also like</h2>
-            <p className="text-sm text-muted-foreground mt-1">Complete your sleep solution</p>
+        <div 
+          className="fixed top-0 bottom-0 left-0 w-96 bg-red-500 z-[250] flex flex-col"
+          style={{ display: 'flex !important' }}
+        >
+          <div className="p-6 bg-primary text-primary-foreground">
+            <h2 className="text-2xl font-bold">RECOMMENDATIONS PANEL</h2>
+            <p className="text-sm mt-1">If you see this, the panel works!</p>
+            <p className="text-xs mt-2">Products loaded: {recommendedProducts.length}</p>
           </div>
           
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto p-6 bg-white">
             {recommendedProducts.length === 0 ? (
               <div className="text-center py-12">
                 <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
@@ -159,12 +163,12 @@ export const CartDrawer = () => {
                     >
                       {isPillow && (
                         <div className="mb-2">
-                          <Badge className="bg-primary text-primary-foreground">1+1 BLACK FRIDAY DEAL</Badge>
+                          <Badge className="bg-primary text-primary-foreground">1+1 DEAL</Badge>
                         </div>
                       )}
                       
                       {image && (
-                        <div className="w-full aspect-square rounded-md overflow-hidden mb-3 bg-white">
+                        <div className="w-full aspect-square rounded-md overflow-hidden mb-3">
                           <img
                             src={image.url}
                             alt={product.node.title}
@@ -173,15 +177,16 @@ export const CartDrawer = () => {
                         </div>
                       )}
                       
-                      <h3 className="font-semibold mb-2 leading-tight">{product.node.title}</h3>
+                      <h3 className="font-semibold mb-2 leading-tight text-sm">{product.node.title}</h3>
                       
                       {variant && (
-                        <p className="text-2xl font-bold text-primary mb-3">
+                        <p className="text-xl font-bold text-primary mb-3">
                           €{parseFloat(variant.price.amount).toFixed(2)}
                         </p>
                       )}
                       
                       <Button
+                        size="sm"
                         className="w-full"
                         onClick={() => handleAddRecommendation(product)}
                       >
