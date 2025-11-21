@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
 import optisleepPillow from "@/assets/optisleep-pillow-main.png";
 import pillowHeroImage from "@/assets/pillow-hero-main.png";
 import pillowHeroNew from "@/assets/pillow-hero-new.png";
@@ -23,6 +24,10 @@ import {
 
 export const ProductImageCarousel = () => {
   const [expandedMedia, setExpandedMedia] = useState<{ url: string; alt: string; type: string } | null>(null);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [isDragging, setIsDragging] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   
   // Multiple views of the RiseByNight pillow (desktop order)
   const images = [
@@ -44,10 +49,59 @@ export const ProductImageCarousel = () => {
     images[5], // pillowLifestyleSleep
   ];
 
+  const handleZoomIn = () => {
+    setZoomLevel(prev => Math.min(prev + 0.5, 3));
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel(prev => Math.max(prev - 0.5, 1));
+    if (zoomLevel <= 1.5) {
+      setPosition({ x: 0, y: 0 });
+    }
+  };
+
+  const handleResetZoom = () => {
+    setZoomLevel(1);
+    setPosition({ x: 0, y: 0 });
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (zoomLevel > 1) {
+      setIsDragging(true);
+      setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isDragging && zoomLevel > 1) {
+      setPosition({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleDoubleClick = () => {
+    if (zoomLevel === 1) {
+      setZoomLevel(2);
+    } else {
+      handleResetZoom();
+    }
+  };
+
+  const handleCloseModal = () => {
+    setExpandedMedia(null);
+    handleResetZoom();
+  };
+
   return (
     <>
       {/* Expanded Media Dialog */}
-      <Dialog open={!!expandedMedia} onOpenChange={(open) => !open && setExpandedMedia(null)}>
+      <Dialog open={!!expandedMedia} onOpenChange={(open) => !open && handleCloseModal()}>
         <DialogContent className="max-w-4xl w-full p-2 md:p-6">
           {expandedMedia && (
             <div className="w-full pt-8 md:pt-0">
@@ -61,11 +115,69 @@ export const ProductImageCarousel = () => {
                   aria-label={expandedMedia.alt}
                 />
               ) : (
-                <img
-                  src={expandedMedia.url}
-                  alt={expandedMedia.alt}
-                  className="w-full h-auto rounded-lg"
-                />
+                <div className="relative overflow-hidden rounded-lg bg-secondary/10">
+                  {/* Zoom Controls */}
+                  <div className="absolute top-2 right-2 z-10 flex gap-2">
+                    <button
+                      onClick={handleZoomOut}
+                      disabled={zoomLevel <= 1}
+                      className="p-2 rounded-full bg-background/90 backdrop-blur-sm shadow-lg hover:bg-background transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      aria-label="Zoom out"
+                    >
+                      <ZoomOut className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={handleResetZoom}
+                      className="p-2 rounded-full bg-background/90 backdrop-blur-sm shadow-lg hover:bg-background transition-all"
+                      aria-label="Reset zoom"
+                    >
+                      <Maximize2 className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={handleZoomIn}
+                      disabled={zoomLevel >= 3}
+                      className="p-2 rounded-full bg-background/90 backdrop-blur-sm shadow-lg hover:bg-background transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      aria-label="Zoom in"
+                    >
+                      <ZoomIn className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  {/* Zoom Level Indicator */}
+                  {zoomLevel > 1 && (
+                    <div className="absolute top-2 left-2 z-10 px-3 py-1 rounded-full bg-background/90 backdrop-blur-sm shadow-lg text-sm font-medium">
+                      {Math.round(zoomLevel * 100)}%
+                    </div>
+                  )}
+
+                  {/* Image with Zoom */}
+                  <div 
+                    className={`w-full overflow-hidden ${zoomLevel > 1 ? 'cursor-move' : 'cursor-zoom-in'}`}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseUp}
+                    onDoubleClick={handleDoubleClick}
+                  >
+                    <img
+                      src={expandedMedia.url}
+                      alt={expandedMedia.alt}
+                      className="w-full h-auto rounded-lg select-none transition-transform duration-200"
+                      style={{
+                        transform: `scale(${zoomLevel}) translate(${position.x / zoomLevel}px, ${position.y / zoomLevel}px)`,
+                        transformOrigin: 'center center'
+                      }}
+                      draggable={false}
+                    />
+                  </div>
+
+                  {/* Help Text */}
+                  {zoomLevel === 1 && (
+                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 px-3 py-1 rounded-full bg-background/90 backdrop-blur-sm shadow-lg text-xs text-muted-foreground">
+                      Double-click to zoom
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           )}
