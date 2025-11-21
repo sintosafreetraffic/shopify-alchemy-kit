@@ -87,11 +87,17 @@ export const ProductCard = ({ product }: ProductCardProps) => {
       <CardFooter className="p-4 pt-0">
         <Button 
           onClick={handleAddToCart}
-          className="w-full" 
+          className="w-full relative overflow-hidden group" 
           size="lg"
         >
-          <ShoppingCart className="w-4 h-4 mr-2" />
-          Add to Cart
+          <span className="inline-flex items-center transition-all duration-300 group-hover:-translate-y-12 group-hover:opacity-0">
+            <ShoppingCart className="w-4 h-4 mr-2" />
+            Add to Cart
+          </span>
+          <span className="absolute inset-0 flex items-center justify-center translate-y-12 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+            <ShoppingCart className="w-4 h-4 mr-2" />
+            Add to Cart
+          </span>
         </Button>
       </CardFooter>
     </Card>

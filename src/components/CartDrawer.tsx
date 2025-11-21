@@ -166,10 +166,15 @@ export const CartDrawer = () => {
                       )}
                       <Button
                         size="sm"
-                        className="flex-1 h-8 text-xs"
+                        className="flex-1 h-8 text-xs relative overflow-hidden group"
                         onClick={() => handleAddRecommendation(product)}
                       >
-                        ADD TO CART
+                        <span className="inline-block transition-all duration-300 group-hover:-translate-y-8 group-hover:opacity-0">
+                          ADD TO CART
+                        </span>
+                        <span className="absolute inset-0 flex items-center justify-center translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                          ADD TO CART
+                        </span>
                       </Button>
                     </div>
                   </div>
@@ -388,10 +393,15 @@ export const CartDrawer = () => {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="w-full h-7 text-xs mt-2"
+                                className="w-full h-7 text-xs mt-2 relative overflow-hidden group"
                                 onClick={() => handleAddRecommendation(product)}
                               >
-                                ADD TO CART
+                                <span className="inline-block transition-all duration-300 group-hover:-translate-y-8 group-hover:opacity-0">
+                                  ADD TO CART
+                                </span>
+                                <span className="absolute inset-0 flex items-center justify-center translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                                  ADD TO CART
+                                </span>
                               </Button>
                             </div>
                           );
