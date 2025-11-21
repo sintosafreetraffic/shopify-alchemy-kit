@@ -136,7 +136,7 @@ export const CartDrawer = () => {
       {/* Recommendations Panel - Attached to cart */}
       {isOpen && createPortal(
         <div 
-          className="fixed top-0 bottom-0 right-[512px] w-80 bg-blue-100 border-r border-border z-[150] hidden lg:flex flex-col"
+          className="fixed top-0 bottom-0 right-[512px] w-80 bg-blue-100 border-r border-border z-[150] hidden lg:flex flex-col pointer-events-auto"
           data-recommendations-panel
           onClick={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
