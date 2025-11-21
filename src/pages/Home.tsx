@@ -5,16 +5,24 @@ import { Link } from "react-router-dom";
 import { ProductGallery } from "@/components/ProductGallery";
 import heroLogo from "@/assets/moon-logo-yellow-transparent.png";
 import lifestyleHero from "@/assets/lifestyle-hero.jpg";
+import lifestyleHeroMobile from "@/assets/lifestyle-hero-mobile.jpg";
 
 export default function Home() {
   return (
     <div className="min-h-screen">
       {/* Lifestyle Hero Image */}
       <section className="w-full">
+        {/* Desktop Image */}
         <img 
           src={lifestyleHero} 
           alt="Peaceful sleep with RiseByNight" 
-          className="w-full h-[60vh] md:h-[70vh] object-cover"
+          className="hidden md:block w-full h-[60vh] md:h-[70vh] object-cover"
+        />
+        {/* Mobile Image */}
+        <img 
+          src={lifestyleHeroMobile} 
+          alt="Peaceful sleep with RiseByNight" 
+          className="block md:hidden w-full h-[60vh] object-cover"
         />
       </section>
 
