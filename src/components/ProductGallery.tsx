@@ -5,11 +5,30 @@ import { Link } from "react-router-dom";
 import pillowMain from "@/assets/optisleep-pillow-main.png";
 import kneePillowMain from "@/assets/knee-pillow-main.jpg";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
+import offerBundle from "@/assets/offer-bundle.png";
 
 export const ProductGallery = () => {
   const products = [
     {
       id: 1,
+      name: "RiseByNight™ Complete Sleep Bundle",
+      tagline: "Everything You Need for Perfect Sleep",
+      price: "$149.99",
+      originalPrice: "$189.97",
+      rating: 4.9,
+      reviews: "2,100+",
+      image: offerBundle,
+      features: [
+        "Ergonomic Pillow + Knee Pillow + Sleep Mask",
+        "Complete sleep solution package",
+        "Save $40 vs buying separately",
+        "Perfect for side & back sleepers"
+      ],
+      badge: "Best Value Bundle",
+      link: "/product/sleep-bundle"
+    },
+    {
+      id: 2,
       name: "RiseByNight™ Ergonomic Pillow",
       tagline: "The #1 Rated Orthopedic Pillow",
       price: "$89.99",
@@ -27,7 +46,7 @@ export const ProductGallery = () => {
       link: "/product/ergonomic-pillow"
     },
     {
-      id: 2,
+      id: 3,
       name: "RiseByNight™ Ergonomic Knee Pillow",
       tagline: "Perfect Support for Side Sleepers",
       price: "$69.99",
@@ -45,7 +64,7 @@ export const ProductGallery = () => {
       link: "/product/knee-pillow"
     },
     {
-      id: 3,
+      id: 4,
       name: "RiseByNight™ Silk Sleep Mask",
       tagline: "100% Pure Mulberry Silk",
       price: "$29.99",
