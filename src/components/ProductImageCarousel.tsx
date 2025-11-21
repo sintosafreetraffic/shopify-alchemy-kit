@@ -24,7 +24,7 @@ import {
 export const ProductImageCarousel = () => {
   const [expandedMedia, setExpandedMedia] = useState<{ url: string; alt: string; type: string } | null>(null);
   
-  // Multiple views of the RiseByNight pillow
+  // Multiple views of the RiseByNight pillow (desktop order)
   const images = [
     { url: pillowHeroNew, alt: "RiseByNight ergonomic pillow main view", type: "image" },
     { url: "/videos/product-demo.mp4", alt: "RiseByNight pillow demonstration", type: "video" },
@@ -32,6 +32,16 @@ export const ProductImageCarousel = () => {
     { url: pillowEasyCleaning, alt: "RiseByNight pillow - easy cleaning and maintenance with removable cover", type: "image" },
     { url: neckPainSpine, alt: "RiseByNight pillow - neck pain and spine alignment relief", type: "image" },
     { url: pillowLifestyleSleep, alt: "RiseByNight pillow - person sleeping comfortably with ergonomic support", type: "image" },
+  ];
+
+  // Mobile order - swap image 2 (video) with image 4 (easy cleaning)
+  const mobileImages = [
+    images[0], // pillowHeroNew
+    images[3], // pillowEasyCleaning (swapped from position 4)
+    images[2], // pillowBenefitsHero
+    images[1], // video (swapped from position 2)
+    images[4], // neckPainSpine
+    images[5], // pillowLifestyleSleep
   ];
 
   return (
@@ -66,7 +76,7 @@ export const ProductImageCarousel = () => {
       <div className="md:hidden">
         <Carousel className="w-full">
           <CarouselContent>
-            {images.map((item, index) => (
+            {mobileImages.map((item, index) => (
               <CarouselItem key={index}>
                 <div 
                   className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 relative cursor-pointer hover:opacity-90 transition-opacity"
