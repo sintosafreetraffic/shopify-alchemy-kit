@@ -135,7 +135,7 @@ export const CartDrawer = () => {
       {/* Recommendations Panel - Attached to cart */}
       {isOpen && createPortal(
         <div 
-          className="fixed top-0 bottom-0 right-[448px] w-80 bg-blue-50/30 border-r border-border z-[100] hidden lg:flex flex-col"
+          className="fixed top-0 bottom-0 right-[512px] w-80 bg-blue-50/30 border-r border-border z-[100] hidden lg:flex flex-col"
           data-recommendations-panel
         >
           <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
