@@ -31,7 +31,6 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <ScrollToTop />
-        <SocialProofNotification />
         <div className="flex flex-col min-h-screen">
           <PaymentMethodsBar />
           <Header />
