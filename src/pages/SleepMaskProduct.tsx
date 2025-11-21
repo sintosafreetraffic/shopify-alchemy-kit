@@ -4,8 +4,12 @@ import { StickyAddToCart } from "@/components/StickyAddToCart";
 import { SleepMaskHero } from "@/components/SleepMaskHero";
 import { SleepMaskFeatures } from "@/components/SleepMaskFeatures";
 import { SleepMaskBenefits } from "@/components/SleepMaskBenefits";
-import { SleepMaskTestimonials } from "@/components/SleepMaskTestimonials";
+import { SleepMaskPainRelief } from "@/components/SleepMaskPainRelief";
+import { SleepMaskChiropractorEndorsement } from "@/components/SleepMaskChiropractorEndorsement";
+import { SleepMaskLookInside } from "@/components/SleepMaskLookInside";
 import { ReviewsSection } from "@/components/ReviewsSection";
+import { SleepMaskVideoSection } from "@/components/SleepMaskVideoSection";
+import { SleepMaskFAQ } from "@/components/SleepMaskFAQ";
 
 const SleepMaskProduct = () => {
   return (
@@ -14,7 +18,12 @@ const SleepMaskProduct = () => {
       <SleepMaskHero />
       <SleepMaskFeatures />
       <SleepMaskBenefits />
-      <SleepMaskTestimonials />
+      <SleepMaskPainRelief />
+      <SleepMaskChiropractorEndorsement />
+      <SleepMaskLookInside />
+      <ReviewsSection />
+      <SleepMaskVideoSection />
+      <SleepMaskFAQ />
       <Guarantee />
       <StickyAddToCart productType="sleep-mask" />
     </div>
