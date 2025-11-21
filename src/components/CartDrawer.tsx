@@ -294,8 +294,19 @@ export const CartDrawer = () => {
               <div className="flex-1 overflow-y-auto pr-2 min-h-0 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
                 <div className="space-y-4">
                 {/* Cart Items */}
-                {items.map((item) => (
-                    <div key={item.variantId} className="flex gap-4 p-2 border rounded-lg">
+                {items.map((item) => {
+                    const hasActiveDeal = (item.product.node.title.toLowerCase().includes('ergonomic sleep pillow') || 
+                                          item.product.node.title.toLowerCase().includes('knee pillow')) && 
+                                         item.quantity >= 2;
+                    
+                    return (
+                    <div key={item.variantId} className="flex gap-4 p-2 border rounded-lg relative">
+                      {hasActiveDeal && (
+                        <div className="absolute -top-2 -right-2 bg-gradient-to-r from-red-600 to-red-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg z-10 flex items-center gap-1 animate-pulse">
+                          <Gift className="w-3 h-3" />
+                          <span>1+1</span>
+                        </div>
+                      )}
                       <div className="w-16 h-16 bg-secondary/20 rounded-md overflow-hidden flex-shrink-0">
                         {item.product.node.images?.edges?.[0]?.node && (
                           <img
@@ -373,7 +384,8 @@ export const CartDrawer = () => {
                         </div>
                       </div>
                     </div>
-                  ))}
+                  );
+                  })}
                   
                   {/* Free Gifts Section */}
                   {freeGifts > 0 && (
