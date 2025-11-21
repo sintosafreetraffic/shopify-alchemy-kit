@@ -131,19 +131,17 @@ export const CartDrawer = () => {
 
   return (
     <>
-      {/* DEBUG: Bright visible panel on left side */}
+      {/* Recommendations Panel - Same level as cart */}
       {isOpen && (
         <div 
-          className="fixed top-0 bottom-0 left-0 w-96 bg-red-500 z-[250] flex flex-col"
-          style={{ display: 'flex !important' }}
+          className="fixed top-0 bottom-0 left-0 w-96 bg-background border-r shadow-xl z-[60] hidden lg:flex flex-col"
         >
-          <div className="p-6 bg-primary text-primary-foreground">
-            <h2 className="text-2xl font-bold">RECOMMENDATIONS PANEL</h2>
-            <p className="text-sm mt-1">If you see this, the panel works!</p>
-            <p className="text-xs mt-2">Products loaded: {recommendedProducts.length}</p>
+          <div className="p-6 border-b">
+            <h2 className="text-2xl font-bold">You may also like</h2>
+            <p className="text-sm text-muted-foreground mt-1">Complete your sleep solution</p>
           </div>
           
-          <div className="flex-1 overflow-y-auto p-6 bg-white">
+          <div className="flex-1 overflow-y-auto p-6">
             {recommendedProducts.length === 0 ? (
               <div className="text-center py-12">
                 <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
