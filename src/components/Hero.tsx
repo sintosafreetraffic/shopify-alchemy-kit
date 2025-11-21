@@ -169,12 +169,12 @@ export const Hero = () => {
               RiseByNight™ Ergonomic Sleep Pillow
             </h1>
             
-            <p className="hidden md:block text-sm md:text-base text-muted-foreground">
+            <p className="hidden md:block text-sm md:text-base text-muted-foreground mb-0">
               The #1 Rated Ergonomic Pillow in the U.S.
             </p>
 
             {/* Benefit-Focused USPs Section */}
-            <div className="space-y-2 mt-0 mb-2 md:my-4">
+            <div className="space-y-2 mt-2 mb-2 md:mt-2 md:mb-4">
               <div className="flex items-start gap-2">
                 <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
                 <p className="text-sm"><span className="font-semibold">Wake up pain-free</span> - Scientifically proven to eliminate neck & shoulder pain</p>
