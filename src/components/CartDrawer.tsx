@@ -134,12 +134,16 @@ export const CartDrawer = () => {
 
   return (
     <>
-      {/* Recommendations Panel - Attached to cart */}
+      {/* Recommendations Panel - Attached to cart - TESTING VERSION */}
       {isOpen && createPortal(
         <div 
-          className="fixed top-0 bottom-0 right-[512px] w-80 bg-blue-100 border-r border-border z-[150] hidden lg:flex flex-col pointer-events-auto"
+          className="fixed top-0 bottom-0 right-[512px] w-80 bg-red-500 border-4 border-yellow-400 z-[150] hidden lg:flex flex-col pointer-events-auto"
           data-recommendations-panel
+          style={{ border: '5px solid red' }}
         >
+          <div className="bg-yellow-200 p-2 text-black font-bold">
+            RECOMMENDATIONS PANEL - CLICK TEST
+          </div>
           <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
             {recommendedProducts.map((product) => {
               const variant = product.node.variants.edges[0]?.node;
@@ -152,8 +156,11 @@ export const CartDrawer = () => {
                 >
                   {image && (
                     <div 
-                      className="w-full aspect-square bg-secondary/20 rounded-md overflow-hidden mb-3 cursor-pointer hover:opacity-80 transition-opacity"
-                      onClick={() => setExpandedImage(image.url)}
+                      className="w-full aspect-square bg-secondary/20 rounded-md overflow-hidden mb-3 cursor-pointer hover:opacity-80 transition-opacity border-4 border-green-500"
+                      onClick={() => {
+                        alert("IMAGE CLICKED! URL: " + image.url);
+                        setExpandedImage(image.url);
+                      }}
                     >
                       <img
                         src={image.url}
