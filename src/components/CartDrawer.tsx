@@ -152,8 +152,7 @@ export const CartDrawer = () => {
                 >
                   {image && (
                     <div 
-                      className="w-full aspect-square bg-secondary/20 rounded-md overflow-hidden mb-3 cursor-pointer hover:opacity-80 transition-opacity"
-                      onClick={() => setExpandedImage(image.url)}
+                      className="w-full aspect-square bg-secondary/20 rounded-md overflow-hidden mb-3"
                     >
                       <img
                         src={image.url}
