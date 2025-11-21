@@ -469,7 +469,7 @@ export const CartDrawer = () => {
                 
                 <Button 
                   onClick={handleCheckout}
-                  className={`w-full transition-transform ${shouldBounce ? 'animate-bounce' : ''}`}
+                  className={`w-full transition-transform ${shouldBounce ? 'animate-subtle-bounce' : ''}`}
                   size="default"
                   disabled={items.length === 0 || isLoading}
                 >
