@@ -131,60 +131,67 @@ export const CartDrawer = () => {
 
   return (
     <>
-      {/* Recommendations Panel - Desktop Only */}
-      {isOpen && recommendedProducts.length > 0 && (
-        <div className="fixed inset-y-0 left-0 w-96 bg-background border-r shadow-xl z-[200] hidden lg:flex flex-col">
+      {/* Recommendations Panel - Shows immediately when cart opens */}
+      {isOpen && (
+        <div className="fixed inset-y-0 left-0 w-96 bg-background border-r shadow-xl z-[200] lg:flex flex-col hidden">
           <div className="p-6 border-b">
             <h2 className="text-2xl font-bold">You may also like</h2>
             <p className="text-sm text-muted-foreground mt-1">Complete your sleep solution</p>
           </div>
           
           <div className="flex-1 overflow-y-auto p-6">
-            <div className="space-y-4">
-              {recommendedProducts.map((product) => {
-                const variant = product.node.variants.edges[0]?.node;
-                const image = product.node.images.edges[0]?.node;
-                const isPillow = product.node.title.toLowerCase().includes('pillow');
-                
-                return (
-                  <div 
-                    key={product.node.id} 
-                    className="bg-secondary/10 rounded-lg p-4 hover:bg-secondary/20 transition-all border"
-                  >
-                    {isPillow && (
-                      <div className="mb-2">
-                        <Badge className="bg-primary text-primary-foreground">1+1 BLACK FRIDAY DEAL</Badge>
-                      </div>
-                    )}
-                    
-                    {image && (
-                      <div className="w-full aspect-square rounded-md overflow-hidden mb-3 bg-white">
-                        <img
-                          src={image.url}
-                          alt={product.node.title}
-                          className="w-full h-full object-contain"
-                        />
-                      </div>
-                    )}
-                    
-                    <h3 className="font-semibold mb-2 leading-tight">{product.node.title}</h3>
-                    
-                    {variant && (
-                      <p className="text-2xl font-bold text-primary mb-3">
-                        €{parseFloat(variant.price.amount).toFixed(2)}
-                      </p>
-                    )}
-                    
-                    <Button
-                      className="w-full"
-                      onClick={() => handleAddRecommendation(product)}
+            {recommendedProducts.length === 0 ? (
+              <div className="text-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
+                <p className="text-muted-foreground">Loading recommendations...</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {recommendedProducts.map((product) => {
+                  const variant = product.node.variants.edges[0]?.node;
+                  const image = product.node.images.edges[0]?.node;
+                  const isPillow = product.node.title.toLowerCase().includes('pillow');
+                  
+                  return (
+                    <div 
+                      key={product.node.id} 
+                      className="bg-secondary/10 rounded-lg p-4 hover:bg-secondary/20 transition-all border"
                     >
-                      Add to Cart
-                    </Button>
-                  </div>
-                );
-              })}
-            </div>
+                      {isPillow && (
+                        <div className="mb-2">
+                          <Badge className="bg-primary text-primary-foreground">1+1 BLACK FRIDAY DEAL</Badge>
+                        </div>
+                      )}
+                      
+                      {image && (
+                        <div className="w-full aspect-square rounded-md overflow-hidden mb-3 bg-white">
+                          <img
+                            src={image.url}
+                            alt={product.node.title}
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                      )}
+                      
+                      <h3 className="font-semibold mb-2 leading-tight">{product.node.title}</h3>
+                      
+                      {variant && (
+                        <p className="text-2xl font-bold text-primary mb-3">
+                          €{parseFloat(variant.price.amount).toFixed(2)}
+                        </p>
+                      )}
+                      
+                      <Button
+                        className="w-full"
+                        onClick={() => handleAddRecommendation(product)}
+                      >
+                        Add to Cart
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       )}
