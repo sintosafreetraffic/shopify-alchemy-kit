@@ -51,18 +51,16 @@ export const Header = () => {
       <div className="container mx-auto px-4 py-2 flex md:grid md:grid-cols-3 items-center">
         {/* Mobile Menu Button - Left */}
         <div className="flex items-center md:hidden">
-          <Sheet open={isMobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+          <Sheet open={isMobileMenuOpen} onOpenChange={setMobileMenuOpen} modal={false}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="mr-2">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[280px] overflow-y-auto z-[45] top-[77px] h-[calc(100vh-77px)]">
-              <style>{`
-                [data-radix-dialog-overlay] {
-                  background-color: transparent !important;
-                }
-              `}</style>
+            <SheetContent 
+              side="left" 
+              className="w-[280px] z-[45] top-[77px] h-[calc(100vh-77px)] overflow-y-auto pb-6"
+            >
               <SheetHeader>
                 <SheetTitle>Menu</SheetTitle>
               </SheetHeader>
