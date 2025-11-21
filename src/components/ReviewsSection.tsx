@@ -63,20 +63,20 @@ const reviews = [
 
 export const ReviewsSection = () => {
   return (
-    <section className="py-8 bg-background">
+    <section className="py-6 md:py-8 bg-background">
       <div className="container mx-auto px-4 max-w-6xl">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 mb-4">
+        <div className="text-center mb-6 md:mb-8">
+          <div className="inline-flex items-center gap-2 mb-3 md:mb-4">
             <div className="flex">
               {[1, 2, 3, 4, 5].map((star) => (
-                <Star key={star} className="w-6 h-6 fill-yellow-500 text-yellow-500" />
+                <Star key={star} className="w-5 h-5 md:w-6 md:h-6 fill-yellow-500 text-yellow-500" />
               ))}
             </div>
-            <span className="text-2xl font-bold">4.8/5</span>
+            <span className="text-xl md:text-2xl font-bold">4.8/5</span>
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold mb-3">30,000+ reviews on RiseByNight</h2>
-          <p className="text-lg text-muted-foreground mb-2">What do our customers say?</p>
-          <p className="text-muted-foreground">Read the reviews and see what others think of their experience with us.</p>
+          <h2 className="text-2xl md:text-4xl font-bold mb-2 md:mb-3">30,000+ reviews on RiseByNight</h2>
+          <p className="text-base md:text-lg text-muted-foreground mb-1.5 md:mb-2">What do our customers say?</p>
+          <p className="text-sm md:text-base text-muted-foreground">Read the reviews and see what others think of their experience with us.</p>
         </div>
 
         <Carousel
