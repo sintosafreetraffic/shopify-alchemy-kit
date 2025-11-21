@@ -6,7 +6,7 @@ import pillowBenefitsHero from "@/assets/pillow-benefits-hero.png";
 import consumerChoiceBadge from "@/assets/consumer-choice-badge-new.jpg";
 import neckPainSpine from "@/assets/neck-pain-spine.png";
 import lifestyleExcellent from "@/assets/lifestyle-excellent-rating.png";
-import pillowEasyCleaning from "@/assets/pillow-easy-cleaning.png";
+import pillowEasyCleaning from "@/assets/pillow-easy-cleaning-new.png";
 import pillowLifestyleSleep from "@/assets/pillow-lifestyle-sleep.jpg";
 import {
   Carousel,
