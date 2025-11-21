@@ -1,0 +1,136 @@
+import kneePillowImage from "@/assets/knee-pillow-main.jpg";
+import { useState } from "react";
+
+const components = [
+  {
+    position: "left-top",
+    title: "Ergonomic Contour Design",
+    description: "Perfectly shaped curves that fit between your knees while maintaining natural leg alignment.",
+  },
+  {
+    position: "left-middle",
+    title: "Memory Foam Core",
+    description:
+      "High-density memory foam that adapts to your leg shape, providing personalized support and pressure relief.",
+  },
+  {
+    position: "left-bottom",
+    title: "Anti-Slip Base Layer",
+    description:
+      "Textured bottom surface that stays in place throughout the night, preventing the pillow from sliding.",
+  },
+  {
+    position: "right-top",
+    title: "Breathable Mesh Cover",
+    description:
+      "Premium cooling fabric cover with temperature-regulating technology to prevent overheating during sleep.",
+  },
+  {
+    position: "right-middle",
+    title: "Hip Alignment Support Zone",
+    description:
+      "Specially engineered thickness that maintains optimal hip positioning and reduces lower back strain.",
+  },
+];
+
+export const KneePillowLookInside = () => {
+  const [expandedMobile, setExpandedMobile] = useState<number | null>(null);
+
+  return (
+    <section className="py-6 md:py-16 bg-primary/5">
+      <div className="container mx-auto px-4 max-w-7xl">
+        <div className="text-center mb-6 md:mb-12">
+          <h2 className="text-2xl md:text-4xl font-bold mb-2 md:mb-4">Let's take a look inside the knee pillow</h2>
+          <p className="text-base md:text-lg text-muted-foreground max-w-3xl mx-auto">
+            The RiseByNight Knee Pillow is made up of several components that work together to help you wake up pain-free every day.
+          </p>
+        </div>
+        <div className="relative max-w-6xl mx-auto">
+          {/* Desktop Layout with Text Cards and Numbered Buttons */}
+          <div className="hidden lg:grid lg:grid-cols-[1fr_2fr_1fr] gap-8 items-center">
+            {/* Left Column - Text Cards */}
+            <div className="space-y-12">
+              {components
+                .filter((c) => c.position.startsWith("left"))
+                .map((component, idx) => (
+                  <div key={idx} className="relative">
+                    <div className="bg-background border-2 border-primary/20 rounded-xl p-6 shadow-lg hover:border-primary/40 transition-colors">
+                      <div className="flex items-start gap-3 mb-2">
+                        <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold text-sm">
+                          {idx + 1}
+                        </div>
+                        <h3 className="font-bold text-lg flex-1">{component.title}</h3>
+                      </div>
+                      <p className="text-sm text-muted-foreground ml-11">{component.description}</p>
+                    </div>
+                  </div>
+                ))}
+            </div>
+
+            {/* Center Column - Image */}
+            <div className="relative flex items-center justify-center py-8">
+              <div className="max-w-md mx-auto relative">
+                <img
+                  src={kneePillowImage}
+                  alt="RiseByNight knee pillow showing ergonomic design and materials"
+                  className="w-full relative z-0 rounded-xl"
+                />
+              </div>
+            </div>
+
+            {/* Right Column - Text Cards */}
+            <div className="space-y-20">
+              {components
+                .filter((c) => c.position.startsWith("right"))
+                .map((component, idx) => (
+                  <div key={idx} className="relative">
+                    <div className="bg-background border-2 border-primary/20 rounded-xl p-6 shadow-lg hover:border-primary/40 transition-colors">
+                      <div className="flex items-start gap-3 mb-2">
+                        <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold text-sm">
+                          {idx + 4}
+                        </div>
+                        <h3 className="font-bold text-lg flex-1">{component.title}</h3>
+                      </div>
+                      <p className="text-sm text-muted-foreground ml-11">{component.description}</p>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+
+          {/* Mobile Layout */}
+          <div className="lg:hidden space-y-8">
+            <div className="max-w-md mx-auto mb-8">
+              <img
+                src={kneePillowImage}
+                alt="RiseByNight knee pillow showing ergonomic design and materials"
+                className="w-full rounded-xl"
+              />
+            </div>
+
+            <div className="space-y-4">
+              {components.map((component, idx) => (
+                <div key={idx} className="bg-background border-2 border-primary/20 rounded-xl p-4 shadow-lg">
+                  <div className="flex items-start gap-3 mb-2">
+                    <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold text-sm">
+                      {idx + 1}
+                    </div>
+                    <h3 className="font-bold text-base flex-1">{component.title}</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground ml-11">{component.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="mt-16 bg-primary/5 border border-primary/20 rounded-xl p-8 text-center">
+          <h3 className="text-2xl font-bold mb-3">Medical-Grade Materials</h3>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Every component of the RiseByNight Knee Pillow is crafted from certified medical-grade materials, ensuring
+            safety, durability, and optimal performance for years to come.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+};
