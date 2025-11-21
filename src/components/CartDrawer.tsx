@@ -160,6 +160,8 @@ export const CartDrawer = () => {
             {recommendedProducts.map((product) => {
               const variant = product.node.variants.edges[0]?.node;
               const image = product.node.images.edges[0]?.node;
+              const hasOnePlusOneDeal = product.node.title.toLowerCase().includes('ergonomic sleep pillow') || 
+                                       product.node.title.toLowerCase().includes('knee pillow');
               
               return (
                 <div
@@ -168,13 +170,18 @@ export const CartDrawer = () => {
                 >
                   {image && (
                     <div 
-                      className="w-full aspect-square bg-secondary/20 rounded-md overflow-hidden mb-3"
+                      className="w-full aspect-square bg-secondary/20 rounded-md overflow-hidden mb-3 relative"
                     >
                       <img
                         src={image.url}
                         alt={product.node.title}
                         className="w-full h-full object-cover"
                       />
+                      {hasOnePlusOneDeal && (
+                        <div className="absolute top-2 right-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-md shadow-lg">
+                          1+1 DEAL
+                        </div>
+                      )}
                     </div>
                   )}
                   <h4 className="font-semibold text-sm leading-tight mb-3">{product.node.title}</h4>
@@ -391,9 +398,11 @@ export const CartDrawer = () => {
                     <div className="pt-4 border-t mt-4 lg:hidden">
                       <h3 className="text-sm font-semibold mb-3">You may also like</h3>
                       <div className="grid grid-cols-2 gap-2">
-                        {recommendedProducts.map((product) => {
+                      {recommendedProducts.map((product) => {
                           const variant = product.node.variants.edges[0]?.node;
                           const image = product.node.images.edges[0]?.node;
+                          const hasOnePlusOneDeal = product.node.title.toLowerCase().includes('ergonomic sleep pillow') || 
+                                                   product.node.title.toLowerCase().includes('knee pillow');
                           
                           return (
                             <div 
@@ -401,12 +410,17 @@ export const CartDrawer = () => {
                               className="border rounded-md p-2 flex flex-col h-full"
                             >
                               {image && (
-                                <div className="w-20 h-20 mx-auto bg-secondary/20 rounded-sm overflow-hidden mb-2">
+                                <div className="w-20 h-20 mx-auto bg-secondary/20 rounded-sm overflow-hidden mb-2 relative">
                                   <img
                                     src={image.url}
                                     alt={product.node.title}
                                     className="w-full h-full object-cover"
                                   />
+                                  {hasOnePlusOneDeal && (
+                                    <div className="absolute top-1 right-1 bg-red-600 text-white text-[8px] font-bold px-1 py-0.5 rounded shadow-lg">
+                                      1+1
+                                    </div>
+                                  )}
                                 </div>
                               )}
                               <div className="flex flex-col gap-1 flex-grow">
