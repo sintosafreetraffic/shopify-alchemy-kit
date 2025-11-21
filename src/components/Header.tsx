@@ -56,10 +56,12 @@ export const Header = () => {
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[280px]">
+            <SheetContent side="left" className="w-[280px] overflow-y-auto">
               <SheetHeader>
                 <SheetTitle>Menu</SheetTitle>
               </SheetHeader>
+              
+              {/* Main Navigation */}
               <nav className="flex flex-col gap-4 mt-6">
                 <NavLink 
                   to="/" 
@@ -83,6 +85,92 @@ export const Header = () => {
                   Track Your Order
                 </NavLink>
               </nav>
+
+              {/* Customer Service Section */}
+              <div className="mt-6 pt-6 border-t">
+                <h3 className="text-sm font-semibold text-foreground mb-3">Customer Service</h3>
+                <nav className="flex flex-col gap-3">
+                  <NavLink 
+                    to="/shipping" 
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Shipping Information
+                  </NavLink>
+                  <NavLink 
+                    to="/return-policy" 
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Return Policy
+                  </NavLink>
+                  <NavLink 
+                    to="/terms" 
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Terms & Conditions
+                  </NavLink>
+                  <NavLink 
+                    to="/privacy" 
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Privacy Policy
+                  </NavLink>
+                </nav>
+              </div>
+
+              {/* Quick Links Section */}
+              <div className="mt-6 pt-6 border-t">
+                <h3 className="text-sm font-semibold text-foreground mb-3">Quick Links</h3>
+                <nav className="flex flex-col gap-3">
+                  <NavLink 
+                    to="/benefits" 
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Benefits
+                  </NavLink>
+                  <NavLink 
+                    to="/reviews" 
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Reviews
+                  </NavLink>
+                  <NavLink 
+                    to="/faq" 
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    FAQ
+                  </NavLink>
+                  <NavLink 
+                    to="/guarantee" 
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Guarantee
+                  </NavLink>
+                </nav>
+              </div>
+
+              {/* Contact Information */}
+              <div className="mt-6 pt-6 border-t">
+                <h3 className="text-sm font-semibold text-foreground mb-3">Contact Us</h3>
+                <div className="text-sm text-muted-foreground space-y-2">
+                  <a 
+                    href="mailto:support@risebynight.com" 
+                    className="block hover:text-primary transition-colors"
+                  >
+                    support@risebynight.com
+                  </a>
+                  <p className="text-xs leading-relaxed">
+                    Loofdakstraat 10, 3036JN, ROTTERDAM
+                  </p>
+                </div>
+              </div>
             </SheetContent>
           </Sheet>
         </div>
