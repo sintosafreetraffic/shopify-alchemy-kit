@@ -116,7 +116,7 @@ export const Header = () => {
                     Terms & Conditions
                   </NavLink>
                   <NavLink 
-                    to="/privacy" 
+                    to="/privacy-policy" 
                     className="text-sm text-muted-foreground hover:text-primary transition-colors"
                     onClick={() => setMobileMenuOpen(false)}
                   >
