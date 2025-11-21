@@ -137,6 +137,8 @@ export const CartDrawer = () => {
         <div 
           className="fixed top-0 bottom-0 right-[512px] w-80 bg-blue-100 border-r border-border z-[100] hidden lg:flex flex-col"
           data-recommendations-panel
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
         >
           <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
             {recommendedProducts.map((product) => {
@@ -166,7 +168,10 @@ export const CartDrawer = () => {
                   <Button
                     size="sm"
                     className="w-full relative overflow-hidden group"
-                    onClick={() => handleAddRecommendation(product)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAddRecommendation(product);
+                    }}
                   >
                     <span className="inline-block transition-all duration-300 group-hover:-translate-y-8 group-hover:opacity-0">
                       ADD TO CART
