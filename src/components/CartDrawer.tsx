@@ -10,6 +10,10 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+} from "@/components/ui/dialog";
 import { ShoppingCart, Minus, Plus, Trash2, Lock, Loader2, Moon, RotateCcw, Shield, Gift, Truck } from "lucide-react";
 import { useCartStore } from "@/stores/cartStore";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
@@ -20,6 +24,7 @@ export const CartDrawer = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [recommendedProducts, setRecommendedProducts] = useState<ShopifyProduct[]>([]);
   const [shouldBounce, setShouldBounce] = useState(false);
+  const [expandedImage, setExpandedImage] = useState<string | null>(null);
   
   const { 
     items, 
@@ -132,6 +137,19 @@ export const CartDrawer = () => {
 
   return (
     <>
+      {/* Image Expansion Dialog */}
+      <Dialog open={!!expandedImage} onOpenChange={() => setExpandedImage(null)}>
+        <DialogContent className="max-w-3xl">
+          {expandedImage && (
+            <img
+              src={expandedImage}
+              alt="Expanded product"
+              className="w-full h-auto"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Recommendations Panel - Attached to cart */}
       {isOpen && createPortal(
         <div 
@@ -151,7 +169,13 @@ export const CartDrawer = () => {
                   className="border border-border rounded-lg p-3 bg-background hover:shadow-md transition-all"
                 >
                   {image && (
-                    <div className="w-full aspect-square bg-secondary/20 rounded-md overflow-hidden mb-3">
+                    <div 
+                      className="w-full aspect-square bg-secondary/20 rounded-md overflow-hidden mb-3 cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpandedImage(image.url);
+                      }}
+                    >
                       <img
                         src={image.url}
                         alt={product.node.title}
