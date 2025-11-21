@@ -60,11 +60,11 @@ export const ImageModal = ({ imageUrl, onClose }: ImageModalProps) => {
           </button>
         </div>
         
-        <div className={`overflow-auto max-h-[85vh] rounded-lg transition-transform duration-300 ${isZoomed ? 'scale-150 cursor-move' : 'scale-100'}`}>
+        <div className={`transition-transform duration-300 ${isZoomed ? 'scale-150 cursor-move overflow-auto max-h-[85vh]' : 'scale-100'}`}>
           <img
             src={imageUrl}
             alt="Product preview"
-            className="w-full h-auto rounded-lg shadow-2xl"
+            className="w-full h-auto max-h-[80vh] object-contain rounded-lg shadow-2xl"
             draggable={isZoomed}
           />
         </div>
