@@ -24,6 +24,7 @@ import {
 
 export const ProductImageCarousel = () => {
   const [expandedMedia, setExpandedMedia] = useState<{ url: string; alt: string; type: string } | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [isDragging, setIsDragging] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -95,13 +96,19 @@ export const ProductImageCarousel = () => {
 
   const handleCloseModal = () => {
     setExpandedMedia(null);
+    setIsDialogOpen(false);
     handleResetZoom();
+  };
+
+  const handleOpenModal = (media: { url: string; alt: string; type: string }) => {
+    setExpandedMedia(media);
+    setIsDialogOpen(true);
   };
 
   return (
     <>
       {/* Expanded Media Dialog */}
-      <Dialog open={!!expandedMedia} onOpenChange={(open) => {
+      <Dialog open={isDialogOpen} onOpenChange={(open) => {
         console.log("Dialog onOpenChange:", open, "expandedMedia:", expandedMedia);
         if (!open) handleCloseModal();
       }}>
@@ -206,7 +213,7 @@ export const ProductImageCarousel = () => {
                   className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 relative cursor-pointer hover:opacity-90 transition-opacity"
                   onClick={() => {
                     console.log("Image clicked:", item);
-                    setExpandedMedia(item);
+                    handleOpenModal(item);
                   }}
                 >
                   {item.type === "video" ? (
@@ -244,7 +251,7 @@ export const ProductImageCarousel = () => {
           className="overflow-hidden relative cursor-pointer hover:opacity-90 transition-opacity"
           onClick={() => {
             console.log("Desktop image clicked:", images[0]);
-            setExpandedMedia(images[0]);
+            handleOpenModal(images[0]);
           }}
         >
           {images[0]?.type === "video" ? (
@@ -272,7 +279,7 @@ export const ProductImageCarousel = () => {
         <div className="grid grid-cols-2 gap-0">
           <div 
             className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-            onClick={() => setExpandedMedia(images[1])}
+            onClick={() => handleOpenModal(images[1])}
           >
             {images[1]?.type === "video" ? (
               <video
@@ -296,7 +303,7 @@ export const ProductImageCarousel = () => {
           </div>
           <div 
             className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-            onClick={() => setExpandedMedia(images[2])}
+            onClick={() => handleOpenModal(images[2])}
           >
             <img
               src={images[2]?.url}
@@ -311,7 +318,7 @@ export const ProductImageCarousel = () => {
         {/* Second large image */}
         <div 
           className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-          onClick={() => setExpandedMedia(images[3])}
+          onClick={() => handleOpenModal(images[3])}
         >
           <img
             src={images[3]?.url}
@@ -326,19 +333,13 @@ export const ProductImageCarousel = () => {
         <div className="grid grid-cols-2 gap-0">
           <div 
             className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-            onClick={() => setExpandedMedia(images[4])}
+            onClick={() => handleOpenModal(images[4])}
           >
-            <img
-              src={images[4]?.url}
-              alt={images[4]?.alt}
-              className="w-full h-full object-cover"
-              loading="lazy"
-              decoding="async"
-            />
+...
           </div>
           <div 
             className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-            onClick={() => setExpandedMedia(images[5])}
+            onClick={() => handleOpenModal(images[5])}
           >
             <img
               src={images[5]?.url}
