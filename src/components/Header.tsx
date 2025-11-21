@@ -6,12 +6,13 @@ import { useState, useEffect } from "react";
 import { Menu, Instagram, Facebook } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { useUIStore } from "@/stores/uiStore";
 
 export const Header = () => {
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [isAtTop, setIsAtTop] = useState(true);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { isMobileMenuOpen, setMobileMenuOpen } = useUIStore();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -50,7 +51,7 @@ export const Header = () => {
       <div className="container mx-auto px-4 py-2 flex md:grid md:grid-cols-3 items-center">
         {/* Mobile Menu Button - Left */}
         <div className="flex items-center md:hidden">
-          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+          <Sheet open={isMobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="mr-2">
                 <Menu className="h-5 w-5" />
