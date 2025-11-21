@@ -64,7 +64,6 @@ export const ImageModal = ({ imageUrl, onClose }: ImageModalProps) => {
       
       <div
         className="relative max-w-5xl w-full"
-        onClick={(e) => e.stopPropagation()}
       >
         
         <div className={`transition-transform duration-300 ${isZoomed ? 'scale-150 cursor-move overflow-auto max-h-[85vh]' : 'scale-100'}`}>
@@ -73,6 +72,7 @@ export const ImageModal = ({ imageUrl, onClose }: ImageModalProps) => {
             alt="Product preview"
             className="w-full h-auto max-h-[80vh] object-contain rounded-lg shadow-2xl"
             draggable={isZoomed}
+            onClick={(e) => e.stopPropagation()}
           />
         </div>
       </div>
