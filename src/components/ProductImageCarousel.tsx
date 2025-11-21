@@ -48,23 +48,23 @@ export const ProductImageCarousel = () => {
     <>
       {/* Expanded Media Dialog */}
       <Dialog open={!!expandedMedia} onOpenChange={(open) => !open && setExpandedMedia(null)}>
-        <DialogContent className="max-w-4xl w-full">
+        <DialogContent className="max-w-4xl w-full p-2 md:p-6">
           {expandedMedia && (
-            <div className="w-full">
+            <div className="w-full pt-8 md:pt-0">
               {expandedMedia.type === "video" ? (
                 <video
                   src={expandedMedia.url}
                   controls
                   autoPlay
                   loop
-                  className="w-full h-auto"
+                  className="w-full h-auto rounded-lg"
                   aria-label={expandedMedia.alt}
                 />
               ) : (
                 <img
                   src={expandedMedia.url}
                   alt={expandedMedia.alt}
-                  className="w-full h-auto"
+                  className="w-full h-auto rounded-lg"
                 />
               )}
             </div>
