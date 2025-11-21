@@ -36,7 +36,7 @@ const App = () => (
         <div className="flex flex-col min-h-screen">
           <PaymentMethodsBar />
           <Header />
-          <main className="flex-1">
+          <main className="flex-1 pt-20">
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/product/ergonomic-pillow" element={<Index />} />
