@@ -105,13 +105,38 @@ export const useCartStore = create<CartStore>()(
           // Calculate free masks: Only for 2+ pillows - pairs of 2 = 2 masks each
           const freeMasks = totalPillows >= 2 ? Math.floor(totalPillows / 2) * 2 : 0;
           
-          // Create checkout with items and free masks info
+          // Determine which discount codes to apply
+          const discountCodes: string[] = [];
+          
+          // Check for Ergonomic Sleep Pillow
+          const hasSleepPillow = items.some(item => 
+            item.product.node.title.toLowerCase().includes('ergonomic sleep pillow')
+          );
+          if (hasSleepPillow) {
+            discountCodes.push('FREESLEEPPILLOW');
+          }
+          
+          // Check for Knee Pillow
+          const hasKneePillow = items.some(item => 
+            item.product.node.title.toLowerCase().includes('knee pillow')
+          );
+          if (hasKneePillow) {
+            discountCodes.push('FREEKNEEPILLOW');
+          }
+          
+          // Add free mask discount if applicable
+          if (freeMasks > 0) {
+            discountCodes.push('FREEMASKSFORYOU');
+          }
+          
+          // Create checkout with items, free masks, and discount codes
           const checkoutUrl = await createStorefrontCheckout(
             items.map(item => ({
               variantId: item.variantId,
               quantity: item.quantity,
             })),
-            freeMasks
+            freeMasks,
+            discountCodes
           );
           setCheckoutUrl(checkoutUrl);
         } catch (error) {
