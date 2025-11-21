@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
+import { ZoomIn, ZoomOut, Maximize2, X } from "lucide-react";
 import optisleepPillow from "@/assets/optisleep-pillow-main.png";
 import pillowHeroImage from "@/assets/pillow-hero-main.png";
 import pillowHeroNew from "@/assets/pillow-hero-new.png";
@@ -102,7 +102,16 @@ export const ProductImageCarousel = () => {
     <>
       {/* Expanded Media Dialog */}
       <Dialog open={!!expandedMedia} onOpenChange={(open) => !open && handleCloseModal()}>
-        <DialogContent className="max-w-4xl w-full p-2 md:p-6">
+        <DialogContent className="max-w-4xl w-full p-2 md:p-6 relative">
+          {/* Dedicated Close Button */}
+          <button
+            onClick={handleCloseModal}
+            className="absolute -top-2 -right-2 md:top-2 md:right-2 z-[60] rounded-full bg-background shadow-xl border-2 border-primary/20 p-2.5 md:p-3 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all hover:scale-110"
+            aria-label="Close"
+          >
+            <X className="w-6 h-6 md:w-7 md:h-7" />
+          </button>
+
           {expandedMedia && (
             <div className="w-full pt-8 md:pt-0">
               {expandedMedia.type === "video" ? (
