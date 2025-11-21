@@ -57,7 +57,12 @@ export const Header = () => {
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[280px] overflow-y-auto z-[45] top-[77px] h-[calc(100vh-77px)] [&~div]:bg-transparent">
+            <SheetContent side="left" className="w-[280px] overflow-y-auto z-[45] top-[77px] h-[calc(100vh-77px)]">
+              <style>{`
+                [data-radix-dialog-overlay] {
+                  background-color: transparent !important;
+                }
+              `}</style>
               <SheetHeader>
                 <SheetTitle>Menu</SheetTitle>
               </SheetHeader>
