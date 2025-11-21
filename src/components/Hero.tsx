@@ -108,17 +108,16 @@ export const Hero = () => {
                     <Star key={star} className="w-5 h-5 fill-yellow-500 text-yellow-500" />
                   ))}
                 </div>
-                <span className="text-sm font-bold">4.8/5</span>
-                <span className="text-xs text-muted-foreground">(1,247 reviews)</span>
+                <span className="text-sm font-semibold">6,247 verified product reviews</span>
               </div>
               
-              <div className="flex items-center gap-2 text-sm">
-                <Users className="w-4 h-4 text-primary" />
-                <span className="font-semibold">12,500+ customers love their RiseByNight pillow</span>
-              </div>
-              
-              <div className="inline-flex items-center gap-2 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 px-3 py-1.5 rounded-md text-xs font-bold">
-                ✓ 98% Customer Satisfaction Rate
+              <div className="flex gap-2 flex-wrap">
+                <div className="inline-flex items-center gap-2 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 px-3 py-1.5 rounded-md text-xs font-bold">
+                  ✓ 98% Customer Satisfaction
+                </div>
+                <div className="inline-flex items-center gap-2 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 px-3 py-1.5 rounded-md text-xs font-bold">
+                  🔥 Frequently Purchased
+                </div>
               </div>
             </div>
             
