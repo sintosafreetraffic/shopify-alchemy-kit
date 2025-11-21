@@ -150,26 +150,39 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                   <div className="flex gap-2">
                     <button
                       onClick={() => setSelectedBundle("1")}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors relative overflow-hidden group ${
                         selectedBundle === "1"
                           ? "bg-primary text-primary-foreground"
                           : "bg-primary/20 hover:bg-primary/40 text-foreground"
                       }`}
                     >
-                      <Plus className="w-3 h-3" />
-                      1 Pillow
+                      <span className="flex items-center gap-1 transition-all duration-300 group-hover:-translate-y-8 group-hover:opacity-0">
+                        <Plus className="w-3 h-3" />
+                        1 Pillow
+                      </span>
+                      <span className="absolute inset-0 flex items-center justify-center gap-1 translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                        <Plus className="w-3 h-3" />
+                        1 Pillow
+                      </span>
                     </button>
                     <button
                       onClick={() => setSelectedBundle("2")}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors relative overflow-hidden group ${
                         selectedBundle === "2"
                           ? "bg-primary text-primary-foreground"
                           : "bg-primary/20 hover:bg-primary/40 text-foreground"
                       }`}
                     >
-                      <Plus className="w-3 h-3" />
-                      <span>2 Pillows + FREE GIFT 2X</span>
-                      <img src={eyeMaskGift} alt="Free gift" className="w-6 h-6 object-contain" />
+                      <span className="flex items-center gap-1 transition-all duration-300 group-hover:-translate-y-8 group-hover:opacity-0">
+                        <Plus className="w-3 h-3" />
+                        <span>2 Pillows + FREE GIFT 2X</span>
+                        <img src={eyeMaskGift} alt="Free gift" className="w-6 h-6 object-contain" />
+                      </span>
+                      <span className="absolute inset-0 flex items-center justify-center gap-1 translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                        <Plus className="w-3 h-3" />
+                        <span>2 Pillows + FREE GIFT 2X</span>
+                        <img src={eyeMaskGift} alt="Free gift" className="w-6 h-6 object-contain" />
+                      </span>
                     </button>
                   </div>
                 )}
