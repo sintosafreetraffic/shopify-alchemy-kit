@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useCartStore } from "@/stores/cartStore";
 
 const messages = [
   "Free delivery within the U.S.",
@@ -7,6 +8,7 @@ const messages = [
 
 export const UrgencyBanner = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const isCartOpen = useCartStore(state => state.isCartOpen);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -15,6 +17,8 @@ export const UrgencyBanner = () => {
 
     return () => clearInterval(interval);
   }, []);
+
+  if (isCartOpen) return null;
 
   return (
     <div className="fixed top-0 left-0 right-0 bg-black text-white py-2 text-center text-sm font-medium z-[70]">

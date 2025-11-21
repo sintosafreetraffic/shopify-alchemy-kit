@@ -132,7 +132,7 @@ export const CartDrawer = () => {
       {isOpen && recommendedProducts.length > 0 && (
         <div 
           data-recommendations-panel 
-          className="hidden lg:flex fixed right-[32rem] top-0 bottom-0 z-[100] w-80 bg-blue-50 dark:bg-blue-950/20 border-r border-border shadow-xl flex-col animate-in slide-in-from-right duration-500 pointer-events-auto"
+          className="hidden md:flex fixed right-[28rem] top-0 bottom-0 z-[100] w-72 bg-primary/5 border-r border-border shadow-xl flex-col animate-in slide-in-from-right duration-500 pointer-events-auto"
           onWheel={(e) => e.stopPropagation()}
         >
           <div 
