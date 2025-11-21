@@ -4,10 +4,20 @@ import { ArrowRight, Moon, Heart, Sparkles, Shield, Users, Award } from "lucide-
 import { Link } from "react-router-dom";
 import { ProductGallery } from "@/components/ProductGallery";
 import heroLogo from "@/assets/moon-logo-yellow-transparent.png";
+import lifestyleHero from "@/assets/lifestyle-hero.jpg";
 
 export default function Home() {
   return (
     <div className="min-h-screen">
+      {/* Lifestyle Hero Image */}
+      <section className="w-full">
+        <img 
+          src={lifestyleHero} 
+          alt="Peaceful sleep with RiseByNight" 
+          className="w-full h-[60vh] md:h-[70vh] object-cover"
+        />
+      </section>
+
       {/* Hero Section */}
       <section className="relative py-20 md:py-32 bg-gradient-to-b from-background via-primary/5 to-background">
         <div className="container mx-auto px-4">
