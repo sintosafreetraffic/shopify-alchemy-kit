@@ -134,7 +134,7 @@ export const CartDrawer = () => {
       {/* Recommendations Panel - Same level as cart */}
       {isOpen && (
         <div 
-          className="fixed top-0 bottom-0 left-0 w-96 bg-background border-r shadow-xl z-[60] hidden lg:flex flex-col"
+          className="fixed top-0 bottom-0 left-0 w-96 bg-background border-r shadow-xl z-[100] hidden lg:flex flex-col"
         >
           <div className="p-6 border-b">
             <h2 className="text-2xl font-bold">You may also like</h2>
