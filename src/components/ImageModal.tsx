@@ -31,34 +31,35 @@ export const ImageModal = ({ imageUrl, onClose }: ImageModalProps) => {
 
   return (
     <div
-      className="fixed inset-0 z-[300] flex items-center justify-center bg-black/90 p-8 animate-in fade-in duration-200"
+      className="fixed inset-0 z-[300] flex items-center justify-center bg-black/90 p-4 md:p-8 animate-in fade-in duration-200"
       onClick={onClose}
     >
+      {/* Control buttons fixed to top right of viewport */}
+      <div className="fixed top-4 right-4 md:top-8 md:right-8 flex gap-2 z-[310]">
+        <button
+          onClick={() => setIsZoomed(!isZoomed)}
+          className="bg-white/90 rounded-full p-2 md:p-3 shadow-lg hover:bg-white transition-colors"
+          aria-label={isZoomed ? "Zoom out" : "Zoom in"}
+        >
+          {isZoomed ? (
+            <ZoomOut className="h-4 w-4 md:h-5 md:w-5 text-black" />
+          ) : (
+            <ZoomIn className="h-4 w-4 md:h-5 md:w-5 text-black" />
+          )}
+        </button>
+        <button
+          onClick={onClose}
+          className="bg-white/90 rounded-full p-2 md:p-3 shadow-lg hover:bg-white transition-colors"
+          aria-label="Close"
+        >
+          <X className="h-4 w-4 md:h-5 md:w-5 text-black" />
+        </button>
+      </div>
+      
       <div
         className="relative max-w-5xl w-full"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Control buttons in top right */}
-        <div className="absolute -top-14 right-0 flex gap-2">
-          <button
-            onClick={() => setIsZoomed(!isZoomed)}
-            className="bg-white/90 rounded-full p-3 shadow-lg hover:bg-white transition-colors"
-            aria-label={isZoomed ? "Zoom out" : "Zoom in"}
-          >
-            {isZoomed ? (
-              <ZoomOut className="h-5 w-5 text-black" />
-            ) : (
-              <ZoomIn className="h-5 w-5 text-black" />
-            )}
-          </button>
-          <button
-            onClick={onClose}
-            className="bg-white/90 rounded-full p-3 shadow-lg hover:bg-white transition-colors"
-            aria-label="Close"
-          >
-            <X className="h-5 w-5 text-black" />
-          </button>
-        </div>
         
         <div className={`transition-transform duration-300 ${isZoomed ? 'scale-150 cursor-move overflow-auto max-h-[85vh]' : 'scale-100'}`}>
           <img
