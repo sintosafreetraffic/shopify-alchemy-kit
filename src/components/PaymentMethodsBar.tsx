@@ -1,6 +1,6 @@
 export const PaymentMethodsBar = () => {
   return (
-    <div className="fixed top-0 left-0 right-0 z-[60] bg-secondary border-b border-border">
+    <div className="fixed top-[36px] left-0 right-0 z-[60] bg-secondary border-b border-border">
       <div className="container mx-auto px-4 py-2">
         <div className="flex items-center justify-center gap-2 md:gap-3 flex-nowrap overflow-x-auto">
           <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
