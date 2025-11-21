@@ -22,6 +22,11 @@ export const CartDrawer = () => {
   const [shouldBounce, setShouldBounce] = useState(false);
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
   
+  // Debug logging for expandedImage state
+  useEffect(() => {
+    console.log("expandedImage state changed:", expandedImage);
+  }, [expandedImage]);
+  
   const { 
     items, 
     isLoading, 
@@ -134,15 +139,25 @@ export const CartDrawer = () => {
   return (
     <>
       {/* Recommendations Panel - Attached to cart */}
-      {isOpen && createPortal(
-        <div 
-          className="fixed top-0 bottom-0 right-[512px] w-80 bg-blue-100 border-r border-border z-[150] hidden lg:flex flex-col pointer-events-auto"
-          data-recommendations-panel
-          onClick={(e) => e.stopPropagation()}
-          onMouseDown={(e) => e.stopPropagation()}
-        >
+      {isOpen && (
+        <>
+          {console.log("Rendering recommendations panel, isOpen:", isOpen)}
+          {createPortal(
+            <div 
+              className="fixed top-0 bottom-0 right-[512px] w-80 bg-blue-100 border-r border-border z-[150] hidden lg:flex flex-col pointer-events-auto"
+              data-recommendations-panel
+              onClick={(e) => {
+                console.log("Panel clicked");
+                e.stopPropagation();
+              }}
+              onMouseDown={(e) => {
+                console.log("Panel mouse down");
+                e.stopPropagation();
+              }}
+            >
           <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
             {recommendedProducts.map((product) => {
+              console.log("Rendering product:", product.node.title);
               const variant = product.node.variants.edges[0]?.node;
               const image = product.node.images.edges[0]?.node;
               
@@ -157,6 +172,7 @@ export const CartDrawer = () => {
                       onClick={(e) => {
                         e.stopPropagation();
                         console.log("Image clicked:", image.url);
+                        toast.success("Image clicked! Opening modal...");
                         setExpandedImage(image.url);
                       }}
                     >
@@ -196,6 +212,8 @@ export const CartDrawer = () => {
           </div>
         </div>,
         document.body
+      )}
+        </>
       )}
 
       <Sheet open={isOpen} onOpenChange={setIsOpen} modal={false}>
