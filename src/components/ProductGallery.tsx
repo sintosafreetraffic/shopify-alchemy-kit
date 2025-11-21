@@ -19,13 +19,13 @@ export const ProductGallery = () => {
       reviews: "2,100+",
       image: offerBundle,
       features: [
-        "Ergonomic Pillow + Knee Pillow + Sleep Mask",
+        "Pillow + Knee Pillow + Sleep Mask",
         "Complete sleep solution package",
         "Save $40 vs buying separately",
-        "Perfect for side & back sleepers"
+        "Perfect for side & back sleepers",
       ],
       badge: "Best Value Bundle",
-      link: "/product/sleep-bundle"
+      link: "/product/sleep-bundle",
     },
     {
       id: 2,
@@ -36,14 +36,9 @@ export const ProductGallery = () => {
       rating: 4.8,
       reviews: "6,247",
       image: pillowMain,
-      features: [
-        "Ergonomic contour design",
-        "Cooling gel technology",
-        "High-density memory foam",
-        "3-5 year lifespan"
-      ],
+      features: ["Ergonomic contour design", "Cooling gel technology", "High-density memory foam", "3-5 year lifespan"],
       badge: "Black Friday 1+1 Deal",
-      link: "/product/ergonomic-pillow"
+      link: "/product/ergonomic-pillow",
     },
     {
       id: 3,
@@ -58,10 +53,10 @@ export const ProductGallery = () => {
         "Aligns hips and spine",
         "Reduces lower back pain",
         "Memory foam comfort",
-        "Adjustable strap included"
+        "Adjustable strap included",
       ],
       badge: "Black Friday 1+1 Deal",
-      link: "/product/knee-pillow"
+      link: "/product/knee-pillow",
     },
     {
       id: 4,
@@ -72,27 +67,18 @@ export const ProductGallery = () => {
       rating: 4.9,
       reviews: "3,200+",
       image: eyeMaskGift,
-      features: [
-        "Blocks 100% of light",
-        "Gentle on skin & eyelashes",
-        "Contoured eye design",
-        "Hypoallergenic silk"
-      ],
+      features: ["Blocks 100% of light", "Gentle on skin & eyelashes", "Contoured eye design", "Hypoallergenic silk"],
       badge: "Special Offer",
-      link: "/product/sleep-mask"
-    }
+      link: "/product/sleep-mask",
+    },
   ];
 
   return (
     <section className="py-16 md:py-24 bg-background">
       <div className="container mx-auto px-4">
         <div className="text-center max-w-3xl mx-auto mb-12">
-          <h2 className="text-3xl md:text-5xl font-bold mb-4">
-            Our Sleep Solutions
-          </h2>
-          <p className="text-xl text-muted-foreground">
-            Discover products designed to transform your sleep quality
-          </p>
+          <h2 className="text-3xl md:text-5xl font-bold mb-4">Our Sleep Solutions</h2>
+          <p className="text-xl text-muted-foreground">Discover products designed to transform your sleep quality</p>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
@@ -107,11 +93,7 @@ export const ProductGallery = () => {
                   </div>
                 )}
                 <div className="bg-gradient-to-b from-primary/5 to-background p-8">
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-64 object-contain"
-                  />
+                  <img src={product.image} alt={product.name} className="w-full h-64 object-contain" />
                 </div>
               </div>
 
@@ -122,9 +104,7 @@ export const ProductGallery = () => {
                       <Star
                         key={i}
                         className={`w-4 h-4 ${
-                          i < Math.floor(product.rating)
-                            ? "fill-primary text-primary"
-                            : "text-muted"
+                          i < Math.floor(product.rating) ? "fill-primary text-primary" : "text-muted"
                         }`}
                       />
                     ))}
