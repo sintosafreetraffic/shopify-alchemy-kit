@@ -153,7 +153,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${
                         selectedBundle === "1"
                           ? "bg-primary text-primary-foreground"
-                          : "bg-secondary/50 hover:bg-secondary"
+                          : "bg-primary/20 hover:bg-primary/40 text-foreground"
                       }`}
                     >
                       <Plus className="w-3 h-3" />
@@ -164,7 +164,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${
                         selectedBundle === "2"
                           ? "bg-primary text-primary-foreground"
-                          : "bg-secondary/50 hover:bg-secondary"
+                          : "bg-primary/20 hover:bg-primary/40 text-foreground"
                       }`}
                     >
                       <Plus className="w-3 h-3" />
