@@ -367,6 +367,7 @@ export const CartDrawer = () => {
                   {/* Mobile Recommendations */}
                   {recommendedProducts.length > 0 && (
                     <div className="pt-4 border-t mt-4 lg:hidden">
+                      <h3 className="text-sm font-semibold mb-3">You may also like</h3>
                       <div className="grid grid-cols-2 gap-2">
                         {recommendedProducts.map((product) => {
                           const variant = product.node.variants.edges[0]?.node;
@@ -396,8 +397,7 @@ export const CartDrawer = () => {
                               </div>
                               <Button
                                 size="sm"
-                                variant="outline"
-                                className="w-full h-7 text-xs mt-2 relative overflow-hidden group"
+                                className="w-full h-7 text-xs mt-2 relative overflow-hidden group bg-black text-white hover:bg-black/90"
                                 onClick={() => handleAddRecommendation(product)}
                               >
                                 <span className="inline-block transition-all duration-300 group-hover:-translate-y-8 group-hover:opacity-0">
