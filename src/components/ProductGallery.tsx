@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import pillowMain from "@/assets/optisleep-pillow-main.png";
 import kneePillowMain from "@/assets/knee-pillow-main.jpg";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
-import offerBundle from "@/assets/offer-bundle.png";
+import completeSleepBundle from "@/assets/complete-sleep-bundle.png";
 
 export const ProductGallery = () => {
   const products = [
@@ -17,7 +17,7 @@ export const ProductGallery = () => {
       originalPrice: "$189.97",
       rating: 4.9,
       reviews: "2,100+",
-      image: offerBundle,
+      image: completeSleepBundle,
       features: [
         "Pillow + Knee Pillow + Sleep Mask",
         "Complete sleep solution package",
