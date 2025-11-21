@@ -19,8 +19,8 @@ const policies = [
   },
   {
     icon: RotateCcw,
-    title: "Free Returns",
-    content: "Changed your mind? No problem. Returns are always free and hassle-free. Simply contact our customer service team. Your refund will be processed within 5 business days of receiving the returned item."
+    title: "Easy Returns",
+    content: "Changed your mind? No problem. Returns are easy and hassle-free. Simply contact our customer service team. Your refund will be processed within 5 business days of receiving the returned item."
   }
 ];
 
