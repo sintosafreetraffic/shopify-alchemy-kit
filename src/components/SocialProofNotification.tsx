@@ -54,7 +54,7 @@ export const SocialProofNotification = () => {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed bottom-24 left-4 z-50 animate-in slide-in-from-left duration-500">
+    <div className="fixed top-4 left-4 md:bottom-24 md:top-auto z-50 animate-in slide-in-from-left duration-500">
       <div className="bg-background border-2 border-primary shadow-lg rounded-lg p-4 max-w-sm flex items-start gap-3">
         <div className="bg-primary/10 p-2 rounded-full">
           <ShoppingBag className="w-5 h-5 text-primary" />
