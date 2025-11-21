@@ -107,7 +107,11 @@ export const ProductImageCarousel = () => {
 
         {/* Two images side by side */}
         <div className="grid grid-cols-2 gap-0">
-          <div className="overflow-hidden aspect-square cursor-pointer hover:opacity-90 transition-opacity" onClick={() => images[1]?.type === "image" && setExpandedImage(images[1].url)}>
+          <div className="overflow-hidden aspect-square cursor-pointer hover:opacity-90 transition-opacity" onClick={() => {
+            if (images[1]?.type === "image") {
+              setExpandedImage(images[1].url);
+            }
+          }}>
             {images[1]?.type === "video" ? (
               <video
                 src={images[1].url}
@@ -128,7 +132,11 @@ export const ProductImageCarousel = () => {
               />
             )}
           </div>
-          <div className="overflow-hidden aspect-square cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setExpandedImage(images[2]?.url)}>
+          <div className="overflow-hidden aspect-square cursor-pointer hover:opacity-90 transition-opacity" onClick={() => {
+            if (images[2]?.type === "image") {
+              setExpandedImage(images[2]?.url);
+            }
+          }}>
             <img
               src={images[2]?.url}
               alt={images[2]?.alt}
@@ -140,7 +148,11 @@ export const ProductImageCarousel = () => {
         </div>
 
         {/* Second large image */}
-        <div className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setExpandedImage(images[3]?.url)}>
+        <div className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity" onClick={() => {
+          if (images[3]?.type === "image") {
+            setExpandedImage(images[3]?.url);
+          }
+        }}>
           <img
             src={images[3]?.url}
             alt={images[3]?.alt}
@@ -152,7 +164,11 @@ export const ProductImageCarousel = () => {
 
         {/* Last two images side by side */}
         <div className="grid grid-cols-2 gap-0">
-          <div className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setExpandedImage(images[4]?.url)}>
+          <div className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity" onClick={() => {
+            if (images[4]?.type === "image") {
+              setExpandedImage(images[4]?.url);
+            }
+          }}>
             <img
               src={images[4]?.url}
               alt={images[4]?.alt}
@@ -161,7 +177,11 @@ export const ProductImageCarousel = () => {
               decoding="async"
             />
           </div>
-          <div className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setExpandedImage(images[5]?.url)}>
+          <div className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity" onClick={() => {
+            if (images[5]?.type === "image") {
+              setExpandedImage(images[5]?.url);
+            }
+          }}>
             <img
               src={images[5]?.url}
               alt={images[5]?.alt}

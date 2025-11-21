@@ -72,7 +72,6 @@ export const ImageModal = ({ imageUrl, onClose }: ImageModalProps) => {
             alt="Product preview"
             className="w-full h-auto max-h-[80vh] object-contain rounded-lg shadow-2xl"
             draggable={isZoomed}
-            onClick={(e) => e.stopPropagation()}
           />
         </div>
       </div>
