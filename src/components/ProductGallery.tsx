@@ -110,7 +110,7 @@ export const ProductGallery = () => {
                   <img
                     src={product.image}
                     alt={product.name}
-                    className="w-full h-auto"
+                    className="w-full h-64 object-contain"
                   />
                 </div>
               </div>
