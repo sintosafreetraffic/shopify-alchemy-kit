@@ -169,7 +169,7 @@ export const CartDrawer = () => {
                         className="flex-1 h-8 text-xs"
                         onClick={() => handleAddRecommendation(product)}
                       >
-                        Add to Cart
+                        ADD TO CART
                       </Button>
                     </div>
                   </div>
@@ -391,7 +391,7 @@ export const CartDrawer = () => {
                                 className="w-full h-7 text-xs mt-2"
                                 onClick={() => handleAddRecommendation(product)}
                               >
-                                Add to Cart
+                                ADD TO CART
                               </Button>
                             </div>
                           );
