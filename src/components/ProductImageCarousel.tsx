@@ -16,19 +16,10 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import {
-  Dialog,
-  DialogContent,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 
 export const ProductImageCarousel = () => {
   const [expandedMedia, setExpandedMedia] = useState<{ url: string; alt: string; type: string } | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
-  const [isDragging, setIsDragging] = useState(false);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   
   // Multiple views of the RiseByNight pillow (desktop order)
   const images = [
@@ -56,98 +47,61 @@ export const ProductImageCarousel = () => {
 
   const handleZoomOut = () => {
     setZoomLevel(prev => Math.max(prev - 0.5, 1));
-    if (zoomLevel <= 1.5) {
-      setPosition({ x: 0, y: 0 });
-    }
   };
 
   const handleResetZoom = () => {
     setZoomLevel(1);
-    setPosition({ x: 0, y: 0 });
-  };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (zoomLevel > 1) {
-      setIsDragging(true);
-      setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
-    }
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (isDragging && zoomLevel > 1) {
-      setPosition({
-        x: e.clientX - dragStart.x,
-        y: e.clientY - dragStart.y
-      });
-    }
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  const handleDoubleClick = () => {
-    if (zoomLevel === 1) {
-      setZoomLevel(2);
-    } else {
-      handleResetZoom();
-    }
   };
 
   const handleCloseModal = () => {
     setExpandedMedia(null);
-    setIsDialogOpen(false);
-    handleResetZoom();
-  };
-
-  const handleOpenModal = (media: { url: string; alt: string; type: string }) => {
-    setExpandedMedia(media);
-    setIsDialogOpen(true);
+    setZoomLevel(1);
   };
 
   return (
     <>
-      {/* Expanded Media Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={(open) => {
-        console.log("Dialog onOpenChange:", open, "expandedMedia:", expandedMedia);
-        if (!open) handleCloseModal();
-      }}>
-        <DialogContent className="max-w-4xl w-full p-2 md:p-6 relative bg-background">
-          {/* Dedicated Close Button */}
-          <button
-            onClick={handleCloseModal}
-            className="absolute -top-2 -right-2 md:top-2 md:right-2 z-[60] rounded-full bg-background shadow-xl border-2 border-primary/20 p-2.5 md:p-3 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all hover:scale-110"
-            aria-label="Close"
-          >
-            <X className="w-6 h-6 md:w-7 md:h-7" />
-          </button>
+      {/* Simple Modal Overlay */}
+      {expandedMedia && (
+        <div 
+          className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center p-4"
+          onClick={handleCloseModal}
+        >
+          <div className="relative max-w-6xl w-full h-full flex items-center justify-center">
+            {/* Close Button */}
+            <button
+              onClick={handleCloseModal}
+              className="absolute top-4 right-4 z-[10000] rounded-full bg-white text-black p-3 hover:bg-gray-200 transition-all shadow-xl"
+              aria-label="Close"
+            >
+              <X className="w-6 h-6" />
+            </button>
 
-          {expandedMedia && (
-            <div className="w-full pt-8 md:pt-0">
+            {/* Content */}
+            <div className="relative max-h-[90vh] max-w-full" onClick={(e) => e.stopPropagation()}>
               {expandedMedia.type === "video" ? (
                 <video
                   src={expandedMedia.url}
                   controls
                   autoPlay
                   loop
-                  className="w-full h-auto rounded-lg bg-black"
+                  className="max-h-[90vh] w-auto rounded-lg"
                   aria-label={expandedMedia.alt}
                 />
               ) : (
-                <div className="relative overflow-hidden rounded-lg bg-background">
+                <div className="relative">
                   {/* Zoom Controls */}
-                  <div className="absolute top-2 right-2 z-10 flex gap-2">
+                  <div className="absolute top-4 right-4 z-10 flex gap-2">
                     <button
                       onClick={handleZoomOut}
                       disabled={zoomLevel <= 1}
-                      className="p-2 rounded-full bg-background/90 backdrop-blur-sm shadow-lg hover:bg-background transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="p-2 rounded-full bg-white text-black shadow-lg hover:bg-gray-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                       aria-label="Zoom out"
                     >
                       <ZoomOut className="w-5 h-5" />
                     </button>
                     <button
                       onClick={handleResetZoom}
-                      className="p-2 rounded-full bg-background/90 backdrop-blur-sm shadow-lg hover:bg-background transition-all"
+                      className="p-2 rounded-full bg-white text-black shadow-lg hover:bg-gray-200 transition-all"
                       aria-label="Reset zoom"
                     >
                       <Maximize2 className="w-5 h-5" />
@@ -155,7 +109,7 @@ export const ProductImageCarousel = () => {
                     <button
                       onClick={handleZoomIn}
                       disabled={zoomLevel >= 3}
-                      className="p-2 rounded-full bg-background/90 backdrop-blur-sm shadow-lg hover:bg-background transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="p-2 rounded-full bg-white text-black shadow-lg hover:bg-gray-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                       aria-label="Zoom in"
                     >
                       <ZoomIn className="w-5 h-5" />
@@ -164,44 +118,28 @@ export const ProductImageCarousel = () => {
 
                   {/* Zoom Level Indicator */}
                   {zoomLevel > 1 && (
-                    <div className="absolute top-2 left-2 z-10 px-3 py-1 rounded-full bg-background/90 backdrop-blur-sm shadow-lg text-sm font-medium">
+                    <div className="absolute top-4 left-4 z-10 px-3 py-1 rounded-full bg-white text-black shadow-lg text-sm font-medium">
                       {Math.round(zoomLevel * 100)}%
                     </div>
                   )}
 
-                  {/* Image with Zoom */}
-                  <div 
-                    className={`w-full overflow-hidden ${zoomLevel > 1 ? 'cursor-move' : 'cursor-zoom-in'}`}
-                    onMouseDown={handleMouseDown}
-                    onMouseMove={handleMouseMove}
-                    onMouseUp={handleMouseUp}
-                    onMouseLeave={handleMouseUp}
-                    onDoubleClick={handleDoubleClick}
-                  >
-                    <img
-                      src={expandedMedia.url}
-                      alt={expandedMedia.alt}
-                      className="w-full h-auto rounded-lg select-none transition-transform duration-200"
-                      style={{
-                        transform: `scale(${zoomLevel}) translate(${position.x / zoomLevel}px, ${position.y / zoomLevel}px)`,
-                        transformOrigin: 'center center'
-                      }}
-                      draggable={false}
-                    />
-                  </div>
-
-                  {/* Help Text */}
-                  {zoomLevel === 1 && (
-                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 px-3 py-1 rounded-full bg-background/90 backdrop-blur-sm shadow-lg text-xs text-muted-foreground">
-                      Double-click to zoom
-                    </div>
-                  )}
+                  {/* Image */}
+                  <img
+                    src={expandedMedia.url}
+                    alt={expandedMedia.alt}
+                    className="max-h-[90vh] w-auto rounded-lg"
+                    style={{
+                      transform: `scale(${zoomLevel})`,
+                      transformOrigin: 'center center',
+                      transition: 'transform 0.2s'
+                    }}
+                  />
                 </div>
               )}
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+          </div>
+        </div>
+      )}
 
       {/* Mobile Carousel */}
       <div className="md:hidden">
@@ -211,10 +149,7 @@ export const ProductImageCarousel = () => {
               <CarouselItem key={index}>
                 <div 
                   className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 relative cursor-pointer hover:opacity-90 transition-opacity"
-                  onClick={() => {
-                    console.log("Image clicked:", item);
-                    handleOpenModal(item);
-                  }}
+                  onClick={() => setExpandedMedia(item)}
                 >
                   {item.type === "video" ? (
                     <video
@@ -249,10 +184,7 @@ export const ProductImageCarousel = () => {
         {/* First large image */}
         <div 
           className="overflow-hidden relative cursor-pointer hover:opacity-90 transition-opacity"
-          onClick={() => {
-            console.log("Desktop image clicked:", images[0]);
-            handleOpenModal(images[0]);
-          }}
+          onClick={() => setExpandedMedia(images[0])}
         >
           {images[0]?.type === "video" ? (
             <video
@@ -279,7 +211,7 @@ export const ProductImageCarousel = () => {
         <div className="grid grid-cols-2 gap-0">
           <div 
             className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-            onClick={() => handleOpenModal(images[1])}
+            onClick={() => setExpandedMedia(images[1])}
           >
             {images[1]?.type === "video" ? (
               <video
@@ -303,7 +235,7 @@ export const ProductImageCarousel = () => {
           </div>
           <div 
             className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-            onClick={() => handleOpenModal(images[2])}
+            onClick={() => setExpandedMedia(images[2])}
           >
             <img
               src={images[2]?.url}
@@ -318,7 +250,7 @@ export const ProductImageCarousel = () => {
         {/* Second large image */}
         <div 
           className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-          onClick={() => handleOpenModal(images[3])}
+          onClick={() => setExpandedMedia(images[3])}
         >
           <img
             src={images[3]?.url}
@@ -333,13 +265,13 @@ export const ProductImageCarousel = () => {
         <div className="grid grid-cols-2 gap-0">
           <div 
             className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-            onClick={() => handleOpenModal(images[4])}
+            onClick={() => setExpandedMedia(images[4])}
           >
 ...
           </div>
           <div 
             className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-            onClick={() => handleOpenModal(images[5])}
+            onClick={() => setExpandedMedia(images[5])}
           >
             <img
               src={images[5]?.url}
