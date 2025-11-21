@@ -2,7 +2,7 @@ import { useState } from "react";
 import optisleepPillow from "@/assets/optisleep-pillow-main.png";
 import pillowHeroImage from "@/assets/pillow-hero-main.png";
 import pillowHeroNew from "@/assets/pillow-hero-new.png";
-import ergonomicPillowHero from "@/assets/ergonomic-pillow-hero.png";
+import pillowBenefitsPainRelief from "@/assets/pillow-benefits-pain-relief.png";
 import pillowBenefitsUpdated from "@/assets/pillow-benefits-updated.png";
 import consumerChoiceBadge from "@/assets/consumer-choice-badge-new.jpg";
 import neckPainSpine from "@/assets/neck-pain-spine.png";
@@ -22,7 +22,7 @@ export const ProductImageCarousel = () => {
   const images = [
     { url: pillowHeroNew, alt: "RiseByNight ergonomic pillow main view", type: "image" },
     { url: "/videos/product-demo.mp4", alt: "RiseByNight pillow demonstration", type: "video" },
-    { url: ergonomicPillowHero, alt: "RiseByNight ergonomic pillow benefits overview", type: "image" },
+    { url: pillowBenefitsPainRelief, alt: "RiseByNight ergonomic pillow benefits - relieves neck & back pain, reduces sleep apnea, reduces acid reflux, relieves shoulders", type: "image" },
     { url: pillowEasyCleaning, alt: "RiseByNight pillow - easy cleaning and maintenance with removable cover", type: "image" },
     { url: neckPainSpine, alt: "RiseByNight pillow - neck pain and spine alignment relief", type: "image" },
     { url: pillowBenefitsUpdated, alt: "RiseByNight pillow - premium ergonomic pillow benefits including neck support, pressure relief, custom fit, durability, high-end materials, enhanced sleep", type: "image" },
