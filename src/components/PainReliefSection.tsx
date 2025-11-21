@@ -41,15 +41,15 @@ const painTypes = [
 
 export const PainReliefSection = () => {
   return (
-    <section className="py-16 px-4 bg-primary/5">
+    <section className="py-6 md:py-16 px-4 bg-primary/5">
       <div className="container mx-auto max-w-6xl">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+        <div className="text-center mb-6 md:mb-12">
+          <h2 className="text-2xl md:text-4xl font-bold mb-2 md:mb-4">
             Relief for Every Type of Pain That – <span className="italic">Disrupts Your Sleep</span>
           </h2>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
           {painTypes.map((pain, index) => (
             <Accordion key={index} type="single" collapsible>
               <AccordionItem 

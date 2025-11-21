@@ -37,11 +37,11 @@ export const LookInside = () => {
   const [expandedMobile, setExpandedMobile] = useState<number | null>(null);
 
   return (
-    <section className="py-16 bg-primary/5">
+    <section className="py-6 md:py-16 bg-primary/5">
       <div className="container mx-auto px-4 max-w-7xl">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Let's take a look inside the pillow</h2>
-          <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+        <div className="text-center mb-6 md:mb-12">
+          <h2 className="text-2xl md:text-4xl font-bold mb-2 md:mb-4">Let's take a look inside the pillow</h2>
+          <p className="text-base md:text-lg text-muted-foreground max-w-3xl mx-auto">
             The RiseByNight pillow is made up of several components that work together to help you wake up happy and
             refreshed every day.
           </p>
