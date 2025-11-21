@@ -7,10 +7,14 @@ import { useState, useEffect } from "react";
 export const Header = () => {
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [isAtTop, setIsAtTop] = useState(true);
 
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
+      
+      // Check if we're at the top
+      setIsAtTop(currentScrollY < 10);
 
       // Show header when scrolling up, hide when scrolling down
       if (currentScrollY < lastScrollY || currentScrollY < 10) {
@@ -31,8 +35,8 @@ export const Header = () => {
 
   return (
     <header 
-      className={`fixed top-0 left-0 right-0 z-50 border-b bg-background transition-transform duration-300 ${
-        isVisible ? "translate-y-0" : "-translate-y-full"
+      className={`${isAtTop ? 'relative' : 'fixed top-[41px]'} left-0 right-0 z-50 border-b bg-background transition-all duration-300 ${
+        !isAtTop && !isVisible ? "-translate-y-full" : "translate-y-0"
       }`}
     >
       <div className="container mx-auto px-4 py-2 grid grid-cols-3 items-center">
