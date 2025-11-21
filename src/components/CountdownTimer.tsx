@@ -8,9 +8,8 @@ export const CountdownTimer = () => {
   });
 
   useEffect(() => {
-    // Set end time to 48 hours from now (can be adjusted to actual sale end)
-    const endTime = new Date();
-    endTime.setHours(endTime.getHours() + 48);
+    // Set end time to Black Friday (November 28, 2025) at 23:59:59
+    const endTime = new Date('2025-11-28T23:59:59');
     
     const timer = setInterval(() => {
       const now = new Date().getTime();
@@ -22,8 +21,11 @@ export const CountdownTimer = () => {
         return;
       }
 
+      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      
       setTimeLeft({
-        hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        hours: days * 24 + hours,
         minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
         seconds: Math.floor((distance % (1000 * 60)) / 1000)
       });
