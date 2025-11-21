@@ -15,7 +15,7 @@ export const ProductGallery = () => {
       price: "$89.99",
       originalPrice: "$179.98",
       rating: 4.8,
-      reviews: "15,000+",
+      reviews: "6,247",
       image: pillowMain,
       features: [
         "Ergonomic contour design",
