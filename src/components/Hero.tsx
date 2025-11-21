@@ -99,9 +99,9 @@ export const Hero = () => {
           <ProductImageCarousel />
           
           {/* Mobile Title Section */}
-          <div className="space-y-3">
+          <div className="space-y-0">
             {/* Enhanced Social Proof */}
-            <div className="space-y-2">
+            <div className="space-y-2 mb-3">
               <div className="flex items-center gap-2 flex-wrap">
                 <div className="flex">
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -121,11 +121,11 @@ export const Hero = () => {
               </div>
             </div>
             
-            <h1 className="text-lg font-bold leading-tight tracking-tight truncate">
+            <h1 className="text-lg font-bold leading-tight tracking-tight truncate mt-3">
               RiseByNight™ Ergonomic Sleep Pillow
             </h1>
             
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground mt-1">
               The #1 Rated Ergonomic Pillow in the U.S.
             </p>
           </div>
