@@ -259,9 +259,15 @@ export default function Home() {
               </Button>
             </Link>
             
-            <div className="mt-8 pt-8 border-t border-primary-foreground/20">
-              <p className="text-sm opacity-75 mb-2">Free Shipping • 100-Night Trial • 2-Year Warranty</p>
-              <p className="text-xs opacity-60">Limited Black Friday Offer: Buy 1 Get 1 FREE on select products</p>
+            <div className="mt-8 pt-8 border-t border-primary-foreground/30">
+              <p className="text-base md:text-lg font-semibold mb-3 tracking-wide">
+                Free Shipping • 100-Night Trial • 2-Year Warranty
+              </p>
+              <div className="inline-block bg-primary-foreground/10 px-4 py-2 rounded-full">
+                <p className="text-sm md:text-base font-medium">
+                  🎉 Limited Black Friday Offer: Buy 1 Get 1 <span className="font-bold">FREE</span> on select products
+                </p>
+              </div>
             </div>
           </div>
         </div>
