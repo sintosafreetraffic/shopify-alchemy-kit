@@ -19,17 +19,16 @@ export default function Home() {
             alt="Peaceful sleep with RiseByNight" 
             className="w-full h-[60vh] md:h-[70vh] object-cover"
           />
-          <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-            <div className="animate-fade-in bg-background/95 backdrop-blur-sm px-8 md:px-12 py-6 md:py-8 rounded-2xl border-2 border-primary shadow-2xl">
-              <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-center">
-                <span className="bg-gradient-to-r from-primary via-primary/80 to-primary bg-clip-text text-transparent">
+          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/40 flex items-center justify-center">
+            <div className="animate-fade-in text-center">
+              <h2 className="text-5xl md:text-6xl lg:text-7xl font-bold mb-2 md:mb-3">
+                <span className="bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent drop-shadow-lg">
                   Black Friday
                 </span>
-                <br />
-                <span className="text-foreground text-3xl md:text-4xl lg:text-5xl">
-                  Buy 1 Get 1 Free
-                </span>
               </h2>
+              <p className="text-3xl md:text-4xl lg:text-5xl font-semibold text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">
+                Buy 1 Get 1 Free
+              </p>
             </div>
           </div>
         </div>
@@ -41,17 +40,16 @@ export default function Home() {
             alt="Peaceful sleep with RiseByNight" 
             className="w-full h-[60vh] object-cover"
           />
-          <div className="absolute inset-0 bg-black/20 flex items-center justify-center px-4">
-            <div className="animate-fade-in bg-background/95 backdrop-blur-sm px-6 py-5 rounded-xl border-2 border-primary shadow-2xl">
-              <h2 className="text-2xl sm:text-3xl font-bold text-center">
-                <span className="bg-gradient-to-r from-primary via-primary/80 to-primary bg-clip-text text-transparent">
+          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/40 flex items-center justify-center px-4">
+            <div className="animate-fade-in text-center">
+              <h2 className="text-3xl sm:text-4xl font-bold mb-2">
+                <span className="bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent drop-shadow-lg">
                   Black Friday
                 </span>
-                <br />
-                <span className="text-foreground text-xl sm:text-2xl">
-                  Buy 1 Get 1 Free
-                </span>
               </h2>
+              <p className="text-xl sm:text-2xl font-semibold text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">
+                Buy 1 Get 1 Free
+              </p>
             </div>
           </div>
         </div>
