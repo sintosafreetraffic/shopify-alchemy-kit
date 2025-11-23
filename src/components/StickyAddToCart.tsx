@@ -10,11 +10,11 @@ import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
 import { Badge } from "@/components/ui/badge";
 
 interface StickyAddToCartProps {
-  productType: "ergonomic-pillow" | "knee-pillow" | "sleep-mask";
+  productType: "ergonomic-pillow" | "knee-pillow" | "sleep-mask" | "sleep-bundle";
 }
 
 export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
-  const isPillowProduct = productType === "ergonomic-pillow" || productType === "knee-pillow";
+  const isPillowProduct = productType === "ergonomic-pillow" || productType === "knee-pillow" || productType === "sleep-bundle";
   const [selectedBundle, setSelectedBundle] = useState<"1" | "2">(isPillowProduct ? "2" : "1");
   const [product, setProduct] = useState<ShopifyProduct | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -35,6 +35,8 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
           selectedProduct = products.find(p => p.node.title.toLowerCase().includes('knee'));
         } else if (productType === "sleep-mask") {
           selectedProduct = products.find(p => p.node.title.toLowerCase().includes('mask'));
+        } else if (productType === "sleep-bundle") {
+          selectedProduct = products.find(p => p.node.title.toLowerCase().includes('bundle'));
         } else {
           selectedProduct = products.find(p => 
             p.node.title.toLowerCase().includes('ergonomic') && 

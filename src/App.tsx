@@ -13,6 +13,7 @@ import Home from "./pages/Home";
 import Index from "./pages/Index";
 import KneePillowProduct from "./pages/KneePillowProduct";
 import SleepMaskProduct from "./pages/SleepMaskProduct";
+import SleepBundleProduct from "./pages/SleepBundleProduct";
 import Benefits from "./pages/Benefits";
 import Reviews from "./pages/Reviews";
 import FAQ from "./pages/FAQ";
@@ -44,6 +45,7 @@ const App = () => (
               <Route path="/product/ergonomic-pillow" element={<Index />} />
               <Route path="/product/knee-pillow" element={<KneePillowProduct />} />
               <Route path="/product/sleep-mask" element={<SleepMaskProduct />} />
+              <Route path="/product/sleep-bundle" element={<SleepBundleProduct />} />
               <Route path="/product" element={<Index />} />
               <Route path="/benefits" element={<Benefits />} />
               <Route path="/reviews" element={<Reviews />} />
