@@ -7,7 +7,7 @@ import { useCartStore } from "@/stores/cartStore";
 import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
-import kneePillowMain from "@/assets/knee-pillow-main.jpg";
+import kneePillowMain from "@/assets/knee-pillow-hero-new.png";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
 import consumerChoiceBadge from "@/assets/consumer-choice-badge-transparent.png";
 
