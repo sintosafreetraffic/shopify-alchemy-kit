@@ -1,4 +1,4 @@
-import kneePillowImage from "@/assets/knee-pillow-hero-new.png";
+import kneePillowImage from "@/assets/knee-pillow-main-new.png";
 import { useState } from "react";
 
 const components = [
