@@ -4,32 +4,32 @@ import { useState } from "react";
 const components = [
   {
     position: "left-top",
-    title: "Ergonomic Contour Design",
-    description: "Perfectly shaped curves that fit between your knees while maintaining natural leg alignment.",
+    title: "Outer Fabric Cover",
+    description: "Quilted cotton/polyester blend that's soft, breathable, and patterned with small white cross-stitch dots. Provides comfort, protects internal foam, and improves airflow with durable stitching.",
   },
   {
     position: "left-middle",
-    title: "Memory Foam Core",
+    title: "Middle Mesh Layer",
     description:
-      "High-density memory foam that adapts to your leg shape, providing personalized support and pressure relief.",
+      "3D breathable air-mesh that's highly ventilated and flexible. Prevents heat buildup, allows airflow around the foam, and adds structural protection while regulating temperature.",
   },
   {
     position: "left-bottom",
-    title: "Anti-Slip Base Layer",
+    title: "Elastic Support Strap",
     description:
-      "Textured bottom surface that stays in place throughout the night, preventing the pillow from sliding.",
+      "Stretchable elastic band wrapped in fabric, adjustable and comfortable against the leg. Keeps pillow in place throughout the night and prevents slipping when you change positions.",
   },
   {
     position: "right-top",
-    title: "Breathable Mesh Cover",
+    title: "Inner Core",
     description:
-      "Premium cooling fabric cover with temperature-regulating technology to prevent overheating during sleep.",
+      "High-density memory foam with slow-rebound formulation for precise pressure relief. Shaped ergonomically for leg separation, aligns hips, knees, and lower spine while maintaining shape over long-term use.",
   },
   {
     position: "right-middle",
-    title: "Hip Alignment Support Zone",
+    title: "Zipper Opening",
     description:
-      "Specially engineered thickness that maintains optimal hip positioning and reduces lower back strain.",
+      "Nylon zipper with reinforced stitching that allows removal of the fabric cover for washing, making maintenance easy and keeping your pillow fresh.",
   },
 ];
 
