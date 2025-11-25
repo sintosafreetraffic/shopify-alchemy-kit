@@ -1,5 +1,6 @@
 import { Check } from "lucide-react";
 import kneePillowMain from "@/assets/knee-pillow-main.jpg";
+import kneePillowCirculation from "@/assets/knee-pillow-circulation.png";
 
 const features: Array<{
   image: string;
@@ -20,7 +21,7 @@ const features: Array<{
     imagePosition: "left"
   },
   {
-    image: kneePillowMain,
+    image: kneePillowCirculation,
     title: "Relieves Pain & Improves Circulation",
     description: "By keeping your legs properly aligned, the knee pillow reduces strain on your lower back, hips, and knees while improving blood circulation for a more restful sleep.",
     benefits: [
