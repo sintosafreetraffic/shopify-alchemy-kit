@@ -1,35 +1,41 @@
 import kneePillowImage from "@/assets/knee-pillow-layers-new.png";
 import { useState } from "react";
+import { Shirt, Wind, Layers, MoveHorizontal, Archive } from "lucide-react";
 
 const components = [
   {
     position: "left-top",
     title: "Outer Fabric Cover",
     description: "Quilted cotton/polyester blend that's soft, breathable, and patterned with small white cross-stitch dots. Provides comfort, protects internal foam, and improves airflow with durable stitching.",
+    icon: Shirt,
   },
   {
     position: "left-middle",
     title: "Middle Mesh Layer",
     description:
       "3D breathable air-mesh that's highly ventilated and flexible. Prevents heat buildup, allows airflow around the foam, and adds structural protection while regulating temperature.",
+    icon: Wind,
   },
   {
     position: "left-bottom",
     title: "Elastic Support Strap",
     description:
       "Stretchable elastic band wrapped in fabric, adjustable and comfortable against the leg. Keeps pillow in place throughout the night and prevents slipping when you change positions.",
+    icon: MoveHorizontal,
   },
   {
     position: "right-top",
     title: "Inner Core",
     description:
       "High-density memory foam with slow-rebound formulation for precise pressure relief. Shaped ergonomically for leg separation, aligns hips, knees, and lower spine while maintaining shape over long-term use.",
+    icon: Layers,
   },
   {
     position: "right-middle",
     title: "Zipper Opening",
     description:
       "Nylon zipper with reinforced stitching that allows removal of the fabric cover for washing, making maintenance easy and keeping your pillow fresh.",
+    icon: Archive,
   },
 ];
 
@@ -55,13 +61,20 @@ export const KneePillowLookInside = () => {
                 .map((component, idx) => (
                   <div key={idx} className="relative">
                     <div className="bg-background border-2 border-primary/20 rounded-xl p-6 shadow-lg hover:border-primary/40 transition-colors">
-                      <div className="flex items-start gap-3 mb-2">
-                        <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold text-sm">
-                          {idx + 1}
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className="flex-shrink-0 w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white">
+                          <component.icon size={20} />
                         </div>
-                        <h3 className="font-bold text-lg flex-1">{component.title}</h3>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="flex-shrink-0 w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold text-xs">
+                              {idx + 1}
+                            </span>
+                            <h3 className="font-bold text-lg">{component.title}</h3>
+                          </div>
+                        </div>
                       </div>
-                      <p className="text-sm text-muted-foreground ml-11">{component.description}</p>
+                      <p className="text-sm text-muted-foreground ml-13">{component.description}</p>
                     </div>
                   </div>
                 ))}
@@ -85,13 +98,20 @@ export const KneePillowLookInside = () => {
                 .map((component, idx) => (
                   <div key={idx} className="relative">
                     <div className="bg-background border-2 border-primary/20 rounded-xl p-6 shadow-lg hover:border-primary/40 transition-colors">
-                      <div className="flex items-start gap-3 mb-2">
-                        <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold text-sm">
-                          {idx + 4}
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className="flex-shrink-0 w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white">
+                          <component.icon size={20} />
                         </div>
-                        <h3 className="font-bold text-lg flex-1">{component.title}</h3>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="flex-shrink-0 w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold text-xs">
+                              {idx + 4}
+                            </span>
+                            <h3 className="font-bold text-lg">{component.title}</h3>
+                          </div>
+                        </div>
                       </div>
-                      <p className="text-sm text-muted-foreground ml-11">{component.description}</p>
+                      <p className="text-sm text-muted-foreground ml-13">{component.description}</p>
                     </div>
                   </div>
                 ))}
@@ -111,13 +131,20 @@ export const KneePillowLookInside = () => {
             <div className="space-y-4">
               {components.map((component, idx) => (
                 <div key={idx} className="bg-background border-2 border-primary/20 rounded-xl p-4 shadow-lg">
-                  <div className="flex items-start gap-3 mb-2">
-                    <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold text-sm">
-                      {idx + 1}
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="flex-shrink-0 w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white">
+                      <component.icon size={20} />
                     </div>
-                    <h3 className="font-bold text-base flex-1">{component.title}</h3>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="flex-shrink-0 w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold text-xs">
+                          {idx + 1}
+                        </span>
+                        <h3 className="font-bold text-base">{component.title}</h3>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-sm text-muted-foreground ml-11">{component.description}</p>
+                  <p className="text-sm text-muted-foreground ml-13">{component.description}</p>
                 </div>
               ))}
             </div>
