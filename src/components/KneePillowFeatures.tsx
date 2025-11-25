@@ -1,5 +1,5 @@
 import { Check } from "lucide-react";
-import kneePillowMain from "@/assets/knee-pillow-main.jpg";
+import kneePillowHero from "@/assets/knee-pillow-hero-new.png";
 import kneePillowCirculation from "@/assets/knee-pillow-circulation.png";
 
 const features: Array<{
@@ -10,7 +10,7 @@ const features: Array<{
   imagePosition: "left" | "right";
 }> = [
   {
-    image: kneePillowMain,
+    image: kneePillowHero,
     title: "Perfect for Side Sleepers",
     description: "Designed specifically for side sleepers, our ergonomic knee pillow fits comfortably between your legs to maintain proper spinal alignment throughout the night.",
     benefits: [
