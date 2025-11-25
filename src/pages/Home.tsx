@@ -14,9 +14,9 @@ export default function Home() {
       <section className="relative w-full">
         {/* Desktop Image */}
         <div className="hidden md:block relative">
-          <img 
-            src={lifestyleHero} 
-            alt="Peaceful sleep with RiseByNight" 
+          <img
+            src={lifestyleHero}
+            alt="Peaceful sleep with RiseByNight"
             className="w-full h-[60vh] md:h-[70vh] object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/40 flex items-center justify-center">
@@ -32,12 +32,12 @@ export default function Home() {
             </div>
           </div>
         </div>
-        
+
         {/* Mobile Image */}
         <div className="block md:hidden relative">
-          <img 
-            src={lifestyleHeroMobile} 
-            alt="Peaceful sleep with RiseByNight" 
+          <img
+            src={lifestyleHeroMobile}
+            alt="Peaceful sleep with RiseByNight"
             className="w-full h-[60vh] object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/40 flex items-center justify-center px-4">
@@ -62,16 +62,18 @@ export default function Home() {
             <div className="inline-flex items-center justify-center w-24 h-24 mb-4">
               <img src={heroLogo} alt="RiseByNight" className="w-full h-full object-contain" />
             </div>
-            
+
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight">
-              Transform Your Sleep,<br />
+              Transform Your Sleep,
+              <br />
               <span className="text-primary">Transform Your Life</span>
             </h1>
-            
+
             <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
-              At RiseByNight, we're dedicated to helping people achieve the restorative sleep they deserve. Through innovative design and premium materials, we create sleep solutions that make a real difference.
+              At RiseByNight, we're dedicated to helping people achieve the restorative sleep they deserve. Through
+              innovative design and premium materials, we create sleep solutions that make a real difference.
             </p>
-            
+
             <div className="flex flex-wrap justify-center gap-4 pt-4">
               <Link to="/product">
                 <Button size="lg" className="text-lg px-8">
@@ -90,7 +92,10 @@ export default function Home() {
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-5xl font-bold mb-4">Our Mission</h2>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                Poor sleep doesn't just leave you tired—it affects your health, productivity, mood, and overall quality of life. Millions struggle with chronic pain, restless nights, and wake up exhausted every morning. We believe this has to change. That's why we're urgently committed to creating innovative, science-backed sleep solutions that help everyone achieve the restorative sleep they desperately need.
+                Poor sleep doesn't just leave you tired—it affects your health, productivity, mood, and overall quality
+                of life. Millions struggle with chronic pain, restless nights, and wake up exhausted every morning. We
+                believe this has to change. That's why we're urgently committed to creating innovative, science-backed
+                sleep solutions that help everyone achieve the restorative sleep they desperately need.
               </p>
             </div>
 
@@ -101,7 +106,8 @@ export default function Home() {
                 </div>
                 <h3 className="text-xl font-bold mb-3">Sleep Wellness</h3>
                 <p className="text-muted-foreground">
-                  We're passionate about improving sleep health through ergonomic design and premium materials that support your body naturally.
+                  We're passionate about improving sleep health through ergonomic design and premium materials that
+                  support your body naturally.
                 </p>
               </div>
 
@@ -111,7 +117,8 @@ export default function Home() {
                 </div>
                 <h3 className="text-xl font-bold mb-3">Innovation</h3>
                 <p className="text-muted-foreground">
-                  Combining cutting-edge sleep science with thoughtful design to create products that truly make a difference in your rest.
+                  Combining cutting-edge sleep science with thoughtful design to create products that truly make a
+                  difference in your rest.
                 </p>
               </div>
 
@@ -121,7 +128,8 @@ export default function Home() {
                 </div>
                 <h3 className="text-xl font-bold mb-3">Quality Promise</h3>
                 <p className="text-muted-foreground">
-                  Every product is crafted with care, tested rigorously, and backed by our commitment to your satisfaction and long-lasting quality.
+                  Every product is crafted with care, tested rigorously, and backed by our commitment to your
+                  satisfaction and long-lasting quality.
                 </p>
               </div>
             </div>
@@ -138,9 +146,7 @@ export default function Home() {
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-5xl font-bold mb-4">Why RiseByNight?</h2>
-              <p className="text-xl text-muted-foreground">
-                Join thousands who've transformed their sleep experience
-              </p>
+              <p className="text-xl text-muted-foreground">Join thousands who've transformed their sleep experience</p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-8">
@@ -148,7 +154,8 @@ export default function Home() {
                 <Users className="w-12 h-12 text-primary mb-4" />
                 <h3 className="text-2xl font-bold mb-3">15,000+ Happy Sleepers</h3>
                 <p className="text-muted-foreground text-lg">
-                  Our community of satisfied customers wakes up refreshed every morning, free from neck pain and discomfort.
+                  Our community of satisfied customers wakes up refreshed every morning, free from neck pain and
+                  discomfort.
                 </p>
               </div>
 
@@ -156,7 +163,8 @@ export default function Home() {
                 <Award className="w-12 h-12 text-primary mb-4" />
                 <h3 className="text-2xl font-bold mb-3">#1 Rated Products</h3>
                 <p className="text-muted-foreground text-lg">
-                  Clinically tested and customer approved. Our products consistently receive top ratings for quality and effectiveness.
+                  Scientifically tested and customer approved. Our products consistently receive top ratings for quality
+                  and effectiveness.
                 </p>
               </div>
 
@@ -164,7 +172,8 @@ export default function Home() {
                 <Moon className="w-12 h-12 text-primary mb-4" />
                 <h3 className="text-2xl font-bold mb-3">100-Night Trial</h3>
                 <p className="text-muted-foreground text-lg">
-                  Try our products risk-free for 100 nights. If you're not sleeping better, we'll refund you—no questions asked.
+                  Try our products risk-free for 100 nights. If you're not sleeping better, we'll refund you—no
+                  questions asked.
                 </p>
               </div>
 
@@ -185,12 +194,8 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-5xl font-bold mb-4">
-                What Our Customers Have Experienced
-              </h2>
-              <p className="text-lg text-muted-foreground">
-                Based on our survey of 1,750 people, both men and women.
-              </p>
+              <h2 className="text-3xl md:text-5xl font-bold mb-4">What Our Customers Have Experienced</h2>
+              <p className="text-lg text-muted-foreground">Based on our survey of 1,750 people, both men and women.</p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-8">
@@ -246,19 +251,17 @@ export default function Home() {
       <section className="py-16 md:py-24 bg-primary text-primary-foreground">
         <div className="container mx-auto px-4 text-center">
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">
-              Ready for Better Sleep?
-            </h2>
+            <h2 className="text-3xl md:text-5xl font-bold mb-4">Ready for Better Sleep?</h2>
             <p className="text-xl mb-8 opacity-90">
               Join our community and discover the difference quality sleep makes in your life.
             </p>
-            
+
             <Link to="/product">
               <Button size="lg" variant="secondary" className="text-lg px-8">
                 Shop Our Bestseller <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </Link>
-            
+
             <div className="mt-8 pt-8 border-t border-primary-foreground/30">
               <p className="text-base md:text-lg font-semibold mb-3 tracking-wide">
                 Free Shipping • 100-Night Trial • 2-Year Warranty
@@ -275,4 +278,3 @@ export default function Home() {
     </div>
   );
 }
-
