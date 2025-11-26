@@ -28,7 +28,7 @@ export const KneePillowBenefits = () => {
     <section className="py-6 md:py-10 px-4 bg-background">
       <div className="container mx-auto max-w-6xl">
         <div className="text-center mb-6 md:mb-8">
-          <h2 className="text-2xl md:text-4xl font-bold mb-3 md:mb-4">Why Choose RiseByNight?</h2>
+          <h2 className="text-2xl md:text-4xl font-bold mb-3 md:mb-4">Why Choose Rise By Night?</h2>
           <p className="text-base md:text-xl text-muted-foreground">
             Backed by sleep science and loved by thousands
           </p>

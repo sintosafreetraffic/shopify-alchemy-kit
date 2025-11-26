@@ -48,7 +48,7 @@ export const KneePillowLookInside = () => {
         <div className="text-center mb-6 md:mb-12">
           <h2 className="text-2xl md:text-4xl font-bold mb-2 md:mb-4">Let's take a look inside the knee pillow</h2>
           <p className="text-base md:text-lg text-muted-foreground max-w-3xl mx-auto">
-            The RiseByNight Knee Pillow is made up of several components that work together to help you wake up pain-free every day.
+            The Rise By Night Knee Pillow is made up of several components that work together to help you wake up pain-free every day.
           </p>
         </div>
         <div className="relative max-w-6xl mx-auto">
@@ -85,7 +85,7 @@ export const KneePillowLookInside = () => {
               <div className="max-w-md mx-auto relative">
                 <img
                   src={kneePillowImage}
-                  alt="RiseByNight knee pillow showing ergonomic design and materials"
+                  alt="Rise By Night knee pillow showing ergonomic design and materials"
                   className="w-full relative z-0 rounded-xl"
                 />
               </div>
@@ -123,7 +123,7 @@ export const KneePillowLookInside = () => {
             <div className="max-w-md mx-auto mb-8">
               <img
                 src={kneePillowImage}
-                alt="RiseByNight knee pillow showing ergonomic design and materials"
+                alt="Rise By Night knee pillow showing ergonomic design and materials"
                 className="w-full rounded-xl"
               />
             </div>
@@ -153,7 +153,7 @@ export const KneePillowLookInside = () => {
         <div className="mt-16 bg-primary/5 border border-primary/20 rounded-xl p-8 text-center">
           <h3 className="text-2xl font-bold mb-3">Medical-Grade Materials</h3>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Every component of the RiseByNight Knee Pillow is crafted from certified medical-grade materials, ensuring
+            Every component of the Rise By Night Knee Pillow is crafted from certified medical-grade materials, ensuring
             safety, durability, and optimal performance for years to come.
           </p>
         </div>

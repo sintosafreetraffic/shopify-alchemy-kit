@@ -6,11 +6,11 @@ const FAQ = () => {
       category: "Product Information",
       questions: [
         {
-          question: "What makes RiseByNight™ pillows different from regular pillows?",
-          answer: "Our pillows feature an ergonomic contour design that supports natural spinal alignment, high-density memory foam that maintains its shape for 3-5 years, and cooling gel technology to prevent overheating. Unlike regular pillows that flatten quickly, our pillows are scientifically designed and clinically proven to reduce neck pain and improve sleep quality."
+          question: "What makes Rise By Night™ pillows different from regular pillows?",
+          answer: "Our pillows feature an ergonomic contour design that supports natural spinal alignment, high-density memory foam that maintains its shape for 3-5 years, and cooling gel technology to prevent overheating. Unlike regular pillows that flatten quickly, our pillows are scientifically designed and scientifically proven to reduce neck pain and improve sleep quality."
         },
         {
-          question: "How long do RiseByNight™ products last?",
+          question: "How long do Rise By Night™ products last?",
           answer: "Our ergonomic pillows are designed to last 3-5 years with proper care, significantly longer than regular pillows that typically need replacement every 6 months. Our products are made with high-density memory foam that maintains its shape and support over time. All products come with a 2-year warranty."
         },
         {
@@ -69,7 +69,7 @@ const FAQ = () => {
       category: "Usage & Care",
       questions: [
         {
-          question: "How do I clean my RiseByNight™ pillow?",
+          question: "How do I clean my Rise By Night™ pillow?",
           answer: "Remove and wash the pillowcase regularly. The pillow itself should be spot-cleaned only with a damp cloth and mild detergent. Do not machine wash or submerge the memory foam pillow in water. Allow to air dry completely before use."
         },
         {
@@ -119,7 +119,7 @@ const FAQ = () => {
               Frequently Asked Questions
             </h1>
             <p className="text-xl text-muted-foreground">
-              Everything you need to know about RiseByNight™ products, shipping, returns, and more
+              Everything you need to know about Rise By Night™ products, shipping, returns, and more
             </p>
           </div>
         </div>

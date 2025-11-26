@@ -42,7 +42,7 @@ export const LookInside = () => {
         <div className="text-center mb-6 md:mb-12">
           <h2 className="text-2xl md:text-4xl font-bold mb-2 md:mb-4">Let's take a look inside the pillow</h2>
           <p className="text-base md:text-lg text-muted-foreground max-w-3xl mx-auto">
-            The RiseByNight pillow is made up of several components that work together to help you wake up happy and
+            The Rise By Night pillow is made up of several components that work together to help you wake up happy and
             refreshed every day.
           </p>
         </div>
@@ -73,7 +73,7 @@ export const LookInside = () => {
               <div className="max-w-md mx-auto relative">
               <img
                 src={pillowLayers}
-                alt="RiseByNight pillow exploded view showing all internal layers and materials"
+                alt="Rise By Night pillow exploded view showing all internal layers and materials"
                 className="w-full relative z-0"
               />
 
@@ -199,7 +199,7 @@ export const LookInside = () => {
             <div className="max-w-md mx-auto mb-8 relative">
               <img
                 src={pillowLayers}
-                alt="RiseByNight pillow exploded view showing all internal layers and materials"
+                alt="Rise By Night pillow exploded view showing all internal layers and materials"
                 className="w-full relative z-0"
               />
 
@@ -358,7 +358,7 @@ export const LookInside = () => {
         <div className="mt-16 bg-primary/5 border border-primary/20 rounded-xl p-8 text-center">
           <h3 className="text-2xl font-bold mb-3">Medical-Grade Materials</h3>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Every component of the RiseByNight pillow is crafted from certified medical-grade materials, ensuring
+            Every component of the Rise By Night pillow is crafted from certified medical-grade materials, ensuring
             safety, durability, and optimal performance for years to come. Our pillows are rigorously tested to meet the
             highest quality standards.
           </p>

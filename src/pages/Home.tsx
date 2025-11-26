@@ -16,7 +16,7 @@ export default function Home() {
         <div className="hidden md:block relative">
           <img
             src={lifestyleHero}
-            alt="Peaceful sleep with RiseByNight"
+            alt="Peaceful sleep with Rise By Night"
             className="w-full h-[60vh] md:h-[70vh] object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/40 flex items-center justify-center">
@@ -37,7 +37,7 @@ export default function Home() {
         <div className="block md:hidden relative">
           <img
             src={lifestyleHeroMobile}
-            alt="Peaceful sleep with RiseByNight"
+            alt="Peaceful sleep with Rise By Night"
             className="w-full h-[60vh] object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/40 flex items-center justify-center px-4">
@@ -60,7 +60,7 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center space-y-8">
             <div className="inline-flex items-center justify-center w-24 h-24 mb-4">
-              <img src={heroLogo} alt="RiseByNight" className="w-full h-full object-contain" />
+              <img src={heroLogo} alt="Rise By Night" className="w-full h-full object-contain" />
             </div>
 
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight">
@@ -70,7 +70,7 @@ export default function Home() {
             </h1>
 
             <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
-              At RiseByNight, we're dedicated to helping people achieve the restorative sleep they deserve. Through
+              At Rise By Night, we're dedicated to helping people achieve the restorative sleep they deserve. Through
               innovative design and premium materials, we create sleep solutions that make a real difference.
             </p>
 
@@ -145,7 +145,7 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-5xl font-bold mb-4">Why RiseByNight?</h2>
+              <h2 className="text-3xl md:text-5xl font-bold mb-4">Why Rise By Night?</h2>
               <p className="text-xl text-muted-foreground">Join thousands who've transformed their sleep experience</p>
             </div>
 

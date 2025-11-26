@@ -9,7 +9,7 @@ export const ChiropractorEndorsement = () => {
           <div className="order-2 md:order-1">
             <img 
               src={chiropractorImage}
-              alt="Dr. Michael Thompson, Chiropractor, endorsing RiseByNight Ergonomic Sleep Pillow"
+              alt="Dr. Michael Thompson, Chiropractor, endorsing Rise By Night Ergonomic Sleep Pillow"
               className="w-full rounded-xl shadow-2xl"
             />
           </div>
@@ -25,7 +25,7 @@ export const ChiropractorEndorsement = () => {
             </div>
             
             <blockquote className="mb-4 md:mb-6 text-base md:text-lg text-muted-foreground italic border-l-4 border-primary pl-3 md:pl-4">
-              "As a chiropractor with over 15 years of experience, I've seen countless patients suffering from neck pain and poor sleep posture. RiseByNight is one of the few products I confidently stand behind and recommend to my patients."
+              "As a chiropractor with over 15 years of experience, I've seen countless patients suffering from neck pain and poor sleep posture. Rise By Night is one of the few products I confidently stand behind and recommend to my patients."
             </blockquote>
             
             <div className="space-y-3 md:space-y-4 mb-4 md:mb-6">

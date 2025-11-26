@@ -9,7 +9,7 @@ export const SleepMaskChiropractorEndorsement = () => {
           <div className="order-2 md:order-1">
             <img 
               src={chiropractorImage}
-              alt="Sleep specialist endorsing RiseByNight Silk Sleep Mask"
+              alt="Sleep specialist endorsing Rise By Night Silk Sleep Mask"
               className="w-full rounded-xl shadow-2xl"
             />
           </div>
@@ -25,7 +25,7 @@ export const SleepMaskChiropractorEndorsement = () => {
             </div>
             
             <blockquote className="mb-4 md:mb-6 text-base md:text-lg text-muted-foreground italic border-l-4 border-primary pl-3 md:pl-4">
-              "As a sleep specialist, I understand the critical role of complete darkness in achieving quality rest. The RiseByNight Sleep Mask is one of the few products I confidently recommend to patients struggling with light sensitivity."
+              "As a sleep specialist, I understand the critical role of complete darkness in achieving quality rest. The Rise By Night Sleep Mask is one of the few products I confidently recommend to patients struggling with light sensitivity."
             </blockquote>
             
             <div className="space-y-3 md:space-y-4 mb-4 md:mb-6">

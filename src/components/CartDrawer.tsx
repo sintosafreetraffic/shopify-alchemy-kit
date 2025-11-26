@@ -185,7 +185,7 @@ export const CartDrawer = () => {
                     </div>
                   )}
                   <h4 className="font-semibold text-sm leading-tight mb-3">
-                    {product.node.title.replace('RiseByNight', 'RiseByNight™')}
+                    {product.node.title.replace('RiseByNight', 'Rise By Night™')}
                   </h4>
                   <div className="flex items-center justify-between gap-2">
                     {variant && (
@@ -314,7 +314,7 @@ export const CartDrawer = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <h4 className="font-medium text-sm leading-tight">
-                            {item.product.node.title.replace('RiseByNight', 'RiseByNight™')}
+                            {item.product.node.title.replace('RiseByNight', 'Rise By Night™')}
                           </h4>
                           {hasActiveDeal && (
                             <div className="bg-gradient-to-r from-red-600 to-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1 flex-shrink-0">
@@ -443,7 +443,7 @@ export const CartDrawer = () => {
                               )}
                               <div className="flex flex-col gap-1 flex-grow">
                                 <h4 className="font-medium text-xs line-clamp-2 leading-tight">
-                                  {product.node.title.replace('RiseByNight', 'RiseByNight™')}
+                                  {product.node.title.replace('RiseByNight', 'Rise By Night™')}
                                 </h4>
                                 {variant && (
                                   <p className="text-sm font-semibold">

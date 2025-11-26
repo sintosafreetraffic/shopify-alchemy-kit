@@ -10,7 +10,7 @@ import completeSleepBundle from "@/assets/complete-sleep-bundle.png";
 export const ProductGallery = () => {
   const bundleProduct = {
     id: 1,
-    name: "RiseByNight™ Complete Sleep Bundle",
+    name: "Rise By Night™ Complete Sleep Bundle",
     tagline: "Everything for Perfect Sleep",
     price: "$149.99",
     originalPrice: "$189.97",
@@ -30,7 +30,7 @@ export const ProductGallery = () => {
   const products = [
     {
       id: 2,
-      name: "RiseByNight™ Ergonomic Pillow",
+      name: "Rise By Night™ Ergonomic Pillow",
       tagline: "The #1 Rated Orthopedic Pillow",
       price: "$89.99",
       originalPrice: "$179.98",
@@ -43,7 +43,7 @@ export const ProductGallery = () => {
     },
     {
       id: 3,
-      name: "RiseByNight™ Ergonomic Knee Pillow",
+      name: "Rise By Night™ Ergonomic Knee Pillow",
       tagline: "Perfect Support for Side Sleepers",
       price: "$69.99",
       originalPrice: "$109.99",
@@ -61,7 +61,7 @@ export const ProductGallery = () => {
     },
     {
       id: 4,
-      name: "RiseByNight™ Silk Sleep Mask",
+      name: "Rise By Night™ Silk Sleep Mask",
       tagline: "100% Pure Mulberry Silk",
       price: "$29.99",
       originalPrice: "$59.99",

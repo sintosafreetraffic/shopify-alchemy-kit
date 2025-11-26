@@ -16,7 +16,7 @@ export const SleepBundleHero = () => {
   };
 
   const images = [
-    { type: "image" as const, src: bundleImage, alt: "RiseByNight Complete Sleep Bundle" }
+    { type: "image" as const, src: bundleImage, alt: "Rise By Night Complete Sleep Bundle" }
   ];
 
   return (
@@ -28,7 +28,7 @@ export const SleepBundleHero = () => {
             <div className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8">
               <img
                 src={bundleImage}
-                alt="RiseByNight Complete Sleep Bundle"
+                alt="Rise By Night Complete Sleep Bundle"
                 className="w-full h-auto object-contain"
               />
             </div>
@@ -48,7 +48,7 @@ export const SleepBundleHero = () => {
             {/* Product Title */}
             <div>
               <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2 leading-tight">
-                RiseByNight™ Complete Sleep Bundle
+                Rise By Night™ Complete Sleep Bundle
               </h1>
               <p className="text-lg md:text-xl text-muted-foreground">
                 Everything You Need for Perfect Sleep
@@ -71,7 +71,7 @@ export const SleepBundleHero = () => {
               </div>
               <div className="flex items-start gap-2">
                 <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                <p className="text-sm md:text-base">Clinically proven to improve sleep quality by 93%</p>
+                <p className="text-sm md:text-base">Scientifically proven to improve sleep quality by 93%</p>
               </div>
             </div>
 

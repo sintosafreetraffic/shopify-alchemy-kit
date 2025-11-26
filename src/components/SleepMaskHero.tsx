@@ -103,7 +103,7 @@ export const SleepMaskHero = () => {
               <div className="bg-gradient-to-b from-primary/5 to-background p-12 rounded-lg">
                 <img
                   src={eyeMaskGift}
-                  alt="RiseByNight Silk Sleep Mask"
+                  alt="Rise By Night Silk Sleep Mask"
                   className="w-full h-auto"
                 />
               </div>
@@ -116,7 +116,7 @@ export const SleepMaskHero = () => {
             {/* Product Title and Rating */}
             <div className="space-y-3">
               <h1 className="text-3xl md:text-5xl font-bold leading-tight">
-                RiseByNight™ Silk Sleep Mask
+                Rise By Night™ Silk Sleep Mask
               </h1>
               <div className="flex items-center gap-2">
                 <div className="flex">

@@ -20,14 +20,14 @@ import { ImageModal } from "./ImageModal";
 
 export const ProductImageCarousel = () => {
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
-  // Multiple views of the RiseByNight pillow (desktop order)
+  // Multiple views of the Rise By Night pillow (desktop order)
   const images = [
-    { url: pillowHeroNew, alt: "RiseByNight ergonomic pillow main view", type: "image" },
-    { url: "/videos/product-demo.mp4", alt: "RiseByNight pillow demonstration", type: "video" },
-    { url: pillowBenefitsPainRelief, alt: "RiseByNight ergonomic pillow benefits - relieves neck & back pain, reduces sleep apnea, reduces acid reflux, relieves shoulders", type: "image" },
-    { url: pillowEasyCleaning, alt: "RiseByNight pillow - easy cleaning and maintenance with removable cover", type: "image" },
-    { url: neckPainSpine, alt: "RiseByNight pillow - neck pain and spine alignment relief", type: "image" },
-    { url: pillowBenefitsUpdated, alt: "RiseByNight pillow - premium ergonomic pillow benefits including neck support, pressure relief, custom fit, durability, high-end materials, enhanced sleep", type: "image" },
+    { url: pillowHeroNew, alt: "Rise By Night ergonomic pillow main view", type: "image" },
+    { url: "/videos/product-demo.mp4", alt: "Rise By Night pillow demonstration", type: "video" },
+    { url: pillowBenefitsPainRelief, alt: "Rise By Night ergonomic pillow benefits - relieves neck & back pain, reduces sleep apnea, reduces acid reflux, relieves shoulders", type: "image" },
+    { url: pillowEasyCleaning, alt: "Rise By Night pillow - easy cleaning and maintenance with removable cover", type: "image" },
+    { url: neckPainSpine, alt: "Rise By Night pillow - neck pain and spine alignment relief", type: "image" },
+    { url: pillowBenefitsUpdated, alt: "Rise By Night pillow - premium ergonomic pillow benefits including neck support, pressure relief, custom fit, durability, high-end materials, enhanced sleep", type: "image" },
   ];
 
   // Mobile order - swap image 2 (video) with image 4 (easy cleaning)

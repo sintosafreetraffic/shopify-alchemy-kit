@@ -106,7 +106,7 @@ export const KneePillowHero = () => {
               <div className="bg-gradient-to-b from-primary/5 to-background p-8 rounded-lg">
                 <img
                   src={kneePillowMain}
-                  alt="RiseByNight Ergonomic Knee Pillow"
+                  alt="Rise By Night Ergonomic Knee Pillow"
                   className="w-full h-auto"
                 />
               </div>
@@ -119,7 +119,7 @@ export const KneePillowHero = () => {
             {/* Product Title and Rating */}
             <div className="space-y-3">
               <h1 className="text-3xl md:text-5xl font-bold leading-tight">
-                RiseByNight™ Ergonomic Knee Pillow
+                Rise By Night™ Ergonomic Knee Pillow
               </h1>
               <div className="flex items-center gap-2">
                 <div className="flex">
