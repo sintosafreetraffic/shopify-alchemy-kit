@@ -72,7 +72,7 @@ export const SleepMaskLookInside = () => {
               <div className="max-w-md mx-auto relative">
                 <img
                   src={sleepMaskImage}
-                  alt="RiseByNight silk sleep mask showing premium construction and materials"
+                  alt="Rise By Night silk sleep mask showing premium construction and materials"
                   className="w-full relative z-0 rounded-xl"
                 />
               </div>
@@ -103,7 +103,7 @@ export const SleepMaskLookInside = () => {
             <div className="max-w-md mx-auto mb-8">
               <img
                 src={sleepMaskImage}
-                alt="RiseByNight silk sleep mask showing premium construction and materials"
+                alt="Rise By Night silk sleep mask showing premium construction and materials"
                 className="w-full rounded-xl"
               />
             </div>

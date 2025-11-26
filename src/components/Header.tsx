@@ -216,7 +216,7 @@ export const Header = () => {
         <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
           <img 
             src={logo} 
-            alt="RiseByNight - Ergonomic Sleep Pillow" 
+            alt="Rise By Night - Ergonomic Sleep Pillow" 
             className="h-10 md:h-12 w-auto object-contain"
           />
         </Link>

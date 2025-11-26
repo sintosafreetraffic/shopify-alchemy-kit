@@ -56,7 +56,7 @@ const Benefits = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              The RiseByNight™ Difference
+              The Rise By Night™ Difference
             </h1>
             <p className="text-xl text-muted-foreground mb-8">
               Scientifically proven benefits that transform your sleep and improve your quality of life. Backed by over 15,000+ satisfied customers and clinical testing.
@@ -132,7 +132,7 @@ const Benefits = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-3xl md:text-5xl font-bold text-center mb-12">
-              Why Choose RiseByNight™?
+              Why Choose Rise By Night™?
             </h2>
             <div className="space-y-6">
               {[
@@ -145,12 +145,12 @@ const Benefits = () => {
                   description: "High-density memory foam, cooling gel technology, and pure mulberry silk - only the finest materials that last for years."
                 },
                 {
-                  title: "Clinically Proven",
+                  title: "Scientifically Proven",
                   description: "Independent testing confirms our pillows significantly reduce neck pain and improve sleep quality compared to regular pillows."
                 },
                 {
                   title: "Risk-Free Trial",
-                  description: "Try any RiseByNight product for 100 nights. If you're not completely satisfied, return it for a full refund - no questions asked."
+                  description: "Try any Rise By Night product for 100 nights. If you're not completely satisfied, return it for a full refund - no questions asked."
                 }
               ].map((item, index) => (
                 <div key={index} className="flex items-start gap-4 p-6 bg-muted/30 rounded-lg">

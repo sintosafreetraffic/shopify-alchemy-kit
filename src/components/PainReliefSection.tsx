@@ -20,7 +20,7 @@ const painTypes = [
   {
     title: "Shoulder Tension",
     cause: "Traditional pillows force your shoulders into awkward angles, creating tightness and soreness that spreads through your upper body and affects your daily comfort.",
-    solution: "Designed with special ergonomic contours, RiseByNight ensures your shoulders remain in a natural position, relieving tension and preventing soreness so you wake up feeling relaxed and refreshed."
+    solution: "Designed with special ergonomic contours, Rise By Night ensures your shoulders remain in a natural position, relieving tension and preventing soreness so you wake up feeling relaxed and refreshed."
   },
   {
     title: "Restless Sleep",
@@ -30,7 +30,7 @@ const painTypes = [
   {
     title: "Morning Headaches",
     cause: "Misaligned neck and shoulder positions restrict blood flow and cause muscle tension, triggering headaches and fatigue that affect your entire day.",
-    solution: "By promoting optimal alignment, RiseByNight improves circulation and reduces tension throughout the night. Wake up pain-free, clear-headed, and ready to take on whatever the day brings."
+    solution: "By promoting optimal alignment, Rise By Night improves circulation and reduces tension throughout the night. Wake up pain-free, clear-headed, and ready to take on whatever the day brings."
   },
   {
     title: "Sleep Disruption",
@@ -73,7 +73,7 @@ export const PainReliefSection = () => {
                     </div>
                     
                     <div>
-                      <p className="font-semibold text-xs mb-1">How RiseByNight Helps:</p>
+                      <p className="font-semibold text-xs mb-1">How Rise By Night Helps:</p>
                       <p className="text-xs text-muted-foreground leading-relaxed">{pain.solution}</p>
                     </div>
                   </div>

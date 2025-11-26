@@ -122,7 +122,7 @@ export const Hero = () => {
             </div>
             
             <h1 className="text-lg font-bold leading-tight tracking-tight truncate mt-3">
-              RiseByNight™ Ergonomic Sleep Pillow
+              Rise By Night™ Ergonomic Sleep Pillow
             </h1>
             
             <p className="text-sm text-muted-foreground mt-0.5">
@@ -166,7 +166,7 @@ export const Hero = () => {
             </div>
 
             <h1 className="hidden md:block text-lg md:text-xl lg:text-2xl font-bold leading-tight tracking-tight truncate">
-              RiseByNight™ Ergonomic Sleep Pillow
+              Rise By Night™ Ergonomic Sleep Pillow
             </h1>
             
             <p className="hidden md:block text-sm md:text-base text-muted-foreground mb-0">

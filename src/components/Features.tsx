@@ -19,7 +19,7 @@ const features: Array<{
   {
     image: testimonial,
     title: "Join 29,931+ Happy Sleepers",
-    description: "Don't just take our word for it. Thousands of customers have transformed their sleep quality with RiseByNight. Experience the difference that proper neck alignment and ergonomic support can make.",
+    description: "Don't just take our word for it. Thousands of customers have transformed their sleep quality with Rise By Night. Experience the difference that proper neck alignment and ergonomic support can make.",
     benefits: [
       "Wake up pain-free and refreshed",
       "Fall asleep faster every night",
@@ -30,7 +30,7 @@ const features: Array<{
   {
     image: comparisonChart,
     title: "Scientifically Proven Superior",
-    description: "RiseByNight isn't just another pillow - it's engineered with advanced ergonomic design and cooling technology that outperforms traditional pillows in every way.",
+    description: "Rise By Night isn't just another pillow - it's engineered with advanced ergonomic design and cooling technology that outperforms traditional pillows in every way.",
     benefits: [
       "Maintains shape 5x longer than regular pillows",
       "Cooling gel prevents night sweats",

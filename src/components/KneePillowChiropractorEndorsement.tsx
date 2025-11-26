@@ -9,7 +9,7 @@ export const KneePillowChiropractorEndorsement = () => {
           <div className="order-2 md:order-1">
             <img 
               src={chiropractorImage}
-              alt="Dr. Michael Thompson, Chiropractor, endorsing RiseByNight Ergonomic Knee Pillow"
+              alt="Dr. Michael Thompson, Chiropractor, endorsing Rise By Night Ergonomic Knee Pillow"
               className="w-full rounded-xl shadow-2xl"
             />
           </div>
@@ -25,7 +25,7 @@ export const KneePillowChiropractorEndorsement = () => {
             </div>
             
             <blockquote className="mb-4 md:mb-6 text-base md:text-lg text-muted-foreground italic border-l-4 border-primary pl-3 md:pl-4">
-              "As a chiropractor specializing in spinal health, I recommend the RiseByNight Knee Pillow to side sleepers experiencing lower back pain. Proper hip alignment during sleep is crucial for spinal health."
+              "As a chiropractor specializing in spinal health, I recommend the Rise By Night Knee Pillow to side sleepers experiencing lower back pain. Proper hip alignment during sleep is crucial for spinal health."
             </blockquote>
             
             <div className="space-y-3 md:space-y-4 mb-4 md:mb-6">

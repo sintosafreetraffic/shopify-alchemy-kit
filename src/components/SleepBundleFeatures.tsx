@@ -14,7 +14,7 @@ export const SleepBundleFeatures = () => {
     },
     {
       icon: Shield,
-      title: "Clinically Proven Results",
+      title: "Scientifically Proven Results",
       description: "93% of users report improved sleep quality, 96% experience pain relief, and 86% notice reduced sleep disruptions.",
     },
     {

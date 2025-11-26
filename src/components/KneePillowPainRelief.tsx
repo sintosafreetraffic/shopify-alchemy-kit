@@ -73,7 +73,7 @@ export const KneePillowPainRelief = () => {
                         <p className="text-sm text-muted-foreground">{point.causes}</p>
                       </div>
                       <div>
-                        <h4 className="font-semibold text-sm text-primary mb-2">How RiseByNight Helps</h4>
+                        <h4 className="font-semibold text-sm text-primary mb-2">How Rise By Night Helps</h4>
                         <p className="text-sm text-muted-foreground">{point.solution}</p>
                       </div>
                     </div>

@@ -46,7 +46,7 @@ export const KneePillowVideoSection = () => {
           <div className="text-center mb-6 md:mb-12">
             <h2 className="text-2xl md:text-4xl font-bold mb-2 md:mb-4">See It In Action</h2>
             <p className="text-base md:text-xl text-muted-foreground">
-              Watch real customers experience the RiseByNight difference
+              Watch real customers experience the Rise By Night difference
             </p>
           </div>
 

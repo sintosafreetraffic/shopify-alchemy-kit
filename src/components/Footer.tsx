@@ -11,11 +11,11 @@ export const Footer = () => {
           <div className="space-y-4">
             <img 
               src={logo} 
-              alt="RiseByNight" 
+              alt="Rise By Night" 
               className="h-12 w-auto"
             />
             <p className="text-sm text-muted-foreground">
-              Transform your sleep with the #1 rated ergonomic pillow. Clinically proven to reduce neck pain and help you wake up refreshed every morning.
+              Transform your sleep with the #1 rated ergonomic pillow. Scientifically proven to reduce neck pain and help you wake up refreshed every morning.
             </p>
           </div>
 
@@ -128,7 +128,7 @@ export const Footer = () => {
 
         {/* Bottom Bar */}
         <div className="border-t border-border mt-8 pt-8 text-center text-sm text-muted-foreground">
-          <p>&copy; 2025 RiseByNight. All rights reserved.</p>
+          <p>&copy; 2025 Rise By Night. All rights reserved.</p>
         </div>
       </div>
     </footer>

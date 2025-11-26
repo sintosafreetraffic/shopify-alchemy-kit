@@ -10,7 +10,7 @@ const policies = [
   {
     icon: Moon,
     title: "100 nights risk free trial",
-    content: "We're so confident you'll love your RiseByNight pillow that we offer a risk-free 100-night trial. Sleep on it for over 3 months - if you're not completely satisfied, return it for a full refund, no questions asked. 98% of our customers keep their pillow after trying it!"
+    content: "We're so confident you'll love your Rise By Night pillow that we offer a risk-free 100-night trial. Sleep on it for over 3 months - if you're not completely satisfied, return it for a full refund, no questions asked. 98% of our customers keep their pillow after trying it!"
   },
   {
     icon: Truck,
