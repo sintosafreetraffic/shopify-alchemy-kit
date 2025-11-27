@@ -9,33 +9,27 @@ export const KneePillowVideoSection = () => {
   const videos = [
     {
       id: 1,
-      src: "/videos/video_1.mp4",
+      src: "/videos/knee-video-1.mp4",
       title: "Perfect leg alignment",
       views: "1.9M"
     },
     {
       id: 2,
-      src: "/videos/video_2.mp4",
+      src: "/videos/knee-video-2.mp4",
       title: "Hip support explained",
       views: "1.5M"
     },
     {
       id: 3,
-      src: "/videos/video_3.mp4",
+      src: "/videos/knee-video-3.mp4",
       title: "Wake up pain-free",
       views: "2.3M"
     },
     {
       id: 4,
-      src: "/videos/video_4.mp4",
+      src: "/videos/knee-video-4.mp4",
       title: "Real customer results",
       views: "1.8M"
-    },
-    {
-      id: 5,
-      src: "/videos/video_5.mp4",
-      title: "Side sleeper comfort",
-      views: "1.6M"
     }
   ];
 
