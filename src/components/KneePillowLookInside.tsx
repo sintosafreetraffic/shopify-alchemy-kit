@@ -88,6 +88,27 @@ export const KneePillowLookInside = () => {
                   alt="Rise By Night knee pillow showing ergonomic design and materials"
                   className="w-full relative z-0 rounded-xl"
                 />
+                {/* Right side icon overlays */}
+                {components
+                  .filter((c) => c.position.startsWith("right"))
+                  .map((component, idx) => {
+                    const Icon = component.icon;
+                    const topPosition = idx === 0 ? "25%" : "65%";
+                    return (
+                      <div
+                        key={idx}
+                        className="absolute z-10"
+                        style={{
+                          right: "-10%",
+                          top: topPosition,
+                        }}
+                      >
+                        <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white shadow-lg border-2 border-white">
+                          <Icon size={24} />
+                        </div>
+                      </div>
+                    );
+                  })}
               </div>
             </div>
 
