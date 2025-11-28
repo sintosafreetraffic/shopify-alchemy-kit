@@ -8,12 +8,6 @@ export const KneePillowVideoSection = () => {
   
   const videos = [
     {
-      id: 1,
-      src: "/videos/knee-video-1.mp4",
-      title: "Perfect leg alignment",
-      views: "1.9M"
-    },
-    {
       id: 2,
       src: "/videos/knee-video-2.mp4",
       title: "Hip support explained",
