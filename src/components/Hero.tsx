@@ -244,7 +244,7 @@ export const Hero = () => {
                   <p className="text-sm text-muted-foreground line-through">${bundles["2"].originalPrice.toFixed(2)}</p>
                   <div className="flex items-center justify-center gap-1 mt-1">
                     <p className="text-sm font-medium">+ FREE GIFT 2X</p>
-                    <img src={eyeMaskGift} alt="Free eye mask gift" className="w-12 h-12 object-contain" />
+                    <img src={eyeMaskGift} alt="Free eye mask gift" className="w-12 h-12 object-contain" loading="lazy" decoding="async" />
                   </div>
                 </button>
               </div>

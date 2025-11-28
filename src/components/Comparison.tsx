@@ -17,6 +17,8 @@ export const Comparison = () => {
             src={comparisonImage} 
             alt="Rise By Night pillow comparison showing ergonomic neck support vs regular pillows that cause stiffness with detailed benefits" 
             className="w-full"
+            loading="lazy"
+            decoding="async"
           />
         </div>
 
@@ -25,6 +27,8 @@ export const Comparison = () => {
             src={comparisonChart} 
             alt="Rise By Night vs regular pillows detailed comparison chart"
             className="w-full"
+            loading="lazy"
+            decoding="async"
           />
         </div>
       </div>

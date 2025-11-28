@@ -95,6 +95,8 @@ export const ReviewsSection = () => {
                       src={review.avatar} 
                       alt={review.name}
                       className="w-28 h-28 rounded-full object-cover mb-3 ring-4 ring-primary/10"
+                      loading="lazy"
+                      decoding="async"
                     />
                     <div>
                       <div className="flex items-center justify-center gap-2 mb-1">

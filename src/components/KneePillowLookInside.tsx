@@ -87,6 +87,8 @@ export const KneePillowLookInside = () => {
                   src={kneePillowImage}
                   alt="Rise By Night knee pillow showing ergonomic design and materials"
                   className="w-full relative z-0 rounded-xl"
+                  loading="lazy"
+                  decoding="async"
                 />
                 {/* Right side icon overlays */}
                 {components
@@ -146,6 +148,8 @@ export const KneePillowLookInside = () => {
                 src={kneePillowImage}
                 alt="Rise By Night knee pillow showing ergonomic design and materials"
                 className="w-full rounded-xl"
+                loading="lazy"
+                decoding="async"
               />
             </div>
 

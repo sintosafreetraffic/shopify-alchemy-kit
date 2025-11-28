@@ -11,6 +11,8 @@ export const ChiropractorEndorsement = () => {
               src={chiropractorImage}
               alt="Dr. Michael Thompson, Chiropractor, endorsing Rise By Night Ergonomic Sleep Pillow"
               className="w-full rounded-xl shadow-2xl"
+              loading="lazy"
+              decoding="async"
             />
           </div>
           

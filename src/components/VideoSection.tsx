@@ -71,7 +71,7 @@ export const VideoSection = () => {
                         loop
                         muted
                         playsInline
-                        preload="metadata"
+                        preload="none"
                         onMouseEnter={(e) => e.currentTarget.play()}
                         onMouseLeave={(e) => {
                           e.currentTarget.pause();
@@ -123,6 +123,7 @@ export const VideoSection = () => {
               controls
               autoPlay
               playsInline
+              preload="auto"
             />
           )}
         </DialogContent>

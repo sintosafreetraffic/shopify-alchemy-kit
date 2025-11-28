@@ -59,6 +59,7 @@ export const ProductImageCarousel = () => {
                       loop
                       muted
                       playsInline
+                      preload="none"
                       className="w-full h-auto object-cover"
                       aria-label={item.alt}
                     />
@@ -91,6 +92,7 @@ export const ProductImageCarousel = () => {
               loop
               muted
               playsInline
+              preload="auto"
               className="w-full h-full object-cover"
               aria-label={images[0].alt}
             />
@@ -119,6 +121,7 @@ export const ProductImageCarousel = () => {
                 loop
                 muted
                 playsInline
+                preload="none"
                 className="w-full h-full object-cover"
                 aria-label={images[1].alt}
               />

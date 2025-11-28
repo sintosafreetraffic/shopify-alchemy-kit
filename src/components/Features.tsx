@@ -113,6 +113,8 @@ export const Features = () => {
                 src={feature.image}
                 alt={feature.title}
                 className="w-full h-auto"
+                loading="lazy"
+                decoding="async"
                 style={
                   feature.image === comparisonChart
                     ? { filter: "hue-rotate(240deg)" }

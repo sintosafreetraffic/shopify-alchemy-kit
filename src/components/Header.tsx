@@ -218,6 +218,8 @@ export const Header = () => {
             src={logo} 
             alt="Rise By Night - Ergonomic Sleep Pillow" 
             className="h-10 md:h-12 w-auto object-contain"
+            loading="eager"
+            decoding="async"
           />
         </Link>
         

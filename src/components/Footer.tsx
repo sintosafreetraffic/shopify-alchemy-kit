@@ -13,6 +13,8 @@ export const Footer = () => {
               src={logo} 
               alt="Rise By Night" 
               className="h-12 w-auto"
+              loading="lazy"
+              decoding="async"
             />
             <p className="text-sm text-muted-foreground">
               Transform your sleep with the #1 rated ergonomic pillow. Scientifically proven to reduce neck pain and help you wake up refreshed every morning.

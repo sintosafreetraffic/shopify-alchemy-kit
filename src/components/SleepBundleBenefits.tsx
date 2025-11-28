@@ -60,6 +60,8 @@ export const SleepBundleBenefits = () => {
                     src={product.image}
                     alt={product.name}
                     className="w-full max-w-md mx-auto h-64 object-contain"
+                    loading="lazy"
+                    decoding="async"
                   />
                 </div>
                 <div className="flex-1 space-y-4">

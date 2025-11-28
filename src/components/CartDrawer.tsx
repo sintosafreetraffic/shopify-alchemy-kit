@@ -176,6 +176,8 @@ export const CartDrawer = () => {
                         src={image.url}
                         alt={product.node.title}
                         className="w-full h-full object-cover"
+                        loading="lazy"
+                        decoding="async"
                       />
                       {hasOnePlusOneDeal && (
                         <div className="absolute top-2 right-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-md shadow-lg">
@@ -307,6 +309,8 @@ export const CartDrawer = () => {
                             src={item.product.node.images.edges[0].node.url}
                             alt={item.product.node.title}
                             className="w-full h-full object-cover"
+                            loading="lazy"
+                            decoding="async"
                           />
                         )}
                       </div>
@@ -398,6 +402,8 @@ export const CartDrawer = () => {
                           src={eyeMaskGift} 
                           alt="Free Sleep Mask" 
                           className="w-10 h-10 object-contain flex-shrink-0"
+                          loading="lazy"
+                          decoding="async"
                         />
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-bold text-primary">
@@ -433,6 +439,8 @@ export const CartDrawer = () => {
                                     src={image.url}
                                     alt={product.node.title}
                                     className="w-full h-full object-cover"
+                                    loading="lazy"
+                                    decoding="async"
                                   />
                                   {hasOnePlusOneDeal && (
                                     <div className="absolute top-1 right-1 bg-red-600 text-white text-[8px] font-bold px-1 py-0.5 rounded shadow-lg">

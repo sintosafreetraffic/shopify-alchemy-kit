@@ -96,7 +96,7 @@ export const ProductGallery = () => {
                     </div>
                   )}
                   <div className="bg-gradient-to-br from-primary/10 to-primary/5 p-8 h-full flex items-center justify-center">
-                    <img src={bundleProduct.image} alt={bundleProduct.name} className="w-full object-contain" />
+                    <img src={bundleProduct.image} alt={bundleProduct.name} className="w-full object-contain" loading="lazy" decoding="async" />
                   </div>
                 </div>
 
@@ -165,7 +165,7 @@ export const ProductGallery = () => {
                     </div>
                   )}
                   <div className="bg-gradient-to-b from-primary/5 to-background p-8">
-                    <img src={product.image} alt={product.name} className="w-full h-64 object-contain" />
+                    <img src={product.image} alt={product.name} className="w-full h-64 object-contain" loading="lazy" decoding="async" />
                   </div>
                 </div>
 

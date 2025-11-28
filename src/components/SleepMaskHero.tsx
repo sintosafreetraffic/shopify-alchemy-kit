@@ -99,12 +99,16 @@ export const SleepMaskHero = () => {
                 src={consumerChoiceBadge} 
                 alt="Consumer Choice" 
                 className="absolute top-4 right-4 z-10 w-20 h-20 md:w-24 md:h-24"
+                loading="lazy"
+                decoding="async"
               />
               <div className="bg-gradient-to-b from-primary/5 to-background p-12 rounded-lg">
                 <img
                   src={eyeMaskGift}
                   alt="Rise By Night Silk Sleep Mask"
                   className="w-full h-auto"
+                  loading="eager"
+                  decoding="async"
                 />
               </div>
             </div>
