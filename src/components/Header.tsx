@@ -1,7 +1,7 @@
 import { CartDrawer } from "./CartDrawer";
 import { NavLink } from "./NavLink";
 import { Link } from "react-router-dom";
-import logo from "@/assets/risebynight-logo-full.png";
+import logo from "@/assets/risebynight-logo-new.png";
 import { useState, useEffect } from "react";
 import { Menu, Instagram, Facebook } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
