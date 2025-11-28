@@ -71,7 +71,7 @@ export const VideoSection = () => {
                         loop
                         muted
                         playsInline
-                        preload="none"
+                        preload="metadata"
                         onMouseEnter={(e) => e.currentTarget.play()}
                         onMouseLeave={(e) => {
                           e.currentTarget.pause();
