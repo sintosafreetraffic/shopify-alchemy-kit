@@ -1,4 +1,4 @@
-import chiropractorImage from "@/assets/knee-pillow-chiropractor.jpg";
+import chiropractorImage from "@/assets/knee-pillow-chiropractor-new.png";
 import { CheckCircle2 } from "lucide-react";
 
 export const KneePillowChiropractorEndorsement = () => {
