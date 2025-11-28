@@ -14,6 +14,8 @@ export const OfferBundle = () => {
             src={offerBundle} 
             alt="Buy Rise By Night pillow and get free sleep mask, pillowcase, and neck roll"
             className="w-full"
+            loading="lazy"
+            decoding="async"
           />
         </div>
         <div className="text-center mt-4">

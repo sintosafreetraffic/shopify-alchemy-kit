@@ -30,6 +30,8 @@ export const SleepBundleHero = () => {
                 src={bundleImage}
                 alt="Rise By Night Complete Sleep Bundle"
                 className="w-full h-auto object-contain"
+                loading="eager"
+                decoding="async"
               />
             </div>
           </div>
@@ -42,6 +44,8 @@ export const SleepBundleHero = () => {
                 src={consumerChoiceBadge} 
                 alt="Consumer Choice Badge" 
                 className="h-16 md:h-20 w-auto object-contain"
+                loading="lazy"
+                decoding="async"
               />
             </div>
 

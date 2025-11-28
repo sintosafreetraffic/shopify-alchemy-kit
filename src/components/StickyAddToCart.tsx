@@ -180,12 +180,12 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                       <span className="flex items-center gap-1 transition-all duration-300 group-hover:-translate-y-8 group-hover:opacity-0">
                         <Plus className="w-3 h-3" />
                         <span>2 Pillows + FREE GIFT 2X</span>
-                        <img src={eyeMaskGift} alt="Free gift" className="w-6 h-6 object-contain" />
+                        <img src={eyeMaskGift} alt="Free gift" className="w-6 h-6 object-contain" loading="lazy" decoding="async" />
                       </span>
                       <span className="absolute inset-0 flex items-center justify-center gap-1 translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
                         <Plus className="w-3 h-3" />
                         <span>2 Pillows + FREE GIFT 2X</span>
-                        <img src={eyeMaskGift} alt="Free gift" className="w-6 h-6 object-contain" />
+                        <img src={eyeMaskGift} alt="Free gift" className="w-6 h-6 object-contain" loading="lazy" decoding="async" />
                       </span>
                     </button>
                   </div>

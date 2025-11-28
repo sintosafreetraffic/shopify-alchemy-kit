@@ -102,12 +102,16 @@ export const KneePillowHero = () => {
                 src={consumerChoiceBadge} 
                 alt="Consumer Choice" 
                 className="absolute top-4 right-4 z-10 w-20 h-20 md:w-24 md:h-24"
+                loading="lazy"
+                decoding="async"
               />
               <div className="bg-gradient-to-b from-primary/5 to-background p-8 rounded-lg">
                 <img
                   src={kneePillowMain}
                   alt="Rise By Night Ergonomic Knee Pillow"
                   className="w-full h-auto"
+                  loading="eager"
+                  decoding="async"
                 />
               </div>
             </div>

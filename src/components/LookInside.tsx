@@ -75,6 +75,8 @@ export const LookInside = () => {
                 src={pillowLayers}
                 alt="Rise By Night pillow exploded view showing all internal layers and materials"
                 className="w-full relative z-0"
+                loading="lazy"
+                decoding="async"
               />
 
               {/* Number indicators with connecting lines */}
@@ -201,6 +203,8 @@ export const LookInside = () => {
                 src={pillowLayers}
                 alt="Rise By Night pillow exploded view showing all internal layers and materials"
                 className="w-full relative z-0"
+                loading="lazy"
+                decoding="async"
               />
 
               {/* Number indicators with connecting lines */}

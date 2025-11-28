@@ -9,6 +9,8 @@ export const TestimonialHero = () => {
             src={testimonial} 
             alt="Customer testimonial - I've never slept this comfortably in my life - 29,931 5 star reviews" 
             className="w-full"
+            loading="lazy"
+            decoding="async"
           />
         </div>
       </div>

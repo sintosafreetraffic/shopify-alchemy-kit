@@ -54,6 +54,8 @@ export const SleepMaskFeatures = () => {
                     src={feature.image}
                     alt={feature.title}
                     className="w-full"
+                    loading="lazy"
+                    decoding="async"
                   />
                 </div>
               </div>

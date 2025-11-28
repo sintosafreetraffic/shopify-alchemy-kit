@@ -54,6 +54,8 @@ export const KneePillowFeatures = () => {
                   src={feature.image}
                   alt={feature.title}
                   className="w-full rounded-lg shadow-lg"
+                  loading="lazy"
+                  decoding="async"
                 />
               </div>
               
