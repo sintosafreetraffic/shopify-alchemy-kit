@@ -1,4 +1,5 @@
-import { Moon, Heart, Target, Users } from "lucide-react";
+import { Heart, Target, Users } from "lucide-react";
+import moonIcon from "@/assets/moon-icon.png";
 
 export default function AboutUs() {
   return (
@@ -6,7 +7,13 @@ export default function AboutUs() {
       {/* Hero Section */}
       <section className="py-16 px-4 bg-primary/5">
         <div className="container mx-auto max-w-4xl text-center">
-          <Moon className="w-16 h-16 text-primary mx-auto mb-6" />
+          <img 
+            src={moonIcon} 
+            alt="Rise By Night Moon Logo" 
+            className="w-16 h-16 mx-auto mb-6"
+            loading="eager"
+            decoding="async"
+          />
           <h1 className="text-4xl md:text-6xl font-bold mb-6">
             About Rise By Night
           </h1>
