@@ -22,6 +22,7 @@ export const CartDrawer = () => {
   const [recommendedProducts, setRecommendedProducts] = useState<ShopifyProduct[]>([]);
   const [shouldBounce, setShouldBounce] = useState(false);
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
+  const [currentPrices, setCurrentPrices] = useState<Record<string, string>>({});
   
   const { 
     items, 
@@ -55,7 +56,14 @@ export const CartDrawer = () => {
   }, []);
   
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  const subtotal = items.reduce((sum, item) => sum + (parseFloat(item.price.amount) * item.quantity), 0);
+  
+  // Use current prices from Shopify if available, fallback to stored prices
+  const getItemPrice = (item: typeof items[0]) => {
+    const currentPrice = currentPrices[item.variantId];
+    return currentPrice ? parseFloat(currentPrice) : parseFloat(item.price.amount);
+  };
+  
+  const subtotal = items.reduce((sum, item) => sum + (getItemPrice(item) * item.quantity), 0);
   
   // Calculate pillow items for free gift logic
   const pillowItems = items.filter(item => 
@@ -75,7 +83,7 @@ export const CartDrawer = () => {
   );
   sleepPillowItems.forEach(item => {
     const freePillows = Math.floor(item.quantity / 2);
-    totalDiscount += freePillows * parseFloat(item.price.amount);
+    totalDiscount += freePillows * getItemPrice(item);
   });
   
   // FREEKNEEPILLOW discount: Buy 1 get 1 free for Knee Pillow
@@ -85,7 +93,7 @@ export const CartDrawer = () => {
   );
   kneePillowItems.forEach(item => {
     const freePillows = Math.floor(item.quantity / 2);
-    totalDiscount += freePillows * parseFloat(item.price.amount);
+    totalDiscount += freePillows * getItemPrice(item);
   });
   
   // FREEMASKSFORYOU discount: 100% off free gift masks (already calculated)
@@ -93,26 +101,38 @@ export const CartDrawer = () => {
   
   const totalPrice = subtotal - totalDiscount;
 
-  // Fetch recommended products (excluding free gift product only)
+  // Fetch current prices and recommended products when cart opens
   useEffect(() => {
-    const loadRecommendations = async () => {
-      console.log('Cart opened, loading recommendations...');
+    const loadCartData = async () => {
+      console.log('Cart opened, loading current prices and recommendations...');
       try {
-        const products = await fetchProducts(10);
+        const products = await fetchProducts(50);
         console.log('Fetched products:', products.length);
-        // Filter out only the free gift product
+        
+        // Extract current prices for cart items
+        const priceMap: Record<string, string> = {};
+        products.forEach(product => {
+          product.node.variants.edges.forEach(variantEdge => {
+            const variant = variantEdge.node;
+            priceMap[variant.id] = variant.price.amount;
+          });
+        });
+        setCurrentPrices(priceMap);
+        console.log('Updated prices:', priceMap);
+        
+        // Filter out only the free gift product for recommendations
         const filtered = products.filter(p => 
           !p.node.title.toLowerCase().includes('free gift')
         );
         console.log('Filtered recommendations:', filtered.length, filtered.map(p => p.node.title));
         setRecommendedProducts(filtered.slice(0, 3));
       } catch (error) {
-        console.error('Failed to fetch recommendations:', error);
+        console.error('Failed to fetch cart data:', error);
       }
     };
     
     if (isOpen) {
-      loadRecommendations();
+      loadCartData();
     }
   }, [isOpen]);
 
@@ -337,23 +357,23 @@ export const CartDrawer = () => {
                         )}
                         <div className="mt-1">
                           {/* Show discounted price for pillows with 1+1 deal */}
-                          {(item.product.node.title.toLowerCase().includes('ergonomic sleep pillow') || 
+                           {(item.product.node.title.toLowerCase().includes('ergonomic sleep pillow') || 
                             item.product.node.title.toLowerCase().includes('knee pillow')) && 
                            item.quantity >= 2 ? (
                             <div className="space-y-0.5">
                               <p className="text-sm text-muted-foreground line-through">
-                                {item.price.currencyCode} ${(parseFloat(item.price.amount) * item.quantity).toFixed(2)}
+                                {item.price.currencyCode} ${(getItemPrice(item) * item.quantity).toFixed(2)}
                               </p>
                               <p className="font-semibold">
                                 {item.price.currencyCode} ${(
-                                  (parseFloat(item.price.amount) * item.quantity) - 
-                                  (Math.floor(item.quantity / 2) * parseFloat(item.price.amount))
+                                  (getItemPrice(item) * item.quantity) - 
+                                  (Math.floor(item.quantity / 2) * getItemPrice(item))
                                 ).toFixed(2)}
                               </p>
                             </div>
                           ) : (
                             <p className="font-semibold">
-                              {item.price.currencyCode} ${(parseFloat(item.price.amount) * item.quantity).toFixed(2)}
+                              {item.price.currencyCode} ${(getItemPrice(item) * item.quantity).toFixed(2)}
                             </p>
                           )}
                         </div>
