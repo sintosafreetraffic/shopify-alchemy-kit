@@ -86,22 +86,16 @@ export const SleepMaskHero = () => {
   const totalPrice = productPrice * quantity;
 
   return (
-    <section className="bg-background">
-      <div className="container mx-auto px-4 pt-0 pb-8 md:pb-12">
-        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-start">
-          {/* Left Column - Product Images */}
-          <div className="lg:sticky lg:top-24">
-            <SleepMaskImageCarousel />
-            <PolicyAccordion />
-          </div>
-
-          {/* Right Column - Product Details */}
-          <div className="space-y-6">
-            {/* Product Title and Rating */}
-            <div className="space-y-3">
-              <h1 className="text-3xl md:text-5xl font-bold leading-tight">
-                Rise By Night™ Deep Sleep Mask
-              </h1>
+    <section className="pt-0 pb-3 md:pb-6 bg-background">
+      <div className="container mx-auto px-4 max-w-7xl">
+        {/* Mobile Layout: Carousel at top, then title */}
+        <div className="md:hidden space-y-3 md:space-y-4 mb-4 md:mb-6">
+          <SleepMaskImageCarousel />
+          
+          {/* Mobile Title Section */}
+          <div className="space-y-0">
+            {/* Enhanced Social Proof */}
+            <div className="space-y-2 mb-3">
               <div className="flex items-center gap-2">
                 <div className="flex">
                   {[...Array(5)].map((_, i) => (
@@ -114,9 +108,51 @@ export const SleepMaskHero = () => {
                 <span className="text-lg font-semibold">4.9</span>
                 <span className="text-muted-foreground">(3,200+ reviews)</span>
               </div>
-              <p className="text-xl text-primary font-semibold">
-                100% Pure Mulberry Silk - Blocks 100% Light
-              </p>
+            </div>
+            
+            <h1 className="text-lg font-bold leading-tight tracking-tight truncate mt-3">
+              Rise By Night™ Silk Deep Sleep Mask
+            </h1>
+            
+            <p className="text-sm text-muted-foreground mt-0.5">
+              100% Pure Mulberry Silk - Blocks 100% Light
+            </p>
+          </div>
+        </div>
+
+        {/* Desktop Grid Layout */}
+        <div className="grid md:grid-cols-2 gap-6 lg:gap-10">
+          {/* Scrollable Product Images Column - Desktop Only */}
+          <div className="hidden md:block relative order-2 md:order-1">
+            <SleepMaskImageCarousel />
+            <PolicyAccordion />
+          </div>
+          
+          {/* Sticky Product Details Column */}
+          <div className="space-y-2 order-1 md:order-2 md:sticky md:top-16 md:self-start md:h-fit">
+
+            {/* Desktop Title Section */}
+            <div className="hidden md:flex flex-col gap-3">
+              <div className="space-y-3">
+                <h1 className="text-3xl md:text-5xl font-bold leading-tight">
+                  Rise By Night™ Silk Deep Sleep Mask
+                </h1>
+                <div className="flex items-center gap-2">
+                  <div className="flex">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className="w-5 h-5 fill-primary text-primary"
+                      />
+                    ))}
+                  </div>
+                  <span className="text-lg font-semibold">4.9</span>
+                  <span className="text-muted-foreground">(3,200+ reviews)</span>
+                </div>
+                <p className="text-xl text-primary font-semibold">
+                  100% Pure Mulberry Silk - Blocks 100% Light
+                </p>
+              </div>
             </div>
 
             {/* USPs */}
@@ -235,6 +271,11 @@ export const SleepMaskHero = () => {
                 <Shield className="w-6 h-6 text-primary mx-auto mb-1" />
                 <p className="text-xs font-medium">2-Year Warranty</p>
               </div>
+            </div>
+
+            {/* Mobile Policy Accordion */}
+            <div className="md:hidden mt-6">
+              <PolicyAccordion />
             </div>
           </div>
         </div>
