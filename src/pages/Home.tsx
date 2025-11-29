@@ -22,6 +22,7 @@ export default function Home() {
             alt="Peaceful sleep with Rise By Night"
             className="w-full h-[60vh] md:h-[70vh] object-cover"
             loading="eager"
+            fetchPriority="high"
             decoding="async"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/40 flex items-center justify-center">
@@ -45,6 +46,7 @@ export default function Home() {
             alt="Peaceful sleep with Rise By Night"
             className="w-full h-[60vh] object-cover"
             loading="eager"
+            fetchPriority="high"
             decoding="async"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/40 flex items-center justify-center px-4">
@@ -67,7 +69,7 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center space-y-8">
             <div className="inline-flex items-center justify-center w-24 h-24 mb-4">
-              <img src={heroLogo} alt="Rise By Night" className="w-full h-full object-contain" loading="eager" decoding="async" />
+              <img src={heroLogo} alt="Rise By Night" className="w-full h-full object-contain" width="96" height="96" loading="eager" fetchPriority="high" decoding="async" />
             </div>
 
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight">
