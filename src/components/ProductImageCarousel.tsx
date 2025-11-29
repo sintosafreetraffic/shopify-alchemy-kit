@@ -69,7 +69,10 @@ export const ProductImageCarousel = () => {
                       alt={item.alt}
                       className="w-full h-auto object-cover"
                       loading={index === 0 ? "eager" : "lazy"}
+                      fetchPriority={index === 0 ? "high" : "low"}
                       decoding="async"
+                      width="800"
+                      height="800"
                     />
                   )}
                 </div>
@@ -102,7 +105,10 @@ export const ProductImageCarousel = () => {
               alt={images[0]?.alt}
               className="w-full h-full object-cover"
               loading="eager"
+              fetchPriority="high"
               decoding="async"
+              width="1200"
+              height="900"
             />
           )}
         </div>
@@ -132,6 +138,8 @@ export const ProductImageCarousel = () => {
                 className="w-full h-full object-cover"
                 loading="lazy"
                 decoding="async"
+                width="600"
+                height="600"
               />
             )}
           </div>
@@ -146,6 +154,8 @@ export const ProductImageCarousel = () => {
               className="w-full h-full object-cover"
               loading="lazy"
               decoding="async"
+              width="600"
+              height="600"
             />
           </div>
         </div>
@@ -162,6 +172,8 @@ export const ProductImageCarousel = () => {
             className="w-full h-full object-cover"
             loading="lazy"
             decoding="async"
+            width="1200"
+            height="900"
           />
         </div>
 
@@ -178,6 +190,8 @@ export const ProductImageCarousel = () => {
               className="w-full h-full object-cover"
               loading="lazy"
               decoding="async"
+              width="600"
+              height="600"
             />
           </div>
           <div className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity" onClick={() => {
@@ -191,6 +205,8 @@ export const ProductImageCarousel = () => {
               className="w-full h-full object-cover"
               loading="lazy"
               decoding="async"
+              width="600"
+              height="600"
             />
           </div>
         </div>
