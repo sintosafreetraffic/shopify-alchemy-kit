@@ -7,9 +7,9 @@ import { useCartStore } from "@/stores/cartStore";
 import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
-import { CountdownTimer } from "./CountdownTimer";
-import kneePillowMain from "@/assets/knee-pillow-main-new.png";
+import { CountdownTimer, CountdownTimerDisplay } from "./CountdownTimer";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
+import { KneePillowImageCarousel } from "./KneePillowImageCarousel";
 
 export const KneePillowHero = () => {
   const [selectedBundle, setSelectedBundle] = useState<"1" | "2">("2");
@@ -94,62 +94,105 @@ export const KneePillowHero = () => {
   };
 
   return (
-    <section className="bg-background">
-      <div className="container mx-auto px-4 pt-0 pb-8 md:pb-12">
-        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-start">
-          {/* Left Column - Product Images */}
-          <div className="lg:sticky lg:top-24">
-            <div className="relative">
-              <div className="bg-gradient-to-b from-primary/5 to-background p-8 rounded-lg">
-                <img
-                  src={kneePillowMain}
-                  alt="Rise By Night Ergonomic Knee Pillow"
-                  className="w-full h-auto"
-                  loading="eager"
-                  decoding="async"
-                />
-              </div>
-            </div>
-            <PolicyAccordion />
-          </div>
-
-          {/* Right Column - Product Details */}
-          <div className="space-y-6">
-            {/* Product Title and Rating */}
-            <div className="space-y-3">
-              <h1 className="text-3xl md:text-5xl font-bold leading-tight">
-                Rise By Night™ Ergonomic Knee Pillow
-              </h1>
-              <div className="flex items-center gap-2">
+    <section className="pt-0 pb-3 md:pb-6 bg-background">
+      <div className="container mx-auto px-4 max-w-7xl">
+        {/* Mobile Layout: Carousel at top, then title */}
+        <div className="md:hidden space-y-3 md:space-y-4 mb-4 md:mb-6">
+          <KneePillowImageCarousel />
+          
+          {/* Mobile Title Section */}
+          <div className="space-y-0">
+            {/* Enhanced Social Proof */}
+            <div className="space-y-2 mb-3">
+              <div className="flex items-center gap-2 flex-wrap">
                 <div className="flex">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className="w-5 h-5 fill-primary text-primary"
-                    />
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star key={star} className="w-5 h-5 fill-yellow-500 text-yellow-500" />
                   ))}
                 </div>
-                <span className="text-lg font-semibold">4.7</span>
-                <span className="text-muted-foreground">(8,500+ reviews)</span>
+                <span className="text-sm font-semibold">8,500+ verified reviews</span>
               </div>
-              <p className="text-xl text-primary font-semibold">
-                Perfect Support for Side Sleepers
-              </p>
+              
+              <div className="flex gap-1 flex-nowrap overflow-x-auto scrollbar-hide -mx-4 px-4">
+                <div className="inline-flex items-center gap-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 px-2 py-1 rounded-md text-[10px] font-bold whitespace-nowrap flex-shrink-0">
+                  ✓ 98% Customer Satisfaction
+                </div>
+                <div className="inline-flex items-center gap-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded-md text-[10px] font-bold whitespace-nowrap flex-shrink-0">
+                  🔥 Frequently Purchased
+                </div>
+              </div>
+            </div>
+            
+            <h1 className="text-lg font-bold leading-tight tracking-tight truncate mt-3">
+              Rise By Night™ Ergonomic Knee Pillow
+            </h1>
+            
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Perfect Support for Side Sleepers
+            </p>
+          </div>
+        </div>
+
+        {/* Desktop Grid Layout */}
+        <div className="grid md:grid-cols-2 gap-6 lg:gap-10">
+          {/* Scrollable Product Images Column - Desktop Only */}
+          <div className="hidden md:block relative order-2 md:order-1">
+            <KneePillowImageCarousel />
+          </div>
+          
+          {/* Sticky Product Details Column */}
+          <div className="space-y-2 order-1 md:order-2 md:sticky md:top-16 md:self-start md:h-fit">
+
+            {/* Desktop Title Section */}
+            <div className="hidden md:flex flex-col gap-3">
+              {/* Enhanced Social Proof */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="flex">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star key={star} className="w-5 h-5 fill-yellow-500 text-yellow-500" />
+                    ))}
+                  </div>
+                  <span className="text-base font-semibold">8,500+ verified reviews</span>
+                </div>
+                
+                <div className="flex gap-1 sm:gap-1.5 flex-nowrap overflow-x-auto scrollbar-hide">
+                  <div className="inline-flex items-center gap-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 px-1.5 sm:px-2 md:px-3 py-0.5 sm:py-1 md:py-1.5 rounded-md text-[9px] sm:text-[10px] md:text-xs font-bold whitespace-nowrap flex-shrink-0">
+                    ✓ 98% Customer Satisfaction
+                  </div>
+                  <div className="inline-flex items-center gap-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 px-1.5 sm:px-2 md:px-3 py-0.5 sm:py-1 md:py-1.5 rounded-md text-[9px] sm:text-[10px] md:text-xs font-bold whitespace-nowrap flex-shrink-0">
+                    🔥 Frequently Purchased
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* USPs */}
-            <div className="space-y-2 pb-4 border-b">
-              {[
-                "Aligns hips and spine for proper posture",
-                "Reduces lower back and hip pain",
-                "Memory foam conforms to leg shape",
-                "Stays in place with adjustable strap"
-              ].map((usp, index) => (
-                <div key={index} className="flex items-start gap-2">
-                  <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                  <span className="text-sm md:text-base">{usp}</span>
-                </div>
-              ))}
+            <h1 className="hidden md:block text-lg md:text-xl lg:text-2xl font-bold leading-tight tracking-tight truncate">
+              Rise By Night™ Ergonomic Knee Pillow
+            </h1>
+            
+            <p className="hidden md:block text-sm md:text-base text-muted-foreground mb-0">
+              Perfect Support for Side Sleepers
+            </p>
+
+            {/* Benefit-Focused USPs Section */}
+            <div className="space-y-2 mt-2 mb-2 md:mt-2 md:mb-4">
+              <div className="flex items-start gap-2">
+                <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                <p className="text-sm"><span className="font-semibold">Perfect alignment</span> - Aligns hips and spine for proper posture</p>
+              </div>
+              <div className="flex items-start gap-2">
+                <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                <p className="text-sm"><span className="font-semibold">Pain relief</span> - Reduces lower back and hip pain</p>
+              </div>
+              <div className="flex items-start gap-2">
+                <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                <p className="text-sm"><span className="font-semibold">Custom comfort</span> - Memory foam conforms to leg shape</p>
+              </div>
+              <div className="flex items-start gap-2">
+                <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                <p className="text-sm"><span className="font-semibold">Stays secure</span> - Adjustable strap keeps it in place</p>
+              </div>
             </div>
 
             {/* Limited Time Offer */}
@@ -239,24 +282,25 @@ export const KneePillowHero = () => {
               )}
             </Button>
 
-            {/* Trust Badges */}
-            <div className="grid grid-cols-3 gap-4 pt-4 border-t">
-              <div className="text-center">
-                <Truck className="w-6 h-6 text-primary mx-auto mb-1" />
-                <p className="text-xs font-medium">Free Shipping</p>
+            <div className="grid grid-cols-3 gap-3 py-3 border-t text-center">
+              <div className="flex flex-col items-center">
+                <Shield className="w-5 h-5 mb-1.5 text-primary" />
+                <p className="text-xs font-medium leading-tight">2-Year Warranty</p>
               </div>
-              <div className="text-center">
-                <Moon className="w-6 h-6 text-primary mx-auto mb-1" />
-                <p className="text-xs font-medium">100-Night Trial</p>
+              <div className="flex flex-col items-center">
+                <Moon className="w-5 h-5 mb-1.5 text-primary" />
+                <p className="text-xs font-medium leading-tight">100 nights risk free trial</p>
               </div>
-              <div className="text-center">
-                <Shield className="w-6 h-6 text-primary mx-auto mb-1" />
-                <p className="text-xs font-medium">2-Year Warranty</p>
+              <div className="flex flex-col items-center">
+                <Truck className="w-5 h-5 mb-1.5 text-primary" />
+                <p className="text-xs font-medium leading-tight">Easy Returns</p>
               </div>
             </div>
           </div>
         </div>
       </div>
+      
+      <PolicyAccordion />
     </section>
   );
 };
