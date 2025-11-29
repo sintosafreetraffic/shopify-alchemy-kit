@@ -1,8 +1,9 @@
 import { useState } from "react";
-import sleepMaskHeroMain from "@/assets/sleep-mask-hero-main.png";
-import sleepMaskBenefits1 from "@/assets/sleep-mask-benefits-1.png";
-import sleepMaskLifestyle1 from "@/assets/sleep-mask-lifestyle-1.png";
-import sleepMaskLifestyle2 from "@/assets/sleep-mask-lifestyle-2.png";
+import sleepMaskProductShot from "@/assets/sleep-mask-product-shot.png";
+import sleepMaskLifestyleReading from "@/assets/sleep-mask-lifestyle-reading.png";
+import sleepMaskHeroBenefits from "@/assets/sleep-mask-hero-benefits.png";
+import sleepMaskBenefitsTurquoise from "@/assets/sleep-mask-benefits-turquoise.png";
+import sleepMaskLifestyleSitting from "@/assets/sleep-mask-lifestyle-sitting.png";
 import {
   Carousel,
   CarouselContent,
@@ -16,12 +17,12 @@ export const SleepMaskImageCarousel = () => {
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
   
   const images = [
-    { url: sleepMaskHeroMain, alt: "Rise By Night Silk Deep Sleep Mask - Wake up pain-free after deep uninterrupted sleep", type: "image" },
-    { url: sleepMaskBenefits1, alt: "Rise By Night Silk Deep Sleep Mask benefits - Reduces puffiness, promotes healthier skin, gentle breathable fabric", type: "image" },
-    { url: sleepMaskLifestyle1, alt: "Rise By Night Silk Deep Sleep Mask - Upgrade your sleep, upgrade your life", type: "image" },
-    { url: sleepMaskLifestyle2, alt: "Rise By Night Silk Deep Sleep Mask - Finally real rest, real recovery", type: "image" },
-    { url: sleepMaskHeroMain, alt: "Rise By Night Silk Deep Sleep Mask comfortable fit", type: "image" },
-    { url: sleepMaskBenefits1, alt: "Rise By Night Silk Deep Sleep Mask premium quality", type: "image" },
+    { url: sleepMaskProductShot, alt: "Rise By Night Silk Deep Sleep Mask product view", type: "image" },
+    { url: sleepMaskLifestyleReading, alt: "Rise By Night Silk Deep Sleep Mask - Reading in bed with comfort", type: "image" },
+    { url: sleepMaskHeroBenefits, alt: "Rise By Night Silk Deep Sleep Mask - The power to feel your best again starts tonight", type: "image" },
+    { url: sleepMaskBenefitsTurquoise, alt: "Rise By Night Silk Deep Sleep Mask - Reduces puffiness, promotes healthier skin, gentle breathable fabric", type: "image" },
+    { url: sleepMaskLifestyleSitting, alt: "Rise By Night Silk Deep Sleep Mask lifestyle", type: "image" },
+    { url: sleepMaskProductShot, alt: "Rise By Night Silk Deep Sleep Mask detailed view", type: "image" },
   ];
 
   return (
