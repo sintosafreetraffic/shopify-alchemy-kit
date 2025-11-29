@@ -7,7 +7,7 @@ import { useCartStore } from "@/stores/cartStore";
 import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
-import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
+import { SleepMaskImageCarousel } from "./SleepMaskImageCarousel";
 import sleepMaskNavy from "@/assets/sleep-mask-navy.png";
 import sleepMaskTurquoise from "@/assets/sleep-mask-turquoise.png";
 import sleepMaskPink from "@/assets/sleep-mask-pink.png";
@@ -91,17 +91,7 @@ export const SleepMaskHero = () => {
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-start">
           {/* Left Column - Product Images */}
           <div className="lg:sticky lg:top-24">
-            <div className="relative">
-              <div className="bg-gradient-to-b from-primary/5 to-background p-12 rounded-lg">
-                <img
-                  src={eyeMaskGift}
-                  alt="Rise By Night Silk Sleep Mask"
-                  className="w-full h-auto"
-                  loading="eager"
-                  decoding="async"
-                />
-              </div>
-            </div>
+            <SleepMaskImageCarousel />
             <PolicyAccordion />
           </div>
 
