@@ -13,6 +13,7 @@ import {
 import { ShoppingCart, Minus, Plus, Trash2, Lock, Loader2, Moon, RotateCcw, Shield, Gift, Truck } from "lucide-react";
 import { useCartStore } from "@/stores/cartStore";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
+import kneePillowCart from "@/assets/knee-pillow-cart.png";
 import { fetchProducts, ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import { ImageModal } from "./ImageModal";
@@ -330,7 +331,7 @@ export const CartDrawer = () => {
                       <div className="w-16 h-16 bg-secondary/20 rounded-md overflow-hidden flex-shrink-0">
                         {item.product.node.images?.edges?.[0]?.node && (
                           <img
-                            src={item.product.node.images.edges[0].node.url}
+                            src={item.product.node.title.toLowerCase().includes('knee pillow') ? kneePillowCart : item.product.node.images.edges[0].node.url}
                             alt={item.product.node.title}
                             className="w-full h-full object-cover"
                             loading="lazy"
