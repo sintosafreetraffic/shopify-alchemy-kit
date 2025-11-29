@@ -224,7 +224,7 @@ export const Header = () => {
         </Link>
         
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center justify-center gap-4 lg:gap-8 mt-3 whitespace-nowrap">
+        <nav className="hidden md:flex items-center justify-center gap-4 lg:gap-8 mt-5 whitespace-nowrap">
           <NavLink to="/" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors whitespace-nowrap">Home</NavLink>
           <NavLink to="/about" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors whitespace-nowrap">About Us</NavLink>
           <NavLink to="/track" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors whitespace-nowrap">Track Your Order</NavLink>
