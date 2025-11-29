@@ -1,7 +1,7 @@
 import { useState } from "react";
 import kneePillowMain from "@/assets/knee-pillow-main-new.png";
-import kneePillowMaterials from "@/assets/knee-pillow-materials.jpg";
-import kneePillowErgonomic from "@/assets/knee-pillow-ergonomic-design.jpg";
+import kneePillowMaterials from "@/assets/knee-pillow-materials.png";
+import kneePillowErgonomic from "@/assets/knee-pillow-ergonomic-design.png";
 import kneePillowSleepingPositions from "@/assets/knee-pillow-sleeping-positions.png";
 import {
   Carousel,
