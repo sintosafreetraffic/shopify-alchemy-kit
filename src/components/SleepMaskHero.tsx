@@ -100,7 +100,7 @@ export const SleepMaskHero = () => {
             {/* Product Title and Rating */}
             <div className="space-y-3">
               <h1 className="text-3xl md:text-5xl font-bold leading-tight">
-                Rise By Night™ Silk Sleep Mask
+                Rise By Night™ Deep Sleep Mask
               </h1>
               <div className="flex items-center gap-2">
                 <div className="flex">
