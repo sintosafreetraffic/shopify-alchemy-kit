@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Check, Shield, Moon, Truck, Loader2, Star, Users } from "lucide-react";
 import { ProductImageCarousel } from "./ProductImageCarousel";
 import { PolicyAccordion } from "./PolicyAccordion";
-import { CountdownTimer } from "./CountdownTimer";
+import { CountdownTimer, CountdownTimerDisplay } from "./CountdownTimer";
 import { useState, useEffect } from "react";
 import { useCartStore } from "@/stores/cartStore";
 import { fetchProducts } from "@/lib/shopify";
@@ -194,8 +194,8 @@ export const Hero = () => {
             </div>
 
             <div className="border-t border-b py-3 my-1.5 space-y-2">
-              <p className="text-center font-bold text-sm md:text-base tracking-wide">🎉 LIMITED BLACK FRIDAY OFFER 🎉</p>
-              <CountdownTimer />
+              <p className="text-center font-bold text-sm md:text-base tracking-wide">🎉 LIMITED {CountdownTimer().saleName} OFFER 🎉</p>
+              <CountdownTimerDisplay />
               
               <div className="grid grid-cols-2 gap-3 mb-2">
                 <button
