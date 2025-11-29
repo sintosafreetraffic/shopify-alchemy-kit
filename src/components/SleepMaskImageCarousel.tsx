@@ -4,6 +4,7 @@ import sleepMaskLifestyleReading from "@/assets/sleep-mask-lifestyle-reading.png
 import sleepMaskHeroBenefits from "@/assets/sleep-mask-hero-benefits.png";
 import sleepMaskBenefitsTurquoise from "@/assets/sleep-mask-benefits-turquoise.png";
 import sleepMaskLifestyleSitting from "@/assets/sleep-mask-lifestyle-sitting.png";
+import sleepMaskStrapDetail from "@/assets/sleep-mask-strap-detail.png";
 import {
   Carousel,
   CarouselContent,
@@ -22,7 +23,7 @@ export const SleepMaskImageCarousel = () => {
     { url: sleepMaskHeroBenefits, alt: "Rise By Night Silk Deep Sleep Mask - The power to feel your best again starts tonight", type: "image" },
     { url: sleepMaskBenefitsTurquoise, alt: "Rise By Night Silk Deep Sleep Mask - Reduces puffiness, promotes healthier skin, gentle breathable fabric", type: "image" },
     { url: sleepMaskLifestyleSitting, alt: "Rise By Night Silk Deep Sleep Mask lifestyle", type: "image" },
-    { url: sleepMaskProductShot, alt: "Rise By Night Silk Deep Sleep Mask detailed view", type: "image" },
+    { url: sleepMaskStrapDetail, alt: "Rise By Night Silk Deep Sleep Mask adjustable strap detail", type: "image" },
   ];
 
   return (
