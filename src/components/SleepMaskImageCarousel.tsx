@@ -1,5 +1,8 @@
 import { useState } from "react";
-import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
+import sleepMaskHeroMain from "@/assets/sleep-mask-hero-main.png";
+import sleepMaskBenefits1 from "@/assets/sleep-mask-benefits-1.png";
+import sleepMaskLifestyle1 from "@/assets/sleep-mask-lifestyle-1.png";
+import sleepMaskLifestyle2 from "@/assets/sleep-mask-lifestyle-2.png";
 import {
   Carousel,
   CarouselContent,
@@ -12,14 +15,13 @@ import { ImageModal } from "./ImageModal";
 export const SleepMaskImageCarousel = () => {
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
   
-  // Duplicate main image to fill the carousel layout
   const images = [
-    { url: eyeMaskGift, alt: "Rise By Night silk sleep mask main view", type: "image" },
-    { url: eyeMaskGift, alt: "Rise By Night silk sleep mask side view", type: "image" },
-    { url: eyeMaskGift, alt: "Rise By Night silk sleep mask benefits", type: "image" },
-    { url: eyeMaskGift, alt: "Rise By Night silk sleep mask comfort", type: "image" },
-    { url: eyeMaskGift, alt: "Rise By Night silk sleep mask support", type: "image" },
-    { url: eyeMaskGift, alt: "Rise By Night silk sleep mask design", type: "image" },
+    { url: sleepMaskHeroMain, alt: "Rise By Night Silk Deep Sleep Mask - Wake up pain-free after deep uninterrupted sleep", type: "image" },
+    { url: sleepMaskBenefits1, alt: "Rise By Night Silk Deep Sleep Mask benefits - Reduces puffiness, promotes healthier skin, gentle breathable fabric", type: "image" },
+    { url: sleepMaskLifestyle1, alt: "Rise By Night Silk Deep Sleep Mask - Upgrade your sleep, upgrade your life", type: "image" },
+    { url: sleepMaskLifestyle2, alt: "Rise By Night Silk Deep Sleep Mask - Finally real rest, real recovery", type: "image" },
+    { url: sleepMaskHeroMain, alt: "Rise By Night Silk Deep Sleep Mask comfortable fit", type: "image" },
+    { url: sleepMaskBenefits1, alt: "Rise By Night Silk Deep Sleep Mask premium quality", type: "image" },
   ];
 
   return (
