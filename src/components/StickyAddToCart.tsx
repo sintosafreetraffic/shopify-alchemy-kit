@@ -5,9 +5,16 @@ import { useUIStore } from "@/stores/uiStore";
 import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
-import { ShoppingCart, Loader2, Plus } from "lucide-react";
+import { ShoppingCart, Loader2, Plus, Minus, Check } from "lucide-react";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
 import { Badge } from "@/components/ui/badge";
+
+const colors = [
+  { name: "Black", value: "black", hex: "#000000" },
+  { name: "Navy", value: "navy", hex: "#1e3a8a" },
+  { name: "Pink", value: "pink", hex: "#ec4899" },
+  { name: "Silver", value: "silver", hex: "#94a3b8" },
+];
 
 interface StickyAddToCartProps {
   productType: "ergonomic-pillow" | "knee-pillow" | "sleep-mask" | "sleep-bundle";
@@ -15,7 +22,11 @@ interface StickyAddToCartProps {
 
 export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
   const isPillowProduct = productType === "ergonomic-pillow" || productType === "knee-pillow" || productType === "sleep-bundle";
+  const isSleepMask = productType === "sleep-mask";
   const [selectedBundle, setSelectedBundle] = useState<"1" | "2">(isPillowProduct ? "2" : "1");
+  const [quantity, setQuantity] = useState(1);
+  const [selectedColor, setSelectedColor] = useState("black");
+  const [showColorPicker, setShowColorPicker] = useState(false);
   const [product, setProduct] = useState<ShopifyProduct | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { addItem, setCartOpen, isCartOpen, items } = useCartStore();
@@ -63,21 +74,30 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
     setIsCheckingOut(true);
     try {
       const variant = product.node.variants.edges[0].node;
-      const quantity = isPillowProduct ? (selectedBundle === "1" ? 1 : 2) : 1;
+      const itemQuantity = isPillowProduct 
+        ? (selectedBundle === "1" ? 1 : 2) 
+        : quantity;
       
       const cartItem = {
         product,
         variantId: variant.id,
-        variantTitle: variant.title,
+        variantTitle: isSleepMask 
+          ? `${variant.title} - ${colors.find(c => c.value === selectedColor)?.name}`
+          : variant.title,
         price: variant.price,
-        quantity,
-        selectedOptions: variant.selectedOptions || []
+        quantity: itemQuantity,
+        selectedOptions: isSleepMask 
+          ? [
+              ...variant.selectedOptions || [],
+              { name: "Color", value: colors.find(c => c.value === selectedColor)?.name || "Black" }
+            ]
+          : variant.selectedOptions || []
       };
       
       addItem(cartItem);
       const itemName = isPillowProduct 
-        ? `${quantity} ${quantity === 1 ? 'pillow' : 'pillows'}`
-        : product.node.title;
+        ? `${itemQuantity} ${itemQuantity === 1 ? 'pillow' : 'pillows'}`
+        : `${itemQuantity} ${product.node.title}${itemQuantity > 1 ? 's' : ''}`;
       toast.success("Added to cart!", {
         description: `${itemName} added to your cart.`,
         cancel: {
@@ -99,7 +119,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
   // Calculate the value being added to cart (not current cart total)
   const addToCartValue = isPillowProduct 
     ? (selectedBundle === "2" ? productPrice : productPrice) // 1+1 deal: pay for 1, get 1 free
-    : productPrice; // Sleep mask: regular price
+    : (productPrice * quantity); // Sleep mask: price * quantity
 
   const bundles = {
     "1": {
@@ -192,6 +212,78 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                         <img src={eyeMaskGift} alt="Free gift" className="w-6 h-6 object-contain" loading="lazy" decoding="async" />
                       </span>
                     </button>
+                  </div>
+                )}
+
+                {/* Sleep Mask Quantity & Color Selector */}
+                {isSleepMask && (
+                  <div className="flex items-center gap-2">
+                    {/* Quantity Selector */}
+                    <div className="flex items-center gap-1 bg-primary/10 rounded-lg p-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                        disabled={quantity <= 1}
+                      >
+                        <Minus className="w-3 h-3" />
+                      </Button>
+                      <span className="text-sm font-semibold min-w-[2rem] text-center">{quantity}</span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => setQuantity(quantity + 1)}
+                      >
+                        <Plus className="w-3 h-3" />
+                      </Button>
+                    </div>
+
+                    {/* Color Selector */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowColorPicker(!showColorPicker)}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors"
+                      >
+                        <div 
+                          className="w-5 h-5 rounded-full border-2 border-border"
+                          style={{ backgroundColor: colors.find(c => c.value === selectedColor)?.hex }}
+                        />
+                        <span className="text-xs font-medium hidden sm:inline">
+                          {colors.find(c => c.value === selectedColor)?.name}
+                        </span>
+                      </button>
+
+                      {/* Color Picker Dropdown */}
+                      {showColorPicker && (
+                        <div className="absolute bottom-full mb-2 right-0 bg-background border border-border rounded-lg shadow-lg p-2 z-[110]">
+                          <div className="grid grid-cols-2 gap-2">
+                            {colors.map((color) => (
+                              <button
+                                key={color.value}
+                                onClick={() => {
+                                  setSelectedColor(color.value);
+                                  setShowColorPicker(false);
+                                }}
+                                className={`flex items-center gap-2 p-2 rounded-lg hover:bg-primary/10 transition-colors ${
+                                  selectedColor === color.value ? "bg-primary/10" : ""
+                                }`}
+                              >
+                                <div 
+                                  className="w-6 h-6 rounded-full border-2 border-border flex-shrink-0"
+                                  style={{ backgroundColor: color.hex }}
+                                />
+                                <span className="text-xs font-medium whitespace-nowrap">{color.name}</span>
+                                {selectedColor === color.value && (
+                                  <Check className="w-3 h-3 text-primary ml-auto" />
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
 
