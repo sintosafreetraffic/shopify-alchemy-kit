@@ -176,10 +176,10 @@ export const CartDrawer = () => {
 
   return (
     <>
-      {/* Dark Overlay for Main Content */}
+      {/* Light Overlay for Main Content */}
       {isOpen && createPortal(
         <div 
-          className="fixed inset-0 bg-black/40 z-[90] transition-opacity duration-300"
+          className="fixed inset-0 bg-black/20 z-[90] transition-opacity duration-300 pointer-events-none"
           aria-hidden="true"
         />,
         document.body
