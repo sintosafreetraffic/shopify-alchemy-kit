@@ -163,14 +163,26 @@ export const CartDrawer = () => {
 
   const handleCheckout = async () => {
     try {
-      await createCheckout();
-      const checkoutUrl = useCartStore.getState().checkoutUrl;
+      const checkoutUrl = await createCheckout();
       if (checkoutUrl) {
-        window.open(checkoutUrl, '_blank');
+        // Use location.href on mobile to avoid popup blockers
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        if (isMobile) {
+          window.location.href = checkoutUrl;
+        } else {
+          window.open(checkoutUrl, '_blank');
+        }
         setIsOpen(false);
+      } else {
+        toast.error("Checkout Failed", {
+          description: "Unable to create checkout. Please try again.",
+        });
       }
     } catch (error) {
       console.error('Checkout failed:', error);
+      toast.error("Checkout Failed", {
+        description: "An error occurred while creating your checkout. Please try again.",
+      });
     }
   };
 
