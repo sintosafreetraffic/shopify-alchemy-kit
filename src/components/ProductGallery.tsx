@@ -33,7 +33,7 @@ export const ProductGallery = () => {
       name: "Rise By Night™ Ergonomic Pillow",
       tagline: "The #1 Rated Orthopedic Pillow",
       price: "$129.99",
-      originalPrice: "$179.98",
+      originalPrice: "$259.98",
       rating: 4.8,
       reviews: "6,247",
       image: pillowMain,
