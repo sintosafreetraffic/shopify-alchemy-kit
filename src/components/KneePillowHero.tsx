@@ -10,7 +10,6 @@ import { toast } from "sonner";
 import { CountdownTimer } from "./CountdownTimer";
 import kneePillowMain from "@/assets/knee-pillow-main-new.png";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
-import consumerChoiceBadge from "@/assets/consumer-choice-badge-transparent.png";
 
 export const KneePillowHero = () => {
   const [selectedBundle, setSelectedBundle] = useState<"1" | "2">("2");
@@ -100,13 +99,6 @@ export const KneePillowHero = () => {
           {/* Left Column - Product Images */}
           <div className="lg:sticky lg:top-24">
             <div className="relative">
-              <img 
-                src={consumerChoiceBadge} 
-                alt="Consumer Choice" 
-                className="absolute top-4 right-4 z-10 w-20 h-20 md:w-24 md:h-24"
-                loading="lazy"
-                decoding="async"
-              />
               <div className="bg-gradient-to-b from-primary/5 to-background p-8 rounded-lg">
                 <img
                   src={kneePillowMain}
