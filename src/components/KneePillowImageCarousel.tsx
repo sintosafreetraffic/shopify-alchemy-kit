@@ -1,5 +1,7 @@
 import { useState } from "react";
 import kneePillowMain from "@/assets/knee-pillow-main-new.png";
+import kneePillowMaterials from "@/assets/knee-pillow-materials.jpg";
+import kneePillowErgonomic from "@/assets/knee-pillow-ergonomic-design.jpg";
 import {
   Carousel,
   CarouselContent,
@@ -12,11 +14,10 @@ import { ImageModal } from "./ImageModal";
 export const KneePillowImageCarousel = () => {
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
   
-  // Duplicate main image to fill the carousel layout
   const images = [
     { url: kneePillowMain, alt: "Rise By Night ergonomic knee pillow main view", type: "image" },
-    { url: kneePillowMain, alt: "Rise By Night ergonomic knee pillow side view", type: "image" },
-    { url: kneePillowMain, alt: "Rise By Night ergonomic knee pillow benefits", type: "image" },
+    { url: kneePillowMaterials, alt: "Rise By Night knee pillow high quality materials", type: "image" },
+    { url: kneePillowErgonomic, alt: "Rise By Night knee pillow ergonomic design", type: "image" },
     { url: kneePillowMain, alt: "Rise By Night ergonomic knee pillow comfort", type: "image" },
     { url: kneePillowMain, alt: "Rise By Night ergonomic knee pillow support", type: "image" },
     { url: kneePillowMain, alt: "Rise By Night ergonomic knee pillow alignment", type: "image" },
