@@ -1,6 +1,6 @@
 import kneePillowImage from "@/assets/knee-pillow-layers-new.png";
 import { useState } from "react";
-import { Shirt, Wind, Layers, MoveHorizontal, Archive } from "lucide-react";
+import { Shirt, Wind, MoveHorizontal } from "lucide-react";
 
 const components = [
   {
@@ -28,14 +28,14 @@ const components = [
     title: "Inner Core",
     description:
       "High-density memory foam with slow-rebound formulation for precise pressure relief. Shaped ergonomically for leg separation, aligns hips, knees, and lower spine while maintaining shape over long-term use.",
-    icon: Layers,
+    icon: Shirt,
   },
   {
     position: "right-middle",
     title: "Zipper Opening",
     description:
       "Nylon zipper with reinforced stitching that allows removal of the fabric cover for washing, making maintenance easy and keeping your pillow fresh.",
-    icon: Archive,
+    icon: Wind,
   },
 ];
 
@@ -90,27 +90,6 @@ export const KneePillowLookInside = () => {
                   loading="lazy"
                   decoding="async"
                 />
-                {/* Right side icon overlays */}
-                {components
-                  .filter((c) => c.position.startsWith("right"))
-                  .map((component, idx) => {
-                    const Icon = component.icon;
-                    const topPosition = idx === 0 ? "25%" : "65%";
-                    return (
-                      <div
-                        key={idx}
-                        className="absolute z-10"
-                        style={{
-                          right: "-10%",
-                          top: topPosition,
-                        }}
-                      >
-                        <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white shadow-lg border-2 border-white">
-                          <Icon size={24} />
-                        </div>
-                      </div>
-                    );
-                  })}
               </div>
             </div>
 
