@@ -11,8 +11,8 @@ const faqs = [
     answer: "The Rise By Night pillow uses scientifically-designed ergonomic contours and medical-grade cooling gel technology to maintain proper spinal alignment, reduce sleep apnea episodes by 86%, and eliminate snoring. Unlike regular pillows that flatten quickly, Rise By Night maintains its shape and support for 3-5 years."
   },
   {
-    question: "How does the 120-day trial work?",
-    answer: "Try Rise By Night risk-free for 120 nights. If you're not completely satisfied, simply contact us for a full refund. No questions asked, no hassle. We'll arrange a free pickup and process your refund within 5 business days."
+    question: "How does the 100-night trial work?",
+    answer: "Try Rise By Night risk-free for 100 nights. If you're not completely satisfied, simply contact us for a full refund. No questions asked, no hassle. We'll arrange a free pickup and process your refund within 5 business days."
   },
   {
     question: "Is the pillow suitable for all sleeping positions?",
