@@ -4,7 +4,7 @@ import { ArrowRight, Moon, Heart, Sparkles, Shield, Users, Award } from "lucide-
 import { Link } from "react-router-dom";
 import { ProductGallery } from "@/components/ProductGallery";
 import { CountdownTimer } from "@/components/CountdownTimer";
-import heroLogo from "@/assets/moon-logo-yellow-transparent.png";
+import heroLogo from "@/assets/moon-logo-new.png";
 import lifestyleHero from "@/assets/lifestyle-hero.jpg";
 import lifestyleHeroMobile from "@/assets/lifestyle-hero-mobile.jpg";
 
