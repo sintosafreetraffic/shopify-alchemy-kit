@@ -15,7 +15,7 @@ export const KneePillowHero = () => {
   const [selectedBundle, setSelectedBundle] = useState<"1" | "2">("2");
   const [product, setProduct] = useState<ShopifyProduct | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const { addItem, createCheckout, checkoutUrl, setCheckoutUrl } = useCartStore();
+  const { addItem, setCartOpen } = useCartStore();
   const { saleName } = CountdownTimer();
 
   useEffect(() => {
@@ -54,16 +54,17 @@ export const KneePillowHero = () => {
       };
       
       addItem(cartItem);
-      await createCheckout();
-      
-      const url = useCartStore.getState().checkoutUrl;
-      if (url) {
-        window.open(url, '_blank');
-        setCheckoutUrl(null);
-      }
+      toast.success("Added to cart!", {
+        description: `${quantity} ${quantity === 1 ? 'pillow' : 'pillows'} added to your cart.`,
+        cancel: {
+          label: "✕",
+          onClick: () => {}
+        }
+      });
+      useCartStore.getState().setCartOpen(true);
     } catch (error) {
-      console.error('Checkout failed:', error);
-      toast.error("Failed to start checkout");
+      console.error('Failed to add to cart:', error);
+      toast.error("Failed to add to cart");
     } finally {
       setIsCheckingOut(false);
     }
@@ -152,70 +153,79 @@ export const KneePillowHero = () => {
             </div>
 
             {/* Limited Time Offer */}
-            <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-              <h3 className="font-bold text-lg mb-3">Limited {saleName === "CYBER MONDAY" ? "Cyber Monday" : "Black Friday"} Offer</h3>
+            <div className="border-t border-b py-3 my-1.5 space-y-2">
+              <p className="text-center font-bold text-sm md:text-base tracking-wide">🎉 LIMITED {saleName} OFFER 🎉</p>
               
-              <div className="space-y-3">
-                {Object.entries(bundles).map(([key, bundle]) => (
-                  <label
-                    key={key}
-                    className={`block p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                      selectedBundle === key
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/50"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="bundle"
-                      value={key}
-                      checked={selectedBundle === key}
-                      onChange={() => setSelectedBundle(key as "1" | "2")}
-                      className="sr-only"
-                    />
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Badge variant="destructive" className="text-xs">
-                            {bundle.discount}
-                          </Badge>
-                          <span className="font-semibold">
-                            {bundle.quantity} Knee Pillow{bundle.quantity > 1 ? "s" : ""}
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground mb-1">{bundle.note}</p>
-                        {bundle.quantity === 2 && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-medium text-primary">{bundle.freeGift}</span>
-                            <img src={eyeMaskGift} alt="Free Gift" className="h-6 w-auto" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-primary">
-                          ${bundle.price.toFixed(2)}
-                        </div>
-                        <div className="text-sm text-muted-foreground line-through">
-                          ${bundle.originalPrice.toFixed(2)}
-                        </div>
-                      </div>
+              <div className="grid grid-cols-2 gap-3 mb-2">
+                <button
+                  onClick={() => setSelectedBundle("1")}
+                  className={`border-2 rounded-lg p-3 text-center transition-all relative min-h-[120px] ${
+                    selectedBundle === "1"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/50"
+                  }`}
+                >
+                  <Badge className="absolute -top-2 left-1/2 -translate-x-1/2 bg-destructive text-destructive-foreground text-xs px-2 py-0.5">
+                    {bundles["1"].discount}
+                  </Badge>
+                  <div className="flex items-center justify-center mb-2 mt-2">
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                      selectedBundle === "1" ? "border-primary" : "border-border"
+                    }`}>
+                      {selectedBundle === "1" && (
+                        <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+                      )}
                     </div>
-                  </label>
-                ))}
+                  </div>
+                  <p className="font-bold text-base">1 Knee Pillow</p>
+                  <p className="text-xs text-muted-foreground mb-1">{bundles["1"].note}</p>
+                  <p className="text-xl font-bold">${bundles["1"].price.toFixed(2)}</p>
+                  <p className="text-sm text-muted-foreground line-through">${bundles["1"].originalPrice.toFixed(2)}</p>
+                </button>
+
+                <button
+                  onClick={() => setSelectedBundle("2")}
+                  className={`border-2 rounded-lg p-3 text-center transition-all relative min-h-[120px] ${
+                    selectedBundle === "2"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/50"
+                  }`}
+                >
+                  <Badge className="absolute -top-2 left-1/2 -translate-x-1/2 bg-destructive text-destructive-foreground text-xs px-2 py-0.5">
+                    {bundles["2"].discount}
+                  </Badge>
+                  <div className="flex items-center justify-center mb-2">
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                      selectedBundle === "2" ? "border-primary" : "border-border"
+                    }`}>
+                      {selectedBundle === "2" && (
+                        <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+                      )}
+                    </div>
+                  </div>
+                  <p className="font-bold text-base">2 Knee Pillows</p>
+                  <p className="text-xs text-muted-foreground mb-1">{bundles["2"].note}</p>
+                  <p className="text-xl font-bold">${bundles["2"].price.toFixed(2)}</p>
+                  <p className="text-sm text-muted-foreground line-through">${bundles["2"].originalPrice.toFixed(2)}</p>
+                  <div className="flex items-center justify-center gap-1 mt-1">
+                    <p className="text-sm font-medium">+ FREE GIFT 2X</p>
+                    <img src={eyeMaskGift} alt="Free eye mask gift" className="w-12 h-12 object-contain" loading="lazy" decoding="async" />
+                  </div>
+                </button>
               </div>
             </div>
 
             {/* Add to Cart Button */}
             <Button
               size="lg"
-              className="w-full text-lg py-6 bg-black text-white hover:bg-primary transition-all relative overflow-hidden group"
+              className="w-full text-lg md:text-xl py-6 font-bold shadow-lg hover:shadow-xl transition-all touch-manipulation animate-subtle-bounce bg-black text-white hover:bg-primary relative overflow-hidden group"
               onClick={handleAddToCart}
               disabled={isCheckingOut || !product}
             >
               {isCheckingOut ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Processing...
+                  Adding...
                 </>
               ) : (
                 <>
