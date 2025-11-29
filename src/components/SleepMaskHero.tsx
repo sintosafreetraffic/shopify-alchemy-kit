@@ -13,7 +13,6 @@ import sleepMaskTurquoise from "@/assets/sleep-mask-turquoise.png";
 import sleepMaskPink from "@/assets/sleep-mask-pink.png";
 import sleepMaskGold from "@/assets/sleep-mask-gold.png";
 import sleepMaskSilver from "@/assets/sleep-mask-silver.png";
-import consumerChoiceBadge from "@/assets/consumer-choice-badge-transparent.png";
 
 const colors = [
   { name: "Navy", value: "navy", hex: "#1e3a8a", image: sleepMaskNavy },
@@ -93,13 +92,6 @@ export const SleepMaskHero = () => {
           {/* Left Column - Product Images */}
           <div className="lg:sticky lg:top-24">
             <div className="relative">
-              <img 
-                src={consumerChoiceBadge} 
-                alt="Consumer Choice" 
-                className="absolute top-4 right-4 z-10 w-20 h-20 md:w-24 md:h-24"
-                loading="lazy"
-                decoding="async"
-              />
               <div className="bg-gradient-to-b from-primary/5 to-background p-12 rounded-lg">
                 <img
                   src={eyeMaskGift}
