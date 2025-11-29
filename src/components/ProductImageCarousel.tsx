@@ -1,14 +1,9 @@
 import { useState } from "react";
-import optisleepPillow from "@/assets/optisleep-pillow-main.png";
-import pillowHeroImage from "@/assets/pillow-hero-main.png";
-import pillowHeroNew from "@/assets/pillow-hero-new.png";
-import pillowBenefitsPainRelief from "@/assets/pillow-benefits-pain-relief.png";
-import pillowBenefitsUpdated from "@/assets/pillow-benefits-updated.png";
-import consumerChoiceBadge from "@/assets/consumer-choice-badge-new.jpg";
-import neckPainSpine from "@/assets/neck-pain-spine.png";
-import lifestyleExcellent from "@/assets/lifestyle-excellent-rating.png";
-import pillowEasyCleaning from "@/assets/pillow-easy-cleaning-new.png";
-import pillowLifestyleSleep from "@/assets/pillow-lifestyle-sleep.jpg";
+import pillowHeroNew from "@/assets/pillow-hero-new.webp";
+import pillowBenefitsNew from "@/assets/pillow-benefits-new.webp";
+import pillowBenefitsUpdated from "@/assets/pillow-benefits-updated.webp";
+import neckPainSpine from "@/assets/neck-pain-spine.webp";
+import pillowEasyCleaning from "@/assets/pillow-easy-cleaning-new.webp";
 import {
   Carousel,
   CarouselContent,
@@ -24,7 +19,7 @@ export const ProductImageCarousel = () => {
   const images = [
     { url: pillowHeroNew, alt: "Rise By Night ergonomic pillow main view", type: "image" },
     { url: "/videos/product-demo.mp4", alt: "Rise By Night pillow demonstration", type: "video" },
-    { url: "/images/pillow-benefits-new.jpg", alt: "Rise By Night ergonomic pillow benefits - relieves neck & back pain, reduces sleep apnea, reduces acid reflux, relieves shoulders", type: "image" },
+    { url: pillowBenefitsNew, alt: "Rise By Night ergonomic pillow benefits - relieves neck & back pain, reduces sleep apnea, reduces acid reflux, relieves shoulders", type: "image" },
     { url: pillowEasyCleaning, alt: "Rise By Night pillow - easy cleaning and maintenance with removable cover", type: "image" },
     { url: neckPainSpine, alt: "Rise By Night pillow - neck pain and spine alignment relief", type: "image" },
     { url: pillowBenefitsUpdated, alt: "Rise By Night pillow - premium ergonomic pillow benefits including neck support, pressure relief, custom fit, durability, high-end materials, enhanced sleep", type: "image" },
