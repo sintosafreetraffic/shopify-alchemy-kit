@@ -8,18 +8,24 @@ import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
+import sleepMaskNavy from "@/assets/sleep-mask-navy.png";
+import sleepMaskTurquoise from "@/assets/sleep-mask-turquoise.png";
+import sleepMaskPink from "@/assets/sleep-mask-pink.png";
+import sleepMaskGold from "@/assets/sleep-mask-gold.png";
+import sleepMaskSilver from "@/assets/sleep-mask-silver.png";
 import consumerChoiceBadge from "@/assets/consumer-choice-badge-transparent.png";
 
 const colors = [
-  { name: "Black", value: "black", hex: "#000000" },
-  { name: "Navy", value: "navy", hex: "#1e3a8a" },
-  { name: "Pink", value: "pink", hex: "#ec4899" },
-  { name: "Silver", value: "silver", hex: "#94a3b8" },
+  { name: "Navy", value: "navy", hex: "#1e3a8a", image: sleepMaskNavy },
+  { name: "Turquoise", value: "turquoise", hex: "#06b6d4", image: sleepMaskTurquoise },
+  { name: "Pink", value: "pink", hex: "#ec4899", image: sleepMaskPink },
+  { name: "Gold", value: "gold", hex: "#fbbf24", image: sleepMaskGold },
+  { name: "Silver", value: "silver", hex: "#94a3b8", image: sleepMaskSilver },
 ];
 
 export const SleepMaskHero = () => {
   const [quantity, setQuantity] = useState(1);
-  const [selectedColor, setSelectedColor] = useState("black");
+  const [selectedColor, setSelectedColor] = useState("navy");
   const [product, setProduct] = useState<ShopifyProduct | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { addItem, createCheckout, checkoutUrl, setCheckoutUrl } = useCartStore();
@@ -150,24 +156,26 @@ export const SleepMaskHero = () => {
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
               <h3 className="font-bold text-lg mb-3">Choose Color</h3>
               
-              <div className="flex gap-3">
+              <div className="grid grid-cols-5 gap-3">
                 {colors.map((color) => (
                   <button
                     key={color.value}
                     onClick={() => setSelectedColor(color.value)}
-                    className={`relative flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all ${
+                    className={`relative w-full aspect-square rounded-lg border-2 transition-all overflow-hidden bg-background ${
                       selectedColor === color.value
-                        ? "border-primary bg-primary/5"
+                        ? "border-primary ring-2 ring-primary ring-offset-2"
                         : "border-border hover:border-primary/50"
                     }`}
                   >
-                    <div 
-                      className="w-8 h-8 rounded-full border-2 border-border"
-                      style={{ backgroundColor: color.hex }}
+                    <img 
+                      src={color.image} 
+                      alt={color.name}
+                      className="w-full h-full object-contain p-1"
                     />
-                    <span className="text-xs font-medium">{color.name}</span>
                     {selectedColor === color.value && (
-                      <Check className="absolute top-1 right-1 w-4 h-4 text-primary" />
+                      <div className="absolute inset-0 bg-primary/10 flex items-center justify-center">
+                        <Check className="w-6 h-6 text-primary drop-shadow-md" />
+                      </div>
                     )}
                   </button>
                 ))}
