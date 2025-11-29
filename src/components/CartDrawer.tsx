@@ -176,15 +176,6 @@ export const CartDrawer = () => {
 
   return (
     <>
-      {/* Light Overlay for Main Content */}
-      {isOpen && createPortal(
-        <div 
-          className="fixed inset-0 bg-black/20 z-[90] transition-opacity duration-300 pointer-events-none"
-          aria-hidden="true"
-        />,
-        document.body
-      )}
-
       {/* Recommendations Panel - Attached to cart */}
       {isOpen && createPortal(
         <div 
