@@ -7,6 +7,7 @@ import { useCartStore } from "@/stores/cartStore";
 import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
+import { CountdownTimer } from "./CountdownTimer";
 import kneePillowMain from "@/assets/knee-pillow-main-new.png";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
 import consumerChoiceBadge from "@/assets/consumer-choice-badge-transparent.png";
@@ -16,6 +17,7 @@ export const KneePillowHero = () => {
   const [product, setProduct] = useState<ShopifyProduct | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { addItem, createCheckout, checkoutUrl, setCheckoutUrl } = useCartStore();
+  const { saleName } = CountdownTimer();
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -159,7 +161,7 @@ export const KneePillowHero = () => {
 
             {/* Limited Time Offer */}
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-              <h3 className="font-bold text-lg mb-3">Limited Black Friday Offer</h3>
+              <h3 className="font-bold text-lg mb-3">Limited {saleName === "CYBER MONDAY" ? "Cyber Monday" : "Black Friday"} Offer</h3>
               
               <div className="space-y-3">
                 {Object.entries(bundles).map(([key, bundle]) => (
