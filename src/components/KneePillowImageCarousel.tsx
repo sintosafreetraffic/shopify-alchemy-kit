@@ -3,6 +3,7 @@ import kneePillowMain from "@/assets/knee-pillow-main-new.png";
 import kneePillowMaterials from "@/assets/knee-pillow-materials.png";
 import kneePillowErgonomic from "@/assets/knee-pillow-ergonomic-design.png";
 import kneePillowSleepingPositions from "@/assets/knee-pillow-sleeping-positions.png";
+import kneePillowDesignFeatures from "@/assets/knee-pillow-design-features.png";
 import {
   Carousel,
   CarouselContent,
@@ -20,7 +21,7 @@ export const KneePillowImageCarousel = () => {
     { url: kneePillowMaterials, alt: "Rise By Night knee pillow high quality materials", type: "image" },
     { url: kneePillowErgonomic, alt: "Rise By Night knee pillow ergonomic design", type: "image" },
     { url: kneePillowSleepingPositions, alt: "Rise By Night knee pillow for multiple sleeping positions", type: "image" },
-    { url: kneePillowMain, alt: "Rise By Night ergonomic knee pillow support", type: "image" },
+    { url: kneePillowDesignFeatures, alt: "Rise By Night knee pillow design features and construction", type: "image" },
     { url: kneePillowMain, alt: "Rise By Night ergonomic knee pillow alignment", type: "image" },
   ];
 
