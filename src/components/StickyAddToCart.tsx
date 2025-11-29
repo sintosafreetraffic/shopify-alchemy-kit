@@ -79,7 +79,11 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
         ? `${quantity} ${quantity === 1 ? 'pillow' : 'pillows'}`
         : product.node.title;
       toast.success("Added to cart!", {
-        description: `${itemName} added to your cart.`
+        description: `${itemName} added to your cart.`,
+        cancel: {
+          label: "✕",
+          onClick: () => {}
+        }
       });
       setCartOpen(true);
     } catch (error) {

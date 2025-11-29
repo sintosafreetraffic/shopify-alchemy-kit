@@ -55,7 +55,11 @@ export const Hero = () => {
       
       addItem(cartItem);
       toast.success("Added to cart!", {
-        description: `${quantity} ${quantity === 1 ? 'pillow' : 'pillows'} added to your cart.`
+        description: `${quantity} ${quantity === 1 ? 'pillow' : 'pillows'} added to your cart.`,
+        cancel: {
+          label: "✕",
+          onClick: () => {}
+        }
       });
       setCartOpen(true);
     } catch (error) {
