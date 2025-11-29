@@ -14,6 +14,7 @@ import { ShoppingCart, Minus, Plus, Trash2, Lock, Loader2, Moon, RotateCcw, Shie
 import { useCartStore } from "@/stores/cartStore";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
 import kneePillowCart from "@/assets/knee-pillow-cart.png";
+import sleepMaskNavy from "@/assets/sleep-mask-navy.png";
 import { fetchProducts, ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import { ImageModal } from "./ImageModal";
@@ -207,7 +208,7 @@ export const CartDrawer = () => {
                       className="w-full aspect-square bg-secondary/20 rounded-md overflow-hidden mb-3 relative"
                     >
                       <img
-                        src={image.url}
+                        src={product.node.title.toLowerCase().includes('mask') ? sleepMaskNavy : image.url}
                         alt={product.node.title}
                         className="w-full h-full object-cover"
                         loading="lazy"
@@ -470,7 +471,7 @@ export const CartDrawer = () => {
                               {image && (
                                 <div className="w-20 h-20 mx-auto bg-secondary/20 rounded-sm overflow-hidden mb-2 relative">
                                   <img
-                                    src={image.url}
+                                    src={product.node.title.toLowerCase().includes('mask') ? sleepMaskNavy : image.url}
                                     alt={product.node.title}
                                     className="w-full h-full object-cover"
                                     loading="lazy"
