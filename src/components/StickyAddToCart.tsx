@@ -8,12 +8,18 @@ import { toast } from "sonner";
 import { ShoppingCart, Loader2, Plus, Minus, Check } from "lucide-react";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
 import { Badge } from "@/components/ui/badge";
+import sleepMaskNavy from "@/assets/sleep-mask-navy.png";
+import sleepMaskTurquoise from "@/assets/sleep-mask-turquoise.png";
+import sleepMaskPink from "@/assets/sleep-mask-pink.png";
+import sleepMaskGold from "@/assets/sleep-mask-gold.png";
+import sleepMaskSilver from "@/assets/sleep-mask-silver.png";
 
 const colors = [
-  { name: "Black", value: "black", hex: "#000000" },
-  { name: "Navy", value: "navy", hex: "#1e3a8a" },
-  { name: "Pink", value: "pink", hex: "#ec4899" },
-  { name: "Silver", value: "silver", hex: "#94a3b8" },
+  { name: "Navy", value: "navy", hex: "#1e3a8a", image: sleepMaskNavy },
+  { name: "Turquoise", value: "turquoise", hex: "#06b6d4", image: sleepMaskTurquoise },
+  { name: "Pink", value: "pink", hex: "#ec4899", image: sleepMaskPink },
+  { name: "Gold", value: "gold", hex: "#fbbf24", image: sleepMaskGold },
+  { name: "Silver", value: "silver", hex: "#94a3b8", image: sleepMaskSilver },
 ];
 
 interface StickyAddToCartProps {
@@ -25,7 +31,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
   const isSleepMask = productType === "sleep-mask";
   const [selectedBundle, setSelectedBundle] = useState<"1" | "2">(isPillowProduct ? "2" : "1");
   const [quantity, setQuantity] = useState(1);
-  const [selectedColor, setSelectedColor] = useState("black");
+  const [selectedColor, setSelectedColor] = useState("navy");
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [product, setProduct] = useState<ShopifyProduct | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -246,10 +252,13 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                         onClick={() => setShowColorPicker(!showColorPicker)}
                         className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors"
                       >
-                        <div 
-                          className="w-5 h-5 rounded-full border-2 border-border"
-                          style={{ backgroundColor: colors.find(c => c.value === selectedColor)?.hex }}
-                        />
+                        <div className="w-8 h-8 rounded-lg border-2 border-border overflow-hidden bg-background flex items-center justify-center">
+                          <img 
+                            src={colors.find(c => c.value === selectedColor)?.image} 
+                            alt={colors.find(c => c.value === selectedColor)?.name}
+                            className="w-full h-full object-contain p-0.5"
+                          />
+                        </div>
                         <span className="text-xs font-medium hidden sm:inline">
                           {colors.find(c => c.value === selectedColor)?.name}
                         </span>
@@ -258,7 +267,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                       {/* Color Picker Dropdown */}
                       {showColorPicker && (
                         <div className="absolute bottom-full mb-2 right-0 bg-background border border-border rounded-lg shadow-lg p-2 z-[110]">
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="grid grid-cols-3 gap-2">
                             {colors.map((color) => (
                               <button
                                 key={color.value}
@@ -266,18 +275,23 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                                   setSelectedColor(color.value);
                                   setShowColorPicker(false);
                                 }}
-                                className={`flex items-center gap-2 p-2 rounded-lg hover:bg-primary/10 transition-colors ${
+                                className={`flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-primary/10 transition-colors ${
                                   selectedColor === color.value ? "bg-primary/10" : ""
                                 }`}
                               >
-                                <div 
-                                  className="w-6 h-6 rounded-full border-2 border-border flex-shrink-0"
-                                  style={{ backgroundColor: color.hex }}
-                                />
+                                <div className="w-12 h-12 rounded-lg border-2 border-border overflow-hidden bg-background flex items-center justify-center relative">
+                                  <img 
+                                    src={color.image} 
+                                    alt={color.name}
+                                    className="w-full h-full object-contain p-1"
+                                  />
+                                  {selectedColor === color.value && (
+                                    <div className="absolute inset-0 bg-primary/10 flex items-center justify-center">
+                                      <Check className="w-4 h-4 text-primary" />
+                                    </div>
+                                  )}
+                                </div>
                                 <span className="text-xs font-medium whitespace-nowrap">{color.name}</span>
-                                {selectedColor === color.value && (
-                                  <Check className="w-3 h-3 text-primary ml-auto" />
-                                )}
                               </button>
                             ))}
                           </div>
