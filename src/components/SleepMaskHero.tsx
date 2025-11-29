@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Shield, Moon, Truck, Loader2, Star } from "lucide-react";
+import { Check, Shield, Moon, Truck, Loader2, Star, Minus, Plus } from "lucide-react";
 import { PolicyAccordion } from "./PolicyAccordion";
 import { useState, useEffect } from "react";
 import { useCartStore } from "@/stores/cartStore";
@@ -10,8 +10,16 @@ import { toast } from "sonner";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
 import consumerChoiceBadge from "@/assets/consumer-choice-badge-transparent.png";
 
+const colors = [
+  { name: "Black", value: "black", hex: "#000000" },
+  { name: "Navy", value: "navy", hex: "#1e3a8a" },
+  { name: "Pink", value: "pink", hex: "#ec4899" },
+  { name: "Silver", value: "silver", hex: "#94a3b8" },
+];
+
 export const SleepMaskHero = () => {
-  const [selectedBundle, setSelectedBundle] = useState<"1" | "2">("1");
+  const [quantity, setQuantity] = useState(1);
+  const [selectedColor, setSelectedColor] = useState("black");
   const [product, setProduct] = useState<ShopifyProduct | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { addItem, createCheckout, checkoutUrl, setCheckoutUrl } = useCartStore();
@@ -40,15 +48,17 @@ export const SleepMaskHero = () => {
     setIsCheckingOut(true);
     try {
       const variant = product.node.variants.edges[0].node;
-      const quantity = selectedBundle === "1" ? 1 : 2;
       
       const cartItem = {
         product,
         variantId: variant.id,
-        variantTitle: variant.title,
+        variantTitle: `${variant.title} - ${colors.find(c => c.value === selectedColor)?.name}`,
         price: variant.price,
         quantity,
-        selectedOptions: variant.selectedOptions || []
+        selectedOptions: [
+          ...variant.selectedOptions || [],
+          { name: "Color", value: colors.find(c => c.value === selectedColor)?.name || "Black" }
+        ]
       };
       
       addItem(cartItem);
@@ -68,25 +78,7 @@ export const SleepMaskHero = () => {
   };
 
   const productPrice = product ? parseFloat(product.node.variants.edges[0].node.price.amount) : 29.99;
-  
-  const bundles = {
-    "1": {
-      quantity: 1,
-      price: productPrice,
-      originalPrice: productPrice * 2,
-      discount: "SPECIAL OFFER",
-      savings: 0,
-      note: "Perfect for personal use"
-    },
-    "2": {
-      quantity: 2,
-      price: productPrice * 1.7,
-      originalPrice: productPrice * 2,
-      discount: "BEST VALUE",
-      savings: productPrice * 0.3,
-      note: "Great for couples or travel backup"
-    }
-  };
+  const totalPrice = productPrice * quantity;
 
   return (
     <section className="bg-background">
@@ -154,53 +146,64 @@ export const SleepMaskHero = () => {
               ))}
             </div>
 
-            {/* Pricing Options */}
+            {/* Color Selection */}
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-              <h3 className="font-bold text-lg mb-3">Choose Your Option</h3>
+              <h3 className="font-bold text-lg mb-3">Choose Color</h3>
               
-              <div className="space-y-3">
-                {Object.entries(bundles).map(([key, bundle]) => (
-                  <label
-                    key={key}
-                    className={`block p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                      selectedBundle === key
+              <div className="flex gap-3">
+                {colors.map((color) => (
+                  <button
+                    key={color.value}
+                    onClick={() => setSelectedColor(color.value)}
+                    className={`relative flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all ${
+                      selectedColor === color.value
                         ? "border-primary bg-primary/5"
                         : "border-border hover:border-primary/50"
                     }`}
                   >
-                    <input
-                      type="radio"
-                      name="bundle"
-                      value={key}
-                      checked={selectedBundle === key}
-                      onChange={() => setSelectedBundle(key as "1" | "2")}
-                      className="sr-only"
+                    <div 
+                      className="w-8 h-8 rounded-full border-2 border-border"
+                      style={{ backgroundColor: color.hex }}
                     />
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Badge variant="destructive" className="text-xs">
-                            {bundle.discount}
-                          </Badge>
-                          <span className="font-semibold">
-                            {bundle.quantity} Sleep Mask{bundle.quantity > 1 ? "s" : ""}
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">{bundle.note}</p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-primary">
-                          ${bundle.price.toFixed(2)}
-                        </div>
-                        {bundle.savings > 0 && (
-                          <div className="text-sm text-muted-foreground line-through">
-                            ${bundle.originalPrice.toFixed(2)}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </label>
+                    <span className="text-xs font-medium">{color.name}</span>
+                    {selectedColor === color.value && (
+                      <Check className="absolute top-1 right-1 w-4 h-4 text-primary" />
+                    )}
+                  </button>
                 ))}
+              </div>
+            </div>
+
+            {/* Quantity Selection */}
+            <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-lg">Quantity</h3>
+                <div className="flex items-center gap-4">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    disabled={quantity <= 1}
+                  >
+                    <Minus className="w-4 h-4" />
+                  </Button>
+                  <span className="text-2xl font-bold min-w-[3rem] text-center">{quantity}</span>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setQuantity(quantity + 1)}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                <span className="text-muted-foreground">Price per mask:</span>
+                <span className="font-semibold">${productPrice.toFixed(2)}</span>
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-lg font-semibold">Total:</span>
+                <span className="text-2xl font-bold text-primary">${totalPrice.toFixed(2)}</span>
               </div>
             </div>
 
@@ -219,10 +222,10 @@ export const SleepMaskHero = () => {
               ) : (
                 <>
                   <span className="inline-block transition-all duration-300 group-hover:-translate-y-12 group-hover:opacity-0">
-                    Add to Cart - ${bundles[selectedBundle].price.toFixed(2)}
+                    Add to Cart - ${totalPrice.toFixed(2)}
                   </span>
                   <span className="absolute inset-0 flex items-center justify-center translate-y-12 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                    Add to Cart - ${bundles[selectedBundle].price.toFixed(2)}
+                    Add to Cart - ${totalPrice.toFixed(2)}
                   </span>
                 </>
               )}
