@@ -1,18 +1,70 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, ShoppingCart } from "lucide-react";
 import consumerChoiceBadge from "@/assets/consumer-choice-badge-transparent.png";
 import { useCartStore } from "@/stores/cartStore";
 import bundleImage from "@/assets/complete-sleep-bundle.png";
+import { fetchProducts, type ShopifyProduct } from "@/lib/shopify";
+import { toast } from "sonner";
 
 export const SleepBundleHero = () => {
   const [selectedBundle, setSelectedBundle] = useState<"single" | "double">("single");
-  const { setCartOpen } = useCartStore();
+  const [product, setProduct] = useState<ShopifyProduct | null>(null);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const { addItem, setCartOpen } = useCartStore();
 
-  const handleAddToCart = () => {
-    // Add bundle to cart logic here
-    setCartOpen(true);
+  useEffect(() => {
+    const loadProduct = async () => {
+      try {
+        const products = await fetchProducts();
+        const bundleProduct = products.find(
+          (p: ShopifyProduct) => p.node.handle === "rise-by-night™-complete-sleep-bundle"
+        );
+        if (bundleProduct) {
+          setProduct(bundleProduct);
+        }
+      } catch (error) {
+        console.error("Failed to load bundle product:", error);
+      }
+    };
+    loadProduct();
+  }, []);
+
+  const handleAddToCart = async () => {
+    if (!product) {
+      toast.error("Product not available");
+      return;
+    }
+
+    setIsCheckingOut(true);
+    try {
+      const variant = product.node.variants.edges.find(
+        (v) => v.node.title === (selectedBundle === "single" ? "Single Bundle" : "Double Bundle")
+      );
+
+      if (!variant) {
+        toast.error("Selected variant not available");
+        return;
+      }
+
+      addItem({
+        product: product,
+        variantId: variant.node.id,
+        variantTitle: variant.node.title,
+        price: variant.node.price,
+        quantity: 1,
+        selectedOptions: variant.node.selectedOptions,
+      });
+
+      toast.success("Added to cart!");
+      setCartOpen(true);
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      toast.error("Failed to add to cart");
+    } finally {
+      setIsCheckingOut(false);
+    }
   };
 
   const images = [
@@ -98,7 +150,10 @@ export const SleepBundleHero = () => {
                     )}
                   </div>
                   <div className="space-y-1">
-                    <p className="text-xl md:text-2xl font-bold text-primary">$149.99</p>
+                    <p className="text-xl md:text-2xl font-bold text-primary">
+                      {product?.node.variants.edges[0]?.node.price.currencyCode}{" "}
+                      {parseFloat(product?.node.variants.edges[0]?.node.price.amount || "149.99").toFixed(2)}
+                    </p>
                     <p className="text-xs text-muted-foreground line-through">$199.99</p>
                     <p className="text-xs text-muted-foreground">1 of each product</p>
                   </div>
@@ -122,8 +177,11 @@ export const SleepBundleHero = () => {
                     )}
                   </div>
                   <div className="space-y-1">
-                    <p className="text-xl md:text-2xl font-bold text-primary">$249.99</p>
-                    <p className="text-xs text-muted-foreground line-through">$379.94</p>
+                    <p className="text-xl md:text-2xl font-bold text-primary">
+                      {product?.node.variants.edges[1]?.node.price.currencyCode}{" "}
+                      {parseFloat(product?.node.variants.edges[1]?.node.price.amount || "249.99").toFixed(2)}
+                    </p>
+                    <p className="text-xs text-muted-foreground line-through">$399.98</p>
                     <p className="text-xs text-muted-foreground">2 of each product</p>
                   </div>
                 </button>
@@ -135,9 +193,13 @@ export const SleepBundleHero = () => {
               size="lg" 
               className="w-full text-base md:text-lg h-12 md:h-14"
               onClick={handleAddToCart}
+              disabled={isCheckingOut || !product}
             >
               <ShoppingCart className="w-5 h-5 mr-2" />
-              Add to Cart - {selectedBundle === "single" ? "$149.99" : "$249.99"}
+              Add to Cart - {selectedBundle === "single" 
+                ? `${product?.node.variants.edges[0]?.node.price.currencyCode || "$"} ${parseFloat(product?.node.variants.edges[0]?.node.price.amount || "149.99").toFixed(2)}`
+                : `${product?.node.variants.edges[1]?.node.price.currencyCode || "$"} ${parseFloat(product?.node.variants.edges[1]?.node.price.amount || "249.99").toFixed(2)}`
+              }
             </Button>
 
             {/* Trust Badges */}

@@ -27,8 +27,9 @@ interface StickyAddToCartProps {
 }
 
 export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
-  const isPillowProduct = productType === "ergonomic-pillow" || productType === "knee-pillow" || productType === "sleep-bundle";
+  const isPillowProduct = productType === "ergonomic-pillow" || productType === "knee-pillow";
   const isSleepMask = productType === "sleep-mask";
+  const isSleepBundle = productType === "sleep-bundle";
   const [selectedBundle, setSelectedBundle] = useState<"1" | "2">(isPillowProduct ? "2" : "1");
   const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState("navy");
@@ -79,10 +80,26 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
 
     setIsCheckingOut(true);
     try {
-      const variant = product.node.variants.edges[0].node;
-      const itemQuantity = isPillowProduct 
-        ? (selectedBundle === "1" ? 1 : 2) 
-        : quantity;
+      let variant;
+      let itemQuantity = 1;
+      
+      if (isSleepBundle) {
+        // For bundle, find the correct variant based on selection
+        variant = product.node.variants.edges.find(
+          v => v.node.title === (selectedBundle === "1" ? "Single Bundle" : "Double Bundle")
+        )?.node;
+      } else if (isPillowProduct) {
+        variant = product.node.variants.edges[0].node;
+        itemQuantity = selectedBundle === "1" ? 1 : 2;
+      } else {
+        variant = product.node.variants.edges[0].node;
+        itemQuantity = quantity;
+      }
+
+      if (!variant) {
+        toast.error("Selected variant not available");
+        return;
+      }
       
       const cartItem = {
         product,
@@ -91,7 +108,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
           ? `${variant.title} - ${colors.find(c => c.value === selectedColor)?.name}`
           : variant.title,
         price: variant.price,
-        quantity: itemQuantity,
+        quantity: isSleepBundle ? 1 : itemQuantity,
         selectedOptions: isSleepMask 
           ? [
               ...variant.selectedOptions || [],
@@ -101,9 +118,11 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
       };
       
       addItem(cartItem);
-      const itemName = isPillowProduct 
-        ? `${itemQuantity} ${itemQuantity === 1 ? 'pillow' : 'pillows'}`
-        : `${itemQuantity} ${product.node.title}${itemQuantity > 1 ? 's' : ''}`;
+      const itemName = isSleepBundle
+        ? variant.title
+        : isPillowProduct 
+          ? `${itemQuantity} ${itemQuantity === 1 ? 'pillow' : 'pillows'}`
+          : `${itemQuantity} ${product.node.title}${itemQuantity > 1 ? 's' : ''}`;
       toast.success("Added to cart!", {
         description: `${itemName} added to your cart.`,
         cancel: {
@@ -123,9 +142,13 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
   const productPrice = product ? parseFloat(product.node.variants.edges[0].node.price.amount) : 89.99;
   
   // Calculate the value being added to cart (not current cart total)
-  const addToCartValue = isPillowProduct 
-    ? (selectedBundle === "2" ? productPrice : productPrice) // 1+1 deal: pay for 1, get 1 free
-    : (productPrice * quantity); // Sleep mask: price * quantity
+  const addToCartValue = isSleepBundle
+    ? (selectedBundle === "2" 
+        ? parseFloat(product?.node.variants.edges[1]?.node.price.amount || "249.99")
+        : parseFloat(product?.node.variants.edges[0]?.node.price.amount || "149.99"))
+    : isPillowProduct 
+      ? (selectedBundle === "2" ? productPrice : productPrice) // 1+1 deal: pay for 1, get 1 free
+      : (productPrice * quantity); // Sleep mask: price * quantity
 
   const bundles = {
     "1": {
@@ -170,17 +193,19 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                     {product.node.title}
                   </h3>
                   <p className="text-xs text-muted-foreground">
-                    {isPillowProduct 
-                      ? `${selectedOption.quantity} ${selectedOption.quantity === 1 ? "Pillow" : "Pillows"} • ${selectedOption.discount}`
-                      : "Sleep Mask"}
+                    {isSleepBundle
+                      ? `${selectedBundle === "1" ? "Single" : "Double"} Bundle`
+                      : isPillowProduct 
+                        ? `${selectedOption.quantity} ${selectedOption.quantity === 1 ? "Pillow" : "Pillows"} • ${selectedOption.discount}`
+                        : "Sleep Mask"}
                   </p>
                 </div>
               </div>
 
               {/* Bundle Selection & Add to Cart */}
               <div className="flex items-center gap-2 w-full sm:w-auto">
-                {/* Bundle Selector - Only show for pillow products */}
-                {isPillowProduct && (
+                {/* Bundle Selector - Only show for pillow products and sleep bundle */}
+                {(isPillowProduct || isSleepBundle) && (
                   <div className="flex gap-2">
                     <button
                       onClick={() => setSelectedBundle("1")}
@@ -192,11 +217,11 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                     >
                       <span className="flex items-center gap-1 transition-all duration-300 group-hover:-translate-y-8 group-hover:opacity-0">
                         <Plus className="w-3 h-3" />
-                        1 Pillow
+                        {isSleepBundle ? "Single Bundle" : "1 Pillow"}
                       </span>
                       <span className="absolute inset-0 flex items-center justify-center gap-1 translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
                         <Plus className="w-3 h-3" />
-                        1 Pillow
+                        {isSleepBundle ? "Single Bundle" : "1 Pillow"}
                       </span>
                     </button>
                     <button
@@ -209,13 +234,25 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                     >
                       <span className="flex items-center gap-1 transition-all duration-300 group-hover:-translate-y-8 group-hover:opacity-0">
                         <Plus className="w-3 h-3" />
-                        <span>2 Pillows + FREE GIFT 2X</span>
-                        <img src={eyeMaskGift} alt="Free gift" className="w-6 h-6 object-contain" loading="lazy" decoding="async" />
+                        {isSleepBundle ? (
+                          "Double Bundle"
+                        ) : (
+                          <>
+                            <span>2 Pillows + FREE GIFT 2X</span>
+                            <img src={eyeMaskGift} alt="Free gift" className="w-6 h-6 object-contain" loading="lazy" decoding="async" />
+                          </>
+                        )}
                       </span>
                       <span className="absolute inset-0 flex items-center justify-center gap-1 translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
                         <Plus className="w-3 h-3" />
-                        <span>2 Pillows + FREE GIFT 2X</span>
-                        <img src={eyeMaskGift} alt="Free gift" className="w-6 h-6 object-contain" loading="lazy" decoding="async" />
+                        {isSleepBundle ? (
+                          "Double Bundle"
+                        ) : (
+                          <>
+                            <span>2 Pillows + FREE GIFT 2X</span>
+                            <img src={eyeMaskGift} alt="Free gift" className="w-6 h-6 object-contain" loading="lazy" decoding="async" />
+                          </>
+                        )}
                       </span>
                     </button>
                   </div>
