@@ -99,7 +99,7 @@ export const SleepBundleHero = () => {
                   </div>
                   <div className="space-y-1">
                     <p className="text-xl md:text-2xl font-bold text-primary">$149.99</p>
-                    <p className="text-xs text-muted-foreground line-through">$189.97</p>
+                    <p className="text-xs text-muted-foreground line-through">$199.99</p>
                     <p className="text-xs text-muted-foreground">1 of each product</p>
                   </div>
                 </button>
