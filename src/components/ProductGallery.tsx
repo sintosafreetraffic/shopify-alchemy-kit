@@ -61,10 +61,10 @@ export const ProductGallery = () => {
     },
     {
       id: 4,
-      name: "Rise By Night™ Silk Sleep Mask",
+      name: "Rise By Night™ Silk Deep Sleep Mask",
       tagline: "100% Pure Mulberry Silk",
       price: "$29.99",
-      originalPrice: "$59.99",
+      originalPrice: "",
       rating: 4.9,
       reviews: "3,200+",
       image: eyeMaskGift,
@@ -190,7 +190,9 @@ export const ProductGallery = () => {
 
                   <div className="flex items-center gap-2 mb-4">
                     <span className="text-2xl font-bold text-primary">{product.price}</span>
-                    <span className="text-lg text-muted-foreground line-through">{product.originalPrice}</span>
+                    {product.originalPrice && (
+                      <span className="text-lg text-muted-foreground line-through">{product.originalPrice}</span>
+                    )}
                   </div>
 
                   <ul className="space-y-2 mb-6">
