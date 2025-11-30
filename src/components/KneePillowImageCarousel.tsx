@@ -1,10 +1,10 @@
 import { useState } from "react";
-import kneePillowMain from "@/assets/knee-pillow-main-new.png";
-import kneePillowMaterials from "@/assets/knee-pillow-materials.png";
-import kneePillowErgonomic from "@/assets/knee-pillow-ergonomic-design.png";
-import kneePillowSleepingPositions from "@/assets/knee-pillow-sleeping-positions.png";
-import kneePillowDesignFeatures from "@/assets/knee-pillow-design-features.png";
-import kneePillowMemoryFoam from "@/assets/knee-pillow-memory-foam-core.png";
+import kneePillowMain from "@/assets/knee-pillow-main-new.webp";
+import kneePillowMaterials from "@/assets/knee-pillow-materials.webp";
+import kneePillowErgonomic from "@/assets/knee-pillow-ergonomic-design.webp";
+import kneePillowSleepingPositions from "@/assets/knee-pillow-sleeping-positions.webp";
+import kneePillowDesignFeatures from "@/assets/knee-pillow-design-features.webp";
+import kneePillowMemoryFoam from "@/assets/knee-pillow-memory-foam-core.webp";
 import {
   Carousel,
   CarouselContent,
