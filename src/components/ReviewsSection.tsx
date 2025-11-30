@@ -7,11 +7,11 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import erikAvatar from "@/assets/reviewer-erik.jpg";
-import sofieAvatar from "@/assets/reviewer-sofie.jpg";
+import erikAvatar from "@/assets/reviewer-erik.webp";
+import sofieAvatar from "@/assets/reviewer-sofie.webp";
 import coupleAvatar from "@/assets/reviewer-couple.jpg";
-import lunaAvatar from "@/assets/reviewer-luna.jpg";
-import hannahAvatar from "@/assets/reviewer-hannah.jpg";
+import lunaAvatar from "@/assets/reviewer-luna.webp";
+import hannahAvatar from "@/assets/reviewer-hannah.webp";
 
 const reviews = [
   {
