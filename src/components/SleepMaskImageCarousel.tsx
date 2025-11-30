@@ -1,10 +1,10 @@
 import { useState } from "react";
-import sleepMaskProductShot from "@/assets/sleep-mask-product-shot.png";
-import sleepMaskLifestyleReading from "@/assets/sleep-mask-lifestyle-reading.png";
-import sleepMaskHeroBenefits from "@/assets/sleep-mask-hero-benefits.png";
-import sleepMaskBenefitsTurquoise from "@/assets/sleep-mask-benefits-turquoise.png";
-import sleepMaskLifestyleSitting from "@/assets/sleep-mask-lifestyle-sitting.png";
-import sleepMaskStrapDetail from "@/assets/sleep-mask-strap-detail.png";
+import sleepMaskProductShot from "@/assets/sleep-mask-product-shot.webp";
+import sleepMaskLifestyleReading from "@/assets/sleep-mask-lifestyle-reading.webp";
+import sleepMaskHeroBenefits from "@/assets/sleep-mask-hero-benefits.webp";
+import sleepMaskBenefitsTurquoise from "@/assets/sleep-mask-benefits-turquoise.webp";
+import sleepMaskLifestyleSitting from "@/assets/sleep-mask-lifestyle-sitting.webp";
+import sleepMaskStrapDetail from "@/assets/sleep-mask-strap-detail.webp";
 import {
   Carousel,
   CarouselContent,
