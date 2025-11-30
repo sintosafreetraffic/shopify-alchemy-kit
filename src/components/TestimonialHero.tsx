@@ -1,4 +1,4 @@
-import testimonial from "@/assets/testimonial-new.png";
+import testimonial from "@/assets/testimonial-new.webp";
 
 export const TestimonialHero = () => {
   return (

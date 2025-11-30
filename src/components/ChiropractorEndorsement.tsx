@@ -1,4 +1,4 @@
-import chiropractorImage from "@/assets/chiropractor-endorsement-new.png";
+import chiropractorImage from "@/assets/chiropractor-endorsement-new.webp";
 import { CheckCircle2 } from "lucide-react";
 
 export const ChiropractorEndorsement = () => {

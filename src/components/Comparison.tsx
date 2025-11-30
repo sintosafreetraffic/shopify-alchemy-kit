@@ -1,5 +1,5 @@
 import comparisonImage from "@/assets/comparison.png";
-import comparisonChart from "@/assets/comparison-them.png";
+import comparisonChart from "@/assets/comparison-them.webp";
 
 export const Comparison = () => {
   return (
