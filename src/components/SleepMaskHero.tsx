@@ -193,7 +193,7 @@ export const SleepMaskHero = () => {
               ].map((usp, index) => (
                 <div key={index} className="flex items-start gap-2">
                   <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0 mt-0.5" />
-                  <span className="text-[10px] sm:text-xs md:text-sm leading-tight">{usp}</span>
+                  <span className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight">{usp}</span>
                 </div>
               ))}
             </div>
