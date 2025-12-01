@@ -348,7 +348,7 @@ export const CartDrawer = () => {
             </div>
           ) : (
             <>
-              {/* Scrollable Cart Items + Recommendations */}
+              {/* Scrollable Cart Items + Trust Badges + Checkout */}
               <div className="flex-1 overflow-y-auto pr-2 min-h-0 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
                 <div className="space-y-4">
                 {/* Cart Items */}
@@ -534,68 +534,67 @@ export const CartDrawer = () => {
                     </div>
                   )}
                 </div>
-              </div>
-              
-              {/* Fixed Bottom Section: Trust Badges + Checkout */}
-              <div className="flex-shrink-0 space-y-3 pt-3 border-t bg-background mt-2">
-                {/* Trust Badges */}
-              <div className="grid grid-cols-3 gap-2 pb-2 mb-3">
-                  <div className="flex flex-col items-center gap-1 text-center">
-                    <Moon className="w-4 h-4 text-primary" />
-                    <span className="text-xs font-medium">100-Night Trial</span>
-                  </div>
-                  <div className="flex flex-col items-center gap-1 text-center">
-                    <RotateCcw className="w-4 h-4 text-primary" />
-                    <span className="text-xs font-medium">Easy Returns</span>
-                  </div>
-                  <div className="flex flex-col items-center gap-1 text-center">
-                    <Shield className="w-4 h-4 text-primary" />
-                    <span className="text-xs font-medium">2-Year Warranty</span>
-                  </div>
-                </div>
 
-                {/* Price Summary */}
-                <div className="space-y-1.5 pt-2">
-                  {totalDiscount > 0 && (
+                {/* Trust Badges + Checkout - Now part of scrollable content */}
+                <div className="space-y-3 pt-4 border-t mt-4">
+                  {/* Trust Badges */}
+                <div className="grid grid-cols-3 gap-2 pb-2 mb-3">
+                    <div className="flex flex-col items-center gap-1 text-center">
+                      <Moon className="w-4 h-4 text-primary" />
+                      <span className="text-xs font-medium">100-Night Trial</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-1 text-center">
+                      <RotateCcw className="w-4 h-4 text-primary" />
+                      <span className="text-xs font-medium">Easy Returns</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-1 text-center">
+                      <Shield className="w-4 h-4 text-primary" />
+                      <span className="text-xs font-medium">2-Year Warranty</span>
+                    </div>
+                  </div>
+
+                  {/* Price Summary */}
+                  <div className="space-y-1.5 pt-2">
+                    {totalDiscount > 0 && (
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-green-600 dark:text-green-400">Savings</span>
+                        <span className="text-green-600 dark:text-green-400 font-semibold">-${totalDiscount.toFixed(2)}</span>
+                      </div>
+                    )}
+                    
                     <div className="flex justify-between items-center text-sm">
-                      <span className="text-green-600 dark:text-green-400">Savings</span>
-                      <span className="text-green-600 dark:text-green-400 font-semibold">-${totalDiscount.toFixed(2)}</span>
+                      <span className="text-muted-foreground">Shipping</span>
+                      <span className="text-primary font-semibold">FREE</span>
                     </div>
-                  )}
-                  
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-muted-foreground">Shipping</span>
-                    <span className="text-primary font-semibold">FREE</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center pt-2 border-t">
-                    <span className="text-base font-bold">Total</span>
-                    <div className="text-lg font-bold">
-                      ${totalPrice.toFixed(2)}
+                    
+                    <div className="flex justify-between items-center pt-2 border-t">
+                      <span className="text-base font-bold">Total</span>
+                      <div className="text-lg font-bold">
+                        ${totalPrice.toFixed(2)}
+                      </div>
                     </div>
                   </div>
-                </div>
-                
-                <Button 
-                  onClick={handleCheckout}
-                  className={`w-full transition-transform ${shouldBounce ? 'animate-subtle-bounce' : ''}`}
-                  size="default"
-                  disabled={items.length === 0 || isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Creating Checkout...
-                    </>
-                  ) : (
-                    <>
-                      <Lock className="w-4 h-4 mr-2" />
-                      PROCEED TO CHECKOUT
-                    </>
-                  )}
-                </Button>
-                
-                <div className="flex items-center justify-center gap-3 flex-wrap">
+                  
+                  <Button 
+                    onClick={handleCheckout}
+                    className={`w-full transition-transform ${shouldBounce ? 'animate-subtle-bounce' : ''}`}
+                    size="default"
+                    disabled={items.length === 0 || isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Creating Checkout...
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="w-4 h-4 mr-2" />
+                        PROCEED TO CHECKOUT
+                      </>
+                    )}
+                  </Button>
+                  
+                  <div className="flex items-center justify-center gap-3 flex-wrap pb-4">
                   {/* Visa */}
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-auto" width="48" height="30" viewBox="0 0 240 150" fill="none"><g clipPath="url(#visa__a)"><path fill="#000" d="M221.053 0H18.947C8.211 0 0 8.125 0 18.75v112.5C0 141.875 8.842 150 18.947 150h202.106c10.736 0 18.947-8.125 18.947-18.75V18.75C240 8.125 231.158 0 221.053 0Z" opacity=".07"></path><path fill="#fff" d="M221.333 6C228.3 6 234 11.646 234 18.546v112.909c0 6.9-5.7 12.545-12.667 12.545H18.667C11.7 144 6 138.355 6 131.455V18.545C6 11.646 11.7 6 18.667 6h202.666Z"></path><path fill="#142688" d="M178.737 63.789h-1.895c-2.526 6.315-4.421 9.473-6.316 18.947h12c-1.895-9.474-1.895-13.895-3.789-18.947Zm18.316 37.263h-10.737c-.632 0-.632 0-1.263-.632l-1.264-5.684-.631-1.263H168c-.632 0-1.263 0-1.263 1.263l-1.895 5.684c0 .632-.632.632-.632.632h-13.263l1.263-3.158 18.316-42.948c0-3.157 1.895-4.42 5.053-4.42h9.474c.631 0 1.263 0 1.263 1.262l8.842 41.053c.631 2.527 1.263 4.421 1.263 6.948.632.631.632.631.632 1.263Zm-84.632-1.895 2.526-11.368c.632 0 1.263.631 1.263.631 4.421 1.895 8.843 3.158 13.264 2.526 1.263 0 3.158-.631 4.421-1.263 3.158-1.263 3.158-4.42.631-6.947-1.263-1.263-3.158-1.895-5.052-3.158-2.527-1.263-5.053-2.526-6.948-4.421-7.579-6.316-5.052-15.158-.631-19.579 3.789-2.526 5.684-5.053 10.736-5.053 7.579 0 15.79 0 19.579 1.264h.632c-.632 3.789-1.263 6.947-2.526 10.736C147.158 61.262 144 60 140.842 60c-1.895 0-3.789 0-5.684.632-1.263 0-1.895.631-2.527 1.263-1.263 1.263-1.263 3.158 0 4.42l3.158 2.527c2.527 1.263 5.053 2.527 6.948 3.79 3.158 1.894 6.316 5.052 6.947 8.842 1.263 5.684-.631 10.737-5.684 14.526-3.158 2.526-4.421 3.79-8.842 3.79-8.842 0-15.79.631-21.474-1.264-.631 1.264-.631 1.263-1.263.632Zm-22.105 1.895c.631-4.421.631-4.421 1.263-6.316 3.158-13.895 6.316-28.421 8.842-42.316.632-1.263.632-1.895 1.895-1.895h11.368c-1.263 7.58-2.526 13.264-4.421 20.21-1.895 9.475-3.789 18.948-6.316 28.422 0 1.263-.631 1.263-1.894 1.263M31.579 51.788c0-.631 1.263-1.263 1.895-1.263h21.473c3.158 0 5.684 1.895 6.316 5.053l5.684 27.79c0 .631 0 .631.632 1.263 0-.632.631-.632.631-.632l13.264-32.21c-.632-.632 0-1.264.631-1.264h13.263c0 .632 0 .632-.631 1.264l-19.58 46.105c-.63 1.263-.63 1.894-1.262 2.526-.632.632-1.895 0-3.158 0h-9.474c-.631 0-1.263 0-1.263-1.263L49.895 59.999c-1.264-1.263-3.158-3.158-5.685-3.79-3.789-1.894-10.736-3.157-12-3.157l-.631-1.264Z"></path></g><defs><clipPath id="visa__a"><path fill="#fff" d="M0 0h240v150H0z"></path></clipPath></defs></svg>
                   
@@ -615,6 +614,7 @@ export const CartDrawer = () => {
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-auto" width="48" height="30" viewBox="0 0 240 150" fill="none"><g clipPath="url(#klarna__a)"><path fill="#FFB3C7" fillRule="evenodd" d="M221.053 0H18.947C8.211 0 0 8.125 0 18.75v112.5C0 141.875 8.842 150 18.947 150h202.106c10.736 0 18.947-8.125 18.947-18.75V18.75C240 8.125 231.158 0 221.053 0Z" clipRule="evenodd"></path><path fill="#FFB3C7" fillRule="evenodd" d="M221.333 6C228.3 6 234 11.646 234 18.546v112.909c0 6.9-5.7 12.545-12.667 12.545H18.667C11.7 144 6 138.355 6 131.455V18.545C6 11.646 11.7 6 18.667 6h202.666Z" clipRule="evenodd"></path><path fill="#0A0B09" d="M215.476 83.266c-3.076 0-5.571 2.527-5.571 5.634 0 3.114 2.495 5.64 5.571 5.64 3.082 0 5.577-2.526 5.577-5.64a5.61 5.61 0 0 0-5.577-5.634Zm-18.335-4.357c0-4.27-3.6-7.725-8.046-7.725-4.447 0-8.047 3.455-8.047 7.718s3.6 7.724 8.047 7.724c4.446 0 8.046-3.46 8.046-7.724v.007Zm.032-15.007h8.88v30h-8.88V91.99a15.452 15.452 0 0 1-8.805 2.747c-8.646 0-15.65-7.086-15.65-15.834 0-8.74 7.01-15.827 15.65-15.827 3.266 0 6.291 1.01 8.805 2.747v-1.92Zm-71.072 3.91v-3.91h-9.095v30h9.114V79.9c0-4.73 5.065-7.263 8.583-7.263h.101v-8.728c-3.6 0-6.922 1.56-8.703 3.903Zm-22.648 11.09c0-4.263-3.6-7.718-8.047-7.718-4.44 0-8.046 3.455-8.046 7.718s3.6 7.724 8.046 7.724c4.447 0 8.047-3.46 8.047-7.724Zm.031-15h8.88v30h-8.88V91.99a15.446 15.446 0 0 1-8.81 2.747c-8.64 0-15.65-7.086-15.65-15.834 0-8.74 7.01-15.827 15.65-15.827a15.4 15.4 0 0 1 8.804 2.747l.006-1.92Zm53.451-.808c-3.543 0-6.903 1.118-9.145 4.187v-3.379h-8.843v30h8.95V78.138c0-4.56 3.025-6.796 6.663-6.796 3.903 0 6.145 2.362 6.145 6.733v15.834h8.874v-19.08c0-6.986-5.495-11.735-12.644-11.735Zm-90.84 30.82h9.297V50.526h-9.297v43.39Zm-40.832 0h9.84V50.526h-9.84v43.39Zm34.421-43.389a34.717 34.717 0 0 1-10.06 24.632l13.603 18.758H51.07L36.283 73.527l3.815-2.892a25.012 25.012 0 0 0 9.96-20.11h9.625Z"></path></g><defs><clipPath id="klarna__a"><path fill="#fff" d="M0 0h240v150H0z"></path></clipPath></defs></svg>
                 </div>
               </div>
+            </div>
             </>
           )}
         </div>
