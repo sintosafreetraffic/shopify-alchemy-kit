@@ -5,8 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Copy, Users, DollarSign, TrendingUp, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
 
 interface AffiliateData {
   id: string;
@@ -120,200 +118,188 @@ const AffiliateDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="container mx-auto px-4 py-16 flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-        <Footer />
+      <div className="container mx-auto px-4 py-16 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   if (!affiliateData) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <main className="container mx-auto px-4 py-16 max-w-2xl">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-2xl">Join Our Affiliate Program</CardTitle>
-              <CardDescription>
-                Earn commissions on every sale you refer
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <p className="text-muted-foreground">
-                Partner with Rise By Night™ and earn generous commissions by sharing our 
-                premium sleep products with your audience. Our multi-level program rewards 
-                you for building a strong referral network.
-              </p>
-              
-              <div className="space-y-3 bg-muted/50 p-4 rounded-lg">
-                <h4 className="font-semibold">Commission Structure:</h4>
-                <ul className="space-y-2 text-sm">
-                  <li className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-primary"></span>
-                    <span><strong>Level 1:</strong> 10% commission on direct referrals</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-primary/70"></span>
-                    <span><strong>Level 2:</strong> 5% commission on second-tier referrals</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-primary/40"></span>
-                    <span><strong>Level 3:</strong> 2.5% commission on third-tier referrals</span>
-                  </li>
-                </ul>
-              </div>
+      <div className="container mx-auto px-4 py-16 max-w-2xl">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">Join Our Affiliate Program</CardTitle>
+            <CardDescription>
+              Earn commissions on every sale you refer
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <p className="text-muted-foreground">
+              Partner with Rise By Night™ and earn generous commissions by sharing our 
+              premium sleep products with your audience. Our multi-level program rewards 
+              you for building a strong referral network.
+            </p>
+            
+            <div className="space-y-3 bg-muted/50 p-4 rounded-lg">
+              <h4 className="font-semibold">Commission Structure:</h4>
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-primary"></span>
+                  <span><strong>Level 1:</strong> 10% commission on direct referrals</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-primary/70"></span>
+                  <span><strong>Level 2:</strong> 5% commission on second-tier referrals</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-primary/40"></span>
+                  <span><strong>Level 3:</strong> 2.5% commission on third-tier referrals</span>
+                </li>
+              </ul>
+            </div>
 
-              <div className="space-y-3 bg-primary/5 p-4 rounded-lg border border-primary/20">
-                <h4 className="font-semibold">Program Benefits:</h4>
-                <ul className="space-y-1 text-sm text-muted-foreground">
-                  <li>• Unique referral link to track all your sales</li>
-                  <li>• Real-time dashboard to monitor earnings</li>
-                  <li>• Monthly payouts via PayPal or bank transfer</li>
-                  <li>• No minimum payout threshold</li>
-                </ul>
-              </div>
+            <div className="space-y-3 bg-primary/5 p-4 rounded-lg border border-primary/20">
+              <h4 className="font-semibold">Program Benefits:</h4>
+              <ul className="space-y-1 text-sm text-muted-foreground">
+                <li>• Unique referral link to track all your sales</li>
+                <li>• Real-time dashboard to monitor earnings</li>
+                <li>• Monthly payouts via PayPal or bank transfer</li>
+                <li>• No minimum payout threshold</li>
+              </ul>
+            </div>
 
-              <Button 
-                onClick={becomeAffiliate} 
-                className="w-full" 
-                size="lg"
-                disabled={joining}
-              >
-                {joining ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Joining...
-                  </>
-                ) : (
-                  "Join Affiliate Program"
-                )}
-              </Button>
-            </CardContent>
-          </Card>
-        </main>
-        <Footer />
+            <Button 
+              onClick={becomeAffiliate} 
+              className="w-full" 
+              size="lg"
+              disabled={joining}
+            >
+              {joining ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Joining...
+                </>
+              ) : (
+                "Join Affiliate Program"
+              )}
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <main className="container mx-auto px-4 py-8 md:py-16">
-        <h1 className="text-3xl font-bold mb-8">Affiliate Dashboard</h1>
+    <div className="container mx-auto px-4 py-8 md:py-16">
+      <h1 className="text-3xl font-bold mb-8">Affiliate Dashboard</h1>
 
-        <div className="grid gap-6 md:grid-cols-3 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Referrals</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{affiliateData.total_referrals || 0}</div>
-              <p className="text-xs text-muted-foreground">People who signed up using your link</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                ${(affiliateData.total_commissions || 0).toFixed(2)}
-              </div>
-              <p className="text-xs text-muted-foreground">Lifetime commission earnings</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Affiliate Level</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">Level {affiliateData.level || 1}</div>
-              <p className="text-xs text-muted-foreground">Your current tier in the program</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Your Referral Link</CardTitle>
-            <CardDescription>Share this link to earn commissions on every sale</CardDescription>
+      <div className="grid gap-6 md:grid-cols-3 mb-8">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Referrals</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <input
-                type="text"
-                readOnly
-                value={`${window.location.origin}?ref=${affiliateData.referral_code}`}
-                className="flex-1 px-3 py-2 border rounded-md bg-muted text-sm"
-              />
-              <Button onClick={copyReferralLink} variant="outline" className="shrink-0">
-                <Copy className="h-4 w-4 mr-2" />
-                Copy Link
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Your referral code: <span className="font-mono font-semibold">{affiliateData.referral_code}</span>
-            </p>
+            <div className="text-2xl font-bold">{affiliateData.total_referrals || 0}</div>
+            <p className="text-xs text-muted-foreground">People who signed up using your link</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Commission History</CardTitle>
-            <CardDescription>Your recent commission earnings</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            {commissions.length === 0 ? (
-              <div className="text-center py-8">
-                <DollarSign className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
-                <p className="text-muted-foreground">No commissions yet</p>
-                <p className="text-sm text-muted-foreground">Share your referral link to start earning!</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {commissions.map((commission) => (
-                  <div
-                    key={commission.id}
-                    className="flex items-center justify-between border-b pb-4 last:border-0"
-                  >
-                    <div>
-                      <p className="font-medium">${commission.amount.toFixed(2)}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Level {commission.level} commission
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className={`text-sm capitalize px-2 py-1 rounded-full ${
-                        commission.status === 'paid' 
-                          ? 'bg-green-100 text-green-800' 
-                          : commission.status === 'pending'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-muted text-muted-foreground'
-                      }`}>
-                        {commission.status}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {new Date(commission.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <div className="text-2xl font-bold">
+              ${(affiliateData.total_commissions || 0).toFixed(2)}
+            </div>
+            <p className="text-xs text-muted-foreground">Lifetime commission earnings</p>
           </CardContent>
         </Card>
-      </main>
-      <Footer />
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Affiliate Level</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">Level {affiliateData.level || 1}</div>
+            <p className="text-xs text-muted-foreground">Your current tier in the program</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Your Referral Link</CardTitle>
+          <CardDescription>Share this link to earn commissions on every sale</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              type="text"
+              readOnly
+              value={`${window.location.origin}?ref=${affiliateData.referral_code}`}
+              className="flex-1 px-3 py-2 border rounded-md bg-muted text-sm"
+            />
+            <Button onClick={copyReferralLink} variant="outline" className="shrink-0">
+              <Copy className="h-4 w-4 mr-2" />
+              Copy Link
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Your referral code: <span className="font-mono font-semibold">{affiliateData.referral_code}</span>
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Commission History</CardTitle>
+          <CardDescription>Your recent commission earnings</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {commissions.length === 0 ? (
+            <div className="text-center py-8">
+              <DollarSign className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
+              <p className="text-muted-foreground">No commissions yet</p>
+              <p className="text-sm text-muted-foreground">Share your referral link to start earning!</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {commissions.map((commission) => (
+                <div
+                  key={commission.id}
+                  className="flex items-center justify-between border-b pb-4 last:border-0"
+                >
+                  <div>
+                    <p className="font-medium">${commission.amount.toFixed(2)}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Level {commission.level} commission
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className={`text-sm capitalize px-2 py-1 rounded-full ${
+                      commission.status === 'paid' 
+                        ? 'bg-green-100 text-green-800' 
+                        : commission.status === 'pending'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-muted text-muted-foreground'
+                    }`}>
+                      {commission.status}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {new Date(commission.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
