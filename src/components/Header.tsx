@@ -45,7 +45,7 @@ export const Header = () => {
 
   return (
     <header 
-      className={`${isAtTop ? 'relative' : 'fixed top-[36px]'} left-0 right-0 z-[75] border-b bg-background transition-transform duration-300 ease-in-out ${
+      className={`${isAtTop ? 'relative mt-[36px]' : 'fixed top-[36px]'} left-0 right-0 z-[75] border-b bg-background transition-transform duration-300 ease-in-out ${
         !isAtTop && !isVisible ? "-translate-y-[calc(100%+36px)]" : "translate-y-0"
       }`}
     >
