@@ -7,7 +7,6 @@ import { Header } from "./components/Header";
 import { Footer } from "./components/Footer";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { SocialProofNotification } from "./components/SocialProofNotification";
-import { PaymentMethodsBar } from "./components/PaymentMethodsBar";
 import { UrgencyBanner } from "./components/UrgencyBanner";
 import Home from "./pages/Home";
 import Index from "./pages/Index";
@@ -37,7 +36,6 @@ const App = () => (
         <ScrollToTop />
         <div className="flex flex-col min-h-screen bg-background">
           <UrgencyBanner />
-          <PaymentMethodsBar />
           <Header />
           <main className="flex-1 pt-2">
             <Routes>
