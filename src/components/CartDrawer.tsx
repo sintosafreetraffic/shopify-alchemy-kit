@@ -643,13 +643,19 @@ export const CartDrawer = () => {
                     </>
                   ) : (
                     <>
-                      <span className="inline-flex items-center transition-all duration-300 group-hover:-translate-y-8 group-hover:opacity-0">
-                        <Lock className="w-4 h-4 mr-2" />
-                        PROCEED TO CHECKOUT
+                      <span className="inline-flex flex-col items-center transition-all duration-300 group-hover:-translate-y-8 group-hover:opacity-0">
+                        <span className="text-xs font-normal mb-0.5">Total ${finalTotal.toFixed(2)}</span>
+                        <span className="flex items-center">
+                          <Lock className="w-4 h-4 mr-2" />
+                          PROCEED TO CHECKOUT
+                        </span>
                       </span>
-                      <span className="absolute inset-0 flex items-center justify-center translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                        <Lock className="w-4 h-4 mr-2" />
-                        PROCEED TO CHECKOUT
+                      <span className="absolute inset-0 flex flex-col items-center justify-center translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                        <span className="text-xs font-normal mb-0.5">Total ${finalTotal.toFixed(2)}</span>
+                        <span className="flex items-center">
+                          <Lock className="w-4 h-4 mr-2" />
+                          PROCEED TO CHECKOUT
+                        </span>
                       </span>
                     </>
                   )}
