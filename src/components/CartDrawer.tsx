@@ -540,9 +540,9 @@ export const CartDrawer = () => {
                   {/* Mobile Recommendations */}
                   {recommendedProducts.length > 0 && (
                     <div className="pt-2 border-t mt-2 lg:hidden">
-                      <h3 className="text-sm font-semibold mb-3">You may also like</h3>
-                      <div className="grid grid-cols-2 gap-2">
-                      {recommendedProducts.map((product) => {
+                      <h3 className="text-sm font-semibold mb-2">You may also like</h3>
+                      <div className="flex flex-col gap-2">
+                        {recommendedProducts.map((product) => {
                           const variant = product.node.variants.edges[0]?.node;
                           const image = product.node.images.edges[0]?.node;
                           const hasOnePlusOneDeal = product.node.title.toLowerCase().includes('ergonomic sleep pillow') || 
@@ -551,46 +551,44 @@ export const CartDrawer = () => {
                           return (
                             <div 
                               key={product.node.id} 
-                              className="border rounded-md p-2 flex flex-col h-full"
+                              className="border rounded-lg p-2 flex items-center gap-3 bg-background"
                             >
                               {image && (
-                                <div className="w-20 h-20 mx-auto bg-secondary/20 rounded-sm overflow-hidden mb-2 relative">
+                                <div className="w-16 h-16 flex-shrink-0 bg-secondary/20 rounded-md overflow-hidden relative">
                                   <img
-                                    src={product.node.title.toLowerCase().includes('mask') ? sleepMaskNavy : image.url}
+                                    src={product.node.title.toLowerCase().includes('mask') ? sleepMaskNavy : 
+                                         product.node.title.toLowerCase().includes('complete sleep bundle') ? completeSleepBundle : image.url}
                                     alt={product.node.title}
                                     className="w-full h-full object-cover"
                                     loading="lazy"
                                     decoding="async"
                                   />
                                   {hasOnePlusOneDeal && (
-                                    <div className="absolute top-1 right-1 bg-red-600 text-white text-[8px] font-bold px-1 py-0.5 rounded shadow-lg">
+                                    <div className="absolute top-1 left-1 bg-red-600 text-white text-[8px] font-bold px-1.5 py-0.5 rounded">
                                       1+1
                                     </div>
                                   )}
                                 </div>
                               )}
-                              <div className="flex flex-col gap-1 flex-grow">
-                                <h4 className="font-medium text-xs line-clamp-2 leading-tight">
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-medium text-xs leading-tight line-clamp-2 mb-1">
                                   {product.node.title.replace('RiseByNight', 'Rise By Night™')}
                                 </h4>
-                                {variant && (
-                                  <p className="text-sm font-semibold">
-                                    ${parseFloat(variant.price.amount).toFixed(2)}
-                                  </p>
-                                )}
+                                <div className="flex items-center justify-between gap-2">
+                                  {variant && (
+                                    <p className="text-sm font-bold text-primary">
+                                      ${parseFloat(variant.price.amount).toFixed(2)}
+                                    </p>
+                                  )}
+                                  <Button
+                                    size="sm"
+                                    className="h-7 px-3 text-xs bg-black text-white hover:bg-black/90"
+                                    onClick={() => handleAddRecommendation(product)}
+                                  >
+                                    ADD
+                                  </Button>
+                                </div>
                               </div>
-                              <Button
-                                size="sm"
-                                className="w-full h-7 text-xs mt-2 relative overflow-hidden group bg-black text-white hover:bg-black/90"
-                                onClick={() => handleAddRecommendation(product)}
-                              >
-                                <span className="inline-block transition-all duration-300 group-hover:-translate-y-8 group-hover:opacity-0">
-                                  ADD TO CART
-                                </span>
-                                <span className="absolute inset-0 flex items-center justify-center translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                                  ADD TO CART
-                                </span>
-                              </Button>
                             </div>
                           );
                         })}
