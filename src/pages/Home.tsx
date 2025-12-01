@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { ProductGallery } from "@/components/ProductGallery";
 import { CountdownTimer } from "@/components/CountdownTimer";
 import heroLogo from "@/assets/moon-logo-new.png";
-import lifestyleHero from "@/assets/lifestyle-hero.webp";
+import lifestyleHero from "@/assets/lifestyle-hero-desktop.webp";
 import lifestyleHeroMobile from "@/assets/lifestyle-hero-mobile.webp";
 
 export default function Home() {
