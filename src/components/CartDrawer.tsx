@@ -389,7 +389,7 @@ export const CartDrawer = () => {
             <>
               {/* Scrollable Cart Items + Trust Badges + Pricing */}
               <div className="flex-1 overflow-y-auto pr-2 min-h-0 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
-                <div className="space-y-2">
+                <div className="space-y-3">
                 {/* Cart Items */}
                 {items.map((item) => {
                     const hasActiveDeal = (item.product.node.title.toLowerCase().includes('ergonomic sleep pillow') || 
@@ -417,107 +417,106 @@ export const CartDrawer = () => {
                     };
                     
                     return (
-                    <div key={item.variantId} className="flex gap-3 p-3 border rounded-lg min-h-[100px]">
-                      <div className="w-20 h-20 bg-secondary/20 rounded-md overflow-hidden flex-shrink-0">
-                        {item.product.node.images?.edges?.[0]?.node && (
-                          <img
-                            src={getItemImage()}
-                            alt={item.product.node.title}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                            decoding="async"
-                          />
-                        )}
-                      </div>
-                      
-                      <div className="flex-1 min-w-0 flex flex-col justify-between">
-                        <div className="flex-1">
-                          <h4 className="font-medium text-sm leading-tight mb-1 line-clamp-2">
-                            {item.product.node.title.replace('RiseByNight', 'Rise By Night™')}
-                          </h4>
+                    <div key={item.variantId} className="border rounded-lg p-3 bg-background">
+                      {/* Top row: Image + Product Info + Delete */}
+                      <div className="flex gap-3">
+                        <div className="w-16 h-16 bg-secondary/20 rounded-md overflow-hidden flex-shrink-0">
+                          {item.product.node.images?.edges?.[0]?.node && (
+                            <img
+                              src={getItemImage()}
+                              alt={item.product.node.title}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          )}
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <h4 className="font-medium text-sm leading-tight">
+                              {item.product.node.title.replace('RiseByNight', 'Rise By Night™')}
+                            </h4>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 flex-shrink-0 -mt-1 -mr-1"
+                              onClick={() => removeItem(item.variantId)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+                            </Button>
+                          </div>
                           {item.selectedOptions.filter(option => option.value.toLowerCase() !== 'default title').length > 0 && (
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-xs text-muted-foreground mt-0.5">
                               {item.selectedOptions
                                 .filter(option => option.value.toLowerCase() !== 'default title')
                                 .map(option => option.value)
                                 .join(' • ')}
                             </p>
                           )}
+                          {hasActiveDeal && (
+                            <div className="bg-gradient-to-r from-red-600 to-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm flex items-center gap-0.5 w-fit mt-1">
+                              <Gift className="w-2.5 h-2.5" />
+                              <span>1+1 DEAL</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Bottom row: Price + Quantity */}
+                      <div className="flex items-center justify-between mt-3 pt-2 border-t border-border/50">
+                        <div className="flex items-center gap-2">
+                          {/* Show discounted price for pillows with 1+1 deal */}
+                          {(item.product.node.title.toLowerCase().includes('ergonomic sleep pillow') || 
+                           item.product.node.title.toLowerCase().includes('knee pillow')) && 
+                          item.quantity >= 2 ? (
+                            <>
+                              <p className="text-xs text-muted-foreground line-through">
+                                ${(getItemPrice(item) * item.quantity).toFixed(2)}
+                              </p>
+                              <p className="font-semibold text-sm">
+                                ${(
+                                  (getItemPrice(item) * item.quantity) - 
+                                  (Math.floor(item.quantity / 2) * getItemPrice(item))
+                                ).toFixed(2)}
+                              </p>
+                            </>
+                          ) : getItemCompareAtPrice(item) ? (
+                            /* Show compare price from Shopify for products with compare_at_price */
+                            <>
+                              <p className="text-xs text-muted-foreground line-through">
+                                ${(getItemCompareAtPrice(item)! * item.quantity).toFixed(2)}
+                              </p>
+                              <p className="font-semibold text-sm">
+                                ${(getItemPrice(item) * item.quantity).toFixed(2)}
+                              </p>
+                            </>
+                          ) : (
+                            <p className="font-semibold text-sm">
+                              ${(getItemPrice(item) * item.quantity).toFixed(2)}
+                            </p>
+                          )}
                         </div>
                         
-                        <div className="flex items-center justify-between mt-1">
-                          {/* Prices with 1+1 badge above */}
-                          <div className="flex flex-col gap-1">
-                            {hasActiveDeal && (
-                              <div className="bg-gradient-to-r from-red-600 to-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1 w-fit">
-                                <Gift className="w-3 h-3" />
-                                <span>1+1</span>
-                              </div>
-                            )}
-                            <div className="flex items-center gap-2">
-                              {/* Show discounted price for pillows with 1+1 deal */}
-                              {(item.product.node.title.toLowerCase().includes('ergonomic sleep pillow') || 
-                               item.product.node.title.toLowerCase().includes('knee pillow')) && 
-                              item.quantity >= 2 ? (
-                                <>
-                                  <p className="text-sm text-muted-foreground line-through">
-                                    ${(getItemPrice(item) * item.quantity).toFixed(2)}
-                                  </p>
-                                  <p className="font-semibold text-base">
-                                    ${(
-                                      (getItemPrice(item) * item.quantity) - 
-                                      (Math.floor(item.quantity / 2) * getItemPrice(item))
-                                    ).toFixed(2)}
-                                  </p>
-                                </>
-                              ) : getItemCompareAtPrice(item) ? (
-                                /* Show compare price from Shopify for products with compare_at_price */
-                                <>
-                                  <p className="text-sm text-muted-foreground line-through">
-                                    ${(getItemCompareAtPrice(item)! * item.quantity).toFixed(2)}
-                                  </p>
-                                  <p className="font-semibold text-base">
-                                    ${(getItemPrice(item) * item.quantity).toFixed(2)}
-                                  </p>
-                                </>
-                              ) : (
-                                <p className="font-semibold text-base">
-                                  ${(getItemPrice(item) * item.quantity).toFixed(2)}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                          
-                          {/* Quantity and trash side by side */}
-                          <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1">
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-10 w-10 md:h-6 md:w-6"
-                                onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
-                              >
-                                <Minus className="h-4 w-4 md:h-3 md:w-3" />
-                              </Button>
-                              <span className="w-8 md:w-6 text-center text-sm">{item.quantity}</span>
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-10 w-10 md:h-6 md:w-6"
-                                onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
-                              >
-                                <Plus className="h-4 w-4 md:h-3 md:w-3" />
-                              </Button>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-10 w-10 md:h-6 md:w-6"
-                              onClick={() => removeItem(item.variantId)}
-                            >
-                              <Trash2 className="h-4 w-4 md:h-3 md:w-3" />
-                            </Button>
-                          </div>
+                        {/* Quantity controls */}
+                        <div className="flex items-center border rounded-md">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-r-none"
+                            onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-l-none"
+                            onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
                         </div>
                       </div>
                     </div>
