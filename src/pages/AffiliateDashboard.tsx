@@ -150,16 +150,23 @@ const AffiliateDashboard = () => {
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-primary/70"></span>
-                  <span><strong>Level 2:</strong> 5% commission on second-tier referrals</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-primary/40"></span>
-                  <span><strong>Level 3:</strong> 2.5% commission on third-tier referrals</span>
+                  <span><strong>Level 2:</strong> 5% commission on sub-affiliate sales</span>
                 </li>
               </ul>
             </div>
 
             <div className="space-y-3 bg-primary/5 p-4 rounded-lg border border-primary/20">
+              <h4 className="font-semibold">Direct Sales Tiers:</h4>
+              <ul className="space-y-1 text-sm text-muted-foreground">
+                <li>• <strong>Bronze:</strong> 15% (default)</li>
+                <li>• <strong>Silver:</strong> 20% (10+ sales in last 30 days)</li>
+                <li>• <strong>Gold:</strong> 25% (25+ sales in last 30 days)</li>
+                <li>• <strong>Platinum:</strong> 30% (50+ sales in last 30 days)</li>
+                <li>• <strong>Diamond:</strong> 35% (invite only)</li>
+              </ul>
+            </div>
+
+            <div className="space-y-3 bg-muted/30 p-4 rounded-lg">
               <h4 className="font-semibold">Program Benefits:</h4>
               <ul className="space-y-1 text-sm text-muted-foreground">
                 <li>• Unique referral link to track all your sales</li>
@@ -225,7 +232,6 @@ const AffiliateDashboard = () => {
               <ul className="space-y-1">
                 <li>• Level 1: 10% on direct sales</li>
                 <li>• Level 2: 5% on sub-affiliate sales</li>
-                <li>• Level 3: 2.5% on third-tier sales</li>
               </ul>
             </div>
           </CardContent>
@@ -240,8 +246,14 @@ const AffiliateDashboard = () => {
             <div className="text-2xl font-bold">Level {affiliateData.level || 1}</div>
             <p className="text-xs text-muted-foreground mb-3">Your current tier in the program</p>
             <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
-              <p className="font-medium text-foreground mb-1">Level benefits:</p>
-              <p>Higher levels unlock bonus commissions and exclusive perks. Invite other affiliates to join under you to increase your level and earn from their sales too!</p>
+              <p className="font-medium text-foreground mb-1">Direct Sales Tiers:</p>
+              <ul className="space-y-1">
+                <li>• <strong>Bronze:</strong> 15% (default)</li>
+                <li>• <strong>Silver:</strong> 20% (10+ sales/30 days)</li>
+                <li>• <strong>Gold:</strong> 25% (25+ sales/30 days)</li>
+                <li>• <strong>Platinum:</strong> 30% (50+ sales/30 days)</li>
+                <li>• <strong>Diamond:</strong> 35% (invite only)</li>
+              </ul>
             </div>
           </CardContent>
         </Card>
