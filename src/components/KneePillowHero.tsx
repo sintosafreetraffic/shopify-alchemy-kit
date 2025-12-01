@@ -77,7 +77,7 @@ export const KneePillowHero = () => {
       quantity: 1,
       price: productPrice,
       originalPrice: productPrice * 2,
-      discount: "BLACK FRIDAY",
+      discount: "CYBER MONDAY",
       savings: 0,
       freeGift: "+ FREE Gift",
       note: "Perfect for trying it out"
@@ -86,7 +86,7 @@ export const KneePillowHero = () => {
       quantity: 2,
       price: productPrice,
       originalPrice: productPrice * 2,
-      discount: "BLACK FRIDAY 1+1",
+      discount: "CYBER MONDAY 1+1",
       savings: productPrice,
       freeGift: "+ FREE GIFT 2X",
       note: "Best Value - Buy 1 Get 1 FREE!"

@@ -77,7 +77,7 @@ export const Hero = () => {
       quantity: 1,
       price: productPrice,
       originalPrice: productPrice * 2,
-      discount: "BLACK FRIDAY",
+      discount: "CYBER MONDAY",
       savings: 0,
       freeGift: "+ FREE Gift",
       freeGiftValue: "$29.99"

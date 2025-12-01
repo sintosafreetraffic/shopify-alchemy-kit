@@ -154,7 +154,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
     "1": {
       quantity: 1,
       price: productPrice,
-      discount: "BLACK FRIDAY"
+      discount: "CYBER MONDAY"
     },
     "2": {
       quantity: 2,
