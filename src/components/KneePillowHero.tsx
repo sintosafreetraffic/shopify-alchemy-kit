@@ -58,7 +58,9 @@ export const KneePillowHero = () => {
         description: `${quantity} ${quantity === 1 ? 'pillow' : 'pillows'} added to your cart.`,
         cancel: {
           label: "✕",
-          onClick: () => {}
+          onClick: (e) => {
+            e?.stopPropagation();
+          }
         }
       });
       useCartStore.getState().setCartOpen(true);

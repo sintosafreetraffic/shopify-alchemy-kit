@@ -86,7 +86,9 @@ export const SleepMaskHero = () => {
         description: `${selectedColor} deep sleep mask${quantity > 1 ? 's' : ''} added to your cart.`,
         cancel: {
           label: "✕",
-          onClick: () => {}
+          onClick: (e) => {
+            e?.stopPropagation();
+          }
         }
       });
       useCartStore.getState().setCartOpen(true);

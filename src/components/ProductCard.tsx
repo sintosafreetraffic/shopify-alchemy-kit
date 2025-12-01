@@ -33,7 +33,9 @@ export const ProductCard = ({ product }: ProductCardProps) => {
       description: `${product.node.title} has been added to your cart.`,
       cancel: {
         label: "✕",
-        onClick: () => {}
+        onClick: (e) => {
+          e?.stopPropagation();
+        }
       }
     });
   };
