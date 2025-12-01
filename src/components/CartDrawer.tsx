@@ -133,6 +133,12 @@ export const CartDrawer = () => {
   const freeGiftValue = freeGifts * 29.99;
   
   const totalPrice = subtotal - totalDiscount;
+  
+  // Shipping calculation
+  const SHIPPING_COST = 14.99;
+  const FREE_SHIPPING_THRESHOLD = 50;
+  const shippingCost = totalPrice >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
+  const finalTotal = totalPrice + shippingCost;
 
   // Fetch current prices and recommended products when cart opens
   useEffect(() => {
@@ -321,7 +327,7 @@ export const CartDrawer = () => {
           {items.length > 0 && (
             <div className="mb-4 px-1">
               <div className="space-y-2">
-                {totalPrice >= 50 ? (
+                {totalPrice >= FREE_SHIPPING_THRESHOLD ? (
                   <>
                     <div className="flex items-center gap-2 text-primary font-semibold text-sm justify-center">
                       <Truck className="w-4 h-4" />
@@ -338,14 +344,14 @@ export const CartDrawer = () => {
                   <>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">
-                        Add ${(50 - totalPrice).toFixed(2)} more for free shipping
+                        Add ${(FREE_SHIPPING_THRESHOLD - totalPrice).toFixed(2)} more for free shipping
                       </span>
                       <Truck className="w-4 h-4 text-muted-foreground" />
                     </div>
                     <div className="w-full bg-secondary rounded-full h-2">
                       <div 
                         className="bg-primary h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${Math.min((totalPrice / 50) * 100, 100)}%` }}
+                        style={{ width: `${Math.min((totalPrice / FREE_SHIPPING_THRESHOLD) * 100, 100)}%` }}
                       />
                     </div>
                   </>
@@ -595,13 +601,17 @@ export const CartDrawer = () => {
                     
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-muted-foreground">Shipping</span>
-                      <span className="text-primary font-semibold">FREE</span>
+                      {shippingCost === 0 ? (
+                        <span className="text-primary font-semibold">FREE</span>
+                      ) : (
+                        <span className="font-semibold">${shippingCost.toFixed(2)}</span>
+                      )}
                     </div>
                     
                     <div className="flex justify-between items-center pt-2 border-t">
                       <span className="text-base font-bold">Total</span>
                       <div className="text-lg font-bold">
-                        ${totalPrice.toFixed(2)}
+                        ${finalTotal.toFixed(2)}
                       </div>
                     </div>
                   </div>
