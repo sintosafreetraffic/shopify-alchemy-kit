@@ -197,7 +197,7 @@ export const KneePillowHero = () => {
 
             {/* Limited Time Offer */}
             <div className="border-t border-b py-3 my-1.5 space-y-2">
-              <p className="text-center font-bold text-sm md:text-base tracking-wide">🎉 LIMITED {saleName} OFFER 🎉</p>
+              <p className="text-center font-bold text-sm md:text-base tracking-wide">🎉 LIMITED CYBER MONDAY OFFER 🎉</p>
               
               <div className="grid grid-cols-2 gap-3 mb-2">
                 <button

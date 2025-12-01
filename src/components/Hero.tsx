@@ -198,7 +198,7 @@ export const Hero = () => {
             </div>
 
             <div className="border-t border-b py-3 my-1.5 space-y-2">
-              <p className="text-center font-bold text-sm md:text-base tracking-wide">🎉 LIMITED {CountdownTimer().saleName} OFFER 🎉</p>
+              <p className="text-center font-bold text-sm md:text-base tracking-wide">🎉 LIMITED CYBER MONDAY OFFER 🎉</p>
               <CountdownTimerDisplay />
               
               <div className="grid grid-cols-2 gap-3 mb-2">
