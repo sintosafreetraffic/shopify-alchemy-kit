@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { useCartStore } from "@/stores/cartStore";
 
 const messages = [
-  "Free delivery within the U.S.",
-  "120 Day Risk-Free Trial"
+  "Free shipping within the U.S.",
+  "100 Day Risk-Free Trial"
 ];
 
 export const UrgencyBanner = () => {
