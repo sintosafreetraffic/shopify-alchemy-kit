@@ -14,7 +14,7 @@ import { ShoppingCart, Minus, Plus, Trash2, Lock, Loader2, Moon, RotateCcw, Shie
 import { useCartStore } from "@/stores/cartStore";
 import eyeMaskGift from "@/assets/eye-mask-gift.webp";
 import kneePillowCart from "@/assets/knee-pillow-main-new.webp";
-import completeSleepBundle from "@/assets/complete-sleep-bundle-new.webp";
+import completeSleepBundle from "@/assets/complete-sleep-bundle-updated.webp";
 import sleepMaskNavy from "@/assets/sleep-mask-navy.webp";
 import sleepMaskTurquoise from "@/assets/sleep-mask-turquoise.webp";
 import sleepMaskPink from "@/assets/sleep-mask-pink.webp";
