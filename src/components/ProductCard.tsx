@@ -15,8 +15,8 @@ export const ProductCard = ({ product }: ProductCardProps) => {
   const variant = product.node.variants.edges[0].node;
   const image = product.node.images.edges[0]?.node;
   const price = parseFloat(variant.price.amount);
-  const originalPrice = price * 1.5;
-  const savings = originalPrice - price;
+  const compareAtPrice = variant.compareAtPrice ? parseFloat(variant.compareAtPrice.amount) : null;
+  const savings = compareAtPrice ? compareAtPrice - price : null;
 
   const handleAddToCart = () => {
     const cartItem = {
@@ -69,12 +69,16 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             <span className="text-2xl font-bold">
               ${price.toFixed(2)}
             </span>
-            <span className="text-sm text-muted-foreground line-through">
-              ${originalPrice.toFixed(2)}
-            </span>
-            <Badge variant="destructive" className="ml-auto">
-              SAVE ${savings.toFixed(2)}
-            </Badge>
+            {compareAtPrice && (
+              <>
+                <span className="text-sm text-muted-foreground line-through">
+                  ${compareAtPrice.toFixed(2)}
+                </span>
+                <Badge variant="destructive" className="ml-auto">
+                  SAVE ${savings!.toFixed(2)}
+                </Badge>
+              </>
+            )}
           </div>
           
           {/* Trust Indicators */}

@@ -74,11 +74,20 @@ export const KneePillowHero = () => {
 
   const productPrice = product ? parseFloat(product.node.variants.edges[0].node.price.amount) : 69.99;
   
+  // Get variants by quantity
+  const variant1Pillow = product?.node.variants.edges.find(v => 
+    v.node.selectedOptions.find(opt => opt.value === "1 Pillow")
+  )?.node;
+  
+  const variant2Pillows = product?.node.variants.edges.find(v => 
+    v.node.selectedOptions.find(opt => opt.value === "2 Pillows")
+  )?.node;
+  
   const bundles = {
     "1": {
       quantity: 1,
-      price: productPrice,
-      originalPrice: productPrice * 2,
+      price: variant1Pillow ? parseFloat(variant1Pillow.price.amount) : 69.99,
+      originalPrice: variant1Pillow?.compareAtPrice ? parseFloat(variant1Pillow.compareAtPrice.amount) : null,
       discount: "CYBER MONDAY",
       savings: 0,
       freeGift: "+ FREE Gift",
@@ -86,10 +95,10 @@ export const KneePillowHero = () => {
     },
     "2": {
       quantity: 2,
-      price: productPrice,
-      originalPrice: productPrice * 2,
+      price: variant2Pillows ? parseFloat(variant2Pillows.price.amount) : 69.99,
+      originalPrice: variant2Pillows?.compareAtPrice ? parseFloat(variant2Pillows.compareAtPrice.amount) : null,
       discount: "CYBER MONDAY 1+1",
-      savings: productPrice,
+      savings: variant2Pillows?.compareAtPrice ? parseFloat(variant2Pillows.compareAtPrice.amount) - parseFloat(variant2Pillows.price.amount) : 0,
       freeGift: "+ FREE GIFT 2X",
       note: "Best Value - Buy 1 Get 1 FREE!"
     }
@@ -225,7 +234,9 @@ export const KneePillowHero = () => {
                   <p className="font-bold text-base">1 Knee Pillow</p>
                   <p className="text-xs text-muted-foreground mb-1">{bundles["1"].note}</p>
                   <p className="text-xl font-bold">${bundles["1"].price.toFixed(2)}</p>
-                  <p className="text-sm text-muted-foreground line-through">${bundles["1"].originalPrice.toFixed(2)}</p>
+                  {bundles["1"].originalPrice && (
+                    <p className="text-sm text-muted-foreground line-through">${bundles["1"].originalPrice.toFixed(2)}</p>
+                  )}
                 </button>
 
                 <button
@@ -251,7 +262,9 @@ export const KneePillowHero = () => {
                   <p className="font-bold text-base">2 Knee Pillows</p>
                   <p className="text-xs text-muted-foreground mb-1">{bundles["2"].note}</p>
                   <p className="text-xl font-bold">${bundles["2"].price.toFixed(2)}</p>
-                  <p className="text-sm text-muted-foreground line-through">${bundles["2"].originalPrice.toFixed(2)}</p>
+                  {bundles["2"].originalPrice && (
+                    <p className="text-sm text-muted-foreground line-through">${bundles["2"].originalPrice.toFixed(2)}</p>
+                  )}
                   <div className="flex items-center justify-center gap-1 mt-1">
                     <p className="text-sm font-medium">+ FREE GIFT 2X</p>
                     <img src={eyeMaskGift} alt="Free eye mask gift" className="w-12 h-12 object-contain" loading="lazy" decoding="async" />
