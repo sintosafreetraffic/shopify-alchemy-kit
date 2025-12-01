@@ -8,7 +8,7 @@ import {
 export const SleepMaskFAQ = () => {
   const faqs = [
     {
-      question: "Will the sleep mask stay in place all night?",
+      question: "Will the deep sleep mask stay in place all night?",
       answer: "Yes! The adjustable elastic strap is designed to stay secure without being too tight. It won't slip off during the night, even if you move around while sleeping."
     },
     {
@@ -16,7 +16,7 @@ export const SleepMaskFAQ = () => {
       answer: "Absolutely! The contoured design and soft silk material make it perfect for side sleepers. The mask stays in place and doesn't create uncomfortable pressure when sleeping on your side."
     },
     {
-      question: "How do I clean the sleep mask?",
+      question: "How do I clean the deep sleep mask?",
       answer: "Hand wash in cold water with mild detergent and air dry. The silk material is durable and easy to maintain. We recommend washing every 1-2 weeks for optimal hygiene."
     },
     {
@@ -47,7 +47,7 @@ export const SleepMaskFAQ = () => {
         <div className="text-center mb-6 md:mb-12">
           <h2 className="text-2xl md:text-4xl font-bold mb-3 md:mb-4">Frequently Asked Questions</h2>
           <p className="text-base md:text-lg text-muted-foreground">
-            Everything you need to know about the RiseByNight™ Sleep Mask
+            Everything you need to know about the RiseByNight™ Deep Sleep Mask
           </p>
         </div>
 

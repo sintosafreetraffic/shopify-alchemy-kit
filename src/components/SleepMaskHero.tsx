@@ -83,7 +83,7 @@ export const SleepMaskHero = () => {
       
       addItem(cartItem);
       toast.success("Added to cart!", {
-        description: `${selectedColor} sleep mask${quantity > 1 ? 's' : ''} added to your cart.`,
+        description: `${selectedColor} deep sleep mask${quantity > 1 ? 's' : ''} added to your cart.`,
         cancel: {
           label: "✕",
           onClick: () => {}

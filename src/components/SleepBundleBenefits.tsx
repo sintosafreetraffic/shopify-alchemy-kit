@@ -26,7 +26,7 @@ export const SleepBundleBenefits = () => {
     },
     {
       image: eyeMaskGift,
-      name: "Silk Sleep Mask",
+      name: "Silk Deep Sleep Mask",
       benefits: [
         "Blocks 100% of light for deeper sleep",
         "Pure mulberry silk gentle on skin",
