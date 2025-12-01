@@ -251,7 +251,7 @@ export const CartDrawer = () => {
                     )}
                     <Button
                       size="sm"
-                      className="relative overflow-hidden group"
+                      className="relative overflow-hidden group hover:bg-black transition-all"
                       onClick={() => handleAddRecommendation(product)}
                     >
                       <span className="inline-block transition-all duration-300 group-hover:-translate-y-8 group-hover:opacity-0">
@@ -581,7 +581,7 @@ export const CartDrawer = () => {
               <div className="flex-shrink-0 space-y-3 pt-3 border-t bg-background">
                 <Button 
                   onClick={handleCheckout}
-                  className={`w-full transition-transform ${shouldBounce ? 'animate-subtle-bounce' : ''}`}
+                  className={`w-full relative overflow-hidden group transition-all hover:bg-black ${shouldBounce ? 'animate-subtle-bounce' : ''}`}
                   size="default"
                   disabled={items.length === 0 || isLoading}
                 >
@@ -592,8 +592,14 @@ export const CartDrawer = () => {
                     </>
                   ) : (
                     <>
-                      <Lock className="w-4 h-4 mr-2" />
-                      PROCEED TO CHECKOUT
+                      <span className="inline-flex items-center transition-all duration-300 group-hover:-translate-y-8 group-hover:opacity-0">
+                        <Lock className="w-4 h-4 mr-2" />
+                        PROCEED TO CHECKOUT
+                      </span>
+                      <span className="absolute inset-0 flex items-center justify-center translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                        <Lock className="w-4 h-4 mr-2" />
+                        PROCEED TO CHECKOUT
+                      </span>
                     </>
                   )}
                 </Button>
