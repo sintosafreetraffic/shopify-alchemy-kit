@@ -521,7 +521,7 @@ export const CartDrawer = () => {
               {/* Fixed Bottom Section: Trust Badges + Checkout */}
               <div className="flex-shrink-0 space-y-3 pt-3 border-t bg-background mt-2">
                 {/* Trust Badges */}
-              <div className="grid grid-cols-3 gap-2 pb-2">
+              <div className="grid grid-cols-3 gap-2 pb-2 mb-3">
                   <div className="flex flex-col items-center gap-1 text-center">
                     <Moon className="w-4 h-4 text-primary" />
                     <span className="text-xs font-medium">100-Night Trial</span>
@@ -537,12 +537,7 @@ export const CartDrawer = () => {
                 </div>
 
                 {/* Price Summary */}
-                <div className="space-y-1.5">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-muted-foreground">Subtotal</span>
-                    <span className="text-muted-foreground">${subtotal.toFixed(2)}</span>
-                  </div>
-                  
+                <div className="space-y-1.5 pt-2">
                   {totalDiscount > 0 && (
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-green-600 dark:text-green-400">Savings</span>
