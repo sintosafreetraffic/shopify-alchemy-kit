@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import sleepMaskProductShot from "@/assets/sleep-mask-product-shot.webp";
 import sleepMaskLifestyleReading from "@/assets/sleep-mask-lifestyle-reading.webp";
 import sleepMaskHeroBenefits from "@/assets/sleep-mask-hero-benefits.webp";
@@ -11,11 +11,14 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
+  type CarouselApi,
 } from "@/components/ui/carousel";
 import { ImageModal } from "./ImageModal";
 
 export const SleepMaskImageCarousel = () => {
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
+  const [api, setApi] = useState<CarouselApi>();
+  const [current, setCurrent] = useState(0);
   
   const images = [
     { url: sleepMaskProductShot, alt: "Rise By Night Silk Deep Sleep Mask product view", type: "image" },
@@ -26,11 +29,22 @@ export const SleepMaskImageCarousel = () => {
     { url: sleepMaskStrapDetail, alt: "Rise By Night Silk Deep Sleep Mask adjustable strap detail", type: "image" },
   ];
 
+  // Track carousel position
+  useEffect(() => {
+    if (!api) return;
+
+    setCurrent(api.selectedScrollSnap());
+
+    api.on("select", () => {
+      setCurrent(api.selectedScrollSnap());
+    });
+  }, [api]);
+
   return (
     <>
       {/* Mobile Carousel */}
       <div className="md:hidden">
-        <Carousel className="w-full">
+        <Carousel className="w-full" setApi={setApi}>
           <CarouselContent>
             {images.map((item, index) => (
               <CarouselItem key={index}>
@@ -55,6 +69,20 @@ export const SleepMaskImageCarousel = () => {
           <CarouselPrevious className="left-2" />
           <CarouselNext className="right-2" />
         </Carousel>
+        
+        {/* Carousel Indicators */}
+        <div className="flex justify-center gap-2 mt-4">
+          {images.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => api?.scrollTo(index)}
+              className={`h-2 rounded-full transition-all ${
+                current === index ? 'w-8 bg-primary' : 'w-2 bg-gray-300'
+              }`}
+              aria-label={`Go to slide ${index + 1}`}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Desktop Static Gallery */}

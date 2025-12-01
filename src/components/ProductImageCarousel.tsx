@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import pillowHeroNew from "@/assets/pillow-hero-new.webp";
 import pillowBenefitsNew from "@/assets/pillow-benefits-new.webp";
 import pillowBenefitsUpdated from "@/assets/pillow-benefits-updated.webp";
@@ -10,11 +10,14 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
+  type CarouselApi,
 } from "@/components/ui/carousel";
 import { ImageModal } from "./ImageModal";
 
 export const ProductImageCarousel = () => {
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
+  const [api, setApi] = useState<CarouselApi>();
+  const [current, setCurrent] = useState(0);
   // Multiple views of the Rise By Night pillow (desktop order)
   const images = [
     { url: pillowHeroNew, alt: "Rise By Night ergonomic pillow main view", type: "image" },
@@ -35,11 +38,22 @@ export const ProductImageCarousel = () => {
     images[5], // pillowLifestyleSleep
   ];
 
+  // Track carousel position
+  useEffect(() => {
+    if (!api) return;
+
+    setCurrent(api.selectedScrollSnap());
+
+    api.on("select", () => {
+      setCurrent(api.selectedScrollSnap());
+    });
+  }, [api]);
+
   return (
     <>
       {/* Mobile Carousel */}
       <div className="md:hidden">
-        <Carousel className="w-full">
+        <Carousel className="w-full" setApi={setApi}>
           <CarouselContent>
             {mobileImages.map((item, index) => (
               <CarouselItem key={index}>
@@ -77,6 +91,20 @@ export const ProductImageCarousel = () => {
           <CarouselPrevious className="left-2" />
           <CarouselNext className="right-2" />
         </Carousel>
+        
+        {/* Carousel Indicators */}
+        <div className="flex justify-center gap-2 mt-4">
+          {mobileImages.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => api?.scrollTo(index)}
+              className={`h-2 rounded-full transition-all ${
+                current === index ? 'w-8 bg-primary' : 'w-2 bg-gray-300'
+              }`}
+              aria-label={`Go to slide ${index + 1}`}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Desktop Static Gallery */}
