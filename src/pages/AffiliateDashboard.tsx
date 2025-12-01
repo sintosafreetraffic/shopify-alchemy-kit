@@ -1,66 +1,318 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, Users, DollarSign, TrendingUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Copy, Users, DollarSign, TrendingUp, Loader2 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 
+interface AffiliateData {
+  id: string;
+  referral_code: string;
+  total_referrals: number;
+  total_commissions: number;
+  level: number;
+  status: string;
+}
+
+interface Commission {
+  id: string;
+  amount: number;
+  level: number;
+  status: string;
+  created_at: string;
+}
+
 const AffiliateDashboard = () => {
+  const [user, setUser] = useState<any>(null);
+  const [affiliateData, setAffiliateData] = useState<AffiliateData | null>(null);
+  const [commissions, setCommissions] = useState<Commission[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [joining, setJoining] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      navigate("/auth");
+      return;
+    }
+
+    setUser(session.user);
+    await fetchAffiliateData();
+  };
+
+  const fetchAffiliateData = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const response = await supabase.functions.invoke('affiliate-api', {
+        body: { action: 'get-affiliate', data: {} }
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      const { affiliate, commissions: commissionsData } = response.data;
+      setAffiliateData(affiliate);
+      setCommissions(commissionsData || []);
+    } catch (error) {
+      console.error("Error fetching affiliate data:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load affiliate data",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const becomeAffiliate = async () => {
+    setJoining(true);
+    try {
+      const response = await supabase.functions.invoke('affiliate-api', {
+        body: { action: 'become-affiliate', data: {} }
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      toast({
+        title: "Success!",
+        description: "You are now an affiliate. Welcome to the program!",
+      });
+
+      setAffiliateData(response.data.affiliate);
+    } catch (error) {
+      console.error("Error becoming affiliate:", error);
+      toast({
+        title: "Error",
+        description: "Failed to join affiliate program. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setJoining(false);
+    }
+  };
+
+  const copyReferralLink = () => {
+    if (!affiliateData) return;
+    
+    const referralLink = `${window.location.origin}?ref=${affiliateData.referral_code}`;
+    navigator.clipboard.writeText(referralLink);
+    
+    toast({
+      title: "Copied!",
+      description: "Referral link copied to clipboard",
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 py-16 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!affiliateData) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="container mx-auto px-4 py-16 max-w-2xl">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-2xl">Join Our Affiliate Program</CardTitle>
+              <CardDescription>
+                Earn commissions on every sale you refer
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <p className="text-muted-foreground">
+                Partner with Rise By Night™ and earn generous commissions by sharing our 
+                premium sleep products with your audience. Our multi-level program rewards 
+                you for building a strong referral network.
+              </p>
+              
+              <div className="space-y-3 bg-muted/50 p-4 rounded-lg">
+                <h4 className="font-semibold">Commission Structure:</h4>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-primary"></span>
+                    <span><strong>Level 1:</strong> 10% commission on direct referrals</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-primary/70"></span>
+                    <span><strong>Level 2:</strong> 5% commission on second-tier referrals</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-primary/40"></span>
+                    <span><strong>Level 3:</strong> 2.5% commission on third-tier referrals</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="space-y-3 bg-primary/5 p-4 rounded-lg border border-primary/20">
+                <h4 className="font-semibold">Program Benefits:</h4>
+                <ul className="space-y-1 text-sm text-muted-foreground">
+                  <li>• Unique referral link to track all your sales</li>
+                  <li>• Real-time dashboard to monitor earnings</li>
+                  <li>• Monthly payouts via PayPal or bank transfer</li>
+                  <li>• No minimum payout threshold</li>
+                </ul>
+              </div>
+
+              <Button 
+                onClick={becomeAffiliate} 
+                className="w-full" 
+                size="lg"
+                disabled={joining}
+              >
+                {joining ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Joining...
+                  </>
+                ) : (
+                  "Join Affiliate Program"
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
-      <main className="container mx-auto px-4 py-16 max-w-4xl">
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-6">
-            <Clock className="h-10 w-10 text-primary" />
-          </div>
-          <h1 className="text-4xl font-bold mb-4">Affiliate Program</h1>
-          <p className="text-xl text-muted-foreground">Coming Soon</p>
+      <main className="container mx-auto px-4 py-8 md:py-16">
+        <h1 className="text-3xl font-bold mb-8">Affiliate Dashboard</h1>
+
+        <div className="grid gap-6 md:grid-cols-3 mb-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Referrals</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{affiliateData.total_referrals || 0}</div>
+              <p className="text-xs text-muted-foreground">People who signed up using your link</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                ${(affiliateData.total_commissions || 0).toFixed(2)}
+              </div>
+              <p className="text-xs text-muted-foreground">Lifetime commission earnings</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Affiliate Level</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">Level {affiliateData.level || 1}</div>
+              <p className="text-xs text-muted-foreground">Your current tier in the program</p>
+            </CardContent>
+          </Card>
         </div>
 
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Join Our Affiliate Program</CardTitle>
-            <CardDescription>
-              We're building something exciting for our community
-            </CardDescription>
+            <CardTitle>Your Referral Link</CardTitle>
+            <CardDescription>Share this link to earn commissions on every sale</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-muted-foreground">
-              Our affiliate program is currently under development. Soon you'll be able to earn 
-              commissions by sharing Rise By Night™ products with your audience.
+          <CardContent>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                readOnly
+                value={`${window.location.origin}?ref=${affiliateData.referral_code}`}
+                className="flex-1 px-3 py-2 border rounded-md bg-muted text-sm"
+              />
+              <Button onClick={copyReferralLink} variant="outline" className="shrink-0">
+                <Copy className="h-4 w-4 mr-2" />
+                Copy Link
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Your referral code: <span className="font-mono font-semibold">{affiliateData.referral_code}</span>
             </p>
-            
-            <div className="grid gap-4 md:grid-cols-3 mt-6">
-              <div className="flex flex-col items-center p-4 rounded-lg bg-muted/50">
-                <Users className="h-8 w-8 text-primary mb-2" />
-                <span className="font-semibold">Build Your Network</span>
-                <span className="text-sm text-muted-foreground text-center">Invite others to join</span>
-              </div>
-              
-              <div className="flex flex-col items-center p-4 rounded-lg bg-muted/50">
-                <DollarSign className="h-8 w-8 text-primary mb-2" />
-                <span className="font-semibold">Earn Commissions</span>
-                <span className="text-sm text-muted-foreground text-center">Up to 15% per sale</span>
-              </div>
-              
-              <div className="flex flex-col items-center p-4 rounded-lg bg-muted/50">
-                <TrendingUp className="h-8 w-8 text-primary mb-2" />
-                <span className="font-semibold">Multi-Level Rewards</span>
-                <span className="text-sm text-muted-foreground text-center">Earn from your network</span>
-              </div>
-            </div>
+          </CardContent>
+        </Card>
 
-            <div className="mt-8 p-4 rounded-lg bg-primary/5 border border-primary/20">
-              <p className="text-center text-sm">
-                <span className="font-semibold">Want to be notified when we launch?</span>
-                <br />
-                Contact us at <a href="mailto:support@risebynight.com" className="text-primary hover:underline">support@risebynight.com</a>
-              </p>
-            </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Commission History</CardTitle>
+            <CardDescription>Your recent commission earnings</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {commissions.length === 0 ? (
+              <div className="text-center py-8">
+                <DollarSign className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
+                <p className="text-muted-foreground">No commissions yet</p>
+                <p className="text-sm text-muted-foreground">Share your referral link to start earning!</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {commissions.map((commission) => (
+                  <div
+                    key={commission.id}
+                    className="flex items-center justify-between border-b pb-4 last:border-0"
+                  >
+                    <div>
+                      <p className="font-medium">${commission.amount.toFixed(2)}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Level {commission.level} commission
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className={`text-sm capitalize px-2 py-1 rounded-full ${
+                        commission.status === 'paid' 
+                          ? 'bg-green-100 text-green-800' 
+                          : commission.status === 'pending'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-muted text-muted-foreground'
+                      }`}>
+                        {commission.status}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {new Date(commission.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </main>
-
       <Footer />
     </div>
   );
