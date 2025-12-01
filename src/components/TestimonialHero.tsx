@@ -1,4 +1,4 @@
-import testimonial from "@/assets/testimonial-new.webp";
+import testimonial from "@/assets/testimonial-new-updated.webp";
 
 export const TestimonialHero = () => {
   return (
@@ -7,7 +7,7 @@ export const TestimonialHero = () => {
         <div className="rounded-xl overflow-hidden shadow-2xl">
           <img 
             src={testimonial} 
-            alt="Customer testimonial - I've never slept this comfortably in my life - 29,931 5 star reviews" 
+            alt="Customer testimonial - I've never slept this comfortably in my life - 29,931 5 Star Reviews" 
             className="w-full"
             loading="lazy"
             decoding="async"
