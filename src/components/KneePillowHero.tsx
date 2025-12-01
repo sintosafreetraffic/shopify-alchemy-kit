@@ -110,7 +110,7 @@ export const KneePillowHero = () => {
                     <Star key={star} className="w-5 h-5 fill-yellow-500 text-yellow-500" />
                   ))}
                 </div>
-                <span className="text-sm font-semibold">8,500+ verified reviews</span>
+                <span className="text-sm font-semibold">5,100+ verified reviews</span>
               </div>
               
               <div className="flex gap-1 flex-nowrap overflow-x-auto scrollbar-hide -mx-4 px-4">
@@ -153,7 +153,7 @@ export const KneePillowHero = () => {
                       <Star key={star} className="w-5 h-5 fill-yellow-500 text-yellow-500" />
                     ))}
                   </div>
-                  <span className="text-base font-semibold">8,500+ verified reviews</span>
+                  <span className="text-base font-semibold">5,100+ verified reviews</span>
                 </div>
                 
                 <div className="flex gap-1 sm:gap-1.5 flex-nowrap overflow-x-auto scrollbar-hide">
