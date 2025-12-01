@@ -58,7 +58,9 @@ export const Hero = () => {
         description: `${quantity} ${quantity === 1 ? 'pillow' : 'pillows'} added to your cart.`,
         cancel: {
           label: "✕",
-          onClick: () => {}
+          onClick: (e) => {
+            e?.stopPropagation();
+          }
         }
       });
       setCartOpen(true);

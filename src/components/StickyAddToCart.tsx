@@ -129,7 +129,9 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
         description: `${itemName} added to your cart.`,
         cancel: {
           label: "✕",
-          onClick: () => {}
+          onClick: (e) => {
+            e?.stopPropagation();
+          }
         }
       });
       setCartOpen(true);
