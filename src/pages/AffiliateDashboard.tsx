@@ -207,8 +207,8 @@ const AffiliateDashboard = () => {
                     </div>
                     <span className="font-semibold">Direct Referrals</span>
                   </div>
-                  <p className="text-2xl font-bold text-primary">10%</p>
-                  <p className="text-sm text-muted-foreground">Commission on direct sales</p>
+                  <p className="text-2xl font-bold text-primary">15-35%</p>
+                  <p className="text-sm text-muted-foreground">Based on your tier level</p>
                 </div>
                 <div className="p-4 rounded-lg bg-secondary border">
                   <div className="flex items-center gap-3 mb-2">
@@ -218,7 +218,7 @@ const AffiliateDashboard = () => {
                     <span className="font-semibold">Sub-Affiliates</span>
                   </div>
                   <p className="text-2xl font-bold">5%</p>
-                  <p className="text-sm text-muted-foreground">From your referrals' sales</p>
+                  <p className="text-sm text-muted-foreground">Fixed rate on referrals' sales</p>
                 </div>
               </div>
 
@@ -427,16 +427,22 @@ const AffiliateDashboard = () => {
                     <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
                       <span className="text-xs font-bold text-primary">L1</span>
                     </div>
-                    <span className="text-sm">Direct Sales</span>
+                    <div>
+                      <span className="text-sm font-medium">Direct Sales</span>
+                      <p className="text-xs text-muted-foreground">Based on your tier</p>
+                    </div>
                   </div>
-                  <span className="font-bold text-primary">10%</span>
+                  <span className="font-bold text-primary">{tierInfo.commissionRate}%</span>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-lg bg-secondary">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-muted-foreground/20 flex items-center justify-center">
                       <span className="text-xs font-bold text-muted-foreground">L2</span>
                     </div>
-                    <span className="text-sm">Sub-Affiliate Sales</span>
+                    <div>
+                      <span className="text-sm font-medium">Sub-Affiliate Sales</span>
+                      <p className="text-xs text-muted-foreground">Fixed rate</p>
+                    </div>
                   </div>
                   <span className="font-bold">5%</span>
                 </div>
