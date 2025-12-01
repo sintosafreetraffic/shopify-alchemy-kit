@@ -382,10 +382,10 @@ export const CartDrawer = () => {
                            item.quantity >= 2 ? (
                             <div className="space-y-0.5">
                               <p className="text-sm text-muted-foreground line-through">
-                                {item.price.currencyCode} ${(getItemPrice(item) * item.quantity).toFixed(2)}
+                                ${(getItemPrice(item) * item.quantity).toFixed(2)}
                               </p>
                               <p className="font-semibold">
-                                {item.price.currencyCode} ${(
+                                ${(
                                   (getItemPrice(item) * item.quantity) - 
                                   (Math.floor(item.quantity / 2) * getItemPrice(item))
                                 ).toFixed(2)}
@@ -393,7 +393,7 @@ export const CartDrawer = () => {
                             </div>
                           ) : (
                             <p className="font-semibold">
-                              {item.price.currencyCode} ${(getItemPrice(item) * item.quantity).toFixed(2)}
+                              ${(getItemPrice(item) * item.quantity).toFixed(2)}
                             </p>
                           )}
                         </div>
