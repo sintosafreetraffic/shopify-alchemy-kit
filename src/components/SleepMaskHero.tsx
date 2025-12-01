@@ -269,22 +269,22 @@ export const SleepMaskHero = () => {
             {/* Add to Cart Button */}
             <Button
               size="lg"
-              className="w-full text-lg py-6 bg-black text-white hover:bg-primary transition-all relative overflow-hidden group"
+              className="w-full text-lg md:text-xl py-6 font-bold shadow-lg hover:shadow-xl transition-all touch-manipulation animate-subtle-bounce bg-black text-white hover:bg-primary relative overflow-hidden group"
               onClick={handleAddToCart}
               disabled={isCheckingOut || !product}
             >
               {isCheckingOut ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Processing...
+                  Adding...
                 </>
               ) : (
                 <>
                   <span className="inline-block transition-all duration-300 group-hover:-translate-y-12 group-hover:opacity-0">
-                    Add to Cart - ${totalPrice.toFixed(2)}
+                    ADD TO CART
                   </span>
                   <span className="absolute inset-0 flex items-center justify-center translate-y-12 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                    Add to Cart - ${totalPrice.toFixed(2)}
+                    ADD TO CART
                   </span>
                 </>
               )}

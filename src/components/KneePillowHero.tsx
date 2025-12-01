@@ -275,10 +275,10 @@ export const KneePillowHero = () => {
               ) : (
                 <>
                   <span className="inline-block transition-all duration-300 group-hover:-translate-y-12 group-hover:opacity-0">
-                    Add {bundles[selectedBundle].quantity} to Cart - ${bundles[selectedBundle].price.toFixed(2)}
+                    ADD TO CART
                   </span>
                   <span className="absolute inset-0 flex items-center justify-center translate-y-12 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                    Add {bundles[selectedBundle].quantity} to Cart - ${bundles[selectedBundle].price.toFixed(2)}
+                    ADD TO CART
                   </span>
                 </>
               )}
