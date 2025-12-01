@@ -139,7 +139,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
     }
   };
 
-  const productPrice = product ? parseFloat(product.node.variants.edges[0].node.price.amount) : 89.99;
+  const productPrice = product ? parseFloat(product.node.variants.edges[0].node.price.amount) : 129.99;
   
   // Calculate the value being added to cart (not current cart total)
   const addToCartValue = isSleepBundle

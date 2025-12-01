@@ -70,7 +70,7 @@ export const Hero = () => {
     }
   };
 
-  const productPrice = product ? parseFloat(product.node.variants.edges[0].node.price.amount) : 89.99;
+  const productPrice = product ? parseFloat(product.node.variants.edges[0].node.price.amount) : 129.99;
   
   const bundles = {
     "1": {
