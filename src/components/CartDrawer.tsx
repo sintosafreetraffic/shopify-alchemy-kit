@@ -433,7 +433,7 @@ export const CartDrawer = () => {
                   
                   {/* Free Gifts Section */}
                   {freeGifts > 0 && (
-                    <div className="bg-primary/5 border border-primary rounded-md p-2 mt-4">
+                    <div className="bg-primary/5 border border-primary rounded-md p-2 mt-2">
                       <div className="flex items-center gap-2">
                         <Gift className="w-4 h-4 text-primary flex-shrink-0" />
                         <img 
@@ -457,7 +457,7 @@ export const CartDrawer = () => {
                   
                   {/* Mobile Recommendations */}
                   {recommendedProducts.length > 0 && (
-                    <div className="pt-4 border-t mt-4 lg:hidden">
+                    <div className="pt-3 border-t mt-3 lg:hidden">
                       <h3 className="text-sm font-semibold mb-3">You may also like</h3>
                       <div className="grid grid-cols-2 gap-2">
                       {recommendedProducts.map((product) => {
@@ -519,9 +519,9 @@ export const CartDrawer = () => {
               </div>
               
               {/* Fixed Bottom Section: Trust Badges + Checkout */}
-              <div className="flex-shrink-0 space-y-3 pt-4 border-t bg-background mt-4">
+              <div className="flex-shrink-0 space-y-3 pt-3 border-t bg-background mt-2">
                 {/* Trust Badges */}
-              <div className="grid grid-cols-3 gap-2 py-2 border-y">
+              <div className="grid grid-cols-3 gap-2 pb-2">
                   <div className="flex flex-col items-center gap-1 text-center">
                     <Moon className="w-4 h-4 text-primary" />
                     <span className="text-xs font-medium">100-Night Trial</span>
