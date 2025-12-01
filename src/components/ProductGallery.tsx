@@ -50,7 +50,7 @@ export const ProductGallery = () => {
       price: "$69.99",
       originalPrice: "$109.99",
       rating: 4.7,
-      reviews: "8,500+",
+      reviews: "5,100+",
       image: kneePillowMain,
       features: [
         "Aligns hips and spine",
