@@ -77,6 +77,7 @@ export const SleepMaskHero = () => {
         variantId: variant.id,
         variantTitle: variant.title,
         price: variant.price,
+        compareAtPrice: variant.compareAtPrice,
         quantity: 1, // Quantity is in the variant itself
         selectedOptions: variant.selectedOptions
       };

@@ -110,6 +110,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
           ? `${variant.title} - ${colors.find(c => c.value === selectedColor)?.name}`
           : variant.title,
         price: variant.price,
+        compareAtPrice: variant.compareAtPrice,
         quantity: isSleepBundle ? 1 : itemQuantity,
         selectedOptions: isSleepMask 
           ? [

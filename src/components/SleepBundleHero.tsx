@@ -52,6 +52,7 @@ export const SleepBundleHero = () => {
         variantId: variant.node.id,
         variantTitle: variant.node.title,
         price: variant.node.price,
+        compareAtPrice: variant.node.compareAtPrice,
         quantity: 1,
         selectedOptions: variant.node.selectedOptions,
       });

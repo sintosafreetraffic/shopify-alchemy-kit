@@ -24,6 +24,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
       variantId: variant.id,
       variantTitle: variant.title,
       price: variant.price,
+      compareAtPrice: variant.compareAtPrice,
       quantity: 1,
       selectedOptions: variant.selectedOptions || []
     };
