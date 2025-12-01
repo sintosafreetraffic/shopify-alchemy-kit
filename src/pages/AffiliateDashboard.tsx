@@ -202,7 +202,11 @@ const AffiliateDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{affiliateData.total_referrals || 0}</div>
-            <p className="text-xs text-muted-foreground">People who signed up using your link</p>
+            <p className="text-xs text-muted-foreground mb-3">People who signed up using your link</p>
+            <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+              <p className="font-medium text-foreground mb-1">How it works:</p>
+              <p>When someone clicks your referral link and makes a purchase, they become your referral. You earn commission on their order and any future orders they place.</p>
+            </div>
           </CardContent>
         </Card>
 
@@ -215,7 +219,15 @@ const AffiliateDashboard = () => {
             <div className="text-2xl font-bold">
               ${(affiliateData.total_commissions || 0).toFixed(2)}
             </div>
-            <p className="text-xs text-muted-foreground">Lifetime commission earnings</p>
+            <p className="text-xs text-muted-foreground mb-3">Lifetime commission earnings</p>
+            <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+              <p className="font-medium text-foreground mb-1">Commission rates:</p>
+              <ul className="space-y-1">
+                <li>• Level 1: 10% on direct sales</li>
+                <li>• Level 2: 5% on sub-affiliate sales</li>
+                <li>• Level 3: 2.5% on third-tier sales</li>
+              </ul>
+            </div>
           </CardContent>
         </Card>
 
@@ -226,7 +238,11 @@ const AffiliateDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">Level {affiliateData.level || 1}</div>
-            <p className="text-xs text-muted-foreground">Your current tier in the program</p>
+            <p className="text-xs text-muted-foreground mb-3">Your current tier in the program</p>
+            <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+              <p className="font-medium text-foreground mb-1">Level benefits:</p>
+              <p>Higher levels unlock bonus commissions and exclusive perks. Invite other affiliates to join under you to increase your level and earn from their sales too!</p>
+            </div>
           </CardContent>
         </Card>
       </div>
