@@ -405,7 +405,7 @@ export const CartDrawer = () => {
                     };
                     
                     return (
-                    <div key={item.variantId} className="flex gap-4 p-2 border rounded-lg">
+                    <div key={item.variantId} className="flex gap-3 p-2 border rounded-lg">
                       <div className="w-16 h-16 bg-secondary/20 rounded-md overflow-hidden flex-shrink-0">
                         {item.product.node.images?.edges?.[0]?.node && (
                           <img
@@ -418,78 +418,83 @@ export const CartDrawer = () => {
                         )}
                       </div>
                       
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-medium text-sm leading-tight">
-                            {item.product.node.title.replace('RiseByNight', 'Rise By Night™')}
-                          </h4>
-                          {hasActiveDeal && (
-                            <div className="bg-gradient-to-r from-red-600 to-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1 flex-shrink-0">
-                              <Gift className="w-3 h-3" />
-                              <span>1+1</span>
-                            </div>
-                          )}
-                        </div>
-                        {item.selectedOptions.filter(option => option.value.toLowerCase() !== 'default title').length > 0 && (
-                          <p className="text-sm text-muted-foreground">
-                            {item.selectedOptions
-                              .filter(option => option.value.toLowerCase() !== 'default title')
-                              .map(option => option.value)
-                              .join(' • ')}
-                          </p>
-                        )}
-                        <div className="mt-1">
-                          {/* Show discounted price for pillows with 1+1 deal */}
-                           {(item.product.node.title.toLowerCase().includes('ergonomic sleep pillow') || 
-                            item.product.node.title.toLowerCase().includes('knee pillow')) && 
-                           item.quantity >= 2 ? (
-                            <div className="space-y-0.5">
-                              <p className="text-sm text-muted-foreground line-through">
-                                ${(getItemPrice(item) * item.quantity).toFixed(2)}
-                              </p>
-                              <p className="font-semibold">
-                                ${(
-                                  (getItemPrice(item) * item.quantity) - 
-                                  (Math.floor(item.quantity / 2) * getItemPrice(item))
-                                ).toFixed(2)}
-                              </p>
-                            </div>
-                          ) : (
-                            <p className="font-semibold">
-                              ${(getItemPrice(item) * item.quantity).toFixed(2)}
+                      <div className="flex-1 min-w-0 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-medium text-sm leading-tight">
+                              {item.product.node.title.replace('RiseByNight', 'Rise By Night™')}
+                            </h4>
+                            {hasActiveDeal && (
+                              <div className="bg-gradient-to-r from-red-600 to-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1 flex-shrink-0">
+                                <Gift className="w-3 h-3" />
+                                <span>1+1</span>
+                              </div>
+                            )}
+                          </div>
+                          {item.selectedOptions.filter(option => option.value.toLowerCase() !== 'default title').length > 0 && (
+                            <p className="text-xs text-muted-foreground">
+                              {item.selectedOptions
+                                .filter(option => option.value.toLowerCase() !== 'default title')
+                                .map(option => option.value)
+                                .join(' • ')}
                             </p>
                           )}
                         </div>
-                      </div>
-                      
-                      <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          onClick={() => removeItem(item.variantId)}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
                         
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-6 w-6"
-                            onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
-                          >
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          <span className="w-8 text-center text-sm">{item.quantity}</span>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-6 w-6"
-                            onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
+                        <div className="flex items-center justify-between mt-1">
+                          {/* Prices side by side */}
+                          <div className="flex items-center gap-2">
+                            {(item.product.node.title.toLowerCase().includes('ergonomic sleep pillow') || 
+                             item.product.node.title.toLowerCase().includes('knee pillow')) && 
+                            item.quantity >= 2 ? (
+                              <>
+                                <p className="text-sm text-muted-foreground line-through">
+                                  ${(getItemPrice(item) * item.quantity).toFixed(2)}
+                                </p>
+                                <p className="font-semibold text-base">
+                                  ${(
+                                    (getItemPrice(item) * item.quantity) - 
+                                    (Math.floor(item.quantity / 2) * getItemPrice(item))
+                                  ).toFixed(2)}
+                                </p>
+                              </>
+                            ) : (
+                              <p className="font-semibold text-base">
+                                ${(getItemPrice(item) * item.quantity).toFixed(2)}
+                              </p>
+                            )}
+                          </div>
+                          
+                          {/* Quantity and trash side by side */}
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
+                              >
+                                <Minus className="h-3 w-3" />
+                              </Button>
+                              <span className="w-6 text-center text-sm">{item.quantity}</span>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
+                              >
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => removeItem(item.variantId)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </div>
