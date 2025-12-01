@@ -141,7 +141,11 @@ export const SleepBundleHero = () => {
                     <p className="text-xl md:text-2xl font-bold text-primary">
                       ${parseFloat(product?.node.variants.edges[0]?.node.price.amount || "149.99").toFixed(2)}
                     </p>
-                    <p className="text-xs text-muted-foreground line-through">$199.99</p>
+                    {product?.node.variants.edges[0]?.node.compareAtPrice && (
+                      <p className="text-xs text-muted-foreground line-through">
+                        ${parseFloat(product.node.variants.edges[0].node.compareAtPrice.amount).toFixed(2)}
+                      </p>
+                    )}
                     <p className="text-xs text-muted-foreground">1 of each product</p>
                   </div>
                 </button>
@@ -167,7 +171,11 @@ export const SleepBundleHero = () => {
                     <p className="text-xl md:text-2xl font-bold text-primary">
                       ${parseFloat(product?.node.variants.edges[1]?.node.price.amount || "249.99").toFixed(2)}
                     </p>
-                    <p className="text-xs text-muted-foreground line-through">$399.98</p>
+                    {product?.node.variants.edges[1]?.node.compareAtPrice && (
+                      <p className="text-xs text-muted-foreground line-through">
+                        ${parseFloat(product.node.variants.edges[1].node.compareAtPrice.amount).toFixed(2)}
+                      </p>
+                    )}
                     <p className="text-xs text-muted-foreground">2 of each product</p>
                   </div>
                 </button>
