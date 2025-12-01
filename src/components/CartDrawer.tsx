@@ -12,8 +12,8 @@ import {
 } from "@/components/ui/sheet";
 import { ShoppingCart, Minus, Plus, Trash2, Lock, Loader2, Moon, RotateCcw, Shield, Gift, Truck } from "lucide-react";
 import { useCartStore } from "@/stores/cartStore";
-import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
-import kneePillowCart from "@/assets/knee-pillow-cart.png";
+import eyeMaskGift from "@/assets/eye-mask-gift.webp";
+import kneePillowCart from "@/assets/knee-pillow-main-new.webp";
 import sleepMaskNavy from "@/assets/sleep-mask-navy.png";
 import sleepMaskTurquoise from "@/assets/sleep-mask-turquoise.png";
 import sleepMaskPink from "@/assets/sleep-mask-pink.png";
