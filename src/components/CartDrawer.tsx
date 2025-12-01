@@ -277,9 +277,11 @@ export const CartDrawer = () => {
         }}
       >
         <SheetHeader className="flex-shrink-0">
-          <SheetTitle>Shopping Cart {totalItems > 0 && `(${totalItems})`}</SheetTitle>
+          <SheetTitle>
+            Shopping Cart {totalItems > 0 && `- ${totalItems} item${totalItems !== 1 ? 's' : ''} in your cart`}
+          </SheetTitle>
           <SheetDescription>
-            {totalItems === 0 ? "Your cart is empty" : `${totalItems} item${totalItems !== 1 ? 's' : ''} in your cart`}
+            {totalItems === 0 && "Your cart is empty"}
           </SheetDescription>
         </SheetHeader>
         
