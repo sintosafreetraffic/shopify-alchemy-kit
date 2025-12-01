@@ -417,8 +417,8 @@ export const CartDrawer = () => {
                     };
                     
                     return (
-                    <div key={item.variantId} className="flex gap-3 p-2 border rounded-lg">
-                      <div className="w-16 h-16 bg-secondary/20 rounded-md overflow-hidden flex-shrink-0">
+                    <div key={item.variantId} className="flex gap-3 p-3 border rounded-lg min-h-[100px]">
+                      <div className="w-20 h-20 bg-secondary/20 rounded-md overflow-hidden flex-shrink-0">
                         {item.product.node.images?.edges?.[0]?.node && (
                           <img
                             src={getItemImage()}
@@ -431,8 +431,8 @@ export const CartDrawer = () => {
                       </div>
                       
                       <div className="flex-1 min-w-0 flex flex-col justify-between">
-                        <div>
-                          <h4 className="font-medium text-sm leading-tight mb-1">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-sm leading-tight mb-1 line-clamp-2">
                             {item.product.node.title.replace('RiseByNight', 'Rise By Night™')}
                           </h4>
                           {item.selectedOptions.filter(option => option.value.toLowerCase() !== 'default title').length > 0 && (
