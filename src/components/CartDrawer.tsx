@@ -494,28 +494,28 @@ export const CartDrawer = () => {
                               <Button
                                 variant="outline"
                                 size="icon"
-                                className="h-6 w-6"
+                                className="h-10 w-10 md:h-6 md:w-6"
                                 onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
                               >
-                                <Minus className="h-3 w-3" />
+                                <Minus className="h-4 w-4 md:h-3 md:w-3" />
                               </Button>
-                              <span className="w-6 text-center text-sm">{item.quantity}</span>
+                              <span className="w-8 md:w-6 text-center text-sm">{item.quantity}</span>
                               <Button
                                 variant="outline"
                                 size="icon"
-                                className="h-6 w-6"
+                                className="h-10 w-10 md:h-6 md:w-6"
                                 onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
                               >
-                                <Plus className="h-3 w-3" />
+                                <Plus className="h-4 w-4 md:h-3 md:w-3" />
                               </Button>
                             </div>
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-6 w-6"
+                              className="h-10 w-10 md:h-6 md:w-6"
                               onClick={() => removeItem(item.variantId)}
                             >
-                              <Trash2 className="h-3 w-3" />
+                              <Trash2 className="h-4 w-4 md:h-3 md:w-3" />
                             </Button>
                           </div>
                         </div>
