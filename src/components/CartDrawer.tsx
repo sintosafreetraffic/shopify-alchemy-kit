@@ -56,6 +56,22 @@ export const CartDrawer = () => {
 
     return () => clearInterval(interval);
   }, []);
+
+  // Lock body scroll when cart is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.paddingRight = 'var(--removed-body-scroll-bar-size, 0px)';
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+    };
+  }, [isOpen]);
   
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   
