@@ -7,8 +7,8 @@ import { Copy, Users, DollarSign, Loader2, Award, Share2, TrendingUp, Check, Spa
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 
-// Production domain for referral links - update this to your custom domain
-const SITE_URL = "https://risebynight.com";
+// Production domain for referral links
+const SITE_URL = "https://www.risebynight.com";
 
 interface AffiliateData {
   id: string;
