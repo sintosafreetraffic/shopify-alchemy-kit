@@ -14,6 +14,7 @@ import { ShoppingCart, Minus, Plus, Trash2, Lock, Loader2, Moon, RotateCcw, Shie
 import { useCartStore } from "@/stores/cartStore";
 import eyeMaskGift from "@/assets/eye-mask-gift.webp";
 import kneePillowCart from "@/assets/knee-pillow-main-new.webp";
+import completeSleepBundle from "@/assets/complete-sleep-bundle-new.webp";
 import sleepMaskNavy from "@/assets/sleep-mask-navy.webp";
 import sleepMaskTurquoise from "@/assets/sleep-mask-turquoise.webp";
 import sleepMaskPink from "@/assets/sleep-mask-pink.webp";
@@ -248,7 +249,8 @@ export const CartDrawer = () => {
                       className="w-full aspect-square bg-secondary/20 rounded-md overflow-hidden mb-3 relative"
                     >
                       <img
-                        src={product.node.title.toLowerCase().includes('silk deep sleep mask') ? sleepMaskNavy : image.url}
+                        src={product.node.title.toLowerCase().includes('complete sleep bundle') ? completeSleepBundle : 
+                             product.node.title.toLowerCase().includes('silk deep sleep mask') ? sleepMaskNavy : image.url}
                         alt={product.node.title}
                         className="w-full h-full object-cover"
                         loading="lazy"
@@ -380,6 +382,10 @@ export const CartDrawer = () => {
                     
                     // Get color-specific image for sleep mask
                     const getItemImage = () => {
+                      if (item.product.node.title.toLowerCase().includes('complete sleep bundle')) {
+                        return completeSleepBundle;
+                      }
+                      
                       if (item.product.node.title.toLowerCase().includes('knee pillow')) {
                         return kneePillowCart;
                       }
