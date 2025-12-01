@@ -40,7 +40,7 @@ export const ProductGallery = () => {
       reviews: "6,247",
       image: pillowMain,
       features: ["Ergonomic contour design", "Cooling gel technology", "High-density memory foam", "3-5 year lifespan"],
-      badge: "Black Friday 1+1 Deal",
+      badge: "Cyber Monday 1+1 Deal",
       link: "/product/ergonomic-pillow",
     },
     {
@@ -58,7 +58,7 @@ export const ProductGallery = () => {
         "Memory foam comfort",
         "Adjustable strap included",
       ],
-      badge: "Black Friday 1+1 Deal",
+      badge: "Cyber Monday 1+1 Deal",
       link: "/product/knee-pillow",
     },
     {
