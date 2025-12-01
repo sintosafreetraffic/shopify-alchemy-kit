@@ -80,12 +80,12 @@ export const SleepBundleBenefits = () => {
           </div>
 
           <div className="mt-12 bg-primary/5 border-2 border-primary rounded-lg p-8 text-center">
-            <h3 className="text-2xl md:text-3xl font-bold mb-3">Save $40 with the Bundle</h3>
+            <h3 className="text-2xl md:text-3xl font-bold mb-3">Save $30 with the Bundle</h3>
             <p className="text-lg text-muted-foreground mb-2">
-              Regular price: <span className="line-through">$189.97</span>
+              Regular price: <span className="line-through">$229.97</span>
             </p>
             <p className="text-3xl md:text-4xl font-bold text-primary">
-              Bundle price: $149.99
+              Bundle price: $199.99
             </p>
           </div>
         </div>
