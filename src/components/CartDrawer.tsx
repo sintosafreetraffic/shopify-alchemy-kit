@@ -443,6 +443,7 @@ export const CartDrawer = () => {
                               </div>
                             )}
                             <div className="flex items-center gap-2">
+                              {/* Show discounted price for pillows with 1+1 deal */}
                               {(item.product.node.title.toLowerCase().includes('ergonomic sleep pillow') || 
                                item.product.node.title.toLowerCase().includes('knee pillow')) && 
                               item.quantity >= 2 ? (
@@ -455,6 +456,17 @@ export const CartDrawer = () => {
                                       (getItemPrice(item) * item.quantity) - 
                                       (Math.floor(item.quantity / 2) * getItemPrice(item))
                                     ).toFixed(2)}
+                                  </p>
+                                </>
+                              ) : item.product.node.title.toLowerCase().includes('complete sleep bundle') && 
+                                 item.selectedOptions.some(opt => opt.value === 'Single Bundle') ? (
+                                /* Show compare price for Single Bundle */
+                                <>
+                                  <p className="text-sm text-muted-foreground line-through">
+                                    ${(199.99 * item.quantity).toFixed(2)}
+                                  </p>
+                                  <p className="font-semibold text-base">
+                                    ${(getItemPrice(item) * item.quantity).toFixed(2)}
                                   </p>
                                 </>
                               ) : (
