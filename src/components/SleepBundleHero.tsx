@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, ShoppingCart } from "lucide-react";
 import { useCartStore } from "@/stores/cartStore";
-import bundleImage from "@/assets/complete-sleep-bundle.png";
+import bundleImage from "@/assets/complete-sleep-bundle-new.webp";
 import { fetchProducts, type ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 
