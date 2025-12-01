@@ -8,36 +8,14 @@ const getUSTime = () => {
 // Helper function to determine sale type and end time
 const getSaleInfo = () => {
   const now = getUSTime();
-  const currentDate = now.getDate();
-  const currentMonth = now.getMonth(); // 0-indexed (11 = December)
-  const currentYear = now.getFullYear();
   
-  // Sunday November 30, 2025 23:59:59 ET
-  const blackFridayEnd = new Date('2025-11-30T23:59:59-05:00');
+  // Get the end of the current day in ET (23:59:59)
+  const endOfDay = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
+  endOfDay.setHours(23, 59, 59, 999);
   
-  // Monday December 1, 2025 23:59:59 ET
-  const cyberMondayEnd = new Date('2025-12-01T23:59:59-05:00');
-  
-  // If before end of Sunday (Nov 30), it's BLACK FRIDAY
-  if (now < blackFridayEnd) {
-    return {
-      saleName: "BLACK FRIDAY",
-      endTime: blackFridayEnd
-    };
-  }
-  
-  // If Monday Dec 1, it's CYBER MONDAY
-  if (now < cyberMondayEnd) {
-    return {
-      saleName: "CYBER MONDAY",
-      endTime: cyberMondayEnd
-    };
-  }
-  
-  // Sale ended
   return {
-    saleName: "SALE ENDED",
-    endTime: cyberMondayEnd
+    saleName: "CYBER MONDAY",
+    endTime: endOfDay
   };
 };
 
@@ -48,7 +26,7 @@ export const CountdownTimer = () => {
     minutes: 0,
     seconds: 0
   });
-  const [saleName, setSaleName] = useState("BLACK FRIDAY");
+  const [saleName, setSaleName] = useState("CYBER MONDAY");
 
   useEffect(() => {
     const timer = setInterval(() => {
