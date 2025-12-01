@@ -14,17 +14,19 @@ import sleepMaskPink from "@/assets/sleep-mask-pink.png";
 import sleepMaskGold from "@/assets/sleep-mask-gold.png";
 import sleepMaskSilver from "@/assets/sleep-mask-silver.png";
 
-const colors = [
-  { name: "Navy", value: "navy", hex: "#1e3a8a", image: sleepMaskNavy },
-  { name: "Turquoise", value: "turquoise", hex: "#06b6d4", image: sleepMaskTurquoise },
-  { name: "Pink", value: "pink", hex: "#ec4899", image: sleepMaskPink },
-  { name: "Gold", value: "gold", hex: "#fbbf24", image: sleepMaskGold },
-  { name: "Silver", value: "silver", hex: "#94a3b8", image: sleepMaskSilver },
-];
+// Image mapping for colors
+const colorImages: Record<string, string> = {
+  "Navy": sleepMaskNavy,
+  "Turquoise": sleepMaskTurquoise,
+  "Pink": sleepMaskPink,
+  "Gold": sleepMaskGold,
+  "Silver": sleepMaskSilver,
+  "Black": sleepMaskNavy, // Using navy as placeholder for black until we have the black image
+};
 
 export const SleepMaskHero = () => {
   const [quantity, setQuantity] = useState(1);
-  const [selectedColor, setSelectedColor] = useState("navy");
+  const [selectedColor, setSelectedColor] = useState<string>("");
   const [product, setProduct] = useState<ShopifyProduct | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { addItem } = useCartStore();
@@ -33,9 +35,14 @@ export const SleepMaskHero = () => {
     const loadProduct = async () => {
       try {
         const products = await fetchProducts(10);
-        const sleepMask = products.find(p => p.node.title.toLowerCase().includes('mask'));
+        const sleepMask = products.find(p => p.node.title.toLowerCase().includes('silk deep sleep mask') && !p.node.title.toLowerCase().includes('free gift'));
         if (sleepMask) {
           setProduct(sleepMask);
+          // Set default color to the first available color
+          const colorOption = sleepMask.node.options.find(opt => opt.name === "Color");
+          if (colorOption && colorOption.values.length > 0) {
+            setSelectedColor(colorOption.values[0]);
+          }
         }
       } catch (error) {
         console.error("Error loading product:", error);
@@ -52,23 +59,30 @@ export const SleepMaskHero = () => {
 
     setIsCheckingOut(true);
     try {
-      const variant = product.node.variants.edges[0].node;
+      // Find the variant that matches selected color and quantity
+      const variant = product.node.variants.edges.find(v => {
+        const colorMatch = v.node.selectedOptions.find(opt => opt.name === "Color")?.value === selectedColor;
+        const quantityMatch = v.node.selectedOptions.find(opt => opt.name === "Quantity")?.value === `${quantity} Mask${quantity > 1 ? 's' : ''}`;
+        return colorMatch && quantityMatch;
+      })?.node;
+
+      if (!variant) {
+        toast.error("Selected variant not available");
+        return;
+      }
       
       const cartItem = {
         product,
         variantId: variant.id,
-        variantTitle: `${variant.title} - ${colors.find(c => c.value === selectedColor)?.name}`,
+        variantTitle: variant.title,
         price: variant.price,
-        quantity,
-        selectedOptions: [
-          ...variant.selectedOptions || [],
-          { name: "Color", value: colors.find(c => c.value === selectedColor)?.name || "Black" }
-        ]
+        quantity: 1, // Quantity is in the variant itself
+        selectedOptions: variant.selectedOptions
       };
       
       addItem(cartItem);
       toast.success("Added to cart!", {
-        description: `${quantity} sleep mask${quantity > 1 ? 's' : ''} added to your cart.`,
+        description: `${selectedColor} sleep mask${quantity > 1 ? 's' : ''} added to your cart.`,
         cancel: {
           label: "✕",
           onClick: () => {}
@@ -83,8 +97,18 @@ export const SleepMaskHero = () => {
     }
   };
 
-  const productPrice = product ? parseFloat(product.node.variants.edges[0].node.price.amount) : 29.99;
-  const totalPrice = productPrice * quantity;
+  // Get available colors from product
+  const availableColors = product?.node.options.find(opt => opt.name === "Color")?.values || [];
+  
+  // Find the variant price for selected color and quantity
+  const selectedVariant = product?.node.variants.edges.find(v => {
+    const colorMatch = v.node.selectedOptions.find(opt => opt.name === "Color")?.value === selectedColor;
+    const quantityMatch = v.node.selectedOptions.find(opt => opt.name === "Quantity")?.value === `${quantity} Mask${quantity > 1 ? 's' : ''}`;
+    return colorMatch && quantityMatch;
+  })?.node;
+
+  const productPrice = selectedVariant ? parseFloat(selectedVariant.price.amount) : 29.99;
+  const totalPrice = productPrice;
 
   return (
     <section className="pt-0 pb-3 md:pb-6 bg-background">
@@ -175,23 +199,29 @@ export const SleepMaskHero = () => {
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
               <h3 className="font-bold text-lg mb-3">Choose Color</h3>
               
-              <div className="grid grid-cols-5 gap-3">
-                {colors.map((color) => (
+              <div className="grid grid-cols-6 gap-3">
+                {availableColors.map((colorName) => (
                   <button
-                    key={color.value}
-                    onClick={() => setSelectedColor(color.value)}
+                    key={colorName}
+                    onClick={() => setSelectedColor(colorName)}
                     className={`relative w-full aspect-square rounded-lg border-2 transition-all overflow-hidden bg-background ${
-                      selectedColor === color.value
+                      selectedColor === colorName
                         ? "border-primary ring-2 ring-primary ring-offset-2"
                         : "border-border hover:border-primary/50"
                     }`}
                   >
-                    <img 
-                      src={color.image} 
-                      alt={color.name}
-                      className="w-full h-full object-contain p-1"
-                    />
-                    {selectedColor === color.value && (
+                    {colorImages[colorName] ? (
+                      <img 
+                        src={colorImages[colorName]} 
+                        alt={colorName}
+                        className="w-full h-full object-contain p-1"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <span className="text-xs font-medium text-center px-1">{colorName}</span>
+                      </div>
+                    )}
+                    {selectedColor === colorName && (
                       <div className="absolute inset-0 bg-primary/10 flex items-center justify-center">
                         <Check className="w-6 h-6 text-primary drop-shadow-md" />
                       </div>
@@ -225,13 +255,12 @@ export const SleepMaskHero = () => {
                 </div>
               </div>
               <div className="flex items-center justify-between mt-4 pt-4 border-t">
-                <span className="text-muted-foreground">Price per mask:</span>
-                <span className="font-semibold">${productPrice.toFixed(2)}</span>
-              </div>
-              <div className="flex items-center justify-between mt-2">
-                <span className="text-lg font-semibold">Total:</span>
+                <span className="text-lg font-semibold">Total Price:</span>
                 <span className="text-2xl font-bold text-primary">${totalPrice.toFixed(2)}</span>
               </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                {quantity} mask{quantity > 1 ? 's' : ''} × ${(productPrice / quantity).toFixed(2)} each
+              </p>
             </div>
 
             {/* Add to Cart Button */}
