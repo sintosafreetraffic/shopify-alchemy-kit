@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/carousel";
 import erikAvatar from "@/assets/reviewer-erik.webp";
 import sofieAvatar from "@/assets/reviewer-sofie.webp";
-import coupleAvatar from "@/assets/reviewer-couple.jpg";
+import coupleAvatar from "@/assets/reviewer-mark-maria.webp";
 import lunaAvatar from "@/assets/reviewer-luna.webp";
 import hannahAvatar from "@/assets/reviewer-hannah.webp";
 
