@@ -420,17 +420,9 @@ export const CartDrawer = () => {
                       
                       <div className="flex-1 min-w-0 flex flex-col justify-between">
                         <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-medium text-sm leading-tight">
-                              {item.product.node.title.replace('RiseByNight', 'Rise By Night™')}
-                            </h4>
-                            {hasActiveDeal && (
-                              <div className="bg-gradient-to-r from-red-600 to-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1 flex-shrink-0">
-                                <Gift className="w-3 h-3" />
-                                <span>1+1</span>
-                              </div>
-                            )}
-                          </div>
+                          <h4 className="font-medium text-sm leading-tight mb-1">
+                            {item.product.node.title.replace('RiseByNight', 'Rise By Night™')}
+                          </h4>
                           {item.selectedOptions.filter(option => option.value.toLowerCase() !== 'default title').length > 0 && (
                             <p className="text-xs text-muted-foreground">
                               {item.selectedOptions
@@ -442,27 +434,35 @@ export const CartDrawer = () => {
                         </div>
                         
                         <div className="flex items-center justify-between mt-1">
-                          {/* Prices side by side */}
-                          <div className="flex items-center gap-2">
-                            {(item.product.node.title.toLowerCase().includes('ergonomic sleep pillow') || 
-                             item.product.node.title.toLowerCase().includes('knee pillow')) && 
-                            item.quantity >= 2 ? (
-                              <>
-                                <p className="text-sm text-muted-foreground line-through">
+                          {/* Prices with 1+1 badge above */}
+                          <div className="flex flex-col gap-1">
+                            {hasActiveDeal && (
+                              <div className="bg-gradient-to-r from-red-600 to-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1 w-fit">
+                                <Gift className="w-3 h-3" />
+                                <span>1+1</span>
+                              </div>
+                            )}
+                            <div className="flex items-center gap-2">
+                              {(item.product.node.title.toLowerCase().includes('ergonomic sleep pillow') || 
+                               item.product.node.title.toLowerCase().includes('knee pillow')) && 
+                              item.quantity >= 2 ? (
+                                <>
+                                  <p className="text-sm text-muted-foreground line-through">
+                                    ${(getItemPrice(item) * item.quantity).toFixed(2)}
+                                  </p>
+                                  <p className="font-semibold text-base">
+                                    ${(
+                                      (getItemPrice(item) * item.quantity) - 
+                                      (Math.floor(item.quantity / 2) * getItemPrice(item))
+                                    ).toFixed(2)}
+                                  </p>
+                                </>
+                              ) : (
+                                <p className="font-semibold text-base">
                                   ${(getItemPrice(item) * item.quantity).toFixed(2)}
                                 </p>
-                                <p className="font-semibold text-base">
-                                  ${(
-                                    (getItemPrice(item) * item.quantity) - 
-                                    (Math.floor(item.quantity / 2) * getItemPrice(item))
-                                  ).toFixed(2)}
-                                </p>
-                              </>
-                            ) : (
-                              <p className="font-semibold text-base">
-                                ${(getItemPrice(item) * item.quantity).toFixed(2)}
-                              </p>
-                            )}
+                              )}
+                            </div>
                           </div>
                           
                           {/* Quantity and trash side by side */}
