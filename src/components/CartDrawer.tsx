@@ -331,7 +331,7 @@ export const CartDrawer = () => {
         <div className="flex flex-col flex-1 pt-0 min-h-0">
           {/* Free Shipping Progress Bar - Always Visible */}
           {items.length > 0 && (
-            <div className="mb-2 px-1">
+            <div className="mb-1 px-1">
               <div className="space-y-2">
                 {totalPrice >= FREE_SHIPPING_THRESHOLD ? (
                   <>
