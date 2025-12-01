@@ -6,13 +6,14 @@ import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import { ShoppingCart, Loader2, Plus, Minus, Check } from "lucide-react";
-import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
+import eyeMaskGift from "@/assets/eye-mask-gift.webp";
 import { Badge } from "@/components/ui/badge";
-import sleepMaskNavy from "@/assets/sleep-mask-navy.png";
-import sleepMaskTurquoise from "@/assets/sleep-mask-turquoise.png";
-import sleepMaskPink from "@/assets/sleep-mask-pink.png";
-import sleepMaskGold from "@/assets/sleep-mask-gold.png";
-import sleepMaskSilver from "@/assets/sleep-mask-silver.png";
+import sleepMaskNavy from "@/assets/sleep-mask-navy.webp";
+import sleepMaskTurquoise from "@/assets/sleep-mask-turquoise.webp";
+import sleepMaskPink from "@/assets/sleep-mask-pink.webp";
+import sleepMaskGold from "@/assets/sleep-mask-gold.webp";
+import sleepMaskSilver from "@/assets/sleep-mask-silver.webp";
+import sleepMaskBlack from "@/assets/sleep-mask-black.webp";
 
 const colors = [
   { name: "Navy", value: "navy", hex: "#1e3a8a", image: sleepMaskNavy },
@@ -20,6 +21,7 @@ const colors = [
   { name: "Pink", value: "pink", hex: "#ec4899", image: sleepMaskPink },
   { name: "Gold", value: "gold", hex: "#fbbf24", image: sleepMaskGold },
   { name: "Silver", value: "silver", hex: "#94a3b8", image: sleepMaskSilver },
+  { name: "Black", value: "black", hex: "#000000", image: sleepMaskBlack },
 ];
 
 interface StickyAddToCartProps {

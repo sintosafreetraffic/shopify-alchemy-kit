@@ -14,11 +14,12 @@ import { ShoppingCart, Minus, Plus, Trash2, Lock, Loader2, Moon, RotateCcw, Shie
 import { useCartStore } from "@/stores/cartStore";
 import eyeMaskGift from "@/assets/eye-mask-gift.webp";
 import kneePillowCart from "@/assets/knee-pillow-main-new.webp";
-import sleepMaskNavy from "@/assets/sleep-mask-navy.png";
-import sleepMaskTurquoise from "@/assets/sleep-mask-turquoise.png";
-import sleepMaskPink from "@/assets/sleep-mask-pink.png";
-import sleepMaskGold from "@/assets/sleep-mask-gold.png";
-import sleepMaskSilver from "@/assets/sleep-mask-silver.png";
+import sleepMaskNavy from "@/assets/sleep-mask-navy.webp";
+import sleepMaskTurquoise from "@/assets/sleep-mask-turquoise.webp";
+import sleepMaskPink from "@/assets/sleep-mask-pink.webp";
+import sleepMaskGold from "@/assets/sleep-mask-gold.webp";
+import sleepMaskSilver from "@/assets/sleep-mask-silver.webp";
+import sleepMaskBlack from "@/assets/sleep-mask-black.webp";
 
 // Image mapping for sleep mask colors
 const sleepMaskColorImages: Record<string, string> = {
@@ -27,7 +28,7 @@ const sleepMaskColorImages: Record<string, string> = {
   "Pink": sleepMaskPink,
   "Gold": sleepMaskGold,
   "Silver": sleepMaskSilver,
-  "Black": sleepMaskNavy, // Using navy for black
+  "Black": sleepMaskBlack,
 };
 import { fetchProducts, ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
