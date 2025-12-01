@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Copy, Users, DollarSign, TrendingUp, Loader2 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Copy, Users, DollarSign, TrendingUp, Loader2, Award } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 
@@ -23,10 +24,27 @@ interface Commission {
   created_at: string;
 }
 
+interface TierInfo {
+  tier: string;
+  commissionRate: number;
+  nextTier: string | null;
+  salesNeeded: number;
+}
+
+const tierColors: Record<string, string> = {
+  'Bronze': 'bg-amber-600',
+  'Silver': 'bg-gray-400',
+  'Gold': 'bg-yellow-500',
+  'Platinum': 'bg-slate-300',
+  'Diamond': 'bg-cyan-400',
+};
+
 const AffiliateDashboard = () => {
   const [user, setUser] = useState<any>(null);
   const [affiliateData, setAffiliateData] = useState<AffiliateData | null>(null);
   const [commissions, setCommissions] = useState<Commission[]>([]);
+  const [tierInfo, setTierInfo] = useState<TierInfo>({ tier: 'Bronze', commissionRate: 15, nextTier: 'Silver', salesNeeded: 10 });
+  const [directSalesLast30, setDirectSalesLast30] = useState(0);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
   const navigate = useNavigate();
@@ -60,9 +78,13 @@ const AffiliateDashboard = () => {
         throw new Error(response.error.message);
       }
 
-      const { affiliate, commissions: commissionsData } = response.data;
+      const { affiliate, commissions: commissionsData, tierInfo: tierData, directSalesLast30Days } = response.data;
       setAffiliateData(affiliate);
       setCommissions(commissionsData || []);
+      if (tierData) {
+        setTierInfo(tierData);
+      }
+      setDirectSalesLast30(directSalesLast30Days || 0);
     } catch (error) {
       console.error("Error fetching affiliate data:", error);
       toast({
@@ -92,6 +114,10 @@ const AffiliateDashboard = () => {
       });
 
       setAffiliateData(response.data.affiliate);
+      if (response.data.tierInfo) {
+        setTierInfo(response.data.tierInfo);
+      }
+      setDirectSalesLast30(response.data.directSalesLast30Days || 0);
     } catch (error) {
       console.error("Error becoming affiliate:", error);
       toast({
@@ -114,6 +140,20 @@ const AffiliateDashboard = () => {
       title: "Copied!",
       description: "Referral link copied to clipboard",
     });
+  };
+
+  // Calculate progress to next tier
+  const getProgressToNextTier = () => {
+    if (tierInfo.tier === 'Diamond' || tierInfo.tier === 'Platinum') return 100;
+    const thresholds: Record<string, number> = {
+      'Bronze': 10,
+      'Silver': 25,
+      'Gold': 50,
+    };
+    const currentThreshold = thresholds[tierInfo.tier] || 10;
+    const prevThreshold = tierInfo.tier === 'Bronze' ? 0 : tierInfo.tier === 'Silver' ? 10 : 25;
+    const progress = ((directSalesLast30 - prevThreshold) / (currentThreshold - prevThreshold)) * 100;
+    return Math.min(Math.max(progress, 0), 100);
   };
 
   if (loading) {
@@ -239,20 +279,47 @@ const AffiliateDashboard = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Affiliate Level</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Your Tier</CardTitle>
+            <Award className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">Level {affiliateData.level || 1}</div>
-            <p className="text-xs text-muted-foreground mb-3">Your current tier in the program</p>
+            <div className="flex items-center gap-2 mb-1">
+              <span className={`w-3 h-3 rounded-full ${tierColors[tierInfo.tier] || 'bg-amber-600'}`}></span>
+              <span className="text-2xl font-bold">{tierInfo.tier}</span>
+            </div>
+            <p className="text-lg font-semibold text-primary">{tierInfo.commissionRate}% commission</p>
+            <p className="text-xs text-muted-foreground mb-3">
+              {directSalesLast30} direct sales in last 30 days
+            </p>
+            
+            {tierInfo.nextTier && tierInfo.salesNeeded > 0 && (
+              <div className="mb-3">
+                <div className="flex justify-between text-xs mb-1">
+                  <span>Progress to {tierInfo.nextTier}</span>
+                  <span>{tierInfo.salesNeeded} more sales needed</span>
+                </div>
+                <Progress value={getProgressToNextTier()} className="h-2" />
+              </div>
+            )}
+
             <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
-              <p className="font-medium text-foreground mb-1">Direct Sales Tiers:</p>
+              <p className="font-medium text-foreground mb-1">All Tiers:</p>
               <ul className="space-y-1">
-                <li>• <strong>Bronze:</strong> 15% (default)</li>
-                <li>• <strong>Silver:</strong> 20% (10+ sales/30 days)</li>
-                <li>• <strong>Gold:</strong> 25% (25+ sales/30 days)</li>
-                <li>• <strong>Platinum:</strong> 30% (50+ sales/30 days)</li>
-                <li>• <strong>Diamond:</strong> 35% (invite only)</li>
+                <li className={tierInfo.tier === 'Bronze' ? 'font-semibold text-foreground' : ''}>
+                  • Bronze: 15% (default)
+                </li>
+                <li className={tierInfo.tier === 'Silver' ? 'font-semibold text-foreground' : ''}>
+                  • Silver: 20% (10+ sales)
+                </li>
+                <li className={tierInfo.tier === 'Gold' ? 'font-semibold text-foreground' : ''}>
+                  • Gold: 25% (25+ sales)
+                </li>
+                <li className={tierInfo.tier === 'Platinum' ? 'font-semibold text-foreground' : ''}>
+                  • Platinum: 30% (50+ sales)
+                </li>
+                <li className={tierInfo.tier === 'Diamond' ? 'font-semibold text-foreground' : ''}>
+                  • Diamond: 35% (invite only)
+                </li>
               </ul>
             </div>
           </CardContent>
@@ -305,7 +372,7 @@ const AffiliateDashboard = () => {
                   <div>
                     <p className="font-medium">${commission.amount.toFixed(2)}</p>
                     <p className="text-sm text-muted-foreground">
-                      Level {commission.level} commission
+                      {commission.level === 1 ? 'Direct sale' : 'Sub-affiliate sale'}
                     </p>
                   </div>
                   <div className="text-right">
