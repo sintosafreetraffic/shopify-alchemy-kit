@@ -151,8 +151,7 @@ export const SleepBundleHero = () => {
                   </div>
                   <div className="space-y-1">
                     <p className="text-xl md:text-2xl font-bold text-primary">
-                      {product?.node.variants.edges[0]?.node.price.currencyCode}{" "}
-                      {parseFloat(product?.node.variants.edges[0]?.node.price.amount || "149.99").toFixed(2)}
+                      ${parseFloat(product?.node.variants.edges[0]?.node.price.amount || "149.99").toFixed(2)}
                     </p>
                     <p className="text-xs text-muted-foreground line-through">$199.99</p>
                     <p className="text-xs text-muted-foreground">1 of each product</p>
@@ -178,8 +177,7 @@ export const SleepBundleHero = () => {
                   </div>
                   <div className="space-y-1">
                     <p className="text-xl md:text-2xl font-bold text-primary">
-                      {product?.node.variants.edges[1]?.node.price.currencyCode}{" "}
-                      {parseFloat(product?.node.variants.edges[1]?.node.price.amount || "249.99").toFixed(2)}
+                      ${parseFloat(product?.node.variants.edges[1]?.node.price.amount || "249.99").toFixed(2)}
                     </p>
                     <p className="text-xs text-muted-foreground line-through">$399.98</p>
                     <p className="text-xs text-muted-foreground">2 of each product</p>
@@ -197,8 +195,8 @@ export const SleepBundleHero = () => {
             >
               <ShoppingCart className="w-5 h-5 mr-2" />
               Add to Cart - {selectedBundle === "single" 
-                ? `${product?.node.variants.edges[0]?.node.price.currencyCode || "$"} ${parseFloat(product?.node.variants.edges[0]?.node.price.amount || "149.99").toFixed(2)}`
-                : `${product?.node.variants.edges[1]?.node.price.currencyCode || "$"} ${parseFloat(product?.node.variants.edges[1]?.node.price.amount || "249.99").toFixed(2)}`
+                ? `$${parseFloat(product?.node.variants.edges[0]?.node.price.amount || "149.99").toFixed(2)}`
+                : `$${parseFloat(product?.node.variants.edges[1]?.node.price.amount || "249.99").toFixed(2)}`
               }
             </Button>
 
