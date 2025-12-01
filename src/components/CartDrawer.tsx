@@ -310,9 +310,11 @@ export const CartDrawer = () => {
       <SheetContent 
         className="w-full sm:max-w-lg flex flex-col h-full"
         onInteractOutside={(e) => {
-          // Prevent closing when clicking on recommendations panel
           const target = e.target as HTMLElement;
-          if (target.closest('[data-recommendations-panel]')) {
+          // Prevent closing when clicking on recommendations panel or toast notifications
+          if (target.closest('[data-recommendations-panel]') || 
+              target.closest('[data-sonner-toaster]') ||
+              target.closest('[data-sonner-toast]')) {
             e.preventDefault();
           }
         }}
