@@ -27,8 +27,8 @@ export const Header = () => {
       } else if (currentScrollY < lastScrollY) {
         // Scrolling up - show header
         setIsVisible(true);
-      } else if (currentScrollY > lastScrollY) {
-        // Scrolling down - hide header immediately
+      } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        // Scrolling down - hide header after scrolling past 100px
         setIsVisible(false);
       }
 
@@ -44,8 +44,8 @@ export const Header = () => {
 
   return (
     <header 
-      className={`${isAtTop ? 'relative' : 'fixed top-[36px]'} left-0 right-0 z-[75] border-b bg-background transition-all duration-300 ${
-        !isAtTop && !isVisible ? "-translate-y-full" : "translate-y-0"
+      className={`${isAtTop ? 'relative' : 'fixed top-[36px]'} left-0 right-0 z-[75] border-b bg-background transition-transform duration-300 ease-in-out ${
+        !isAtTop && !isVisible ? "-translate-y-[calc(100%+36px)]" : "translate-y-0"
       }`}
     >
       <div className="container mx-auto px-4 py-2 relative flex md:grid md:grid-cols-3 items-center">
