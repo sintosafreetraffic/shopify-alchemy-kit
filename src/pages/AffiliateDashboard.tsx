@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Copy, Users, DollarSign, TrendingUp, Loader2, Award } from "lucide-react";
+import { Copy, Users, DollarSign, Loader2, Award, Share2, TrendingUp, Check, Sparkles } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 
@@ -31,13 +31,21 @@ interface TierInfo {
   salesNeeded: number;
 }
 
-const tierColors: Record<string, string> = {
-  'Bronze': 'bg-amber-600',
-  'Silver': 'bg-gray-400',
-  'Gold': 'bg-yellow-500',
-  'Platinum': 'bg-slate-300',
-  'Diamond': 'bg-cyan-400',
+const tierConfig: Record<string, { color: string; bgColor: string; borderColor: string; icon: string }> = {
+  'Bronze': { color: 'text-amber-700', bgColor: 'bg-amber-100', borderColor: 'border-amber-300', icon: '🥉' },
+  'Silver': { color: 'text-slate-600', bgColor: 'bg-slate-100', borderColor: 'border-slate-300', icon: '🥈' },
+  'Gold': { color: 'text-yellow-700', bgColor: 'bg-yellow-100', borderColor: 'border-yellow-400', icon: '🥇' },
+  'Platinum': { color: 'text-slate-700', bgColor: 'bg-gradient-to-r from-slate-100 to-slate-200', borderColor: 'border-slate-400', icon: '💎' },
+  'Diamond': { color: 'text-cyan-700', bgColor: 'bg-gradient-to-r from-cyan-100 to-blue-100', borderColor: 'border-cyan-400', icon: '👑' },
 };
+
+const allTiers = [
+  { name: 'Bronze', rate: 15, requirement: 'Default' },
+  { name: 'Silver', rate: 20, requirement: '10+ sales' },
+  { name: 'Gold', rate: 25, requirement: '25+ sales' },
+  { name: 'Platinum', rate: 30, requirement: '50+ sales' },
+  { name: 'Diamond', rate: 35, requirement: 'Invite only' },
+];
 
 const AffiliateDashboard = () => {
   const [user, setUser] = useState<any>(null);
@@ -47,6 +55,7 @@ const AffiliateDashboard = () => {
   const [directSalesLast30, setDirectSalesLast30] = useState(0);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
+  const [copied, setCopied] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -135,14 +144,16 @@ const AffiliateDashboard = () => {
     
     const referralLink = `${window.location.origin}?ref=${affiliateData.referral_code}`;
     navigator.clipboard.writeText(referralLink);
+    setCopied(true);
     
     toast({
       title: "Copied!",
       description: "Referral link copied to clipboard",
     });
+
+    setTimeout(() => setCopied(false), 2000);
   };
 
-  // Calculate progress to next tier
   const getProgressToNextTier = () => {
     if (tierInfo.tier === 'Diamond' || tierInfo.tier === 'Platinum') return 100;
     const thresholds: Record<string, number> = {
@@ -158,243 +169,363 @@ const AffiliateDashboard = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-16 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen bg-secondary/30 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading your dashboard...</p>
+        </div>
       </div>
     );
   }
 
   if (!affiliateData) {
     return (
-      <div className="container mx-auto px-4 py-16 max-w-2xl">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">Join Our Affiliate Program</CardTitle>
-            <CardDescription>
-              Earn commissions on every sale you refer
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <p className="text-muted-foreground">
-              Partner with Rise By Night™ and earn generous commissions by sharing our 
-              premium sleep products with your audience. Our multi-level program rewards 
-              you for building a strong referral network.
+      <div className="min-h-screen bg-secondary/30">
+        <div className="container mx-auto px-4 py-12 max-w-3xl">
+          {/* Hero Section */}
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
+              <Sparkles className="h-8 w-8 text-primary" />
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold mb-3">Affiliate Program</h1>
+            <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+              Partner with Rise By Night™ and earn generous commissions by sharing our premium sleep products.
             </p>
-            
-            <div className="space-y-3 bg-muted/50 p-4 rounded-lg">
-              <h4 className="font-semibold">Commission Structure:</h4>
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-primary"></span>
-                  <span><strong>Level 1:</strong> 10% commission on direct referrals</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-primary/70"></span>
-                  <span><strong>Level 2:</strong> 5% commission on sub-affiliate sales</span>
-                </li>
-              </ul>
-            </div>
+          </div>
 
-            <div className="space-y-3 bg-primary/5 p-4 rounded-lg border border-primary/20">
-              <h4 className="font-semibold">Direct Sales Tiers:</h4>
-              <ul className="space-y-1 text-sm text-muted-foreground">
-                <li>• <strong>Bronze:</strong> 15% (default)</li>
-                <li>• <strong>Silver:</strong> 20% (10+ sales in last 30 days)</li>
-                <li>• <strong>Gold:</strong> 25% (25+ sales in last 30 days)</li>
-                <li>• <strong>Platinum:</strong> 30% (50+ sales in last 30 days)</li>
-                <li>• <strong>Diamond:</strong> 35% (invite only)</li>
-              </ul>
+          <Card className="border-0 shadow-lg overflow-hidden">
+            <div className="bg-gradient-to-r from-primary/5 to-primary/10 p-6 border-b">
+              <h2 className="text-xl font-semibold mb-1">Commission Structure</h2>
+              <p className="text-sm text-muted-foreground">Earn on every sale you refer</p>
             </div>
+            <CardContent className="p-6 space-y-6">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                      <span className="text-sm font-bold text-primary">L1</span>
+                    </div>
+                    <span className="font-semibold">Direct Referrals</span>
+                  </div>
+                  <p className="text-2xl font-bold text-primary">10%</p>
+                  <p className="text-sm text-muted-foreground">Commission on direct sales</p>
+                </div>
+                <div className="p-4 rounded-lg bg-secondary border">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 rounded-full bg-muted-foreground/20 flex items-center justify-center">
+                      <span className="text-sm font-bold text-muted-foreground">L2</span>
+                    </div>
+                    <span className="font-semibold">Sub-Affiliates</span>
+                  </div>
+                  <p className="text-2xl font-bold">5%</p>
+                  <p className="text-sm text-muted-foreground">From your referrals' sales</p>
+                </div>
+              </div>
 
-            <div className="space-y-3 bg-muted/30 p-4 rounded-lg">
-              <h4 className="font-semibold">Program Benefits:</h4>
-              <ul className="space-y-1 text-sm text-muted-foreground">
-                <li>• Unique referral link to track all your sales</li>
-                <li>• Real-time dashboard to monitor earnings</li>
-                <li>• Monthly payouts via PayPal or bank transfer</li>
-                <li>• No minimum payout threshold</li>
-              </ul>
-            </div>
+              <div className="border-t pt-6">
+                <h3 className="font-semibold mb-4 flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-primary" />
+                  Performance Tiers
+                </h3>
+                <div className="space-y-2">
+                  {allTiers.map((tier) => (
+                    <div key={tier.name} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors">
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg">{tierConfig[tier.name]?.icon}</span>
+                        <span className="font-medium">{tier.name}</span>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className="text-sm text-muted-foreground">{tier.requirement}</span>
+                        <span className="font-bold text-primary">{tier.rate}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-            <Button 
-              onClick={becomeAffiliate} 
-              className="w-full" 
-              size="lg"
-              disabled={joining}
-            >
-              {joining ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Joining...
-                </>
-              ) : (
-                "Join Affiliate Program"
-              )}
-            </Button>
-          </CardContent>
-        </Card>
+              <div className="border-t pt-6">
+                <h3 className="font-semibold mb-3">Program Benefits</h3>
+                <ul className="space-y-2">
+                  {[
+                    'Unique referral link to track all your sales',
+                    'Real-time dashboard to monitor earnings',
+                    'Monthly payouts via PayPal or bank transfer',
+                    'No minimum payout threshold'
+                  ].map((benefit, i) => (
+                    <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Check className="h-4 w-4 text-success shrink-0" />
+                      {benefit}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <Button 
+                onClick={becomeAffiliate} 
+                className="w-full h-12 text-base" 
+                size="lg"
+                disabled={joining}
+              >
+                {joining ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Joining...
+                  </>
+                ) : (
+                  "Join Affiliate Program"
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
+  const currentTierConfig = tierConfig[tierInfo.tier] || tierConfig['Bronze'];
+
   return (
-    <div className="container mx-auto px-4 py-8 md:py-16">
-      <h1 className="text-3xl font-bold mb-8">Affiliate Dashboard</h1>
+    <div className="min-h-screen bg-secondary/30">
+      {/* Header */}
+      <div className="bg-background border-b">
+        <div className="container mx-auto px-4 py-6 md:py-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold">Affiliate Dashboard</h1>
+              <p className="text-muted-foreground">Welcome back! Here's your performance overview.</p>
+            </div>
+            <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border ${currentTierConfig.bgColor} ${currentTierConfig.borderColor}`}>
+              <span className="text-xl">{currentTierConfig.icon}</span>
+              <span className={`font-semibold ${currentTierConfig.color}`}>{tierInfo.tier} Partner</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <div className="grid gap-6 md:grid-cols-3 mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Referrals</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{affiliateData.total_referrals || 0}</div>
-            <p className="text-xs text-muted-foreground mb-3">People who signed up using your link</p>
-            <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
-              <p className="font-medium text-foreground mb-1">How it works:</p>
-              <p>When someone clicks your referral link and makes a purchase, they become your referral. You earn commission on their order and any future orders they place.</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ${(affiliateData.total_commissions || 0).toFixed(2)}
-            </div>
-            <p className="text-xs text-muted-foreground mb-3">Lifetime commission earnings</p>
-            <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
-              <p className="font-medium text-foreground mb-1">Commission rates:</p>
-              <ul className="space-y-1">
-                <li>• Level 1: 10% on direct sales</li>
-                <li>• Level 2: 5% on sub-affiliate sales</li>
-              </ul>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Your Tier</CardTitle>
-            <Award className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2 mb-1">
-              <span className={`w-3 h-3 rounded-full ${tierColors[tierInfo.tier] || 'bg-amber-600'}`}></span>
-              <span className="text-2xl font-bold">{tierInfo.tier}</span>
-            </div>
-            <p className="text-lg font-semibold text-primary">{tierInfo.commissionRate}% commission</p>
-            <p className="text-xs text-muted-foreground mb-3">
-              {directSalesLast30} direct sales in last 30 days
-            </p>
-            
-            {tierInfo.nextTier && tierInfo.salesNeeded > 0 && (
-              <div className="mb-3">
-                <div className="flex justify-between text-xs mb-1">
-                  <span>Progress to {tierInfo.nextTier}</span>
-                  <span>{tierInfo.salesNeeded} more sales needed</span>
+      <div className="container mx-auto px-4 py-6 md:py-8 space-y-6">
+        {/* Stats Grid */}
+        <div className="grid gap-4 md:grid-cols-3">
+          {/* Total Referrals */}
+          <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
+                  <Users className="h-6 w-6 text-blue-600" />
                 </div>
-                <Progress value={getProgressToNextTier()} className="h-2" />
+                <span className="text-xs font-medium text-muted-foreground bg-secondary px-2 py-1 rounded">All Time</span>
+              </div>
+              <p className="text-3xl font-bold mb-1">{affiliateData.total_referrals || 0}</p>
+              <p className="text-sm text-muted-foreground">Total Referrals</p>
+            </CardContent>
+          </Card>
+
+          {/* Total Earnings */}
+          <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
+                  <DollarSign className="h-6 w-6 text-green-600" />
+                </div>
+                <span className="text-xs font-medium text-muted-foreground bg-secondary px-2 py-1 rounded">Lifetime</span>
+              </div>
+              <p className="text-3xl font-bold mb-1">${(affiliateData.total_commissions || 0).toFixed(2)}</p>
+              <p className="text-sm text-muted-foreground">Total Earnings</p>
+            </CardContent>
+          </Card>
+
+          {/* Current Commission Rate */}
+          <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
+                  <Award className="h-6 w-6 text-purple-600" />
+                </div>
+                <span className="text-xs font-medium text-muted-foreground bg-secondary px-2 py-1 rounded">Current Rate</span>
+              </div>
+              <p className="text-3xl font-bold mb-1">{tierInfo.commissionRate}%</p>
+              <p className="text-sm text-muted-foreground">Commission Rate</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Referral Link Card */}
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Share2 className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">Your Referral Link</h3>
+                  <p className="text-sm text-muted-foreground">Share to earn commissions</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={`${window.location.origin}?ref=${affiliateData.referral_code}`}
+                    className="flex-1 px-4 py-3 border rounded-lg bg-secondary/50 text-sm font-mono truncate"
+                  />
+                  <Button onClick={copyReferralLink} size="lg" className="shrink-0 px-6">
+                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Code: <span className="font-mono font-semibold">{affiliateData.referral_code}</span>
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Tier Progress Card */}
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-lg bg-yellow-100 flex items-center justify-center">
+                  <TrendingUp className="h-5 w-5 text-yellow-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">Tier Progress</h3>
+                  <p className="text-sm text-muted-foreground">{directSalesLast30} sales in last 30 days</p>
+                </div>
+              </div>
+              
+              {tierInfo.nextTier && tierInfo.salesNeeded > 0 ? (
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="font-medium">{tierInfo.tier}</span>
+                    <span className="font-medium">{tierInfo.nextTier}</span>
+                  </div>
+                  <Progress value={getProgressToNextTier()} className="h-3" />
+                  <p className="text-sm text-muted-foreground text-center">
+                    {tierInfo.salesNeeded} more sales to unlock {tierInfo.nextTier}
+                  </p>
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <span className="text-2xl mb-2 block">{currentTierConfig.icon}</span>
+                  <p className="font-medium">You've reached {tierInfo.tier}!</p>
+                  <p className="text-sm text-muted-foreground">Maximum tier achieved</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Commission Rates & Tiers */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Commission Rates */}
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-6">
+              <h3 className="font-semibold mb-4">Commission Structure</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-primary/20">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                      <span className="text-xs font-bold text-primary">L1</span>
+                    </div>
+                    <span className="text-sm">Direct Sales</span>
+                  </div>
+                  <span className="font-bold text-primary">10%</span>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-secondary">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-muted-foreground/20 flex items-center justify-center">
+                      <span className="text-xs font-bold text-muted-foreground">L2</span>
+                    </div>
+                    <span className="text-sm">Sub-Affiliate Sales</span>
+                  </div>
+                  <span className="font-bold">5%</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* All Tiers */}
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-6">
+              <h3 className="font-semibold mb-4">Performance Tiers</h3>
+              <div className="space-y-2">
+                {allTiers.map((tier) => (
+                  <div 
+                    key={tier.name} 
+                    className={`flex items-center justify-between p-3 rounded-lg transition-colors ${
+                      tierInfo.tier === tier.name 
+                        ? `${tierConfig[tier.name]?.bgColor} ${tierConfig[tier.name]?.borderColor} border` 
+                        : 'bg-secondary/50 hover:bg-secondary'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>{tierConfig[tier.name]?.icon}</span>
+                      <span className={`text-sm ${tierInfo.tier === tier.name ? 'font-semibold' : ''}`}>{tier.name}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-muted-foreground">{tier.requirement}</span>
+                      <span className={`font-bold ${tierInfo.tier === tier.name ? 'text-primary' : ''}`}>{tier.rate}%</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Commission History */}
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-6">
+            <h3 className="font-semibold mb-4">Commission History</h3>
+            {commissions.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 rounded-full bg-secondary mx-auto mb-4 flex items-center justify-center">
+                  <DollarSign className="h-8 w-8 text-muted-foreground/40" />
+                </div>
+                <p className="font-medium text-muted-foreground mb-1">No commissions yet</p>
+                <p className="text-sm text-muted-foreground">Share your referral link to start earning!</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {commissions.map((commission) => (
+                  <div
+                    key={commission.id}
+                    className="flex items-center justify-between p-4 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        commission.level === 1 ? 'bg-primary/10' : 'bg-secondary'
+                      }`}>
+                        <DollarSign className={`h-5 w-5 ${commission.level === 1 ? 'text-primary' : 'text-muted-foreground'}`} />
+                      </div>
+                      <div>
+                        <p className="font-semibold">${commission.amount.toFixed(2)}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {commission.level === 1 ? 'Direct sale' : 'Sub-affiliate sale'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className={`inline-block text-xs font-medium px-3 py-1 rounded-full ${
+                        commission.status === 'paid' 
+                          ? 'bg-green-100 text-green-700' 
+                          : commission.status === 'pending'
+                          ? 'bg-yellow-100 text-yellow-700'
+                          : 'bg-secondary text-muted-foreground'
+                      }`}>
+                        {commission.status.charAt(0).toUpperCase() + commission.status.slice(1)}
+                      </span>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {new Date(commission.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
-
-            <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
-              <p className="font-medium text-foreground mb-1">All Tiers:</p>
-              <ul className="space-y-1">
-                <li className={tierInfo.tier === 'Bronze' ? 'font-semibold text-foreground' : ''}>
-                  • Bronze: 15% (default)
-                </li>
-                <li className={tierInfo.tier === 'Silver' ? 'font-semibold text-foreground' : ''}>
-                  • Silver: 20% (10+ sales)
-                </li>
-                <li className={tierInfo.tier === 'Gold' ? 'font-semibold text-foreground' : ''}>
-                  • Gold: 25% (25+ sales)
-                </li>
-                <li className={tierInfo.tier === 'Platinum' ? 'font-semibold text-foreground' : ''}>
-                  • Platinum: 30% (50+ sales)
-                </li>
-                <li className={tierInfo.tier === 'Diamond' ? 'font-semibold text-foreground' : ''}>
-                  • Diamond: 35% (invite only)
-                </li>
-              </ul>
-            </div>
           </CardContent>
         </Card>
       </div>
-
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Your Referral Link</CardTitle>
-          <CardDescription>Share this link to earn commissions on every sale</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <input
-              type="text"
-              readOnly
-              value={`${window.location.origin}?ref=${affiliateData.referral_code}`}
-              className="flex-1 px-3 py-2 border rounded-md bg-muted text-sm"
-            />
-            <Button onClick={copyReferralLink} variant="outline" className="shrink-0">
-              <Copy className="h-4 w-4 mr-2" />
-              Copy Link
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            Your referral code: <span className="font-mono font-semibold">{affiliateData.referral_code}</span>
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Commission History</CardTitle>
-          <CardDescription>Your recent commission earnings</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {commissions.length === 0 ? (
-            <div className="text-center py-8">
-              <DollarSign className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
-              <p className="text-muted-foreground">No commissions yet</p>
-              <p className="text-sm text-muted-foreground">Share your referral link to start earning!</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {commissions.map((commission) => (
-                <div
-                  key={commission.id}
-                  className="flex items-center justify-between border-b pb-4 last:border-0"
-                >
-                  <div>
-                    <p className="font-medium">${commission.amount.toFixed(2)}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {commission.level === 1 ? 'Direct sale' : 'Sub-affiliate sale'}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className={`text-sm capitalize px-2 py-1 rounded-full ${
-                      commission.status === 'paid' 
-                        ? 'bg-green-100 text-green-800' 
-                        : commission.status === 'pending'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-muted text-muted-foreground'
-                    }`}>
-                      {commission.status}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {new Date(commission.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 };
