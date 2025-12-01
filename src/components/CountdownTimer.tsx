@@ -55,7 +55,7 @@ export const CountdownTimer = () => {
       const saleInfo = getSaleInfo();
       setSaleName(saleInfo.saleName);
       
-      const now = new Date().getTime();
+      const now = getUSTime().getTime();
       const distance = saleInfo.endTime.getTime() - now;
 
       if (distance < 0) {
