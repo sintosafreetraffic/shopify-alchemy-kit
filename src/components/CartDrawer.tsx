@@ -377,7 +377,7 @@ export const CartDrawer = () => {
             <>
               {/* Scrollable Cart Items + Trust Badges + Pricing */}
               <div className="flex-1 overflow-y-auto pr-2 min-h-0 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
-                <div className="space-y-4">
+                <div className="space-y-2">
                 {/* Cart Items */}
                 {items.map((item) => {
                     const hasActiveDeal = (item.product.node.title.toLowerCase().includes('ergonomic sleep pillow') || 
@@ -498,7 +498,7 @@ export const CartDrawer = () => {
                   
                   {/* Free Gifts Section */}
                   {freeGifts > 0 && (
-                    <div className="bg-primary/5 border border-primary rounded-md p-2 mt-2">
+                    <div className="bg-primary/5 border border-primary rounded-md p-2 mt-1">
                       <div className="flex items-center gap-2">
                         <Gift className="w-4 h-4 text-primary flex-shrink-0" />
                         <img 
@@ -522,7 +522,7 @@ export const CartDrawer = () => {
                   
                   {/* Mobile Recommendations */}
                   {recommendedProducts.length > 0 && (
-                    <div className="pt-3 border-t mt-3 lg:hidden">
+                    <div className="pt-2 border-t mt-2 lg:hidden">
                       <h3 className="text-sm font-semibold mb-3">You may also like</h3>
                       <div className="grid grid-cols-2 gap-2">
                       {recommendedProducts.map((product) => {
@@ -583,9 +583,9 @@ export const CartDrawer = () => {
                 </div>
 
                 {/* Trust Badges + Pricing - Part of scrollable content */}
-                <div className="space-y-3 pt-4 border-t mt-4 pb-4">
+                <div className="space-y-2 pt-2 border-t mt-2 pb-2">
                   {/* Trust Badges */}
-                <div className="grid grid-cols-3 gap-2 pb-2 mb-3">
+                <div className="grid grid-cols-3 gap-2 pb-1 mb-2">
                     <div className="flex flex-col items-center gap-1 text-center">
                       <Moon className="w-4 h-4 text-primary" />
                       <span className="text-xs font-medium">100-Night Trial</span>
@@ -601,7 +601,7 @@ export const CartDrawer = () => {
                   </div>
 
                   {/* Price Summary */}
-                  <div className="space-y-1.5 pt-2">
+                  <div className="space-y-1 pt-1">
                     {totalDiscount > 0 && (
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-green-600 dark:text-green-400">Savings</span>
@@ -629,7 +629,7 @@ export const CartDrawer = () => {
               </div>
               
               {/* Fixed Checkout Section at Bottom */}
-              <div className="flex-shrink-0 space-y-3 pt-3 border-t bg-background">
+              <div className="flex-shrink-0 space-y-2 pt-2 border-t bg-background">
                 <Button 
                   onClick={handleCheckout}
                   className={`w-full relative overflow-hidden group transition-all hover:bg-black ${shouldBounce ? 'animate-subtle-bounce' : ''}`}
