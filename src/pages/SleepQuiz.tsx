@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -8,7 +8,7 @@ import { Loader2, CheckCircle, AlertCircle, ShoppingCart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useCartStore } from "@/stores/cartStore";
-import { fetchProducts } from "@/lib/shopify";
+import { fetchProducts, ShopifyProduct } from "@/lib/shopify";
 
 interface QuizAnswers {
   sleepPosition: string;
@@ -40,8 +40,21 @@ const SleepQuiz = () => {
   });
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [results, setResults] = useState<AnalysisResult | null>(null);
+  const [products, setProducts] = useState<ShopifyProduct[]>([]);
   const navigate = useNavigate();
   const { addItem } = useCartStore();
+
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const fetchedProducts = await fetchProducts(50);
+        setProducts(fetchedProducts);
+      } catch (error) {
+        console.error("Error loading products:", error);
+      }
+    };
+    loadProducts();
+  }, []);
 
   const handleSleepPositionChange = (value: string) => {
     setAnswers({ ...answers, sleepPosition: value });
@@ -113,12 +126,15 @@ const SleepQuiz = () => {
     }
   };
 
+  const getProductByName = (productName: string) => {
+    return products.find(p => 
+      p.node.title.toLowerCase().includes(productName.toLowerCase().replace('rise by night™ ', ''))
+    );
+  };
+
   const handleAddToCart = async (productName: string) => {
     try {
-      const products = await fetchProducts(50);
-      const product = products.find(p => 
-        p.node.title.toLowerCase().includes(productName.toLowerCase().replace('rise by night™ ', ''))
-      );
+      const product = getProductByName(productName);
 
       if (!product) {
         toast.error("Product not found");
@@ -304,29 +320,42 @@ const SleepQuiz = () => {
               <div>
                 <h3 className="text-xl font-semibold mb-4">Recommended Products</h3>
                 <div className="space-y-4">
-                  {results.recommendations.map((rec, index) => (
-                    <Card key={index} className="p-6">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h4 className="font-semibold text-lg">{rec.product}</h4>
-                            <span className={`text-xs font-medium uppercase ${getPriorityColor(rec.priority)}`}>
-                              {rec.priority} priority
-                            </span>
+                  {results.recommendations.map((rec, index) => {
+                    const product = getProductByName(rec.product);
+                    const productImage = product?.node.images?.edges?.[0]?.node.url;
+                    
+                    return (
+                      <Card key={index} className="p-6">
+                        <div className="flex items-start gap-4">
+                          {productImage && (
+                            <div className="w-24 h-24 flex-shrink-0 bg-secondary/20 rounded-md overflow-hidden">
+                              <img
+                                src={productImage}
+                                alt={rec.product}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h4 className="font-semibold text-lg">{rec.product}</h4>
+                              <span className={`text-xs font-medium uppercase ${getPriorityColor(rec.priority)}`}>
+                                {rec.priority} priority
+                              </span>
+                            </div>
+                            <p className="text-muted-foreground mb-3">{rec.reason}</p>
+                            <Button
+                              onClick={() => handleAddToCart(rec.product)}
+                              size="sm"
+                            >
+                              <ShoppingCart className="w-4 h-4 mr-2" />
+                              Add to Cart
+                            </Button>
                           </div>
-                          <p className="text-muted-foreground mb-3">{rec.reason}</p>
                         </div>
-                        <Button
-                          onClick={() => handleAddToCart(rec.product)}
-                          size="sm"
-                          className="flex-shrink-0"
-                        >
-                          <ShoppingCart className="w-4 h-4 mr-2" />
-                          Add to Cart
-                        </Button>
-                      </div>
-                    </Card>
-                  ))}
+                      </Card>
+                    );
+                  })}
                 </div>
               </div>
 
