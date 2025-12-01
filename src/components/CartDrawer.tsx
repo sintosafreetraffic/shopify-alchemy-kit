@@ -15,6 +15,20 @@ import { useCartStore } from "@/stores/cartStore";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
 import kneePillowCart from "@/assets/knee-pillow-cart.png";
 import sleepMaskNavy from "@/assets/sleep-mask-navy.png";
+import sleepMaskTurquoise from "@/assets/sleep-mask-turquoise.png";
+import sleepMaskPink from "@/assets/sleep-mask-pink.png";
+import sleepMaskGold from "@/assets/sleep-mask-gold.png";
+import sleepMaskSilver from "@/assets/sleep-mask-silver.png";
+
+// Image mapping for sleep mask colors
+const sleepMaskColorImages: Record<string, string> = {
+  "Navy": sleepMaskNavy,
+  "Turquoise": sleepMaskTurquoise,
+  "Pink": sleepMaskPink,
+  "Gold": sleepMaskGold,
+  "Silver": sleepMaskSilver,
+  "Black": sleepMaskNavy, // Using navy for black
+};
 import { fetchProducts, ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import { ImageModal } from "./ImageModal";
@@ -222,12 +236,12 @@ export const CartDrawer = () => {
                   key={product.node.id}
                   className="border border-border rounded-lg p-3 bg-background hover:shadow-md transition-all"
                 >
-                  {image && (
+                   {image && (
                     <div 
                       className="w-full aspect-square bg-secondary/20 rounded-md overflow-hidden mb-3 relative"
                     >
                       <img
-                        src={product.node.title.toLowerCase().includes('mask') ? sleepMaskNavy : image.url}
+                        src={product.node.title.toLowerCase().includes('silk deep sleep mask') ? sleepMaskNavy : image.url}
                         alt={product.node.title}
                         className="w-full h-full object-cover"
                         loading="lazy"
@@ -357,12 +371,28 @@ export const CartDrawer = () => {
                                           item.product.node.title.toLowerCase().includes('knee pillow')) && 
                                          item.quantity >= 2;
                     
+                    // Get color-specific image for sleep mask
+                    const getItemImage = () => {
+                      if (item.product.node.title.toLowerCase().includes('knee pillow')) {
+                        return kneePillowCart;
+                      }
+                      
+                      if (item.product.node.title.toLowerCase().includes('silk deep sleep mask')) {
+                        const colorOption = item.selectedOptions.find(opt => opt.name === 'Color');
+                        if (colorOption && sleepMaskColorImages[colorOption.value]) {
+                          return sleepMaskColorImages[colorOption.value];
+                        }
+                      }
+                      
+                      return item.product.node.images.edges[0]?.node.url;
+                    };
+                    
                     return (
                     <div key={item.variantId} className="flex gap-4 p-2 border rounded-lg">
                       <div className="w-16 h-16 bg-secondary/20 rounded-md overflow-hidden flex-shrink-0">
                         {item.product.node.images?.edges?.[0]?.node && (
                           <img
-                            src={item.product.node.title.toLowerCase().includes('knee pillow') ? kneePillowCart : item.product.node.images.edges[0].node.url}
+                            src={getItemImage()}
                             alt={item.product.node.title}
                             className="w-full h-full object-cover"
                             loading="lazy"
