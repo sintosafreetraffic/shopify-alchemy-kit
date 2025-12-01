@@ -9,7 +9,7 @@ export const SleepBundleFAQ = () => {
   const faqs = [
     {
       question: "What products are included in the Complete Sleep Bundle?",
-      answer: "The Complete Sleep Bundle includes one RiseByNight™ Ergonomic Sleep Pillow, one RiseByNight™ Ergonomic Knee Pillow, and one RiseByNight™ Silk Sleep Mask. The Double Bundle includes two of each product.",
+      answer: "The Complete Sleep Bundle includes one RiseByNight™ Ergonomic Sleep Pillow, one RiseByNight™ Ergonomic Knee Pillow, and one RiseByNight™ Silk Deep Sleep Mask. The Double Bundle includes two of each product.",
     },
     {
       question: "How much do I save with the bundle?",
@@ -25,11 +25,11 @@ export const SleepBundleFAQ = () => {
     },
     {
       question: "Is the bundle suitable for all sleeping positions?",
-      answer: "Absolutely! The ergonomic pillow works for back, side, and stomach sleepers. The knee pillow is perfect for side sleepers but also benefits back sleepers. The silk sleep mask works for everyone. Together, they provide comprehensive sleep support.",
+      answer: "Absolutely! The ergonomic pillow works for back, side, and stomach sleepers. The knee pillow is perfect for side sleepers but also benefits back sleepers. The silk deep sleep mask works for everyone. Together, they provide comprehensive sleep support.",
     },
     {
       question: "How do I care for the products in the bundle?",
-      answer: "The pillow and knee pillow covers are machine washable. The silk sleep mask should be hand-washed with cold water and mild detergent. All products come with detailed care instructions.",
+      answer: "The pillow and knee pillow covers are machine washable. The silk deep sleep mask should be hand-washed with cold water and mild detergent. All products come with detailed care instructions.",
     },
     {
       question: "Does the bundle come with a warranty?",

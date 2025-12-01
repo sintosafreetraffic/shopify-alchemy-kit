@@ -103,7 +103,7 @@ export const SleepBundleHero = () => {
             <div className="space-y-2">
               <div className="flex items-start gap-2">
                 <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                <p className="text-sm md:text-base">Complete sleep solution package - Pillow, Knee Pillow & Sleep Mask</p>
+                <p className="text-sm md:text-base">Complete sleep solution package - Pillow, Knee Pillow & Deep Sleep Mask</p>
               </div>
               <div className="flex items-start gap-2">
                 <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />

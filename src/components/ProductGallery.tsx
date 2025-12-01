@@ -136,7 +136,7 @@ export const ProductGallery = () => {
                     <ul className="space-y-3 mb-8">
                       <li className="flex items-start gap-2">
                         <span className="text-primary mt-0.5 text-lg">✓</span>
-                        <span className="text-muted-foreground">Pillow + Knee Pillow + Sleep Mask</span>
+                        <span className="text-muted-foreground">Pillow + Knee Pillow + Deep Sleep Mask</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-primary mt-0.5 text-lg">✓</span>

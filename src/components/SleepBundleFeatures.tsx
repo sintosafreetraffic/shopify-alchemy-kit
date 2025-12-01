@@ -5,7 +5,7 @@ export const SleepBundleFeatures = () => {
     {
       icon: Moon,
       title: "Complete Sleep Solution",
-      description: "Everything you need for perfect sleep in one bundle - ergonomic pillow, knee pillow, and silk sleep mask work together for optimal rest.",
+      description: "Everything you need for perfect sleep in one bundle - ergonomic pillow, knee pillow, and silk deep sleep mask work together for optimal rest.",
     },
     {
       icon: Wind,

@@ -11,7 +11,7 @@ const features: Array<{
   {
     image: eyeMaskGift,
     title: "Luxury Silk for Ultimate Comfort",
-    description: "Made from 100% pure mulberry silk, our sleep mask is incredibly soft and gentle on your skin. Unlike synthetic materials, silk is naturally hypoallergenic and won't absorb your skin's moisture or beauty products.",
+    description: "Made from 100% pure mulberry silk, our deep sleep mask is incredibly soft and gentle on your skin. Unlike synthetic materials, silk is naturally hypoallergenic and won't absorb your skin's moisture or beauty products.",
     benefits: [
       "Prevents wrinkles and sleep lines",
       "Gentle on eyelashes and extensions",
