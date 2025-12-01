@@ -136,14 +136,15 @@ export const Hero = () => {
         </div>
 
         {/* Desktop Grid Layout */}
-        <div className="grid md:grid-cols-2 gap-6 lg:gap-10 md:items-start">
+        <div className="grid md:grid-cols-2 gap-6 lg:gap-10">
           {/* Scrollable Product Images Column - Desktop Only */}
           <div className="hidden md:block relative order-2 md:order-1">
             <ProductImageCarousel />
           </div>
           
           {/* Sticky Product Details Column */}
-          <div className="space-y-2 order-1 md:order-2 md:sticky md:top-4 md:self-start">
+          <div className="space-y-2 order-1 md:order-2">
+            <div className="md:sticky md:top-20 md:pb-8">
 
             {/* Desktop Title Section */}
             <div className="hidden md:flex flex-col gap-3">
@@ -290,6 +291,7 @@ export const Hero = () => {
                 <Truck className="w-5 h-5 mb-1.5 text-primary" />
                 <p className="text-xs font-medium leading-tight">Easy Returns</p>
               </div>
+            </div>
             </div>
           </div>
         </div>
