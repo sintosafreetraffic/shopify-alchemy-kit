@@ -21,16 +21,17 @@ export const Header = () => {
       // Check if we're at the top
       setIsAtTop(currentScrollY < 10);
 
-      // Show header when scrolling up, hide when scrolling down
+      // Show header when at top or scrolling up
       if (currentScrollY < 10) {
         setIsVisible(true);
       } else if (currentScrollY < lastScrollY) {
-        // Scrolling up - show header
+        // Scrolling up - show header and keep it visible
         setIsVisible(true);
       } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
-        // Scrolling down - hide header after scrolling past 100px
+        // Scrolling down - hide header only when actively scrolling down
         setIsVisible(false);
       }
+      // When not scrolling (currentScrollY === lastScrollY), maintain current state
 
       setLastScrollY(currentScrollY);
     };
