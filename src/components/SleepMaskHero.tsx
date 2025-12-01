@@ -27,7 +27,7 @@ export const SleepMaskHero = () => {
   const [selectedColor, setSelectedColor] = useState("navy");
   const [product, setProduct] = useState<ShopifyProduct | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const { addItem, createCheckout, checkoutUrl, setCheckoutUrl } = useCartStore();
+  const { addItem } = useCartStore();
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -67,16 +67,17 @@ export const SleepMaskHero = () => {
       };
       
       addItem(cartItem);
-      await createCheckout();
-      
-      const url = useCartStore.getState().checkoutUrl;
-      if (url) {
-        window.open(url, '_blank');
-        setCheckoutUrl(null);
-      }
+      toast.success("Added to cart!", {
+        description: `${quantity} sleep mask${quantity > 1 ? 's' : ''} added to your cart.`,
+        cancel: {
+          label: "✕",
+          onClick: () => {}
+        }
+      });
+      useCartStore.getState().setCartOpen(true);
     } catch (error) {
-      console.error('Checkout failed:', error);
-      toast.error("Failed to start checkout");
+      console.error('Failed to add to cart:', error);
+      toast.error("Failed to add to cart");
     } finally {
       setIsCheckingOut(false);
     }
