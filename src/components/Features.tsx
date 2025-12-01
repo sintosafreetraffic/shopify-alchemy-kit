@@ -2,7 +2,7 @@ import { Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import testimonial from "@/assets/testimonial-hero.png";
 import offerBundle from "@/assets/offer-bundle.png";
-import comparisonChart from "@/assets/comparison-new.jpg";
+import comparisonChart from "@/assets/comparison-new-updated.webp";
 import { useState, useEffect } from "react";
 import { useCartStore } from "@/stores/cartStore";
 import { fetchProducts } from "@/lib/shopify";
