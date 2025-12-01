@@ -498,15 +498,15 @@ export const CartDrawer = () => {
                       <div className="flex items-center gap-2">
                         <Gift className="w-4 h-4 text-primary flex-shrink-0" />
                         <img 
-                          src={eyeMaskGift} 
-                          alt="Free Deep Sleep Mask" 
+                          src={sleepMaskNavy} 
+                          alt="Free Sleep Mask" 
                           className="w-10 h-10 object-contain flex-shrink-0"
                           loading="lazy"
                           decoding="async"
                         />
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-bold text-primary">
-                            FREE GIFT{freeGifts > 1 ? 'S' : ''}: {freeGifts}x Deep Sleep Mask
+                            FREE GIFT{freeGifts > 1 ? 'S' : ''}: {freeGifts}x Sleep Mask
                           </p>
                           <p className="text-xs text-muted-foreground">
                             Value: ${(freeGifts * 29.99).toFixed(2)}
