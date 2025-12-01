@@ -40,7 +40,7 @@ export const CartDrawer = () => {
   const [recommendedProducts, setRecommendedProducts] = useState<ShopifyProduct[]>([]);
   const [shouldBounce, setShouldBounce] = useState(false);
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
-  const [currentPrices, setCurrentPrices] = useState<Record<string, string>>({});
+  const [currentPrices, setCurrentPrices] = useState<Record<string, { price: string; compareAtPrice?: string }>>({});
   
   const { 
     items, 
@@ -94,7 +94,15 @@ export const CartDrawer = () => {
   // Use current prices from Shopify if available, fallback to stored prices
   const getItemPrice = (item: typeof items[0]) => {
     const currentPrice = currentPrices[item.variantId];
-    return currentPrice ? parseFloat(currentPrice) : parseFloat(item.price.amount);
+    return currentPrice ? parseFloat(currentPrice.price) : parseFloat(item.price.amount);
+  };
+  
+  const getItemCompareAtPrice = (item: typeof items[0]) => {
+    const currentPrice = currentPrices[item.variantId];
+    if (currentPrice?.compareAtPrice) {
+      return parseFloat(currentPrice.compareAtPrice);
+    }
+    return item.compareAtPrice ? parseFloat(item.compareAtPrice.amount) : null;
   };
   
   const subtotal = items.reduce((sum, item) => sum + (getItemPrice(item) * item.quantity), 0);
@@ -150,11 +158,14 @@ export const CartDrawer = () => {
         console.log('Fetched products:', products.length);
         
         // Extract current prices for cart items
-        const priceMap: Record<string, string> = {};
+        const priceMap: Record<string, { price: string; compareAtPrice?: string }> = {};
         products.forEach(product => {
           product.node.variants.edges.forEach(variantEdge => {
             const variant = variantEdge.node;
-            priceMap[variant.id] = variant.price.amount;
+            priceMap[variant.id] = {
+              price: variant.price.amount,
+              compareAtPrice: variant.compareAtPrice?.amount
+            };
           });
         });
         setCurrentPrices(priceMap);
@@ -459,11 +470,11 @@ export const CartDrawer = () => {
                                     ).toFixed(2)}
                                   </p>
                                 </>
-                              ) : item.compareAtPrice ? (
+                              ) : getItemCompareAtPrice(item) ? (
                                 /* Show compare price from Shopify for products with compare_at_price */
                                 <>
                                   <p className="text-sm text-muted-foreground line-through">
-                                    ${(parseFloat(item.compareAtPrice.amount) * item.quantity).toFixed(2)}
+                                    ${(getItemCompareAtPrice(item)! * item.quantity).toFixed(2)}
                                   </p>
                                   <p className="font-semibold text-base">
                                     ${(getItemPrice(item) * item.quantity).toFixed(2)}
