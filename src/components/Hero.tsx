@@ -54,12 +54,12 @@ export const Hero = () => {
       };
       
       addItem(cartItem);
-      toast.success("Added to cart!", {
+      const toastId = toast.success("Added to cart!", {
         description: `${quantity} ${quantity === 1 ? 'pillow' : 'pillows'} added to your cart.`,
         cancel: {
           label: "✕",
-          onClick: (e) => {
-            e?.stopPropagation();
+          onClick: () => {
+            toast.dismiss(toastId);
           }
         }
       });

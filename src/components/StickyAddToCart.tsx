@@ -125,12 +125,12 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
         : isPillowProduct 
           ? `${itemQuantity} ${itemQuantity === 1 ? 'pillow' : 'pillows'}`
           : `${itemQuantity} ${product.node.title}${itemQuantity > 1 ? 's' : ''}`;
-      toast.success("Added to cart!", {
+      const toastId = toast.success("Added to cart!", {
         description: `${itemName} added to your cart.`,
         cancel: {
           label: "✕",
-          onClick: (e) => {
-            e?.stopPropagation();
+          onClick: () => {
+            toast.dismiss(toastId);
           }
         }
       });
