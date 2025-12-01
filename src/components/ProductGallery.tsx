@@ -128,8 +128,7 @@ export const ProductGallery = () => {
 
                     <div className="flex items-center gap-3 mb-6">
                       <span className="text-3xl md:text-4xl font-bold text-primary">
-                        {bundleProduct.node.variants.edges[0]?.node.price.currencyCode}{" "}
-                        {parseFloat(bundleProduct.node.variants.edges[0]?.node.price.amount || "0").toFixed(2)}
+                        ${parseFloat(bundleProduct.node.variants.edges[0]?.node.price.amount || "0").toFixed(2)}
                       </span>
                       <span className="text-xl text-muted-foreground line-through">$199.99</span>
                     </div>
