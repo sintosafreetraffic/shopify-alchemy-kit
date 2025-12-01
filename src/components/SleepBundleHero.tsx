@@ -107,7 +107,7 @@ export const SleepBundleHero = () => {
               </div>
               <div className="flex items-start gap-2">
                 <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                <p className="text-sm md:text-base">Save $40 compared to buying products separately</p>
+                <p className="text-sm md:text-base">Save $30 compared to buying products separately</p>
               </div>
               <div className="flex items-start gap-2">
                 <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />

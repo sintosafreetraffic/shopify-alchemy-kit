@@ -144,7 +144,7 @@ export const ProductGallery = () => {
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-primary mt-0.5 text-lg">✓</span>
-                        <span className="text-muted-foreground">Save $40 vs buying separately</span>
+                        <span className="text-muted-foreground">Save $30 vs buying separately</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-primary mt-0.5 text-lg">✓</span>

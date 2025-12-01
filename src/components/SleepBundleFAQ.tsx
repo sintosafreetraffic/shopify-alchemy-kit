@@ -13,7 +13,7 @@ export const SleepBundleFAQ = () => {
     },
     {
       question: "How much do I save with the bundle?",
-      answer: "You save $40 when purchasing the Complete Sleep Bundle compared to buying each product separately. The regular combined price is $189.97, but the bundle is priced at just $149.99.",
+      answer: "You save $30 when purchasing the Complete Sleep Bundle compared to buying each product separately. The regular combined price is $229.97, but the bundle is priced at just $199.99.",
     },
     {
       question: "Can I choose different quantities for each product?",
