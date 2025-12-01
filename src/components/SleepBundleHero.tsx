@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, ShoppingCart } from "lucide-react";
-import consumerChoiceBadge from "@/assets/consumer-choice-badge-transparent.png";
 import { useCartStore } from "@/stores/cartStore";
 import bundleImage from "@/assets/complete-sleep-bundle.png";
 import { fetchProducts, type ShopifyProduct } from "@/lib/shopify";
@@ -90,17 +89,6 @@ export const SleepBundleHero = () => {
 
           {/* Right Column - Product Details */}
           <div className="space-y-6">
-            {/* Consumer Choice Badge */}
-            <div className="flex justify-start">
-              <img 
-                src={consumerChoiceBadge} 
-                alt="Consumer Choice Badge" 
-                className="h-16 md:h-20 w-auto object-contain"
-                loading="lazy"
-                decoding="async"
-              />
-            </div>
-
             {/* Product Title */}
             <div>
               <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2 leading-tight">
