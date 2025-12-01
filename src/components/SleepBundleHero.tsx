@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, ShoppingCart } from "lucide-react";
+import { Check, ShoppingCart, Shield, Moon, Truck } from "lucide-react";
 import { useCartStore } from "@/stores/cartStore";
 import bundleImage from "@/assets/complete-sleep-bundle-new.webp";
 import { fetchProducts, type ShopifyProduct } from "@/lib/shopify";
@@ -198,15 +198,18 @@ export const SleepBundleHero = () => {
 
             {/* Trust Badges */}
             <div className="grid grid-cols-3 gap-3 pt-4 border-t">
-              <div className="text-center">
+              <div className="flex flex-col items-center text-center">
+                <Shield className="w-5 h-5 mb-1.5 text-primary" />
                 <p className="font-semibold text-xs md:text-sm">2-Year</p>
                 <p className="text-xs text-muted-foreground">Warranty</p>
               </div>
-              <div className="text-center">
+              <div className="flex flex-col items-center text-center">
+                <Moon className="w-5 h-5 mb-1.5 text-primary" />
                 <p className="font-semibold text-xs md:text-sm">100 nights</p>
                 <p className="text-xs text-muted-foreground">risk free</p>
               </div>
-              <div className="text-center">
+              <div className="flex flex-col items-center text-center">
+                <Truck className="w-5 h-5 mb-1.5 text-primary" />
                 <p className="font-semibold text-xs md:text-sm">Easy</p>
                 <p className="text-xs text-muted-foreground">Returns</p>
               </div>
