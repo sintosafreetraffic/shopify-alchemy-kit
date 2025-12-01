@@ -645,11 +645,11 @@ export const CartDrawer = () => {
                     <>
                       <span className="inline-flex items-center transition-all duration-300 group-hover:-translate-y-8 group-hover:opacity-0">
                         <Lock className="w-4 h-4 mr-2" />
-                        ${finalTotal.toFixed(2)} PROCEED TO CHECKOUT
+                        CHECKOUT - ${finalTotal.toFixed(2)}
                       </span>
                       <span className="absolute inset-0 flex items-center justify-center translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
                         <Lock className="w-4 h-4 mr-2" />
-                        ${finalTotal.toFixed(2)} PROCEED TO CHECKOUT
+                        CHECKOUT - ${finalTotal.toFixed(2)}
                       </span>
                     </>
                   )}
