@@ -147,15 +147,15 @@ export const SleepMaskHero = () => {
         </div>
 
         {/* Desktop Grid Layout */}
-        <div className="grid md:grid-cols-2 gap-6 lg:gap-10">
+        <div className="grid md:grid-cols-2 gap-6 lg:gap-10 md:items-start">
           {/* Scrollable Product Images Column - Desktop Only */}
-          <div className="hidden md:block relative order-2 md:order-1">
+          <div className="hidden md:block relative order-2 md:order-1 min-h-screen">
             <SleepMaskImageCarousel />
             <PolicyAccordion />
           </div>
           
           {/* Sticky Product Details Column */}
-          <div className="space-y-2 order-1 md:order-2 md:sticky md:top-16 md:self-start md:h-fit">
+          <div className="space-y-2 order-1 md:order-2 md:sticky md:top-20 md:self-start md:h-fit md:max-h-screen md:overflow-auto">
 
             {/* Desktop Title Section */}
             <div className="hidden md:flex flex-col gap-3">
