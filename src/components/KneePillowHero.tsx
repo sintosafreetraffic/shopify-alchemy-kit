@@ -180,20 +180,20 @@ export const KneePillowHero = () => {
             {/* Benefit-Focused USPs Section */}
             <div className="space-y-2 mt-2 mb-2 md:mt-2 md:mb-4">
               <div className="flex items-start gap-2">
-                <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                <p className="text-sm"><span className="font-semibold">Perfect alignment</span> - Aligns hips and spine for proper posture</p>
+                <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0 mt-0.5" />
+                <p className="text-[10px] sm:text-xs md:text-sm leading-tight"><span className="font-semibold">Perfect alignment</span> - Aligns hips and spine for proper posture</p>
               </div>
               <div className="flex items-start gap-2">
-                <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                <p className="text-sm"><span className="font-semibold">Pain relief</span> - Reduces lower back and hip pain</p>
+                <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0 mt-0.5" />
+                <p className="text-[10px] sm:text-xs md:text-sm leading-tight"><span className="font-semibold">Pain relief</span> - Reduces lower back and hip pain</p>
               </div>
               <div className="flex items-start gap-2">
-                <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                <p className="text-sm"><span className="font-semibold">Custom comfort</span> - Memory foam conforms to leg shape</p>
+                <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0 mt-0.5" />
+                <p className="text-[10px] sm:text-xs md:text-sm leading-tight"><span className="font-semibold">Custom comfort</span> - Memory foam conforms to leg shape</p>
               </div>
               <div className="flex items-start gap-2">
-                <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                <p className="text-sm"><span className="font-semibold">Stays secure</span> - Adjustable strap keeps it in place</p>
+                <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0 mt-0.5" />
+                <p className="text-[10px] sm:text-xs md:text-sm leading-tight"><span className="font-semibold">Stays secure</span> - Adjustable strap keeps it in place</p>
               </div>
             </div>
 
