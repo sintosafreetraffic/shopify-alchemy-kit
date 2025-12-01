@@ -8,11 +8,12 @@ import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import { SleepMaskImageCarousel } from "./SleepMaskImageCarousel";
-import sleepMaskNavy from "@/assets/sleep-mask-navy.png";
-import sleepMaskTurquoise from "@/assets/sleep-mask-turquoise.png";
-import sleepMaskPink from "@/assets/sleep-mask-pink.png";
-import sleepMaskGold from "@/assets/sleep-mask-gold.png";
-import sleepMaskSilver from "@/assets/sleep-mask-silver.png";
+import sleepMaskNavy from "@/assets/sleep-mask-navy.webp";
+import sleepMaskTurquoise from "@/assets/sleep-mask-turquoise.webp";
+import sleepMaskPink from "@/assets/sleep-mask-pink.webp";
+import sleepMaskGold from "@/assets/sleep-mask-gold.webp";
+import sleepMaskSilver from "@/assets/sleep-mask-silver.webp";
+import sleepMaskBlack from "@/assets/sleep-mask-black.webp";
 
 // Image mapping for colors
 const colorImages: Record<string, string> = {
@@ -21,7 +22,7 @@ const colorImages: Record<string, string> = {
   "Pink": sleepMaskPink,
   "Gold": sleepMaskGold,
   "Silver": sleepMaskSilver,
-  "Black": sleepMaskNavy, // Using navy as placeholder for black until we have the black image
+  "Black": sleepMaskBlack,
 };
 
 export const SleepMaskHero = () => {
