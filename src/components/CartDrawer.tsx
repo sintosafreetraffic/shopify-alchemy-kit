@@ -389,7 +389,7 @@ export const CartDrawer = () => {
             <>
               {/* Scrollable Cart Items + Trust Badges + Pricing */}
               <div className="flex-1 overflow-y-auto pr-2 min-h-0 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
-                <div className="space-y-3">
+                <div className="space-y-2">
                 {/* Cart Items */}
                 {items.map((item) => {
                     const hasActiveDeal = (item.product.node.title.toLowerCase().includes('ergonomic sleep pillow') || 
@@ -417,106 +417,98 @@ export const CartDrawer = () => {
                     };
                     
                     return (
-                    <div key={item.variantId} className="border rounded-lg p-3 bg-background">
-                      {/* Top row: Image + Product Info + Delete */}
-                      <div className="flex gap-3">
-                        <div className="w-16 h-16 bg-secondary/20 rounded-md overflow-hidden flex-shrink-0">
-                          {item.product.node.images?.edges?.[0]?.node && (
-                            <img
-                              src={getItemImage()}
-                              alt={item.product.node.title}
-                              className="w-full h-full object-cover"
-                              loading="lazy"
-                              decoding="async"
-                            />
-                          )}
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <h4 className="font-medium text-sm leading-tight">
-                              {item.product.node.title.replace('RiseByNight', 'Rise By Night™')}
-                            </h4>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 flex-shrink-0 -mt-1 -mr-1"
-                              onClick={() => removeItem(item.variantId)}
-                            >
-                              <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
-                            </Button>
-                          </div>
-                          {item.selectedOptions.filter(option => option.value.toLowerCase() !== 'default title').length > 0 && (
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              {item.selectedOptions
-                                .filter(option => option.value.toLowerCase() !== 'default title')
-                                .map(option => option.value)
-                                .join(' • ')}
-                            </p>
-                          )}
-                          {hasActiveDeal && (
-                            <div className="bg-gradient-to-r from-red-600 to-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm flex items-center gap-0.5 w-fit mt-1">
-                              <Gift className="w-2.5 h-2.5" />
-                              <span>1+1 DEAL</span>
-                            </div>
-                          )}
-                        </div>
+                    <div key={item.variantId} className="flex gap-2 p-2 border rounded-lg bg-background">
+                      {/* Product Image */}
+                      <div className="w-14 h-14 bg-secondary/20 rounded overflow-hidden flex-shrink-0">
+                        {item.product.node.images?.edges?.[0]?.node && (
+                          <img
+                            src={getItemImage()}
+                            alt={item.product.node.title}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        )}
                       </div>
                       
-                      {/* Bottom row: Price + Quantity */}
-                      <div className="flex items-center justify-between mt-3 pt-2 border-t border-border/50">
-                        <div className="flex items-center gap-2">
-                          {/* Show discounted price for pillows with 1+1 deal */}
-                          {(item.product.node.title.toLowerCase().includes('ergonomic sleep pillow') || 
-                           item.product.node.title.toLowerCase().includes('knee pillow')) && 
-                          item.quantity >= 2 ? (
-                            <>
-                              <p className="text-xs text-muted-foreground line-through">
-                                ${(getItemPrice(item) * item.quantity).toFixed(2)}
+                      {/* Product Details */}
+                      <div className="flex-1 min-w-0 flex flex-col justify-between">
+                        <div className="flex items-start justify-between gap-1">
+                          <div className="min-w-0">
+                            <h4 className="font-medium text-xs leading-tight line-clamp-2">
+                              {item.product.node.title.replace('RiseByNight', 'Rise By Night™')}
+                            </h4>
+                            {item.selectedOptions.filter(option => option.value.toLowerCase() !== 'default title').length > 0 && (
+                              <p className="text-[10px] text-muted-foreground">
+                                {item.selectedOptions
+                                  .filter(option => option.value.toLowerCase() !== 'default title')
+                                  .map(option => option.value)
+                                  .join(' • ')}
                               </p>
-                              <p className="font-semibold text-sm">
-                                ${(
-                                  (getItemPrice(item) * item.quantity) - 
-                                  (Math.floor(item.quantity / 2) * getItemPrice(item))
-                                ).toFixed(2)}
-                              </p>
-                            </>
-                          ) : getItemCompareAtPrice(item) ? (
-                            /* Show compare price from Shopify for products with compare_at_price */
-                            <>
-                              <p className="text-xs text-muted-foreground line-through">
-                                ${(getItemCompareAtPrice(item)! * item.quantity).toFixed(2)}
-                              </p>
-                              <p className="font-semibold text-sm">
-                                ${(getItemPrice(item) * item.quantity).toFixed(2)}
-                              </p>
-                            </>
-                          ) : (
-                            <p className="font-semibold text-sm">
-                              ${(getItemPrice(item) * item.quantity).toFixed(2)}
-                            </p>
-                          )}
+                            )}
+                            {hasActiveDeal && (
+                              <span className="inline-flex items-center gap-0.5 bg-red-600 text-white text-[9px] font-bold px-1 py-0.5 rounded mt-0.5">
+                                <Gift className="w-2 h-2" />
+                                1+1
+                              </span>
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5 flex-shrink-0 -mt-0.5 -mr-0.5"
+                            onClick={() => removeItem(item.variantId)}
+                          >
+                            <Trash2 className="h-3 w-3 text-muted-foreground" />
+                          </Button>
                         </div>
                         
-                        {/* Quantity controls */}
-                        <div className="flex items-center border rounded-md">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-r-none"
-                            onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
-                          >
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-l-none"
-                            onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
+                        {/* Price + Quantity row */}
+                        <div className="flex items-center justify-between mt-1">
+                          <div className="flex items-center gap-1">
+                            {(item.product.node.title.toLowerCase().includes('ergonomic sleep pillow') || 
+                             item.product.node.title.toLowerCase().includes('knee pillow')) && 
+                            item.quantity >= 2 ? (
+                              <>
+                                <span className="text-[10px] text-muted-foreground line-through">
+                                  ${(getItemPrice(item) * item.quantity).toFixed(2)}
+                                </span>
+                                <span className="font-semibold text-xs">
+                                  ${((getItemPrice(item) * item.quantity) - (Math.floor(item.quantity / 2) * getItemPrice(item))).toFixed(2)}
+                                </span>
+                              </>
+                            ) : getItemCompareAtPrice(item) ? (
+                              <>
+                                <span className="text-[10px] text-muted-foreground line-through">
+                                  ${(getItemCompareAtPrice(item)! * item.quantity).toFixed(2)}
+                                </span>
+                                <span className="font-semibold text-xs">
+                                  ${(getItemPrice(item) * item.quantity).toFixed(2)}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="font-semibold text-xs">
+                                ${(getItemPrice(item) * item.quantity).toFixed(2)}
+                              </span>
+                            )}
+                          </div>
+                          
+                          {/* Compact quantity controls */}
+                          <div className="flex items-center border rounded h-6">
+                            <button
+                              className="h-full px-1.5 hover:bg-secondary/50 transition-colors"
+                              onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
+                            >
+                              <Minus className="h-2.5 w-2.5" />
+                            </button>
+                            <span className="w-5 text-center text-xs font-medium">{item.quantity}</span>
+                            <button
+                              className="h-full px-1.5 hover:bg-secondary/50 transition-colors"
+                              onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
+                            >
+                              <Plus className="h-2.5 w-2.5" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -525,24 +517,22 @@ export const CartDrawer = () => {
                   
                   {/* Free Gifts Section */}
                   {freeGifts > 0 && (
-                    <div className="bg-primary/5 border border-primary rounded-md p-2 mt-1">
-                      <div className="flex items-center gap-2">
-                        <Gift className="w-4 h-4 text-primary flex-shrink-0" />
-                        <img 
-                          src={sleepMaskNavy} 
-                          alt="Free Sleep Mask" 
-                          className="w-10 h-10 object-contain flex-shrink-0"
-                          loading="lazy"
-                          decoding="async"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-bold text-primary">
-                            FREE GIFT{freeGifts > 1 ? 'S' : ''}: {freeGifts}x Sleep Mask
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Value: ${(freeGifts * 29.99).toFixed(2)}
-                          </p>
-                        </div>
+                    <div className="bg-primary/5 border border-primary rounded p-1.5 flex items-center gap-2">
+                      <Gift className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                      <img 
+                        src={sleepMaskNavy} 
+                        alt="Free Sleep Mask" 
+                        className="w-8 h-8 object-contain flex-shrink-0"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] font-bold text-primary">
+                          FREE: {freeGifts}x Sleep Mask
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          Value: ${(freeGifts * 29.99).toFixed(2)}
+                        </p>
                       </div>
                     </div>
                   )}
