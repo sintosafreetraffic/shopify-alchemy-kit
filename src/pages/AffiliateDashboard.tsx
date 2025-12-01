@@ -7,6 +7,9 @@ import { Copy, Users, DollarSign, Loader2, Award, Share2, TrendingUp, Check, Spa
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 
+// Production domain for referral links - update this to your custom domain
+const SITE_URL = "https://risebynight.com";
+
 interface AffiliateData {
   id: string;
   referral_code: string;
@@ -142,7 +145,7 @@ const AffiliateDashboard = () => {
   const copyReferralLink = () => {
     if (!affiliateData) return;
     
-    const referralLink = `${window.location.origin}?ref=${affiliateData.referral_code}`;
+    const referralLink = `${SITE_URL}?ref=${affiliateData.referral_code}`;
     navigator.clipboard.writeText(referralLink);
     setCopied(true);
     
@@ -366,7 +369,7 @@ const AffiliateDashboard = () => {
                   <input
                     type="text"
                     readOnly
-                    value={`${window.location.origin}?ref=${affiliateData.referral_code}`}
+                    value={`${SITE_URL}?ref=${affiliateData.referral_code}`}
                     className="flex-1 px-4 py-3 border rounded-lg bg-secondary/50 text-sm font-mono truncate"
                   />
                   <Button onClick={copyReferralLink} size="lg" className="shrink-0 px-6">
