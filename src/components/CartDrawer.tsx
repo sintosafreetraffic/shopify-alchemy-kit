@@ -417,9 +417,9 @@ export const CartDrawer = () => {
                     };
                     
                     return (
-                    <div key={item.variantId} className="flex gap-2 p-2 border rounded-lg bg-background">
+                    <div key={item.variantId} className="flex gap-3 p-3 border rounded-lg bg-background">
                       {/* Product Image */}
-                      <div className="w-14 h-14 bg-secondary/20 rounded overflow-hidden flex-shrink-0">
+                      <div className="w-20 h-20 bg-secondary/20 rounded-md overflow-hidden flex-shrink-0">
                         {item.product.node.images?.edges?.[0]?.node && (
                           <img
                             src={getItemImage()}
@@ -433,13 +433,13 @@ export const CartDrawer = () => {
                       
                       {/* Product Details */}
                       <div className="flex-1 min-w-0 flex flex-col justify-between">
-                        <div className="flex items-start justify-between gap-1">
+                        <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <h4 className="font-medium text-xs leading-tight line-clamp-2">
+                            <h4 className="font-semibold text-sm leading-tight line-clamp-2">
                               {item.product.node.title.replace('RiseByNight', 'Rise By Night™')}
                             </h4>
                             {item.selectedOptions.filter(option => option.value.toLowerCase() !== 'default title').length > 0 && (
-                              <p className="text-[10px] text-muted-foreground">
+                              <p className="text-xs text-muted-foreground mt-0.5">
                                 {item.selectedOptions
                                   .filter(option => option.value.toLowerCase() !== 'default title')
                                   .map(option => option.value)
@@ -447,66 +447,66 @@ export const CartDrawer = () => {
                               </p>
                             )}
                             {hasActiveDeal && (
-                              <span className="inline-flex items-center gap-0.5 bg-red-600 text-white text-[9px] font-bold px-1 py-0.5 rounded mt-0.5">
-                                <Gift className="w-2 h-2" />
-                                1+1
+                              <span className="inline-flex items-center gap-1 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded mt-1">
+                                <Gift className="w-2.5 h-2.5" />
+                                1+1 DEAL
                               </span>
                             )}
                           </div>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-5 w-5 flex-shrink-0 -mt-0.5 -mr-0.5"
+                            className="h-6 w-6 flex-shrink-0 -mt-0.5 -mr-0.5"
                             onClick={() => removeItem(item.variantId)}
                           >
-                            <Trash2 className="h-3 w-3 text-muted-foreground" />
+                            <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
                           </Button>
                         </div>
                         
                         {/* Price + Quantity row */}
-                        <div className="flex items-center justify-between mt-1">
-                          <div className="flex items-center gap-1">
+                        <div className="flex items-center justify-between mt-2">
+                          <div className="flex items-center gap-1.5">
                             {(item.product.node.title.toLowerCase().includes('ergonomic sleep pillow') || 
                              item.product.node.title.toLowerCase().includes('knee pillow')) && 
                             item.quantity >= 2 ? (
                               <>
-                                <span className="text-[10px] text-muted-foreground line-through">
+                                <span className="text-xs text-muted-foreground line-through">
                                   ${(getItemPrice(item) * item.quantity).toFixed(2)}
                                 </span>
-                                <span className="font-semibold text-xs">
+                                <span className="font-bold text-sm text-primary">
                                   ${((getItemPrice(item) * item.quantity) - (Math.floor(item.quantity / 2) * getItemPrice(item))).toFixed(2)}
                                 </span>
                               </>
                             ) : getItemCompareAtPrice(item) ? (
                               <>
-                                <span className="text-[10px] text-muted-foreground line-through">
+                                <span className="text-xs text-muted-foreground line-through">
                                   ${(getItemCompareAtPrice(item)! * item.quantity).toFixed(2)}
                                 </span>
-                                <span className="font-semibold text-xs">
+                                <span className="font-bold text-sm">
                                   ${(getItemPrice(item) * item.quantity).toFixed(2)}
                                 </span>
                               </>
                             ) : (
-                              <span className="font-semibold text-xs">
+                              <span className="font-bold text-sm">
                                 ${(getItemPrice(item) * item.quantity).toFixed(2)}
                               </span>
                             )}
                           </div>
                           
                           {/* Compact quantity controls */}
-                          <div className="flex items-center border rounded h-6">
+                          <div className="flex items-center border rounded-md h-7">
                             <button
-                              className="h-full px-1.5 hover:bg-secondary/50 transition-colors"
+                              className="h-full px-2 hover:bg-secondary/50 transition-colors"
                               onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
                             >
-                              <Minus className="h-2.5 w-2.5" />
+                              <Minus className="h-3 w-3" />
                             </button>
-                            <span className="w-5 text-center text-xs font-medium">{item.quantity}</span>
+                            <span className="w-6 text-center text-sm font-medium">{item.quantity}</span>
                             <button
-                              className="h-full px-1.5 hover:bg-secondary/50 transition-colors"
+                              className="h-full px-2 hover:bg-secondary/50 transition-colors"
                               onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
                             >
-                              <Plus className="h-2.5 w-2.5" />
+                              <Plus className="h-3 w-3" />
                             </button>
                           </div>
                         </div>
@@ -540,8 +540,8 @@ export const CartDrawer = () => {
                   {/* Mobile Recommendations */}
                   {recommendedProducts.length > 0 && (
                     <div className="pt-2 border-t mt-2 lg:hidden">
-                      <h3 className="text-sm font-semibold mb-2">You may also like</h3>
-                      <div className="flex flex-col gap-2">
+                      <h3 className="text-xs font-semibold mb-1.5 text-muted-foreground">You may also like</h3>
+                      <div className="flex flex-col gap-1.5">
                         {recommendedProducts.map((product) => {
                           const variant = product.node.variants.edges[0]?.node;
                           const image = product.node.images.edges[0]?.node;
@@ -551,10 +551,10 @@ export const CartDrawer = () => {
                           return (
                             <div 
                               key={product.node.id} 
-                              className="border rounded-lg p-2 flex items-center gap-3 bg-background"
+                              className="border rounded p-1.5 flex items-center gap-2 bg-secondary/30"
                             >
                               {image && (
-                                <div className="w-16 h-16 flex-shrink-0 bg-secondary/20 rounded-md overflow-hidden relative">
+                                <div className="w-10 h-10 flex-shrink-0 bg-background rounded overflow-hidden relative">
                                   <img
                                     src={product.node.title.toLowerCase().includes('mask') ? sleepMaskNavy : 
                                          product.node.title.toLowerCase().includes('complete sleep bundle') ? completeSleepBundle : image.url}
@@ -564,31 +564,29 @@ export const CartDrawer = () => {
                                     decoding="async"
                                   />
                                   {hasOnePlusOneDeal && (
-                                    <div className="absolute top-1 left-1 bg-red-600 text-white text-[8px] font-bold px-1.5 py-0.5 rounded">
+                                    <div className="absolute top-0 left-0 bg-red-600 text-white text-[6px] font-bold px-1 rounded-br">
                                       1+1
                                     </div>
                                   )}
                                 </div>
                               )}
                               <div className="flex-1 min-w-0">
-                                <h4 className="font-medium text-xs leading-tight line-clamp-2 mb-1">
+                                <h4 className="font-medium text-[10px] leading-tight line-clamp-1">
                                   {product.node.title.replace('RiseByNight', 'Rise By Night™')}
                                 </h4>
-                                <div className="flex items-center justify-between gap-2">
-                                  {variant && (
-                                    <p className="text-sm font-bold text-primary">
-                                      ${parseFloat(variant.price.amount).toFixed(2)}
-                                    </p>
-                                  )}
-                                  <Button
-                                    size="sm"
-                                    className="h-7 px-3 text-xs bg-black text-white hover:bg-black/90"
-                                    onClick={() => handleAddRecommendation(product)}
-                                  >
-                                    ADD
-                                  </Button>
-                                </div>
+                                {variant && (
+                                  <p className="text-[10px] font-semibold">
+                                    ${parseFloat(variant.price.amount).toFixed(2)}
+                                  </p>
+                                )}
                               </div>
+                              <Button
+                                size="sm"
+                                className="h-6 px-2 text-[10px] bg-black text-white hover:bg-black/90"
+                                onClick={() => handleAddRecommendation(product)}
+                              >
+                                ADD
+                              </Button>
                             </div>
                           );
                         })}
