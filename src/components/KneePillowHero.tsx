@@ -136,12 +136,12 @@ export const KneePillowHero = () => {
         {/* Desktop Grid Layout */}
         <div className="grid md:grid-cols-2 gap-6 lg:gap-10 md:items-start">
           {/* Scrollable Product Images Column - Desktop Only */}
-          <div className="hidden md:block relative order-2 md:order-1 min-h-screen">
+          <div className="hidden md:block relative order-2 md:order-1">
             <KneePillowImageCarousel />
           </div>
           
           {/* Sticky Product Details Column */}
-          <div className="space-y-2 order-1 md:order-2 md:sticky md:top-20 md:self-start md:h-fit md:max-h-screen md:overflow-auto">
+          <div className="space-y-2 order-1 md:order-2 md:sticky md:top-4 md:self-start">
 
             {/* Desktop Title Section */}
             <div className="hidden md:flex flex-col gap-3">
