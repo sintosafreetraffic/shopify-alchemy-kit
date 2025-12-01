@@ -190,12 +190,12 @@ export const CartDrawer = () => {
     };
     
     addItem(cartItem);
-    toast.success("Added to cart!", {
+    const toastId = toast.success("Added to cart!", {
       description: `${product.node.title} has been added to your cart.`,
       cancel: {
         label: "✕",
-        onClick: (e) => {
-          e?.stopPropagation();
+        onClick: () => {
+          toast.dismiss(toastId);
         }
       }
     });

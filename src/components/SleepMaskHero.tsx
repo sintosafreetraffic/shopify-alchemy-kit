@@ -82,12 +82,12 @@ export const SleepMaskHero = () => {
       };
       
       addItem(cartItem);
-      toast.success("Added to cart!", {
+      const toastId = toast.success("Added to cart!", {
         description: `${selectedColor} deep sleep mask${quantity > 1 ? 's' : ''} added to your cart.`,
         cancel: {
           label: "✕",
-          onClick: (e) => {
-            e?.stopPropagation();
+          onClick: () => {
+            toast.dismiss(toastId);
           }
         }
       });
