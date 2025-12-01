@@ -5,6 +5,23 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Calculate tier based on direct sales in last 30 days
+function calculateTier(directSalesLast30Days: number, isDiamond: boolean): { tier: string; commissionRate: number; nextTier: string | null; salesNeeded: number } {
+  if (isDiamond) {
+    return { tier: 'Diamond', commissionRate: 35, nextTier: null, salesNeeded: 0 };
+  }
+  if (directSalesLast30Days >= 50) {
+    return { tier: 'Platinum', commissionRate: 30, nextTier: 'Diamond (invite only)', salesNeeded: 0 };
+  }
+  if (directSalesLast30Days >= 25) {
+    return { tier: 'Gold', commissionRate: 25, nextTier: 'Platinum', salesNeeded: 50 - directSalesLast30Days };
+  }
+  if (directSalesLast30Days >= 10) {
+    return { tier: 'Silver', commissionRate: 20, nextTier: 'Gold', salesNeeded: 25 - directSalesLast30Days };
+  }
+  return { tier: 'Bronze', commissionRate: 15, nextTier: 'Silver', salesNeeded: 10 - directSalesLast30Days };
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -61,7 +78,11 @@ Deno.serve(async (req) => {
         }
 
         let commissions: any[] = [];
+        let directSalesLast30Days = 0;
+        let tierInfo = calculateTier(0, false);
+
         if (affiliate) {
+          // Fetch all commissions
           const { data: commissionsData, error: commError } = await supabaseAdmin
             .from('commissions')
             .select('*')
@@ -73,10 +94,36 @@ Deno.serve(async (req) => {
           } else {
             commissions = commissionsData || [];
           }
+
+          // Calculate direct sales (level 1) in last 30 days
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+          const { data: directSalesData, error: salesError } = await supabaseAdmin
+            .from('commissions')
+            .select('id')
+            .eq('affiliate_id', affiliate.id)
+            .eq('level', 1) // Only direct sales
+            .gte('created_at', thirtyDaysAgo.toISOString());
+
+          if (!salesError && directSalesData) {
+            directSalesLast30Days = directSalesData.length;
+          }
+
+          // Check if affiliate is Diamond (invite only - stored in status or level field)
+          const isDiamond = affiliate.status === 'diamond';
+          tierInfo = calculateTier(directSalesLast30Days, isDiamond);
+
+          console.log('Direct sales last 30 days:', directSalesLast30Days, 'Tier:', tierInfo.tier);
         }
 
         return new Response(
-          JSON.stringify({ affiliate, commissions }),
+          JSON.stringify({ 
+            affiliate, 
+            commissions, 
+            tierInfo,
+            directSalesLast30Days 
+          }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -105,8 +152,10 @@ Deno.serve(async (req) => {
 
         console.log('Created affiliate:', affiliate);
 
+        const tierInfo = calculateTier(0, false);
+
         return new Response(
-          JSON.stringify({ affiliate }),
+          JSON.stringify({ affiliate, tierInfo, directSalesLast30Days: 0 }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
