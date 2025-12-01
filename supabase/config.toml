@@ -1,0 +1,4 @@
+project_id = "ofryballwrjrgivokzln"
+
+[functions.analyze-sleep-quiz]
+verify_jwt = false
