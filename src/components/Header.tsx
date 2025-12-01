@@ -48,9 +48,9 @@ export const Header = () => {
         !isAtTop && !isVisible ? "-translate-y-full" : "translate-y-0"
       }`}
     >
-      <div className="container mx-auto px-4 py-2 flex md:grid md:grid-cols-3 items-center">
-        {/* Mobile Menu Button - Left */}
-        <div className="flex items-center md:hidden">
+      <div className="container mx-auto px-4 py-2 relative flex md:grid md:grid-cols-3 items-center">
+        {/* Mobile Menu Button - Absolute Left on Mobile */}
+        <div className="absolute left-4 md:static flex items-center md:hidden">
           <Sheet open={isMobileMenuOpen} onOpenChange={setMobileMenuOpen} modal={false}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="mr-2">
@@ -179,8 +179,8 @@ export const Header = () => {
           </Sheet>
         </div>
 
-        {/* Logo - Left on desktop, after menu button on mobile */}
-        <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
+        {/* Logo - Centered on Mobile, Left on Desktop */}
+        <Link to="/" className="flex items-center justify-center md:justify-start hover:opacity-80 transition-opacity mx-auto md:mx-0">
           <img 
             src={logo} 
             alt="Rise By Night - Ergonomic Sleep Pillow" 
@@ -197,8 +197,8 @@ export const Header = () => {
           <NavLink to="/track" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors whitespace-nowrap">Track Your Order</NavLink>
         </nav>
         
-        {/* Cart - Right */}
-        <div className="flex items-center justify-end ml-auto">
+        {/* Cart - Absolute Right on Mobile, Right on Desktop */}
+        <div className="absolute right-4 md:static flex items-center justify-end md:ml-auto">
           <CartDrawer />
         </div>
       </div>
