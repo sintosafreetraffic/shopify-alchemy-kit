@@ -2,3 +2,6 @@ project_id = "ofryballwrjrgivokzln"
 
 [functions.analyze-sleep-quiz]
 verify_jwt = false
+
+[functions.affiliate-api]
+verify_jwt = false
