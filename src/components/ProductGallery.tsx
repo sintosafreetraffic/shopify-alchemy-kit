@@ -7,7 +7,7 @@ import { fetchProducts, type ShopifyProduct } from "@/lib/shopify";
 import pillowMain from "@/assets/optisleep-pillow-main.png";
 import kneePillowMain from "@/assets/knee-pillow-new.png";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
-import completeSleepBundle from "@/assets/complete-sleep-bundle.png";
+import completeSleepBundle from "@/assets/complete-sleep-bundle-new.webp";
 
 export const ProductGallery = () => {
   const [bundleProduct, setBundleProduct] = useState<ShopifyProduct | null>(null);
