@@ -49,6 +49,7 @@ export const KneePillowHero = () => {
         variantId: variant.id,
         variantTitle: variant.title,
         price: variant.price,
+        compareAtPrice: variant.compareAtPrice,
         quantity,
         selectedOptions: variant.selectedOptions || []
       };

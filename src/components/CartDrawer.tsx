@@ -185,6 +185,7 @@ export const CartDrawer = () => {
       variantId: variant.id,
       variantTitle: variant.title,
       price: variant.price,
+      compareAtPrice: variant.compareAtPrice,
       quantity: 1,
       selectedOptions: variant.selectedOptions || []
     };
@@ -458,12 +459,11 @@ export const CartDrawer = () => {
                                     ).toFixed(2)}
                                   </p>
                                 </>
-                              ) : item.product.node.title.toLowerCase().includes('complete sleep bundle') && 
-                                 item.selectedOptions.some(opt => opt.value === 'Single Bundle') ? (
-                                /* Show compare price for Single Bundle */
+                              ) : item.compareAtPrice ? (
+                                /* Show compare price from Shopify for products with compare_at_price */
                                 <>
                                   <p className="text-sm text-muted-foreground line-through">
-                                    ${(199.99 * item.quantity).toFixed(2)}
+                                    ${(parseFloat(item.compareAtPrice.amount) * item.quantity).toFixed(2)}
                                   </p>
                                   <p className="font-semibold text-base">
                                     ${(getItemPrice(item) * item.quantity).toFixed(2)}
