@@ -112,8 +112,8 @@ export const SleepMaskHero = () => {
   const totalPrice = productPrice;
 
   return (
-    <section className="pt-0 pb-3 md:pb-6 bg-background">
-      <div className="container mx-auto px-4 max-w-7xl">
+    <section className="pt-0 pb-3 md:pb-6 bg-background overflow-visible">
+      <div className="container mx-auto px-4 max-w-7xl overflow-visible">
         {/* Mobile Layout: Carousel at top, then title */}
         <div className="md:hidden space-y-3 md:space-y-4 mb-4 md:mb-6">
           <SleepMaskImageCarousel />
