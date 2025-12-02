@@ -10,7 +10,7 @@ import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import testimonialAvatar from "@/assets/testimonial.png";
-import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
+import eyeMaskGift from "@/assets/eye-mask-gift-new.webp";
 import consumerChoiceBadge from "@/assets/consumer-choice-badge-transparent.png";
 
 export const Hero = () => {

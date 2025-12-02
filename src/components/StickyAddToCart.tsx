@@ -6,7 +6,7 @@ import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import { ShoppingCart, Loader2, Plus, Minus, Check } from "lucide-react";
-import eyeMaskGift from "@/assets/eye-mask-gift.webp";
+import eyeMaskGift from "@/assets/eye-mask-gift-new.webp";
 import { Badge } from "@/components/ui/badge";
 import sleepMaskNavy from "@/assets/sleep-mask-navy.webp";
 import sleepMaskTurquoise from "@/assets/sleep-mask-turquoise.webp";
