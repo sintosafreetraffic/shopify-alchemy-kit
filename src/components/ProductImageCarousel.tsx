@@ -69,14 +69,14 @@ export const ProductImageCarousel = () => {
                       muted
                       playsInline
                       preload="none"
-                      className="w-full h-auto object-cover"
+                      className="w-full h-auto object-cover rounded-xl"
                       aria-label={item.alt}
                     />
                   ) : (
                     <img
                       src={item.url}
                       alt={item.alt}
-                      className="w-full h-auto object-cover"
+                      className="w-full h-auto object-cover rounded-xl"
                       loading={index === 0 ? "eager" : "lazy"}
                       fetchPriority={index === 0 ? "high" : "low"}
                       decoding="async"
@@ -108,9 +108,9 @@ export const ProductImageCarousel = () => {
       </div>
 
       {/* Desktop Static Gallery */}
-      <div className="hidden md:block">
+      <div className="hidden md:block space-y-2">
         {/* First large image */}
-        <div className="overflow-hidden relative cursor-pointer hover:opacity-90 transition-opacity" onClick={() => images[0]?.type === "image" && setExpandedImage(images[0].url)}>
+        <div className="overflow-hidden rounded-xl relative cursor-pointer hover:opacity-90 transition-opacity" onClick={() => images[0]?.type === "image" && setExpandedImage(images[0].url)}>
           {images[0]?.type === "video" ? (
             <video
               src={images[0].url}
@@ -119,14 +119,14 @@ export const ProductImageCarousel = () => {
               muted
               playsInline
               preload="auto"
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover rounded-xl"
               aria-label={images[0].alt}
             />
           ) : (
             <img
               src={images[0]?.url}
               alt={images[0]?.alt}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover rounded-xl"
               loading="eager"
               fetchPriority="high"
               decoding="async"
@@ -137,8 +137,8 @@ export const ProductImageCarousel = () => {
         </div>
 
         {/* Two images side by side */}
-        <div className="grid grid-cols-2 gap-0">
-          <div className="overflow-hidden aspect-square cursor-pointer hover:opacity-90 transition-opacity" onClick={() => {
+        <div className="grid grid-cols-2 gap-2">
+          <div className="overflow-hidden rounded-xl aspect-square cursor-pointer hover:opacity-90 transition-opacity" onClick={() => {
             if (images[1]?.type === "image") {
               setExpandedImage(images[1].url);
             }
@@ -151,14 +151,14 @@ export const ProductImageCarousel = () => {
                 muted
                 playsInline
                 preload="none"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover rounded-xl"
                 aria-label={images[1].alt}
               />
             ) : (
               <img
                 src={images[1]?.url}
                 alt={images[1]?.alt}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover rounded-xl"
                 loading="lazy"
                 decoding="async"
                 width="600"
@@ -166,7 +166,7 @@ export const ProductImageCarousel = () => {
               />
             )}
           </div>
-          <div className="overflow-hidden aspect-square cursor-pointer hover:opacity-90 transition-opacity" onClick={() => {
+          <div className="overflow-hidden rounded-xl aspect-square cursor-pointer hover:opacity-90 transition-opacity" onClick={() => {
             if (images[2]?.type === "image") {
               setExpandedImage(images[2]?.url);
             }
@@ -174,7 +174,7 @@ export const ProductImageCarousel = () => {
             <img
               src={images[2]?.url}
               alt={images[2]?.alt}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover rounded-xl"
               loading="lazy"
               decoding="async"
               width="600"
@@ -184,7 +184,7 @@ export const ProductImageCarousel = () => {
         </div>
 
         {/* Second large image */}
-        <div className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity" onClick={() => {
+        <div className="overflow-hidden rounded-xl cursor-pointer hover:opacity-90 transition-opacity" onClick={() => {
           if (images[3]?.type === "image") {
             setExpandedImage(images[3]?.url);
           }
@@ -192,7 +192,7 @@ export const ProductImageCarousel = () => {
           <img
             src={images[3]?.url}
             alt={images[3]?.alt}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover rounded-xl"
             loading="lazy"
             decoding="async"
             width="1200"
@@ -201,8 +201,8 @@ export const ProductImageCarousel = () => {
         </div>
 
         {/* Last two images side by side */}
-        <div className="grid grid-cols-2 gap-0">
-          <div className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity" onClick={() => {
+        <div className="grid grid-cols-2 gap-2">
+          <div className="overflow-hidden rounded-xl cursor-pointer hover:opacity-90 transition-opacity" onClick={() => {
             if (images[4]?.type === "image") {
               setExpandedImage(images[4]?.url);
             }
@@ -210,14 +210,14 @@ export const ProductImageCarousel = () => {
             <img
               src={images[4]?.url}
               alt={images[4]?.alt}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover rounded-xl"
               loading="lazy"
               decoding="async"
               width="600"
               height="600"
             />
           </div>
-          <div className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity" onClick={() => {
+          <div className="overflow-hidden rounded-xl cursor-pointer hover:opacity-90 transition-opacity" onClick={() => {
             if (images[5]?.type === "image") {
               setExpandedImage(images[5]?.url);
             }
@@ -225,7 +225,7 @@ export const ProductImageCarousel = () => {
             <img
               src={images[5]?.url}
               alt={images[5]?.alt}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover rounded-xl"
               loading="lazy"
               decoding="async"
               width="600"
