@@ -171,9 +171,11 @@ export const CartDrawer = () => {
         setCurrentPrices(priceMap);
         console.log('Updated prices:', priceMap);
         
-        // Filter out only the free gift product for recommendations
+        // Filter out free gift products and products already in cart
+        const cartProductIds = items.map(item => item.product.node.id);
         const filtered = products.filter(p => 
-          !p.node.title.toLowerCase().includes('free gift')
+          !p.node.title.toLowerCase().includes('free gift') &&
+          !cartProductIds.includes(p.node.id)
         );
         console.log('Filtered recommendations:', filtered.length, filtered.map(p => p.node.title));
         setRecommendedProducts(filtered.slice(0, 3));
@@ -185,7 +187,7 @@ export const CartDrawer = () => {
     if (isOpen) {
       loadCartData();
     }
-  }, [isOpen]);
+  }, [isOpen, items]);
 
   const handleAddRecommendation = (product: ShopifyProduct) => {
     const variant = product.node.variants.edges[0]?.node;
