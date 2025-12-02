@@ -8,7 +8,7 @@ import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import { CountdownTimer, CountdownTimerDisplay } from "./CountdownTimer";
-import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
+import eyeMaskGift from "@/assets/eye-mask-gift-new.webp";
 import { KneePillowImageCarousel } from "./KneePillowImageCarousel";
 
 export const KneePillowHero = () => {

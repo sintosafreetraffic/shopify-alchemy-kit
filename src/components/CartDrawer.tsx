@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/sheet";
 import { ShoppingCart, Minus, Plus, Trash2, Lock, Loader2, Moon, RotateCcw, Shield, Gift, Truck } from "lucide-react";
 import { useCartStore } from "@/stores/cartStore";
-import eyeMaskGift from "@/assets/eye-mask-gift.webp";
+import eyeMaskGift from "@/assets/eye-mask-gift-new.webp";
 import kneePillowCart from "@/assets/knee-pillow-main-new.webp";
 import completeSleepBundle from "@/assets/complete-sleep-bundle-updated.webp";
 import sleepMaskNavy from "@/assets/sleep-mask-navy.webp";
