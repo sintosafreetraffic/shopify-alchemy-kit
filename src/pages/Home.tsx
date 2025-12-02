@@ -6,7 +6,7 @@ import { ProductGallery } from "@/components/ProductGallery";
 import { CountdownTimer } from "@/components/CountdownTimer";
 import heroLogo from "@/assets/moon-logo-new.png";
 import lifestyleHero from "@/assets/lifestyle-hero-desktop.webp";
-import lifestyleHeroMobile from "@/assets/lifestyle-hero-mobile.webp";
+import lifestyleHeroMobile from "@/assets/home-hero-mobile.webp";
 
 export default function Home() {
   const { saleName } = CountdownTimer();
