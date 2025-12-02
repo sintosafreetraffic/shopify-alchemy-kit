@@ -187,7 +187,7 @@ export const Hero = () => {
             </p>
 
             {/* Benefit-Focused USPs Section */}
-            <div className="space-y-2 mt-1 mb-2 md:mt-2 md:mb-4">
+            <div className="space-y-2 mt-0 mb-2 md:mt-2 md:mb-4">
               <div className="flex items-start gap-2">
                 <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0 mt-0.5" />
                 <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">Wake up pain-free</span> – Scientifically designed to relieve neck & shoulder pain</p>
