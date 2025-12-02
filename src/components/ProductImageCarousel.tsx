@@ -108,7 +108,7 @@ export const ProductImageCarousel = () => {
       </div>
 
       {/* Desktop Static Gallery */}
-      <div className="hidden md:block space-y-2">
+      <div className="hidden md:block">
         {/* First large image */}
         <div className="overflow-hidden rounded-xl relative cursor-pointer hover:opacity-90 transition-opacity" onClick={() => images[0]?.type === "image" && setExpandedImage(images[0].url)}>
           {images[0]?.type === "video" ? (
@@ -137,7 +137,7 @@ export const ProductImageCarousel = () => {
         </div>
 
         {/* Two images side by side */}
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-0">
           <div className="overflow-hidden rounded-xl aspect-square cursor-pointer hover:opacity-90 transition-opacity" onClick={() => {
             if (images[1]?.type === "image") {
               setExpandedImage(images[1].url);
@@ -201,7 +201,7 @@ export const ProductImageCarousel = () => {
         </div>
 
         {/* Last two images side by side */}
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-0">
           <div className="overflow-hidden rounded-xl cursor-pointer hover:opacity-90 transition-opacity" onClick={() => {
             if (images[4]?.type === "image") {
               setExpandedImage(images[4]?.url);
