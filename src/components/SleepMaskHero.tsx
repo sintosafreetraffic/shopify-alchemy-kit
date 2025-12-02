@@ -185,18 +185,23 @@ export const SleepMaskHero = () => {
             </div>
 
             {/* USPs */}
-            <div className="space-y-2 pb-4 border-b">
-              {[
-                "100% pure mulberry silk - gentle on skin and eyelashes",
-                "Contoured design prevents pressure on eyes",
-                "Blocks out 100% of light for deeper sleep",
-                "Adjustable elastic strap for perfect fit"
-              ].map((usp, index) => (
-                <div key={index} className="flex items-start gap-2">
-                  <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0 mt-0.5" />
-                  <span className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight">{usp}</span>
-                </div>
-              ))}
+            <div className="space-y-2 mt-2 mb-2 md:mt-2 md:mb-4">
+              <div className="flex items-start gap-2">
+                <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0 mt-0.5" />
+                <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">100% pure silk</span> – Gentle on skin and eyelashes</p>
+              </div>
+              <div className="flex items-start gap-2">
+                <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0 mt-0.5" />
+                <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">Contoured design</span> – Prevents pressure on eyes</p>
+              </div>
+              <div className="flex items-start gap-2">
+                <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0 mt-0.5" />
+                <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">Total darkness</span> – Blocks out 100% of light for deeper sleep</p>
+              </div>
+              <div className="flex items-start gap-2">
+                <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0 mt-0.5" />
+                <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">Perfect fit</span> – Adjustable elastic strap stays secure</p>
+              </div>
             </div>
 
             {/* Color Selection */}
