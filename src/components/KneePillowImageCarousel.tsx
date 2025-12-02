@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import kneePillowHeroLifestyle from "@/assets/knee-pillow-hero-lifestyle.webp";
 import kneePillowMain from "@/assets/knee-pillow-main-new.webp";
 import kneePillowMaterials from "@/assets/knee-pillow-materials.webp";
 import kneePillowErgonomic from "@/assets/knee-pillow-ergonomic-design.webp";
@@ -21,6 +22,7 @@ export const KneePillowImageCarousel = () => {
   const [current, setCurrent] = useState(0);
   
   const images = [
+    { url: kneePillowHeroLifestyle, alt: "Rise By Night ergonomic knee pillow lifestyle view on bed", type: "image" },
     { url: kneePillowMain, alt: "Rise By Night ergonomic knee pillow main view", type: "image" },
     { url: kneePillowMaterials, alt: "Rise By Night knee pillow high quality materials", type: "image" },
     { url: kneePillowErgonomic, alt: "Rise By Night knee pillow ergonomic design", type: "image" },
