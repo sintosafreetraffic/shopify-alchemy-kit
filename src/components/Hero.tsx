@@ -109,13 +109,16 @@ export const Hero = () => {
           <div className="space-y-0">
             {/* Enhanced Social Proof */}
             <div className="space-y-2 mb-3">
-              <div className="flex items-center gap-2 flex-wrap">
+              <div 
+                className="flex items-center gap-2 flex-wrap cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' })}
+              >
                 <div className="flex">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <Star key={star} className="w-5 h-5 fill-yellow-500 text-yellow-500" />
                   ))}
                 </div>
-                <span className="text-sm font-semibold">6,247 verified product reviews</span>
+                <span className="text-sm font-semibold underline underline-offset-2">6,247 verified product reviews</span>
               </div>
               
               <div className="flex gap-1 flex-nowrap overflow-x-auto scrollbar-hide -mx-4 px-4">
@@ -152,13 +155,16 @@ export const Hero = () => {
             <div className="hidden md:flex flex-col gap-3">
               {/* Enhanced Social Proof */}
               <div className="space-y-2">
-                <div className="flex items-center gap-3 flex-wrap">
+                <div 
+                  className="flex items-center gap-3 flex-wrap cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() => document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' })}
+                >
                   <div className="flex">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <Star key={star} className="w-5 h-5 fill-yellow-500 text-yellow-500" />
                     ))}
                   </div>
-                  <span className="text-base font-semibold">6,247 verified product reviews</span>
+                  <span className="text-base font-semibold underline underline-offset-2">6,247 verified product reviews</span>
                 </div>
                 
                 <div className="flex gap-1 sm:gap-1.5 flex-nowrap overflow-x-auto scrollbar-hide">
