@@ -4,6 +4,7 @@ import pillowBenefitsNew from "@/assets/pillow-benefits-new.webp";
 import pillowBenefitsUpdated from "@/assets/pillow-benefits-updated.webp";
 import neckPainSpine from "@/assets/neck-pain-spine.webp";
 import pillowEasyCleaning from "@/assets/pillow-easy-cleaning-new.webp";
+import lifestyleHeroMobile from "@/assets/lifestyle-hero-mobile-new.webp";
 import {
   Carousel,
   CarouselContent,
@@ -31,14 +32,15 @@ export const ProductImageCarousel = () => {
   // Get only image URLs (excluding videos) for the modal navigation
   const imageOnlyUrls = images.filter(img => img.type === "image").map(img => img.url);
 
-  // Mobile order - swap image 2 (video) with image 4 (easy cleaning)
+  // Mobile order - use lifestyle hero as first image
   const mobileImages = [
+    { url: lifestyleHeroMobile, alt: "Rise By Night ergonomic pillow lifestyle hero", type: "image" },
     images[0], // pillowHeroNew
-    images[3], // pillowEasyCleaning (swapped from position 4)
-    images[2], // pillowBenefitsHero
-    images[1], // video (swapped from position 2)
+    images[3], // pillowEasyCleaning
+    images[2], // pillowBenefitsNew
+    images[1], // video
     images[4], // neckPainSpine
-    images[5], // pillowLifestyleSleep
+    images[5], // pillowBenefitsUpdated
   ];
   
   // Get only image URLs for mobile (excluding videos) for the modal navigation
