@@ -188,20 +188,20 @@ export const Hero = () => {
 
             {/* Benefit-Focused USPs Section */}
             <div className="space-y-2 mt-0 mb-2 md:mt-2 md:mb-4">
-              <div className="flex items-start gap-2">
-                <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0 mt-0.5" />
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0" />
                 <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">Wake up pain-free</span> – Scientifically designed to relieve neck & shoulder pain</p>
               </div>
-              <div className="flex items-start gap-2">
-                <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0 mt-0.5" />
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0" />
                 <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">Sleep undisturbed</span> – Proper spinal alignment reduces tossing & turning</p>
               </div>
-              <div className="flex items-start gap-2">
-                <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0 mt-0.5" />
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0" />
                 <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">Built to last</span> – Premium memory foam holds its shape for years</p>
               </div>
-              <div className="flex items-start gap-2">
-                <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0 mt-0.5" />
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0" />
                 <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">Stay cool</span> – Cooling gel prevents overheating & night sweats</p>
               </div>
             </div>
