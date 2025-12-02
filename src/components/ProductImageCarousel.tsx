@@ -5,6 +5,7 @@ import pillowBenefitsUpdated from "@/assets/pillow-benefits-updated.webp";
 import neckPainSpine from "@/assets/neck-pain-spine.webp";
 import pillowEasyCleaning from "@/assets/pillow-easy-cleaning-new.webp";
 import lifestyleHeroMobile from "@/assets/lifestyle-hero-mobile-new.webp";
+import lifestyleHeroDesktop from "@/assets/lifestyle-hero-desktop.webp";
 import {
   Carousel,
   CarouselContent,
@@ -21,6 +22,7 @@ export const ProductImageCarousel = () => {
   const [current, setCurrent] = useState(0);
   // Multiple views of the Rise By Night pillow (desktop order)
   const images = [
+    { url: lifestyleHeroDesktop, alt: "Rise By Night ergonomic pillow lifestyle hero", type: "image" },
     { url: pillowHeroNew, alt: "Rise By Night ergonomic pillow main view", type: "image" },
     { url: "/videos/product-demo.mp4", alt: "Rise By Night pillow demonstration", type: "video" },
     { url: pillowBenefitsNew, alt: "Rise By Night ergonomic pillow benefits - relieves neck & back pain, reduces sleep apnea, reduces acid reflux, relieves shoulders", type: "image" },
@@ -35,12 +37,12 @@ export const ProductImageCarousel = () => {
   // Mobile order - use lifestyle hero as first image
   const mobileImages = [
     { url: lifestyleHeroMobile, alt: "Rise By Night ergonomic pillow lifestyle hero", type: "image" },
-    images[0], // pillowHeroNew
-    images[3], // pillowEasyCleaning
-    images[2], // pillowBenefitsNew
-    images[1], // video
-    images[4], // neckPainSpine
-    images[5], // pillowBenefitsUpdated
+    images[1], // pillowHeroNew
+    images[4], // pillowEasyCleaning
+    images[3], // pillowBenefitsNew
+    images[2], // video
+    images[5], // neckPainSpine
+    images[6], // pillowBenefitsUpdated
   ];
   
   // Get only image URLs for mobile (excluding videos) for the modal navigation
