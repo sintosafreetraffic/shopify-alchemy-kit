@@ -66,13 +66,13 @@ export const ProductImageCarousel = () => {
   return (
     <>
       {/* Mobile Carousel */}
-      <div className="md:hidden">
+      <div className="md:hidden -mx-4">
         <Carousel className="w-full" setApi={setApi}>
-          <CarouselContent>
+          <CarouselContent className="-ml-0">
             {mobileImages.map((item, index) => (
-              <CarouselItem key={index}>
+              <CarouselItem key={index} className="pl-0">
                 <div 
-                  className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 relative cursor-pointer hover:opacity-90 transition-opacity"
+                  className="overflow-hidden relative cursor-pointer hover:opacity-90 transition-opacity"
                   onClick={() => item.type === "image" && openImageModal(item.url, true)}
                 >
                   {item.type === "video" ? (
@@ -83,14 +83,14 @@ export const ProductImageCarousel = () => {
                       muted
                       playsInline
                       preload="none"
-                      className="w-full h-auto object-cover rounded-xl"
+                      className="w-full h-auto object-cover"
                       aria-label={item.alt}
                     />
                   ) : (
                     <img
                       src={item.url}
                       alt={item.alt}
-                      className="w-full h-auto object-cover rounded-xl"
+                      className="w-full h-auto object-cover"
                       loading={index === 0 ? "eager" : "lazy"}
                       fetchPriority={index === 0 ? "high" : "low"}
                       decoding="async"
