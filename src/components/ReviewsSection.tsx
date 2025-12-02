@@ -63,7 +63,7 @@ const reviews = [
 
 export const ReviewsSection = () => {
   return (
-    <section className="py-6 md:py-8 bg-background">
+    <section id="reviews" className="py-6 md:py-8 bg-background">
       <div className="container mx-auto px-4 max-w-6xl">
         <div className="text-center mb-6 md:mb-8">
           <div className="inline-flex items-center gap-2 mb-3 md:mb-4">
