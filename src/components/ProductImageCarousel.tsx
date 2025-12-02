@@ -34,9 +34,9 @@ export const ProductImageCarousel = () => {
   // Get only image URLs (excluding videos) for the modal navigation
   const imageOnlyUrls = images.filter(img => img.type === "image").map(img => img.url);
 
-  // Mobile order - use lifestyle hero as first image
+  // Mobile order - use same lifestyle hero as desktop
   const mobileImages = [
-    { url: lifestyleHeroMobile, alt: "Rise By Night ergonomic pillow lifestyle hero", type: "image" },
+    images[0], // lifestyleHeroDesktop
     images[1], // pillowHeroNew
     images[4], // pillowEasyCleaning
     images[3], // pillowBenefitsNew
