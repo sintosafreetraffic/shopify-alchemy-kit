@@ -107,7 +107,7 @@ export const ProductImageCarousel = () => {
         </Carousel>
         
         {/* Carousel Indicators */}
-        <div className="flex justify-center gap-2 mt-4">
+        <div className="flex justify-center gap-2 mt-1.5">
           {mobileImages.map((_, index) => (
             <button
               key={index}
