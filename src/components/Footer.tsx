@@ -6,9 +6,9 @@ export const Footer = () => {
   return (
     <footer className="border-t bg-white text-foreground">
       <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand Column */}
-          <div className="col-span-2 md:col-span-1 space-y-4">
+          <div className="space-y-4">
             <img 
               src={logo} 
               alt="Rise By Night" 
@@ -21,67 +21,70 @@ export const Footer = () => {
             </p>
           </div>
 
-          {/* Quick Links */}
-          <div>
-            <h3 className="font-semibold mb-4">Quick Links</h3>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link to="/sleep-quiz" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Sleep Quiz
-                </Link>
-              </li>
-              <li>
-                <Link to="/benefits" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Benefits
-                </Link>
-              </li>
-              <li>
-                <Link to="/reviews" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Reviews
-                </Link>
-              </li>
-              <li>
-                <Link to="/faq" className="text-muted-foreground hover:text-foreground transition-colors">
-                  FAQ
-                </Link>
-              </li>
-              <li>
-                <Link to="/guarantee" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Guarantee
-                </Link>
-              </li>
-            </ul>
-          </div>
+          {/* Quick Links & Customer Service - Side by Side on Mobile */}
+          <div className="grid grid-cols-2 gap-6 md:contents">
+            {/* Quick Links */}
+            <div>
+              <h3 className="font-semibold mb-4">Quick Links</h3>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <Link to="/sleep-quiz" className="text-muted-foreground hover:text-foreground transition-colors">
+                    Sleep Quiz
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/benefits" className="text-muted-foreground hover:text-foreground transition-colors">
+                    Benefits
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/reviews" className="text-muted-foreground hover:text-foreground transition-colors">
+                    Reviews
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/faq" className="text-muted-foreground hover:text-foreground transition-colors">
+                    FAQ
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/guarantee" className="text-muted-foreground hover:text-foreground transition-colors">
+                    Guarantee
+                  </Link>
+                </li>
+              </ul>
+            </div>
 
-          {/* Customer Service */}
-          <div>
-            <h3 className="font-semibold mb-4">Customer Service</h3>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link to="/shipping" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Shipping Information
-                </Link>
-              </li>
-              <li>
-                <Link to="/return-policy" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Return Policy
-                </Link>
-              </li>
-              <li>
-                <Link to="/terms" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Terms & Conditions
-                </Link>
-              </li>
-              <li>
-                <Link to="/privacy-policy" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Privacy Policy
-                </Link>
-              </li>
-            </ul>
+            {/* Customer Service */}
+            <div>
+              <h3 className="font-semibold mb-4">Customer Service</h3>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <Link to="/shipping" className="text-muted-foreground hover:text-foreground transition-colors">
+                    Shipping Information
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/return-policy" className="text-muted-foreground hover:text-foreground transition-colors">
+                    Return Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/terms" className="text-muted-foreground hover:text-foreground transition-colors">
+                    Terms & Conditions
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/privacy-policy" className="text-muted-foreground hover:text-foreground transition-colors">
+                    Privacy Policy
+                  </Link>
+                </li>
+              </ul>
+            </div>
           </div>
 
           {/* Contact Info */}
-          <div className="col-span-2 md:col-span-1">
+          <div>
             <h3 className="font-semibold mb-4">Contact Us</h3>
             <ul className="space-y-3 text-sm">
               <li className="flex items-start gap-2">
