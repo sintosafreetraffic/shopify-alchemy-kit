@@ -15,7 +15,7 @@ import {
 import { ImageModal } from "./ImageModal";
 
 export const ProductImageCarousel = () => {
-  const [expandedImage, setExpandedImage] = useState<string | null>(null);
+  const [expandedImageIndex, setExpandedImageIndex] = useState<number | null>(null);
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
   // Multiple views of the Rise By Night pillow (desktop order)
@@ -28,6 +28,9 @@ export const ProductImageCarousel = () => {
     { url: pillowBenefitsUpdated, alt: "Rise By Night pillow - premium ergonomic pillow benefits including neck support, pressure relief, custom fit, durability, high-end materials, enhanced sleep", type: "image" },
   ];
 
+  // Get only image URLs (excluding videos) for the modal navigation
+  const imageOnlyUrls = images.filter(img => img.type === "image").map(img => img.url);
+
   // Mobile order - swap image 2 (video) with image 4 (easy cleaning)
   const mobileImages = [
     images[0], // pillowHeroNew
@@ -37,6 +40,17 @@ export const ProductImageCarousel = () => {
     images[4], // neckPainSpine
     images[5], // pillowLifestyleSleep
   ];
+  
+  // Get only image URLs for mobile (excluding videos) for the modal navigation
+  const mobileImageOnlyUrls = mobileImages.filter(img => img.type === "image").map(img => img.url);
+
+  const openImageModal = (url: string, isMobile: boolean) => {
+    const urlList = isMobile ? mobileImageOnlyUrls : imageOnlyUrls;
+    const index = urlList.indexOf(url);
+    if (index !== -1) {
+      setExpandedImageIndex(index);
+    }
+  };
 
   // Track carousel position
   useEffect(() => {
@@ -59,7 +73,7 @@ export const ProductImageCarousel = () => {
               <CarouselItem key={index}>
                 <div 
                   className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 relative cursor-pointer hover:opacity-90 transition-opacity"
-                  onClick={() => item.type === "image" && setExpandedImage(item.url)}
+                  onClick={() => item.type === "image" && openImageModal(item.url, true)}
                 >
                   {item.type === "video" ? (
                     <video
@@ -110,7 +124,7 @@ export const ProductImageCarousel = () => {
       {/* Desktop Static Gallery */}
       <div className="hidden md:block">
         {/* First large image */}
-        <div className="overflow-hidden rounded-xl relative cursor-pointer hover:opacity-90 transition-opacity" onClick={() => images[0]?.type === "image" && setExpandedImage(images[0].url)}>
+        <div className="overflow-hidden rounded-xl relative cursor-pointer hover:opacity-90 transition-opacity" onClick={() => images[0]?.type === "image" && openImageModal(images[0].url, false)}>
           {images[0]?.type === "video" ? (
             <video
               src={images[0].url}
@@ -140,7 +154,7 @@ export const ProductImageCarousel = () => {
         <div className="grid grid-cols-2 gap-0">
           <div className="overflow-hidden rounded-xl aspect-square cursor-pointer hover:opacity-90 transition-opacity" onClick={() => {
             if (images[1]?.type === "image") {
-              setExpandedImage(images[1].url);
+              openImageModal(images[1].url, false);
             }
           }}>
             {images[1]?.type === "video" ? (
@@ -168,7 +182,7 @@ export const ProductImageCarousel = () => {
           </div>
           <div className="overflow-hidden rounded-xl aspect-square cursor-pointer hover:opacity-90 transition-opacity" onClick={() => {
             if (images[2]?.type === "image") {
-              setExpandedImage(images[2]?.url);
+              openImageModal(images[2]?.url, false);
             }
           }}>
             <img
@@ -186,7 +200,7 @@ export const ProductImageCarousel = () => {
         {/* Second large image */}
         <div className="overflow-hidden rounded-xl cursor-pointer hover:opacity-90 transition-opacity" onClick={() => {
           if (images[3]?.type === "image") {
-            setExpandedImage(images[3]?.url);
+            openImageModal(images[3]?.url, false);
           }
         }}>
           <img
@@ -204,7 +218,7 @@ export const ProductImageCarousel = () => {
         <div className="grid grid-cols-2 gap-0">
           <div className="overflow-hidden rounded-xl cursor-pointer hover:opacity-90 transition-opacity" onClick={() => {
             if (images[4]?.type === "image") {
-              setExpandedImage(images[4]?.url);
+              openImageModal(images[4]?.url, false);
             }
           }}>
             <img
@@ -219,7 +233,7 @@ export const ProductImageCarousel = () => {
           </div>
           <div className="overflow-hidden rounded-xl cursor-pointer hover:opacity-90 transition-opacity" onClick={() => {
             if (images[5]?.type === "image") {
-              setExpandedImage(images[5]?.url);
+              openImageModal(images[5]?.url, false);
             }
           }}>
             <img
@@ -235,7 +249,13 @@ export const ProductImageCarousel = () => {
         </div>
       </div>
 
-      <ImageModal imageUrl={expandedImage} onClose={() => setExpandedImage(null)} />
+      <ImageModal 
+        imageUrl={expandedImageIndex !== null ? imageOnlyUrls[expandedImageIndex] : null} 
+        onClose={() => setExpandedImageIndex(null)}
+        images={imageOnlyUrls}
+        currentIndex={expandedImageIndex ?? 0}
+        onNavigate={setExpandedImageIndex}
+      />
     </>
   );
 };

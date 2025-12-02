@@ -1,31 +1,54 @@
-import { X, ZoomIn, ZoomOut } from "lucide-react";
+import { X, ZoomIn, ZoomOut, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface ImageModalProps {
   imageUrl: string | null;
   onClose: () => void;
+  images?: string[];
+  currentIndex?: number;
+  onNavigate?: (index: number) => void;
 }
 
-export const ImageModal = ({ imageUrl, onClose }: ImageModalProps) => {
+export const ImageModal = ({ imageUrl, onClose, images, currentIndex = 0, onNavigate }: ImageModalProps) => {
   const [isZoomed, setIsZoomed] = useState(false);
+
+  const canNavigate = images && images.length > 1 && onNavigate;
+  const hasPrev = canNavigate && currentIndex > 0;
+  const hasNext = canNavigate && currentIndex < images.length - 1;
+
+  const handlePrev = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (hasPrev && onNavigate) {
+      onNavigate(currentIndex - 1);
+    }
+  };
+
+  const handleNext = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (hasNext && onNavigate) {
+      onNavigate(currentIndex + 1);
+    }
+  };
 
   useEffect(() => {
     if (!imageUrl) return;
     
-    // Close on Escape key
-    const handleEscape = (e: KeyboardEvent) => {
+    // Close on Escape key, navigate with arrow keys
+    const handleKeydown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft" && hasPrev && onNavigate) onNavigate(currentIndex - 1);
+      if (e.key === "ArrowRight" && hasNext && onNavigate) onNavigate(currentIndex + 1);
     };
     
-    document.addEventListener("keydown", handleEscape);
+    document.addEventListener("keydown", handleKeydown);
     document.body.style.overflow = "hidden";
     
     return () => {
-      document.removeEventListener("keydown", handleEscape);
+      document.removeEventListener("keydown", handleKeydown);
       document.body.style.overflow = "unset";
       setIsZoomed(false);
     };
-  }, [imageUrl, onClose]);
+  }, [imageUrl, onClose, hasPrev, hasNext, currentIndex, onNavigate]);
 
   if (!imageUrl) return null;
 
@@ -61,9 +84,43 @@ export const ImageModal = ({ imageUrl, onClose }: ImageModalProps) => {
           <X className="h-4 w-4 md:h-5 md:w-5 text-black" />
         </button>
       </div>
+
+      {/* Navigation arrows */}
+      {canNavigate && (
+        <>
+          <button
+            onClick={handlePrev}
+            disabled={!hasPrev}
+            className={`fixed left-2 md:left-6 top-1/2 -translate-y-1/2 z-[310] bg-white/90 rounded-full p-2 md:p-3 shadow-lg transition-all ${
+              hasPrev ? 'hover:bg-white cursor-pointer opacity-100' : 'opacity-30 cursor-not-allowed'
+            }`}
+            aria-label="Previous image"
+          >
+            <ChevronLeft className="h-5 w-5 md:h-6 md:w-6 text-black" />
+          </button>
+          <button
+            onClick={handleNext}
+            disabled={!hasNext}
+            className={`fixed right-2 md:right-6 top-1/2 -translate-y-1/2 z-[310] bg-white/90 rounded-full p-2 md:p-3 shadow-lg transition-all ${
+              hasNext ? 'hover:bg-white cursor-pointer opacity-100' : 'opacity-30 cursor-not-allowed'
+            }`}
+            aria-label="Next image"
+          >
+            <ChevronRight className="h-5 w-5 md:h-6 md:w-6 text-black" />
+          </button>
+        </>
+      )}
+
+      {/* Image counter */}
+      {canNavigate && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[310] bg-white/90 rounded-full px-4 py-2 text-sm font-medium text-black">
+          {currentIndex + 1} / {images.length}
+        </div>
+      )}
       
       <div
         className="relative max-w-5xl w-full"
+        onClick={(e) => e.stopPropagation()}
       >
         
         <div className={`transition-transform duration-300 ${isZoomed ? 'scale-150 cursor-move overflow-auto max-h-[85vh]' : 'scale-100'}`}>
