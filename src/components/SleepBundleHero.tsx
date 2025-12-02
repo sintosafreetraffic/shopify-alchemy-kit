@@ -107,22 +107,22 @@ export const SleepBundleHero = () => {
             </div>
 
             {/* Key Benefits */}
-            <div className="space-y-2">
+            <div className="space-y-2 mt-2 mb-2 md:mt-2 md:mb-4">
               <div className="flex items-start gap-2">
-                <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                <p className="text-sm md:text-base">Complete sleep solution package - Pillow, Knee Pillow & Deep Sleep Mask</p>
+                <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0 mt-0.5" />
+                <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">Complete solution</span> – Pillow, Knee Pillow & Deep Sleep Mask included</p>
               </div>
               <div className="flex items-start gap-2">
-                <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                <p className="text-sm md:text-base">Save $30 compared to buying products separately</p>
+                <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0 mt-0.5" />
+                <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">Save $30</span> – Compared to buying products separately</p>
               </div>
               <div className="flex items-start gap-2">
-                <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                <p className="text-sm md:text-base">Perfect for all sleeping positions - side, back, and stomach sleepers</p>
+                <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0 mt-0.5" />
+                <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">All positions</span> – Perfect for side, back, and stomach sleepers</p>
               </div>
               <div className="flex items-start gap-2">
-                <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                <p className="text-sm md:text-base">Scientifically proven to improve sleep quality by 93%</p>
+                <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0 mt-0.5" />
+                <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">Proven results</span> – Scientifically shown to improve sleep quality by 93%</p>
               </div>
             </div>
 
