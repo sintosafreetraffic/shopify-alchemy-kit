@@ -4,12 +4,13 @@ import { Check, Shield, Moon, Truck, Loader2, Star, Users } from "lucide-react";
 import { ProductImageCarousel } from "./ProductImageCarousel";
 import { PolicyAccordion } from "./PolicyAccordion";
 import { CountdownTimer, CountdownTimerDisplay } from "./CountdownTimer";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useCartStore } from "@/stores/cartStore";
 import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import { trackPageVisit } from "@/lib/pinterest";
+import { trackViewedProduct } from "@/lib/klaviyo";
 import testimonialAvatar from "@/assets/testimonial.png";
 import eyeMaskGift from "@/assets/eye-mask-gift-new.webp";
 import consumerChoiceBadge from "@/assets/consumer-choice-badge-transparent.png";
@@ -19,6 +20,7 @@ export const Hero = () => {
   const [product, setProduct] = useState<ShopifyProduct | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { addItem, setCartOpen } = useCartStore();
+  const hasTrackedView = useRef(false);
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -28,6 +30,19 @@ export const Hero = () => {
           setProduct(products[0]);
           // Track Pinterest PageVisit with product ID
           trackPageVisit(products[0].node.id);
+          
+          // Track Klaviyo Viewed Product (only once per page load)
+          if (!hasTrackedView.current) {
+            hasTrackedView.current = true;
+            const p = products[0];
+            trackViewedProduct({
+              id: p.node.id,
+              title: p.node.title,
+              price: parseFloat(p.node.variants.edges[0]?.node.price.amount || "0"),
+              sku: p.node.variants.edges[0]?.node.id || "",
+              imageUrl: p.node.images?.edges?.[0]?.node?.url || "",
+            });
+          }
         }
       } catch (error) {
         console.error("Error loading product:", error);

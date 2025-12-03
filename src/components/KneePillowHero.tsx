@@ -2,12 +2,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, Shield, Moon, Truck, Loader2, Star } from "lucide-react";
 import { PolicyAccordion } from "./PolicyAccordion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useCartStore } from "@/stores/cartStore";
 import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import { trackPageVisit } from "@/lib/pinterest";
+import { trackViewedProduct } from "@/lib/klaviyo";
 import { CountdownTimer, CountdownTimerDisplay } from "./CountdownTimer";
 import eyeMaskGift from "@/assets/eye-mask-gift-new.webp";
 import { KneePillowImageCarousel } from "./KneePillowImageCarousel";
@@ -18,6 +19,7 @@ export const KneePillowHero = () => {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { addItem, setCartOpen } = useCartStore();
   const { saleName } = CountdownTimer();
+  const hasTrackedView = useRef(false);
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -28,6 +30,18 @@ export const KneePillowHero = () => {
           setProduct(kneePillow);
           // Track Pinterest PageVisit with product ID
           trackPageVisit(kneePillow.node.id);
+          
+          // Track Klaviyo Viewed Product (only once per page load)
+          if (!hasTrackedView.current) {
+            hasTrackedView.current = true;
+            trackViewedProduct({
+              id: kneePillow.node.id,
+              title: kneePillow.node.title,
+              price: parseFloat(kneePillow.node.variants.edges[0]?.node.price.amount || "0"),
+              sku: kneePillow.node.variants.edges[0]?.node.id || "",
+              imageUrl: kneePillow.node.images?.edges?.[0]?.node?.url || "",
+            });
+          }
         }
       } catch (error) {
         console.error("Error loading product:", error);
