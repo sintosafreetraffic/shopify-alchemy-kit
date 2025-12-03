@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { createStorefrontCheckout } from '@/lib/shopify';
 import type { ShopifyProduct } from '@/lib/shopify';
+import { trackAddToCart, trackCheckout } from '@/lib/pinterest';
 
 export interface CartItem {
   product: ShopifyProduct;
@@ -53,6 +54,15 @@ export const useCartStore = create<CartStore>()(
         const { items } = get();
         const existingItem = items.find(i => i.variantId === item.variantId);
         
+        // Track Pinterest AddToCart event
+        trackAddToCart(
+          item.product.node.id,
+          item.variantId,
+          parseFloat(item.price.amount) * item.quantity,
+          item.price.currencyCode,
+          item.quantity
+        );
+        
         if (existingItem) {
           set({
             items: items.map(i =>
@@ -100,6 +110,21 @@ export const useCartStore = create<CartStore>()(
 
         setLoading(true);
         try {
+          // Track Pinterest Checkout event
+          const totalValue = items.reduce((sum, item) => 
+            sum + (parseFloat(item.price.amount) * item.quantity), 0
+          );
+          trackCheckout(
+            items.map(item => ({
+              productId: item.product.node.id,
+              variantId: item.variantId,
+              quantity: item.quantity,
+              price: parseFloat(item.price.amount),
+            })),
+            totalValue,
+            items[0]?.price.currencyCode || 'USD'
+          );
+
           // Calculate pillow items only (exclude sleep mask for free gift calculation)
           const pillowItems = items.filter(item => 
             item.product.node.title.toLowerCase().includes('pillow')

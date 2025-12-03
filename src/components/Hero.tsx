@@ -9,6 +9,7 @@ import { useCartStore } from "@/stores/cartStore";
 import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
+import { trackPageVisit } from "@/lib/pinterest";
 import testimonialAvatar from "@/assets/testimonial.png";
 import eyeMaskGift from "@/assets/eye-mask-gift-new.webp";
 import consumerChoiceBadge from "@/assets/consumer-choice-badge-transparent.png";
@@ -25,6 +26,8 @@ export const Hero = () => {
         const products = await fetchProducts(1);
         if (products.length > 0) {
           setProduct(products[0]);
+          // Track Pinterest PageVisit with product ID
+          trackPageVisit(products[0].node.id);
         }
       } catch (error) {
         console.error("Error loading product:", error);
