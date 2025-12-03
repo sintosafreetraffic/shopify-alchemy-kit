@@ -7,6 +7,7 @@ import { useCartStore } from "@/stores/cartStore";
 import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
+import { trackPageVisit } from "@/lib/pinterest";
 import { CountdownTimer, CountdownTimerDisplay } from "./CountdownTimer";
 import eyeMaskGift from "@/assets/eye-mask-gift-new.webp";
 import { KneePillowImageCarousel } from "./KneePillowImageCarousel";
@@ -25,6 +26,8 @@ export const KneePillowHero = () => {
         const kneePillow = products.find(p => p.node.title.toLowerCase().includes('knee'));
         if (kneePillow) {
           setProduct(kneePillow);
+          // Track Pinterest PageVisit with product ID
+          trackPageVisit(kneePillow.node.id);
         }
       } catch (error) {
         console.error("Error loading product:", error);

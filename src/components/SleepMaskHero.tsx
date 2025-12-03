@@ -7,6 +7,7 @@ import { useCartStore } from "@/stores/cartStore";
 import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
+import { trackPageVisit } from "@/lib/pinterest";
 import { SleepMaskImageCarousel } from "./SleepMaskImageCarousel";
 import sleepMaskNavy from "@/assets/sleep-mask-navy.webp";
 import sleepMaskTurquoise from "@/assets/sleep-mask-turquoise.webp";
@@ -39,6 +40,8 @@ export const SleepMaskHero = () => {
         const sleepMask = products.find(p => p.node.title.toLowerCase().includes('silk deep sleep mask') && !p.node.title.toLowerCase().includes('free gift'));
         if (sleepMask) {
           setProduct(sleepMask);
+          // Track Pinterest PageVisit with product ID
+          trackPageVisit(sleepMask.node.id);
           // Set default color to the first available color
           const colorOption = sleepMask.node.options.find(opt => opt.name === "Color");
           if (colorOption && colorOption.values.length > 0) {
