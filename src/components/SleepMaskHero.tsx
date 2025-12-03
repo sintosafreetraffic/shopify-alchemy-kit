@@ -2,12 +2,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, Shield, Moon, Truck, Loader2, Star, Minus, Plus } from "lucide-react";
 import { PolicyAccordion } from "./PolicyAccordion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useCartStore } from "@/stores/cartStore";
 import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import { trackPageVisit } from "@/lib/pinterest";
+import { trackViewedProduct } from "@/lib/klaviyo";
 import { SleepMaskImageCarousel } from "./SleepMaskImageCarousel";
 import sleepMaskNavy from "@/assets/sleep-mask-navy.webp";
 import sleepMaskTurquoise from "@/assets/sleep-mask-turquoise.webp";
@@ -32,6 +33,7 @@ export const SleepMaskHero = () => {
   const [product, setProduct] = useState<ShopifyProduct | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { addItem } = useCartStore();
+  const hasTrackedView = useRef(false);
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -42,6 +44,19 @@ export const SleepMaskHero = () => {
           setProduct(sleepMask);
           // Track Pinterest PageVisit with product ID
           trackPageVisit(sleepMask.node.id);
+          
+          // Track Klaviyo Viewed Product (only once per page load)
+          if (!hasTrackedView.current) {
+            hasTrackedView.current = true;
+            trackViewedProduct({
+              id: sleepMask.node.id,
+              title: sleepMask.node.title,
+              price: parseFloat(sleepMask.node.variants.edges[0]?.node.price.amount || "0"),
+              sku: sleepMask.node.variants.edges[0]?.node.id || "",
+              imageUrl: sleepMask.node.images?.edges?.[0]?.node?.url || "",
+            });
+          }
+          
           // Set default color to the first available color
           const colorOption = sleepMask.node.options.find(opt => opt.name === "Color");
           if (colorOption && colorOption.values.length > 0) {

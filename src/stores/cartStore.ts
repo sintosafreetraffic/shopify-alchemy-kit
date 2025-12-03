@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { createStorefrontCheckout } from '@/lib/shopify';
 import type { ShopifyProduct } from '@/lib/shopify';
 import { trackAddToCart, trackCheckout } from '@/lib/pinterest';
+import { trackAddedToCart as trackKlaviyoAddToCart } from '@/lib/klaviyo';
 
 export interface CartItem {
   product: ShopifyProduct;
@@ -62,6 +63,17 @@ export const useCartStore = create<CartStore>()(
           item.price.currencyCode,
           item.quantity
         );
+
+        // Track Klaviyo AddToCart event
+        trackKlaviyoAddToCart({
+          id: item.product.node.id,
+          title: item.product.node.title,
+          price: parseFloat(item.price.amount),
+          quantity: item.quantity,
+          sku: item.variantId,
+          variantTitle: item.variantTitle,
+          imageUrl: item.product.node.images?.edges?.[0]?.node?.url || "",
+        });
         
         if (existingItem) {
           set({

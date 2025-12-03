@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, ShoppingCart, Shield, Moon, Truck } from "lucide-react";
@@ -6,12 +6,14 @@ import { useCartStore } from "@/stores/cartStore";
 import bundleImage from "@/assets/complete-sleep-bundle-updated.webp";
 import { fetchProducts, type ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
+import { trackViewedProduct } from "@/lib/klaviyo";
 
 export const SleepBundleHero = () => {
   const [selectedBundle, setSelectedBundle] = useState<"single" | "double">("single");
   const [product, setProduct] = useState<ShopifyProduct | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { addItem, setCartOpen } = useCartStore();
+  const hasTrackedView = useRef(false);
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -22,6 +24,18 @@ export const SleepBundleHero = () => {
         );
         if (bundleProduct) {
           setProduct(bundleProduct);
+          
+          // Track Klaviyo Viewed Product (only once per page load)
+          if (!hasTrackedView.current) {
+            hasTrackedView.current = true;
+            trackViewedProduct({
+              id: bundleProduct.node.id,
+              title: bundleProduct.node.title,
+              price: parseFloat(bundleProduct.node.variants.edges[0]?.node.price.amount || "0"),
+              sku: bundleProduct.node.variants.edges[0]?.node.id || "",
+              imageUrl: bundleProduct.node.images?.edges?.[0]?.node?.url || "",
+            });
+          }
         }
       } catch (error) {
         console.error("Failed to load bundle product:", error);
