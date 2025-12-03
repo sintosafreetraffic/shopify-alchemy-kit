@@ -10,7 +10,7 @@ export const Guarantee = () => {
               <Truck className="w-6 h-6 md:w-8 md:h-8 text-primary" />
             </div>
             <h3 className="text-lg md:text-xl font-bold">Free Shipping</h3>
-            <p className="text-sm md:text-base text-muted-foreground">Fast delivery on all orders</p>
+            <p className="text-sm md:text-base text-muted-foreground">On pillow orders within the U.S.</p>
           </div>
           
           <div className="space-y-1.5 md:space-y-2">
