@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useCartStore } from "@/stores/cartStore";
 
 const messages = [
-  "Free shipping within the U.S.",
+  "Free shipping within the U.S. with orders over $50",
   "100 Day Risk-Free Trial"
 ];
 
