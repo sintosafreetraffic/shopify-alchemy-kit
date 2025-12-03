@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useCartStore } from "@/stores/cartStore";
 
-const messages = ["Free shipping within the U.S. over $50", "100 Day Risk-Free Trial"];
+const messages = ["Free shipping from 50$", "100 Day Risk-Free Trial"];
 
 export const UrgencyBanner = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
