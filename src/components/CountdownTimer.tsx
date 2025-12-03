@@ -1,13 +1,51 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 
-// Helper to calculate time remaining from a target end time
-const calculateTimeLeft = (endTime: number) => {
-  const now = Date.now();
-  let distance = endTime - now;
+// Get next midnight in Eastern Time (ET)
+const getNextMidnightET = (): number => {
+  // Create a date formatter for Eastern Time
+  const etFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
   
-  // If expired, return null to signal reset needed
+  const now = new Date();
+  const parts = etFormatter.formatToParts(now);
+  
+  // Extract current ET date components
+  const year = parseInt(parts.find(p => p.type === 'year')?.value || '2025');
+  const month = parseInt(parts.find(p => p.type === 'month')?.value || '1') - 1;
+  const day = parseInt(parts.find(p => p.type === 'day')?.value || '1');
+  
+  // Create tomorrow's date in ET
+  const tomorrowET = new Date(Date.UTC(year, month, day + 1, 5, 0, 0, 0)); // 00:00 ET = 05:00 UTC (EST) or 04:00 UTC (EDT)
+  
+  // Adjust for DST - check if we're in EDT or EST
+  const jan = new Date(year, 0, 1);
+  const jul = new Date(year, 6, 1);
+  const stdOffset = Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset());
+  const isDST = now.getTimezoneOffset() < stdOffset;
+  
+  // ET is UTC-5 (EST) or UTC-4 (EDT)
+  const utcMidnightET = new Date(Date.UTC(year, month, day + 1, isDST ? 4 : 5, 0, 0, 0));
+  
+  return utcMidnightET.getTime();
+};
+
+// Calculate time remaining until next midnight ET
+const calculateTimeLeft = () => {
+  const now = Date.now();
+  const targetMidnight = getNextMidnightET();
+  let distance = targetMidnight - now;
+  
+  // If somehow negative (edge case), add 24 hours
   if (distance <= 0) {
-    return null;
+    distance += 24 * 60 * 60 * 1000;
   }
 
   const hours = Math.floor(distance / (1000 * 60 * 60));
@@ -18,28 +56,15 @@ const calculateTimeLeft = (endTime: number) => {
 };
 
 export const CountdownTimer = () => {
-  const [timeLeft, setTimeLeft] = useState({
-    hours: 0,
-    minutes: 0,
-    seconds: 0
-  });
+  const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft());
   const [saleName] = useState("CYBER MONDAY");
-  const endTimeRef = useRef<number>(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
 
   useEffect(() => {
-    // Initialize with 24 hours from now
-    endTimeRef.current = Date.now() + 24 * 60 * 60 * 1000;
+    // Calculate immediately on mount
+    setTimeLeft(calculateTimeLeft());
     
     const timer = setInterval(() => {
-      const result = calculateTimeLeft(endTimeRef.current);
-      
-      if (result === null) {
-        // Timer expired, reset to 24 hours
-        endTimeRef.current = Date.now() + 24 * 60 * 60 * 1000;
-        setTimeLeft({ hours: 24, minutes: 0, seconds: 0 });
-      } else {
-        setTimeLeft(result);
-      }
+      setTimeLeft(calculateTimeLeft());
     }, 1000);
 
     return () => clearInterval(timer);
