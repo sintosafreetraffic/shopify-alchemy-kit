@@ -11,9 +11,10 @@ import completeSleepBundle from "@/assets/complete-sleep-bundle-updated.webp";
 
 export const ProductGallery = () => {
   const [bundleProduct, setBundleProduct] = useState<ShopifyProduct | null>(null);
+  const [kneePillowProduct, setKneePillowProduct] = useState<ShopifyProduct | null>(null);
 
   useEffect(() => {
-    const loadBundleProduct = async () => {
+    const loadProducts = async () => {
       try {
         const products = await fetchProducts();
         const bundle = products.find(
@@ -22,12 +23,38 @@ export const ProductGallery = () => {
         if (bundle) {
           setBundleProduct(bundle);
         }
+        
+        const kneePillow = products.find(
+          (p: ShopifyProduct) => p.node.handle === "risebynight-ergonomic-knee-pillow"
+        );
+        if (kneePillow) {
+          setKneePillowProduct(kneePillow);
+        }
       } catch (error) {
-        console.error("Failed to load bundle product:", error);
+        console.error("Failed to load products:", error);
       }
     };
-    loadBundleProduct();
+    loadProducts();
   }, []);
+
+  // Get knee pillow dynamic pricing from Shopify
+  const getKneePillowPricing = () => {
+    if (kneePillowProduct) {
+      const variant = kneePillowProduct.node.variants.edges.find(
+        v => v.node.title === "2 Pillows"
+      );
+      if (variant) {
+        const price = parseFloat(variant.node.price.amount).toFixed(2);
+        const compareAt = variant.node.compareAtPrice?.amount 
+          ? parseFloat(variant.node.compareAtPrice.amount).toFixed(2)
+          : null;
+        return { price: `$${price}`, originalPrice: compareAt ? `$${compareAt}` : "" };
+      }
+    }
+    return { price: "$69.99", originalPrice: "$139.98" };
+  };
+
+  const kneePricing = getKneePillowPricing();
 
   const products = [
     {
@@ -47,8 +74,8 @@ export const ProductGallery = () => {
       id: 3,
       name: "Rise By Night™ Ergonomic Knee Pillow",
       tagline: "Perfect Support for Side Sleepers",
-      price: "$69.99",
-      originalPrice: "$109.99",
+      price: kneePricing.price,
+      originalPrice: kneePricing.originalPrice,
       rating: 4.7,
       reviews: "5,100+",
       image: kneePillowMain,
