@@ -20,10 +20,17 @@ export function extractVariantId(shopifyGid: string): string {
   return match ? match[1] : shopifyGid;
 }
 
+// Generate unique event ID
+function generateEventId(): string {
+  return `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
 // Track page visit with product ID (for product pages)
 export function trackPageVisit(productId?: string) {
   if (typeof window !== 'undefined' && window.pintrk) {
-    const data: Record<string, any> = {};
+    const data: Record<string, any> = {
+      event_id: generateEventId(),
+    };
     if (productId) {
       data.product_id = extractProductId(productId);
     }
@@ -42,11 +49,11 @@ export function trackAddToCart(
 ) {
   if (typeof window !== 'undefined' && window.pintrk) {
     const data = {
+      event_id: generateEventId(),
       product_id: extractProductId(productId),
-      product_variant_id: extractVariantId(variantId),
       value: value,
-      currency: currency,
       order_quantity: quantity,
+      currency: currency,
     };
     window.pintrk('track', 'addtocart', data);
     console.log('[Pinterest] AddToCart tracked', data);
@@ -65,10 +72,11 @@ export function trackCheckout(
   currency: string = 'USD'
 ) {
   if (typeof window !== 'undefined' && window.pintrk) {
-    // Pinterest accepts product_ids as array or comma-separated string
+    // Pinterest accepts product_ids as array
     const productIds = items.map(item => extractProductId(item.productId));
     
     const data = {
+      event_id: generateEventId(),
       product_id: productIds,
       value: totalValue,
       currency: currency,
@@ -79,30 +87,25 @@ export function trackCheckout(
   }
 }
 
-// Initialize Pinterest tag (called once on page load)
-export function initPinterestTag(tagId: string) {
-  if (typeof window === 'undefined' || window.pintrk) return;
-  
-  // Pinterest base code
-  (function(e: string) {
-    if (!window.pintrk) {
-      window.pintrk = function() {
-        (window.pintrk as any).queue.push(Array.prototype.slice.call(arguments));
-      } as any;
-      (window.pintrk as any).queue = [];
-      (window.pintrk as any).version = "3.0";
-      const n = document.createElement("script");
-      n.async = true;
-      n.src = e;
-      const t = document.getElementsByTagName("script")[0];
-      if (t && t.parentNode) {
-        t.parentNode.insertBefore(n, t);
-      }
-    }
-  })("https://s.pinimg.com/ct/core.js");
-  
-  window.pintrk('load', tagId);
-  window.pintrk('page');
-  
-  console.log('[Pinterest] Tag initialized with ID:', tagId);
+// Track lead event (e.g., newsletter signup)
+export function trackLead(leadType: string = 'Newsletter') {
+  if (typeof window !== 'undefined' && window.pintrk) {
+    const data = {
+      event_id: generateEventId(),
+      lead_type: leadType,
+    };
+    window.pintrk('track', 'lead', data);
+    console.log('[Pinterest] Lead tracked', data);
+  }
+}
+
+// Track signup event
+export function trackSignup() {
+  if (typeof window !== 'undefined' && window.pintrk) {
+    const data = {
+      event_id: generateEventId(),
+    };
+    window.pintrk('track', 'signup', data);
+    console.log('[Pinterest] Signup tracked', data);
+  }
 }
