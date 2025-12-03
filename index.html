@@ -45,6 +45,24 @@
           y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
       })(window, document, "clarity", "script", "ue7ibjdmdj");
     </script>
+    
+    <!-- Shopify Web Pixel Analytics -->
+    <script type="text/javascript">
+      (function() {
+        var shopifyStore = 'lovable-project-swlbs.myshopify.com';
+        var script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://cdn.shopify.com/shopifycloud/web-pixels-manager/latest/web-pixels-manager.js';
+        script.dataset.shopDomain = shopifyStore;
+        var firstScript = document.getElementsByTagName('script')[0];
+        firstScript.parentNode.insertBefore(script, firstScript);
+        
+        window.ShopifyAnalytics = window.ShopifyAnalytics || {};
+        window.ShopifyAnalytics.meta = window.ShopifyAnalytics.meta || {};
+        window.ShopifyAnalytics.meta.currency = 'USD';
+        window.ShopifyAnalytics.lib = window.ShopifyAnalytics.lib || {};
+      })();
+    </script>
   </head>
 
   <body>
