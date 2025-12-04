@@ -80,11 +80,11 @@ export const SleepReportSummary = ({ logs, trends, plan, email }: SleepReportSum
     
     setIsGenerating(true);
     try {
-      // Dynamically import libraries to prevent build issues
-      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
-        import('html2canvas'),
-        import('jspdf'),
-      ]);
+      // Dynamically import libraries only when needed
+      const html2canvasModule = await import('html2canvas');
+      const jspdfModule = await import('jspdf');
+      const html2canvas = html2canvasModule.default;
+      const jsPDF = jspdfModule.default;
       
       const canvas = await html2canvas(reportRef.current, {
         scale: 2,
@@ -107,6 +107,7 @@ export const SleepReportSummary = ({ logs, trends, plan, email }: SleepReportSum
       pdf.save(`sleep-report-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
     } catch (error) {
       console.error('Failed to generate PDF:', error);
+      alert('Failed to generate PDF. Please try again.');
     }
     setIsGenerating(false);
   };
