@@ -1,7 +1,7 @@
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, Share2, Moon, TrendingUp, TrendingDown, Minus, Heart, Thermometer, Brain } from "lucide-react";
+import { Share2, Moon, TrendingUp, TrendingDown, Minus, Heart, Thermometer, Brain } from "lucide-react";
 import { format, subDays } from "date-fns";
 
 interface SleepLog {
@@ -17,15 +17,7 @@ interface CoachPlan {
   encouragement_message?: string;
   main_focus_this_week?: string[];
   spine_health_score?: number;
-  sleep_plan?: {
-    day1?: { focus?: string; tip?: string };
-    day2?: { focus?: string; tip?: string };
-    day3?: { focus?: string; tip?: string };
-    day4?: { focus?: string; tip?: string };
-    day5?: { focus?: string; tip?: string };
-    day6?: { focus?: string; tip?: string };
-    day7?: { focus?: string; tip?: string };
-  };
+  sleep_plan?: Record<string, { focus?: string; tip?: string }>;
 }
 
 interface TrendData {
@@ -45,9 +37,8 @@ interface SleepReportSummaryProps {
   email: string;
 }
 
-export const SleepReportSummary = ({ logs, trends, plan, email }: SleepReportSummaryProps) => {
+export const SleepReportSummary = ({ logs, trends, plan }: SleepReportSummaryProps) => {
   const reportRef = useRef<HTMLDivElement>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
 
   const weekStart = format(subDays(new Date(), 7), 'MMM d');
   const weekEnd = format(new Date(), 'MMM d, yyyy');
@@ -75,44 +66,6 @@ export const SleepReportSummary = ({ logs, trends, plan, email }: SleepReportSum
     return 'Poor';
   };
 
-  const handleDownloadPDF = async () => {
-    setIsGenerating(true);
-    try {
-      // Dynamic import to avoid bundling issues
-      const { default: html2canvas } = await import('html2canvas');
-      const { default: jsPDF } = await import('jspdf');
-      
-      if (!reportRef.current) {
-        throw new Error('Report element not found');
-      }
-      
-      const canvas = await html2canvas(reportRef.current, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-      });
-      
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-      });
-      
-      const imgWidth = 190;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
-      pdf.save(`sleep-report-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
-    } catch (error) {
-      console.error('Failed to generate PDF:', error);
-      alert('Failed to generate PDF. Please try again.');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
   const handleShare = async () => {
     const shareText = `My Weekly Sleep Report (${weekStart} - ${weekEnd})
     
@@ -126,10 +79,7 @@ Powered by Rise By Night AI Sleep Coach`;
 
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: 'My Weekly Sleep Report',
-          text: shareText,
-        });
+        await navigator.share({ title: 'My Weekly Sleep Report', text: shareText });
       } catch (error) {
         if ((error as Error).name !== 'AbortError') {
           console.error('Share failed:', error);
@@ -143,31 +93,14 @@ Powered by Rise By Night AI Sleep Coach`;
 
   return (
     <div className="space-y-4">
-      {/* Action buttons */}
       <div className="flex gap-2 justify-end">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleShare}
-          className="gap-2"
-        >
+        <Button variant="outline" size="sm" onClick={handleShare} className="gap-2">
           <Share2 className="w-4 h-4" />
-          Share
-        </Button>
-        <Button
-          size="sm"
-          onClick={handleDownloadPDF}
-          disabled={isGenerating}
-          className="gap-2"
-        >
-          <Download className="w-4 h-4" />
-          {isGenerating ? 'Generating...' : 'Download PDF'}
+          Share Report
         </Button>
       </div>
 
-      {/* Report content */}
       <div ref={reportRef} className="bg-white p-6 rounded-xl space-y-6">
-        {/* Header */}
         <div className="text-center border-b pb-4">
           <div className="flex items-center justify-center gap-2 mb-2">
             <Moon className="w-8 h-8 text-primary" />
@@ -177,7 +110,6 @@ Powered by Rise By Night AI Sleep Coach`;
           <p className="text-sm text-muted-foreground mt-1">Rise By Night AI Sleep Coach</p>
         </div>
 
-        {/* Overview Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card className="bg-primary/5 border-primary/20">
             <CardContent className="p-4 text-center">
@@ -214,7 +146,6 @@ Powered by Rise By Night AI Sleep Coach`;
           </Card>
         </div>
 
-        {/* Detailed Insights */}
         <div className="grid md:grid-cols-2 gap-4">
           <Card>
             <CardHeader className="pb-2">
@@ -251,29 +182,10 @@ Powered by Rise By Night AI Sleep Coach`;
                 <div className="flex items-center gap-4">
                   <div className="relative w-20 h-20">
                     <svg className="w-20 h-20 transform -rotate-90">
-                      <circle
-                        cx="40"
-                        cy="40"
-                        r="36"
-                        stroke="currentColor"
-                        strokeWidth="8"
-                        fill="none"
-                        className="text-muted/20"
-                      />
-                      <circle
-                        cx="40"
-                        cy="40"
-                        r="36"
-                        stroke="currentColor"
-                        strokeWidth="8"
-                        fill="none"
-                        strokeDasharray={`${(plan.spine_health_score / 100) * 226} 226`}
-                        className="text-primary"
-                      />
+                      <circle cx="40" cy="40" r="36" stroke="currentColor" strokeWidth="8" fill="none" className="text-muted/20" />
+                      <circle cx="40" cy="40" r="36" stroke="currentColor" strokeWidth="8" fill="none" strokeDasharray={`${(plan.spine_health_score / 100) * 226} 226`} className="text-primary" />
                     </svg>
-                    <span className="absolute inset-0 flex items-center justify-center text-xl font-bold">
-                      {plan.spine_health_score}
-                    </span>
+                    <span className="absolute inset-0 flex items-center justify-center text-xl font-bold">{plan.spine_health_score}</span>
                   </div>
                   <div className="flex-1">
                     <p className="text-sm text-muted-foreground">
@@ -288,7 +200,6 @@ Powered by Rise By Night AI Sleep Coach`;
           )}
         </div>
 
-        {/* AI Coach Insights */}
         {plan && (
           <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
             <CardHeader className="pb-2">
@@ -301,7 +212,6 @@ Powered by Rise By Night AI Sleep Coach`;
               {plan.encouragement_message && (
                 <p className="text-foreground italic">"{plan.encouragement_message}"</p>
               )}
-              
               {plan.main_focus_this_week && plan.main_focus_this_week.length > 0 && (
                 <div>
                   <p className="font-medium mb-2">Focus Areas This Week:</p>
@@ -316,7 +226,6 @@ Powered by Rise By Night AI Sleep Coach`;
           </Card>
         )}
 
-        {/* Daily Breakdown */}
         {logs.length > 0 && (
           <Card>
             <CardHeader className="pb-2">
@@ -355,7 +264,6 @@ Powered by Rise By Night AI Sleep Coach`;
           </Card>
         )}
 
-        {/* Footer */}
         <div className="text-center pt-4 border-t text-xs text-muted-foreground">
           <p>Generated by Rise By Night AI Sleep Coach</p>
           <p className="mt-1">www.risebynight.com</p>
