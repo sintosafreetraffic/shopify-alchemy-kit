@@ -197,16 +197,38 @@ const SleepCoachDashboard = () => {
   };
 
   const handleCreateProfile = async (profileData: any) => {
+    const isUpdate = !!profile;
     const result = await createOrUpdateProfile(profileData);
     if (result) {
       setProfile(result);
       setShowWizard(false);
-      toast({ title: "Profile saved!", description: "Your sleep profile has been created. Let's generate your personalized plan!" });
-      setTimeout(() => handleGeneratePlan(), 500);
+      
+      if (!isUpdate) {
+        // New profile - generate initial plan
+        toast({ title: "Profile saved!", description: "Your sleep profile has been created. Let's generate your personalized plan!" });
+        setTimeout(() => handleGeneratePlan(), 500);
+      } else {
+        // Profile update - check if plan regeneration is allowed (max once per week)
+        const canRegenerate = !plan || canRegeneratePlanAfterProfileUpdate(plan);
+        
+        if (canRegenerate) {
+          toast({ title: "Profile updated!", description: "Generating a new sleep plan based on your updated profile." });
+          setTimeout(() => handleGeneratePlan(), 500);
+        } else {
+          toast({ title: "Profile updated!", description: "Your profile has been saved. Your sleep plan will update at the start of next week." });
+        }
+      }
     } else {
       toast({ title: "Error", description: error || "Failed to save profile", variant: "destructive" });
     }
     return result;
+  };
+
+  // Check if plan can be regenerated after profile update (max once per week)
+  const canRegeneratePlanAfterProfileUpdate = (currentPlan: CoachPlan): boolean => {
+    const planDate = new Date(currentPlan.generated_at);
+    const daysSincePlan = (Date.now() - planDate.getTime()) / (1000 * 60 * 60 * 24);
+    return daysSincePlan >= 7;
   };
 
   const handleGeneratePlan = async () => {
