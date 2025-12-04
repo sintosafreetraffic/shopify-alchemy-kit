@@ -83,6 +83,7 @@ const AppContent = () => {
   );
 };
 
+// App component
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
