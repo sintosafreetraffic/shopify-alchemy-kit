@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSleepApi, SleepProfile, SleepLog, CoachPlan, TrendData } from "@/hooks/useSleepApi";
 import { SleepLogForm, SleepLogTable, SleepHistoryChart, ProfileViewer, ProfileForm, ProfileWizard, CoachPlanDisplay, WhatsAppSimulator } from "@/components/sleep-coach";
 import { Input } from "@/components/ui/input";
@@ -6,43 +6,108 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Moon, BarChart3, MessageCircle, Loader2, Sparkles, Users, ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Search, Moon, BarChart3, MessageCircle, Loader2, Sparkles, Users, ArrowRight, Lock, ShoppingBag, AlertCircle } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/moon-logo-yellow-transparent.png";
+
+interface AccessStatus {
+  hasAccess: boolean;
+  accessReason: string;
+  affiliateSales: number;
+  hasPurchased: boolean;
+}
 
 const SleepCoachDashboard = () => {
   const [email, setEmail] = useState("");
-  const [searchEmail, setSearchEmail] = useState("");
   const [profile, setProfile] = useState<SleepProfile | null>(null);
   const [logs, setLogs] = useState<SleepLog[]>([]);
   const [trends, setTrends] = useState<TrendData | null>(null);
   const [plan, setPlan] = useState<CoachPlan | null>(null);
-  const [isSearching, setIsSearching] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
+  
+  // Auth state
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [accessStatus, setAccessStatus] = useState<AccessStatus | null>(null);
+  const [isVerifyingAccess, setIsVerifyingAccess] = useState(false);
 
   const { loading, error, fetchProfile, createOrUpdateProfile, fetchLogs, addLog, updateLog, deleteLog, generateCoachPlan, fetchCoachPlan, getWhatsAppMessage } = useSleepApi();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
-  const handleSearch = async () => {
-    if (!searchEmail.trim()) return;
-    
-    setIsSearching(true);
-    setEmail(searchEmail.trim().toLowerCase());
-    
+  // Check authentication on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        setIsAuthenticated(true);
+        const userEmail = session.user.email || '';
+        setEmail(userEmail);
+        
+        // Verify access
+        await verifyAccess(userEmail);
+        
+        // Load user data
+        await loadUserData(userEmail);
+      } else {
+        setIsAuthenticated(false);
+      }
+      setIsCheckingAuth(false);
+    };
+
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        setIsAuthenticated(true);
+        const userEmail = session.user.email || '';
+        setEmail(userEmail);
+        await verifyAccess(userEmail);
+        await loadUserData(userEmail);
+      } else {
+        setIsAuthenticated(false);
+        setEmail("");
+        setAccessStatus(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const verifyAccess = async (userEmail: string) => {
+    setIsVerifyingAccess(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-sleep-coach-access', {
+        body: { email: userEmail },
+      });
+
+      if (error) throw error;
+      setAccessStatus(data);
+    } catch (e: any) {
+      console.error('Error verifying access:', e);
+      // Default to allowing access if verification fails (graceful degradation)
+      setAccessStatus({ hasAccess: true, accessReason: 'default', affiliateSales: 0, hasPurchased: false });
+    } finally {
+      setIsVerifyingAccess(false);
+    }
+  };
+
+  const loadUserData = async (userEmail: string) => {
     const [profileData, logsData, planData] = await Promise.all([
-      fetchProfile(searchEmail.trim().toLowerCase()),
-      fetchLogs(searchEmail.trim().toLowerCase()),
-      fetchCoachPlan(searchEmail.trim().toLowerCase()),
+      fetchProfile(userEmail),
+      fetchLogs(userEmail),
+      fetchCoachPlan(userEmail),
     ]);
 
     setProfile(profileData);
-    setShowWizard(!profileData); // Show wizard if no profile exists
+    setShowWizard(!profileData);
     if (logsData) {
       setLogs(logsData.logs);
       setTrends(logsData.trends);
     }
     setPlan(planData);
-    setIsSearching(false);
   };
 
   const refreshLogs = async () => {
@@ -92,7 +157,6 @@ const SleepCoachDashboard = () => {
       setProfile(result);
       setShowWizard(false);
       toast({ title: "Profile saved!", description: "Your sleep profile has been created. Let's generate your personalized plan!" });
-      // Auto-generate initial plan after profile creation
       setTimeout(() => handleGeneratePlan(), 500);
     } else {
       toast({ title: "Error", description: error || "Failed to save profile", variant: "destructive" });
@@ -116,6 +180,123 @@ const SleepCoachDashboard = () => {
     return await getWhatsAppMessage(email);
   };
 
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
+  };
+
+  // Loading state
+  if (isCheckingAuth || isVerifyingAccess) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">
+            {isCheckingAuth ? "Checking authentication..." : "Verifying access..."}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Not authenticated - show login prompt
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 flex items-center justify-center px-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-8 pb-8 text-center space-y-6">
+            <div className="flex justify-center">
+              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                <Lock className="h-8 w-8 text-primary" />
+              </div>
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold mb-2">Sleep Coach Dashboard</h2>
+              <p className="text-muted-foreground">
+                Sign in to access your personalized AI sleep coaching dashboard.
+              </p>
+            </div>
+            <div className="bg-muted/50 rounded-lg p-4 text-left space-y-2">
+              <p className="text-sm font-medium">Access is available to:</p>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <ShoppingBag className="h-4 w-4 text-primary" />
+                <span>Rise By Night customers</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Users className="h-4 w-4 text-primary" />
+                <span>Affiliates with 3+ sales</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Moon className="h-4 w-4 text-primary" />
+                <span>Sleep quiz completers</span>
+              </div>
+            </div>
+            <Link to="/auth?returnTo=/sleep-coach&context=sleep-coach">
+              <Button className="w-full">
+                Sign In / Create Account
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Access denied
+  if (accessStatus && !accessStatus.hasAccess) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 flex items-center justify-center px-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-8 pb-8 text-center space-y-6">
+            <div className="flex justify-center">
+              <div className="h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center">
+                <AlertCircle className="h-8 w-8 text-destructive" />
+              </div>
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold mb-2">Access Required</h2>
+              <p className="text-muted-foreground">
+                To access the Sleep Coach, you need to either:
+              </p>
+            </div>
+            <div className="bg-muted/50 rounded-lg p-4 text-left space-y-3">
+              <div className="flex items-start gap-3">
+                <ShoppingBag className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium">Purchase a Rise By Night Product</p>
+                  <p className="text-sm text-muted-foreground">
+                    Customers automatically get free access to the AI Sleep Coach.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <Users className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium">Become an Affiliate</p>
+                  <p className="text-sm text-muted-foreground">
+                    Earn access with 3+ successful referrals and help others sleep better.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Link to="/product/ergonomic-pillow" className="flex-1">
+                <Button variant="outline" className="w-full">Shop Products</Button>
+              </Link>
+              <Link to="/affiliate" className="flex-1">
+                <Button className="w-full">Join Affiliate</Button>
+              </Link>
+            </div>
+            <Button variant="ghost" onClick={handleSignOut} className="text-muted-foreground">
+              Sign out
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Main dashboard (authenticated with access)
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       {/* Header */}
@@ -129,49 +310,34 @@ const SleepCoachDashboard = () => {
                 <p className="text-xs text-muted-foreground">AI-Powered Sleep Improvement System</p>
               </div>
             </div>
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-muted-foreground hidden md:block">{email}</span>
+              <Button variant="outline" size="sm" onClick={handleSignOut}>
+                Sign Out
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        {/* Search Section */}
-        <Card className="mb-8 border-border/50 bg-card/50 backdrop-blur-sm">
-          <CardContent className="pt-6">
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <Input
-                  placeholder="Enter customer email to load their data..."
-                  value={searchEmail}
-                  onChange={(e) => setSearchEmail(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                  className="text-base"
-                />
-              </div>
-              <Button onClick={handleSearch} disabled={isSearching || !searchEmail.trim()}>
-                {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4 mr-2" />}
-                {isSearching ? "Loading..." : "Search"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {email && showWizard && !profile && (
+        {showWizard && !profile && (
           <div className="space-y-6">
             <div className="text-center mb-8">
               <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-4">
                 <Sparkles className="h-4 w-4" />
-                New User Detected
+                Welcome to Sleep Coach
               </div>
-              <h2 className="text-2xl font-bold mb-2">Welcome to Rise By Night Sleep Coach!</h2>
+              <h2 className="text-2xl font-bold mb-2">Let's Create Your Sleep Profile</h2>
               <p className="text-muted-foreground max-w-md mx-auto">
-                Let's create a personalized sleep profile for <span className="font-medium text-foreground">{email}</span> to unlock AI-powered recommendations.
+                Complete this quick setup to unlock your personalized AI sleep plan.
               </p>
             </div>
             <ProfileWizard email={email} onComplete={handleCreateProfile} loading={loading} />
           </div>
         )}
 
-        {email && !showWizard && (
+        {!showWizard && (
           <Tabs defaultValue="plan" className="space-y-6">
             <TabsList className="grid w-full grid-cols-3 max-w-md mx-auto">
               <TabsTrigger value="plan" className="gap-2">
@@ -193,7 +359,6 @@ const SleepCoachDashboard = () => {
             </TabsContent>
 
             <TabsContent value="dashboard" className="space-y-6">
-              {/* Sleep History Chart */}
               <SleepHistoryChart logs={logs} />
               
               <div className="grid lg:grid-cols-3 gap-6">
@@ -223,14 +388,6 @@ const SleepCoachDashboard = () => {
               </div>
             </TabsContent>
           </Tabs>
-        )}
-
-        {!email && (
-          <div className="text-center py-16">
-            <Moon className="h-16 w-16 text-primary/30 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Enter an email to get started</h2>
-            <p className="text-muted-foreground">Search for a customer to view their sleep data and AI coach plan.</p>
-          </div>
         )}
 
         {/* Affiliate Program Banner */}

@@ -452,7 +452,10 @@ const SleepQuiz = () => {
                   Back to Home
                 </Button>
                 {results.profileCreated ? (
-                  <Button onClick={() => navigate("/sleep-coach")} className="flex-1">
+                  <Button 
+                    onClick={() => navigate(`/auth?returnTo=/sleep-coach&email=${encodeURIComponent(email)}&context=sleep-coach`)} 
+                    className="flex-1"
+                  >
                     <Sparkles className="w-4 h-4 mr-2" />
                     View Sleep Plan
                   </Button>
