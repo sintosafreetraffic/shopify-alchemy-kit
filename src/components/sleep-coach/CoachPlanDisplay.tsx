@@ -185,11 +185,8 @@ export const CoachPlanDisplay = ({ plan, onGeneratePlan, loading }: CoachPlanDis
           </TabsContent>
         </Tabs>
 
-        <div className="mt-6 pt-4 border-t border-border/50 flex items-center justify-between text-xs text-muted-foreground">
+        <div className="mt-6 pt-4 border-t border-border/50 text-xs text-muted-foreground">
           <span>Generated: {new Date(plan.generated_at).toLocaleDateString()}</span>
-          <Button variant="ghost" size="sm" onClick={onGeneratePlan} disabled={loading}>
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Regenerate'}
-          </Button>
         </div>
       </CardContent>
     </Card>
