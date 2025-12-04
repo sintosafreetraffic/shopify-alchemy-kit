@@ -8,7 +8,8 @@ import {
   ProfileForm, 
   ProfileWizard, 
   CoachPlanDisplay, 
-  WhatsAppSimulator 
+  WhatsAppSimulator,
+  StreakDisplay 
 } from "@/components/sleep-coach";
 import { SleepReportSummary } from "@/components/sleep-coach/SleepReportSummary";
 import { Input } from "@/components/ui/input";
@@ -35,6 +36,7 @@ const SleepCoachDashboard = () => {
   const [trends, setTrends] = useState<TrendData | null>(null);
   const [plan, setPlan] = useState<CoachPlan | null>(null);
   const [showWizard, setShowWizard] = useState(false);
+  const [streak, setStreak] = useState(0);
   
   // Auth state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -42,7 +44,7 @@ const SleepCoachDashboard = () => {
   const [accessStatus, setAccessStatus] = useState<AccessStatus | null>(null);
   const [isVerifyingAccess, setIsVerifyingAccess] = useState(false);
 
-  const { loading, error, fetchProfile, createOrUpdateProfile, fetchLogs, addLog, updateLog, deleteLog, generateCoachPlan, fetchCoachPlan, getWhatsAppMessage } = useSleepApi();
+  const { loading, error, fetchProfile, createOrUpdateProfile, fetchLogs, addLog, updateLog, deleteLog, generateCoachPlan, fetchCoachPlan, getWhatsAppMessage, evaluateEngagement } = useSleepApi();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -106,10 +108,11 @@ const SleepCoachDashboard = () => {
   };
 
   const loadUserData = async (userEmail: string) => {
-    const [profileData, logsData, planData] = await Promise.all([
+    const [profileData, logsData, planData, engagementData] = await Promise.all([
       fetchProfile(userEmail),
       fetchLogs(userEmail),
       fetchCoachPlan(userEmail),
+      evaluateEngagement(userEmail),
     ]);
 
     setProfile(profileData);
@@ -117,6 +120,9 @@ const SleepCoachDashboard = () => {
     if (logsData) {
       setLogs(logsData.logs);
       setTrends(logsData.trends);
+    }
+    if (engagementData) {
+      setStreak(engagementData.streak || 0);
     }
     
     // Auto-generate plan if: no plan exists, plan is expired, or sleep quality dropped significantly
@@ -156,10 +162,16 @@ const SleepCoachDashboard = () => {
   };
 
   const refreshLogs = async () => {
-    const logsData = await fetchLogs(email);
+    const [logsData, engagementData] = await Promise.all([
+      fetchLogs(email),
+      evaluateEngagement(email),
+    ]);
     if (logsData) {
       setLogs(logsData.logs);
       setTrends(logsData.trends);
+    }
+    if (engagementData) {
+      setStreak(engagementData.streak || 0);
     }
   };
 
@@ -430,7 +442,14 @@ const SleepCoachDashboard = () => {
             </TabsContent>
 
             <TabsContent value="dashboard" className="space-y-6">
-              <SleepHistoryChart logs={logs} />
+              <div className="grid lg:grid-cols-4 gap-6">
+                <div className="lg:col-span-3">
+                  <SleepHistoryChart logs={logs} />
+                </div>
+                <div className="lg:col-span-1">
+                  <StreakDisplay streak={streak} />
+                </div>
+              </div>
               
               <div className="grid lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-1 space-y-6">

@@ -1,4 +1,5 @@
 export { SleepLogForm } from './SleepLogForm';
+export { StreakDisplay } from './StreakDisplay';
 export { SleepLogTable } from './SleepLogTable';
 export { SleepHistoryChart } from './SleepHistoryChart';
 export { ProfileViewer } from './ProfileViewer';
