@@ -129,6 +129,53 @@ Deno.serve(async (req) => {
 
     console.log('Plan saved successfully:', plan.id);
 
+    // Trigger Klaviyo events for email reminders
+    const KLAVIYO_PRIVATE_API_KEY = Deno.env.get('KLAVIYO_PRIVATE_API_KEY');
+    if (KLAVIYO_PRIVATE_API_KEY && parsed.todayActions?.length > 0) {
+      try {
+        // Send "Sleep Plan Created" event with morning/evening tasks
+        await sendKlaviyoEvent(KLAVIYO_PRIVATE_API_KEY, email, 'RBN_SleepPlan_Created', {
+          plan_type: planType,
+          focus_areas: parsed.focusAreas?.join(', ') || '',
+          encouragement: parsed.encouragement || '',
+          spine_score: parsed.spineScore || 0,
+          morning_task: parsed.todayActions.find((a: any) => a.time === 'morning')?.action || '',
+          evening_task: parsed.todayActions.find((a: any) => a.time === 'evening')?.action || '',
+          week_day1_focus: parsed.weeklyPlan?.day1?.focus || '',
+          week_day1_morning: parsed.weeklyPlan?.day1?.morningTask || '',
+          week_day1_evening: parsed.weeklyPlan?.day1?.eveningTask || '',
+          valid_until: validUntil.toISOString(),
+        });
+
+        // Schedule morning reminder event
+        const morningTask = parsed.todayActions.find((a: any) => a.time === 'morning');
+        if (morningTask) {
+          await sendKlaviyoEvent(KLAVIYO_PRIVATE_API_KEY, email, 'RBN_Morning_Reminder', {
+            task: morningTask.action,
+            duration: morningTask.duration || '5 min',
+            day_focus: parsed.weeklyPlan?.day1?.focus || 'Sleep Improvement',
+            tip: parsed.weeklyPlan?.day1?.tip || '',
+          });
+        }
+
+        // Schedule evening reminder event
+        const eveningTask = parsed.todayActions.find((a: any) => a.time === 'evening');
+        if (eveningTask) {
+          await sendKlaviyoEvent(KLAVIYO_PRIVATE_API_KEY, email, 'RBN_Evening_Reminder', {
+            task: eveningTask.action,
+            duration: eveningTask.duration || '10 min',
+            day_focus: parsed.weeklyPlan?.day1?.focus || 'Sleep Improvement',
+            tip: parsed.weeklyPlan?.day1?.tip || '',
+          });
+        }
+
+        console.log('Klaviyo reminder events sent successfully');
+      } catch (klaviyoError) {
+        console.error('Failed to send Klaviyo events:', klaviyoError);
+        // Don't fail the whole request if Klaviyo fails
+      }
+    }
+
     return new Response(JSON.stringify({ success: true, plan }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -250,4 +297,34 @@ function parseAIResponse(content: string): any {
     klaviyoEvents: [],
     spineScore: 50,
   };
+}
+
+async function sendKlaviyoEvent(apiKey: string, email: string, eventName: string, properties: Record<string, any>) {
+  const response = await fetch('https://a.klaviyo.com/api/events/', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Klaviyo-API-Key ${apiKey}`,
+      'Content-Type': 'application/json',
+      'revision': '2024-02-15',
+    },
+    body: JSON.stringify({
+      data: {
+        type: 'event',
+        attributes: {
+          metric: { data: { type: 'metric', attributes: { name: eventName } } },
+          profile: { data: { type: 'profile', attributes: { email } } },
+          properties,
+          time: new Date().toISOString(),
+        },
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Klaviyo API error: ${errorText}`);
+  }
+
+  console.log(`Klaviyo event "${eventName}" sent for ${email}`);
+  return response;
 }
