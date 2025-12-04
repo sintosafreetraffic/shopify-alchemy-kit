@@ -1,0 +1,256 @@
+import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+
+export interface SleepProfile {
+  id: string;
+  email: string;
+  sleep_position: 'side' | 'back' | 'stomach' | 'mixed';
+  pain_points: string[];
+  temperature_preference: 'cold' | 'neutral' | 'warm';
+  stress_level: 'low' | 'medium' | 'high';
+  wake_up_condition: 'energized' | 'neutral' | 'tired' | 'stiff';
+  delivery_date: string | null;
+  purchase_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SleepLog {
+  id: string;
+  email: string;
+  date: string;
+  sleep_quality: number;
+  pain_level_morning: number;
+  time_to_sleep_minutes: number | null;
+  wake_ups_per_night: number | null;
+  felt_hot: boolean;
+  felt_stressed: boolean;
+  notes: string | null;
+  source: 'manual' | 'whatsapp';
+  created_at: string;
+}
+
+export interface CoachPlan {
+  id: string;
+  email: string;
+  plan_type: string;
+  sleep_plan: any;
+  encouragement_message: string;
+  main_focus_this_week: string[];
+  recommended_pdfs: string[];
+  recommended_actions_today: any[];
+  whatsapp_messages: string[];
+  klaviyo_events: any[];
+  spine_health_score: number;
+  generated_at: string;
+  valid_until: string;
+}
+
+export interface TrendData {
+  avgSleepQuality: number;
+  avgPain: number;
+  trend: 'improving' | 'stable' | 'worsening';
+  hotNights: number;
+  stressedNights: number;
+  goodNights: number;
+  poorNights: number;
+}
+
+export function useSleepApi() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchProfile = async (email: string): Promise<SleepProfile | null> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error: err } = await supabase
+        .from('sleep_profiles')
+        .select('*')
+        .eq('email', email)
+        .maybeSingle();
+      
+      if (err) throw err;
+      return data as SleepProfile | null;
+    } catch (e: any) {
+      setError(e.message);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createOrUpdateProfile = async (profile: Partial<SleepProfile> & { email: string }): Promise<SleepProfile | null> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error: err } = await supabase
+        .from('sleep_profiles')
+        .upsert(profile, { onConflict: 'email' })
+        .select()
+        .single();
+      
+      if (err) throw err;
+      return data as SleepProfile;
+    } catch (e: any) {
+      setError(e.message);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchLogs = async (email: string, days = 30): Promise<{ logs: SleepLog[]; trends: TrendData } | null> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error: err } = await supabase
+        .from('sleep_logs')
+        .select('*')
+        .eq('email', email)
+        .order('date', { ascending: false })
+        .limit(days);
+      
+      if (err) throw err;
+      
+      const logs = (data || []) as SleepLog[];
+      const trends = calculateTrends(logs);
+      return { logs, trends };
+    } catch (e: any) {
+      setError(e.message);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addLog = async (log: Partial<SleepLog>): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { error: err } = await supabase.from('sleep_logs').insert(log as any);
+      if (err) throw err;
+      return true;
+    } catch (e: any) {
+      setError(e.message);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generateCoachPlan = async (email: string, planType = 'initial'): Promise<CoachPlan | null> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error: err } = await supabase.functions.invoke('coach-generate-sleep-plan', {
+        body: { email, planType },
+      });
+      
+      if (err) throw err;
+      return data.plan;
+    } catch (e: any) {
+      setError(e.message);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCoachPlan = async (email: string): Promise<CoachPlan | null> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error: err } = await supabase
+        .from('coach_plans')
+        .select('*')
+        .eq('email', email)
+        .order('generated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (err) throw err;
+      return data as CoachPlan | null;
+    } catch (e: any) {
+      setError(e.message);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getWhatsAppMessage = async (email: string): Promise<{ message: string; messageType: string } | null> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error: err } = await supabase.functions.invoke('whatsapp-coach-simulate', {
+        body: { email },
+      });
+      
+      if (err) throw err;
+      return data;
+    } catch (e: any) {
+      setError(e.message);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const evaluateEngagement = async (email: string): Promise<any> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error: err } = await supabase.functions.invoke('engagement-evaluate', {
+        body: { email },
+      });
+      
+      if (err) throw err;
+      return data;
+    } catch (e: any) {
+      setError(e.message);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return {
+    loading,
+    error,
+    fetchProfile,
+    createOrUpdateProfile,
+    fetchLogs,
+    addLog,
+    generateCoachPlan,
+    fetchCoachPlan,
+    getWhatsAppMessage,
+    evaluateEngagement,
+  };
+}
+
+function calculateTrends(logs: SleepLog[]): TrendData {
+  if (logs.length === 0) {
+    return { avgSleepQuality: 0, avgPain: 0, trend: 'stable', hotNights: 0, stressedNights: 0, goodNights: 0, poorNights: 0 };
+  }
+
+  const avgSleepQuality = logs.reduce((sum, l) => sum + l.sleep_quality, 0) / logs.length;
+  const avgPain = logs.reduce((sum, l) => sum + l.pain_level_morning, 0) / logs.length;
+  const hotNights = logs.filter(l => l.felt_hot).length;
+  const stressedNights = logs.filter(l => l.felt_stressed).length;
+  const goodNights = logs.filter(l => l.sleep_quality >= 4).length;
+  const poorNights = logs.filter(l => l.sleep_quality <= 2).length;
+
+  const recent = logs.slice(0, 7);
+  const older = logs.slice(7, 14);
+  let trend: 'improving' | 'stable' | 'worsening' = 'stable';
+  
+  if (older.length >= 3) {
+    const recentAvg = recent.reduce((s, l) => s + l.sleep_quality, 0) / recent.length;
+    const olderAvg = older.reduce((s, l) => s + l.sleep_quality, 0) / older.length;
+    if (recentAvg - olderAvg > 0.5) trend = 'improving';
+    else if (olderAvg - recentAvg > 0.5) trend = 'worsening';
+  }
+
+  return { avgSleepQuality, avgPain, trend, hotNights, stressedNights, goodNights, poorNights };
+}
