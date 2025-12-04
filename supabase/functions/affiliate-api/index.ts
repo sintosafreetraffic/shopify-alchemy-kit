@@ -436,6 +436,23 @@ Deno.serve(async (req) => {
             .update({ total_commissions: (affiliate.total_commissions || 0) + amount })
             .eq('id', affiliateId);
 
+          // Calculate tier before and after this commission (for milestone detection)
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+          const { data: directSalesData } = await supabaseAdmin
+            .from('commissions')
+            .select('id')
+            .eq('affiliate_id', affiliateId)
+            .eq('level', 1)
+            .gte('created_at', thirtyDaysAgo.toISOString());
+
+          const currentSales = directSalesData?.length || 0;
+          const previousSales = currentSales - (level === 1 ? 1 : 0); // Subtract this sale if it's level 1
+          
+          const currentTier = calculateTier(currentSales, false);
+          const previousTier = calculateTier(previousSales, false);
+
           // Send commission notification email
           try {
             const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers();
@@ -445,6 +462,7 @@ Deno.serve(async (req) => {
               const KLAVIYO_PRIVATE_API_KEY = Deno.env.get('KLAVIYO_PRIVATE_API_KEY');
               
               if (KLAVIYO_PRIVATE_API_KEY) {
+                // Send commission notification
                 const commissionResponse = await fetch('https://a.klaviyo.com/api/events/', {
                   method: 'POST',
                   headers: {
@@ -477,10 +495,48 @@ Deno.serve(async (req) => {
                 } else {
                   console.log('Commission notification sent to affiliate:', affiliateUser.email);
                 }
+
+                // Check for tier milestone upgrade
+                if (currentTier.tier !== previousTier.tier && currentTier.tier !== 'Bronze') {
+                  console.log(`Tier upgrade detected: ${previousTier.tier} -> ${currentTier.tier}`);
+                  
+                  const milestoneResponse = await fetch('https://a.klaviyo.com/api/events/', {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Klaviyo-API-Key ${KLAVIYO_PRIVATE_API_KEY}`,
+                      'Content-Type': 'application/json',
+                      'revision': '2024-02-15',
+                    },
+                    body: JSON.stringify({
+                      data: {
+                        type: 'event',
+                        attributes: {
+                          metric: { data: { type: 'metric', attributes: { name: 'RBN_Tier_Milestone_Reached' } } },
+                          profile: { data: { type: 'profile', attributes: { email: affiliateUser.email } } },
+                          properties: {
+                            previous_tier: previousTier.tier,
+                            new_tier: currentTier.tier,
+                            new_commission_rate: currentTier.commissionRate,
+                            previous_commission_rate: previousTier.commissionRate,
+                            direct_sales_count: currentSales,
+                            achieved_at: new Date().toISOString(),
+                          },
+                          time: new Date().toISOString(),
+                        },
+                      },
+                    }),
+                  });
+
+                  if (!milestoneResponse.ok) {
+                    console.error('Milestone notification failed:', await milestoneResponse.text());
+                  } else {
+                    console.log('Tier milestone notification sent:', currentTier.tier);
+                  }
+                }
               }
             }
           } catch (notifyError) {
-            console.error('Error sending commission notification:', notifyError);
+            console.error('Error sending notifications:', notifyError);
           }
         }
 
