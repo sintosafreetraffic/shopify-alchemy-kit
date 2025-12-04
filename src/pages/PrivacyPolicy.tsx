@@ -156,7 +156,6 @@ export default function PrivacyPolicy() {
               <Lock className="w-6 h-6 text-primary" />
               <h2 className="text-2xl font-bold">Sharing Your Personal Information</h2>
             </div>
-
             <div className="bg-card p-6 rounded-lg border space-y-4">
               <p className="text-muted-foreground">
                 We share your Personal Information with third parties to help us use your Personal Information, as
@@ -168,7 +167,7 @@ export default function PrivacyPolicy() {
                   <span className="text-primary mt-1">•</span>
                   <span>
                     <strong>Payment Processors:</strong> We use secure payment gateways to process your payment
-                    information safely
+                    information safely.
                   </span>
                 </li>
 
@@ -176,27 +175,25 @@ export default function PrivacyPolicy() {
                   <span className="text-primary mt-1">•</span>
                   <span>
                     <strong>Shipping Partners:</strong> We share shipping information with logistics providers to
-                    deliver your order
+                    deliver your order.
                   </span>
                 </li>
 
                 <li className="text-muted-foreground flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
                   <span>
-                    <strong>Analytics Services:</strong> We use analytics tools to understand how customers use our Site
+                    <strong>Analytics Services:</strong> We use analytics to understand how customers use our Site.
                   </span>
                 </li>
 
                 <li className="text-muted-foreground flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
                   <span>
-                    <strong>Third‑Party Integrations (Sleep & Wellness Apps):</strong>
-                    If you choose to connect external sleep‑tracking, wellness, or wearable devices with our products or
-                    services, we will only process the data necessary to provide the features you enable. We do{" "}
-                    <strong>not</strong>
-                    share sleep data, health‑related data, or any personal information received from these external
-                    integrations with third parties for marketing or advertising. This data is never sold or disclosed
-                    outside of what is required to provide the service you request.
+                    <strong>Third‑Party Integrations (e.g., health or sleep tracking apps):</strong>
+                    We do <strong>not</strong> share, sell, or use any sleep data or sensitive personal data collected
+                    through third‑party connections for advertising or external purposes. If you choose to connect an
+                    external app or service, the data shared with us is used solely to provide the features you request,
+                    and never for marketing, resale, or profiling.
                   </span>
                 </li>
               </ul>
