@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.affiliate-api]
 verify_jwt = false
+
+[functions.klaviyo-subscribe]
+verify_jwt = false
