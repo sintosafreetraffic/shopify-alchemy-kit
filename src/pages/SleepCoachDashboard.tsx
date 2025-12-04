@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSleepApi, SleepProfile, SleepLog, CoachPlan, TrendData } from "@/hooks/useSleepApi";
-import { SleepLogForm, SleepLogTable, ProfileViewer, ProfileForm, CoachPlanDisplay, WhatsAppSimulator } from "@/components/sleep-coach";
+import { SleepLogForm, SleepLogTable, ProfileViewer, ProfileForm, ProfileWizard, CoachPlanDisplay, WhatsAppSimulator } from "@/components/sleep-coach";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Moon, BarChart3, MessageCircle, Loader2 } from "lucide-react";
+import { Search, Moon, BarChart3, MessageCircle, Loader2, Sparkles } from "lucide-react";
 import logo from "@/assets/moon-logo-yellow-transparent.png";
 
 const SleepCoachDashboard = () => {
@@ -17,6 +17,7 @@ const SleepCoachDashboard = () => {
   const [trends, setTrends] = useState<TrendData | null>(null);
   const [plan, setPlan] = useState<CoachPlan | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
 
   const { loading, error, fetchProfile, createOrUpdateProfile, fetchLogs, addLog, generateCoachPlan, fetchCoachPlan, getWhatsAppMessage } = useSleepApi();
   const { toast } = useToast();
@@ -34,6 +35,7 @@ const SleepCoachDashboard = () => {
     ]);
 
     setProfile(profileData);
+    setShowWizard(!profileData); // Show wizard if no profile exists
     if (logsData) {
       setLogs(logsData.logs);
       setTrends(logsData.trends);
@@ -62,7 +64,10 @@ const SleepCoachDashboard = () => {
     const result = await createOrUpdateProfile(profileData);
     if (result) {
       setProfile(result);
-      toast({ title: "Profile saved!", description: "Your sleep profile has been updated." });
+      setShowWizard(false);
+      toast({ title: "Profile saved!", description: "Your sleep profile has been created. Let's generate your personalized plan!" });
+      // Auto-generate initial plan after profile creation
+      setTimeout(() => handleGeneratePlan(), 500);
     } else {
       toast({ title: "Error", description: error || "Failed to save profile", variant: "destructive" });
     }
@@ -124,7 +129,23 @@ const SleepCoachDashboard = () => {
           </CardContent>
         </Card>
 
-        {email && (
+        {email && showWizard && !profile && (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-4">
+                <Sparkles className="h-4 w-4" />
+                New User Detected
+              </div>
+              <h2 className="text-2xl font-bold mb-2">Welcome to Rise By Night Sleep Coach!</h2>
+              <p className="text-muted-foreground max-w-md mx-auto">
+                Let's create a personalized sleep profile for <span className="font-medium text-foreground">{email}</span> to unlock AI-powered recommendations.
+              </p>
+            </div>
+            <ProfileWizard email={email} onComplete={handleCreateProfile} loading={loading} />
+          </div>
+        )}
+
+        {email && !showWizard && (
           <Tabs defaultValue="plan" className="space-y-6">
             <TabsList className="grid w-full grid-cols-3 max-w-md mx-auto">
               <TabsTrigger value="plan" className="gap-2">
