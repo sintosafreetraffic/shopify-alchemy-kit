@@ -4,11 +4,13 @@ import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Loader2, CheckCircle, AlertCircle, ShoppingCart } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Loader2, CheckCircle, AlertCircle, ShoppingCart, Mail, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useCartStore } from "@/stores/cartStore";
 import { fetchProducts, ShopifyProduct } from "@/lib/shopify";
+import { trackQuizStarted } from "@/lib/klaviyo";
 
 interface QuizAnswers {
   sleepPosition: string;
@@ -28,6 +30,7 @@ interface AnalysisResult {
   recommendations: ProductRecommendation[];
   bundleRecommended: boolean;
   bundleReason?: string;
+  profileCreated?: boolean;
 }
 
 const SleepQuiz = () => {
@@ -38,6 +41,8 @@ const SleepQuiz = () => {
     pillowIssues: [],
     sleepGoals: [],
   });
+  const [email, setEmail] = useState("");
+  const [createSleepCoachProfile, setCreateSleepCoachProfile] = useState(true);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [results, setResults] = useState<AnalysisResult | null>(null);
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
@@ -45,6 +50,9 @@ const SleepQuiz = () => {
   const { addItem } = useCartStore();
 
   useEffect(() => {
+    // Track quiz started event
+    trackQuizStarted();
+    
     const loadProducts = async () => {
       try {
         const fetchedProducts = await fetchProducts(50);
@@ -70,6 +78,10 @@ const SleepQuiz = () => {
     });
   };
 
+  const isValidEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
   const canProceed = () => {
     switch (step) {
       case 1:
@@ -80,13 +92,15 @@ const SleepQuiz = () => {
         return answers.pillowIssues.length > 0;
       case 4:
         return answers.sleepGoals.length > 0;
+      case 5:
+        return true; // Email is optional
       default:
         return false;
     }
   };
 
   const handleNext = () => {
-    if (step < 4) {
+    if (step < 5) {
       setStep(step + 1);
     } else {
       analyzeQuiz();
@@ -105,7 +119,11 @@ const SleepQuiz = () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
-          body: JSON.stringify({ answers }),
+          body: JSON.stringify({ 
+            answers,
+            email: email.trim() || undefined,
+            createProfile: createSleepCoachProfile && isValidEmail(email),
+          }),
         }
       );
 
@@ -115,7 +133,13 @@ const SleepQuiz = () => {
 
       const data = await response.json();
       setResults(data);
-      setStep(5);
+      setStep(6);
+
+      if (data.profileCreated) {
+        toast.success("Sleep Coach profile created!", {
+          description: "Access your personalized AI sleep plan anytime.",
+        });
+      }
     } catch (error) {
       console.error("Quiz analysis error:", error);
       toast.error("Failed to analyze quiz", {
@@ -187,16 +211,16 @@ const SleepQuiz = () => {
           </p>
         </div>
 
-        {step <= 4 && (
+        {step <= 5 && (
           <div className="mb-6">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium">Step {step} of 4</span>
-              <span className="text-sm text-muted-foreground">{Math.round((step / 4) * 100)}%</span>
+              <span className="text-sm font-medium">Step {step} of 5</span>
+              <span className="text-sm text-muted-foreground">{Math.round((step / 5) * 100)}%</span>
             </div>
             <div className="w-full bg-secondary rounded-full h-2">
               <div
                 className="bg-primary h-2 rounded-full transition-all duration-300"
-                style={{ width: `${(step / 4) * 100}%` }}
+                style={{ width: `${(step / 5) * 100}%` }}
               />
             </div>
           </div>
@@ -306,7 +330,52 @@ const SleepQuiz = () => {
             </div>
           )}
 
-          {step === 5 && results && (
+          {step === 5 && (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-semibold">Get Your Personalized Results</h2>
+              <p className="text-muted-foreground">
+                Enter your email to receive your sleep assessment and unlock exclusive recommendations.
+              </p>
+              
+              <div className="space-y-4">
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    type="email"
+                    placeholder="your@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                
+                {email && isValidEmail(email) && (
+                  <div className="flex items-start space-x-3 p-4 rounded-lg border bg-primary/5 border-primary/20">
+                    <Checkbox
+                      id="sleepCoach"
+                      checked={createSleepCoachProfile}
+                      onCheckedChange={(checked) => setCreateSleepCoachProfile(checked as boolean)}
+                    />
+                    <div className="flex-1">
+                      <Label htmlFor="sleepCoach" className="cursor-pointer flex items-center gap-2">
+                        <Sparkles className="h-4 w-4 text-primary" />
+                        <span className="font-medium">Create AI Sleep Coach Profile</span>
+                      </Label>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Get a personalized 7-day sleep improvement plan based on your quiz answers.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <p className="text-xs text-muted-foreground">
+                By continuing, you agree to receive personalized sleep tips and product recommendations. You can unsubscribe anytime.
+              </p>
+            </div>
+          )}
+
+          {step === 6 && results && (
             <div className="space-y-6">
               <div className="text-center">
                 <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
@@ -382,9 +451,16 @@ const SleepQuiz = () => {
                 <Button variant="outline" onClick={() => navigate("/")} className="flex-1">
                   Back to Home
                 </Button>
-                <Button onClick={() => navigate("/product/ergonomic-pillow")} className="flex-1">
-                  View Products
-                </Button>
+                {results.profileCreated ? (
+                  <Button onClick={() => navigate("/sleep-coach")} className="flex-1">
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    View Sleep Plan
+                  </Button>
+                ) : (
+                  <Button onClick={() => navigate("/product/ergonomic-pillow")} className="flex-1">
+                    View Products
+                  </Button>
+                )}
               </div>
             </div>
           )}
@@ -399,7 +475,7 @@ const SleepQuiz = () => {
             </div>
           )}
 
-          {step <= 4 && !isAnalyzing && (
+          {step <= 5 && !isAnalyzing && (
             <div className="flex gap-4 mt-8">
               {step > 1 && (
                 <Button variant="outline" onClick={() => setStep(step - 1)} className="flex-1">
@@ -411,7 +487,7 @@ const SleepQuiz = () => {
                 disabled={!canProceed()}
                 className="flex-1"
               >
-                {step === 4 ? "Get Results" : "Next"}
+                {step === 5 ? (email ? "Get My Results" : "Skip & Get Results") : "Next"}
               </Button>
             </div>
           )}

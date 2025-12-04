@@ -78,3 +78,23 @@ export const trackAddedToCart = (product: {
     console.warn("Klaviyo trackAddedToCart failed:", error);
   }
 };
+
+/**
+ * Track "Started Sleep Quiz" event when user begins the quiz
+ */
+export const trackQuizStarted = () => {
+  if (!initKlaviyo()) return;
+
+  try {
+    window._klOnsite!.push([
+      "track",
+      "Started Sleep Quiz",
+      {
+        URL: window.location.href,
+        timestamp: new Date().toISOString(),
+      },
+    ]);
+  } catch (error) {
+    console.warn("Klaviyo trackQuizStarted failed:", error);
+  }
+};
