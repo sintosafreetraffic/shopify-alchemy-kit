@@ -463,7 +463,7 @@ const SleepCoachDashboard = () => {
                   </p>
                 </div>
               </div>
-              <Link to="/affiliate">
+              <Link to="/affiliate-dashboard">
                 <Button className="gap-2">
                   Join Affiliate Program
                   <ArrowRight className="h-4 w-4" />
