@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { useSleepApi, SleepProfile, SleepLog, CoachPlan, TrendData } from "@/hooks/useSleepApi";
 import { SleepLogForm, SleepLogTable, SleepHistoryChart, ProfileViewer, ProfileForm, ProfileWizard, CoachPlanDisplay, WhatsAppSimulator } from "@/components/sleep-coach";
-import { SleepReportSummary } from "@/components/sleep-coach/SleepReportSummary";
+
+// Lazy load SleepReportSummary to prevent jspdf/html2canvas from blocking the main bundle
+const SleepReportSummary = lazy(() => import("@/components/sleep-coach/SleepReportSummary"));
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -424,12 +426,14 @@ const SleepCoachDashboard = () => {
             </TabsContent>
 
             <TabsContent value="report" className="space-y-6">
-              <SleepReportSummary 
-                logs={logs} 
-                trends={trends || { avgSleepQuality: 0, avgPain: 0, trend: 'stable', hotNights: 0, stressedNights: 0, goodNights: 0, poorNights: 0 }} 
-                plan={plan} 
-                email={email} 
-              />
+              <Suspense fallback={<div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+                <SleepReportSummary 
+                  logs={logs} 
+                  trends={trends || { avgSleepQuality: 0, avgPain: 0, trend: 'stable', hotNights: 0, stressedNights: 0, goodNights: 0, poorNights: 0 }} 
+                  plan={plan} 
+                  email={email} 
+                />
+              </Suspense>
             </TabsContent>
 
             <TabsContent value="engagement" className="space-y-6">
