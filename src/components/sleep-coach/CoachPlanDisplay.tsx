@@ -12,7 +12,10 @@ interface CoachPlanDisplayProps {
 }
 
 export const CoachPlanDisplay = ({ plan, onGeneratePlan, loading }: CoachPlanDisplayProps) => {
-  if (!plan) {
+  // Check if plan exists but has empty sleep_plan data
+  const hasPlanData = plan?.sleep_plan && Object.keys(plan.sleep_plan).length > 0;
+  
+  if (!plan || !hasPlanData) {
     return (
       <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
         <CardContent className="py-12 text-center">

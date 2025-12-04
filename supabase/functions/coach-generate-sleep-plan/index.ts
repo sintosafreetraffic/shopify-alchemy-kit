@@ -274,29 +274,54 @@ function calculateTrends(logs: SleepLog[]): TrendData {
 
 function parseToolCallResponse(aiData: any): any {
   try {
-    // Extract from tool call response
+    // First, try to extract from tool call response
     const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
     if (toolCall?.function?.arguments) {
       const args = typeof toolCall.function.arguments === 'string' 
         ? JSON.parse(toolCall.function.arguments) 
         : toolCall.function.arguments;
       console.log('Parsed tool call arguments:', JSON.stringify(args).substring(0, 300));
-      return args;
+      
+      // Validate it has the expected structure
+      if (args.weeklyPlan && args.weeklyPlan.day1) {
+        return args;
+      }
     }
     
-    // Fallback: try to extract from content
+    // Fallback: try to extract from content (may be wrapped in markdown)
     const content = aiData.choices?.[0]?.message?.content;
     if (content) {
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      // Strip markdown code blocks
+      let cleanContent = content;
+      if (content.includes('```json')) {
+        cleanContent = content.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+      } else if (content.includes('```')) {
+        cleanContent = content.replace(/```\s*/g, '');
+      }
+      
+      const jsonMatch = cleanContent.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
+        const parsed = JSON.parse(jsonMatch[0]);
+        console.log('Parsed content JSON:', Object.keys(parsed).join(', '));
+        
+        // Check if it has expected structure
+        if (parsed.weeklyPlan && parsed.weeklyPlan.day1) {
+          return parsed;
+        }
+        
+        // AI returned different structure - extract what we can for notes
+        console.log('AI returned non-standard format, using default plan with AI notes');
       }
     }
   } catch (e) {
     console.error('Failed to parse AI response:', e);
   }
   
-  // Return default plan if parsing fails
+  // Return default plan if parsing fails or AI returned different format
+  return getDefaultPlan();
+}
+
+function getDefaultPlan() {
   return {
     weeklyPlan: {
       day1: { focus: "Pillow Setup", morningTask: "Check your pillow height - it should keep your neck aligned with your spine", eveningTask: "Position your pillow in the cervical curve of your neck before sleep", tip: "Side sleepers need a higher pillow than back sleepers" },
