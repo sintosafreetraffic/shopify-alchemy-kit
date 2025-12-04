@@ -17,6 +17,7 @@ import SleepBundleProduct from "./pages/SleepBundleProduct";
 import SleepQuiz from "./pages/SleepQuiz";
 import Auth from "./pages/Auth";
 import AffiliateDashboard from "./pages/AffiliateDashboard";
+import SleepCoachDashboard from "./pages/SleepCoachDashboard";
 import Benefits from "./pages/Benefits";
 import Reviews from "./pages/Reviews";
 import FAQ from "./pages/FAQ";
@@ -55,6 +56,7 @@ const AppContent = () => {
           <Route path="/sleep-quiz" element={<SleepQuiz />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/affiliate-dashboard" element={<AffiliateDashboard />} />
+          <Route path="/sleep-coach" element={<SleepCoachDashboard />} />
           <Route path="/benefits" element={<Benefits />} />
           <Route path="/reviews" element={<Reviews />} />
           <Route path="/faq" element={<FAQ />} />
