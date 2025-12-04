@@ -43,15 +43,31 @@ Deno.serve(async (req) => {
 
     const inactivityDetected = daysSinceLastLog >= 3;
     
-    // Calculate streak
+    // Calculate streak based on unique days the user actually logged (created_at), not sleep dates
+    // This means logging multiple past dates in one session counts as 1 streak day
     let streak = 0;
     if (logs && logs.length > 0) {
-      const sortedLogs = [...logs].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      // Get unique logging days based on created_at timestamp
+      const loggingDays = new Set<string>();
+      logs.forEach(log => {
+        const createdAt = new Date(log.created_at);
+        const dayKey = `${createdAt.getFullYear()}-${createdAt.getMonth()}-${createdAt.getDate()}`;
+        loggingDays.add(dayKey);
+      });
+      
+      // Convert to sorted array of dates
+      const sortedLoggingDays = Array.from(loggingDays)
+        .map(key => {
+          const [year, month, day] = key.split('-').map(Number);
+          return new Date(year, month, day);
+        })
+        .sort((a, b) => b.getTime() - a.getTime());
+      
+      // Calculate consecutive days streak
       let currentDate = new Date();
       currentDate.setHours(0, 0, 0, 0);
       
-      for (const log of sortedLogs) {
-        const logDate = new Date(log.date);
+      for (const logDate of sortedLoggingDays) {
         logDate.setHours(0, 0, 0, 0);
         const diffDays = Math.floor((currentDate.getTime() - logDate.getTime()) / (1000 * 60 * 60 * 24));
         
