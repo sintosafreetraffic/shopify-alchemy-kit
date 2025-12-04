@@ -16,24 +16,27 @@ export const CoachPlanDisplay = ({ plan, onGeneratePlan, loading }: CoachPlanDis
     return (
       <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
         <CardContent className="py-12 text-center">
-          <Sparkles className="h-12 w-12 text-primary mx-auto mb-4 opacity-50" />
-          <h3 className="text-lg font-semibold mb-2">No Sleep Plan Yet</h3>
-          <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-            Generate a personalized AI sleep plan based on your profile and sleep logs.
-          </p>
-          <Button onClick={onGeneratePlan} disabled={loading}>
-            {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generating Plan...
-              </>
-            ) : (
-              <>
+          {loading ? (
+            <>
+              <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Generating Your Sleep Plan...</h3>
+              <p className="text-muted-foreground max-w-md mx-auto">
+                Our AI is creating a personalized 7-day plan based on your profile.
+              </p>
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-12 w-12 text-primary mx-auto mb-4 opacity-50" />
+              <h3 className="text-lg font-semibold mb-2">No Sleep Plan Yet</h3>
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                Generate a personalized AI sleep plan based on your profile and sleep logs.
+              </p>
+              <Button onClick={onGeneratePlan} disabled={loading}>
                 <Sparkles className="mr-2 h-4 w-4" />
                 Generate My Sleep Plan
-              </>
-            )}
-          </Button>
+              </Button>
+            </>
+          )}
         </CardContent>
       </Card>
     );
@@ -46,17 +49,29 @@ export const CoachPlanDisplay = ({ plan, onGeneratePlan, loading }: CoachPlanDis
   return (
     <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
       <CardHeader className="pb-4">
-        <CardTitle className="flex items-center justify-between">
+        <CardTitle className="flex items-center justify-between flex-wrap gap-2">
           <span className="flex items-center gap-2 text-lg">
             <Sparkles className="h-5 w-5 text-primary" />
             Your Personalized Sleep Plan
           </span>
-          {plan.spine_health_score && (
-            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
-              Spine Score: {plan.spine_health_score}/100
-            </Badge>
-          )}
+          <div className="flex items-center gap-2">
+            {plan.spine_health_score && (
+              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
+                Spine Score: {plan.spine_health_score}/100
+              </Badge>
+            )}
+            <Button variant="outline" size="sm" onClick={onGeneratePlan} disabled={loading}>
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Regenerate"}
+            </Button>
+          </div>
         </CardTitle>
+        {plan.valid_until && (
+          <p className="text-xs text-muted-foreground mt-1">
+            {new Date(plan.valid_until) < new Date() 
+              ? "Plan expired - generating new plan automatically"
+              : `Plan valid until ${new Date(plan.valid_until).toLocaleDateString()}`}
+          </p>
+        )}
       </CardHeader>
       <CardContent>
         {/* Encouragement Message */}

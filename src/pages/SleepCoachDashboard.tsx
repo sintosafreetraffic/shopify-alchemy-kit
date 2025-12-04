@@ -46,11 +46,11 @@ const SleepCoachDashboard = () => {
         const userEmail = session.user.email || '';
         setEmail(userEmail);
         
-        // Verify access
-        await verifyAccess(userEmail);
-        
-        // Load user data
-        await loadUserData(userEmail);
+        // Run access verification and data loading in parallel for speed
+        await Promise.all([
+          verifyAccess(userEmail),
+          loadUserData(userEmail),
+        ]);
       } else {
         setIsAuthenticated(false);
       }
@@ -64,8 +64,11 @@ const SleepCoachDashboard = () => {
         setIsAuthenticated(true);
         const userEmail = session.user.email || '';
         setEmail(userEmail);
-        await verifyAccess(userEmail);
-        await loadUserData(userEmail);
+        // Run in parallel
+        await Promise.all([
+          verifyAccess(userEmail),
+          loadUserData(userEmail),
+        ]);
       } else {
         setIsAuthenticated(false);
         setEmail("");
@@ -107,7 +110,41 @@ const SleepCoachDashboard = () => {
       setLogs(logsData.logs);
       setTrends(logsData.trends);
     }
-    setPlan(planData);
+    
+    // Auto-generate plan if: no plan exists, plan is expired, or sleep quality dropped significantly
+    if (profileData && !planData) {
+      // No plan exists - generate initial plan
+      const newPlan = await generateCoachPlan(userEmail, 'initial');
+      setPlan(newPlan);
+    } else if (planData) {
+      const validUntil = new Date(planData.valid_until);
+      const now = new Date();
+      
+      // Check if plan is expired
+      if (validUntil < now) {
+        const newPlan = await generateCoachPlan(userEmail, 'weekly_update');
+        setPlan(newPlan);
+      } else if (logsData && shouldRegeneratePlan(logsData.trends, planData)) {
+        // Sleep quality dropped significantly - regenerate
+        const newPlan = await generateCoachPlan(userEmail, 'weekly_update');
+        setPlan(newPlan);
+      } else {
+        setPlan(planData);
+      }
+    } else {
+      setPlan(planData);
+    }
+  };
+
+  // Check if plan should be regenerated based on declining sleep quality
+  const shouldRegeneratePlan = (trends: TrendData | null, currentPlan: CoachPlan): boolean => {
+    if (!trends) return false;
+    
+    // Only regenerate if trend is worsening and it's been at least 3 days since last plan
+    const planDate = new Date(currentPlan.generated_at);
+    const daysSincePlan = (Date.now() - planDate.getTime()) / (1000 * 60 * 60 * 24);
+    
+    return trends.trend === 'worsening' && daysSincePlan >= 3;
   };
 
   const refreshLogs = async () => {
