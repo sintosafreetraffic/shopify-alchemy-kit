@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,7 +18,6 @@ import SleepBundleProduct from "./pages/SleepBundleProduct";
 import SleepQuiz from "./pages/SleepQuiz";
 import Auth from "./pages/Auth";
 import AffiliateDashboard from "./pages/AffiliateDashboard";
-import SleepCoachDashboard from "./pages/SleepCoachDashboard";
 import Benefits from "./pages/Benefits";
 import Reviews from "./pages/Reviews";
 import FAQ from "./pages/FAQ";
@@ -31,6 +31,9 @@ import TrackOrder from "./pages/TrackOrder";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+// Lazy load SleepCoachDashboard to prevent build issues with jspdf/html2canvas
+const SleepCoachDashboard = lazy(() => import("./pages/SleepCoachDashboard"));
 
 const AppContent = () => {
   const { isOpen, showTeaser, closePopup, openFromTeaser } = useEmailPopup({
@@ -56,7 +59,11 @@ const AppContent = () => {
           <Route path="/sleep-quiz" element={<SleepQuiz />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/affiliate-dashboard" element={<AffiliateDashboard />} />
-          <Route path="/sleep-coach" element={<SleepCoachDashboard />} />
+          <Route path="/sleep-coach" element={
+            <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+              <SleepCoachDashboard />
+            </Suspense>
+          } />
           <Route path="/benefits" element={<Benefits />} />
           <Route path="/reviews" element={<Reviews />} />
           <Route path="/faq" element={<FAQ />} />
@@ -67,7 +74,6 @@ const AppContent = () => {
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/about" element={<AboutUs />} />
           <Route path="/track" element={<TrackOrder />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
@@ -83,7 +89,6 @@ const AppContent = () => {
   );
 };
 
-// App component
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
