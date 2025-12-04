@@ -64,12 +64,10 @@ Deno.serve(async (req) => {
       .limit(14);
 
     const trends = calculateTrends(logs || []);
-    const systemPrompt = planType === 'initial' 
-      ? buildInitialPlanPrompt() 
-      : buildWeeklyUpdatePrompt(trends);
+    const systemPrompt = buildSystemPrompt(planType, trends);
     const userContext = buildUserContext(profile, logs || [], trends);
 
-    // Call Lovable AI
+    // Call Lovable AI with tool calling for structured output
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -82,8 +80,53 @@ Deno.serve(async (req) => {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userContext }
         ],
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "create_sleep_plan",
+              description: "Create a personalized 7-day sleep improvement plan",
+              parameters: {
+                type: "object",
+                properties: {
+                  weeklyPlan: {
+                    type: "object",
+                    properties: {
+                      day1: { type: "object", properties: { focus: { type: "string" }, morningTask: { type: "string" }, eveningTask: { type: "string" }, tip: { type: "string" } }, required: ["focus", "morningTask", "eveningTask", "tip"] },
+                      day2: { type: "object", properties: { focus: { type: "string" }, morningTask: { type: "string" }, eveningTask: { type: "string" }, tip: { type: "string" } }, required: ["focus", "morningTask", "eveningTask", "tip"] },
+                      day3: { type: "object", properties: { focus: { type: "string" }, morningTask: { type: "string" }, eveningTask: { type: "string" }, tip: { type: "string" } }, required: ["focus", "morningTask", "eveningTask", "tip"] },
+                      day4: { type: "object", properties: { focus: { type: "string" }, morningTask: { type: "string" }, eveningTask: { type: "string" }, tip: { type: "string" } }, required: ["focus", "morningTask", "eveningTask", "tip"] },
+                      day5: { type: "object", properties: { focus: { type: "string" }, morningTask: { type: "string" }, eveningTask: { type: "string" }, tip: { type: "string" } }, required: ["focus", "morningTask", "eveningTask", "tip"] },
+                      day6: { type: "object", properties: { focus: { type: "string" }, morningTask: { type: "string" }, eveningTask: { type: "string" }, tip: { type: "string" } }, required: ["focus", "morningTask", "eveningTask", "tip"] },
+                      day7: { type: "object", properties: { focus: { type: "string" }, morningTask: { type: "string" }, eveningTask: { type: "string" }, tip: { type: "string" } }, required: ["focus", "morningTask", "eveningTask", "tip"] },
+                    },
+                    required: ["day1", "day2", "day3", "day4", "day5", "day6", "day7"]
+                  },
+                  encouragement: { type: "string", description: "A warm, personalized encouragement message (2-3 sentences)" },
+                  focusAreas: { type: "array", items: { type: "string" }, description: "3 main focus areas for this week" },
+                  pdfs: { type: "array", items: { type: "string" }, description: "Recommended PDF resources" },
+                  todayActions: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        time: { type: "string", enum: ["morning", "evening"] },
+                        action: { type: "string" },
+                        duration: { type: "string" }
+                      },
+                      required: ["time", "action", "duration"]
+                    }
+                  },
+                  spineScore: { type: "number", description: "Spine health score from 0-100 based on user data" }
+                },
+                required: ["weeklyPlan", "encouragement", "focusAreas", "todayActions", "spineScore"],
+                additionalProperties: false
+              }
+            }
+          }
+        ],
+        tool_choice: { type: "function", function: { name: "create_sleep_plan" } },
         temperature: 0.7,
-        max_tokens: 2000,
       }),
     });
 
@@ -94,10 +137,10 @@ Deno.serve(async (req) => {
     }
 
     const aiData = await aiResponse.json();
-    const content = aiData.choices[0]?.message?.content || '';
-    console.log('AI response received:', content.substring(0, 200));
+    console.log('AI response received:', JSON.stringify(aiData).substring(0, 500));
     
-    const parsed = parseAIResponse(content);
+    // Extract tool call arguments
+    const parsed = parseToolCallResponse(aiData);
 
     // Save to database
     const validUntil = new Date();
@@ -111,12 +154,12 @@ Deno.serve(async (req) => {
         sleep_plan: parsed.weeklyPlan,
         encouragement_message: parsed.encouragement,
         main_focus_this_week: parsed.focusAreas,
-        recommended_pdfs: parsed.pdfs,
+        recommended_pdfs: parsed.pdfs || ['Ergonomic Sleep Guide', 'Pain Relief Stretches'],
         recommended_actions_today: parsed.todayActions,
-        whatsapp_messages: parsed.whatsappMessages,
-        klaviyo_events: parsed.klaviyoEvents,
+        whatsapp_messages: [],
+        klaviyo_events: [],
         spine_health_score: parsed.spineScore,
-        raw_ai_response: content,
+        raw_ai_response: JSON.stringify(aiData),
         valid_until: validUntil.toISOString(),
       })
       .select()
@@ -133,7 +176,6 @@ Deno.serve(async (req) => {
     const KLAVIYO_PRIVATE_API_KEY = Deno.env.get('KLAVIYO_PRIVATE_API_KEY');
     if (KLAVIYO_PRIVATE_API_KEY && parsed.todayActions?.length > 0) {
       try {
-        // Send "Sleep Plan Created" event with morning/evening tasks
         await sendKlaviyoEvent(KLAVIYO_PRIVATE_API_KEY, email, 'RBN_SleepPlan_Created', {
           plan_type: planType,
           focus_areas: parsed.focusAreas?.join(', ') || '',
@@ -142,37 +184,11 @@ Deno.serve(async (req) => {
           morning_task: parsed.todayActions.find((a: any) => a.time === 'morning')?.action || '',
           evening_task: parsed.todayActions.find((a: any) => a.time === 'evening')?.action || '',
           week_day1_focus: parsed.weeklyPlan?.day1?.focus || '',
-          week_day1_morning: parsed.weeklyPlan?.day1?.morningTask || '',
-          week_day1_evening: parsed.weeklyPlan?.day1?.eveningTask || '',
           valid_until: validUntil.toISOString(),
         });
-
-        // Schedule morning reminder event
-        const morningTask = parsed.todayActions.find((a: any) => a.time === 'morning');
-        if (morningTask) {
-          await sendKlaviyoEvent(KLAVIYO_PRIVATE_API_KEY, email, 'RBN_Morning_Reminder', {
-            task: morningTask.action,
-            duration: morningTask.duration || '5 min',
-            day_focus: parsed.weeklyPlan?.day1?.focus || 'Sleep Improvement',
-            tip: parsed.weeklyPlan?.day1?.tip || '',
-          });
-        }
-
-        // Schedule evening reminder event
-        const eveningTask = parsed.todayActions.find((a: any) => a.time === 'evening');
-        if (eveningTask) {
-          await sendKlaviyoEvent(KLAVIYO_PRIVATE_API_KEY, email, 'RBN_Evening_Reminder', {
-            task: eveningTask.action,
-            duration: eveningTask.duration || '10 min',
-            day_focus: parsed.weeklyPlan?.day1?.focus || 'Sleep Improvement',
-            tip: parsed.weeklyPlan?.day1?.tip || '',
-          });
-        }
-
-        console.log('Klaviyo reminder events sent successfully');
+        console.log('Klaviyo event sent successfully');
       } catch (klaviyoError) {
         console.error('Failed to send Klaviyo events:', klaviyoError);
-        // Don't fail the whole request if Klaviyo fails
       }
     }
 
@@ -188,48 +204,30 @@ Deno.serve(async (req) => {
   }
 });
 
-function buildInitialPlanPrompt(): string {
+function buildSystemPrompt(planType: string, trends: TrendData): string {
   return `You are Rise by Night's AI Sleep Coach. Create a personalized 7-day sleep improvement plan for customers who purchased Rise By Night ergonomic pillows.
 
-Available Rise By Night Products to recommend:
-1. Rise By Night™ Ergonomic Sleep Pillow ($129.99) - Contoured memory foam for neck/back pain relief
-2. Rise By Night™ Ergonomic Knee Pillow ($69.99) - Memory foam knee pillow for hip alignment
-3. Rise By Night™ Silk Deep Sleep Mask ($29.99) - Premium silk sleep mask for light blocking
+Your goal is to help users improve their sleep quality through:
+1. Proper pillow positioning and sleep posture
+2. Evening wind-down routines
+3. Morning stretching to reduce stiffness
+4. Temperature and environment optimization
 
-Return a JSON object with this exact structure:
-{
-  "weeklyPlan": {
-    "day1": { "focus": "string", "morningTask": "string", "eveningTask": "string", "tip": "string" },
-    "day2": { "focus": "string", "morningTask": "string", "eveningTask": "string", "tip": "string" },
-    "day3": { "focus": "string", "morningTask": "string", "eveningTask": "string", "tip": "string" },
-    "day4": { "focus": "string", "morningTask": "string", "eveningTask": "string", "tip": "string" },
-    "day5": { "focus": "string", "morningTask": "string", "eveningTask": "string", "tip": "string" },
-    "day6": { "focus": "string", "morningTask": "string", "eveningTask": "string", "tip": "string" },
-    "day7": { "focus": "string", "morningTask": "string", "eveningTask": "string", "tip": "string" }
-  },
-  "encouragement": "A warm, personalized encouragement message (2-3 sentences)",
-  "focusAreas": ["area1", "area2", "area3"],
-  "pdfs": ["Ergonomic Sleep Guide", "Pain Relief Stretches"],
-  "todayActions": [
-    { "time": "morning", "action": "string", "duration": "5 min" },
-    { "time": "evening", "action": "string", "duration": "10 min" }
-  ],
-  "whatsappMessages": ["Morning check-in message", "Evening reminder message"],
-  "klaviyoEvents": [{ "event": "RBN_SleepPlan_Created", "properties": {} }],
-  "spineScore": 65
-}`;
-}
+Available Rise By Night Products:
+- Rise By Night™ Ergonomic Sleep Pillow ($129.99) - Contoured memory foam for neck/back pain relief
+- Rise By Night™ Ergonomic Knee Pillow ($69.99) - Memory foam for hip alignment
+- Rise By Night™ Silk Deep Sleep Mask ($29.99) - Premium silk for light blocking
 
-function buildWeeklyUpdatePrompt(trends: TrendData): string {
-  return `You are Rise by Night's AI Sleep Coach. Update the sleep plan based on progress.
+${planType === 'weekly_update' ? `
+User's recent trends: ${JSON.stringify(trends)}
+If improving, celebrate and maintain. If declining, offer gentle adjustments.
+` : ''}
 
-Recent trends: ${JSON.stringify(trends)}
-
-Return the same JSON structure as the initial plan, but adapted to the user's progress. If they're improving, celebrate and suggest maintaining habits. If declining, offer gentle support and adjustments.`;
+Create specific, actionable tasks. Morning tasks should take 5-10 minutes. Evening tasks should be relaxing pre-sleep activities.`;
 }
 
 function buildUserContext(profile: SleepProfile | null, logs: SleepLog[], trends: TrendData): string {
-  if (!profile) return 'New user with no profile data yet. Create a general sleep improvement plan.';
+  if (!profile) return 'New user with no profile data. Create a general sleep improvement plan focused on pillow positioning and sleep hygiene.';
   
   return `User Profile:
 - Sleep Position: ${profile.sleep_position}
@@ -238,21 +236,19 @@ function buildUserContext(profile: SleepProfile | null, logs: SleepLog[], trends
 - Stress Level: ${profile.stress_level}
 - Wake Up Condition: ${profile.wake_up_condition}
 
-Recent Sleep Data (${logs.length} nights):
+Sleep Data (${logs.length} nights logged):
 - Average Sleep Quality: ${trends.avgSleepQuality.toFixed(1)}/5
 - Average Pain Level: ${trends.avgPain.toFixed(1)}/10
 - Trend: ${trends.trend}
 - Hot Nights: ${trends.hotNights}
 - Stressed Nights: ${trends.stressedNights}
-- Good Nights (4-5 quality): ${trends.goodNights}
-- Poor Nights (1-2 quality): ${trends.poorNights}
 
-Create a personalized plan based on this data.`;
+Create a personalized 7-day plan addressing their specific pain points and sleep position.`;
 }
 
 function calculateTrends(logs: SleepLog[]): TrendData {
   if (logs.length === 0) {
-    return { avgSleepQuality: 0, avgPain: 0, trend: 'stable', hotNights: 0, stressedNights: 0, goodNights: 0, poorNights: 0 };
+    return { avgSleepQuality: 3, avgPain: 5, trend: 'stable', hotNights: 0, stressedNights: 0, goodNights: 0, poorNights: 0 };
   }
 
   const avgSleepQuality = logs.reduce((sum, l) => sum + l.sleep_quality, 0) / logs.length;
@@ -262,7 +258,6 @@ function calculateTrends(logs: SleepLog[]): TrendData {
   const goodNights = logs.filter(l => l.sleep_quality >= 4).length;
   const poorNights = logs.filter(l => l.sleep_quality <= 2).length;
 
-  // Calculate trend
   const recentLogs = logs.slice(0, 7);
   const olderLogs = logs.slice(7, 14);
   let trend: 'improving' | 'stable' | 'worsening' = 'stable';
@@ -277,25 +272,49 @@ function calculateTrends(logs: SleepLog[]): TrendData {
   return { avgSleepQuality, avgPain, trend, hotNights, stressedNights, goodNights, poorNights };
 }
 
-function parseAIResponse(content: string): any {
+function parseToolCallResponse(aiData: any): any {
   try {
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+    // Extract from tool call response
+    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+    if (toolCall?.function?.arguments) {
+      const args = typeof toolCall.function.arguments === 'string' 
+        ? JSON.parse(toolCall.function.arguments) 
+        : toolCall.function.arguments;
+      console.log('Parsed tool call arguments:', JSON.stringify(args).substring(0, 300));
+      return args;
+    }
+    
+    // Fallback: try to extract from content
+    const content = aiData.choices?.[0]?.message?.content;
+    if (content) {
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
+      }
     }
   } catch (e) {
     console.error('Failed to parse AI response:', e);
   }
   
+  // Return default plan if parsing fails
   return {
-    weeklyPlan: {},
-    encouragement: 'Welcome to your sleep improvement journey with Rise By Night!',
-    focusAreas: ['Sleep Quality', 'Pain Management'],
-    pdfs: ['Getting Started Guide'],
-    todayActions: [],
-    whatsappMessages: [],
-    klaviyoEvents: [],
-    spineScore: 50,
+    weeklyPlan: {
+      day1: { focus: "Pillow Setup", morningTask: "Check your pillow height - it should keep your neck aligned with your spine", eveningTask: "Position your pillow in the cervical curve of your neck before sleep", tip: "Side sleepers need a higher pillow than back sleepers" },
+      day2: { focus: "Sleep Posture", morningTask: "Notice which position you woke up in", eveningTask: "Try sleeping on your back with pillow under your knees", tip: "Back sleeping reduces facial wrinkles and neck strain" },
+      day3: { focus: "Evening Routine", morningTask: "5 gentle neck stretches upon waking", eveningTask: "Wind down 30 minutes before bed - no screens", tip: "Blue light suppresses melatonin production" },
+      day4: { focus: "Temperature", morningTask: "Rate your sleep temperature 1-10", eveningTask: "Keep bedroom at 65-68°F (18-20°C)", tip: "A cool room promotes deeper sleep stages" },
+      day5: { focus: "Pain Prevention", morningTask: "Shoulder rolls and neck rotations (2 min)", eveningTask: "Light stretching before bed to release tension", tip: "Tension in muscles builds up throughout the day" },
+      day6: { focus: "Deep Sleep", morningTask: "Avoid caffeine after 2 PM today", eveningTask: "Try a 10-minute meditation or breathing exercise", tip: "Caffeine has a 6-hour half-life in your system" },
+      day7: { focus: "Review & Adjust", morningTask: "Log how you feel compared to day 1", eveningTask: "Plan adjustments for next week", tip: "Consistency is key - stick with what works" }
+    },
+    encouragement: "Welcome to your personalized sleep improvement journey with Rise By Night! Small daily changes lead to big improvements in sleep quality. You've got this!",
+    focusAreas: ['Pillow Positioning', 'Sleep Hygiene', 'Pain Prevention'],
+    pdfs: ['Ergonomic Sleep Guide', 'Pain Relief Stretches'],
+    todayActions: [
+      { time: 'morning', action: 'Check pillow height and adjust for your sleep position', duration: '5 min' },
+      { time: 'evening', action: 'Position pillow in cervical curve, wind down 30 min before bed', duration: '10 min' }
+    ],
+    spineScore: 65,
   };
 }
 
@@ -325,6 +344,5 @@ async function sendKlaviyoEvent(apiKey: string, email: string, eventName: string
     throw new Error(`Klaviyo API error: ${errorText}`);
   }
 
-  console.log(`Klaviyo event "${eventName}" sent for ${email}`);
   return response;
 }
