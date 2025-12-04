@@ -6,8 +6,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Header } from "./components/Header";
 import { Footer } from "./components/Footer";
 import { ScrollToTop } from "./components/ScrollToTop";
-import { SocialProofNotification } from "./components/SocialProofNotification";
 import { UrgencyBanner } from "./components/UrgencyBanner";
+import { EmailPopup } from "./components/EmailPopup";
+import { useEmailPopup } from "./hooks/useEmailPopup";
 import Home from "./pages/Home";
 import Index from "./pages/Index";
 import KneePillowProduct from "./pages/KneePillowProduct";
@@ -30,6 +31,56 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+const AppContent = () => {
+  const { isOpen, showTeaser, closePopup, openFromTeaser } = useEmailPopup({
+    delay: 45000,
+    showOnScroll: true,
+    scrollThreshold: 50,
+    exitIntent: true,
+    storageKey: "risebynight_email_popup_v1",
+  });
+
+  return (
+    <div className="flex flex-col min-h-screen bg-background">
+      <UrgencyBanner />
+      <Header />
+      <main className="flex-1 pt-2">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/product/ergonomic-pillow" element={<Index />} />
+          <Route path="/product/knee-pillow" element={<KneePillowProduct />} />
+          <Route path="/product/sleep-mask" element={<SleepMaskProduct />} />
+          <Route path="/product/sleep-bundle" element={<SleepBundleProduct />} />
+          <Route path="/product" element={<Index />} />
+          <Route path="/sleep-quiz" element={<SleepQuiz />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/affiliate-dashboard" element={<AffiliateDashboard />} />
+          <Route path="/benefits" element={<Benefits />} />
+          <Route path="/reviews" element={<Reviews />} />
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/guarantee" element={<Guarantee />} />
+          <Route path="/shipping" element={<ShippingPolicy />} />
+          <Route path="/terms" element={<TermsConditions />} />
+          <Route path="/return-policy" element={<ReturnPolicy />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/about" element={<AboutUs />} />
+          <Route path="/track" element={<TrackOrder />} />
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </main>
+      <Footer />
+      <EmailPopup
+        isOpen={isOpen}
+        showTeaser={showTeaser}
+        onClose={closePopup}
+        onOpenFromTeaser={openFromTeaser}
+        discountCode="MYSTERYDISCOUNT"
+      />
+    </div>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -37,36 +88,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <ScrollToTop />
-        <div className="flex flex-col min-h-screen bg-background">
-          <UrgencyBanner />
-          <Header />
-          <main className="flex-1 pt-2">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/product/ergonomic-pillow" element={<Index />} />
-              <Route path="/product/knee-pillow" element={<KneePillowProduct />} />
-              <Route path="/product/sleep-mask" element={<SleepMaskProduct />} />
-              <Route path="/product/sleep-bundle" element={<SleepBundleProduct />} />
-              <Route path="/product" element={<Index />} />
-              <Route path="/sleep-quiz" element={<SleepQuiz />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/affiliate-dashboard" element={<AffiliateDashboard />} />
-              <Route path="/benefits" element={<Benefits />} />
-              <Route path="/reviews" element={<Reviews />} />
-              <Route path="/faq" element={<FAQ />} />
-              <Route path="/guarantee" element={<Guarantee />} />
-              <Route path="/shipping" element={<ShippingPolicy />} />
-              <Route path="/terms" element={<TermsConditions />} />
-              <Route path="/return-policy" element={<ReturnPolicy />} />
-              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-              <Route path="/about" element={<AboutUs />} />
-              <Route path="/track" element={<TrackOrder />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </main>
-          <Footer />
-        </div>
+        <AppContent />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
