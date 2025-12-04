@@ -283,6 +283,46 @@ Deno.serve(async (req) => {
           }
         }
 
+        // Send welcome email to new affiliate
+        try {
+          const KLAVIYO_PRIVATE_API_KEY = Deno.env.get('KLAVIYO_PRIVATE_API_KEY');
+          
+          if (KLAVIYO_PRIVATE_API_KEY && user.email) {
+            const welcomeResponse = await fetch('https://a.klaviyo.com/api/events/', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Klaviyo-API-Key ${KLAVIYO_PRIVATE_API_KEY}`,
+                'Content-Type': 'application/json',
+                'revision': '2024-02-15',
+              },
+              body: JSON.stringify({
+                data: {
+                  type: 'event',
+                  attributes: {
+                    metric: { data: { type: 'metric', attributes: { name: 'RBN_Affiliate_Welcome' } } },
+                    profile: { data: { type: 'profile', attributes: { email: user.email } } },
+                    properties: {
+                      referral_code: referralCode,
+                      referral_link: `https://www.risebynight.com?ref=${referralCode}`,
+                      invite_link: `https://www.risebynight.com/affiliate-dashboard?invite=${referralCode}`,
+                      joined_at: new Date().toISOString(),
+                    },
+                    time: new Date().toISOString(),
+                  },
+                },
+              }),
+            });
+
+            if (!welcomeResponse.ok) {
+              console.error('Welcome email notification failed:', await welcomeResponse.text());
+            } else {
+              console.log('Welcome email sent to new affiliate:', user.email);
+            }
+          }
+        } catch (welcomeError) {
+          console.error('Error sending welcome email:', welcomeError);
+        }
+
         const tierInfo = calculateTier(0, false);
 
         return new Response(
@@ -383,10 +423,10 @@ Deno.serve(async (req) => {
           throw error;
         }
 
-        // Update affiliate total commissions
+        // Update affiliate total commissions and get affiliate details
         const { data: affiliate } = await supabaseAdmin
           .from('affiliates')
-          .select('total_commissions')
+          .select('total_commissions, user_id')
           .eq('id', affiliateId)
           .single();
 
@@ -395,6 +435,53 @@ Deno.serve(async (req) => {
             .from('affiliates')
             .update({ total_commissions: (affiliate.total_commissions || 0) + amount })
             .eq('id', affiliateId);
+
+          // Send commission notification email
+          try {
+            const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers();
+            const affiliateUser = authUsers?.users?.find((u: any) => u.id === affiliate.user_id);
+            
+            if (affiliateUser?.email) {
+              const KLAVIYO_PRIVATE_API_KEY = Deno.env.get('KLAVIYO_PRIVATE_API_KEY');
+              
+              if (KLAVIYO_PRIVATE_API_KEY) {
+                const commissionResponse = await fetch('https://a.klaviyo.com/api/events/', {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Klaviyo-API-Key ${KLAVIYO_PRIVATE_API_KEY}`,
+                    'Content-Type': 'application/json',
+                    'revision': '2024-02-15',
+                  },
+                  body: JSON.stringify({
+                    data: {
+                      type: 'event',
+                      attributes: {
+                        metric: { data: { type: 'metric', attributes: { name: 'RBN_Commission_Earned' } } },
+                        profile: { data: { type: 'profile', attributes: { email: affiliateUser.email } } },
+                        properties: {
+                          commission_amount: amount,
+                          order_id: orderId,
+                          commission_level: level,
+                          commission_type: level === 1 ? 'Direct Sale' : 'Sub-Affiliate Sale',
+                          new_total_commissions: (affiliate.total_commissions || 0) + amount,
+                          earned_at: new Date().toISOString(),
+                        },
+                        time: new Date().toISOString(),
+                      },
+                    },
+                  }),
+                });
+
+                if (!commissionResponse.ok) {
+                  console.error('Commission notification failed:', await commissionResponse.text());
+                } else {
+                  console.log('Commission notification sent to affiliate:', affiliateUser.email);
+                }
+              }
+            }
+          } catch (notifyError) {
+            console.error('Error sending commission notification:', notifyError);
+          }
         }
 
         return new Response(
