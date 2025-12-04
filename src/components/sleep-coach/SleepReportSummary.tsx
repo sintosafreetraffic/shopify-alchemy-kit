@@ -1,10 +1,8 @@
-import { useRef, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Download, Share2, Moon, TrendingUp, TrendingDown, Minus, Heart, Thermometer, Brain } from 'lucide-react';
-import { format, subDays } from 'date-fns';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import { useRef, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Download, Share2, Moon, TrendingUp, TrendingDown, Minus, Heart, Thermometer, Brain } from "lucide-react";
+import { format, subDays } from "date-fns";
 
 interface SleepLog {
   date: string;
@@ -82,6 +80,12 @@ export const SleepReportSummary = ({ logs, trends, plan, email }: SleepReportSum
     
     setIsGenerating(true);
     try {
+      // Dynamically import libraries to prevent build issues
+      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf'),
+      ]);
+      
       const canvas = await html2canvas(reportRef.current, {
         scale: 2,
         useCORS: true,
