@@ -76,15 +76,15 @@ export const SleepReportSummary = ({ logs, trends, plan, email }: SleepReportSum
   };
 
   const handleDownloadPDF = async () => {
-    if (!reportRef.current) return;
-    
     setIsGenerating(true);
     try {
-      // Dynamically import libraries only when needed
-      const html2canvasModule = await import('html2canvas');
-      const jspdfModule = await import('jspdf');
-      const html2canvas = html2canvasModule.default;
-      const jsPDF = jspdfModule.default;
+      // Dynamic import to avoid bundling issues
+      const { default: html2canvas } = await import('html2canvas');
+      const { default: jsPDF } = await import('jspdf');
+      
+      if (!reportRef.current) {
+        throw new Error('Report element not found');
+      }
       
       const canvas = await html2canvas(reportRef.current, {
         scale: 2,
@@ -108,8 +108,9 @@ export const SleepReportSummary = ({ logs, trends, plan, email }: SleepReportSum
     } catch (error) {
       console.error('Failed to generate PDF:', error);
       alert('Failed to generate PDF. Please try again.');
+    } finally {
+      setIsGenerating(false);
     }
-    setIsGenerating(false);
   };
 
   const handleShare = async () => {
