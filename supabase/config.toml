@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.whatsapp-coach-simulate]
 verify_jwt = false
+
+[functions.verify-sleep-coach-access]
+verify_jwt = false
