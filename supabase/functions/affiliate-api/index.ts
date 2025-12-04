@@ -80,6 +80,7 @@ Deno.serve(async (req) => {
         let commissions: any[] = [];
         let directSalesLast30Days = 0;
         let tierInfo = calculateTier(0, false);
+        let subAffiliates: any[] = [];
 
         if (affiliate) {
           // Fetch all commissions
@@ -114,7 +115,44 @@ Deno.serve(async (req) => {
           const isDiamond = affiliate.status === 'diamond';
           tierInfo = calculateTier(directSalesLast30Days, isDiamond);
 
-          console.log('Direct sales last 30 days:', directSalesLast30Days, 'Tier:', tierInfo.tier);
+          // Fetch sub-affiliates (affiliates who have this affiliate as parent)
+          const { data: subAffiliatesData, error: subError } = await supabaseAdmin
+            .from('affiliates')
+            .select('id, referral_code, total_referrals, total_commissions, created_at, status')
+            .eq('parent_affiliate_id', affiliate.id)
+            .order('created_at', { ascending: false });
+
+          if (!subError && subAffiliatesData) {
+            // For each sub-affiliate, get their email from auth.users
+            const subAffiliateIds = subAffiliatesData.map(sa => sa.id);
+            
+            // Get user_ids for sub-affiliates
+            const { data: subAffiliateUsers } = await supabaseAdmin
+              .from('affiliates')
+              .select('id, user_id')
+              .in('id', subAffiliateIds);
+
+            // Get emails from auth
+            const userIds = subAffiliateUsers?.map(sa => sa.user_id) || [];
+            const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers();
+            
+            const userEmailMap: Record<string, string> = {};
+            authUsers?.users?.forEach((u: any) => {
+              if (userIds.includes(u.id)) {
+                userEmailMap[u.id] = u.email || 'Unknown';
+              }
+            });
+
+            subAffiliates = subAffiliatesData.map(sa => {
+              const userEntry = subAffiliateUsers?.find(su => su.id === sa.id);
+              return {
+                ...sa,
+                email: userEntry ? userEmailMap[userEntry.user_id] : 'Unknown'
+              };
+            });
+          }
+
+          console.log('Direct sales last 30 days:', directSalesLast30Days, 'Tier:', tierInfo.tier, 'Sub-affiliates:', subAffiliates.length);
         }
 
         return new Response(
@@ -122,13 +160,48 @@ Deno.serve(async (req) => {
             affiliate, 
             commissions, 
             tierInfo,
-            directSalesLast30Days 
+            directSalesLast30Days,
+            subAffiliates
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
       case 'become-affiliate': {
+        const { inviteCode } = data || {};
+        
+        // Check if user is already an affiliate
+        const { data: existingAffiliate } = await supabaseAdmin
+          .from('affiliates')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (existingAffiliate) {
+          return new Response(
+            JSON.stringify({ error: 'You are already an affiliate' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // Find parent affiliate if invite code provided
+        let parentAffiliateId = null;
+        if (inviteCode) {
+          const { data: parentAffiliate, error: parentError } = await supabaseAdmin
+            .from('affiliates')
+            .select('id, user_id')
+            .eq('referral_code', inviteCode)
+            .maybeSingle();
+
+          if (parentAffiliate) {
+            // Ensure user is not trying to be their own parent
+            if (parentAffiliate.user_id !== user.id) {
+              parentAffiliateId = parentAffiliate.id;
+              console.log('Found parent affiliate:', parentAffiliateId);
+            }
+          }
+        }
+
         // Generate unique referral code
         const referralCode = `REF${user.id.substring(0, 8).toUpperCase()}${Date.now().toString(36).toUpperCase()}`;
         
@@ -139,8 +212,9 @@ Deno.serve(async (req) => {
             referral_code: referralCode,
             total_referrals: 0,
             total_commissions: 0,
-            level: 1,
-            status: 'active'
+            level: parentAffiliateId ? 2 : 1,
+            status: 'active',
+            parent_affiliate_id: parentAffiliateId
           })
           .select()
           .single();
@@ -150,12 +224,41 @@ Deno.serve(async (req) => {
           throw error;
         }
 
-        console.log('Created affiliate:', affiliate);
+        console.log('Created affiliate:', affiliate, 'Parent:', parentAffiliateId);
 
         const tierInfo = calculateTier(0, false);
 
         return new Response(
-          JSON.stringify({ affiliate, tierInfo, directSalesLast30Days: 0 }),
+          JSON.stringify({ affiliate, tierInfo, directSalesLast30Days: 0, subAffiliates: [] }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      case 'check-invite-code': {
+        const { inviteCode } = data;
+        
+        if (!inviteCode) {
+          return new Response(
+            JSON.stringify({ valid: false, error: 'No invite code provided' }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        const { data: parentAffiliate, error } = await supabaseAdmin
+          .from('affiliates')
+          .select('id, referral_code')
+          .eq('referral_code', inviteCode)
+          .maybeSingle();
+
+        if (error || !parentAffiliate) {
+          return new Response(
+            JSON.stringify({ valid: false, error: 'Invalid invite code' }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        return new Response(
+          JSON.stringify({ valid: true }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }

@@ -3,9 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Copy, Users, DollarSign, Loader2, Award, Share2, TrendingUp, Check, Sparkles } from "lucide-react";
+import { Copy, Users, DollarSign, Loader2, Award, Share2, TrendingUp, Check, Sparkles, UserPlus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 // Production domain for referral links
 const SITE_URL = "https://www.risebynight.com";
@@ -17,6 +17,7 @@ interface AffiliateData {
   total_commissions: number;
   level: number;
   status: string;
+  parent_affiliate_id: string | null;
 }
 
 interface Commission {
@@ -25,6 +26,16 @@ interface Commission {
   level: number;
   status: string;
   created_at: string;
+}
+
+interface SubAffiliate {
+  id: string;
+  referral_code: string;
+  total_referrals: number;
+  total_commissions: number;
+  created_at: string;
+  status: string;
+  email: string;
 }
 
 interface TierInfo {
@@ -54,12 +65,16 @@ const AffiliateDashboard = () => {
   const [user, setUser] = useState<any>(null);
   const [affiliateData, setAffiliateData] = useState<AffiliateData | null>(null);
   const [commissions, setCommissions] = useState<Commission[]>([]);
+  const [subAffiliates, setSubAffiliates] = useState<SubAffiliate[]>([]);
   const [tierInfo, setTierInfo] = useState<TierInfo>({ tier: 'Bronze', commissionRate: 15, nextTier: 'Silver', salesNeeded: 10 });
   const [directSalesLast30, setDirectSalesLast30] = useState(0);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [inviteCopied, setInviteCopied] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const inviteCode = searchParams.get('invite');
 
   useEffect(() => {
     checkAuth();
@@ -69,6 +84,10 @@ const AffiliateDashboard = () => {
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session) {
+      // Store invite code if present before redirecting
+      if (inviteCode) {
+        sessionStorage.setItem('affiliate_invite_code', inviteCode);
+      }
       navigate("/auth");
       return;
     }
@@ -90,9 +109,10 @@ const AffiliateDashboard = () => {
         throw new Error(response.error.message);
       }
 
-      const { affiliate, commissions: commissionsData, tierInfo: tierData, directSalesLast30Days } = response.data;
+      const { affiliate, commissions: commissionsData, tierInfo: tierData, directSalesLast30Days, subAffiliates: subAffiliatesData } = response.data;
       setAffiliateData(affiliate);
       setCommissions(commissionsData || []);
+      setSubAffiliates(subAffiliatesData || []);
       if (tierData) {
         setTierInfo(tierData);
       }
@@ -112,17 +132,28 @@ const AffiliateDashboard = () => {
   const becomeAffiliate = async () => {
     setJoining(true);
     try {
+      // Check for stored invite code from URL or session storage
+      const storedInviteCode = inviteCode || sessionStorage.getItem('affiliate_invite_code');
+      
       const response = await supabase.functions.invoke('affiliate-api', {
-        body: { action: 'become-affiliate', data: {} }
+        body: { 
+          action: 'become-affiliate', 
+          data: { inviteCode: storedInviteCode } 
+        }
       });
 
       if (response.error) {
         throw new Error(response.error.message);
       }
 
+      // Clear stored invite code
+      sessionStorage.removeItem('affiliate_invite_code');
+
       toast({
         title: "Success!",
-        description: "You are now an affiliate. Welcome to the program!",
+        description: storedInviteCode 
+          ? "You are now an affiliate, connected to your referrer!" 
+          : "You are now an affiliate. Welcome to the program!",
       });
 
       setAffiliateData(response.data.affiliate);
@@ -130,6 +161,7 @@ const AffiliateDashboard = () => {
         setTierInfo(response.data.tierInfo);
       }
       setDirectSalesLast30(response.data.directSalesLast30Days || 0);
+      setSubAffiliates(response.data.subAffiliates || []);
     } catch (error) {
       console.error("Error becoming affiliate:", error);
       toast({
@@ -155,6 +187,21 @@ const AffiliateDashboard = () => {
     });
 
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const copyInviteLink = () => {
+    if (!affiliateData) return;
+    
+    const inviteLink = `${SITE_URL}/affiliate-dashboard?invite=${affiliateData.referral_code}`;
+    navigator.clipboard.writeText(inviteLink);
+    setInviteCopied(true);
+    
+    toast({
+      title: "Copied!",
+      description: "Affiliate invite link copied to clipboard",
+    });
+
+    setTimeout(() => setInviteCopied(false), 2000);
   };
 
   const getProgressToNextTier = () => {
@@ -194,6 +241,13 @@ const AffiliateDashboard = () => {
             <p className="text-lg text-muted-foreground max-w-xl mx-auto">
               Partner with Rise By Night™ and earn generous commissions by sharing our premium sleep products.
             </p>
+            {(inviteCode || sessionStorage.getItem('affiliate_invite_code')) && (
+              <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-lg inline-block">
+                <p className="text-sm text-primary font-medium">
+                  🎉 You've been invited! Join to connect with your referrer.
+                </p>
+              </div>
+            )}
           </div>
 
           <Card className="border-0 shadow-lg overflow-hidden">
@@ -251,6 +305,7 @@ const AffiliateDashboard = () => {
                 <ul className="space-y-2">
                   {[
                     'Unique referral link to track all your sales',
+                    'Invite other affiliates and earn 5% on their sales',
                     'Real-time dashboard to monitor earnings',
                     'Monthly payouts via PayPal or bank transfer',
                     'No minimum payout threshold'
@@ -307,7 +362,7 @@ const AffiliateDashboard = () => {
 
       <div className="container mx-auto px-4 py-6 md:py-8 space-y-6">
         {/* Stats Grid */}
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-4">
           {/* Total Referrals */}
           <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="p-6">
@@ -349,6 +404,20 @@ const AffiliateDashboard = () => {
               <p className="text-sm text-muted-foreground">Commission Rate</p>
             </CardContent>
           </Card>
+
+          {/* Sub-Affiliates */}
+          <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center">
+                  <UserPlus className="h-6 w-6 text-orange-600" />
+                </div>
+                <span className="text-xs font-medium text-muted-foreground bg-secondary px-2 py-1 rounded">Team</span>
+              </div>
+              <p className="text-3xl font-bold mb-1">{subAffiliates.length}</p>
+              <p className="text-sm text-muted-foreground">Sub-Affiliates</p>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
@@ -361,7 +430,7 @@ const AffiliateDashboard = () => {
                 </div>
                 <div>
                   <h3 className="font-semibold">Your Referral Link</h3>
-                  <p className="text-sm text-muted-foreground">Share to earn commissions</p>
+                  <p className="text-sm text-muted-foreground">Share to earn commissions on sales</p>
                 </div>
               </div>
               <div className="space-y-3">
@@ -383,40 +452,129 @@ const AffiliateDashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Tier Progress Card */}
-          <Card className="border-0 shadow-sm">
+          {/* Invite Affiliates Link Card */}
+          <Card className="border-0 shadow-sm border-orange-200 bg-gradient-to-br from-orange-50/50 to-background">
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-yellow-100 flex items-center justify-center">
-                  <TrendingUp className="h-5 w-5 text-yellow-600" />
+                <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
+                  <UserPlus className="h-5 w-5 text-orange-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold">Tier Progress</h3>
-                  <p className="text-sm text-muted-foreground">{directSalesLast30} sales in last 30 days</p>
+                  <h3 className="font-semibold">Invite Affiliates</h3>
+                  <p className="text-sm text-muted-foreground">Earn 5% on their sales</p>
                 </div>
               </div>
-              
-              {tierInfo.nextTier && tierInfo.salesNeeded > 0 ? (
-                <div className="space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="font-medium">{tierInfo.tier}</span>
-                    <span className="font-medium">{tierInfo.nextTier}</span>
-                  </div>
-                  <Progress value={getProgressToNextTier()} className="h-3" />
-                  <p className="text-sm text-muted-foreground text-center">
-                    {tierInfo.salesNeeded} more sales to unlock {tierInfo.nextTier}
-                  </p>
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={`${SITE_URL}/affiliate-dashboard?invite=${affiliateData.referral_code}`}
+                    className="flex-1 px-4 py-3 border rounded-lg bg-secondary/50 text-sm font-mono truncate"
+                  />
+                  <Button onClick={copyInviteLink} size="lg" variant="outline" className="shrink-0 px-6 border-orange-300 hover:bg-orange-50">
+                    {inviteCopied ? <Check className="h-4 w-4 text-orange-600" /> : <Copy className="h-4 w-4" />}
+                  </Button>
                 </div>
-              ) : (
-                <div className="text-center py-4">
-                  <span className="text-2xl mb-2 block">{currentTierConfig.icon}</span>
-                  <p className="font-medium">You've reached {tierInfo.tier}!</p>
-                  <p className="text-sm text-muted-foreground">Maximum tier achieved</p>
-                </div>
-              )}
+                <p className="text-xs text-muted-foreground">
+                  Share this link to invite other affiliates and build your team
+                </p>
+              </div>
             </CardContent>
           </Card>
         </div>
+
+        {/* Tier Progress */}
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-lg bg-yellow-100 flex items-center justify-center">
+                <TrendingUp className="h-5 w-5 text-yellow-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Tier Progress</h3>
+                <p className="text-sm text-muted-foreground">{directSalesLast30} sales in last 30 days</p>
+              </div>
+            </div>
+            
+            {tierInfo.nextTier && tierInfo.salesNeeded > 0 ? (
+              <div className="space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="font-medium">{tierInfo.tier}</span>
+                  <span className="font-medium">{tierInfo.nextTier}</span>
+                </div>
+                <Progress value={getProgressToNextTier()} className="h-3" />
+                <p className="text-sm text-muted-foreground text-center">
+                  {tierInfo.salesNeeded} more sales to unlock {tierInfo.nextTier}
+                </p>
+              </div>
+            ) : (
+              <div className="text-center py-4">
+                <span className="text-2xl mb-2 block">{currentTierConfig.icon}</span>
+                <p className="font-medium">You've reached {tierInfo.tier}!</p>
+                <p className="text-sm text-muted-foreground">Maximum tier achieved</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Sub-Affiliates Section */}
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
+                <UserPlus className="h-5 w-5 text-orange-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Your Team (Sub-Affiliates)</h3>
+                <p className="text-sm text-muted-foreground">Affiliates you've invited - earn 5% on their sales</p>
+              </div>
+            </div>
+            
+            {subAffiliates.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 rounded-full bg-secondary mx-auto mb-4 flex items-center justify-center">
+                  <UserPlus className="h-8 w-8 text-muted-foreground/40" />
+                </div>
+                <p className="font-medium text-muted-foreground mb-1">No sub-affiliates yet</p>
+                <p className="text-sm text-muted-foreground">Share your invite link above to build your team!</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {subAffiliates.map((subAffiliate) => (
+                  <div
+                    key={subAffiliate.id}
+                    className="flex items-center justify-between p-4 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                        <Users className="h-5 w-5 text-orange-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{subAffiliate.email}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {subAffiliate.total_referrals} referrals · ${(subAffiliate.total_commissions || 0).toFixed(2)} earned
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className={`inline-block text-xs font-medium px-3 py-1 rounded-full ${
+                        subAffiliate.status === 'active' 
+                          ? 'bg-green-100 text-green-700' 
+                          : 'bg-secondary text-muted-foreground'
+                      }`}>
+                        {subAffiliate.status.charAt(0).toUpperCase() + subAffiliate.status.slice(1)}
+                      </span>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Joined {new Date(subAffiliate.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Commission Rates & Tiers */}
         <div className="grid gap-6 lg:grid-cols-2">
@@ -437,17 +595,17 @@ const AffiliateDashboard = () => {
                   </div>
                   <span className="font-bold text-primary">{tierInfo.commissionRate}%</span>
                 </div>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-secondary">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-orange-50 border border-orange-200">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-muted-foreground/20 flex items-center justify-center">
-                      <span className="text-xs font-bold text-muted-foreground">L2</span>
+                    <div className="w-8 h-8 rounded-full bg-orange-200 flex items-center justify-center">
+                      <span className="text-xs font-bold text-orange-700">L2</span>
                     </div>
                     <div>
                       <span className="text-sm font-medium">Sub-Affiliate Sales</span>
                       <p className="text-xs text-muted-foreground">Fixed rate</p>
                     </div>
                   </div>
-                  <span className="font-bold">5%</span>
+                  <span className="font-bold text-orange-700">5%</span>
                 </div>
               </div>
             </CardContent>
@@ -503,9 +661,9 @@ const AffiliateDashboard = () => {
                   >
                     <div className="flex items-center gap-4">
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        commission.level === 1 ? 'bg-primary/10' : 'bg-secondary'
+                        commission.level === 1 ? 'bg-primary/10' : 'bg-orange-100'
                       }`}>
-                        <DollarSign className={`h-5 w-5 ${commission.level === 1 ? 'text-primary' : 'text-muted-foreground'}`} />
+                        <DollarSign className={`h-5 w-5 ${commission.level === 1 ? 'text-primary' : 'text-orange-600'}`} />
                       </div>
                       <div>
                         <p className="font-semibold">${commission.amount.toFixed(2)}</p>
