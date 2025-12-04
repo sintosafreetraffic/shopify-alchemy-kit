@@ -49,15 +49,16 @@ const SleepCoachDashboard = () => {
         const userEmail = session.user.email || '';
         setEmail(userEmail);
         
-        // Run access verification and data loading in parallel for speed
-        await Promise.all([
-          verifyAccess(userEmail),
-          loadUserData(userEmail),
-        ]);
+        // Verify access first (fast), then load data in background
+        await verifyAccess(userEmail);
+        setIsCheckingAuth(false);
+        
+        // Load user data after showing dashboard (slower operations)
+        loadUserData(userEmail);
       } else {
         setIsAuthenticated(false);
+        setIsCheckingAuth(false);
       }
-      setIsCheckingAuth(false);
     };
 
     checkAuth();
@@ -67,11 +68,8 @@ const SleepCoachDashboard = () => {
         setIsAuthenticated(true);
         const userEmail = session.user.email || '';
         setEmail(userEmail);
-        // Run in parallel
-        await Promise.all([
-          verifyAccess(userEmail),
-          loadUserData(userEmail),
-        ]);
+        await verifyAccess(userEmail);
+        loadUserData(userEmail);
       } else {
         setIsAuthenticated(false);
         setEmail("");
