@@ -226,6 +226,63 @@ Deno.serve(async (req) => {
 
         console.log('Created affiliate:', affiliate, 'Parent:', parentAffiliateId);
 
+        // Send Klaviyo notification to parent affiliate when sub-affiliate joins
+        if (parentAffiliateId) {
+          try {
+            // Get parent affiliate's user_id
+            const { data: parentAffiliateData } = await supabaseAdmin
+              .from('affiliates')
+              .select('user_id')
+              .eq('id', parentAffiliateId)
+              .single();
+
+            if (parentAffiliateData) {
+              // Get parent's email from auth
+              const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers();
+              const parentUser = authUsers?.users?.find((u: any) => u.id === parentAffiliateData.user_id);
+              
+              if (parentUser?.email) {
+                const KLAVIYO_PRIVATE_API_KEY = Deno.env.get('KLAVIYO_PRIVATE_API_KEY');
+                
+                if (KLAVIYO_PRIVATE_API_KEY) {
+                  const klaviyoResponse = await fetch('https://a.klaviyo.com/api/events/', {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Klaviyo-API-Key ${KLAVIYO_PRIVATE_API_KEY}`,
+                      'Content-Type': 'application/json',
+                      'revision': '2024-02-15',
+                    },
+                    body: JSON.stringify({
+                      data: {
+                        type: 'event',
+                        attributes: {
+                          metric: { data: { type: 'metric', attributes: { name: 'RBN_SubAffiliate_Joined' } } },
+                          profile: { data: { type: 'profile', attributes: { email: parentUser.email } } },
+                          properties: {
+                            new_affiliate_email: user.email || 'Unknown',
+                            new_affiliate_referral_code: referralCode,
+                            joined_at: new Date().toISOString(),
+                          },
+                          time: new Date().toISOString(),
+                        },
+                      },
+                    }),
+                  });
+
+                  if (!klaviyoResponse.ok) {
+                    console.error('Klaviyo notification failed:', await klaviyoResponse.text());
+                  } else {
+                    console.log('Klaviyo notification sent to parent affiliate:', parentUser.email);
+                  }
+                }
+              }
+            }
+          } catch (klaviyoError) {
+            console.error('Error sending Klaviyo notification:', klaviyoError);
+            // Don't fail the main operation if Klaviyo fails
+          }
+        }
+
         const tierInfo = calculateTier(0, false);
 
         return new Response(
