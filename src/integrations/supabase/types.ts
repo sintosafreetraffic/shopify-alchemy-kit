@@ -61,6 +61,68 @@ export type Database = {
           },
         ]
       }
+      coach_plans: {
+        Row: {
+          created_at: string
+          email: string
+          encouragement_message: string | null
+          generated_at: string
+          id: string
+          klaviyo_events: Json | null
+          main_focus_this_week: string[] | null
+          plan_type: string | null
+          raw_ai_response: string | null
+          recommended_actions_today: Json | null
+          recommended_pdfs: string[] | null
+          sleep_plan: Json | null
+          spine_health_score: number | null
+          valid_until: string | null
+          whatsapp_messages: string[] | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          encouragement_message?: string | null
+          generated_at?: string
+          id?: string
+          klaviyo_events?: Json | null
+          main_focus_this_week?: string[] | null
+          plan_type?: string | null
+          raw_ai_response?: string | null
+          recommended_actions_today?: Json | null
+          recommended_pdfs?: string[] | null
+          sleep_plan?: Json | null
+          spine_health_score?: number | null
+          valid_until?: string | null
+          whatsapp_messages?: string[] | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          encouragement_message?: string | null
+          generated_at?: string
+          id?: string
+          klaviyo_events?: Json | null
+          main_focus_this_week?: string[] | null
+          plan_type?: string | null
+          raw_ai_response?: string | null
+          recommended_actions_today?: Json | null
+          recommended_pdfs?: string[] | null
+          sleep_plan?: Json | null
+          spine_health_score?: number | null
+          valid_until?: string | null
+          whatsapp_messages?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_plans_email_fkey"
+            columns: ["email"]
+            isOneToOne: false
+            referencedRelation: "sleep_profiles"
+            referencedColumns: ["email"]
+          },
+        ]
+      }
       commissions: {
         Row: {
           affiliate_id: string
@@ -109,6 +171,51 @@ export type Database = {
           },
         ]
       }
+      engagement_meta: {
+        Row: {
+          created_at: string
+          decline_detected: boolean | null
+          email: string
+          id: string
+          improvement_detected: boolean | null
+          inactivity_detected: boolean | null
+          last_evaluation_at: string | null
+          last_reminder_type: string | null
+          last_seen_at: string | null
+          last_whatsapp_nudge_at: string | null
+          total_streak_days: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          decline_detected?: boolean | null
+          email: string
+          id?: string
+          improvement_detected?: boolean | null
+          inactivity_detected?: boolean | null
+          last_evaluation_at?: string | null
+          last_reminder_type?: string | null
+          last_seen_at?: string | null
+          last_whatsapp_nudge_at?: string | null
+          total_streak_days?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          decline_detected?: boolean | null
+          email?: string
+          id?: string
+          improvement_detected?: boolean | null
+          inactivity_detected?: boolean | null
+          last_evaluation_at?: string | null
+          last_reminder_type?: string | null
+          last_seen_at?: string | null
+          last_whatsapp_nudge_at?: string | null
+          total_streak_days?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       referrals: {
         Row: {
           affiliate_id: string
@@ -144,6 +251,175 @@ export type Database = {
           },
         ]
       }
+      sleep_logs: {
+        Row: {
+          created_at: string
+          date: string
+          email: string
+          felt_hot: boolean | null
+          felt_stressed: boolean | null
+          id: string
+          notes: string | null
+          pain_level_morning: number
+          sleep_quality: number
+          source: Database["public"]["Enums"]["log_source"]
+          time_to_sleep_minutes: number | null
+          wake_ups_per_night: number | null
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          email: string
+          felt_hot?: boolean | null
+          felt_stressed?: boolean | null
+          id?: string
+          notes?: string | null
+          pain_level_morning: number
+          sleep_quality: number
+          source?: Database["public"]["Enums"]["log_source"]
+          time_to_sleep_minutes?: number | null
+          wake_ups_per_night?: number | null
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          email?: string
+          felt_hot?: boolean | null
+          felt_stressed?: boolean | null
+          id?: string
+          notes?: string | null
+          pain_level_morning?: number
+          sleep_quality?: number
+          source?: Database["public"]["Enums"]["log_source"]
+          time_to_sleep_minutes?: number | null
+          wake_ups_per_night?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sleep_logs_email_fkey"
+            columns: ["email"]
+            isOneToOne: false
+            referencedRelation: "sleep_profiles"
+            referencedColumns: ["email"]
+          },
+        ]
+      }
+      sleep_profiles: {
+        Row: {
+          created_at: string
+          delivery_date: string | null
+          email: string
+          id: string
+          pain_points: string[] | null
+          purchase_count: number | null
+          sleep_position: Database["public"]["Enums"]["sleep_position"]
+          stress_level: Database["public"]["Enums"]["stress_level"] | null
+          temperature_preference:
+            | Database["public"]["Enums"]["temperature_preference"]
+            | null
+          updated_at: string
+          wake_up_condition:
+            | Database["public"]["Enums"]["wake_up_condition"]
+            | null
+        }
+        Insert: {
+          created_at?: string
+          delivery_date?: string | null
+          email: string
+          id?: string
+          pain_points?: string[] | null
+          purchase_count?: number | null
+          sleep_position?: Database["public"]["Enums"]["sleep_position"]
+          stress_level?: Database["public"]["Enums"]["stress_level"] | null
+          temperature_preference?:
+            | Database["public"]["Enums"]["temperature_preference"]
+            | null
+          updated_at?: string
+          wake_up_condition?:
+            | Database["public"]["Enums"]["wake_up_condition"]
+            | null
+        }
+        Update: {
+          created_at?: string
+          delivery_date?: string | null
+          email?: string
+          id?: string
+          pain_points?: string[] | null
+          purchase_count?: number | null
+          sleep_position?: Database["public"]["Enums"]["sleep_position"]
+          stress_level?: Database["public"]["Enums"]["stress_level"] | null
+          temperature_preference?:
+            | Database["public"]["Enums"]["temperature_preference"]
+            | null
+          updated_at?: string
+          wake_up_condition?:
+            | Database["public"]["Enums"]["wake_up_condition"]
+            | null
+        }
+        Relationships: []
+      }
+      whatsapp_message_logs: {
+        Row: {
+          created_at: string
+          direction: string
+          email: string
+          id: string
+          message: string
+          message_type: string | null
+          phone_number: string
+        }
+        Insert: {
+          created_at?: string
+          direction: string
+          email: string
+          id?: string
+          message: string
+          message_type?: string | null
+          phone_number: string
+        }
+        Update: {
+          created_at?: string
+          direction?: string
+          email?: string
+          id?: string
+          message?: string
+          message_type?: string | null
+          phone_number?: string
+        }
+        Relationships: []
+      }
+      whatsapp_user_links: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          last_interaction_at: string | null
+          phone_number: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          last_interaction_at?: string | null
+          phone_number: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          last_interaction_at?: string | null
+          phone_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_user_links_email_fkey"
+            columns: ["email"]
+            isOneToOne: false
+            referencedRelation: "sleep_profiles"
+            referencedColumns: ["email"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -152,7 +428,11 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      log_source: "manual" | "whatsapp"
+      sleep_position: "side" | "back" | "stomach" | "mixed"
+      stress_level: "low" | "medium" | "high"
+      temperature_preference: "cold" | "neutral" | "warm"
+      wake_up_condition: "energized" | "neutral" | "tired" | "stiff"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -279,6 +559,12 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      log_source: ["manual", "whatsapp"],
+      sleep_position: ["side", "back", "stomach", "mixed"],
+      stress_level: ["low", "medium", "high"],
+      temperature_preference: ["cold", "neutral", "warm"],
+      wake_up_condition: ["energized", "neutral", "tired", "stiff"],
+    },
   },
 } as const
