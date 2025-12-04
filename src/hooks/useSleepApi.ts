@@ -124,11 +124,84 @@ export function useSleepApi() {
     }
   };
 
+  const checkDateExists = async (email: string, date: string, excludeId?: string): Promise<boolean> => {
+    try {
+      let query = supabase
+        .from('sleep_logs')
+        .select('id')
+        .eq('email', email)
+        .eq('date', date);
+      
+      if (excludeId) {
+        query = query.neq('id', excludeId);
+      }
+      
+      const { data } = await query;
+      return (data?.length || 0) > 0;
+    } catch {
+      return false;
+    }
+  };
+
   const addLog = async (log: Partial<SleepLog>): Promise<boolean> => {
     setLoading(true);
     setError(null);
     try {
+      // Check for duplicate date
+      if (log.email && log.date) {
+        const exists = await checkDateExists(log.email, log.date);
+        if (exists) {
+          setError('A sleep log already exists for this date. Please edit the existing entry instead.');
+          return false;
+        }
+      }
+      
       const { error: err } = await supabase.from('sleep_logs').insert(log as any);
+      if (err) throw err;
+      return true;
+    } catch (e: any) {
+      setError(e.message);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateLog = async (id: string, log: Partial<SleepLog>): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Check for duplicate date (excluding current log)
+      if (log.email && log.date) {
+        const exists = await checkDateExists(log.email, log.date, id);
+        if (exists) {
+          setError('A sleep log already exists for this date.');
+          return false;
+        }
+      }
+      
+      const { error: err } = await supabase
+        .from('sleep_logs')
+        .update(log)
+        .eq('id', id);
+      if (err) throw err;
+      return true;
+    } catch (e: any) {
+      setError(e.message);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteLog = async (id: string): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { error: err } = await supabase
+        .from('sleep_logs')
+        .delete()
+        .eq('id', id);
       if (err) throw err;
       return true;
     } catch (e: any) {
@@ -222,6 +295,9 @@ export function useSleepApi() {
     createOrUpdateProfile,
     fetchLogs,
     addLog,
+    updateLog,
+    deleteLog,
+    checkDateExists,
     generateCoachPlan,
     fetchCoachPlan,
     getWhatsAppMessage,
