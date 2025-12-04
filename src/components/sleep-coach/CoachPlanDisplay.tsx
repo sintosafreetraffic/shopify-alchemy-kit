@@ -15,6 +15,9 @@ export const CoachPlanDisplay = ({ plan, onGeneratePlan, loading }: CoachPlanDis
   // Check if plan exists but has empty sleep_plan data
   const hasPlanData = plan?.sleep_plan && Object.keys(plan.sleep_plan).length > 0;
   
+  // Check if plan is expired (week is over)
+  const isPlanExpired = plan?.valid_until ? new Date(plan.valid_until) < new Date() : false;
+  
   if (!plan || !hasPlanData) {
     return (
       <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
@@ -32,12 +35,8 @@ export const CoachPlanDisplay = ({ plan, onGeneratePlan, loading }: CoachPlanDis
               <Sparkles className="h-12 w-12 text-primary mx-auto mb-4 opacity-50" />
               <h3 className="text-lg font-semibold mb-2">No Sleep Plan Yet</h3>
               <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                Generate a personalized AI sleep plan based on your profile and sleep logs.
+                Your personalized AI sleep plan will be generated automatically based on your profile and sleep logs.
               </p>
-              <Button onClick={onGeneratePlan} disabled={loading}>
-                <Sparkles className="mr-2 h-4 w-4" />
-                Generate My Sleep Plan
-              </Button>
             </>
           )}
         </CardContent>
@@ -63,17 +62,26 @@ export const CoachPlanDisplay = ({ plan, onGeneratePlan, loading }: CoachPlanDis
                 Spine Score: {plan.spine_health_score}/100
               </Badge>
             )}
-            <Button variant="outline" size="sm" onClick={onGeneratePlan} disabled={loading}>
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Regenerate"}
-            </Button>
           </div>
         </CardTitle>
         {plan.valid_until && (
-          <p className="text-xs text-muted-foreground mt-1">
-            {new Date(plan.valid_until) < new Date() 
-              ? "Plan expired - generating new plan automatically"
-              : `Plan valid until ${new Date(plan.valid_until).toLocaleDateString()}`}
-          </p>
+          <div className="mt-2">
+            {isPlanExpired ? (
+              <div className="flex items-center gap-3">
+                <p className="text-sm text-amber-600 dark:text-amber-400">
+                  Your weekly plan has ended. Generate a new plan for this week!
+                </p>
+                <Button size="sm" onClick={onGeneratePlan} disabled={loading}>
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                  Generate New Plan
+                </Button>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Plan valid until {new Date(plan.valid_until).toLocaleDateString()}
+              </p>
+            )}
+          </div>
         )}
       </CardHeader>
       <CardContent>
@@ -205,6 +213,8 @@ export const CoachPlanDisplay = ({ plan, onGeneratePlan, loading }: CoachPlanDis
 
         <div className="mt-6 pt-4 border-t border-border/50 text-xs text-muted-foreground">
           <span>Generated: {new Date(plan.generated_at).toLocaleDateString()}</span>
+          <span className="mx-2">•</span>
+          <span>Plan auto-updates when sleep quality changes or weekly</span>
         </div>
       </CardContent>
     </Card>
