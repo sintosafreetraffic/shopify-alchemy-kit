@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useSleepApi, SleepProfile, SleepLog, CoachPlan, TrendData } from "@/hooks/useSleepApi";
-import { SleepLogForm, SleepLogTable, SleepHistoryChart, ProfileViewer, ProfileForm, ProfileWizard, CoachPlanDisplay, WhatsAppSimulator } from "@/components/sleep-coach";
+import { SleepLogForm, SleepLogTable, SleepHistoryChart, ProfileViewer, ProfileForm, ProfileWizard, CoachPlanDisplay, WhatsAppSimulator, SleepReportSummary } from "@/components/sleep-coach";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Moon, BarChart3, MessageCircle, Loader2, Sparkles, Users, ArrowRight, Lock, ShoppingBag, AlertCircle } from "lucide-react";
+import { Search, Moon, BarChart3, MessageCircle, Loader2, Sparkles, Users, ArrowRight, Lock, ShoppingBag, AlertCircle, FileText } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/moon-logo-yellow-transparent.png";
@@ -376,7 +376,7 @@ const SleepCoachDashboard = () => {
 
         {!showWizard && (
           <Tabs defaultValue="plan" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3 max-w-md mx-auto">
+            <TabsList className="grid w-full grid-cols-4 max-w-lg mx-auto">
               <TabsTrigger value="plan" className="gap-2">
                 <Moon className="h-4 w-4" />
                 Sleep Plan
@@ -384,6 +384,10 @@ const SleepCoachDashboard = () => {
               <TabsTrigger value="dashboard" className="gap-2">
                 <BarChart3 className="h-4 w-4" />
                 Dashboard
+              </TabsTrigger>
+              <TabsTrigger value="report" className="gap-2">
+                <FileText className="h-4 w-4" />
+                Report
               </TabsTrigger>
               <TabsTrigger value="engagement" className="gap-2">
                 <MessageCircle className="h-4 w-4" />
@@ -416,6 +420,15 @@ const SleepCoachDashboard = () => {
                   />
                 </div>
               </div>
+            </TabsContent>
+
+            <TabsContent value="report" className="space-y-6">
+              <SleepReportSummary 
+                logs={logs} 
+                trends={trends || { avgSleepQuality: 0, avgPain: 0, trend: 'stable', hotNights: 0, stressedNights: 0, goodNights: 0, poorNights: 0 }} 
+                plan={plan} 
+                email={email} 
+              />
             </TabsContent>
 
             <TabsContent value="engagement" className="space-y-6">

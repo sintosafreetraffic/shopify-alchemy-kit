@@ -6,3 +6,4 @@ export { ProfileForm } from './ProfileForm';
 export { ProfileWizard } from './ProfileWizard';
 export { CoachPlanDisplay } from './CoachPlanDisplay';
 export { WhatsAppSimulator } from './WhatsAppSimulator';
+export { SleepReportSummary } from './SleepReportSummary';
