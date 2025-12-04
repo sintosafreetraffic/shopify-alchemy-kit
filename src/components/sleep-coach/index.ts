@@ -1,5 +1,6 @@
 export { SleepLogForm } from './SleepLogForm';
 export { SleepLogTable } from './SleepLogTable';
+export { SleepHistoryChart } from './SleepHistoryChart';
 export { ProfileViewer } from './ProfileViewer';
 export { ProfileForm } from './ProfileForm';
 export { ProfileWizard } from './ProfileWizard';

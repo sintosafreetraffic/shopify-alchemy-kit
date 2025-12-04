@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useSleepApi, SleepProfile, SleepLog, CoachPlan, TrendData } from "@/hooks/useSleepApi";
-import { SleepLogForm, SleepLogTable, ProfileViewer, ProfileForm, ProfileWizard, CoachPlanDisplay, WhatsAppSimulator } from "@/components/sleep-coach";
+import { SleepLogForm, SleepLogTable, SleepHistoryChart, ProfileViewer, ProfileForm, ProfileWizard, CoachPlanDisplay, WhatsAppSimulator } from "@/components/sleep-coach";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Moon, BarChart3, MessageCircle, Loader2, Sparkles } from "lucide-react";
+import { Search, Moon, BarChart3, MessageCircle, Loader2, Sparkles, Users, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import logo from "@/assets/moon-logo-yellow-transparent.png";
 
 const SleepCoachDashboard = () => {
@@ -19,7 +20,7 @@ const SleepCoachDashboard = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
 
-  const { loading, error, fetchProfile, createOrUpdateProfile, fetchLogs, addLog, generateCoachPlan, fetchCoachPlan, getWhatsAppMessage } = useSleepApi();
+  const { loading, error, fetchProfile, createOrUpdateProfile, fetchLogs, addLog, updateLog, deleteLog, generateCoachPlan, fetchCoachPlan, getWhatsAppMessage } = useSleepApi();
   const { toast } = useToast();
 
   const handleSearch = async () => {
@@ -44,18 +45,43 @@ const SleepCoachDashboard = () => {
     setIsSearching(false);
   };
 
+  const refreshLogs = async () => {
+    const logsData = await fetchLogs(email);
+    if (logsData) {
+      setLogs(logsData.logs);
+      setTrends(logsData.trends);
+    }
+  };
+
   const handleAddLog = async (log: any) => {
     const success = await addLog(log);
     if (success) {
       toast({ title: "Sleep logged!", description: "Your sleep data has been saved." });
-      // Refresh logs
-      const logsData = await fetchLogs(email);
-      if (logsData) {
-        setLogs(logsData.logs);
-        setTrends(logsData.trends);
-      }
+      await refreshLogs();
     } else {
       toast({ title: "Error", description: error || "Failed to save sleep log", variant: "destructive" });
+    }
+    return success;
+  };
+
+  const handleUpdateLog = async (id: string, log: Partial<SleepLog>) => {
+    const success = await updateLog(id, log);
+    if (success) {
+      toast({ title: "Log updated!", description: "Your sleep data has been updated." });
+      await refreshLogs();
+    } else {
+      toast({ title: "Error", description: error || "Failed to update sleep log", variant: "destructive" });
+    }
+    return success;
+  };
+
+  const handleDeleteLog = async (id: string) => {
+    const success = await deleteLog(id);
+    if (success) {
+      toast({ title: "Log deleted", description: "Your sleep log has been removed." });
+      await refreshLogs();
+    } else {
+      toast({ title: "Error", description: error || "Failed to delete sleep log", variant: "destructive" });
     }
     return success;
   };
@@ -167,6 +193,9 @@ const SleepCoachDashboard = () => {
             </TabsContent>
 
             <TabsContent value="dashboard" className="space-y-6">
+              {/* Sleep History Chart */}
+              <SleepHistoryChart logs={logs} />
+              
               <div className="grid lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-1 space-y-6">
                   {profile ? (
@@ -177,7 +206,12 @@ const SleepCoachDashboard = () => {
                   <SleepLogForm email={email} onSubmit={handleAddLog} loading={loading} />
                 </div>
                 <div className="lg:col-span-2">
-                  <SleepLogTable logs={logs} trends={trends || { avgSleepQuality: 0, avgPain: 0, trend: 'stable', hotNights: 0, stressedNights: 0, goodNights: 0, poorNights: 0 }} />
+                  <SleepLogTable 
+                    logs={logs} 
+                    trends={trends || { avgSleepQuality: 0, avgPain: 0, trend: 'stable', hotNights: 0, stressedNights: 0, goodNights: 0, poorNights: 0 }}
+                    onUpdateLog={handleUpdateLog}
+                    onDeleteLog={handleDeleteLog}
+                  />
                 </div>
               </div>
             </TabsContent>
@@ -198,6 +232,31 @@ const SleepCoachDashboard = () => {
             <p className="text-muted-foreground">Search for a customer to view their sleep data and AI coach plan.</p>
           </div>
         )}
+
+        {/* Affiliate Program Banner */}
+        <Card className="mt-8 border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10">
+          <CardContent className="py-6">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
+                  <Users className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">Help Fellow Sleepers & Earn Commission</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Join our affiliate program and earn up to 35% commission by helping others improve their sleep.
+                  </p>
+                </div>
+              </div>
+              <Link to="/affiliate">
+                <Button className="gap-2">
+                  Join Affiliate Program
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
