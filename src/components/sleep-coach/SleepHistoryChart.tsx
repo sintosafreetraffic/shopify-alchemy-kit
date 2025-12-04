@@ -9,12 +9,14 @@ interface SleepHistoryChartProps {
 
 export const SleepHistoryChart = ({ logs }: SleepHistoryChartProps) => {
   // Prepare data for chart (reverse to show oldest to newest)
+  // Normalize quality from 1-5 to 0-10 scale for comparison with pain (0-10)
   const chartData = [...logs]
     .reverse()
     .slice(-14) // Last 14 days
     .map(log => ({
       date: new Date(log.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      quality: log.sleep_quality,
+      quality: log.sleep_quality * 2, // Normalize 1-5 to 2-10
+      qualityOriginal: log.sleep_quality,
       pain: log.pain_level_morning,
       wakeUps: log.wake_ups_per_night || 0,
     }));
@@ -30,6 +32,26 @@ export const SleepHistoryChart = ({ logs }: SleepHistoryChartProps) => {
     );
   }
 
+  // Custom tooltip to show original values
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
+          <p className="font-medium text-foreground mb-2">{label}</p>
+          {payload.map((entry: any, index: number) => (
+            <p key={index} className="text-sm" style={{ color: entry.color }}>
+              {entry.name === 'Sleep Quality' 
+                ? `Sleep Quality: ${entry.payload.qualityOriginal}/5`
+                : `Pain Level: ${entry.value}/10`
+              }
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
       <CardHeader className="pb-4">
@@ -37,6 +59,9 @@ export const SleepHistoryChart = ({ logs }: SleepHistoryChartProps) => {
           <BarChart3 className="h-5 w-5 text-primary" />
           Sleep Trends (Last 14 Days)
         </CardTitle>
+        <p className="text-xs text-muted-foreground mt-1">
+          Quality scaled to 0-10 for comparison • Higher quality is better, lower pain is better
+        </p>
       </CardHeader>
       <CardContent>
         <div className="h-[300px] w-full">
@@ -49,48 +74,33 @@ export const SleepHistoryChart = ({ logs }: SleepHistoryChartProps) => {
                 className="fill-muted-foreground"
               />
               <YAxis 
-                yAxisId="left" 
-                domain={[0, 5]} 
-                tick={{ fontSize: 12 }}
-                className="fill-muted-foreground"
-                label={{ value: 'Quality', angle: -90, position: 'insideLeft', fontSize: 12 }}
-              />
-              <YAxis 
-                yAxisId="right" 
-                orientation="right" 
                 domain={[0, 10]} 
+                ticks={[0, 2, 4, 6, 8, 10]}
                 tick={{ fontSize: 12 }}
                 className="fill-muted-foreground"
-                label={{ value: 'Pain', angle: 90, position: 'insideRight', fontSize: 12 }}
+                label={{ value: 'Score (0-10)', angle: -90, position: 'insideLeft', fontSize: 11, offset: 10 }}
               />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'hsl(var(--card))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px',
-                }}
-                labelStyle={{ color: 'hsl(var(--foreground))' }}
-              />
+              <Tooltip content={<CustomTooltip />} />
               <Legend />
               <Line
-                yAxisId="left"
                 type="monotone"
                 dataKey="quality"
                 name="Sleep Quality"
                 stroke="hsl(var(--primary))"
                 strokeWidth={2}
-                dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2 }}
+                dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
                 activeDot={{ r: 6 }}
+                connectNulls
               />
               <Line
-                yAxisId="right"
                 type="monotone"
                 dataKey="pain"
                 name="Pain Level"
                 stroke="hsl(0 84% 60%)"
                 strokeWidth={2}
-                dot={{ fill: 'hsl(0 84% 60%)', strokeWidth: 2 }}
+                dot={{ fill: 'hsl(0 84% 60%)', strokeWidth: 2, r: 4 }}
                 activeDot={{ r: 6 }}
+                connectNulls
               />
             </LineChart>
           </ResponsiveContainer>
