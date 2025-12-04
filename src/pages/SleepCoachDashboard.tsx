@@ -1,6 +1,15 @@
 import { useState, useEffect } from "react";
 import { useSleepApi, SleepProfile, SleepLog, CoachPlan, TrendData } from "@/hooks/useSleepApi";
-import { SleepLogForm, SleepLogTable, SleepHistoryChart, ProfileViewer, ProfileForm, ProfileWizard, CoachPlanDisplay, WhatsAppSimulator } from "@/components/sleep-coach";
+import { 
+  SleepLogForm, 
+  SleepLogTable, 
+  SleepHistoryChart, 
+  ProfileViewer, 
+  ProfileForm, 
+  ProfileWizard, 
+  CoachPlanDisplay, 
+  WhatsAppSimulator 
+} from "@/components/sleep-coach";
 import { SleepReportSummary } from "@/components/sleep-coach/SleepReportSummary";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
