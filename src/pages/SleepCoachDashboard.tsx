@@ -482,7 +482,7 @@ const SleepCoachDashboard = () => {
 
             <TabsContent value="engagement" className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
-                <WhatsAppSimulator onSimulate={handleWhatsAppSimulate} loading={loading} />
+                <WhatsAppSimulator onSimulate={handleWhatsAppSimulate} loading={loading} whatsappEnabled={profile?.whatsapp_enabled || false} />
                 {profile && <ProfileForm email={email} existingProfile={profile} onSubmit={handleCreateProfile} loading={loading} />}
               </div>
             </TabsContent>

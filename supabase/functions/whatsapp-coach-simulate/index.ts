@@ -19,19 +19,33 @@ Deno.serve(async (req) => {
 
     console.log(`Simulating WhatsApp message for ${email}`);
 
-    // Fetch user data
+    // Fetch user profile first to check if WhatsApp is enabled
+    const { data: profile } = await supabase
+      .from('sleep_profiles')
+      .select('*')
+      .eq('email', email)
+      .maybeSingle();
+
+    // Check if WhatsApp is enabled for this user
+    if (!profile?.whatsapp_enabled) {
+      console.log(`WhatsApp not enabled for ${email}`);
+      return new Response(JSON.stringify({ 
+        error: 'WhatsApp updates not enabled',
+        message: 'Please enable WhatsApp updates in your profile settings to receive messages.',
+        enabled: false 
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Fetch sleep logs
     const { data: logs } = await supabase
       .from('sleep_logs')
       .select('*')
       .eq('email', email)
       .order('date', { ascending: false })
       .limit(14);
-
-    const { data: profile } = await supabase
-      .from('sleep_profiles')
-      .select('*')
-      .eq('email', email)
-      .maybeSingle();
 
     const { data: meta } = await supabase
       .from('engagement_meta')
