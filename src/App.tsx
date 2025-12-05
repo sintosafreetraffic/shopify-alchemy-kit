@@ -1,4 +1,3 @@
-import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,6 +17,7 @@ import SleepBundleProduct from "./pages/SleepBundleProduct";
 import SleepQuiz from "./pages/SleepQuiz";
 import Auth from "./pages/Auth";
 import AffiliateDashboard from "./pages/AffiliateDashboard";
+import SleepCoachDashboard from "./pages/SleepCoachDashboard";
 import Benefits from "./pages/Benefits";
 import Reviews from "./pages/Reviews";
 import FAQ from "./pages/FAQ";
@@ -31,18 +31,6 @@ import TrackOrder from "./pages/TrackOrder";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
-
-// Lazy load SleepCoachDashboard
-const SleepCoachDashboard = lazy(() => import("./pages/SleepCoachDashboard"));
-
-const SleepCoachFallback = () => (
-  <div className="min-h-screen flex items-center justify-center">
-    <div className="text-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-      <p className="text-muted-foreground">Loading Sleep Coach...</p>
-    </div>
-  </div>
-);
 
 const AppContent = () => {
   const { isOpen, showTeaser, closePopup, openFromTeaser } = useEmailPopup({
@@ -68,11 +56,7 @@ const AppContent = () => {
           <Route path="/sleep-quiz" element={<SleepQuiz />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/affiliate-dashboard" element={<AffiliateDashboard />} />
-          <Route path="/sleep-coach" element={
-            <Suspense fallback={<SleepCoachFallback />}>
-              <SleepCoachDashboard />
-            </Suspense>
-          } />
+          <Route path="/sleep-coach" element={<SleepCoachDashboard />} />
           <Route path="/benefits" element={<Benefits />} />
           <Route path="/reviews" element={<Reviews />} />
           <Route path="/faq" element={<FAQ />} />
