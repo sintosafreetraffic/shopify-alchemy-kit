@@ -9,14 +9,12 @@ interface SleepHistoryChartProps {
 
 export const SleepHistoryChart = ({ logs }: SleepHistoryChartProps) => {
   // Prepare data for chart (reverse to show oldest to newest)
-  // Normalize quality from 1-5 to 0-10 scale for comparison with pain (0-10)
   const chartData = [...logs]
     .reverse()
     .slice(-14) // Last 14 days
     .map(log => ({
       date: new Date(log.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      quality: log.sleep_quality * 2, // Normalize 1-5 to 2-10
-      qualityOriginal: log.sleep_quality,
+      quality: log.sleep_quality,
       pain: log.pain_level_morning,
       wakeUps: log.wake_ups_per_night || 0,
     }));
@@ -60,7 +58,7 @@ export const SleepHistoryChart = ({ logs }: SleepHistoryChartProps) => {
           Sleep Trends (Last 14 Days)
         </CardTitle>
         <p className="text-xs text-muted-foreground mt-1">
-          Quality scaled to 0-10 for comparison • Higher quality is better, lower pain is better
+          Higher quality is better, lower pain is better
         </p>
       </CardHeader>
       <CardContent>

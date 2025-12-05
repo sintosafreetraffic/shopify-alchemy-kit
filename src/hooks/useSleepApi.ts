@@ -314,8 +314,8 @@ function calculateTrends(logs: SleepLog[]): TrendData {
   const avgPain = logs.reduce((sum, l) => sum + l.pain_level_morning, 0) / logs.length;
   const hotNights = logs.filter(l => l.felt_hot).length;
   const stressedNights = logs.filter(l => l.felt_stressed).length;
-  const goodNights = logs.filter(l => l.sleep_quality >= 4).length;
-  const poorNights = logs.filter(l => l.sleep_quality <= 2).length;
+  const goodNights = logs.filter(l => l.sleep_quality >= 7).length;
+  const poorNights = logs.filter(l => l.sleep_quality <= 4).length;
 
   const recent = logs.slice(0, 7);
   const older = logs.slice(7, 14);
@@ -324,8 +324,8 @@ function calculateTrends(logs: SleepLog[]): TrendData {
   if (older.length >= 3) {
     const recentAvg = recent.reduce((s, l) => s + l.sleep_quality, 0) / recent.length;
     const olderAvg = older.reduce((s, l) => s + l.sleep_quality, 0) / older.length;
-    if (recentAvg - olderAvg > 0.5) trend = 'improving';
-    else if (olderAvg - recentAvg > 0.5) trend = 'worsening';
+    if (recentAvg - olderAvg > 1) trend = 'improving';
+    else if (olderAvg - recentAvg > 1) trend = 'worsening';
   }
 
   return { avgSleepQuality, avgPain, trend, hotNights, stressedNights, goodNights, poorNights };

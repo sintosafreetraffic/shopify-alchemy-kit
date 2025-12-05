@@ -86,8 +86,8 @@ export const SleepLogTable = ({ logs, trends, onUpdateLog, onDeleteLog }: SleepL
   };
 
   const getQualityColor = (quality: number) => {
-    if (quality >= 4) return "bg-green-500/20 text-green-700 border-green-500/30";
-    if (quality >= 3) return "bg-yellow-500/20 text-yellow-700 border-yellow-500/30";
+    if (quality >= 7) return "bg-green-500/20 text-green-700 border-green-500/30";
+    if (quality >= 5) return "bg-yellow-500/20 text-yellow-700 border-yellow-500/30";
     return "bg-red-500/20 text-red-700 border-red-500/30";
   };
 
@@ -97,7 +97,7 @@ export const SleepLogTable = ({ logs, trends, onUpdateLog, onDeleteLog }: SleepL
     return "text-red-600";
   };
 
-  const qualityLabels = ["Terrible", "Poor", "Okay", "Good", "Excellent"];
+  const qualityLabels = ["Terrible", "Very Poor", "Poor", "Below Average", "Average", "Above Average", "Good", "Very Good", "Excellent", "Perfect"];
   const painLabels = ["None", "", "Mild", "", "Moderate", "", "Severe", "", "Very Severe", "", "Extreme"];
 
   return (
@@ -126,7 +126,7 @@ export const SleepLogTable = ({ logs, trends, onUpdateLog, onDeleteLog }: SleepL
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
             <div className="bg-muted/50 rounded-lg p-3 text-center">
               <div className="text-2xl font-bold text-primary">{trends.avgSleepQuality.toFixed(1)}</div>
-              <div className="text-xs text-muted-foreground">Avg Quality /5</div>
+              <div className="text-xs text-muted-foreground">Avg Quality /10</div>
             </div>
             <div className="bg-muted/50 rounded-lg p-3 text-center">
               <div className="text-2xl font-bold text-primary">{trends.avgPain.toFixed(1)}</div>
@@ -188,7 +188,7 @@ export const SleepLogTable = ({ logs, trends, onUpdateLog, onDeleteLog }: SleepL
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className={getQualityColor(log.sleep_quality)}>
-                          {log.sleep_quality}/5
+                          {log.sleep_quality}/10
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -260,12 +260,12 @@ export const SleepLogTable = ({ logs, trends, onUpdateLog, onDeleteLog }: SleepL
           
           <div className="space-y-4 py-4">
             <div>
-              <Label>Sleep Quality: {editSleepQuality}/5 - {qualityLabels[editSleepQuality - 1]}</Label>
+              <Label>Sleep Quality: {editSleepQuality}/10 - {qualityLabels[editSleepQuality - 1]}</Label>
               <Slider
                 value={[editSleepQuality]}
                 onValueChange={(v) => setEditSleepQuality(v[0])}
                 min={1}
-                max={5}
+                max={10}
                 step={1}
                 className="mt-2"
               />
