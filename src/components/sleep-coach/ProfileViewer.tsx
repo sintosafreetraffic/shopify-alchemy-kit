@@ -1,7 +1,7 @@
 import { SleepProfile } from "@/hooks/useSleepApi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { User, Bed, Thermometer, Brain, Sun, Package, Check } from "lucide-react";
+import { User, Bed, Thermometer, Brain, Sun, Package, Check, MessageCircle } from "lucide-react";
 
 interface ProfileViewerProps {
   profile: SleepProfile | null;
@@ -132,6 +132,26 @@ export const ProfileViewer = ({ profile }: ProfileViewerProps) => {
                 </div>
               );
             })}
+          </div>
+        </div>
+
+        <div className="pt-2 border-t border-border/50">
+          <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+            <MessageCircle className="h-3 w-3" /> WhatsApp Updates
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge 
+              variant="outline" 
+              className={profile.whatsapp_enabled 
+                ? "bg-green-500/20 text-green-700 border-green-500/30" 
+                : "bg-gray-500/20 text-gray-700 border-gray-500/30"
+              }
+            >
+              {profile.whatsapp_enabled ? "Enabled" : "Disabled"}
+            </Badge>
+            {profile.whatsapp_enabled && profile.whatsapp_phone && (
+              <span className="text-xs text-muted-foreground">{profile.whatsapp_phone}</span>
+            )}
           </div>
         </div>
 

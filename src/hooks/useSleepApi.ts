@@ -12,6 +12,8 @@ export interface SleepProfile {
   delivery_date: string | null;
   purchase_count: number;
   products_owned: string[];
+  whatsapp_enabled: boolean;
+  whatsapp_phone: string | null;
   created_at: string;
   updated_at: string;
 }

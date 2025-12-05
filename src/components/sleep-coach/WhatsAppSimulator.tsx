@@ -2,15 +2,16 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, Loader2, Copy, Check } from "lucide-react";
+import { MessageCircle, Loader2, Copy, Check, AlertCircle } from "lucide-react";
 
 interface WhatsAppSimulatorProps {
-  onSimulate: () => Promise<{ message: string; messageType: string } | null>;
+  onSimulate: () => Promise<{ message: string; messageType: string; enabled?: boolean; error?: string } | null>;
   loading?: boolean;
+  whatsappEnabled?: boolean;
 }
 
-export const WhatsAppSimulator = ({ onSimulate, loading }: WhatsAppSimulatorProps) => {
-  const [result, setResult] = useState<{ message: string; messageType: string } | null>(null);
+export const WhatsAppSimulator = ({ onSimulate, loading, whatsappEnabled }: WhatsAppSimulatorProps) => {
+  const [result, setResult] = useState<{ message: string; messageType: string; enabled?: boolean; error?: string } | null>(null);
   const [copied, setCopied] = useState(false);
 
   const handleSimulate = async () => {
@@ -37,6 +38,31 @@ export const WhatsAppSimulator = ({ onSimulate, loading }: WhatsAppSimulatorProp
     morning_checkin: { label: "Morning Check-in", color: "bg-orange-500/20 text-orange-700 border-orange-500/30" },
     general_tip: { label: "General Tip", color: "bg-gray-500/20 text-gray-700 border-gray-500/30" },
   };
+
+  // Show disabled state if WhatsApp is not enabled
+  if (!whatsappEnabled) {
+    return (
+      <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <MessageCircle className="h-5 w-5 text-muted-foreground" />
+            WhatsApp Updates
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-start gap-3 p-4 bg-muted/30 rounded-lg border border-border/50">
+            <AlertCircle className="h-5 w-5 text-muted-foreground mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-foreground">WhatsApp Updates Disabled</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Enable WhatsApp updates in your profile settings to receive personalized sleep tips, product updates, and exclusive offers via WhatsApp.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
@@ -65,7 +91,16 @@ export const WhatsAppSimulator = ({ onSimulate, loading }: WhatsAppSimulatorProp
           )}
         </Button>
 
-        {result && (
+        {result && result.error && (
+          <div className="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">{result.message || result.error}</p>
+            </div>
+          </div>
+        )}
+
+        {result && !result.error && result.message && (
           <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg p-4">
             <div className="flex items-center justify-between mb-3">
               <Badge 

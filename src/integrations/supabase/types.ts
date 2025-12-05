@@ -322,6 +322,8 @@ export type Database = {
           wake_up_condition:
             | Database["public"]["Enums"]["wake_up_condition"]
             | null
+          whatsapp_enabled: boolean | null
+          whatsapp_phone: string | null
         }
         Insert: {
           created_at?: string
@@ -340,6 +342,8 @@ export type Database = {
           wake_up_condition?:
             | Database["public"]["Enums"]["wake_up_condition"]
             | null
+          whatsapp_enabled?: boolean | null
+          whatsapp_phone?: string | null
         }
         Update: {
           created_at?: string
@@ -358,6 +362,8 @@ export type Database = {
           wake_up_condition?:
             | Database["public"]["Enums"]["wake_up_condition"]
             | null
+          whatsapp_enabled?: boolean | null
+          whatsapp_phone?: string | null
         }
         Relationships: []
       }

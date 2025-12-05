@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { UserPlus, Loader2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { UserPlus, Loader2, MessageCircle } from "lucide-react";
 
 interface ProfileFormProps {
   email: string;
@@ -38,6 +39,8 @@ export const ProfileForm = ({ email, existingProfile, onSubmit, loading }: Profi
   const [stressLevel, setStressLevel] = useState<string>(existingProfile?.stress_level || "medium");
   const [wakeUpCondition, setWakeUpCondition] = useState<string>(existingProfile?.wake_up_condition || "neutral");
   const [productsOwned, setProductsOwned] = useState<string[]>(existingProfile?.products_owned || []);
+  const [whatsappEnabled, setWhatsappEnabled] = useState<boolean>(existingProfile?.whatsapp_enabled || false);
+  const [whatsappPhone, setWhatsappPhone] = useState<string>(existingProfile?.whatsapp_phone || "");
 
   const handlePainPointToggle = (point: string) => {
     setPainPoints(prev => 
@@ -66,6 +69,8 @@ export const ProfileForm = ({ email, existingProfile, onSubmit, loading }: Profi
       stress_level: stressLevel as any,
       wake_up_condition: wakeUpCondition as any,
       products_owned: productsOwned,
+      whatsapp_enabled: whatsappEnabled,
+      whatsapp_phone: whatsappEnabled ? whatsappPhone : null,
     });
   };
 
@@ -173,6 +178,39 @@ export const ProfileForm = ({ email, existingProfile, onSubmit, loading }: Profi
                 </div>
               ))}
             </div>
+          </div>
+
+          <div className="pt-4 border-t border-border/50">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <MessageCircle className="h-4 w-4 text-green-600" />
+                <Label htmlFor="whatsapp-toggle" className="font-medium">WhatsApp Updates</Label>
+              </div>
+              <Switch
+                id="whatsapp-toggle"
+                checked={whatsappEnabled}
+                onCheckedChange={setWhatsappEnabled}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mb-3">
+              Get personalized sleep tips, new product announcements, and exclusive offers via WhatsApp.
+            </p>
+            {whatsappEnabled && (
+              <div>
+                <Label htmlFor="whatsapp-phone">WhatsApp Phone Number</Label>
+                <Input
+                  id="whatsapp-phone"
+                  type="tel"
+                  placeholder="+1 (555) 123-4567"
+                  value={whatsappPhone}
+                  onChange={(e) => setWhatsappPhone(e.target.value)}
+                  className="mt-1.5"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Include country code (e.g., +1 for US)
+                </p>
+              </div>
+            )}
           </div>
 
           <Button type="submit" className="w-full" disabled={loading}>
