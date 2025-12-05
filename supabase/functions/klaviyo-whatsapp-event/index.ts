@@ -14,7 +14,6 @@ type WhatsAppEventType =
   | 'RBN_WhatsApp_Weekly_Summary';
 
 interface WhatsAppEventPayload {
-  email: string;
   event_type: WhatsAppEventType;
   custom_properties?: Record<string, any>;
 }
@@ -26,23 +25,48 @@ Deno.serve(async (req) => {
 
   try {
     const KLAVIYO_PRIVATE_API_KEY = Deno.env.get('KLAVIYO_PRIVATE_API_KEY');
-    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
     if (!KLAVIYO_PRIVATE_API_KEY) {
       throw new Error('Klaviyo API key not configured');
     }
 
-    const { email, event_type, custom_properties = {} }: WhatsAppEventPayload = await req.json();
-
-    if (!email || !event_type) {
-      throw new Error('email and event_type are required');
+    // Extract user from JWT - this is the authenticated user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Authorization header required' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    console.log(`Processing WhatsApp event ${event_type} for ${email}`);
+    // Create client with user's JWT to get their identity
+    const supabaseAuth = createClient(SUPABASE_URL, Deno.env.get('SUPABASE_ANON_KEY')!, {
+      global: { headers: { Authorization: authHeader } }
+    });
+    
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    if (authError || !user?.email) {
+      console.error('Auth error:', authError);
+      return new Response(JSON.stringify({ error: 'Invalid or expired token' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
-    // Initialize Supabase client to fetch user data for personalization
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+    // Use the authenticated user's email - ignore any email in request body
+    const email = user.email;
+    const { event_type, custom_properties = {} }: WhatsAppEventPayload = await req.json();
+
+    if (!event_type) {
+      throw new Error('event_type is required');
+    }
+
+    console.log(`Processing WhatsApp event ${event_type} for authenticated user: ${email}`);
+
+    // Use service role for database operations
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // Fetch user profile for personalization
     const { data: profile } = await supabase
@@ -120,7 +144,7 @@ Deno.serve(async (req) => {
       event_timestamp: new Date().toISOString(),
     };
 
-    console.log(`Sending ${event_type} with personalization:`, JSON.stringify(personalizationProperties, null, 2));
+    console.log(`Sending ${event_type} with personalization`);
 
     // Send event to Klaviyo
     const response = await fetch('https://a.klaviyo.com/api/events/', {
