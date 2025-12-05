@@ -2,6 +2,7 @@ import { useState } from "react";
 import { X, Copy, Check, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { setEnhancedMatch, trackLead } from "@/lib/pinterest";
 import logo from "@/assets/risebynight-logo-popup.png";
 import moonIcon from "@/assets/moon-icon-popup.webp";
 
@@ -48,6 +49,10 @@ export const EmailPopup = ({
       });
 
       if (error) throw error;
+
+      // Set Pinterest enhanced match and track lead
+      await setEnhancedMatch(email);
+      trackLead('Newsletter');
 
       setIsSuccess(true);
       toast({
