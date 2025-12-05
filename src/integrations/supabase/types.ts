@@ -434,7 +434,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_auth_email: { Args: never; Returns: string }
     }
     Enums: {
       log_source: "manual" | "whatsapp"
