@@ -6,6 +6,6 @@ export { ProfileViewer } from './ProfileViewer';
 export { ProfileForm } from './ProfileForm';
 export { ProfileWizard } from './ProfileWizard';
 export { CoachPlanDisplay } from './CoachPlanDisplay';
-export { WhatsAppSimulator } from './WhatsAppSimulator';
+export { WhatsAppSettings } from './WhatsAppSettings';
 // SleepReportSummary is intentionally not exported here to allow lazy loading
 // Import it directly: import { SleepReportSummary } from '@/components/sleep-coach/SleepReportSummary';

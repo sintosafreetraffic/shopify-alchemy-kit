@@ -8,7 +8,7 @@ import {
   ProfileForm, 
   ProfileWizard, 
   CoachPlanDisplay, 
-  WhatsAppSimulator,
+  WhatsAppSettings,
   StreakDisplay 
 } from "@/components/sleep-coach";
 import { SleepReportSummary } from "@/components/sleep-coach/SleepReportSummary";
@@ -44,7 +44,7 @@ const SleepCoachDashboard = () => {
   const [accessStatus, setAccessStatus] = useState<AccessStatus | null>(null);
   const [isVerifyingAccess, setIsVerifyingAccess] = useState(false);
 
-  const { loading, error, fetchProfile, createOrUpdateProfile, fetchLogs, addLog, updateLog, deleteLog, generateCoachPlan, fetchCoachPlan, getWhatsAppMessage, evaluateEngagement } = useSleepApi();
+  const { loading, error, fetchProfile, createOrUpdateProfile, fetchLogs, addLog, updateLog, deleteLog, generateCoachPlan, fetchCoachPlan, evaluateEngagement } = useSleepApi();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -252,11 +252,6 @@ const SleepCoachDashboard = () => {
     } else {
       toast({ title: "Error", description: error || "Failed to generate plan", variant: "destructive" });
     }
-  };
-
-  const handleWhatsAppSimulate = async () => {
-    if (!email) return null;
-    return await getWhatsAppMessage(email);
   };
 
   const handleSignOut = async () => {
@@ -482,7 +477,7 @@ const SleepCoachDashboard = () => {
 
             <TabsContent value="engagement" className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
-                <WhatsAppSimulator onSimulate={handleWhatsAppSimulate} loading={loading} whatsappEnabled={profile?.whatsapp_enabled || false} />
+                <WhatsAppSettings whatsappEnabled={profile?.whatsapp_enabled || false} whatsappPhone={profile?.whatsapp_phone} />
                 {profile && <ProfileForm email={email} existingProfile={profile} onSubmit={handleCreateProfile} loading={loading} />}
               </div>
             </TabsContent>
