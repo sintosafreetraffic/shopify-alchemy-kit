@@ -25,18 +25,33 @@ const PAIN_POINTS = [
   "Numbness/tingling",
 ];
 
+const PRODUCTS = [
+  { id: 'ergonomic_pillow', name: 'Ergonomic Pillow', icon: '🛏️' },
+  { id: 'knee_pillow', name: 'Knee Pillow', icon: '🦵' },
+  { id: 'sleep_mask', name: 'Sleep Mask', icon: '😴' },
+];
+
 export const ProfileForm = ({ email, existingProfile, onSubmit, loading }: ProfileFormProps) => {
   const [sleepPosition, setSleepPosition] = useState<string>(existingProfile?.sleep_position || "side");
   const [painPoints, setPainPoints] = useState<string[]>(existingProfile?.pain_points || []);
   const [temperaturePreference, setTemperaturePreference] = useState<string>(existingProfile?.temperature_preference || "neutral");
   const [stressLevel, setStressLevel] = useState<string>(existingProfile?.stress_level || "medium");
   const [wakeUpCondition, setWakeUpCondition] = useState<string>(existingProfile?.wake_up_condition || "neutral");
+  const [productsOwned, setProductsOwned] = useState<string[]>(existingProfile?.products_owned || []);
 
   const handlePainPointToggle = (point: string) => {
     setPainPoints(prev => 
       prev.includes(point) 
         ? prev.filter(p => p !== point)
         : [...prev, point]
+    );
+  };
+
+  const handleProductToggle = (productId: string) => {
+    setProductsOwned(prev => 
+      prev.includes(productId) 
+        ? prev.filter(p => p !== productId)
+        : [...prev, productId]
     );
   };
 
@@ -50,6 +65,7 @@ export const ProfileForm = ({ email, existingProfile, onSubmit, loading }: Profi
       temperature_preference: temperaturePreference as any,
       stress_level: stressLevel as any,
       wake_up_condition: wakeUpCondition as any,
+      products_owned: productsOwned,
     });
   };
 
@@ -134,6 +150,26 @@ export const ProfileForm = ({ email, existingProfile, onSubmit, loading }: Profi
                   <Label htmlFor={point} className="text-sm cursor-pointer">
                     {point}
                   </Label>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <Label className="mb-3 block">Products Owned (select all that apply)</Label>
+            <div className="grid grid-cols-3 gap-2">
+              {PRODUCTS.map(product => (
+                <div 
+                  key={product.id} 
+                  onClick={() => handleProductToggle(product.id)}
+                  className={`cursor-pointer flex flex-col items-center p-3 rounded-lg border transition-all ${
+                    productsOwned.includes(product.id)
+                      ? 'bg-primary/10 border-primary/50 text-foreground'
+                      : 'bg-muted/30 border-border hover:border-primary/30'
+                  }`}
+                >
+                  <span className="text-2xl mb-1">{product.icon}</span>
+                  <span className="text-xs text-center">{product.name}</span>
                 </div>
               ))}
             </div>

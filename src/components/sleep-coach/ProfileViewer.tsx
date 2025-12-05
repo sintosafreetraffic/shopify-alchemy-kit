@@ -1,7 +1,7 @@
 import { SleepProfile } from "@/hooks/useSleepApi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { User, Bed, Thermometer, Brain, Sun } from "lucide-react";
+import { User, Bed, Thermometer, Brain, Sun, Package, Check } from "lucide-react";
 
 interface ProfileViewerProps {
   profile: SleepProfile | null;
@@ -102,11 +102,41 @@ export const ProfileViewer = ({ profile }: ProfileViewerProps) => {
           </div>
         )}
 
+        <div className="pt-2 border-t border-border/50">
+          <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+            <Package className="h-3 w-3" /> Products Owned
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { id: 'ergonomic_pillow', name: 'Ergonomic Pillow', icon: '🛏️' },
+              { id: 'knee_pillow', name: 'Knee Pillow', icon: '🦵' },
+              { id: 'sleep_mask', name: 'Sleep Mask', icon: '😴' },
+            ].map((product) => {
+              const isOwned = profile.products_owned?.includes(product.id);
+              return (
+                <div
+                  key={product.id}
+                  className={`relative flex flex-col items-center p-2 rounded-lg border text-center transition-all ${
+                    isOwned
+                      ? 'bg-primary/10 border-primary/30 text-foreground'
+                      : 'bg-muted/30 border-border/30 text-muted-foreground opacity-50'
+                  }`}
+                >
+                  {isOwned && (
+                    <div className="absolute -top-1 -right-1 bg-primary rounded-full p-0.5">
+                      <Check className="h-3 w-3 text-primary-foreground" />
+                    </div>
+                  )}
+                  <span className="text-lg mb-1">{product.icon}</span>
+                  <span className="text-[10px] leading-tight">{product.name}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
         <div className="pt-2 border-t border-border/50 text-xs text-muted-foreground">
           <div>Member since: {new Date(profile.created_at).toLocaleDateString()}</div>
-          {profile.purchase_count > 0 && (
-            <div>Products purchased: {profile.purchase_count}</div>
-          )}
         </div>
       </CardContent>
     </Card>
