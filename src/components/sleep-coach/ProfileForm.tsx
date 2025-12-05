@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { UserPlus, Loader2, MessageCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ProfileFormProps {
   email: string;
@@ -58,10 +59,33 @@ export const ProfileForm = ({ email, existingProfile, onSubmit, loading }: Profi
     );
   };
 
+  const syncToKlaviyo = async (profileData: Partial<SleepProfile>) => {
+    try {
+      await supabase.functions.invoke('klaviyo-profile', {
+        body: {
+          email,
+          phone_number: profileData.whatsapp_enabled ? profileData.whatsapp_phone : null,
+          whatsapp_enabled: profileData.whatsapp_enabled,
+          properties: {
+            sleep_position: profileData.sleep_position,
+            pain_points: profileData.pain_points,
+            temperature_preference: profileData.temperature_preference,
+            stress_level: profileData.stress_level,
+            wake_up_condition: profileData.wake_up_condition,
+            products_owned: profileData.products_owned,
+          },
+        },
+      });
+      console.log('Profile synced to Klaviyo');
+    } catch (error) {
+      console.warn('Failed to sync to Klaviyo:', error);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    await onSubmit({
+    const profileData = {
       email,
       sleep_position: sleepPosition as any,
       pain_points: painPoints,
@@ -71,7 +95,14 @@ export const ProfileForm = ({ email, existingProfile, onSubmit, loading }: Profi
       products_owned: productsOwned,
       whatsapp_enabled: whatsappEnabled,
       whatsapp_phone: whatsappEnabled ? whatsappPhone : null,
-    });
+    };
+
+    const result = await onSubmit(profileData);
+    
+    // Sync to Klaviyo after successful save
+    if (result) {
+      await syncToKlaviyo(profileData);
+    }
   };
 
   return (

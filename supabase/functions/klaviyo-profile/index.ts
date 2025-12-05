@@ -14,9 +14,9 @@ Deno.serve(async (req) => {
       throw new Error('Klaviyo API key not configured');
     }
 
-    const { email, properties } = await req.json();
+    const { email, properties, phone_number, whatsapp_enabled } = await req.json();
 
-    console.log(`Updating Klaviyo profile for ${email}`);
+    console.log(`Updating Klaviyo profile for ${email}, WhatsApp: ${whatsapp_enabled}`);
 
     // Find profile by email
     const searchResponse = await fetch(
@@ -32,6 +32,22 @@ Deno.serve(async (req) => {
     const searchData = await searchResponse.json();
     const profileId = searchData.data[0]?.id;
 
+    // Build profile attributes
+    const profileAttributes: any = {
+      email,
+      properties: {
+        ...properties,
+        whatsapp_enabled: whatsapp_enabled || false,
+      },
+    };
+
+    // Add phone number if WhatsApp is enabled
+    if (whatsapp_enabled && phone_number) {
+      profileAttributes.phone_number = phone_number;
+      profileAttributes.properties.whatsapp_phone = phone_number;
+      console.log(`Syncing WhatsApp phone: ${phone_number}`);
+    }
+
     if (!profileId) {
       console.log('Profile not found, creating new one');
       // Create new profile
@@ -45,10 +61,7 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           data: {
             type: 'profile',
-            attributes: {
-              email,
-              properties,
-            },
+            attributes: profileAttributes,
           },
         }),
       });
@@ -56,6 +69,8 @@ Deno.serve(async (req) => {
       if (!createResponse.ok) {
         const errorText = await createResponse.text();
         console.error('Create profile error:', errorText);
+      } else {
+        console.log('Profile created successfully');
       }
 
       return new Response(JSON.stringify({ success: true, created: true }), {
@@ -75,7 +90,14 @@ Deno.serve(async (req) => {
         data: {
           type: 'profile',
           id: profileId,
-          attributes: { properties },
+          attributes: {
+            phone_number: whatsapp_enabled && phone_number ? phone_number : undefined,
+            properties: {
+              ...properties,
+              whatsapp_enabled: whatsapp_enabled || false,
+              whatsapp_phone: whatsapp_enabled ? phone_number : null,
+            },
+          },
         },
       }),
     });
