@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, Lock, ShoppingBag, Users, Moon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { StreakDisplay } from "@/components/sleep-coach/StreakDisplay";
 
 const SleepCoachDashboard = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -102,10 +103,8 @@ const SleepCoachDashboard = () => {
           <CardContent className="py-12 text-center">
             <h1 className="text-2xl font-bold mb-4">Sleep Coach Dashboard</h1>
             <p className="text-muted-foreground mb-4">Welcome, {email}</p>
-            <p className="text-sm text-muted-foreground mb-6">
-              The full dashboard is being loaded. If you see this message for more than a few seconds, please refresh the page.
-            </p>
-            <Button variant="outline" onClick={handleSignOut}>
+            <StreakDisplay streak={5} />
+            <Button variant="outline" onClick={handleSignOut} className="mt-4">
               Sign Out
             </Button>
           </CardContent>
