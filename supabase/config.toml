@@ -1,5 +1,8 @@
 project_id = "ofryballwrjrgivokzln"
 
+[functions.shopify-order-webhook]
+verify_jwt = false
+
 [functions.analyze-sleep-quiz]
 verify_jwt = false
 
