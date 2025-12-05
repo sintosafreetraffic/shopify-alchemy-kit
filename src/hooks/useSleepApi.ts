@@ -11,6 +11,7 @@ export interface SleepProfile {
   wake_up_condition: 'energized' | 'neutral' | 'tired' | 'stiff';
   delivery_date: string | null;
   purchase_count: number;
+  products_owned: string[];
   created_at: string;
   updated_at: string;
 }

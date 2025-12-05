@@ -311,6 +311,7 @@ export type Database = {
           email: string
           id: string
           pain_points: string[] | null
+          products_owned: string[] | null
           purchase_count: number | null
           sleep_position: Database["public"]["Enums"]["sleep_position"]
           stress_level: Database["public"]["Enums"]["stress_level"] | null
@@ -328,6 +329,7 @@ export type Database = {
           email: string
           id?: string
           pain_points?: string[] | null
+          products_owned?: string[] | null
           purchase_count?: number | null
           sleep_position?: Database["public"]["Enums"]["sleep_position"]
           stress_level?: Database["public"]["Enums"]["stress_level"] | null
@@ -345,6 +347,7 @@ export type Database = {
           email?: string
           id?: string
           pain_points?: string[] | null
+          products_owned?: string[] | null
           purchase_count?: number | null
           sleep_position?: Database["public"]["Enums"]["sleep_position"]
           stress_level?: Database["public"]["Enums"]["stress_level"] | null
