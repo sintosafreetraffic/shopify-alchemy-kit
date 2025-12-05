@@ -7,6 +7,23 @@ declare global {
   }
 }
 
+// SHA-256 hash function for enhanced matching
+async function sha256(message: string): Promise<string> {
+  const msgBuffer = new TextEncoder().encode(message.toLowerCase().trim());
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Set enhanced match data (call when user email is known)
+export async function setEnhancedMatch(email?: string) {
+  if (typeof window !== 'undefined' && window.pintrk && email) {
+    const hashedEmail = await sha256(email);
+    window.pintrk('set', { em: hashedEmail });
+    console.log('[Pinterest] Enhanced match set');
+  }
+}
+
 // Extract numeric product ID from Shopify GraphQL ID
 // e.g., "gid://shopify/Product/8456789123456" -> "8456789123456"
 export function extractProductId(shopifyGid: string): string {
