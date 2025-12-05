@@ -6,6 +6,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { StreakDisplay } from "@/components/sleep-coach/StreakDisplay";
 import { SleepHistoryChart } from "@/components/sleep-coach/SleepHistoryChart";
+import { ProfileViewer } from "@/components/sleep-coach/ProfileViewer";
+import { ProfileForm } from "@/components/sleep-coach/ProfileForm";
 
 const SleepCoachDashboard = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -106,6 +108,7 @@ const SleepCoachDashboard = () => {
             <p className="text-muted-foreground mb-4">Welcome, {email}</p>
             <StreakDisplay streak={5} />
             <SleepHistoryChart logs={[]} />
+            <ProfileViewer profile={null} />
             <Button variant="outline" onClick={handleSignOut} className="mt-4">
               Sign Out
             </Button>
