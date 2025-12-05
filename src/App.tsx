@@ -83,6 +83,7 @@ const AppContent = () => {
         showTeaser={showTeaser}
         onClose={closePopup}
         onOpenFromTeaser={openFromTeaser}
+        listId="UEJzEU"
         discountCode="MYSTERYDISCOUNT"
       />
     </div>
