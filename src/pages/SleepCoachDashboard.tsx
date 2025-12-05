@@ -4,18 +4,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, Lock, ShoppingBag, Users, Moon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { ProfileWizard } from "@/components/sleep-coach";
-import { useSleepApi } from "@/hooks/useSleepApi";
 
 const SleepCoachDashboard = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [email, setEmail] = useState("");
-  const [profile, setProfile] = useState<any>(null);
-  const [hasProfile, setHasProfile] = useState<boolean | null>(null);
   const navigate = useNavigate();
-  
-  const { fetchProfile, createOrUpdateProfile, loading: apiLoading } = useSleepApi();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -30,7 +24,7 @@ const SleepCoachDashboard = () => {
 
     checkAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
         setIsAuthenticated(true);
         setEmail(session.user.email || '');
@@ -42,19 +36,6 @@ const SleepCoachDashboard = () => {
 
     return () => subscription.unsubscribe();
   }, []);
-
-  // Load profile when email is available
-  useEffect(() => {
-    if (email) {
-      loadProfile();
-    }
-  }, [email]);
-
-  const loadProfile = async () => {
-    const profileData = await fetchProfile(email);
-    setProfile(profileData);
-    setHasProfile(!!profileData);
-  };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -117,47 +98,18 @@ const SleepCoachDashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       <div className="container mx-auto px-4 py-8">
-        {/* Loading state */}
-        {hasProfile === null && (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-              <p className="text-muted-foreground">Loading your profile...</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* No profile - show wizard */}
-        {hasProfile === false && (
-          <ProfileWizard 
-            email={email} 
-            onComplete={async (profileData) => {
-              const saved = await createOrUpdateProfile(profileData);
-              if (saved) {
-                setProfile(saved);
-                setHasProfile(true);
-              }
-              return saved;
-            }}
-            loading={apiLoading}
-          />
-        )}
-
-        {/* Has profile - show dashboard */}
-        {hasProfile === true && profile && (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <h1 className="text-2xl font-bold mb-4">Sleep Coach Dashboard</h1>
-              <p className="text-muted-foreground mb-4">Welcome, {email}</p>
-              <p className="text-sm text-muted-foreground mb-6">
-                Profile loaded! More features coming.
-              </p>
-              <Button variant="outline" onClick={handleSignOut}>
-                Sign Out
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+        <Card>
+          <CardContent className="py-12 text-center">
+            <h1 className="text-2xl font-bold mb-4">Sleep Coach Dashboard</h1>
+            <p className="text-muted-foreground mb-4">Welcome, {email}</p>
+            <p className="text-sm text-muted-foreground mb-6">
+              Minimal version working. Ready to add features.
+            </p>
+            <Button variant="outline" onClick={handleSignOut}>
+              Sign Out
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
