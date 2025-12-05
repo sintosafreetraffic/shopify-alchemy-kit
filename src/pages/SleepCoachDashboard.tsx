@@ -8,6 +8,11 @@ import { StreakDisplay } from "@/components/sleep-coach/StreakDisplay";
 import { SleepHistoryChart } from "@/components/sleep-coach/SleepHistoryChart";
 import { ProfileViewer } from "@/components/sleep-coach/ProfileViewer";
 import { ProfileForm } from "@/components/sleep-coach/ProfileForm";
+import { SleepLogForm } from "@/components/sleep-coach/SleepLogForm";
+import { SleepLogTable } from "@/components/sleep-coach/SleepLogTable";
+import { ProfileWizard } from "@/components/sleep-coach/ProfileWizard";
+import { CoachPlanDisplay } from "@/components/sleep-coach/CoachPlanDisplay";
+import { WhatsAppSettings } from "@/components/sleep-coach/WhatsAppSettings";
 
 const SleepCoachDashboard = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
