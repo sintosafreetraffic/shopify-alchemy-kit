@@ -32,7 +32,7 @@ export const SleepHistoryChart = ({ logs }: SleepHistoryChartProps) => {
     );
   }
 
-  // Custom tooltip to show original values
+  // Custom tooltip to show normalized values
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -41,7 +41,7 @@ export const SleepHistoryChart = ({ logs }: SleepHistoryChartProps) => {
           {payload.map((entry: any, index: number) => (
             <p key={index} className="text-sm" style={{ color: entry.color }}>
               {entry.name === 'Sleep Quality' 
-                ? `Sleep Quality: ${entry.payload.qualityOriginal}/5`
+                ? `Sleep Quality: ${entry.value}/10`
                 : `Pain Level: ${entry.value}/10`
               }
             </p>
