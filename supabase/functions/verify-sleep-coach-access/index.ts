@@ -11,18 +11,36 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { email } = await req.json();
-    
-    if (!email) {
-      return new Response(
-        JSON.stringify({ error: 'Email is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const SHOPIFY_ACCESS_TOKEN = Deno.env.get('SHOPIFY_ACCESS_TOKEN');
+
+    // Extract user from JWT - this is the authenticated user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Authorization header required' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Create client with user's JWT to get their identity
+    const supabaseAuth = createClient(SUPABASE_URL, Deno.env.get('SUPABASE_ANON_KEY')!, {
+      global: { headers: { Authorization: authHeader } }
+    });
+    
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    if (authError || !user?.email) {
+      console.error('Auth error:', authError);
+      return new Response(JSON.stringify({ error: 'Invalid or expired token' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Use the authenticated user's email and ID
+    const email = user.email;
+    const userId = user.id;
     
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     
@@ -32,45 +50,20 @@ Deno.serve(async (req) => {
     let hasPurchased = false;
 
     // Check 1: Is user an affiliate with 3+ sales?
-    console.log(`Checking affiliate status for: ${email}`);
+    console.log(`Checking affiliate status for authenticated user: ${email}`);
     
-    // First get user_id from auth.users by email
-    const { data: authUser } = await supabase
-      .from('sleep_profiles')
-      .select('email')
-      .eq('email', email.toLowerCase())
+    const { data: affiliate } = await supabase
+      .from('affiliates')
+      .select('total_referrals, status')
+      .eq('user_id', userId)
+      .eq('status', 'active')
       .single();
 
-    // Check affiliates table - we need to match by user email through a different approach
-    // Since affiliates link to user_id, we need to check if this user has an affiliate record
-    const { data: affiliateData } = await supabase
-      .rpc('get_affiliate_by_email', { user_email: email.toLowerCase() })
-      .single();
-
-    // If no RPC exists, try direct query approach
-    if (!affiliateData) {
-      // Check via auth - get user by email first
-      const { data: { users }, error: authError } = await supabase.auth.admin.listUsers();
-      
-      if (!authError && users) {
-        const user = users.find(u => u.email?.toLowerCase() === email.toLowerCase());
-        
-        if (user) {
-          const { data: affiliate } = await supabase
-            .from('affiliates')
-            .select('total_referrals, status')
-            .eq('user_id', user.id)
-            .eq('status', 'active')
-            .single();
-
-          if (affiliate && affiliate.total_referrals >= 3) {
-            hasAccess = true;
-            accessReason = 'affiliate';
-            affiliateSales = affiliate.total_referrals;
-            console.log(`User is affiliate with ${affiliateSales} sales`);
-          }
-        }
-      }
+    if (affiliate && affiliate.total_referrals >= 3) {
+      hasAccess = true;
+      accessReason = 'affiliate';
+      affiliateSales = affiliate.total_referrals;
+      console.log(`User is affiliate with ${affiliateSales} sales`);
     }
 
     // Check 2: Has user purchased from Shopify?

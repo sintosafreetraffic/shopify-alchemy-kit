@@ -16,10 +16,10 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.coach-generate-sleep-plan]
-verify_jwt = false
+verify_jwt = true
 
 [functions.coach-sleep-plan]
-verify_jwt = false
+verify_jwt = true
 
 [functions.klaviyo-profile]
 verify_jwt = false
@@ -28,13 +28,13 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.klaviyo-whatsapp-event]
-verify_jwt = false
+verify_jwt = true
 
 [functions.engagement-evaluate]
-verify_jwt = false
+verify_jwt = true
 
 [functions.whatsapp-coach-simulate]
-verify_jwt = false
+verify_jwt = true
 
 [functions.verify-sleep-coach-access]
-verify_jwt = false
+verify_jwt = true

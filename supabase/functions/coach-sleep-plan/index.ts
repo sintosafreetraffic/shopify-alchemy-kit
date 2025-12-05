@@ -13,19 +13,37 @@ Deno.serve(async (req) => {
   try {
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const url = new URL(req.url);
-    const email = url.searchParams.get('email');
-
-    if (!email) {
-      return new Response(JSON.stringify({ error: 'Email required' }), {
-        status: 400,
+    // Extract user from JWT - this is the authenticated user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Authorization header required' }), {
+        status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    console.log(`Fetching sleep plan for ${email}`);
+    // Create client with user's JWT to get their identity
+    const supabaseAuth = createClient(SUPABASE_URL, Deno.env.get('SUPABASE_ANON_KEY')!, {
+      global: { headers: { Authorization: authHeader } }
+    });
+    
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    if (authError || !user?.email) {
+      console.error('Auth error:', authError);
+      return new Response(JSON.stringify({ error: 'Invalid or expired token' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Use the authenticated user's email - ignore any email in query params
+    const email = user.email;
+
+    console.log(`Fetching sleep plan for authenticated user: ${email}`);
+
+    // Use service role for database operations
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // Fetch latest plan
     const { data: plan, error: planError } = await supabase
