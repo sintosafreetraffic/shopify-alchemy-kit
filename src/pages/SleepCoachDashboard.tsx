@@ -5,6 +5,7 @@ import { Loader2, Lock, ShoppingBag, Users, Moon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ProfileWizard, ProfileForm, ProfileViewer, SleepLogForm, SleepLogTable, SleepHistoryChart, StreakDisplay, CoachPlanDisplay, WhatsAppSettings } from "@/components/sleep-coach";
+import { useSleepApi } from "@/hooks/useSleepApi";
 
 const SleepCoachDashboard = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
