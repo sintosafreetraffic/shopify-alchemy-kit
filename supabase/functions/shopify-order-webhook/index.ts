@@ -7,12 +7,60 @@ const corsHeaders = {
 
 const KLAVIYO_LIST_ID = "UEJzEU";
 
+// Verify Shopify HMAC signature
+async function verifyShopifyHmac(body: string, hmacHeader: string | null): Promise<boolean> {
+  if (!hmacHeader) {
+    console.error("Missing HMAC header");
+    return false;
+  }
+
+  const secret = Deno.env.get("SHOPIFY_WEBHOOK_SECRET");
+  if (!secret) {
+    console.error("SHOPIFY_WEBHOOK_SECRET not configured");
+    return false;
+  }
+
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+
+  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(body));
+  const computedHmac = btoa(String.fromCharCode(...new Uint8Array(signature)));
+
+  const isValid = computedHmac === hmacHeader;
+  if (!isValid) {
+    console.error("HMAC verification failed");
+  }
+  return isValid;
+}
+
 serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Read raw body for HMAC verification
+    const rawBody = await req.text();
+    const hmacHeader = req.headers.get("x-shopify-hmac-sha256");
+    
+    // Verify HMAC signature
+    const isValidHmac = await verifyShopifyHmac(rawBody, hmacHeader);
+    if (!isValidHmac) {
+      console.error("Invalid webhook signature - rejecting request");
+      return new Response(
+        JSON.stringify({ error: "Invalid signature" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    console.log("HMAC signature verified successfully");
+
     const shopifyTopic = req.headers.get("x-shopify-topic");
     console.log("Shopify webhook received, topic:", shopifyTopic);
 
@@ -25,7 +73,8 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    const order = await req.json();
+    // Parse body after HMAC verification
+    const order = JSON.parse(rawBody);
     console.log("Order received:", order.id, order.email);
 
     const email = order.email;
