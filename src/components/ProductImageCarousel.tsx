@@ -106,17 +106,40 @@ export const ProductImageCarousel = () => {
           <CarouselNext className="right-2" />
         </Carousel>
         
-        {/* Carousel Indicators */}
-        <div className="flex justify-center gap-2 mt-1.5">
-          {mobileImages.map((_, index) => (
+        {/* Carousel Thumbnail Indicators */}
+        <div className="flex justify-center gap-2 mt-3 px-4">
+          {mobileImages.map((item, index) => (
             <button
               key={index}
               onClick={() => api?.scrollTo(index)}
-              className={`h-2 rounded-full transition-all ${
-                current === index ? 'w-8 bg-primary' : 'w-2 bg-gray-300'
+              className={`relative w-12 h-12 rounded-lg overflow-hidden transition-all ${
+                current === index 
+                  ? 'ring-2 ring-primary ring-offset-1' 
+                  : 'opacity-60 hover:opacity-100'
               }`}
               aria-label={`Go to slide ${index + 1}`}
-            />
+            >
+              {item.type === "video" ? (
+                <>
+                  <video
+                    src={item.url}
+                    className="w-full h-full object-cover"
+                    muted
+                    preload="metadata"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                    <div className="w-4 h-4 border-l-[6px] border-l-white border-y-[4px] border-y-transparent ml-0.5" />
+                  </div>
+                </>
+              ) : (
+                <img
+                  src={item.url}
+                  alt={`Thumbnail ${index + 1}`}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              )}
+            </button>
           ))}
         </div>
       </div>
