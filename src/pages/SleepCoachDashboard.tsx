@@ -1,3 +1,4 @@
+// Sleep Coach Dashboard - AI-powered sleep improvement system
 import { useState, useEffect } from "react";
 import { useSleepApi, SleepProfile, SleepLog, CoachPlan, TrendData } from "@/hooks/useSleepApi";
 import { 
