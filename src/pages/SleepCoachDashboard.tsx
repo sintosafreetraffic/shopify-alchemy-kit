@@ -1,6 +1,7 @@
-// Sleep Coach Dashboard - AI-powered sleep improvement system
+// Sleep Coach Dashboard v2 - AI-powered sleep improvement system
 import { useState, useEffect } from "react";
-import { useSleepApi, SleepProfile, SleepLog, CoachPlan, TrendData } from "@/hooks/useSleepApi";
+import type { SleepProfile, SleepLog, CoachPlan, TrendData } from "@/hooks/useSleepApi";
+import { useSleepApi } from "@/hooks/useSleepApi";
 import { 
   SleepLogForm, 
   SleepLogTable, 
@@ -13,12 +14,11 @@ import {
   StreakDisplay 
 } from "@/components/sleep-coach";
 import { SleepReportSummary } from "@/components/sleep-coach/SleepReportSummary";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Moon, BarChart3, MessageCircle, Loader2, Sparkles, Users, ArrowRight, Lock, ShoppingBag, AlertCircle, FileText } from "lucide-react";
+import { Moon, BarChart3, MessageCircle, Loader2, Sparkles, Users, ArrowRight, Lock, ShoppingBag, AlertCircle, FileText } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/moon-logo-yellow-transparent.png";
