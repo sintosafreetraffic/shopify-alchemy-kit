@@ -5,6 +5,7 @@ import { Loader2, Lock, ShoppingBag, Users, Moon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { StreakDisplay } from "@/components/sleep-coach/StreakDisplay";
+import { SleepHistoryChart } from "@/components/sleep-coach/SleepHistoryChart";
 
 const SleepCoachDashboard = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -104,6 +105,7 @@ const SleepCoachDashboard = () => {
             <h1 className="text-2xl font-bold mb-4">Sleep Coach Dashboard</h1>
             <p className="text-muted-foreground mb-4">Welcome, {email}</p>
             <StreakDisplay streak={5} />
+            <SleepHistoryChart logs={[]} />
             <Button variant="outline" onClick={handleSignOut} className="mt-4">
               Sign Out
             </Button>
