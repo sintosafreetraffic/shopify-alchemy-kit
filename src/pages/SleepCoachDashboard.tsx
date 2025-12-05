@@ -1,18 +1,15 @@
-// Sleep Coach Dashboard v2 - AI-powered sleep improvement system
 import { useState, useEffect } from "react";
-import type { SleepProfile, SleepLog, CoachPlan, TrendData } from "@/hooks/useSleepApi";
 import { useSleepApi } from "@/hooks/useSleepApi";
-import { 
-  SleepLogForm, 
-  SleepLogTable, 
-  SleepHistoryChart, 
-  ProfileViewer, 
-  ProfileForm, 
-  ProfileWizard, 
-  CoachPlanDisplay, 
-  WhatsAppSettings,
-  StreakDisplay 
-} from "@/components/sleep-coach";
+import type { SleepProfile, SleepLog, CoachPlan, TrendData } from "@/hooks/useSleepApi";
+import { SleepLogForm } from "@/components/sleep-coach/SleepLogForm";
+import { SleepLogTable } from "@/components/sleep-coach/SleepLogTable";
+import { SleepHistoryChart } from "@/components/sleep-coach/SleepHistoryChart";
+import { ProfileViewer } from "@/components/sleep-coach/ProfileViewer";
+import { ProfileForm } from "@/components/sleep-coach/ProfileForm";
+import { ProfileWizard } from "@/components/sleep-coach/ProfileWizard";
+import { CoachPlanDisplay } from "@/components/sleep-coach/CoachPlanDisplay";
+import { WhatsAppSettings } from "@/components/sleep-coach/WhatsAppSettings";
+import { StreakDisplay } from "@/components/sleep-coach/StreakDisplay";
 import { SleepReportSummary } from "@/components/sleep-coach/SleepReportSummary";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
