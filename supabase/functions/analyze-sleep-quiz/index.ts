@@ -16,6 +16,7 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
     const KLAVIYO_PRIVATE_API_KEY = Deno.env.get("KLAVIYO_PRIVATE_API_KEY");
     const KLAVIYO_MAIN_LIST_ID = Deno.env.get("KLAVIYO_MAIN_LIST_ID");
 
@@ -23,6 +24,45 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
+    // SECURITY: If createProfile is requested, require authentication
+    let authenticatedEmail: string | null = null;
+    if (createProfile) {
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader) {
+        return new Response(
+          JSON.stringify({ error: "Authentication required to create profile" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Verify the JWT and get user email
+      const authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        global: { headers: { Authorization: authHeader } }
+      });
+      
+      const { data: { user }, error: authError } = await authClient.auth.getUser();
+      
+      if (authError || !user?.email) {
+        console.error("Auth error:", authError);
+        return new Response(
+          JSON.stringify({ error: "Invalid authentication token" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      authenticatedEmail = user.email;
+
+      // SECURITY: Verify the provided email matches the authenticated user
+      if (email && email.toLowerCase() !== authenticatedEmail.toLowerCase()) {
+        console.error("Email mismatch - provided:", email, "authenticated:", authenticatedEmail);
+        return new Response(
+          JSON.stringify({ error: "Email does not match authenticated user" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    // Use service role client for database operations (only after auth verification)
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     const systemPrompt = `You are a sleep health expert for RiseByNight, analyzing customer sleep quiz responses to recommend products.
@@ -108,32 +148,14 @@ Analyze and recommend products.`;
 
     const analysis = JSON.parse(jsonMatch[0]);
 
-    // If email provided, track in Klaviyo and optionally create Sleep Coach profile
-    if (email && KLAVIYO_PRIVATE_API_KEY) {
-      console.log("Tracking quiz completion for:", email);
+    // Use authenticated email for profile creation, provided email for Klaviyo tracking only
+    const trackingEmail = email;
+    const profileEmail = authenticatedEmail || email;
+
+    // If email provided, track in Klaviyo (this is safe - just marketing tracking)
+    if (trackingEmail && KLAVIYO_PRIVATE_API_KEY) {
+      console.log("Tracking quiz completion for:", trackingEmail);
       
-      // Map sleep position
-      const sleepPositionMap: Record<string, string> = {
-        'back': 'back',
-        'side': 'side',
-        'stomach': 'stomach',
-        'combination': 'mixed'
-      };
-
-      // Infer stress level from quiz answers
-      const hasStressGoal = answers.sleepGoals?.some((g: string) => 
-        g.toLowerCase().includes('stress') || g.toLowerCase().includes('better sleep')
-      );
-      const stressLevel = hasStressGoal ? 'high' : 'medium';
-
-      // Infer wake up condition from pain points and goals
-      const hasPain = answers.painPoints?.some((p: string) => p.toLowerCase() !== 'no pain');
-      const wantsRefreshed = answers.sleepGoals?.includes('Wake up refreshed');
-      let wakeUpCondition = 'neutral';
-      if (hasPain) wakeUpCondition = 'stiff';
-      else if (!wantsRefreshed) wakeUpCondition = 'tired';
-      else if (!hasPain && wantsRefreshed) wakeUpCondition = 'energized';
-
       // Create Klaviyo profile with quiz data
       try {
         const profileResponse = await fetch("https://a.klaviyo.com/api/profiles/", {
@@ -147,7 +169,7 @@ Analyze and recommend products.`;
             data: {
               type: "profile",
               attributes: {
-                email,
+                email: trackingEmail,
                 properties: {
                   sleep_position: answers.sleepPosition,
                   pain_points: answers.painPoints,
@@ -192,7 +214,7 @@ Analyze and recommend products.`;
             data: {
               type: "event",
               attributes: {
-                profile: { $email: email },
+                profile: { $email: trackingEmail },
                 metric: { name: "Completed Sleep Quiz" },
                 properties: {
                   sleep_position: answers.sleepPosition,
@@ -211,57 +233,79 @@ Analyze and recommend products.`;
       } catch (klaviyoError) {
         console.error("Klaviyo tracking error:", klaviyoError);
       }
+    }
 
-      // Create Sleep Coach profile if requested
-      if (createProfile) {
-        try {
-          // Check if profile exists
-          const { data: existingProfile } = await supabase
+    // Create Sleep Coach profile only if authenticated (already verified above)
+    if (createProfile && authenticatedEmail) {
+      // Map sleep position
+      const sleepPositionMap: Record<string, string> = {
+        'back': 'back',
+        'side': 'side',
+        'stomach': 'stomach',
+        'combination': 'mixed'
+      };
+
+      // Infer stress level from quiz answers
+      const hasStressGoal = answers.sleepGoals?.some((g: string) => 
+        g.toLowerCase().includes('stress') || g.toLowerCase().includes('better sleep')
+      );
+      const stressLevel = hasStressGoal ? 'high' : 'medium';
+
+      // Infer wake up condition from pain points and goals
+      const hasPain = answers.painPoints?.some((p: string) => p.toLowerCase() !== 'no pain');
+      const wantsRefreshed = answers.sleepGoals?.includes('Wake up refreshed');
+      let wakeUpCondition = 'neutral';
+      if (hasPain) wakeUpCondition = 'stiff';
+      else if (!wantsRefreshed) wakeUpCondition = 'tired';
+      else if (!hasPain && wantsRefreshed) wakeUpCondition = 'energized';
+
+      try {
+        // Check if profile exists
+        const { data: existingProfile } = await supabase
+          .from('sleep_profiles')
+          .select('email')
+          .eq('email', authenticatedEmail)
+          .single();
+
+        if (!existingProfile) {
+          // Create new sleep profile from quiz data
+          const { error: insertError } = await supabase
             .from('sleep_profiles')
-            .select('email')
-            .eq('email', email)
-            .single();
+            .insert({
+              email: authenticatedEmail,
+              sleep_position: sleepPositionMap[answers.sleepPosition] || 'mixed',
+              pain_points: answers.painPoints.filter((p: string) => p.toLowerCase() !== 'no pain'),
+              stress_level: stressLevel,
+              wake_up_condition: wakeUpCondition,
+              temperature_preference: answers.pillowIssues?.includes('Gets too hot') ? 'cold' : 'neutral',
+            });
 
-          if (!existingProfile) {
-            // Create new sleep profile from quiz data
-            const { error: insertError } = await supabase
-              .from('sleep_profiles')
-              .insert({
-                email,
-                sleep_position: sleepPositionMap[answers.sleepPosition] || 'mixed',
-                pain_points: answers.painPoints.filter((p: string) => p.toLowerCase() !== 'no pain'),
-                stress_level: stressLevel,
-                wake_up_condition: wakeUpCondition,
-                temperature_preference: answers.pillowIssues?.includes('Gets too hot') ? 'cold' : 'neutral',
-              });
-
-            if (insertError) {
-              console.error("Error creating sleep profile:", insertError);
-            } else {
-              console.log("Sleep Coach profile created for:", email);
-            }
+          if (insertError) {
+            console.error("Error creating sleep profile:", insertError);
           } else {
-            // Update existing profile
-            await supabase
-              .from('sleep_profiles')
-              .update({
-                sleep_position: sleepPositionMap[answers.sleepPosition] || 'mixed',
-                pain_points: answers.painPoints.filter((p: string) => p.toLowerCase() !== 'no pain'),
-                stress_level: stressLevel,
-                wake_up_condition: wakeUpCondition,
-                temperature_preference: answers.pillowIssues?.includes('Gets too hot') ? 'cold' : 'neutral',
-              })
-              .eq('email', email);
-            console.log("Sleep Coach profile updated for:", email);
+            console.log("Sleep Coach profile created for:", authenticatedEmail);
           }
-        } catch (profileError) {
-          console.error("Sleep profile creation error:", profileError);
+        } else {
+          // Update existing profile
+          await supabase
+            .from('sleep_profiles')
+            .update({
+              sleep_position: sleepPositionMap[answers.sleepPosition] || 'mixed',
+              pain_points: answers.painPoints.filter((p: string) => p.toLowerCase() !== 'no pain'),
+              stress_level: stressLevel,
+              wake_up_condition: wakeUpCondition,
+              temperature_preference: answers.pillowIssues?.includes('Gets too hot') ? 'cold' : 'neutral',
+            })
+            .eq('email', authenticatedEmail);
+          console.log("Sleep Coach profile updated for:", authenticatedEmail);
         }
+      } catch (profileError) {
+        console.error("Sleep profile creation error:", profileError);
       }
     }
 
     return new Response(
-      JSON.stringify({ ...analysis, profileCreated: createProfile && !!email }),
+      JSON.stringify({ ...analysis, profileCreated: createProfile && !!authenticatedEmail }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
