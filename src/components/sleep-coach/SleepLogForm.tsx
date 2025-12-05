@@ -16,7 +16,7 @@ interface SleepLogFormProps {
 
 export const SleepLogForm = ({ email, onSubmit, loading }: SleepLogFormProps) => {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [sleepQuality, setSleepQuality] = useState(3);
+  const [sleepQuality, setSleepQuality] = useState(5);
   const [painLevel, setPainLevel] = useState(3);
   const [timeToSleep, setTimeToSleep] = useState<string>("");
   const [wakeUps, setWakeUps] = useState<string>("");
@@ -43,7 +43,7 @@ export const SleepLogForm = ({ email, onSubmit, loading }: SleepLogFormProps) =>
     const success = await onSubmit(log);
     if (success) {
       // Reset form
-      setSleepQuality(3);
+      setSleepQuality(5);
       setPainLevel(3);
       setTimeToSleep("");
       setWakeUps("");
@@ -53,7 +53,7 @@ export const SleepLogForm = ({ email, onSubmit, loading }: SleepLogFormProps) =>
     }
   };
 
-  const qualityLabels = ["Terrible", "Poor", "Okay", "Good", "Excellent"];
+  const qualityLabels = ["Terrible", "Very Poor", "Poor", "Below Average", "Average", "Above Average", "Good", "Very Good", "Excellent", "Perfect"];
   const painLabels = ["None", "", "Mild", "", "Moderate", "", "Severe", "", "Very Severe", "", "Extreme"];
 
   return (
@@ -78,21 +78,21 @@ export const SleepLogForm = ({ email, onSubmit, loading }: SleepLogFormProps) =>
           </div>
 
           <div>
-            <Label>Sleep Quality: {sleepQuality}/5 - {qualityLabels[sleepQuality - 1]}</Label>
+            <Label>Sleep Quality: {sleepQuality}/10 - {qualityLabels[sleepQuality - 1]}</Label>
             <div className="mt-3 px-2">
               <Slider
                 value={[sleepQuality]}
                 onValueChange={(v) => setSleepQuality(v[0])}
                 min={1}
-                max={5}
+                max={10}
                 step={1}
                 className="w-full"
               />
             </div>
             <div className="flex justify-between text-xs text-muted-foreground mt-1 px-1">
-              <span>😫</span>
-              <span>😐</span>
-              <span>😴</span>
+              <span>😫 Poor</span>
+              <span>😐 Average</span>
+              <span>😴 Excellent</span>
             </div>
           </div>
 
