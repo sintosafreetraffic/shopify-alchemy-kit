@@ -3,14 +3,11 @@ import { Progress } from "@/components/ui/progress";
 import { ArrowRight, Moon, Heart, Sparkles, Shield, Users, Award } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ProductGallery } from "@/components/ProductGallery";
-import { CountdownTimer } from "@/components/CountdownTimer";
 import heroLogo from "@/assets/moon-logo-new.png";
 import lifestyleHero from "@/assets/lifestyle-hero-desktop.webp";
 import lifestyleHeroMobile from "@/assets/home-hero-mobile.webp";
 
 export default function Home() {
-  const { saleName } = CountdownTimer();
-  
   return (
     <div className="min-h-screen">
       {/* Lifestyle Hero Image */}
