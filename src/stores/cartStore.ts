@@ -122,20 +122,8 @@ export const useCartStore = create<CartStore>()(
 
         setLoading(true);
         try {
-          // Track Pinterest Checkout event
-          const totalValue = items.reduce((sum, item) => 
-            sum + (parseFloat(item.price.amount) * item.quantity), 0
-          );
-          trackCheckout(
-            items.map(item => ({
-              productId: item.product.node.id,
-              variantId: item.variantId,
-              quantity: item.quantity,
-              price: parseFloat(item.price.amount),
-            })),
-            totalValue,
-            items[0]?.price.currencyCode || 'USD'
-          );
+          // Track Pinterest Checkout event (no value/product data - just signals checkout initiated)
+          trackCheckout();
 
           // Calculate pillow items only (exclude sleep mask for free gift calculation)
           const pillowItems = items.filter(item => 

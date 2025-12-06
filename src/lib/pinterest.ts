@@ -94,29 +94,17 @@ export function trackAddToCart(
 }
 
 // Track checkout/initiate checkout event
-export function trackCheckout(
-  items: Array<{
-    productId: string;
-    variantId: string;
-    quantity: number;
-    price: number;
-  }>,
-  totalValue: number,
-  currency: string = 'USD'
-) {
+// IMPORTANT: Do NOT include value, currency, or order_quantity here!
+// Including monetary values causes Pinterest to treat this as a purchase-like event,
+// leading to deduplication failures with Shopify's CAPI Purchase events.
+// Only Shopify's Pinterest App should send Purchase events with revenue data.
+export function trackCheckout() {
   if (typeof window !== 'undefined' && window.pintrk) {
-    // Pinterest accepts product_ids as array
-    const productIds = items.map(item => extractProductId(item.productId));
-    
     const data = {
       event_id: generateEventId(),
-      product_id: productIds,
-      value: totalValue,
-      currency: currency,
-      order_quantity: items.reduce((sum, item) => sum + item.quantity, 0),
     };
     window.pintrk('track', 'checkout', data);
-    console.log('[Pinterest] Checkout tracked', data);
+    console.log('[Pinterest] Checkout tracked (no value - InitiateCheckout only)', data);
   }
 }
 
