@@ -21,18 +21,14 @@ export const KneePillowImageCarousel = () => {
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
-
+  
   const images = [
     { url: kneePillowHeroMain, alt: "Rise By Night ergonomic knee pillow main product view", type: "image" },
     { url: kneePillowHeroLifestyle, alt: "Rise By Night ergonomic knee pillow lifestyle view on bed", type: "image" },
     { url: kneePillowMain, alt: "Rise By Night ergonomic knee pillow main view", type: "image" },
     { url: kneePillowMaterials, alt: "Rise By Night knee pillow high quality materials", type: "image" },
     { url: kneePillowErgonomic, alt: "Rise By Night knee pillow ergonomic design", type: "image" },
-    {
-      url: kneePillowSleepingPositions,
-      alt: "Rise By Night knee pillow for multiple sleeping positions",
-      type: "image",
-    },
+    { url: kneePillowSleepingPositions, alt: "Rise By Night knee pillow for multiple sleeping positions", type: "image" },
     { url: kneePillowDesignFeatures, alt: "Rise By Night knee pillow design features and construction", type: "image" },
     { url: kneePillowMemoryFoam, alt: "Rise By Night knee pillow memory foam core technology", type: "image" },
   ];
@@ -56,7 +52,7 @@ export const KneePillowImageCarousel = () => {
           <CarouselContent>
             {images.map((item, index) => (
               <CarouselItem key={index}>
-                <div
+                <div 
                   className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 relative cursor-pointer hover:opacity-90 transition-opacity"
                   onClick={() => setExpandedImage(item.url)}
                 >
@@ -77,14 +73,16 @@ export const KneePillowImageCarousel = () => {
           <CarouselPrevious className="left-2" />
           <CarouselNext className="right-2" />
         </Carousel>
-
+        
         {/* Carousel Indicators */}
         <div className="flex justify-center gap-2 mt-4">
           {images.map((_, index) => (
             <button
               key={index}
               onClick={() => api?.scrollTo(index)}
-              className={`h-2 rounded-full transition-all ${current === index ? "w-8 bg-primary" : "w-2 bg-gray-300"}`}
+              className={`h-2 rounded-full transition-all ${
+                current === index ? 'w-8 bg-primary' : 'w-2 bg-gray-300'
+              }`}
               aria-label={`Go to slide ${index + 1}`}
             />
           ))}
@@ -94,10 +92,7 @@ export const KneePillowImageCarousel = () => {
       {/* Desktop Static Gallery */}
       <div className="hidden md:block">
         {/* First large image */}
-        <div
-          className="overflow-hidden relative cursor-pointer hover:opacity-90 transition-opacity"
-          onClick={() => setExpandedImage(images[0].url)}
-        >
+        <div className="overflow-hidden relative cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setExpandedImage(images[0].url)}>
           <img
             src={images[0].url}
             alt={images[0].alt}
@@ -112,10 +107,7 @@ export const KneePillowImageCarousel = () => {
 
         {/* Two images side by side */}
         <div className="grid grid-cols-2 gap-0">
-          <div
-            className="overflow-hidden aspect-square cursor-pointer hover:opacity-90 transition-opacity"
-            onClick={() => setExpandedImage(images[1].url)}
-          >
+          <div className="overflow-hidden aspect-square cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setExpandedImage(images[1].url)}>
             <img
               src={images[1].url}
               alt={images[1].alt}
@@ -126,10 +118,7 @@ export const KneePillowImageCarousel = () => {
               height="600"
             />
           </div>
-          <div
-            className="overflow-hidden aspect-square cursor-pointer hover:opacity-90 transition-opacity"
-            onClick={() => setExpandedImage(images[2].url)}
-          >
+          <div className="overflow-hidden aspect-square cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setExpandedImage(images[2].url)}>
             <img
               src={images[2].url}
               alt={images[2].alt}
@@ -143,10 +132,7 @@ export const KneePillowImageCarousel = () => {
         </div>
 
         {/* Second large image */}
-        <div
-          className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-          onClick={() => setExpandedImage(images[3].url)}
-        >
+        <div className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setExpandedImage(images[3].url)}>
           <img
             src={images[3].url}
             alt={images[3].alt}
@@ -160,10 +146,7 @@ export const KneePillowImageCarousel = () => {
 
         {/* Last two images side by side */}
         <div className="grid grid-cols-2 gap-0">
-          <div
-            className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-            onClick={() => setExpandedImage(images[4].url)}
-          >
+          <div className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setExpandedImage(images[4].url)}>
             <img
               src={images[4].url}
               alt={images[4].alt}
@@ -174,10 +157,7 @@ export const KneePillowImageCarousel = () => {
               height="600"
             />
           </div>
-          <div
-            className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-            onClick={() => setExpandedImage(images[5].url)}
-          >
+          <div className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setExpandedImage(images[5].url)}>
             <img
               src={images[5].url}
               alt={images[5].alt}
