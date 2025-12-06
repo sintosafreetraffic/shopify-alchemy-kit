@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import pillowHeroNew from "@/assets/pillow-hero-new.webp";
+import pillowHeroNew from "@/assets/ergonomic-pillow-main-hero.webp";
 import pillowBenefitsNew from "@/assets/pillow-benefits-new.webp";
 import pillowBenefitsUpdated from "@/assets/pillow-benefits-updated.webp";
 import neckPainSpine from "@/assets/neck-pain-spine.webp";
