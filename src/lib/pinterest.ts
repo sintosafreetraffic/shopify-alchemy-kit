@@ -1,5 +1,21 @@
 // Pinterest Tracking Utility
 // Pinterest expects product_id to match the catalog (Shopify numeric ID)
+//
+// IMPORTANT: Event Attribution Strategy
+// =====================================
+// Lovable Front-End handles:
+//   - PageVisit (product page views)
+//   - AddToCart (items added to cart)
+//   - Checkout / InitiateCheckout (checkout started)
+//   - Lead (email signups)
+//   - Signup (account creation)
+//
+// Shopify Pinterest App handles (DO NOT duplicate here):
+//   - Purchase events (order confirmation)
+//   - CAPI (Conversions API) events
+//
+// This separation prevents attribution conflicts and allows Pinterest
+// to deduplicate correctly between client-side and server-side events.
 
 declare global {
   interface Window {
