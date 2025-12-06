@@ -1,10 +1,25 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Input validation schema
+const answersSchema = z.object({
+  sleepPosition: z.enum(['back', 'side', 'stomach', 'combination']),
+  painPoints: z.array(z.string().max(100, "Pain point too long")).max(10, "Too many pain points"),
+  pillowIssues: z.array(z.string().max(100, "Pillow issue too long")).max(10, "Too many pillow issues"),
+  sleepGoals: z.array(z.string().max(100, "Sleep goal too long")).max(10, "Too many sleep goals"),
+});
+
+const requestSchema = z.object({
+  answers: answersSchema,
+  email: z.string().email("Invalid email format").max(255, "Email too long").optional(),
+  createProfile: z.boolean().optional().default(false),
+});
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -12,7 +27,20 @@ serve(async (req) => {
   }
 
   try {
-    const { answers, email, createProfile } = await req.json();
+    // Validate input
+    const rawBody = await req.json();
+    const parseResult = requestSchema.safeParse(rawBody);
+    
+    if (!parseResult.success) {
+      console.error("Validation error:", parseResult.error.errors);
+      return new Response(
+        JSON.stringify({ error: "Invalid input", details: parseResult.error.errors }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    const { answers, email, createProfile } = parseResult.data;
+    
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -92,11 +120,19 @@ Format your response EXACTLY as JSON with this structure:
   "bundleReason": "Why the bundle is beneficial for them (if recommended)"
 }`;
 
+    // Sanitize user input to prevent prompt injection
+    const sanitizedAnswers = {
+      sleepPosition: answers.sleepPosition,
+      painPoints: answers.painPoints.map(p => p.replace(/[<>{}[\]`$]/g, '')),
+      pillowIssues: answers.pillowIssues.map(p => p.replace(/[<>{}[\]`$]/g, '')),
+      sleepGoals: answers.sleepGoals.map(g => g.replace(/[<>{}[\]`$]/g, '')),
+    };
+
     const userPrompt = `Sleep Quiz Responses:
-Sleep Position: ${answers.sleepPosition}
-Pain Points: ${answers.painPoints.join(", ")}
-Current Pillow Issues: ${answers.pillowIssues.join(", ")}
-Sleep Goals: ${answers.sleepGoals.join(", ")}
+Sleep Position: ${sanitizedAnswers.sleepPosition}
+Pain Points: ${sanitizedAnswers.painPoints.join(", ")}
+Current Pillow Issues: ${sanitizedAnswers.pillowIssues.join(", ")}
+Sleep Goals: ${sanitizedAnswers.sleepGoals.join(", ")}
 
 Analyze and recommend products.`;
 
@@ -176,7 +212,7 @@ Analyze and recommend products.`;
                   pillow_issues: answers.pillowIssues,
                   sleep_goals: answers.sleepGoals,
                   quiz_completed_at: new Date().toISOString(),
-                  recommended_products: analysis.recommendations.map((r: any) => r.product),
+                  recommended_products: analysis.recommendations.map((r: { product: string }) => r.product),
                   bundle_recommended: analysis.bundleRecommended,
                 }
               },

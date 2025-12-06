@@ -1,14 +1,16 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface SubscribeRequest {
-  email: string;
-  listId?: string;
-}
+// Input validation schema
+const subscribeSchema = z.object({
+  email: z.string().email("Invalid email format").max(255, "Email too long"),
+  listId: z.string().max(50, "List ID too long").optional(),
+});
 
 serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
@@ -16,17 +18,21 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, listId }: SubscribeRequest = await req.json();
+    // Validate input
+    const rawBody = await req.json();
+    const parseResult = subscribeSchema.safeParse(rawBody);
     
-    console.log("Klaviyo subscribe request:", { email, listId });
-    
-    if (!email) {
-      console.error("Email is required");
+    if (!parseResult.success) {
+      console.error("Validation error:", parseResult.error.errors);
       return new Response(
-        JSON.stringify({ error: "Email is required" }),
+        JSON.stringify({ error: "Invalid input", details: parseResult.error.errors }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    
+    const { email, listId } = parseResult.data;
+    
+    console.log("Klaviyo subscribe request:", { email, listId });
 
     const klaviyoApiKey = Deno.env.get("KLAVIYO_PRIVATE_API_KEY");
     
