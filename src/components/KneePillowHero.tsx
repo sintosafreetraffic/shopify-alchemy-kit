@@ -9,7 +9,7 @@ import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import { trackPageVisit } from "@/lib/pinterest";
 import { trackViewedProduct } from "@/lib/klaviyo";
-import { CountdownTimer, CountdownTimerDisplay } from "./CountdownTimer";
+import { CountdownTimerDisplay } from "./CountdownTimer";
 import eyeMaskGift from "@/assets/eye-mask-gift-new.webp";
 import { KneePillowImageCarousel } from "./KneePillowImageCarousel";
 
@@ -18,7 +18,6 @@ export const KneePillowHero = () => {
   const [product, setProduct] = useState<ShopifyProduct | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { addItem, setCartOpen } = useCartStore();
-  const { saleName } = CountdownTimer();
   const hasTrackedView = useRef(false);
 
   useEffect(() => {

@@ -55,7 +55,7 @@ const calculateTimeLeft = () => {
   return { hours, minutes, seconds };
 };
 
-export const CountdownTimer = () => {
+export const useCountdownTimer = () => {
   const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft());
   const [saleName] = useState("CYBER MONDAY");
 
@@ -78,7 +78,7 @@ export const CountdownTimer = () => {
 
 // Display component for the countdown
 export const CountdownTimerDisplay = () => {
-  const { timeLeft } = CountdownTimer();
+  const { timeLeft } = useCountdownTimer();
   
   return (
     <div className="flex items-center justify-center gap-2 text-sm font-medium">

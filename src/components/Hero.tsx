@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Check, Shield, Moon, Truck, Loader2, Star, Users } from "lucide-react";
 import { ProductImageCarousel } from "./ProductImageCarousel";
 import { PolicyAccordion } from "./PolicyAccordion";
-import { CountdownTimer, CountdownTimerDisplay } from "./CountdownTimer";
+import { CountdownTimerDisplay } from "./CountdownTimer";
 import { useState, useEffect, useRef } from "react";
 import { useCartStore } from "@/stores/cartStore";
 import { fetchProducts } from "@/lib/shopify";
