@@ -1,15 +1,21 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Lock, ShoppingBag, Users, Moon, LogOut } from "lucide-react";
+import { Loader2, Lock, ShoppingBag, Users, Moon, LogOut, AlertCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useSleepDashboardData } from "@/hooks/useSleepDashboardData";
 
 const SleepCoachDashboard = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  // Load dashboard data - this hook handles fetching once after auth
+  const { data, loading: dataLoading, error: dataError, refetch } = useSleepDashboardData(
+    isAuthenticated ? email : null
+  );
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -17,7 +23,7 @@ const SleepCoachDashboard = () => {
       
       if (session?.user) {
         setIsAuthenticated(true);
-        setEmail(session.user.email || "");
+        setEmail(session.user.email || null);
       }
       setIsCheckingAuth(false);
     };
@@ -27,10 +33,10 @@ const SleepCoachDashboard = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
         setIsAuthenticated(true);
-        setEmail(session.user.email || "");
+        setEmail(session.user.email || null);
       } else {
         setIsAuthenticated(false);
-        setEmail("");
+        setEmail(null);
       }
     });
 
@@ -112,16 +118,60 @@ const SleepCoachDashboard = () => {
           </Button>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Dashboard</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              Your Sleep Coach dashboard is ready. Full features coming soon.
-            </p>
-          </CardContent>
-        </Card>
+        {dataError && (
+          <Card className="border-destructive">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3 text-destructive">
+                <AlertCircle className="h-5 w-5" />
+                <div>
+                  <p className="font-medium">Failed to load data</p>
+                  <p className="text-sm text-muted-foreground">{dataError}</p>
+                </div>
+              </div>
+              <Button variant="outline" size="sm" className="mt-4" onClick={refetch}>
+                Try Again
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {dataLoading && (
+          <Card>
+            <CardContent className="pt-6 flex items-center gap-3">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              <p className="text-muted-foreground">Loading your sleep data...</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {!dataLoading && !dataError && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Dashboard</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {data.profile ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    Sleep position: <span className="font-medium text-foreground">{data.profile.sleep_position}</span>
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Logged nights: <span className="font-medium text-foreground">{data.logs.length}</span>
+                  </p>
+                  {data.trends.avgSleepQuality > 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      Avg sleep quality: <span className="font-medium text-foreground">{data.trends.avgSleepQuality.toFixed(1)}/10</span>
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-muted-foreground">
+                  No profile found. Complete the sleep quiz to get started.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
