@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import pillowMainProduct from "@/assets/pillow-main-product.webp";
 import pillowHeroNew from "@/assets/pillow-hero-new.webp";
 import pillowBenefitsNew from "@/assets/pillow-benefits-new.webp";
 import pillowBenefitsUpdated from "@/assets/pillow-benefits-updated.webp";
@@ -21,7 +22,8 @@ export const ProductImageCarousel = () => {
   const [current, setCurrent] = useState(0);
   // Multiple views of the Rise By Night pillow (desktop order)
   const images = [
-    { url: pillowHeroNew, alt: "Rise By Night ergonomic pillow main view", type: "image", thumbnail: pillowHeroNew },
+    { url: pillowMainProduct, alt: "Rise By Night ergonomic pillow main product view", type: "image", thumbnail: pillowMainProduct },
+    { url: pillowHeroNew, alt: "Rise By Night ergonomic pillow side view", type: "image", thumbnail: pillowHeroNew },
     { url: "/videos/product-demo.mp4", alt: "Rise By Night pillow demonstration", type: "video", thumbnail: productDemoThumbnail },
     { url: pillowBenefitsNew, alt: "Rise By Night ergonomic pillow benefits - relieves neck & back pain, reduces sleep apnea, reduces acid reflux, relieves shoulders", type: "image", thumbnail: pillowBenefitsNew },
     { url: pillowEasyCleaning, alt: "Rise By Night pillow - easy cleaning and maintenance with removable cover", type: "image", thumbnail: pillowEasyCleaning },
