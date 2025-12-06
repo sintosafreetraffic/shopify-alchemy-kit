@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import kneePillowHeroMain from "@/assets/knee-pillow-hero-main.webp";
+import kneePillowHeroMain from "@/assets/knee-pillow-main-hero.webp";
 import kneePillowHeroLifestyle from "@/assets/knee-pillow-hero-lifestyle.webp";
 import kneePillowMain from "@/assets/knee-pillow-main-new.webp";
 import kneePillowMaterials from "@/assets/knee-pillow-materials.webp";
