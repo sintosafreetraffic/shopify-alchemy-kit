@@ -36,12 +36,13 @@ export const ProductImageCarousel = () => {
 
   // Mobile order - same product images as desktop, reordered
   const mobileImages = [
-    images[0], // pillowHeroNew
-    images[3], // pillowEasyCleaning
-    images[2], // pillowBenefitsNew
-    images[1], // video
-    images[4], // neckPainSpine
-    images[5], // pillowBenefitsUpdated
+    images[0], // pillowMainProduct (new main image)
+    images[1], // pillowHeroNew
+    images[2], // video
+    images[3], // pillowBenefitsNew
+    images[4], // pillowEasyCleaning
+    images[5], // neckPainSpine
+    images[6], // pillowBenefitsUpdated
   ];
   
   // Get only image URLs for mobile (excluding videos) for the modal navigation
