@@ -12,6 +12,9 @@ interface SleepProfile {
   temperature_preference: string;
   stress_level: string;
   wake_up_condition: string;
+  whatsapp_enabled?: boolean;
+  purchase_count?: number;
+  delivery_date?: string;
 }
 
 interface SleepLog {
@@ -31,6 +34,54 @@ interface TrendData {
   stressedNights: number;
   goodNights: number;
   poorNights: number;
+}
+
+// Sleep Sync types
+type Level3 = "low" | "medium" | "high";
+type Trend3 = "improving" | "stable" | "worsening" | "unknown";
+
+interface SleepSyncAttributes {
+  email: string;
+  sleep_stress_level: Level3;
+  sleep_trend: Trend3;
+  pain_trend: Trend3;
+  avg_sleep_quality_7d: number | null;
+  avg_sleep_quality_14d: number | null;
+  avg_pain_7d: number | null;
+  avg_pain_14d: number | null;
+  hot_nights_7d: number;
+  hot_nights_14d: number;
+  stressed_nights_7d: number;
+  stressed_nights_14d: number;
+  streak_days: number;
+  last_log_days_ago: number | null;
+  log_consistency_score: number;
+  temperature_sensitive: boolean;
+  engagement_level: Level3;
+  last_dashboard_visit_days_ago: number | null;
+  last_whatsapp_interaction_days_ago: number | null;
+  ai_coach_engagement_level: Level3;
+  pdf_opens_last_30d: number;
+  email_opens_last_30d: number;
+  whatsapp_enabled: boolean;
+  purchase_status: "not_bought" | "bought_once" | "repeat_buyer";
+  orders_count: number;
+  days_since_last_order: number | null;
+  is_new_customer: boolean;
+  has_returned_pillow: boolean;
+  refund_risk_flag: boolean;
+  complaint_flag: boolean;
+  app_usage_type: "none" | "quiz_only" | "sleep_log_user" | "dashboard_user" | "full_user";
+  used_sleep_quiz: boolean;
+  used_sleep_plan: boolean;
+  used_pillow_wizard: boolean;
+  deep_sleep_supported: boolean;
+  wearable_connected: boolean;
+  risk_level: Level3;
+  upsell_score: number;
+  churn_risk_score: number;
+  affiliate_potential_score: number;
+  prefers_channel: "email" | "whatsapp" | "both" | "unknown";
 }
 
 Deno.serve(async (req) => {
@@ -219,6 +270,38 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Generate and store Sleep Sync attributes after plan creation
+    try {
+      const sleepSyncAttrs = await generateSleepSyncAttributes(supabase, email, logs || [], trends, profile);
+      const sleepSyncEvent = buildSleepSyncEvent(sleepSyncAttrs);
+      
+      // Store attributes
+      await supabase
+        .from('sleep_attributes_state')
+        .upsert({
+          email,
+          data: sleepSyncAttrs,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'email' });
+
+      // Also add to plan's klaviyo_events for later sending
+      await supabase
+        .from('coach_plans')
+        .update({
+          klaviyo_events: [sleepSyncEvent]
+        })
+        .eq('id', plan.id);
+
+      // Send Sleep Sync event to Klaviyo
+      if (KLAVIYO_PRIVATE_API_KEY) {
+        await sendKlaviyoEvent(KLAVIYO_PRIVATE_API_KEY, email, sleepSyncEvent.eventName, sleepSyncEvent.payload);
+        console.log('Sleep Sync event sent to Klaviyo');
+      }
+    } catch (syncError) {
+      console.error('Failed to generate Sleep Sync attributes:', syncError);
+      // Non-blocking - don't fail the plan creation
+    }
+
     return new Response(JSON.stringify({ success: true, plan }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -397,4 +480,109 @@ async function sendKlaviyoEvent(apiKey: string, email: string, eventName: string
   }
 
   return response;
+}
+
+// Sleep Sync helper functions
+function daysBetween(date1: Date, date2: Date): number {
+  return Math.floor((date2.getTime() - date1.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function calculateAvg(values: number[]): number | null {
+  if (values.length === 0) return null;
+  return Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 10) / 10;
+}
+
+async function generateSleepSyncAttributes(
+  supabase: any,
+  email: string,
+  logs: SleepLog[],
+  trends: TrendData,
+  profile: SleepProfile | null
+): Promise<SleepSyncAttributes> {
+  const now = new Date();
+  
+  // Get engagement meta
+  const { data: engagementMeta } = await supabase
+    .from('engagement_meta')
+    .select('*')
+    .eq('email', email)
+    .maybeSingle();
+
+  // Get coach plans count
+  const { data: plans } = await supabase
+    .from('coach_plans')
+    .select('id, created_at')
+    .eq('email', email);
+
+  const logs7d = logs.filter(l => daysBetween(new Date(l.date), now) <= 7);
+  const logs14d = logs.filter(l => daysBetween(new Date(l.date), now) <= 14);
+
+  const stressedNights7d = logs7d.filter(l => l.felt_stressed).length;
+  const stressedNights14d = logs14d.filter(l => l.felt_stressed).length;
+  const hotNights7d = logs7d.filter(l => l.felt_hot).length;
+  const hotNights14d = logs14d.filter(l => l.felt_hot).length;
+
+  const sleepStressLevel: Level3 = stressedNights14d >= 4 ? "high" : stressedNights14d >= 2 ? "medium" : "low";
+  const sleepTrend: Trend3 = trends.trend === 'improving' ? 'improving' : trends.trend === 'worsening' ? 'worsening' : 'stable';
+  
+  const lastLogDaysAgo = logs.length > 0 ? daysBetween(new Date(logs[0].date), now) : null;
+  const logConsistency = Math.round((logs14d.length / 14) * 100);
+  const streakDays = engagementMeta?.total_streak_days || 0;
+  
+  const ordersCount = profile?.purchase_count || 0;
+  const purchaseStatus: "not_bought" | "bought_once" | "repeat_buyer" = ordersCount === 0 ? "not_bought" : ordersCount === 1 ? "bought_once" : "repeat_buyer";
+  
+  const engagementLevel: Level3 = logConsistency >= 60 ? "high" : logConsistency >= 30 ? "medium" : "low";
+  const riskLevel: Level3 = sleepTrend === "worsening" || engagementLevel === "low" ? "high" : engagementLevel === "medium" ? "medium" : "low";
+
+  return {
+    email,
+    sleep_stress_level: sleepStressLevel,
+    sleep_trend: sleepTrend,
+    pain_trend: trends.avgPain > 5 ? "worsening" : trends.avgPain < 3 ? "improving" : "stable",
+    avg_sleep_quality_7d: calculateAvg(logs7d.map(l => l.sleep_quality / 2)),
+    avg_sleep_quality_14d: calculateAvg(logs14d.map(l => l.sleep_quality / 2)),
+    avg_pain_7d: calculateAvg(logs7d.map(l => l.pain_level_morning)),
+    avg_pain_14d: calculateAvg(logs14d.map(l => l.pain_level_morning)),
+    hot_nights_7d: hotNights7d,
+    hot_nights_14d: hotNights14d,
+    stressed_nights_7d: stressedNights7d,
+    stressed_nights_14d: stressedNights14d,
+    streak_days: streakDays,
+    last_log_days_ago: lastLogDaysAgo,
+    log_consistency_score: logConsistency,
+    temperature_sensitive: hotNights14d >= 3,
+    engagement_level: engagementLevel,
+    last_dashboard_visit_days_ago: engagementMeta?.last_seen_at ? daysBetween(new Date(engagementMeta.last_seen_at), now) : null,
+    last_whatsapp_interaction_days_ago: engagementMeta?.last_whatsapp_nudge_at ? daysBetween(new Date(engagementMeta.last_whatsapp_nudge_at), now) : null,
+    ai_coach_engagement_level: (plans?.length || 0) >= 3 ? "high" : (plans?.length || 0) >= 1 ? "medium" : "low",
+    pdf_opens_last_30d: 0,
+    email_opens_last_30d: 0,
+    whatsapp_enabled: profile?.whatsapp_enabled || false,
+    purchase_status: purchaseStatus,
+    orders_count: ordersCount,
+    days_since_last_order: profile?.delivery_date ? daysBetween(new Date(profile.delivery_date), now) : null,
+    is_new_customer: profile?.delivery_date ? daysBetween(new Date(profile.delivery_date), now) <= 30 : false,
+    has_returned_pillow: false,
+    refund_risk_flag: sleepTrend === "worsening" && trends.avgPain >= 6,
+    complaint_flag: false,
+    app_usage_type: logs.length > 0 && (plans?.length || 0) > 0 ? "full_user" : logs.length > 0 ? "sleep_log_user" : profile ? "quiz_only" : "none",
+    used_sleep_quiz: !!profile,
+    used_sleep_plan: (plans?.length || 0) > 0,
+    used_pillow_wizard: false,
+    deep_sleep_supported: false,
+    wearable_connected: false,
+    risk_level: riskLevel,
+    upsell_score: Math.min(100, (sleepTrend === "improving" ? 40 : 20) + (engagementLevel === "high" ? 40 : 20) + (ordersCount > 0 ? 20 : 0)),
+    churn_risk_score: Math.min(100, (lastLogDaysAgo !== null && lastLogDaysAgo >= 14 ? 40 : 0) + (engagementLevel === "low" ? 30 : 0) + (sleepTrend === "worsening" ? 30 : 0)),
+    affiliate_potential_score: Math.min(100, (sleepTrend === "improving" ? 35 : 10) + (engagementLevel === "high" ? 35 : 10) + (ordersCount >= 2 ? 30 : ordersCount >= 1 ? 15 : 0)),
+    prefers_channel: profile?.whatsapp_enabled ? "whatsapp" : "email",
+  };
+}
+
+function buildSleepSyncEvent(attrs: SleepSyncAttributes) {
+  return {
+    eventName: "RBN_SleepSync_Updated",
+    payload: { ...attrs, source: "sleep_sync_v1", timestamp: new Date().toISOString() }
+  };
 }

@@ -251,6 +251,48 @@ export type Database = {
           },
         ]
       }
+      sleep_attributes_history: {
+        Row: {
+          created_at: string
+          data: Json
+          email: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          data: Json
+          email: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          email?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      sleep_attributes_state: {
+        Row: {
+          created_at: string
+          data: Json
+          email: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          email: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          email?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sleep_logs: {
         Row: {
           created_at: string
