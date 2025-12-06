@@ -1,7 +1,17 @@
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schema
+const profileSchema = z.object({
+  email: z.string().email("Invalid email format").max(255, "Email too long"),
+  properties: z.record(z.unknown()).optional().default({}),
+  phone_number: z.string().max(20, "Phone number too long").optional(),
+  whatsapp_enabled: z.boolean().optional().default(false),
+});
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -14,11 +24,23 @@ Deno.serve(async (req) => {
       throw new Error('Klaviyo API key not configured');
     }
 
-    const { email, properties, phone_number, whatsapp_enabled } = await req.json();
+    // Validate input
+    const rawBody = await req.json();
+    const parseResult = profileSchema.safeParse(rawBody);
+    
+    if (!parseResult.success) {
+      console.error("Validation error:", parseResult.error.errors);
+      return new Response(
+        JSON.stringify({ error: "Invalid input", details: parseResult.error.errors }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const { email, properties, phone_number, whatsapp_enabled } = parseResult.data;
 
     console.log(`Updating Klaviyo profile for ${email}, WhatsApp: ${whatsapp_enabled}`);
 
-    // Find profile by email
+    // Find profile by email - use encodeURIComponent to prevent injection
     const searchResponse = await fetch(
       `https://a.klaviyo.com/api/profiles/?filter=equals(email,"${encodeURIComponent(email)}")`,
       {
@@ -33,7 +55,7 @@ Deno.serve(async (req) => {
     const profileId = searchData.data[0]?.id;
 
     // Build profile attributes
-    const profileAttributes: any = {
+    const profileAttributes: Record<string, unknown> = {
       email,
       properties: {
         ...properties,
@@ -44,7 +66,7 @@ Deno.serve(async (req) => {
     // Add phone number if WhatsApp is enabled
     if (whatsapp_enabled && phone_number) {
       profileAttributes.phone_number = phone_number;
-      profileAttributes.properties.whatsapp_phone = phone_number;
+      (profileAttributes.properties as Record<string, unknown>).whatsapp_phone = phone_number;
       console.log(`Syncing WhatsApp phone: ${phone_number}`);
     }
 

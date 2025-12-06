@@ -1,9 +1,43 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
+
+// Input validation schema
+const actionSchema = z.object({
+  action: z.enum([
+    'get-affiliate',
+    'become-affiliate',
+    'check-invite-code',
+    'track-referral',
+    'record-commission'
+  ]),
+  data: z.record(z.unknown()).optional(),
+});
+
+// Sub-schemas for each action
+const becomeAffiliateDataSchema = z.object({
+  inviteCode: z.string().max(50, "Invite code too long").optional(),
+});
+
+const checkInviteCodeDataSchema = z.object({
+  inviteCode: z.string().min(1, "Invite code required").max(50, "Invite code too long"),
+});
+
+const trackReferralDataSchema = z.object({
+  referralCode: z.string().min(1, "Referral code required").max(50, "Referral code too long"),
+  referredUserId: z.string().uuid("Invalid user ID").optional(),
+});
+
+const recordCommissionDataSchema = z.object({
+  affiliateId: z.string().uuid("Invalid affiliate ID"),
+  orderId: z.string().min(1).max(100, "Order ID too long"),
+  amount: z.number().positive("Amount must be positive").max(1000000, "Amount too large"),
+  level: z.number().int().min(1).max(2),
+});
 
 // Calculate tier based on direct sales in last 30 days
 function calculateTier(directSalesLast30Days: number, isDiamond: boolean): { tier: string; commissionRate: number; nextTier: string | null; salesNeeded: number } {
@@ -61,7 +95,19 @@ Deno.serve(async (req) => {
 
     console.log('Authenticated user:', user.id);
 
-    const { action, data } = await req.json();
+    // Validate input
+    const rawBody = await req.json();
+    const parseResult = actionSchema.safeParse(rawBody);
+    
+    if (!parseResult.success) {
+      console.error("Validation error:", parseResult.error.errors);
+      return new Response(
+        JSON.stringify({ error: "Invalid input", details: parseResult.error.errors }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const { action, data } = parseResult.data;
     console.log('Action:', action, 'Data:', data);
 
     switch (action) {
@@ -168,7 +214,8 @@ Deno.serve(async (req) => {
       }
 
       case 'become-affiliate': {
-        const { inviteCode } = data || {};
+        const validatedData = becomeAffiliateDataSchema.safeParse(data || {});
+        const inviteCode = validatedData.success ? validatedData.data.inviteCode : undefined;
         
         // Check if user is already an affiliate
         const { data: existingAffiliate } = await supabaseAdmin
@@ -332,14 +379,14 @@ Deno.serve(async (req) => {
       }
 
       case 'check-invite-code': {
-        const { inviteCode } = data;
-        
-        if (!inviteCode) {
+        const validatedData = checkInviteCodeDataSchema.safeParse(data);
+        if (!validatedData.success) {
           return new Response(
             JSON.stringify({ valid: false, error: 'No invite code provided' }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
+        const { inviteCode } = validatedData.data;
 
         const { data: parentAffiliate, error } = await supabaseAdmin
           .from('affiliates')
@@ -361,7 +408,14 @@ Deno.serve(async (req) => {
       }
 
       case 'track-referral': {
-        const { referralCode, referredUserId } = data;
+        const validatedData = trackReferralDataSchema.safeParse(data);
+        if (!validatedData.success) {
+          return new Response(
+            JSON.stringify({ error: 'Invalid input', details: validatedData.error.errors }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        const { referralCode, referredUserId } = validatedData.data;
 
         // Find the affiliate with this referral code
         const { data: affiliate, error: affError } = await supabaseAdmin
@@ -406,7 +460,14 @@ Deno.serve(async (req) => {
       }
 
       case 'record-commission': {
-        const { affiliateId, orderId, amount, level } = data;
+        const validatedData = recordCommissionDataSchema.safeParse(data);
+        if (!validatedData.success) {
+          return new Response(
+            JSON.stringify({ error: 'Invalid input', details: validatedData.error.errors }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        const { affiliateId, orderId, amount, level } = validatedData.data;
 
         const { error } = await supabaseAdmin
           .from('commissions')

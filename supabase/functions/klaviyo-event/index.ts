@@ -1,7 +1,16 @@
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schema
+const eventSchema = z.object({
+  email: z.string().email("Invalid email format").max(255, "Email too long"),
+  event: z.string().min(1, "Event name required").max(100, "Event name too long"),
+  properties: z.record(z.unknown()).optional().default({}),
+});
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -14,7 +23,19 @@ Deno.serve(async (req) => {
       throw new Error('Klaviyo API key not configured');
     }
 
-    const { email, event, properties = {} } = await req.json();
+    // Validate input
+    const rawBody = await req.json();
+    const parseResult = eventSchema.safeParse(rawBody);
+    
+    if (!parseResult.success) {
+      console.error("Validation error:", parseResult.error.errors);
+      return new Response(
+        JSON.stringify({ error: "Invalid input", details: parseResult.error.errors }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const { email, event, properties } = parseResult.data;
 
     console.log(`Tracking Klaviyo event "${event}" for ${email}`);
 
