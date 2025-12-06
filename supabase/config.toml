@@ -41,3 +41,6 @@ verify_jwt = true
 
 [functions.verify-sleep-coach-access]
 verify_jwt = true
+
+[functions.sleep-attributes-sync]
+verify_jwt = true
