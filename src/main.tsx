@@ -2,5 +2,8 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 
-// Initialize app
-createRoot(document.getElementById("root")!).render(<App />);
+// Initialize application - force rebuild
+const rootElement = document.getElementById("root");
+if (rootElement) {
+  createRoot(rootElement).render(<App />);
+}
