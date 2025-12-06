@@ -4,7 +4,6 @@ import pillowBenefitsNew from "@/assets/pillow-benefits-new.webp";
 import pillowBenefitsUpdated from "@/assets/pillow-benefits-updated.webp";
 import neckPainSpine from "@/assets/neck-pain-spine.webp";
 import pillowEasyCleaning from "@/assets/pillow-easy-cleaning-new.webp";
-import productDemoThumbnail from "@/assets/product-demo-thumbnail.webp";
 import {
   Carousel,
   CarouselContent,
@@ -21,12 +20,12 @@ export const ProductImageCarousel = () => {
   const [current, setCurrent] = useState(0);
   // Multiple views of the Rise By Night pillow (desktop order)
   const images = [
-    { url: pillowHeroNew, alt: "Rise By Night ergonomic pillow main view", type: "image", thumbnail: pillowHeroNew },
-    { url: "/videos/product-demo.mp4", alt: "Rise By Night pillow demonstration", type: "video", thumbnail: productDemoThumbnail },
-    { url: pillowBenefitsNew, alt: "Rise By Night ergonomic pillow benefits - relieves neck & back pain, reduces sleep apnea, reduces acid reflux, relieves shoulders", type: "image", thumbnail: pillowBenefitsNew },
-    { url: pillowEasyCleaning, alt: "Rise By Night pillow - easy cleaning and maintenance with removable cover", type: "image", thumbnail: pillowEasyCleaning },
-    { url: neckPainSpine, alt: "Rise By Night pillow - neck pain and spine alignment relief", type: "image", thumbnail: neckPainSpine },
-    { url: pillowBenefitsUpdated, alt: "Rise By Night pillow - premium ergonomic pillow benefits including neck support, pressure relief, custom fit, durability, high-end materials, enhanced sleep", type: "image", thumbnail: pillowBenefitsUpdated },
+    { url: pillowHeroNew, alt: "Rise By Night ergonomic pillow main view", type: "image" },
+    { url: "/videos/product-demo.mp4", alt: "Rise By Night pillow demonstration", type: "video" },
+    { url: pillowBenefitsNew, alt: "Rise By Night ergonomic pillow benefits - relieves neck & back pain, reduces sleep apnea, reduces acid reflux, relieves shoulders", type: "image" },
+    { url: pillowEasyCleaning, alt: "Rise By Night pillow - easy cleaning and maintenance with removable cover", type: "image" },
+    { url: neckPainSpine, alt: "Rise By Night pillow - neck pain and spine alignment relief", type: "image" },
+    { url: pillowBenefitsUpdated, alt: "Rise By Night pillow - premium ergonomic pillow benefits including neck support, pressure relief, custom fit, durability, high-end materials, enhanced sleep", type: "image" },
   ];
 
   // Get only image URLs (excluding videos) for the modal navigation
@@ -122,11 +121,11 @@ export const ProductImageCarousel = () => {
             >
               {item.type === "video" ? (
                 <>
-                  <img
-                    src={item.thumbnail}
-                    alt={`Thumbnail ${index + 1}`}
+                  <video
+                    src={item.url}
                     className="w-full h-full object-cover"
-                    loading="lazy"
+                    muted
+                    preload="metadata"
                   />
                   <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                     <div className="w-4 h-4 border-l-[6px] border-l-white border-y-[4px] border-y-transparent ml-0.5" />
@@ -134,7 +133,7 @@ export const ProductImageCarousel = () => {
                 </>
               ) : (
                 <img
-                  src={item.thumbnail}
+                  src={item.url}
                   alt={`Thumbnail ${index + 1}`}
                   className="w-full h-full object-cover"
                   loading="lazy"
