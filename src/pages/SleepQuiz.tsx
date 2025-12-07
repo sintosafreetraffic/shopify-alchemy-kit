@@ -93,7 +93,7 @@ const SleepQuiz = () => {
       case 4:
         return answers.sleepGoals.length > 0;
       case 5:
-        return true; // Email is optional
+        return isValidEmail(email); // Email is required
       default:
         return false;
     }
