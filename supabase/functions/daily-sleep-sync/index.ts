@@ -1,24 +1,31 @@
 /**
  * Daily Sleep Sync Cron Edge Function
  * 
+ * This function is intended to be called by Supabase Scheduler only.
+ * Expected:
+ *   Method: POST
+ *   URL:    /daily-sleep-sync
+ *   Header: Authorization: Bearer <CRON_SECRET>
+ * 
  * Runs once per day to refresh SleepAttributes for all active users.
  * Finds users with profiles, recent logs, or orders and syncs their attributes.
- * 
- * Trigger via cron job or manual POST with CRON_SECRET.
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
+  corsHeaders,
+  requireEnvVar,
+  getEnvVar,
+  validateCronSecret,
+  createErrorResponse,
+  createSuccessResponse,
+} from "../_shared/env.ts";
+import {
   generateSleepAttributes,
   buildSleepSyncEvent,
   sendKlaviyoEvent,
 } from "../_shared/sleep-sync.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -26,20 +33,17 @@ serve(async (req) => {
   }
 
   try {
-    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const CRON_SECRET = Deno.env.get('CRON_SECRET');
-    const KLAVIYO_PRIVATE_API_KEY = Deno.env.get('KLAVIYO_PRIVATE_API_KEY');
-
-    // Verify cron secret for security
+    // Validate CRON secret for authorization
     const authHeader = req.headers.get('Authorization');
-    if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
+    if (!validateCronSecret(authHeader)) {
       console.log('[daily-sleep-sync] Unauthorized request');
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return createErrorResponse('Unauthorized', 401);
     }
+
+    // Load environment variables using centralized helper
+    const SUPABASE_URL = requireEnvVar('SUPABASE_URL');
+    const SUPABASE_SERVICE_ROLE_KEY = requireEnvVar('SUPABASE_SERVICE_ROLE_KEY');
+    const KLAVIYO_PRIVATE_API_KEY = getEnvVar('KLAVIYO_PRIVATE_API_KEY');
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const now = new Date();
@@ -113,7 +117,7 @@ serve(async (req) => {
             try {
               await sendKlaviyoEvent(KLAVIYO_PRIVATE_API_KEY, email, event.eventName, event.payload);
             } catch (klaviyoError) {
-              console.error(`[daily-sleep-sync] Klaviyo error for ${email}:`, klaviyoError);
+              console.error(`[Klaviyo] Error for ${email}:`, klaviyoError);
               // Don't fail the whole sync for Klaviyo errors
             }
           }
@@ -134,20 +138,15 @@ serve(async (req) => {
 
     console.log(`[daily-sleep-sync] Completed: ${successCount} success, ${errorCount} errors`);
 
-    return new Response(JSON.stringify({
+    return createSuccessResponse({
       success: true,
       totalEmails: emails.length,
       successCount,
       errorCount,
       errors: errors.slice(0, 10), // Return first 10 errors only
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error: any) {
     console.error('[daily-sleep-sync] Fatal error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return createErrorResponse(error.message, 500);
   }
 });

@@ -1,9 +1,25 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+/**
+ * Engagement Evaluate Edge Function
+ * 
+ * Evaluates user engagement metrics and updates engagement_meta.
+ * 
+ * Access is gated via hasSleepCoachAccess.
+ * All queries use the authenticated user's email.
+ */
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  corsHeaders,
+  requireEnvVar,
+  createErrorResponse,
+  createSuccessResponse,
+} from "../_shared/env.ts";
+import {
+  authenticateRequest,
+  hasSleepCoachAccess,
+  createAuthErrorResponse,
+  createAccessDeniedResponse,
+} from "../_shared/auth.ts";
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -11,41 +27,35 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    // Load environment variables using centralized helper
+    const SUPABASE_URL = requireEnvVar('SUPABASE_URL');
+    const SUPABASE_SERVICE_ROLE_KEY = requireEnvVar('SUPABASE_SERVICE_ROLE_KEY');
+    const SUPABASE_ANON_KEY = requireEnvVar('SUPABASE_ANON_KEY');
 
-    // Extract user from JWT - this is the authenticated user
+    // Authenticate user using centralized auth helper
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Authorization header required' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Create client with user's JWT to get their identity
-    const supabaseAuth = createClient(SUPABASE_URL, Deno.env.get('SUPABASE_ANON_KEY')!, {
-      global: { headers: { Authorization: authHeader } }
-    });
+    const authResult = await authenticateRequest(authHeader, SUPABASE_URL, SUPABASE_ANON_KEY);
     
-    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
-    if (authError || !user?.email) {
-      console.error('Auth error:', authError);
-      return new Response(JSON.stringify({ error: 'Invalid or expired token' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    if (authResult.error || !authResult.user) {
+      return createAuthErrorResponse(authResult.error || 'Unauthorized', authResult.status);
     }
 
-    // Use the authenticated user's email - ignore any email in request body
-    const email = user.email;
-
-    console.log(`Evaluating engagement for authenticated user: ${email}`);
+    // Use authenticated user's email - ignore any email in request body
+    const email = authResult.user.email;
+    const userId = authResult.user.id;
 
     // Use service role for database operations
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Get recent logs
+    // Check Sleep Coach access
+    const accessResult = await hasSleepCoachAccess(supabase, email, userId);
+    if (!accessResult.hasAccess) {
+      return createAccessDeniedResponse();
+    }
+
+    console.log(`[engagement-evaluate] Evaluating for authenticated user: ${email}`);
+
+    // Get recent logs using authenticated email only
     const { data: logs } = await supabase
       .from('sleep_logs')
       .select('*')
@@ -70,10 +80,8 @@ Deno.serve(async (req) => {
     const inactivityDetected = daysSinceLastLog >= 3;
     
     // Calculate streak based on unique days the user actually logged (created_at), not sleep dates
-    // This means logging multiple past dates in one session counts as 1 streak day
     let streak = 0;
     if (logs && logs.length > 0) {
-      // Get unique logging days based on created_at timestamp
       const loggingDays = new Set<string>();
       logs.forEach(log => {
         const createdAt = new Date(log.created_at);
@@ -81,7 +89,6 @@ Deno.serve(async (req) => {
         loggingDays.add(dayKey);
       });
       
-      // Convert to sorted array of dates
       const sortedLoggingDays = Array.from(loggingDays)
         .map(key => {
           const [year, month, day] = key.split('-').map(Number);
@@ -89,7 +96,6 @@ Deno.serve(async (req) => {
         })
         .sort((a, b) => b.getTime() - a.getTime());
       
-      // Calculate consecutive days streak
       let currentDate = new Date();
       currentDate.setHours(0, 0, 0, 0);
       
@@ -121,7 +127,7 @@ Deno.serve(async (req) => {
       if (recentAvg - olderAvg > 0.5) improvementDetected = true;
     }
 
-    // Update engagement meta
+    // Update engagement meta using authenticated email
     const { error: upsertError } = await supabase
       .from('engagement_meta')
       .upsert({
@@ -135,12 +141,12 @@ Deno.serve(async (req) => {
       }, { onConflict: 'email' });
 
     if (upsertError) {
-      console.error('Upsert error:', upsertError);
+      console.error('[engagement-evaluate] Upsert error:', upsertError);
     }
 
-    console.log(`Engagement evaluation complete: streak=${streak}, inactive=${inactivityDetected}, decline=${declineDetected}, improvement=${improvementDetected}`);
+    console.log(`[engagement-evaluate] Complete: streak=${streak}, inactive=${inactivityDetected}, decline=${declineDetected}`);
 
-    return new Response(JSON.stringify({
+    return createSuccessResponse({
       email,
       streak,
       daysSinceLastLog,
@@ -148,14 +154,9 @@ Deno.serve(async (req) => {
       declineDetected,
       improvementDetected,
       logsCount: logs?.length || 0,
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error: any) {
-    console.error('Error in engagement-evaluate:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('[engagement-evaluate] Error:', error);
+    return createErrorResponse(error.message, 500);
   }
 });

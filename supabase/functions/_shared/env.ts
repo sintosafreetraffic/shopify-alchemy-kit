@@ -96,6 +96,13 @@ export function requireEnvVar(name: string): string {
 }
 
 /**
+ * Get a single environment variable or return null (no throw)
+ */
+export function getEnvVar(name: string): string | null {
+  return Deno.env.get(name) || null;
+}
+
+/**
  * Check if OpenAI API is configured
  */
 export function hasOpenAIKey(): boolean {
@@ -145,4 +152,39 @@ export function validateDebugSecret(authHeader: string | null): boolean {
   }
   
   return true;
+}
+
+/**
+ * Standard CORS headers for all edge functions
+ */
+export const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-internal-token',
+};
+
+/**
+ * Create a standard error response
+ */
+export function createErrorResponse(
+  error: string,
+  status: number,
+  headers: Record<string, string> = corsHeaders
+): Response {
+  return new Response(
+    JSON.stringify({ error }),
+    { status, headers: { ...headers, 'Content-Type': 'application/json' } }
+  );
+}
+
+/**
+ * Create a standard success response
+ */
+export function createSuccessResponse(
+  data: Record<string, any>,
+  headers: Record<string, string> = corsHeaders
+): Response {
+  return new Response(
+    JSON.stringify(data),
+    { headers: { ...headers, 'Content-Type': 'application/json' } }
+  );
 }

@@ -5,6 +5,7 @@
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { corsHeaders, requireEnvVar } from "./env.ts";
 
 export interface AuthUser {
   id: string;
@@ -111,10 +112,53 @@ export async function hasSleepCoachAccess(
 export function createAuthErrorResponse(
   error: string,
   status: number,
-  corsHeaders: Record<string, string>
+  headers: Record<string, string> = corsHeaders
 ): Response {
   return new Response(
     JSON.stringify({ error }),
-    { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    { status, headers: { ...headers, 'Content-Type': 'application/json' } }
   );
+}
+
+/**
+ * Create error response for authorization failures (403)
+ */
+export function createAccessDeniedResponse(
+  headers: Record<string, string> = corsHeaders
+): Response {
+  return new Response(
+    JSON.stringify({ error: 'Sleep Coach access not allowed for this user' }),
+    { status: 403, headers: { ...headers, 'Content-Type': 'application/json' } }
+  );
+}
+
+/**
+ * Full authentication + access check for Sleep Coach endpoints
+ * Returns the authenticated user's email or an error response
+ */
+export async function authenticateAndCheckAccess(
+  req: Request,
+  supabase: any
+): Promise<{ email: string; userId: string } | Response> {
+  const supabaseUrl = requireEnvVar('SUPABASE_URL');
+  const supabaseAnonKey = requireEnvVar('SUPABASE_ANON_KEY');
+  
+  const authHeader = req.headers.get('Authorization');
+  const authResult = await authenticateRequest(authHeader, supabaseUrl, supabaseAnonKey);
+
+  if (authResult.error || !authResult.user) {
+    return createAuthErrorResponse(authResult.error || 'Unauthorized', authResult.status);
+  }
+
+  const accessResult = await hasSleepCoachAccess(
+    supabase,
+    authResult.user.email,
+    authResult.user.id
+  );
+
+  if (!accessResult.hasAccess) {
+    return createAccessDeniedResponse();
+  }
+
+  return { email: authResult.user.email, userId: authResult.user.id };
 }

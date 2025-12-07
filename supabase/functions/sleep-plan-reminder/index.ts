@@ -1,9 +1,18 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+/**
+ * Sleep Plan Reminder Edge Function
+ * 
+ * Sends reminders to users with expired sleep plans.
+ * Requires CRON_SECRET for authorization.
+ */
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import {
+  corsHeaders,
+  requireEnvVar,
+  validateCronSecret,
+  createErrorResponse,
+  createSuccessResponse,
+} from "../_shared/env.ts";
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -11,62 +20,36 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Validate CRON secret for authorization
-    const cronSecret = Deno.env.get('CRON_SECRET');
     const authHeader = req.headers.get('Authorization');
-    
-    if (!cronSecret) {
-      console.error('CRON_SECRET not configured');
-      return new Response(
-        JSON.stringify({ error: 'Server configuration error' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (!validateCronSecret(authHeader)) {
+      console.warn('[sleep-plan-reminder] Unauthorized access attempt');
+      return createErrorResponse('Unauthorized', 401);
     }
-    
-    if (!authHeader || authHeader !== `Bearer ${cronSecret}`) {
-      console.warn('Unauthorized access attempt to sleep-plan-reminder');
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const KLAVIYO_PRIVATE_API_KEY = Deno.env.get('KLAVIYO_PRIVATE_API_KEY');
 
-    if (!KLAVIYO_PRIVATE_API_KEY) {
-      throw new Error('Klaviyo API key not configured');
-    }
+    const supabaseUrl = requireEnvVar('SUPABASE_URL');
+    const supabaseServiceKey = requireEnvVar('SUPABASE_SERVICE_ROLE_KEY');
+    const KLAVIYO_PRIVATE_API_KEY = requireEnvVar('KLAVIYO_PRIVATE_API_KEY');
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-    console.log('Starting sleep plan reminder check...');
+    console.log('[sleep-plan-reminder] Starting reminder check...');
 
     const now = new Date();
 
-    // Get all sleep profiles
     const { data: profiles, error: profilesError } = await supabaseAdmin
       .from('sleep_profiles')
       .select('email');
 
-    if (profilesError) {
-      console.error('Error fetching profiles:', profilesError);
-      throw profilesError;
-    }
+    if (profilesError) throw profilesError;
 
     if (!profiles || profiles.length === 0) {
-      console.log('No profiles found');
-      return new Response(
-        JSON.stringify({ success: true, message: 'No profiles found' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return createSuccessResponse({ success: true, message: 'No profiles found' });
     }
 
     let remindersSent = 0;
 
     for (const profile of profiles) {
-      // Get the latest plan for this user
-      const { data: latestPlan, error: planError } = await supabaseAdmin
+      const { data: latestPlan } = await supabaseAdmin
         .from('coach_plans')
         .select('id, valid_until, generated_at')
         .eq('email', profile.email)
@@ -74,20 +57,11 @@ Deno.serve(async (req) => {
         .limit(1)
         .maybeSingle();
 
-      if (planError) {
-        console.error(`Error fetching plan for ${profile.email}:`, planError);
-        continue;
-      }
-
-      // Check if plan is expired or doesn't exist
       const needsNewPlan = !latestPlan || 
         (latestPlan.valid_until && new Date(latestPlan.valid_until) < now);
 
-      if (!needsNewPlan) {
-        continue;
-      }
+      if (!needsNewPlan) continue;
 
-      // Check if we already sent a reminder recently (within last 24 hours)
       const { data: recentReminder } = await supabaseAdmin
         .from('engagement_meta')
         .select('last_reminder_type, updated_at')
@@ -95,16 +69,10 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (recentReminder?.last_reminder_type === 'new_plan_available') {
-        const lastReminderTime = new Date(recentReminder.updated_at);
-        const hoursSinceReminder = (now.getTime() - lastReminderTime.getTime()) / (1000 * 60 * 60);
-        
-        if (hoursSinceReminder < 24) {
-          console.log(`Skipping ${profile.email} - reminder sent ${hoursSinceReminder.toFixed(1)} hours ago`);
-          continue;
-        }
+        const hoursSinceReminder = (now.getTime() - new Date(recentReminder.updated_at).getTime()) / (1000 * 60 * 60);
+        if (hoursSinceReminder < 24) continue;
       }
 
-      // Send Klaviyo notification
       const response = await fetch('https://a.klaviyo.com/api/events/', {
         method: 'POST',
         headers: {
@@ -120,9 +88,7 @@ Deno.serve(async (req) => {
               profile: { data: { type: 'profile', attributes: { email: profile.email } } },
               properties: {
                 last_plan_date: latestPlan?.generated_at || null,
-                plan_expired_date: latestPlan?.valid_until || null,
                 dashboard_url: 'https://www.risebynight.com/sleep-coach',
-                sent_at: now.toISOString(),
               },
               time: now.toISOString(),
             },
@@ -130,38 +96,20 @@ Deno.serve(async (req) => {
         }),
       });
 
-      if (!response.ok) {
-        console.error(`Failed to send reminder to ${profile.email}:`, await response.text());
-        continue;
-      }
-
-      // Update engagement_meta to track reminder
-      await supabaseAdmin
-        .from('engagement_meta')
-        .upsert({
+      if (response.ok) {
+        await supabaseAdmin.from('engagement_meta').upsert({
           email: profile.email,
           last_reminder_type: 'new_plan_available',
           updated_at: now.toISOString(),
-        }, {
-          onConflict: 'email',
-        });
-
-      remindersSent++;
-      console.log(`New plan reminder sent to ${profile.email}`);
+        }, { onConflict: 'email' });
+        remindersSent++;
+      }
     }
 
-    console.log(`Sleep plan reminder job complete. Sent ${remindersSent} reminders.`);
-
-    return new Response(
-      JSON.stringify({ success: true, reminders_sent: remindersSent }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    console.log(`[sleep-plan-reminder] Completed: ${remindersSent} reminders sent`);
+    return createSuccessResponse({ success: true, reminders_sent: remindersSent });
   } catch (error) {
-    console.error('Sleep plan reminder error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    console.error('[sleep-plan-reminder] Error:', error);
+    return createErrorResponse(error instanceof Error ? error.message : 'Unknown error', 500);
   }
 });

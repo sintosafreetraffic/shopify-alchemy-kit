@@ -1,9 +1,18 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+/**
+ * Affiliate Monthly Summary Edge Function
+ * 
+ * Sends monthly summary emails to all active affiliates.
+ * Requires CRON_SECRET for authorization.
+ */
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { 
+  corsHeaders, 
+  requireEnvVar,
+  validateCronSecret,
+  createErrorResponse,
+  createSuccessResponse,
+} from "../_shared/env.ts";
 
 // Calculate tier based on direct sales in last 30 days
 function calculateTier(directSalesLast30Days: number, isDiamond: boolean): { tier: string; commissionRate: number } {
@@ -21,36 +30,20 @@ Deno.serve(async (req) => {
 
   try {
     // Validate CRON secret for authorization
-    const cronSecret = Deno.env.get('CRON_SECRET');
     const authHeader = req.headers.get('Authorization');
-    
-    if (!cronSecret) {
-      console.error('CRON_SECRET not configured');
-      return new Response(
-        JSON.stringify({ error: 'Server configuration error' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
-    if (!authHeader || authHeader !== `Bearer ${cronSecret}`) {
-      console.warn('Unauthorized access attempt to affiliate-monthly-summary');
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (!validateCronSecret(authHeader)) {
+      console.warn('[affiliate-monthly-summary] Unauthorized access attempt');
+      return createErrorResponse('Unauthorized', 401);
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const KLAVIYO_PRIVATE_API_KEY = Deno.env.get('KLAVIYO_PRIVATE_API_KEY');
-
-    if (!KLAVIYO_PRIVATE_API_KEY) {
-      throw new Error('Klaviyo API key not configured');
-    }
+    // Load environment variables using centralized helper
+    const supabaseUrl = requireEnvVar('SUPABASE_URL');
+    const supabaseServiceKey = requireEnvVar('SUPABASE_SERVICE_ROLE_KEY');
+    const KLAVIYO_PRIVATE_API_KEY = requireEnvVar('KLAVIYO_PRIVATE_API_KEY');
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-    console.log('Starting monthly affiliate summary job...');
+    console.log('[affiliate-monthly-summary] Starting monthly summary job...');
 
     // Get all active affiliates
     const { data: affiliates, error: affError } = await supabaseAdmin
@@ -59,16 +52,13 @@ Deno.serve(async (req) => {
       .eq('status', 'active');
 
     if (affError) {
-      console.error('Error fetching affiliates:', affError);
+      console.error('[affiliate-monthly-summary] Error fetching affiliates:', affError);
       throw affError;
     }
 
     if (!affiliates || affiliates.length === 0) {
-      console.log('No active affiliates found');
-      return new Response(
-        JSON.stringify({ success: true, message: 'No active affiliates' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      console.log('[affiliate-monthly-summary] No active affiliates found');
+      return createSuccessResponse({ success: true, message: 'No active affiliates' });
     }
 
     // Get all auth users for email lookup
@@ -92,7 +82,7 @@ Deno.serve(async (req) => {
     for (const affiliate of affiliates) {
       const email = userEmailMap[affiliate.user_id];
       if (!email) {
-        console.log(`No email found for affiliate ${affiliate.id}`);
+        console.log(`[affiliate-monthly-summary] No email found for affiliate ${affiliate.id}`);
         continue;
       }
 
@@ -177,25 +167,19 @@ Deno.serve(async (req) => {
       });
 
       if (!summaryResponse.ok) {
-        console.error(`Failed to send summary to ${email}:`, await summaryResponse.text());
+        console.error(`[Klaviyo] Failed to send summary to ${email}:`, await summaryResponse.text());
       } else {
         summariesSent++;
-        console.log(`Monthly summary sent to ${email}`);
+        console.log(`[Klaviyo] Monthly summary sent to ${email}`);
       }
     }
 
-    console.log(`Monthly summary job complete. Sent ${summariesSent} summaries.`);
+    console.log(`[affiliate-monthly-summary] Completed: ${summariesSent} summaries sent`);
 
-    return new Response(
-      JSON.stringify({ success: true, summaries_sent: summariesSent }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return createSuccessResponse({ success: true, summaries_sent: summariesSent });
   } catch (error) {
-    console.error('Monthly summary error:', error);
+    console.error('[affiliate-monthly-summary] Error:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return createErrorResponse(errorMessage, 500);
   }
 });

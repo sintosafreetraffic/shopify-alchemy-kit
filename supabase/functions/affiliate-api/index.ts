@@ -1,10 +1,20 @@
+/**
+ * Affiliate API Edge Function
+ * 
+ * Handles affiliate operations: get, become, check-invite, track-referral, record-commission.
+ * Uses centralized env/auth helpers.
+ */
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { 
+  corsHeaders, 
+  requireEnvVar,
+  getEnvVar,
+  createErrorResponse,
+  createSuccessResponse,
+} from "../_shared/env.ts";
+import { authenticateRequest, createAuthErrorResponse } from "../_shared/auth.ts";
 
 // Input validation schema
 const actionSchema = z.object({
@@ -57,58 +67,42 @@ function calculateTier(directSalesLast30Days: number, isDiamond: boolean): { tie
 }
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    // Load environment variables using centralized helper
+    const supabaseUrl = requireEnvVar('SUPABASE_URL');
+    const supabaseServiceKey = requireEnvVar('SUPABASE_SERVICE_ROLE_KEY');
+    const supabaseAnonKey = requireEnvVar('SUPABASE_ANON_KEY');
+    const KLAVIYO_PRIVATE_API_KEY = getEnvVar('KLAVIYO_PRIVATE_API_KEY');
     
     // Create admin client to bypass RLS
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get the authorization header to verify the user
+    // Authenticate user using centralized auth helper
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'No authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Verify the user's JWT
-    const supabaseClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
-      global: { headers: { Authorization: authHeader } }
-    });
-
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    const authResult = await authenticateRequest(authHeader, supabaseUrl, supabaseAnonKey);
     
-    if (userError || !user) {
-      console.error('Auth error:', userError);
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (authResult.error || !authResult.user) {
+      return createAuthErrorResponse(authResult.error || 'Unauthorized', authResult.status);
     }
 
-    console.log('Authenticated user:', user.id);
+    const user = authResult.user;
+    console.log('[affiliate-api] Authenticated user:', user.id);
 
     // Validate input
     const rawBody = await req.json();
     const parseResult = actionSchema.safeParse(rawBody);
     
     if (!parseResult.success) {
-      console.error("Validation error:", parseResult.error.errors);
-      return new Response(
-        JSON.stringify({ error: "Invalid input", details: parseResult.error.errors }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      console.error("[affiliate-api] Validation error:", parseResult.error.errors);
+      return createErrorResponse("Invalid input", 400);
     }
     
     const { action, data } = parseResult.data;
-    console.log('Action:', action, 'Data:', data);
+    console.log('[affiliate-api] Action:', action);
 
     switch (action) {
       case 'get-affiliate': {
@@ -119,7 +113,7 @@ Deno.serve(async (req) => {
           .maybeSingle();
 
         if (error) {
-          console.error('Error fetching affiliate:', error);
+          console.error('[affiliate-api] Error fetching affiliate:', error);
           throw error;
         }
 
@@ -137,7 +131,7 @@ Deno.serve(async (req) => {
             .order('created_at', { ascending: false });
 
           if (commError) {
-            console.error('Error fetching commissions:', commError);
+            console.error('[affiliate-api] Error fetching commissions:', commError);
           } else {
             commissions = commissionsData || [];
           }
@@ -150,18 +144,17 @@ Deno.serve(async (req) => {
             .from('commissions')
             .select('id')
             .eq('affiliate_id', affiliate.id)
-            .eq('level', 1) // Only direct sales
+            .eq('level', 1)
             .gte('created_at', thirtyDaysAgo.toISOString());
 
           if (!salesError && directSalesData) {
             directSalesLast30Days = directSalesData.length;
           }
 
-          // Check if affiliate is Diamond (invite only - stored in status or level field)
           const isDiamond = affiliate.status === 'diamond';
           tierInfo = calculateTier(directSalesLast30Days, isDiamond);
 
-          // Fetch sub-affiliates (affiliates who have this affiliate as parent)
+          // Fetch sub-affiliates
           const { data: subAffiliatesData, error: subError } = await supabaseAdmin
             .from('affiliates')
             .select('id, referral_code, total_referrals, total_commissions, created_at, status')
@@ -169,16 +162,13 @@ Deno.serve(async (req) => {
             .order('created_at', { ascending: false });
 
           if (!subError && subAffiliatesData) {
-            // For each sub-affiliate, get their email from auth.users
             const subAffiliateIds = subAffiliatesData.map(sa => sa.id);
             
-            // Get user_ids for sub-affiliates
             const { data: subAffiliateUsers } = await supabaseAdmin
               .from('affiliates')
               .select('id, user_id')
               .in('id', subAffiliateIds);
 
-            // Get emails from auth
             const userIds = subAffiliateUsers?.map(sa => sa.user_id) || [];
             const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers();
             
@@ -197,20 +187,15 @@ Deno.serve(async (req) => {
               };
             });
           }
-
-          console.log('Direct sales last 30 days:', directSalesLast30Days, 'Tier:', tierInfo.tier, 'Sub-affiliates:', subAffiliates.length);
         }
 
-        return new Response(
-          JSON.stringify({ 
-            affiliate, 
-            commissions, 
-            tierInfo,
-            directSalesLast30Days,
-            subAffiliates
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return createSuccessResponse({ 
+          affiliate, 
+          commissions, 
+          tierInfo,
+          directSalesLast30Days,
+          subAffiliates
+        });
       }
 
       case 'become-affiliate': {
@@ -225,27 +210,20 @@ Deno.serve(async (req) => {
           .maybeSingle();
 
         if (existingAffiliate) {
-          return new Response(
-            JSON.stringify({ error: 'You are already an affiliate' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+          return createErrorResponse('You are already an affiliate', 400);
         }
 
         // Find parent affiliate if invite code provided
         let parentAffiliateId = null;
         if (inviteCode) {
-          const { data: parentAffiliate, error: parentError } = await supabaseAdmin
+          const { data: parentAffiliate } = await supabaseAdmin
             .from('affiliates')
             .select('id, user_id')
             .eq('referral_code', inviteCode)
             .maybeSingle();
 
-          if (parentAffiliate) {
-            // Ensure user is not trying to be their own parent
-            if (parentAffiliate.user_id !== user.id) {
-              parentAffiliateId = parentAffiliate.id;
-              console.log('Found parent affiliate:', parentAffiliateId);
-            }
+          if (parentAffiliate && parentAffiliate.user_id !== user.id) {
+            parentAffiliateId = parentAffiliate.id;
           }
         }
 
@@ -267,32 +245,27 @@ Deno.serve(async (req) => {
           .single();
 
         if (error) {
-          console.error('Error creating affiliate:', error);
+          console.error('[affiliate-api] Error creating affiliate:', error);
           throw error;
         }
 
-        console.log('Created affiliate:', affiliate, 'Parent:', parentAffiliateId);
+        // Send Klaviyo notifications
+        if (KLAVIYO_PRIVATE_API_KEY) {
+          // Notify parent affiliate
+          if (parentAffiliateId) {
+            try {
+              const { data: parentAffiliateData } = await supabaseAdmin
+                .from('affiliates')
+                .select('user_id')
+                .eq('id', parentAffiliateId)
+                .single();
 
-        // Send Klaviyo notification to parent affiliate when sub-affiliate joins
-        if (parentAffiliateId) {
-          try {
-            // Get parent affiliate's user_id
-            const { data: parentAffiliateData } = await supabaseAdmin
-              .from('affiliates')
-              .select('user_id')
-              .eq('id', parentAffiliateId)
-              .single();
-
-            if (parentAffiliateData) {
-              // Get parent's email from auth
-              const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers();
-              const parentUser = authUsers?.users?.find((u: any) => u.id === parentAffiliateData.user_id);
-              
-              if (parentUser?.email) {
-                const KLAVIYO_PRIVATE_API_KEY = Deno.env.get('KLAVIYO_PRIVATE_API_KEY');
+              if (parentAffiliateData) {
+                const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers();
+                const parentUser = authUsers?.users?.find((u: any) => u.id === parentAffiliateData.user_id);
                 
-                if (KLAVIYO_PRIVATE_API_KEY) {
-                  const klaviyoResponse = await fetch('https://a.klaviyo.com/api/events/', {
+                if (parentUser?.email) {
+                  await fetch('https://a.klaviyo.com/api/events/', {
                     method: 'POST',
                     headers: {
                       'Authorization': `Klaviyo-API-Key ${KLAVIYO_PRIVATE_API_KEY}`,
@@ -315,76 +288,56 @@ Deno.serve(async (req) => {
                       },
                     }),
                   });
-
-                  if (!klaviyoResponse.ok) {
-                    console.error('Klaviyo notification failed:', await klaviyoResponse.text());
-                  } else {
-                    console.log('Klaviyo notification sent to parent affiliate:', parentUser.email);
-                  }
+                  console.log('[Klaviyo] Notification sent to parent affiliate');
                 }
               }
+            } catch (klaviyoError) {
+              console.error('[Klaviyo] Error sending notification:', klaviyoError);
             }
-          } catch (klaviyoError) {
-            console.error('Error sending Klaviyo notification:', klaviyoError);
-            // Don't fail the main operation if Klaviyo fails
           }
-        }
 
-        // Send welcome email to new affiliate
-        try {
-          const KLAVIYO_PRIVATE_API_KEY = Deno.env.get('KLAVIYO_PRIVATE_API_KEY');
-          
-          if (KLAVIYO_PRIVATE_API_KEY && user.email) {
-            const welcomeResponse = await fetch('https://a.klaviyo.com/api/events/', {
-              method: 'POST',
-              headers: {
-                'Authorization': `Klaviyo-API-Key ${KLAVIYO_PRIVATE_API_KEY}`,
-                'Content-Type': 'application/json',
-                'revision': '2024-02-15',
-              },
-              body: JSON.stringify({
-                data: {
-                  type: 'event',
-                  attributes: {
-                    metric: { data: { type: 'metric', attributes: { name: 'RBN_Affiliate_Welcome' } } },
-                    profile: { data: { type: 'profile', attributes: { email: user.email } } },
-                    properties: {
-                      referral_code: referralCode,
-                      referral_link: `https://www.risebynight.com?ref=${referralCode}`,
-                      invite_link: `https://www.risebynight.com/affiliate-dashboard?invite=${referralCode}`,
-                      joined_at: new Date().toISOString(),
-                    },
-                    time: new Date().toISOString(),
-                  },
+          // Welcome email to new affiliate
+          if (user.email) {
+            try {
+              await fetch('https://a.klaviyo.com/api/events/', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Klaviyo-API-Key ${KLAVIYO_PRIVATE_API_KEY}`,
+                  'Content-Type': 'application/json',
+                  'revision': '2024-02-15',
                 },
-              }),
-            });
-
-            if (!welcomeResponse.ok) {
-              console.error('Welcome email notification failed:', await welcomeResponse.text());
-            } else {
-              console.log('Welcome email sent to new affiliate:', user.email);
+                body: JSON.stringify({
+                  data: {
+                    type: 'event',
+                    attributes: {
+                      metric: { data: { type: 'metric', attributes: { name: 'RBN_Affiliate_Welcome' } } },
+                      profile: { data: { type: 'profile', attributes: { email: user.email } } },
+                      properties: {
+                        referral_code: referralCode,
+                        referral_link: `https://www.risebynight.com?ref=${referralCode}`,
+                        invite_link: `https://www.risebynight.com/affiliate-dashboard?invite=${referralCode}`,
+                        joined_at: new Date().toISOString(),
+                      },
+                      time: new Date().toISOString(),
+                    },
+                  },
+                }),
+              });
+              console.log('[Klaviyo] Welcome email sent to new affiliate');
+            } catch (welcomeError) {
+              console.error('[Klaviyo] Error sending welcome email:', welcomeError);
             }
           }
-        } catch (welcomeError) {
-          console.error('Error sending welcome email:', welcomeError);
         }
 
         const tierInfo = calculateTier(0, false);
-
-        return new Response(
-          JSON.stringify({ affiliate, tierInfo, directSalesLast30Days: 0, subAffiliates: [] }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return createSuccessResponse({ affiliate, tierInfo, directSalesLast30Days: 0, subAffiliates: [] });
       }
 
       case 'check-invite-code': {
         const validatedData = checkInviteCodeDataSchema.safeParse(data);
         if (!validatedData.success) {
-          return new Response(
-            JSON.stringify({ valid: false, error: 'No invite code provided' }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+          return createSuccessResponse({ valid: false, error: 'No invite code provided' });
         }
         const { inviteCode } = validatedData.data;
 
@@ -395,29 +348,19 @@ Deno.serve(async (req) => {
           .maybeSingle();
 
         if (error || !parentAffiliate) {
-          return new Response(
-            JSON.stringify({ valid: false, error: 'Invalid invite code' }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+          return createSuccessResponse({ valid: false, error: 'Invalid invite code' });
         }
 
-        return new Response(
-          JSON.stringify({ valid: true }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return createSuccessResponse({ valid: true });
       }
 
       case 'track-referral': {
         const validatedData = trackReferralDataSchema.safeParse(data);
         if (!validatedData.success) {
-          return new Response(
-            JSON.stringify({ error: 'Invalid input', details: validatedData.error.errors }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+          return createErrorResponse("Invalid input", 400);
         }
         const { referralCode, referredUserId } = validatedData.data;
 
-        // Find the affiliate with this referral code
         const { data: affiliate, error: affError } = await supabaseAdmin
           .from('affiliates')
           .select('*')
@@ -425,14 +368,9 @@ Deno.serve(async (req) => {
           .single();
 
         if (affError || !affiliate) {
-          console.error('Affiliate not found:', affError);
-          return new Response(
-            JSON.stringify({ error: 'Invalid referral code' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+          return createErrorResponse('Invalid referral code', 400);
         }
 
-        // Create referral record
         const { error: refError } = await supabaseAdmin
           .from('referrals')
           .insert({
@@ -443,182 +381,123 @@ Deno.serve(async (req) => {
           });
 
         if (refError) {
-          console.error('Error creating referral:', refError);
+          console.error('[affiliate-api] Error creating referral:', refError);
           throw refError;
         }
 
-        // Update affiliate total referrals
         await supabaseAdmin
           .from('affiliates')
           .update({ total_referrals: (affiliate.total_referrals || 0) + 1 })
           .eq('id', affiliate.id);
 
-        return new Response(
-          JSON.stringify({ success: true }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return createSuccessResponse({ success: true });
       }
 
       case 'record-commission': {
         const validatedData = recordCommissionDataSchema.safeParse(data);
         if (!validatedData.success) {
-          return new Response(
-            JSON.stringify({ error: 'Invalid input', details: validatedData.error.errors }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+          return createErrorResponse("Invalid input", 400);
         }
         const { affiliateId, orderId, amount, level } = validatedData.data;
 
-        const { error } = await supabaseAdmin
+        // Check for duplicate commission
+        const { data: existingCommission } = await supabaseAdmin
+          .from('commissions')
+          .select('id')
+          .eq('affiliate_id', affiliateId)
+          .eq('order_id', orderId)
+          .maybeSingle();
+
+        if (existingCommission) {
+          return createErrorResponse('Commission already recorded for this order', 400);
+        }
+
+        // Get affiliate for tier calculation
+        const { data: affiliate, error: affError } = await supabaseAdmin
+          .from('affiliates')
+          .select('*')
+          .eq('id', affiliateId)
+          .single();
+
+        if (affError || !affiliate) {
+          return createErrorResponse('Affiliate not found', 404);
+        }
+
+        // Calculate tier-based commission rate
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const { data: directSalesData } = await supabaseAdmin
+          .from('commissions')
+          .select('id')
+          .eq('affiliate_id', affiliateId)
+          .eq('level', 1)
+          .gte('created_at', thirtyDaysAgo.toISOString());
+
+        const directSalesLast30Days = directSalesData?.length || 0;
+        const tierInfo = calculateTier(directSalesLast30Days, affiliate.status === 'diamond');
+        
+        // Apply tier rate for level 1, fixed 5% for level 2
+        const commissionRate = level === 1 ? tierInfo.commissionRate : 5;
+        const commissionAmount = (amount * commissionRate) / 100;
+
+        // Record commission
+        const { error: commError } = await supabaseAdmin
           .from('commissions')
           .insert({
             affiliate_id: affiliateId,
             order_id: orderId,
-            amount,
+            amount: commissionAmount,
             level,
             status: 'pending'
           });
 
-        if (error) {
-          console.error('Error recording commission:', error);
-          throw error;
+        if (commError) {
+          console.error('[affiliate-api] Error recording commission:', commError);
+          throw commError;
         }
 
-        // Update affiliate total commissions and get affiliate details
-        const { data: affiliate } = await supabaseAdmin
+        // Update affiliate totals
+        await supabaseAdmin
           .from('affiliates')
-          .select('total_commissions, user_id')
-          .eq('id', affiliateId)
-          .single();
+          .update({
+            total_commissions: (affiliate.total_commissions || 0) + commissionAmount,
+            total_referrals: level === 1 ? (affiliate.total_referrals || 0) + 1 : affiliate.total_referrals
+          })
+          .eq('id', affiliateId);
 
-        if (affiliate) {
-          await supabaseAdmin
+        // Process level 2 commission for parent affiliate
+        if (level === 1 && affiliate.parent_affiliate_id) {
+          const level2Amount = (amount * 5) / 100;
+          await supabaseAdmin.from('commissions').insert({
+            affiliate_id: affiliate.parent_affiliate_id,
+            order_id: orderId,
+            amount: level2Amount,
+            level: 2,
+            status: 'pending'
+          });
+
+          const { data: parentAffiliate } = await supabaseAdmin
             .from('affiliates')
-            .update({ total_commissions: (affiliate.total_commissions || 0) + amount })
-            .eq('id', affiliateId);
+            .select('total_commissions')
+            .eq('id', affiliate.parent_affiliate_id)
+            .single();
 
-          // Calculate tier before and after this commission (for milestone detection)
-          const thirtyDaysAgo = new Date();
-          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-          const { data: directSalesData } = await supabaseAdmin
-            .from('commissions')
-            .select('id')
-            .eq('affiliate_id', affiliateId)
-            .eq('level', 1)
-            .gte('created_at', thirtyDaysAgo.toISOString());
-
-          const currentSales = directSalesData?.length || 0;
-          const previousSales = currentSales - (level === 1 ? 1 : 0); // Subtract this sale if it's level 1
-          
-          const currentTier = calculateTier(currentSales, false);
-          const previousTier = calculateTier(previousSales, false);
-
-          // Send commission notification email
-          try {
-            const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers();
-            const affiliateUser = authUsers?.users?.find((u: any) => u.id === affiliate.user_id);
-            
-            if (affiliateUser?.email) {
-              const KLAVIYO_PRIVATE_API_KEY = Deno.env.get('KLAVIYO_PRIVATE_API_KEY');
-              
-              if (KLAVIYO_PRIVATE_API_KEY) {
-                // Send commission notification
-                const commissionResponse = await fetch('https://a.klaviyo.com/api/events/', {
-                  method: 'POST',
-                  headers: {
-                    'Authorization': `Klaviyo-API-Key ${KLAVIYO_PRIVATE_API_KEY}`,
-                    'Content-Type': 'application/json',
-                    'revision': '2024-02-15',
-                  },
-                  body: JSON.stringify({
-                    data: {
-                      type: 'event',
-                      attributes: {
-                        metric: { data: { type: 'metric', attributes: { name: 'RBN_Commission_Earned' } } },
-                        profile: { data: { type: 'profile', attributes: { email: affiliateUser.email } } },
-                        properties: {
-                          commission_amount: amount,
-                          order_id: orderId,
-                          commission_level: level,
-                          commission_type: level === 1 ? 'Direct Sale' : 'Sub-Affiliate Sale',
-                          new_total_commissions: (affiliate.total_commissions || 0) + amount,
-                          earned_at: new Date().toISOString(),
-                        },
-                        time: new Date().toISOString(),
-                      },
-                    },
-                  }),
-                });
-
-                if (!commissionResponse.ok) {
-                  console.error('Commission notification failed:', await commissionResponse.text());
-                } else {
-                  console.log('Commission notification sent to affiliate:', affiliateUser.email);
-                }
-
-                // Check for tier milestone upgrade
-                if (currentTier.tier !== previousTier.tier && currentTier.tier !== 'Bronze') {
-                  console.log(`Tier upgrade detected: ${previousTier.tier} -> ${currentTier.tier}`);
-                  
-                  const milestoneResponse = await fetch('https://a.klaviyo.com/api/events/', {
-                    method: 'POST',
-                    headers: {
-                      'Authorization': `Klaviyo-API-Key ${KLAVIYO_PRIVATE_API_KEY}`,
-                      'Content-Type': 'application/json',
-                      'revision': '2024-02-15',
-                    },
-                    body: JSON.stringify({
-                      data: {
-                        type: 'event',
-                        attributes: {
-                          metric: { data: { type: 'metric', attributes: { name: 'RBN_Tier_Milestone_Reached' } } },
-                          profile: { data: { type: 'profile', attributes: { email: affiliateUser.email } } },
-                          properties: {
-                            previous_tier: previousTier.tier,
-                            new_tier: currentTier.tier,
-                            new_commission_rate: currentTier.commissionRate,
-                            previous_commission_rate: previousTier.commissionRate,
-                            direct_sales_count: currentSales,
-                            achieved_at: new Date().toISOString(),
-                          },
-                          time: new Date().toISOString(),
-                        },
-                      },
-                    }),
-                  });
-
-                  if (!milestoneResponse.ok) {
-                    console.error('Milestone notification failed:', await milestoneResponse.text());
-                  } else {
-                    console.log('Tier milestone notification sent:', currentTier.tier);
-                  }
-                }
-              }
-            }
-          } catch (notifyError) {
-            console.error('Error sending notifications:', notifyError);
+          if (parentAffiliate) {
+            await supabaseAdmin
+              .from('affiliates')
+              .update({ total_commissions: (parentAffiliate.total_commissions || 0) + level2Amount })
+              .eq('id', affiliate.parent_affiliate_id);
           }
         }
 
-        return new Response(
-          JSON.stringify({ success: true }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return createSuccessResponse({ success: true, commissionAmount, tier: tierInfo.tier });
       }
 
       default:
-        return new Response(
-          JSON.stringify({ error: 'Invalid action' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return createErrorResponse('Unknown action', 400);
     }
-  } catch (error) {
-    console.error('Edge function error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+  } catch (error: any) {
+    console.error('[affiliate-api] Error:', error);
+    return createErrorResponse(error.message || 'Internal server error', 500);
   }
 });

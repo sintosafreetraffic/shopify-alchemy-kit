@@ -4,21 +4,33 @@
  * Generates personalized 7-day sleep plans using AI Brain (OpenAI).
  * Uses deterministic Sleep Sync attributes for metrics.
  * 
+ * Access is gated via hasSleepCoachAccess.
+ * All queries use the authenticated user's email.
+ * 
  * Uses OPENAI_API_KEY via centralized AI Brain - NO Lovable AI.
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { callSleepPlanAI } from "../_shared/ai-brain.ts";
+import {
+  corsHeaders,
+  requireEnvVar,
+  getEnvVar,
+  hasOpenAIKey,
+  createErrorResponse,
+  createSuccessResponse,
+} from "../_shared/env.ts";
+import {
+  authenticateRequest,
+  hasSleepCoachAccess,
+  createAuthErrorResponse,
+  createAccessDeniedResponse,
+} from "../_shared/auth.ts";
+import { callSleepPlanAI, getDefaultSleepPlan } from "../_shared/ai-brain.ts";
 import {
   generateSleepAttributes,
   buildSleepSyncEvent,
   sendKlaviyoEvent,
 } from "../_shared/sleep-sync.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
 
 interface SleepProfile {
   email: string;
@@ -58,49 +70,43 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    // Load environment variables using centralized helper
+    const SUPABASE_URL = requireEnvVar('SUPABASE_URL');
+    const SUPABASE_SERVICE_ROLE_KEY = requireEnvVar('SUPABASE_SERVICE_ROLE_KEY');
+    const SUPABASE_ANON_KEY = requireEnvVar('SUPABASE_ANON_KEY');
+    const KLAVIYO_PRIVATE_API_KEY = getEnvVar('KLAVIYO_PRIVATE_API_KEY');
     
     // Verify OPENAI_API_KEY is available
-    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-    if (!OPENAI_API_KEY) {
-      console.error('OPENAI_API_KEY is not configured');
-      return new Response(JSON.stringify({ error: 'AI service not configured' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    if (!hasOpenAIKey()) {
+      console.error('[coach-generate-sleep-plan] OPENAI_API_KEY is not configured');
+      return createErrorResponse('AI service not configured', 500);
     }
 
-    // Extract user from JWT
+    // Authenticate user using centralized auth helper
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Authorization header required' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const supabaseAuth = createClient(SUPABASE_URL, Deno.env.get('SUPABASE_ANON_KEY')!, {
-      global: { headers: { Authorization: authHeader } }
-    });
+    const authResult = await authenticateRequest(authHeader, SUPABASE_URL, SUPABASE_ANON_KEY);
     
-    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
-    if (authError || !user?.email) {
-      console.error('Auth error:', authError);
-      return new Response(JSON.stringify({ error: 'Invalid or expired token' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    if (authResult.error || !authResult.user) {
+      return createAuthErrorResponse(authResult.error || 'Unauthorized', authResult.status);
     }
 
-    const email = user.email;
+    // Use authenticated user's email for all queries
+    const email = authResult.user.email;
+    const userId = authResult.user.id;
+    
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // Check Sleep Coach access
+    const accessResult = await hasSleepCoachAccess(supabase, email, userId);
+    if (!accessResult.hasAccess) {
+      return createAccessDeniedResponse();
+    }
+
     const { planType = 'initial' } = await req.json();
 
     console.log(`[coach-generate-sleep-plan] Generating ${planType} plan for: ${email}`);
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
-    // Fetch profile and logs
+    // Fetch profile and logs using authenticated email only
     const [profileResult, logsResult] = await Promise.all([
       supabase.from('sleep_profiles').select('*').eq('email', email).single(),
       supabase.from('sleep_logs').select('*').eq('email', email).order('date', { ascending: false }).limit(14),
@@ -116,17 +122,17 @@ Deno.serve(async (req) => {
     const userContext = buildUserContext(profile, logs, trends);
 
     // Call AI Brain for sleep plan generation (OpenAI)
-    console.log('[coach-generate-sleep-plan] Calling AI Brain for plan generation');
+    console.log('[AI Brain] Calling for plan generation');
     let parsed;
     try {
       parsed = await callSleepPlanAI(userContext, planType);
-      console.log('[coach-generate-sleep-plan] AI plan generated successfully');
+      console.log('[AI Brain] Plan generated successfully');
     } catch (aiError) {
-      console.error('[coach-generate-sleep-plan] AI error, using fallback:', aiError);
-      parsed = getDefaultPlan();
+      console.error('[AI Brain] Error, using fallback:', aiError);
+      parsed = getDefaultSleepPlan();
     }
 
-    // Save to database
+    // Save to database using authenticated email
     const validUntil = new Date();
     validUntil.setDate(validUntil.getDate() + 7);
 
@@ -150,14 +156,13 @@ Deno.serve(async (req) => {
       .single();
 
     if (error) {
-      console.error('Database error:', error);
+      console.error('[coach-generate-sleep-plan] Database error:', error);
       throw error;
     }
 
-    console.log('Plan saved successfully:', plan.id);
+    console.log('[coach-generate-sleep-plan] Plan saved:', plan.id);
 
     // Send Klaviyo event for plan creation
-    const KLAVIYO_PRIVATE_API_KEY = Deno.env.get('KLAVIYO_PRIVATE_API_KEY');
     if (KLAVIYO_PRIVATE_API_KEY && parsed.todayActions?.length > 0) {
       try {
         await sendKlaviyoEvent(KLAVIYO_PRIVATE_API_KEY, email, 'RBN_SleepPlan_Created', {
@@ -170,9 +175,9 @@ Deno.serve(async (req) => {
           week_day1_focus: parsed.weeklyPlan?.day1?.focus || '',
           valid_until: validUntil.toISOString(),
         });
-        console.log('Klaviyo RBN_SleepPlan_Created event sent');
+        console.log('[Klaviyo] RBN_SleepPlan_Created event sent');
       } catch (klaviyoError) {
-        console.error('Failed to send Klaviyo plan event:', klaviyoError);
+        console.error('[Klaviyo] Failed to send plan event:', klaviyoError);
       }
     }
 
@@ -211,15 +216,10 @@ Deno.serve(async (req) => {
       // Non-blocking
     }
 
-    return new Response(JSON.stringify({ success: true, plan }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return createSuccessResponse({ success: true, plan });
   } catch (error: any) {
-    console.error('Error in coach-generate-sleep-plan:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('[coach-generate-sleep-plan] Error:', error);
+    return createErrorResponse(error.message, 500);
   }
 });
 
@@ -270,26 +270,4 @@ function calculateTrends(logs: SleepLog[]): TrendData {
   }
 
   return { avgSleepQuality, avgPain, trend, hotNights, stressedNights, goodNights, poorNights };
-}
-
-function getDefaultPlan() {
-  return {
-    weeklyPlan: {
-      day1: { focus: "Pillow Setup", morningTask: "Check your pillow height - it should keep your neck aligned with your spine", eveningTask: "Position your pillow in the cervical curve of your neck before sleep", tip: "Side sleepers need a higher pillow than back sleepers" },
-      day2: { focus: "Sleep Posture", morningTask: "Notice which position you woke up in", eveningTask: "Try sleeping on your back with pillow under your knees", tip: "Back sleeping reduces facial wrinkles and neck strain" },
-      day3: { focus: "Evening Routine", morningTask: "5 gentle neck stretches upon waking", eveningTask: "Wind down 30 minutes before bed - no screens", tip: "Blue light suppresses melatonin production" },
-      day4: { focus: "Temperature", morningTask: "Rate your sleep temperature 1-10", eveningTask: "Keep bedroom at 65-68°F (18-20°C)", tip: "A cool room promotes deeper sleep stages" },
-      day5: { focus: "Pain Prevention", morningTask: "Shoulder rolls and neck rotations (2 min)", eveningTask: "Light stretching before bed to release tension", tip: "Tension in muscles builds up throughout the day" },
-      day6: { focus: "Deep Sleep", morningTask: "Avoid caffeine after 2 PM today", eveningTask: "Try a 10-minute meditation or breathing exercise", tip: "Caffeine has a 6-hour half-life in your system" },
-      day7: { focus: "Review & Adjust", morningTask: "Log how you feel compared to day 1", eveningTask: "Plan adjustments for next week", tip: "Consistency is key - stick with what works" }
-    },
-    encouragement: "Welcome to your personalized sleep improvement journey with Rise By Night! Small daily changes lead to big improvements in sleep quality. You've got this!",
-    focusAreas: ['Pillow Positioning', 'Sleep Hygiene', 'Pain Prevention'],
-    pdfs: ['Ergonomic Sleep Guide', 'Pain Relief Stretches'],
-    todayActions: [
-      { time: 'morning', action: 'Check pillow height and adjust for your sleep position', duration: '5 min' },
-      { time: 'evening', action: 'Position pillow in cervical curve, wind down 30 min before bed', duration: '10 min' }
-    ],
-    spineScore: 65,
-  };
 }
