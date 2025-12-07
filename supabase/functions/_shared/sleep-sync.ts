@@ -286,6 +286,8 @@ export async function generateSleepAttributes(
 ): Promise<SleepAttributes> {
   const now = new Date();
   
+  console.log(`[Sleep Sync] Generating attributes for: ${email}`);
+  
   // Start with defaults
   const attrs = getDefaultSleepAttributes(email);
   
@@ -428,19 +430,67 @@ export async function generateSleepAttributes(
     attrs.email_opens_last_30d
   );
 
+  console.log(`[Sleep Sync] Attributes generated for: ${email}`);
   return attrs;
 }
 
 /**
  * Build Klaviyo Sleep Sync event payload
+ * Standardized structure for all triggers
  */
 export function buildSleepSyncEvent(attrs: SleepAttributes, source: string = "sleep_sync_v1"): SleepSyncEvent {
   return {
     eventName: "RBN_SleepSync_Updated",
     payload: {
-      ...attrs,
+      // Schema info
+      schema_version: attrs.schema_version,
       source,
       timestamp: new Date().toISOString(),
+      
+      // User identity
+      email: attrs.email,
+      generated_at: attrs.generated_at,
+      
+      // Sleep metrics
+      sleep_trend: attrs.sleep_trend,
+      pain_trend: attrs.pain_trend,
+      sleep_stress_level: attrs.sleep_stress_level,
+      avg_sleep_quality_7d: attrs.avg_sleep_quality_7d,
+      avg_sleep_quality_14d: attrs.avg_sleep_quality_14d,
+      avg_pain_7d: attrs.avg_pain_7d,
+      avg_pain_14d: attrs.avg_pain_14d,
+      hot_nights_7d: attrs.hot_nights_7d,
+      stressed_nights_7d: attrs.stressed_nights_7d,
+      streak_days: attrs.streak_days,
+      last_log_days_ago: attrs.last_log_days_ago,
+      log_consistency_score: attrs.log_consistency_score,
+      temperature_sensitive: attrs.temperature_sensitive,
+      
+      // Engagement
+      engagement_level: attrs.engagement_level,
+      ai_coach_engagement_level: attrs.ai_coach_engagement_level,
+      last_dashboard_visit_days_ago: attrs.last_dashboard_visit_days_ago,
+      whatsapp_enabled: attrs.whatsapp_enabled,
+      
+      // Purchase lifecycle
+      purchase_status: attrs.purchase_status,
+      orders_count: attrs.orders_count,
+      is_new_customer: attrs.is_new_customer,
+      days_since_first_order: attrs.days_since_first_order,
+      
+      // App usage
+      app_usage_type: attrs.app_usage_type,
+      used_sleep_quiz: attrs.used_sleep_quiz,
+      used_sleep_plan: attrs.used_sleep_plan,
+      
+      // Risk & opportunity
+      risk_level: attrs.risk_level,
+      churn_risk_score: attrs.churn_risk_score,
+      upsell_score: attrs.upsell_score,
+      affiliate_potential_score: attrs.affiliate_potential_score,
+      
+      // Channel
+      prefers_channel: attrs.prefers_channel,
     },
   };
 }
@@ -472,13 +522,14 @@ export function buildWhatsAppEvent(
 
 /**
  * Store attributes in database and optionally send to Klaviyo
+ * This is the unified sync function used by all triggers
  */
 export async function syncAndStoreAttributes(
   supabase: any,
   email: string,
   source: string = "manual"
 ): Promise<{ attributes: SleepAttributes; event: SleepSyncEvent }> {
-  console.log(`[Sleep Sync] Generating attributes for: ${email}, source: ${source}`);
+  console.log(`[Sleep Sync] Starting sync for: ${email}, source: ${source}`);
   
   const attributes = await generateSleepAttributes(supabase, email);
   const event = buildSleepSyncEvent(attributes, source);
@@ -516,6 +567,8 @@ export async function sendKlaviyoEvent(
   eventName: string,
   properties: Record<string, any>
 ): Promise<void> {
+  console.log(`[Klaviyo] Sending event: ${eventName} for: ${email}`);
+  
   const response = await fetch('https://a.klaviyo.com/api/events/', {
     method: 'POST',
     headers: {
@@ -541,4 +594,6 @@ export async function sendKlaviyoEvent(
     console.error(`[Klaviyo] Event error: ${errorText}`);
     throw new Error(`Klaviyo API error: ${response.status}`);
   }
+  
+  console.log(`[Klaviyo] Event sent successfully: ${eventName}`);
 }
