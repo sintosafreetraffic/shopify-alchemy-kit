@@ -1,9 +1,27 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+/**
+ * Verify Sleep Coach Access Edge Function
+ * 
+ * Checks if the authenticated user has access to Sleep Coach features.
+ * 
+ * Access is granted if:
+ * - User has purchase_count > 0 in sleep_profiles
+ * - User is an affiliate with 3+ sales
+ * - User has an existing sleep profile (fallback)
+ */
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  corsHeaders,
+  requireEnvVar,
+  getEnvVar,
+  createErrorResponse,
+  createSuccessResponse,
+} from "../_shared/env.ts";
+import {
+  authenticateRequest,
+  hasSleepCoachAccess,
+  createAuthErrorResponse,
+} from "../_shared/auth.ts";
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -11,36 +29,23 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const SHOPIFY_ACCESS_TOKEN = Deno.env.get('SHOPIFY_ACCESS_TOKEN');
+    // Load environment variables using centralized helper
+    const SUPABASE_URL = requireEnvVar('SUPABASE_URL');
+    const SUPABASE_SERVICE_ROLE_KEY = requireEnvVar('SUPABASE_SERVICE_ROLE_KEY');
+    const SUPABASE_ANON_KEY = requireEnvVar('SUPABASE_ANON_KEY');
+    const SHOPIFY_ACCESS_TOKEN = getEnvVar('SHOPIFY_ACCESS_TOKEN');
 
-    // Extract user from JWT - this is the authenticated user
+    // Authenticate user using centralized auth helper
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Authorization header required' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Create client with user's JWT to get their identity
-    const supabaseAuth = createClient(SUPABASE_URL, Deno.env.get('SUPABASE_ANON_KEY')!, {
-      global: { headers: { Authorization: authHeader } }
-    });
+    const authResult = await authenticateRequest(authHeader, SUPABASE_URL, SUPABASE_ANON_KEY);
     
-    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
-    if (authError || !user?.email) {
-      console.error('Auth error:', authError);
-      return new Response(JSON.stringify({ error: 'Invalid or expired token' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    if (authResult.error || !authResult.user) {
+      return createAuthErrorResponse(authResult.error || 'Unauthorized', authResult.status);
     }
 
-    // Use the authenticated user's email and ID
-    const email = user.email;
-    const userId = user.id;
+    // Use authenticated user's email and ID
+    const email = authResult.user.email;
+    const userId = authResult.user.id;
     
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     
@@ -49,9 +54,9 @@ Deno.serve(async (req) => {
     let affiliateSales = 0;
     let hasPurchased = false;
 
+    console.log(`[verify-sleep-coach-access] Checking for authenticated user: ${email}`);
+
     // Check 1: Is user an affiliate with 3+ sales?
-    console.log(`Checking affiliate status for authenticated user: ${email}`);
-    
     const { data: affiliate } = await supabase
       .from('affiliates')
       .select('total_referrals, status')
@@ -63,12 +68,12 @@ Deno.serve(async (req) => {
       hasAccess = true;
       accessReason = 'affiliate';
       affiliateSales = affiliate.total_referrals;
-      console.log(`User is affiliate with ${affiliateSales} sales`);
+      console.log(`[Auth] User is affiliate with ${affiliateSales} sales`);
     }
 
     // Check 2: Has user purchased from Shopify?
     if (!hasAccess && SHOPIFY_ACCESS_TOKEN) {
-      console.log(`Checking Shopify orders for: ${email}`);
+      console.log(`[verify-sleep-coach-access] Checking Shopify orders for: ${email}`);
       
       const shopifyDomain = 'lovable-project-swlbs.myshopify.com';
       const ordersUrl = `https://${shopifyDomain}/admin/api/2024-01/orders.json?email=${encodeURIComponent(email)}&status=any&limit=1`;
@@ -85,7 +90,6 @@ Deno.serve(async (req) => {
           const ordersData = await ordersResponse.json();
           
           if (ordersData.orders && ordersData.orders.length > 0) {
-            // Check if any order is paid/fulfilled
             const validOrder = ordersData.orders.find((order: any) => 
               order.financial_status === 'paid' || 
               order.financial_status === 'partially_paid' ||
@@ -96,14 +100,14 @@ Deno.serve(async (req) => {
               hasAccess = true;
               accessReason = 'purchase';
               hasPurchased = true;
-              console.log(`User has valid Shopify order: ${validOrder.id}`);
+              console.log(`[Auth] User has valid Shopify order: ${validOrder.id}`);
             }
           }
         } else {
-          console.error('Shopify API error:', ordersResponse.status);
+          console.error('[verify-sleep-coach-access] Shopify API error:', ordersResponse.status);
         }
       } catch (shopifyError) {
-        console.error('Error checking Shopify orders:', shopifyError);
+        console.error('[verify-sleep-coach-access] Error checking Shopify orders:', shopifyError);
       }
     }
 
@@ -116,29 +120,22 @@ Deno.serve(async (req) => {
         .single();
 
       if (profile) {
-        // For now, allow access if they have a profile (from quiz)
         hasAccess = true;
         accessReason = 'profile_exists';
-        console.log(`User has existing sleep profile`);
+        console.log(`[Auth] User has existing sleep profile`);
       }
     }
 
-    console.log(`Access check complete: hasAccess=${hasAccess}, reason=${accessReason}`);
+    console.log(`[verify-sleep-coach-access] Complete: hasAccess=${hasAccess}, reason=${accessReason}`);
 
-    return new Response(
-      JSON.stringify({
-        hasAccess,
-        accessReason,
-        affiliateSales,
-        hasPurchased,
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return createSuccessResponse({
+      hasAccess,
+      accessReason,
+      affiliateSales,
+      hasPurchased,
+    });
   } catch (error: any) {
-    console.error('Error in verify-sleep-coach-access:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    console.error('[verify-sleep-coach-access] Error:', error);
+    return createErrorResponse(error.message, 500);
   }
 });

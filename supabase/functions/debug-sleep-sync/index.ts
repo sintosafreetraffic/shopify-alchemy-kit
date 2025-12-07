@@ -1,22 +1,28 @@
 /**
  * Debug Sleep Sync Endpoint
  * 
- * GET /debug/sleep-sync?email=...
- * Recomputes attributes without storing - for debugging only
+ * Protected read-only debugging endpoints:
+ * - GET /debug-sleep-sync?email=... - Recomputes attributes without storing
+ * - GET /debug-sleep-sync?email=...&planType=initial|weekly_update - Generates plan without storing
  * 
  * Requires Authorization: Bearer DEBUG_SECRET or CRON_SECRET
+ * 
+ * These endpoints are READ-ONLY:
+ * - No data is written to the database
+ * - No events are sent to Klaviyo
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { validateDebugSecret } from "../_shared/env.ts";
+import {
+  corsHeaders,
+  requireEnvVar,
+  validateDebugSecret,
+  createErrorResponse,
+  createSuccessResponse,
+} from "../_shared/env.ts";
 import { generateSleepAttributes, buildSleepSyncEvent } from "../_shared/sleep-sync.ts";
 import { callSleepPlanAI, buildUserContext } from "../_shared/ai-brain.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -27,87 +33,67 @@ serve(async (req) => {
     // Validate debug secret
     const authHeader = req.headers.get('Authorization');
     if (!validateDebugSecret(authHeader)) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      console.log('[Debug] Unauthorized request');
+      return createErrorResponse('Unauthorized', 401);
     }
 
     const url = new URL(req.url);
-    const path = url.pathname.split('/').filter(Boolean).pop();
     const email = url.searchParams.get('email');
+    const planType = url.searchParams.get('planType');
 
     if (!email) {
-      return new Response(JSON.stringify({ error: 'Email parameter required' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return createErrorResponse('Email parameter required', 400);
     }
 
-    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    // Load environment variables using centralized helper
+    const SUPABASE_URL = requireEnvVar('SUPABASE_URL');
+    const SUPABASE_SERVICE_ROLE_KEY = requireEnvVar('SUPABASE_SERVICE_ROLE_KEY');
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Debug Sleep Sync
-    if (path === 'sleep-sync' || path === 'debug-sleep-sync') {
+    // Debug Sleep Sync (when no planType specified)
+    if (!planType) {
       console.log(`[Debug] Generating attributes for: ${email}`);
       
       const attributes = await generateSleepAttributes(supabase, email);
       const event = buildSleepSyncEvent(attributes, "debug");
 
-      return new Response(JSON.stringify({
+      return createSuccessResponse({
         success: true,
         email,
         attributes,
         event,
         note: "Read-only debug - no data stored or sent to Klaviyo",
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Debug Generate Plan
-    if (path === 'generate-plan' || path === 'debug-generate-plan') {
-      const planType = url.searchParams.get('planType') || 'initial';
-      
-      console.log(`[Debug] Generating ${planType} plan for: ${email}`);
+    // Debug Generate Plan (when planType specified)
+    console.log(`[Debug] Generating ${planType} plan for: ${email}`);
 
-      // Fetch profile and logs
-      const [profileResult, logsResult] = await Promise.all([
-        supabase.from('sleep_profiles').select('*').eq('email', email).maybeSingle(),
-        supabase.from('sleep_logs').select('*').eq('email', email).order('date', { ascending: false }).limit(14),
-      ]);
+    // Fetch profile and logs
+    const [profileResult, logsResult] = await Promise.all([
+      supabase.from('sleep_profiles').select('*').eq('email', email).maybeSingle(),
+      supabase.from('sleep_logs').select('*').eq('email', email).order('date', { ascending: false }).limit(14),
+    ]);
 
-      const userContext = buildUserContext({
-        mode: "sleep_plan",
-        userProfile: profileResult.data,
-        attributes: null,
-        logs: logsResult.data || [],
-      });
+    const userContext = buildUserContext({
+      mode: "sleep_plan",
+      userProfile: profileResult.data,
+      attributes: null,
+      logs: logsResult.data || [],
+    });
 
-      const plan = await callSleepPlanAI(userContext, planType);
+    const plan = await callSleepPlanAI(userContext, planType);
 
-      return new Response(JSON.stringify({
-        success: true,
-        email,
-        planType,
-        plan,
-        note: "Read-only debug - no data stored",
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    return new Response(JSON.stringify({ error: 'Unknown debug endpoint' }), {
-      status: 404,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    return createSuccessResponse({
+      success: true,
+      email,
+      planType,
+      plan,
+      note: "Read-only debug - no data stored",
     });
 
   } catch (error: any) {
     console.error('[Debug] Error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return createErrorResponse(error.message, 500);
   }
 });

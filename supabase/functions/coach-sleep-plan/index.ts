@@ -1,9 +1,25 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+/**
+ * Coach Sleep Plan Edge Function
+ * 
+ * Retrieves the user's sleep plan, profile, and recent logs.
+ * 
+ * Access is gated via hasSleepCoachAccess.
+ * All queries use the authenticated user's email.
+ */
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  corsHeaders,
+  requireEnvVar,
+  createErrorResponse,
+  createSuccessResponse,
+} from "../_shared/env.ts";
+import {
+  authenticateRequest,
+  hasSleepCoachAccess,
+  createAuthErrorResponse,
+  createAccessDeniedResponse,
+} from "../_shared/auth.ts";
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -11,41 +27,35 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    // Load environment variables using centralized helper
+    const SUPABASE_URL = requireEnvVar('SUPABASE_URL');
+    const SUPABASE_SERVICE_ROLE_KEY = requireEnvVar('SUPABASE_SERVICE_ROLE_KEY');
+    const SUPABASE_ANON_KEY = requireEnvVar('SUPABASE_ANON_KEY');
 
-    // Extract user from JWT - this is the authenticated user
+    // Authenticate user using centralized auth helper
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Authorization header required' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Create client with user's JWT to get their identity
-    const supabaseAuth = createClient(SUPABASE_URL, Deno.env.get('SUPABASE_ANON_KEY')!, {
-      global: { headers: { Authorization: authHeader } }
-    });
+    const authResult = await authenticateRequest(authHeader, SUPABASE_URL, SUPABASE_ANON_KEY);
     
-    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
-    if (authError || !user?.email) {
-      console.error('Auth error:', authError);
-      return new Response(JSON.stringify({ error: 'Invalid or expired token' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    if (authResult.error || !authResult.user) {
+      return createAuthErrorResponse(authResult.error || 'Unauthorized', authResult.status);
     }
 
-    // Use the authenticated user's email - ignore any email in query params
-    const email = user.email;
-
-    console.log(`Fetching sleep plan for authenticated user: ${email}`);
+    // Use authenticated user's email - ignore any email in query params
+    const email = authResult.user.email;
+    const userId = authResult.user.id;
 
     // Use service role for database operations
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Fetch latest plan
+    // Check Sleep Coach access
+    const accessResult = await hasSleepCoachAccess(supabase, email, userId);
+    if (!accessResult.hasAccess) {
+      return createAccessDeniedResponse();
+    }
+
+    console.log(`[coach-sleep-plan] Fetching for authenticated user: ${email}`);
+
+    // Fetch latest plan using authenticated email only
     const { data: plan, error: planError } = await supabase
       .from('coach_plans')
       .select('*')
@@ -55,18 +65,18 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (planError) {
-      console.error('Error fetching plan:', planError);
+      console.error('[coach-sleep-plan] Error fetching plan:', planError);
       throw planError;
     }
 
-    // Fetch profile for context
+    // Fetch profile using authenticated email only
     const { data: profile } = await supabase
       .from('sleep_profiles')
       .select('*')
       .eq('email', email)
       .maybeSingle();
 
-    // Fetch recent logs
+    // Fetch recent logs using authenticated email only
     const { data: logs } = await supabase
       .from('sleep_logs')
       .select('*')
@@ -74,21 +84,16 @@ Deno.serve(async (req) => {
       .order('date', { ascending: false })
       .limit(7);
 
-    console.log(`Found plan: ${!!plan}, profile: ${!!profile}, logs: ${logs?.length || 0}`);
+    console.log(`[coach-sleep-plan] Found: plan=${!!plan}, profile=${!!profile}, logs=${logs?.length || 0}`);
 
-    return new Response(JSON.stringify({
+    return createSuccessResponse({
       plan,
       profile,
       recentLogs: logs || [],
       hasPlan: !!plan,
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error: any) {
-    console.error('Error in coach-sleep-plan:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('[coach-sleep-plan] Error:', error);
+    return createErrorResponse(error.message, 500);
   }
 });

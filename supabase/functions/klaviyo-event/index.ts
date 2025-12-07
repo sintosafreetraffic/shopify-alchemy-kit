@@ -1,11 +1,17 @@
+/**
+ * Klaviyo Event Edge Function
+ * 
+ * Tracks custom events in Klaviyo.
+ */
+
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import {
+  corsHeaders,
+  requireEnvVar,
+  createErrorResponse,
+  createSuccessResponse,
+} from "../_shared/env.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-// Input validation schema
 const eventSchema = z.object({
   email: z.string().email("Invalid email format").max(255, "Email too long"),
   event: z.string().min(1, "Event name required").max(100, "Event name too long"),
@@ -18,26 +24,19 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const KLAVIYO_PRIVATE_API_KEY = Deno.env.get('KLAVIYO_PRIVATE_API_KEY');
-    if (!KLAVIYO_PRIVATE_API_KEY) {
-      throw new Error('Klaviyo API key not configured');
-    }
+    const KLAVIYO_PRIVATE_API_KEY = requireEnvVar('KLAVIYO_PRIVATE_API_KEY');
 
-    // Validate input
     const rawBody = await req.json();
     const parseResult = eventSchema.safeParse(rawBody);
     
     if (!parseResult.success) {
-      console.error("Validation error:", parseResult.error.errors);
-      return new Response(
-        JSON.stringify({ error: "Invalid input", details: parseResult.error.errors }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      console.error("[klaviyo-event] Validation error:", parseResult.error.errors);
+      return createErrorResponse("Invalid input", 400);
     }
     
     const { email, event, properties } = parseResult.data;
 
-    console.log(`Tracking Klaviyo event "${event}" for ${email}`);
+    console.log(`[Klaviyo] Tracking event "${event}" for ${email}`);
 
     const response = await fetch('https://a.klaviyo.com/api/events/', {
       method: 'POST',
@@ -61,20 +60,14 @@ Deno.serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Klaviyo API error:', errorText);
+      console.error('[Klaviyo] API error:', errorText);
       throw new Error(`Klaviyo API error: ${errorText}`);
     }
 
-    console.log('Event tracked successfully');
-
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.log('[Klaviyo] Event tracked successfully');
+    return createSuccessResponse({ success: true });
   } catch (error: any) {
-    console.error('Error in klaviyo-event:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('[klaviyo-event] Error:', error);
+    return createErrorResponse(error.message, 500);
   }
 });
