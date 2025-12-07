@@ -161,6 +161,19 @@ export function useSleepApi() {
       
       const { error: err } = await supabase.from('sleep_logs').insert(log as any);
       if (err) throw err;
+
+      // Trigger Sleep Sync after successful log submission
+      if (log.email) {
+        try {
+          await supabase.functions.invoke('sleep-attributes-sync', {
+            body: { source: 'sleep_log_submission' },
+          });
+        } catch (syncErr) {
+          console.error('Sleep Sync error:', syncErr);
+          // Non-blocking
+        }
+      }
+
       return true;
     } catch (e: any) {
       setError(e.message);

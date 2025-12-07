@@ -1,4 +1,16 @@
+/**
+ * Shopify Order Webhook Edge Function
+ * 
+ * Handles order creation/payment webhooks and triggers Sleep Sync
+ */
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  generateSleepAttributes,
+  buildSleepSyncEvent,
+  sendKlaviyoEvent,
+} from "../_shared/sleep-sync.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -87,12 +99,36 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     const klaviyoApiKey = Deno.env.get("KLAVIYO_PRIVATE_API_KEY");
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
     if (!klaviyoApiKey) {
       console.error("KLAVIYO_PRIVATE_API_KEY not configured");
       return new Response(
         JSON.stringify({ error: "Klaviyo API key not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // Update sleep profile with purchase info
+    const { data: existingProfile } = await supabase
+      .from('sleep_profiles')
+      .select('email, purchase_count')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (existingProfile) {
+      // Update purchase count
+      await supabase
+        .from('sleep_profiles')
+        .update({
+          purchase_count: (existingProfile.purchase_count || 0) + 1,
+          delivery_date: new Date().toISOString().split('T')[0],
+        })
+        .eq('email', email);
+      console.log("Updated purchase count for:", email);
     }
 
     // Create or update profile in Klaviyo
@@ -126,10 +162,8 @@ serve(async (req: Request): Promise<Response> => {
     const profileData = await profileResponse.json();
     console.log("Klaviyo profile response status:", profileResponse.status);
 
-    // Get profile ID - handle both new creation and existing profile responses
+    // Get profile ID
     let profileId = profileData.data?.id;
-    
-    // If profile already exists, Klaviyo returns 409 with the existing profile
     if (!profileId && profileData.errors) {
       const duplicateError = profileData.errors.find((e: any) => e.code === "duplicate_profile");
       if (duplicateError?.meta?.duplicate_profile_id) {
@@ -141,7 +175,7 @@ serve(async (req: Request): Promise<Response> => {
     // Subscribe to list
     if (profileId) {
       console.log("Subscribing profile to list:", KLAVIYO_LIST_ID);
-      const listResponse = await fetch(`https://a.klaviyo.com/api/lists/${KLAVIYO_LIST_ID}/relationships/profiles/`, {
+      await fetch(`https://a.klaviyo.com/api/lists/${KLAVIYO_LIST_ID}/relationships/profiles/`, {
         method: "POST",
         headers: {
           "Authorization": `Klaviyo-API-Key ${klaviyoApiKey}`,
@@ -152,9 +186,6 @@ serve(async (req: Request): Promise<Response> => {
           data: [{ type: "profile", id: profileId }],
         }),
       });
-      console.log("Klaviyo list subscription response status:", listResponse.status);
-    } else {
-      console.warn("Could not get profile ID, skipping list subscription");
     }
 
     // Track the order event
@@ -193,6 +224,33 @@ serve(async (req: Request): Promise<Response> => {
         },
       }),
     });
+
+    // TRIGGER SLEEP SYNC - Update attributes after purchase
+    console.log("[Sleep Sync] Triggering for order:", email);
+    try {
+      const attributes = await generateSleepAttributes(supabase, email);
+      const event = buildSleepSyncEvent(attributes, "shopify_order");
+
+      // Store attributes
+      await supabase
+        .from('sleep_attributes_state')
+        .upsert({
+          email,
+          data: attributes,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'email' });
+
+      await supabase
+        .from('sleep_attributes_history')
+        .insert({ email, data: attributes });
+
+      // Send Sleep Sync event to Klaviyo
+      await sendKlaviyoEvent(klaviyoApiKey, email, event.eventName, event.payload);
+      console.log("[Sleep Sync] Completed for:", email);
+    } catch (syncError) {
+      console.error("[Sleep Sync] Error:", syncError);
+      // Non-blocking
+    }
 
     console.log("Successfully processed Shopify order webhook");
     return new Response(
