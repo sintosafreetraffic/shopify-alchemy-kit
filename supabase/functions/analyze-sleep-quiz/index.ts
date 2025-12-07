@@ -93,28 +93,36 @@ Deno.serve(async (req) => {
       return createErrorResponse("AI service not configured", 500);
     }
 
-    // Authenticate if profile creation requested
-    let authenticatedEmail: string | null = null;
+    // For quiz flow: profile creation uses email (no JWT required)
+    // If JWT provided, use authenticated email; otherwise use provided email
+    let profileEmail: string | null = null;
+    
     if (createProfile) {
+      // Check if authenticated (optional for quiz flow)
       const authHeader = req.headers.get("Authorization");
-      if (!authHeader) {
-        return createErrorResponse("Authentication required to create profile", 401);
+      if (authHeader) {
+        try {
+          const authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            global: { headers: { Authorization: authHeader } }
+          });
+          const { data: { user } } = await authClient.auth.getUser();
+          if (user?.email) {
+            profileEmail = user.email;
+            console.log("[analyze-sleep-quiz] Using authenticated email:", profileEmail);
+          }
+        } catch (e) {
+          console.log("[analyze-sleep-quiz] Auth check failed, using provided email");
+        }
       }
-
-      const authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        global: { headers: { Authorization: authHeader } }
-      });
       
-      const { data: { user }, error: authError } = await authClient.auth.getUser();
-      
-      if (authError || !user?.email) {
-        return createErrorResponse("Invalid authentication token", 401);
+      // Fall back to provided email if no auth
+      if (!profileEmail && email) {
+        profileEmail = email.toLowerCase().trim();
+        console.log("[analyze-sleep-quiz] Using provided email for profile:", profileEmail);
       }
-
-      authenticatedEmail = user.email;
-
-      if (email && email.toLowerCase() !== authenticatedEmail.toLowerCase()) {
-        return createErrorResponse("Email does not match authenticated user", 403);
+      
+      if (!profileEmail) {
+        return createErrorResponse("Email required for profile creation", 400);
       }
     }
 
@@ -163,7 +171,7 @@ Deno.serve(async (req) => {
     console.log("[analyze-sleep-quiz] AI analysis complete:", analysis.recommendations?.length, "recommendations");
 
     const trackingEmail = email;
-    const profileEmail = authenticatedEmail || email;
+    // profileEmail is already set above in the createProfile block
 
     // Track in Klaviyo
     if (trackingEmail && KLAVIYO_PRIVATE_API_KEY) {
@@ -279,9 +287,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Create Sleep Coach profile if authenticated
+    // Create Sleep Coach profile if email available
     let profileCreated = false;
-    if (createProfile && authenticatedEmail) {
+    if (createProfile && profileEmail) {
       const sleepPositionMap: Record<string, string> = {
         'back': 'back',
         'side': 'side',
@@ -319,11 +327,11 @@ Deno.serve(async (req) => {
         const { data: existingProfile } = await supabase
           .from('sleep_profiles')
           .select('email')
-          .eq('email', authenticatedEmail)
+          .eq('email', profileEmail)
           .single();
 
         const profileData = {
-          email: authenticatedEmail,
+          email: profileEmail,
           sleep_position: sleepPositionMap[answers.sleepPosition] || 'mixed',
           pain_points: painData.filter((p: string) => p.toLowerCase() !== 'no pain' && p.toLowerCase() !== 'none'),
           stress_level: stressLevel,
@@ -335,23 +343,23 @@ Deno.serve(async (req) => {
           const { error } = await supabase.from('sleep_profiles').insert(profileData);
           if (!error) {
             profileCreated = true;
-            console.log("[analyze-sleep-quiz] Sleep Coach profile created for:", authenticatedEmail);
+            console.log("[analyze-sleep-quiz] Sleep Coach profile created for:", profileEmail);
           }
         } else {
-          await supabase.from('sleep_profiles').update(profileData).eq('email', authenticatedEmail);
+          await supabase.from('sleep_profiles').update(profileData).eq('email', profileEmail);
           profileCreated = true;
-          console.log("[analyze-sleep-quiz] Sleep Coach profile updated for:", authenticatedEmail);
+          console.log("[analyze-sleep-quiz] Sleep Coach profile updated for:", profileEmail);
         }
 
         // TRIGGER SLEEP SYNC using centralized function
         if (profileCreated && KLAVIYO_PRIVATE_API_KEY) {
-          console.log("[Sleep Sync] Triggering for quiz completion:", authenticatedEmail);
+          console.log("[Sleep Sync] Triggering for quiz completion:", profileEmail);
           try {
             // Use single source of truth for Sleep Sync
-            const { attributes, event } = await syncAndStoreAttributes(supabase, authenticatedEmail, "quiz_completion");
+            const { attributes, event } = await syncAndStoreAttributes(supabase, profileEmail, "quiz_completion");
             
-            await sendKlaviyoEvent(KLAVIYO_PRIVATE_API_KEY, authenticatedEmail, event.eventName, event.payload);
-            console.log("[Sleep Sync] Completed for:", authenticatedEmail);
+            await sendKlaviyoEvent(KLAVIYO_PRIVATE_API_KEY, profileEmail, event.eventName, event.payload);
+            console.log("[Sleep Sync] Completed for:", profileEmail);
           } catch (syncError) {
             console.error("[Sleep Sync] Error:", syncError);
           }
