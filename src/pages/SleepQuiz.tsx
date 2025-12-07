@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
@@ -605,27 +604,40 @@ const SleepQuiz = () => {
     const { id, type, options, optional, subtitle, maxSelections, min, max, labels } = currentQuestion;
     
     if (type === "radio") {
+      const currentValue = answers[id] as string || "";
       return (
-        <RadioGroup 
-          value={answers[id] as string || ""} 
-          onValueChange={(value) => handleRadioChange(id, value)}
-          className="space-y-3"
-        >
-          {options?.map((option) => (
-            <div 
-              key={option.value} 
-              className="flex items-center space-x-3 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-accent/30 transition-all cursor-pointer group"
-            >
-              <RadioGroupItem value={option.value} id={`${id}-${option.value}`} />
-              <Label 
-                htmlFor={`${id}-${option.value}`} 
-                className="flex-1 cursor-pointer text-base group-hover:text-foreground transition-colors"
+        <div className="space-y-3">
+          {options?.map((option) => {
+            const isSelected = currentValue === option.value;
+            
+            return (
+              <div 
+                key={option.value} 
+                className={`flex items-center space-x-4 p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                  isSelected 
+                    ? "border-primary bg-primary/5" 
+                    : "border-border hover:border-primary/50 hover:bg-accent/30"
+                }`}
+                onClick={() => handleRadioChange(id, option.value)}
               >
-                {option.label}
-              </Label>
-            </div>
-          ))}
-        </RadioGroup>
+                <div 
+                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                    isSelected 
+                      ? "border-primary bg-primary" 
+                      : "border-muted-foreground"
+                  }`}
+                >
+                  {isSelected && (
+                    <div className="w-2 h-2 rounded-full bg-primary-foreground" />
+                  )}
+                </div>
+                <span className="flex-1 text-base text-foreground">
+                  {option.label}
+                </span>
+              </div>
+            );
+          })}
+        </div>
       );
     }
     
@@ -639,24 +651,27 @@ const SleepQuiz = () => {
             return (
               <div 
                 key={option.value} 
-                className={`flex items-center space-x-3 p-4 rounded-xl border transition-all cursor-pointer ${
+                className={`flex items-center space-x-4 p-4 rounded-xl border-2 transition-all cursor-pointer ${
                   isChecked 
                     ? "border-primary bg-primary/5" 
                     : "border-border hover:border-primary/50 hover:bg-accent/30"
                 }`}
                 onClick={() => handleCheckboxChange(id, option.value, maxSelections)}
               >
-                <Checkbox
-                  id={`${id}-${option.value}`}
-                  checked={isChecked}
-                  onCheckedChange={() => handleCheckboxChange(id, option.value, maxSelections)}
-                />
-                <Label 
-                  htmlFor={`${id}-${option.value}`} 
-                  className="flex-1 cursor-pointer text-base"
+                <div 
+                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                    isChecked 
+                      ? "border-primary bg-primary" 
+                      : "border-muted-foreground"
+                  }`}
                 >
+                  {isChecked && (
+                    <div className="w-2 h-2 rounded-full bg-primary-foreground" />
+                  )}
+                </div>
+                <span className="flex-1 text-base text-foreground">
                   {option.label}
-                </Label>
+                </span>
               </div>
             );
           })}
