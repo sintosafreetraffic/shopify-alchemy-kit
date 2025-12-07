@@ -1,34 +1,35 @@
 /**
  * Shopify Order Webhook Edge Function
  * 
- * Handles order creation/payment webhooks and triggers Sleep Sync
+ * Handles order creation/payment webhooks and triggers Sleep Sync.
+ * Uses centralized env/cors helpers and syncAndStoreAttributes.
  */
 
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
-  generateSleepAttributes,
-  buildSleepSyncEvent,
+  corsHeaders,
+  requireEnvVar,
+  getEnvVar,
+  createErrorResponse,
+  createSuccessResponse,
+} from "../_shared/env.ts";
+import {
+  syncAndStoreAttributes,
   sendKlaviyoEvent,
 } from "../_shared/sleep-sync.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-shopify-topic, x-shopify-hmac-sha256, x-shopify-shop-domain",
-};
 
 const KLAVIYO_LIST_ID = "UEJzEU";
 
 // Verify Shopify HMAC signature
 async function verifyShopifyHmac(body: string, hmacHeader: string | null): Promise<boolean> {
   if (!hmacHeader) {
-    console.error("Missing HMAC header");
+    console.error("[Shopify] Missing HMAC header");
     return false;
   }
 
-  const secret = Deno.env.get("SHOPIFY_WEBHOOK_SECRET");
+  const secret = getEnvVar("SHOPIFY_WEBHOOK_SECRET");
   if (!secret) {
-    console.error("SHOPIFY_WEBHOOK_SECRET not configured");
+    console.error("[Shopify] SHOPIFY_WEBHOOK_SECRET not configured");
     return false;
   }
 
@@ -46,12 +47,13 @@ async function verifyShopifyHmac(body: string, hmacHeader: string | null): Promi
 
   const isValid = computedHmac === hmacHeader;
   if (!isValid) {
-    console.error("HMAC verification failed");
+    console.error("[Shopify] HMAC verification failed");
   }
   return isValid;
 }
 
-serve(async (req: Request): Promise<Response> => {
+Deno.serve(async (req: Request): Promise<Response> => {
+  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -64,51 +66,35 @@ serve(async (req: Request): Promise<Response> => {
     // Verify HMAC signature
     const isValidHmac = await verifyShopifyHmac(rawBody, hmacHeader);
     if (!isValidHmac) {
-      console.error("Invalid webhook signature - rejecting request");
-      return new Response(
-        JSON.stringify({ error: "Invalid signature" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      console.error("[Shopify] Invalid webhook signature - rejecting request");
+      return createErrorResponse("Invalid signature", 401);
     }
     
-    console.log("HMAC signature verified successfully");
+    console.log("[Shopify] HMAC signature verified successfully");
 
     const shopifyTopic = req.headers.get("x-shopify-topic");
-    console.log("Shopify webhook received, topic:", shopifyTopic);
+    console.log("[Shopify] Webhook received, topic:", shopifyTopic);
 
     // Only process order creation/payment events
     if (shopifyTopic !== "orders/create" && shopifyTopic !== "orders/paid") {
-      console.log("Ignoring non-order topic:", shopifyTopic);
-      return new Response(JSON.stringify({ success: true, message: "Ignored" }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      console.log("[Shopify] Ignoring non-order topic:", shopifyTopic);
+      return createSuccessResponse({ success: true, message: "Ignored" });
     }
 
     // Parse body after HMAC verification
     const order = JSON.parse(rawBody);
-    console.log("Order received:", order.id, order.email);
+    console.log("[Shopify] Order received:", order.id, order.email);
 
     const email = order.email;
     if (!email) {
-      console.log("No email in order, skipping");
-      return new Response(JSON.stringify({ success: true, message: "No email" }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      console.log("[Shopify] No email in order, skipping");
+      return createSuccessResponse({ success: true, message: "No email" });
     }
 
-    const klaviyoApiKey = Deno.env.get("KLAVIYO_PRIVATE_API_KEY");
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-    if (!klaviyoApiKey) {
-      console.error("KLAVIYO_PRIVATE_API_KEY not configured");
-      return new Response(
-        JSON.stringify({ error: "Klaviyo API key not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    // Use centralized env helpers
+    const KLAVIYO_PRIVATE_API_KEY = requireEnvVar("KLAVIYO_PRIVATE_API_KEY");
+    const SUPABASE_URL = requireEnvVar("SUPABASE_URL");
+    const SUPABASE_SERVICE_ROLE_KEY = requireEnvVar("SUPABASE_SERVICE_ROLE_KEY");
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -128,15 +114,15 @@ serve(async (req: Request): Promise<Response> => {
           delivery_date: new Date().toISOString().split('T')[0],
         })
         .eq('email', email);
-      console.log("Updated purchase count for:", email);
+      console.log("[Shopify] Updated purchase count for:", email);
     }
 
     // Create or update profile in Klaviyo
-    console.log("Creating/updating Klaviyo profile for:", email);
+    console.log("[Klaviyo] Creating/updating profile for:", email);
     const profileResponse = await fetch("https://a.klaviyo.com/api/profiles/", {
       method: "POST",
       headers: {
-        "Authorization": `Klaviyo-API-Key ${klaviyoApiKey}`,
+        "Authorization": `Klaviyo-API-Key ${KLAVIYO_PRIVATE_API_KEY}`,
         "Content-Type": "application/json",
         "revision": "2024-02-15",
       },
@@ -160,7 +146,7 @@ serve(async (req: Request): Promise<Response> => {
     });
 
     const profileData = await profileResponse.json();
-    console.log("Klaviyo profile response status:", profileResponse.status);
+    console.log("[Klaviyo] Profile response status:", profileResponse.status);
 
     // Get profile ID
     let profileId = profileData.data?.id;
@@ -168,17 +154,17 @@ serve(async (req: Request): Promise<Response> => {
       const duplicateError = profileData.errors.find((e: any) => e.code === "duplicate_profile");
       if (duplicateError?.meta?.duplicate_profile_id) {
         profileId = duplicateError.meta.duplicate_profile_id;
-        console.log("Using existing profile ID:", profileId);
+        console.log("[Klaviyo] Using existing profile ID:", profileId);
       }
     }
 
     // Subscribe to list
     if (profileId) {
-      console.log("Subscribing profile to list:", KLAVIYO_LIST_ID);
+      console.log("[Klaviyo] Subscribing profile to list:", KLAVIYO_LIST_ID);
       await fetch(`https://a.klaviyo.com/api/lists/${KLAVIYO_LIST_ID}/relationships/profiles/`, {
         method: "POST",
         headers: {
-          "Authorization": `Klaviyo-API-Key ${klaviyoApiKey}`,
+          "Authorization": `Klaviyo-API-Key ${KLAVIYO_PRIVATE_API_KEY}`,
           "Content-Type": "application/json",
           "revision": "2024-02-15",
         },
@@ -189,11 +175,11 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // Track the order event
-    console.log("Tracking Placed Order event");
+    console.log("[Klaviyo] Tracking Placed Order event");
     await fetch("https://a.klaviyo.com/api/events/", {
       method: "POST",
       headers: {
-        "Authorization": `Klaviyo-API-Key ${klaviyoApiKey}`,
+        "Authorization": `Klaviyo-API-Key ${KLAVIYO_PRIVATE_API_KEY}`,
         "Content-Type": "application/json",
         "revision": "2024-02-15",
       },
@@ -225,43 +211,24 @@ serve(async (req: Request): Promise<Response> => {
       }),
     });
 
-    // TRIGGER SLEEP SYNC - Update attributes after purchase
+    // TRIGGER SLEEP SYNC - Use centralized syncAndStoreAttributes
     console.log("[Sleep Sync] Triggering for order:", email);
     try {
-      const attributes = await generateSleepAttributes(supabase, email);
-      const event = buildSleepSyncEvent(attributes, "shopify_order");
-
-      // Store attributes
-      await supabase
-        .from('sleep_attributes_state')
-        .upsert({
-          email,
-          data: attributes,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'email' });
-
-      await supabase
-        .from('sleep_attributes_history')
-        .insert({ email, data: attributes });
-
+      // Use single source of truth for Sleep Sync
+      const { attributes, event } = await syncAndStoreAttributes(supabase, email, "shopify_order");
+      
       // Send Sleep Sync event to Klaviyo
-      await sendKlaviyoEvent(klaviyoApiKey, email, event.eventName, event.payload);
+      await sendKlaviyoEvent(KLAVIYO_PRIVATE_API_KEY, email, event.eventName, event.payload);
       console.log("[Sleep Sync] Completed for:", email);
     } catch (syncError) {
       console.error("[Sleep Sync] Error:", syncError);
       // Non-blocking
     }
 
-    console.log("Successfully processed Shopify order webhook");
-    return new Response(
-      JSON.stringify({ success: true }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    console.log("[Shopify] Successfully processed order webhook");
+    return createSuccessResponse({ success: true });
   } catch (error: any) {
-    console.error("Shopify webhook error:", error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    console.error("[Shopify] Webhook error:", error);
+    return createErrorResponse(error.message, 500);
   }
 });

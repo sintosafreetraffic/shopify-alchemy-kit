@@ -1,23 +1,41 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+/**
+ * WhatsApp Coach Simulate Edge Function
+ * 
+ * Simulates WhatsApp message generation for testing.
+ * Uses centralized env/cors helpers and AI Brain for tip generation.
+ */
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  corsHeaders,
+  requireEnvVar,
+  hasOpenAIKey,
+  createErrorResponse,
+  createSuccessResponse,
+} from "../_shared/env.ts";
+import { generateWhatsAppTip } from "../_shared/ai-brain.ts";
+import { generateSleepAttributes } from "../_shared/sleep-sync.ts";
 
 Deno.serve(async (req) => {
+  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    // Use centralized env helpers
+    const SUPABASE_URL = requireEnvVar('SUPABASE_URL');
+    const SUPABASE_SERVICE_ROLE_KEY = requireEnvVar('SUPABASE_SERVICE_ROLE_KEY');
+    
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const { email } = await req.json();
+    const { email, tipType = "micro_tip" } = await req.json();
 
-    console.log(`Simulating WhatsApp message for ${email}`);
+    if (!email) {
+      return createErrorResponse('Email is required', 400);
+    }
+
+    console.log(`[WhatsApp Simulate] Generating message for ${email}, type: ${tipType}`);
 
     // Fetch user profile first to check if WhatsApp is enabled
     const { data: profile } = await supabase
@@ -28,14 +46,11 @@ Deno.serve(async (req) => {
 
     // Check if WhatsApp is enabled for this user
     if (!profile?.whatsapp_enabled) {
-      console.log(`WhatsApp not enabled for ${email}`);
-      return new Response(JSON.stringify({ 
+      console.log(`[WhatsApp Simulate] WhatsApp not enabled for ${email}`);
+      return createSuccessResponse({ 
         error: 'WhatsApp updates not enabled',
         message: 'Please enable WhatsApp updates in your profile settings to receive messages.',
         enabled: false 
-      }), {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
@@ -62,16 +77,45 @@ Deno.serve(async (req) => {
 
     const streak = meta?.total_streak_days || 0;
     const trends = analyzeTrends(logs || []);
-    
-    // Generate appropriate message
-    const { message, messageType } = selectBestMessage({
-      daysSinceLastLog,
-      streak,
-      trends,
-      profile,
-      lastLog,
-      meta,
-    });
+
+    // Determine tip type based on context
+    let actualTipType = tipType;
+    if (daysSinceLastLog >= 3) {
+      actualTipType = "streak_reminder";
+    } else if (streak >= 7 && streak % 7 === 0) {
+      actualTipType = "celebration";
+    } else if (trends.trend === "improving") {
+      actualTipType = "celebration";
+    }
+
+    // Generate message using AI Brain if available
+    let message: string;
+    let messageType = actualTipType;
+
+    if (hasOpenAIKey()) {
+      // Use centralized AI Brain for message generation
+      const attributes = await generateSleepAttributes(supabase, email);
+      message = await generateWhatsAppTip(
+        profile,
+        attributes,
+        logs || [],
+        actualTipType as "morning_checkin" | "micro_tip" | "celebration" | "streak_reminder"
+      );
+      console.log(`[WhatsApp Simulate] Generated AI message for ${email}`);
+    } else {
+      // Use fallback static message selection
+      const result = selectBestMessage({
+        daysSinceLastLog,
+        streak,
+        trends,
+        profile,
+        lastLog,
+        meta,
+      });
+      message = result.message;
+      messageType = result.messageType;
+      console.log(`[WhatsApp Simulate] Generated fallback message for ${email}`);
+    }
 
     // Update last nudge time
     await supabase
@@ -82,21 +126,16 @@ Deno.serve(async (req) => {
         updated_at: now.toISOString(),
       }, { onConflict: 'email' });
 
-    console.log(`Generated ${messageType} message`);
+    console.log(`[WhatsApp Simulate] Generated ${messageType} message`);
 
-    return new Response(JSON.stringify({
+    return createSuccessResponse({
       message,
       messageType,
       context: { daysSinceLastLog, streak, trends },
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error: any) {
-    console.error('Error in whatsapp-coach-simulate:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('[WhatsApp Simulate] Error:', error);
+    return createErrorResponse(error.message, 500);
   }
 });
 
@@ -120,8 +159,9 @@ function analyzeTrends(logs: any[]): any {
   return { trend, avgQuality, avgPain };
 }
 
+// Static fallback message selection when AI is not available
 function selectBestMessage(ctx: any): { message: string; messageType: string } {
-  const { daysSinceLastLog, streak, trends, profile, lastLog } = ctx;
+  const { daysSinceLastLog, streak, trends, lastLog } = ctx;
   
   // Inactivity reminder
   if (daysSinceLastLog >= 3) {

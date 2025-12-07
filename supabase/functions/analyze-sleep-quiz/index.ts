@@ -4,23 +4,24 @@
  * Analyzes quiz responses with AI (via AI Brain) and optionally creates Sleep Coach profile.
  * Triggers Sleep Sync after profile creation.
  * 
- * Uses OPENAI_API_KEY via centralized AI Brain - NO Lovable AI.
+ * Uses centralized env/cors helpers, AI Brain, and syncAndStoreAttributes.
  */
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import {
+  corsHeaders,
+  requireEnvVar,
+  getEnvVar,
+  hasOpenAIKey,
+  createErrorResponse,
+  createSuccessResponse,
+} from "../_shared/env.ts";
 import { analyzeQuizForRecommendations } from "../_shared/ai-brain.ts";
 import {
-  generateSleepAttributes,
-  buildSleepSyncEvent,
+  syncAndStoreAttributes,
   sendKlaviyoEvent,
 } from "../_shared/sleep-sync.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
 
 // Input validation schema
 const answersSchema = z.object({
@@ -36,7 +37,8 @@ const requestSchema = z.object({
   createProfile: z.boolean().optional().default(false),
 });
 
-serve(async (req) => {
+Deno.serve(async (req) => {
+  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -47,29 +49,23 @@ serve(async (req) => {
     const parseResult = requestSchema.safeParse(rawBody);
     
     if (!parseResult.success) {
-      console.error("Validation error:", parseResult.error.errors);
-      return new Response(
-        JSON.stringify({ error: "Invalid input", details: parseResult.error.errors }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      console.error("[analyze-sleep-quiz] Validation error:", parseResult.error.errors);
+      return createErrorResponse("Invalid input", 400);
     }
     
     const { answers, email, createProfile } = parseResult.data;
     
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const KLAVIYO_PRIVATE_API_KEY = Deno.env.get("KLAVIYO_PRIVATE_API_KEY");
-    const KLAVIYO_MAIN_LIST_ID = Deno.env.get("KLAVIYO_MAIN_LIST_ID");
+    // Use centralized env helpers
+    const SUPABASE_URL = requireEnvVar("SUPABASE_URL");
+    const SUPABASE_SERVICE_ROLE_KEY = requireEnvVar("SUPABASE_SERVICE_ROLE_KEY");
+    const SUPABASE_ANON_KEY = requireEnvVar("SUPABASE_ANON_KEY");
+    const KLAVIYO_PRIVATE_API_KEY = getEnvVar("KLAVIYO_PRIVATE_API_KEY");
+    const KLAVIYO_MAIN_LIST_ID = getEnvVar("KLAVIYO_MAIN_LIST_ID");
 
-    // Verify OPENAI_API_KEY is available
-    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
-    if (!OPENAI_API_KEY) {
-      console.error("OPENAI_API_KEY is not configured");
-      return new Response(
-        JSON.stringify({ error: "AI service not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    // Check OPENAI_API_KEY availability
+    if (!hasOpenAIKey()) {
+      console.error("[analyze-sleep-quiz] OPENAI_API_KEY is not configured");
+      return createErrorResponse("AI service not configured", 500);
     }
 
     // Authenticate if profile creation requested
@@ -77,10 +73,7 @@ serve(async (req) => {
     if (createProfile) {
       const authHeader = req.headers.get("Authorization");
       if (!authHeader) {
-        return new Response(
-          JSON.stringify({ error: "Authentication required to create profile" }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return createErrorResponse("Authentication required to create profile", 401);
       }
 
       const authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -90,19 +83,13 @@ serve(async (req) => {
       const { data: { user }, error: authError } = await authClient.auth.getUser();
       
       if (authError || !user?.email) {
-        return new Response(
-          JSON.stringify({ error: "Invalid authentication token" }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return createErrorResponse("Invalid authentication token", 401);
       }
 
       authenticatedEmail = user.email;
 
       if (email && email.toLowerCase() !== authenticatedEmail.toLowerCase()) {
-        return new Response(
-          JSON.stringify({ error: "Email does not match authenticated user" }),
-          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return createErrorResponse("Email does not match authenticated user", 403);
       }
     }
 
@@ -200,8 +187,9 @@ serve(async (req) => {
             },
           }),
         });
+        console.log("[Klaviyo] Quiz completion tracked for:", trackingEmail);
       } catch (klaviyoError) {
-        console.error("Klaviyo tracking error:", klaviyoError);
+        console.error("[Klaviyo] Tracking error:", klaviyoError);
       }
     }
 
@@ -247,33 +235,21 @@ serve(async (req) => {
           const { error } = await supabase.from('sleep_profiles').insert(profileData);
           if (!error) {
             profileCreated = true;
-            console.log("Sleep Coach profile created for:", authenticatedEmail);
+            console.log("[analyze-sleep-quiz] Sleep Coach profile created for:", authenticatedEmail);
           }
         } else {
           await supabase.from('sleep_profiles').update(profileData).eq('email', authenticatedEmail);
           profileCreated = true;
-          console.log("Sleep Coach profile updated for:", authenticatedEmail);
+          console.log("[analyze-sleep-quiz] Sleep Coach profile updated for:", authenticatedEmail);
         }
 
-        // TRIGGER SLEEP SYNC after profile creation/update
+        // TRIGGER SLEEP SYNC using centralized function
         if (profileCreated && KLAVIYO_PRIVATE_API_KEY) {
           console.log("[Sleep Sync] Triggering for quiz completion:", authenticatedEmail);
           try {
-            const attributes = await generateSleepAttributes(supabase, authenticatedEmail);
-            const event = buildSleepSyncEvent(attributes, "quiz_completion");
-
-            await supabase
-              .from('sleep_attributes_state')
-              .upsert({
-                email: authenticatedEmail,
-                data: attributes,
-                updated_at: new Date().toISOString(),
-              }, { onConflict: 'email' });
-
-            await supabase
-              .from('sleep_attributes_history')
-              .insert({ email: authenticatedEmail, data: attributes });
-
+            // Use single source of truth for Sleep Sync
+            const { attributes, event } = await syncAndStoreAttributes(supabase, authenticatedEmail, "quiz_completion");
+            
             await sendKlaviyoEvent(KLAVIYO_PRIVATE_API_KEY, authenticatedEmail, event.eventName, event.payload);
             console.log("[Sleep Sync] Completed for:", authenticatedEmail);
           } catch (syncError) {
@@ -281,19 +257,13 @@ serve(async (req) => {
           }
         }
       } catch (profileError) {
-        console.error("Sleep profile creation error:", profileError);
+        console.error("[analyze-sleep-quiz] Sleep profile creation error:", profileError);
       }
     }
 
-    return new Response(
-      JSON.stringify({ ...analysis, profileCreated }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return createSuccessResponse({ ...analysis, profileCreated });
   } catch (error) {
-    console.error("Error in analyze-sleep-quiz:", error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    console.error("[analyze-sleep-quiz] Error:", error);
+    return createErrorResponse(error instanceof Error ? error.message : "Unknown error", 500);
   }
 });
