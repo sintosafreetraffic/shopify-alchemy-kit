@@ -1,13 +1,16 @@
 /**
  * Analyze Sleep Quiz Edge Function
  * 
- * Analyzes quiz responses with AI and optionally creates Sleep Coach profile.
+ * Analyzes quiz responses with AI (via AI Brain) and optionally creates Sleep Coach profile.
  * Triggers Sleep Sync after profile creation.
+ * 
+ * Uses OPENAI_API_KEY via centralized AI Brain - NO Lovable AI.
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { analyzeQuizForRecommendations } from "../_shared/ai-brain.ts";
 import {
   generateSleepAttributes,
   buildSleepSyncEvent,
@@ -53,15 +56,20 @@ serve(async (req) => {
     
     const { answers, email, createProfile } = parseResult.data;
     
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
     const KLAVIYO_PRIVATE_API_KEY = Deno.env.get("KLAVIYO_PRIVATE_API_KEY");
     const KLAVIYO_MAIN_LIST_ID = Deno.env.get("KLAVIYO_MAIN_LIST_ID");
 
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    // Verify OPENAI_API_KEY is available
+    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+    if (!OPENAI_API_KEY) {
+      console.error("OPENAI_API_KEY is not configured");
+      return new Response(
+        JSON.stringify({ error: "AI service not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Authenticate if profile creation requested
@@ -100,25 +108,7 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // AI Analysis
-    const systemPrompt = `You are a sleep health expert for RiseByNight. Analyze quiz responses and recommend products.
-
-Available Products:
-1. Rise By Night™ Ergonomic Sleep Pillow ($129.99) - Contoured memory foam for neck/back pain
-2. Rise By Night™ Ergonomic Knee Pillow ($69.99) - Memory foam for hip alignment
-3. Rise By Night™ Silk Deep Sleep Mask ($29.99) - Premium silk for light blocking
-4. Rise By Night™ Complete Sleep Bundle ($149.99) - All three products bundled
-
-Return JSON:
-{
-  "assessment": "Personalized assessment (2-3 sentences)",
-  "recommendations": [
-    { "product": "Name", "reason": "Why it helps", "priority": "high|medium|low" }
-  ],
-  "bundleRecommended": true/false,
-  "bundleReason": "Why bundle helps (if recommended)"
-}`;
-
+    // Sanitize inputs
     const sanitizedAnswers = {
       sleepPosition: answers.sleepPosition,
       painPoints: answers.painPoints.map(p => p.replace(/[<>{}[\]`$]/g, '')),
@@ -126,50 +116,11 @@ Return JSON:
       sleepGoals: answers.sleepGoals.map(g => g.replace(/[<>{}[\]`$]/g, '')),
     };
 
-    const userPrompt = `Sleep Quiz Responses:
-Sleep Position: ${sanitizedAnswers.sleepPosition}
-Pain Points: ${sanitizedAnswers.painPoints.join(", ")}
-Pillow Issues: ${sanitizedAnswers.pillowIssues.join(", ")}
-Sleep Goals: ${sanitizedAnswers.sleepGoals.join(", ")}`;
+    // AI Analysis via centralized AI Brain (OpenAI)
+    console.log("[analyze-sleep-quiz] Calling AI Brain for product recommendations");
+    const analysis = await analyzeQuizForRecommendations(sanitizedAnswers);
+    console.log("[analyze-sleep-quiz] AI analysis complete:", analysis.recommendations?.length, "recommendations");
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      throw new Error("AI analysis failed");
-    }
-
-    const data = await response.json();
-    const analysisText = data.choices?.[0]?.message?.content;
-
-    if (!analysisText) {
-      throw new Error("No analysis returned from AI");
-    }
-
-    const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error("Invalid AI response format");
-    }
-
-    const analysis = JSON.parse(jsonMatch[0]);
     const trackingEmail = email;
     const profileEmail = authenticatedEmail || email;
 
