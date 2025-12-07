@@ -23,12 +23,37 @@ import {
   sendKlaviyoEvent,
 } from "../_shared/sleep-sync.ts";
 
-// Input validation schema
+// Input validation schema - supports both legacy and new 22-question format
 const answersSchema = z.object({
+  // Core questions (legacy + new)
   sleepPosition: z.enum(['back', 'side', 'stomach', 'combination']),
-  painPoints: z.array(z.string().max(100)).max(10),
-  pillowIssues: z.array(z.string().max(100)).max(10),
-  sleepGoals: z.array(z.string().max(100)).max(10),
+  
+  // New comprehensive questions
+  movesOften: z.string().max(50).optional(),
+  pillowCount: z.string().max(10).optional(),
+  mattressFirmness: z.string().max(50).optional(),
+  sleepEquipment: z.array(z.string().max(100)).max(15).optional(),
+  painAreas: z.array(z.string().max(100)).max(15).optional(),
+  painSeverity: z.number().min(0).max(10).optional(),
+  nightAwakenings: z.string().max(50).optional(),
+  sleepTemperature: z.string().max(50).optional(),
+  roomBrightness: z.string().max(50).optional(),
+  roomNoise: z.string().max(50).optional(),
+  sleepLatency: z.string().max(50).optional(),
+  sleepHours: z.string().max(50).optional(),
+  eveningScreenUse: z.string().max(50).optional(),
+  ageGroup: z.string().max(20).optional(),
+  gender: z.string().max(20).optional(),
+  sleepClothing: z.string().max(50).optional(),
+  coSleeping: z.array(z.string().max(50)).max(10).optional(),
+  sleepGoals: z.array(z.string().max(100)).max(10).optional(),
+  snoring: z.string().max(50).optional(),
+  triedMethods: z.array(z.string().max(100)).max(15).optional(),
+  pillowSatisfaction: z.number().min(0).max(10).optional(),
+  
+  // Legacy fields (for backwards compatibility)
+  painPoints: z.array(z.string().max(100)).max(10).optional(),
+  pillowIssues: z.array(z.string().max(100)).max(10).optional(),
 });
 
 const requestSchema = z.object({
@@ -95,12 +120,41 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Sanitize inputs
+    // Sanitize inputs - handle both legacy and new format
+    const sanitizeArray = (arr?: string[]) => (arr || []).map(p => p.replace(/[<>{}[\]`$]/g, ''));
+    const sanitizeString = (str?: string) => (str || '').replace(/[<>{}[\]`$]/g, '');
+    
+    // Build comprehensive sanitized answers object
     const sanitizedAnswers = {
+      // Core position
       sleepPosition: answers.sleepPosition,
-      painPoints: answers.painPoints.map(p => p.replace(/[<>{}[\]`$]/g, '')),
-      pillowIssues: answers.pillowIssues.map(p => p.replace(/[<>{}[\]`$]/g, '')),
-      sleepGoals: answers.sleepGoals.map(g => g.replace(/[<>{}[\]`$]/g, '')),
+      
+      // New comprehensive fields
+      movesOften: sanitizeString(answers.movesOften),
+      pillowCount: sanitizeString(answers.pillowCount),
+      mattressFirmness: sanitizeString(answers.mattressFirmness),
+      sleepEquipment: sanitizeArray(answers.sleepEquipment),
+      painAreas: sanitizeArray(answers.painAreas),
+      painSeverity: answers.painSeverity ?? 5,
+      nightAwakenings: sanitizeString(answers.nightAwakenings),
+      sleepTemperature: sanitizeString(answers.sleepTemperature),
+      roomBrightness: sanitizeString(answers.roomBrightness),
+      roomNoise: sanitizeString(answers.roomNoise),
+      sleepLatency: sanitizeString(answers.sleepLatency),
+      sleepHours: sanitizeString(answers.sleepHours),
+      eveningScreenUse: sanitizeString(answers.eveningScreenUse),
+      ageGroup: sanitizeString(answers.ageGroup),
+      gender: sanitizeString(answers.gender),
+      sleepClothing: sanitizeString(answers.sleepClothing),
+      coSleeping: sanitizeArray(answers.coSleeping),
+      sleepGoals: sanitizeArray(answers.sleepGoals),
+      snoring: sanitizeString(answers.snoring),
+      triedMethods: sanitizeArray(answers.triedMethods),
+      pillowSatisfaction: answers.pillowSatisfaction ?? 5,
+      
+      // Legacy fields (mapped from new fields for AI compatibility)
+      painPoints: sanitizeArray(answers.painPoints || answers.painAreas),
+      pillowIssues: sanitizeArray(answers.pillowIssues || answers.sleepEquipment),
     };
 
     // AI Analysis via centralized AI Brain (OpenAI)
@@ -127,11 +181,43 @@ Deno.serve(async (req) => {
               attributes: {
                 email: trackingEmail,
                 properties: {
-                  sleep_position: answers.sleepPosition,
-                  pain_points: answers.painPoints,
-                  pillow_issues: answers.pillowIssues,
-                  sleep_goals: answers.sleepGoals,
+                  // Core sleep data
+                  sleep_position: sanitizedAnswers.sleepPosition,
+                  moves_often: sanitizedAnswers.movesOften,
+                  pillow_count: sanitizedAnswers.pillowCount,
+                  mattress_firmness: sanitizedAnswers.mattressFirmness,
+                  
+                  // Equipment and pain
+                  sleep_equipment: sanitizedAnswers.sleepEquipment,
+                  pain_areas: sanitizedAnswers.painAreas,
+                  pain_severity: sanitizedAnswers.painSeverity,
+                  
+                  // Sleep environment
+                  night_awakenings: sanitizedAnswers.nightAwakenings,
+                  sleep_temperature: sanitizedAnswers.sleepTemperature,
+                  room_brightness: sanitizedAnswers.roomBrightness,
+                  room_noise: sanitizedAnswers.roomNoise,
+                  
+                  // Sleep patterns
+                  sleep_latency: sanitizedAnswers.sleepLatency,
+                  sleep_hours: sanitizedAnswers.sleepHours,
+                  evening_screen_use: sanitizedAnswers.eveningScreenUse,
+                  
+                  // Demographics
+                  age_group: sanitizedAnswers.ageGroup,
+                  gender: sanitizedAnswers.gender,
+                  sleep_clothing: sanitizedAnswers.sleepClothing,
+                  co_sleeping: sanitizedAnswers.coSleeping,
+                  
+                  // Goals and history
+                  sleep_goals: sanitizedAnswers.sleepGoals,
+                  snoring: sanitizedAnswers.snoring,
+                  tried_methods: sanitizedAnswers.triedMethods,
+                  pillow_satisfaction: sanitizedAnswers.pillowSatisfaction,
+                  
+                  // Quiz metadata
                   quiz_completed_at: new Date().toISOString(),
+                  quiz_version: "v2_comprehensive",
                   recommended_products: analysis.recommendations.map((r: any) => r.product),
                   bundle_recommended: analysis.bundleRecommended,
                 }
@@ -203,17 +289,31 @@ Deno.serve(async (req) => {
         'combination': 'mixed'
       };
 
-      const hasStressGoal = answers.sleepGoals?.some((g: string) => 
+      // Use sanitizedAnswers which has proper fallbacks
+      const hasStressGoal = sanitizedAnswers.sleepGoals.some((g: string) => 
         g.toLowerCase().includes('stress') || g.toLowerCase().includes('better sleep')
       );
       const stressLevel = hasStressGoal ? 'high' : 'medium';
 
-      const hasPain = answers.painPoints?.some((p: string) => p.toLowerCase() !== 'no pain');
-      const wantsRefreshed = answers.sleepGoals?.includes('Wake up refreshed');
+      // Use painAreas (new) or painPoints (legacy)
+      const painData = sanitizedAnswers.painAreas.length > 0 ? sanitizedAnswers.painAreas : sanitizedAnswers.painPoints;
+      const hasPain = painData.some((p: string) => p.toLowerCase() !== 'no pain' && p.toLowerCase() !== 'none');
+      const wantsRefreshed = sanitizedAnswers.sleepGoals.includes('Wake up refreshed') || 
+                             sanitizedAnswers.sleepGoals.includes('wake_refreshed');
       let wakeUpCondition = 'neutral';
       if (hasPain) wakeUpCondition = 'stiff';
       else if (!wantsRefreshed) wakeUpCondition = 'tired';
       else if (!hasPain && wantsRefreshed) wakeUpCondition = 'energized';
+
+      // Determine temperature preference from new sleepTemperature field or legacy pillowIssues
+      let temperaturePreference = 'neutral';
+      if (sanitizedAnswers.sleepTemperature === 'hot') {
+        temperaturePreference = 'cold';
+      } else if (sanitizedAnswers.sleepTemperature === 'cold') {
+        temperaturePreference = 'warm';
+      } else if (sanitizedAnswers.pillowIssues.some(i => i.toLowerCase().includes('hot'))) {
+        temperaturePreference = 'cold';
+      }
 
       try {
         const { data: existingProfile } = await supabase
@@ -225,10 +325,10 @@ Deno.serve(async (req) => {
         const profileData = {
           email: authenticatedEmail,
           sleep_position: sleepPositionMap[answers.sleepPosition] || 'mixed',
-          pain_points: answers.painPoints.filter((p: string) => p.toLowerCase() !== 'no pain'),
+          pain_points: painData.filter((p: string) => p.toLowerCase() !== 'no pain' && p.toLowerCase() !== 'none'),
           stress_level: stressLevel,
           wake_up_condition: wakeUpCondition,
-          temperature_preference: answers.pillowIssues?.includes('Gets too hot') ? 'cold' : 'neutral',
+          temperature_preference: temperaturePreference,
         };
 
         if (!existingProfile) {
