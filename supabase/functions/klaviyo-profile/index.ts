@@ -1,9 +1,17 @@
-import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+/**
+ * Klaviyo Profile Edge Function
+ * 
+ * Creates/updates Klaviyo profiles for WhatsApp settings and properties.
+ * Uses centralized env/cors helpers.
+ */
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import {
+  corsHeaders,
+  requireEnvVar,
+  createErrorResponse,
+  createSuccessResponse,
+} from "../_shared/env.ts";
 
 // Input validation schema
 const profileSchema = z.object({
@@ -14,33 +22,29 @@ const profileSchema = z.object({
 });
 
 Deno.serve(async (req) => {
+  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const KLAVIYO_PRIVATE_API_KEY = Deno.env.get('KLAVIYO_PRIVATE_API_KEY');
-    if (!KLAVIYO_PRIVATE_API_KEY) {
-      throw new Error('Klaviyo API key not configured');
-    }
+    // Use centralized env helper
+    const KLAVIYO_PRIVATE_API_KEY = requireEnvVar('KLAVIYO_PRIVATE_API_KEY');
 
     // Validate input
     const rawBody = await req.json();
     const parseResult = profileSchema.safeParse(rawBody);
     
     if (!parseResult.success) {
-      console.error("Validation error:", parseResult.error.errors);
-      return new Response(
-        JSON.stringify({ error: "Invalid input", details: parseResult.error.errors }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      console.error("[Klaviyo] Validation error:", parseResult.error.errors);
+      return createErrorResponse("Invalid input", 400);
     }
     
     const { email, properties, phone_number, whatsapp_enabled } = parseResult.data;
 
-    console.log(`Updating Klaviyo profile for ${email}, WhatsApp: ${whatsapp_enabled}`);
+    console.log(`[Klaviyo] Updating profile for ${email}, WhatsApp: ${whatsapp_enabled}`);
 
-    // Find profile by email - use encodeURIComponent to prevent injection
+    // Find profile by email
     const searchResponse = await fetch(
       `https://a.klaviyo.com/api/profiles/?filter=equals(email,"${encodeURIComponent(email)}")`,
       {
@@ -67,11 +71,11 @@ Deno.serve(async (req) => {
     if (whatsapp_enabled && phone_number) {
       profileAttributes.phone_number = phone_number;
       (profileAttributes.properties as Record<string, unknown>).whatsapp_phone = phone_number;
-      console.log(`Syncing WhatsApp phone: ${phone_number}`);
+      console.log(`[Klaviyo] Syncing WhatsApp phone: ${phone_number}`);
     }
 
     if (!profileId) {
-      console.log('Profile not found, creating new one');
+      console.log('[Klaviyo] Profile not found, creating new one');
       // Create new profile
       const createResponse = await fetch('https://a.klaviyo.com/api/profiles/', {
         method: 'POST',
@@ -90,14 +94,12 @@ Deno.serve(async (req) => {
 
       if (!createResponse.ok) {
         const errorText = await createResponse.text();
-        console.error('Create profile error:', errorText);
+        console.error('[Klaviyo] Create profile error:', errorText);
       } else {
-        console.log('Profile created successfully');
+        console.log('[Klaviyo] Profile created successfully');
       }
 
-      return new Response(JSON.stringify({ success: true, created: true }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return createSuccessResponse({ success: true, created: true });
     }
 
     // Update existing profile
@@ -126,19 +128,13 @@ Deno.serve(async (req) => {
 
     if (!updateResponse.ok) {
       const errorText = await updateResponse.text();
-      console.error('Update profile error:', errorText);
+      console.error('[Klaviyo] Update profile error:', errorText);
     }
 
-    console.log('Profile updated successfully');
-
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.log('[Klaviyo] Profile updated successfully');
+    return createSuccessResponse({ success: true });
   } catch (error: any) {
-    console.error('Error in klaviyo-profile:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('[Klaviyo] Error in klaviyo-profile:', error);
+    return createErrorResponse(error.message, 500);
   }
 });

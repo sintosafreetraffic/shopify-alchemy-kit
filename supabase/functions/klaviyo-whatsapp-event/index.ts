@@ -1,9 +1,18 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+/**
+ * Klaviyo WhatsApp Event Edge Function
+ * 
+ * Sends personalized WhatsApp events to Klaviyo.
+ * Requires JWT authentication.
+ * Uses centralized env/cors helpers.
+ */
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import {
+  corsHeaders,
+  requireEnvVar,
+  createErrorResponse,
+  createSuccessResponse,
+} from "../_shared/env.ts";
 
 // WhatsApp event types for personalized messaging
 type WhatsAppEventType = 
@@ -19,40 +28,33 @@ interface WhatsAppEventPayload {
 }
 
 Deno.serve(async (req) => {
+  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const KLAVIYO_PRIVATE_API_KEY = Deno.env.get('KLAVIYO_PRIVATE_API_KEY');
-    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-
-    if (!KLAVIYO_PRIVATE_API_KEY) {
-      throw new Error('Klaviyo API key not configured');
-    }
+    // Use centralized env helpers
+    const KLAVIYO_PRIVATE_API_KEY = requireEnvVar('KLAVIYO_PRIVATE_API_KEY');
+    const SUPABASE_URL = requireEnvVar('SUPABASE_URL');
+    const SUPABASE_SERVICE_ROLE_KEY = requireEnvVar('SUPABASE_SERVICE_ROLE_KEY');
+    const SUPABASE_ANON_KEY = requireEnvVar('SUPABASE_ANON_KEY');
 
     // Extract user from JWT - this is the authenticated user
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Authorization header required' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return createErrorResponse('Authorization header required', 401);
     }
 
     // Create client with user's JWT to get their identity
-    const supabaseAuth = createClient(SUPABASE_URL, Deno.env.get('SUPABASE_ANON_KEY')!, {
+    const supabaseAuth = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       global: { headers: { Authorization: authHeader } }
     });
     
     const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
     if (authError || !user?.email) {
-      console.error('Auth error:', authError);
-      return new Response(JSON.stringify({ error: 'Invalid or expired token' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      console.error('[Auth] Error:', authError);
+      return createErrorResponse('Invalid or expired token', 401);
     }
 
     // Use the authenticated user's email - ignore any email in request body
@@ -60,10 +62,10 @@ Deno.serve(async (req) => {
     const { event_type, custom_properties = {} }: WhatsAppEventPayload = await req.json();
 
     if (!event_type) {
-      throw new Error('event_type is required');
+      return createErrorResponse('event_type is required', 400);
     }
 
-    console.log(`Processing WhatsApp event ${event_type} for authenticated user: ${email}`);
+    console.log(`[Klaviyo] Processing WhatsApp event ${event_type} for authenticated user: ${email}`);
 
     // Use service role for database operations
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -76,10 +78,8 @@ Deno.serve(async (req) => {
       .single();
 
     if (!profile?.whatsapp_enabled) {
-      console.log(`WhatsApp not enabled for ${email}, skipping event`);
-      return new Response(JSON.stringify({ success: false, reason: 'whatsapp_not_enabled' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      console.log(`[Klaviyo] WhatsApp not enabled for ${email}, skipping event`);
+      return createSuccessResponse({ success: false, reason: 'whatsapp_not_enabled' });
     }
 
     // Fetch latest sleep logs for trend data
@@ -144,7 +144,7 @@ Deno.serve(async (req) => {
       event_timestamp: new Date().toISOString(),
     };
 
-    console.log(`Sending ${event_type} with personalization`);
+    console.log(`[Klaviyo] Sending ${event_type} with personalization`);
 
     // Send event to Klaviyo
     const response = await fetch('https://a.klaviyo.com/api/events/', {
@@ -169,20 +169,14 @@ Deno.serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Klaviyo API error:', errorText);
-      throw new Error(`Klaviyo API error: ${errorText}`);
+      console.error('[Klaviyo] API error:', errorText);
+      return createErrorResponse(`Klaviyo API error: ${errorText}`, 500);
     }
 
-    console.log(`WhatsApp event ${event_type} sent successfully for ${email}`);
-
-    return new Response(JSON.stringify({ success: true, event_type }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.log(`[Klaviyo] WhatsApp event ${event_type} sent successfully for ${email}`);
+    return createSuccessResponse({ success: true, event_type });
   } catch (error: any) {
-    console.error('Error in klaviyo-whatsapp-event:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('[Klaviyo] Error in klaviyo-whatsapp-event:', error);
+    return createErrorResponse(error.message, 500);
   }
 });
