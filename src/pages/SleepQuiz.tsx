@@ -5,12 +5,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { Loader2, CheckCircle, AlertCircle, ShoppingCart, Mail, Sparkles, Info, Moon, ArrowLeft, ArrowRight } from "lucide-react";
+import { Loader2, CheckCircle, AlertCircle, ShoppingCart, Mail, Sparkles, Info, Moon, ArrowLeft, ArrowRight, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useCartStore } from "@/stores/cartStore";
 import { fetchProducts, ShopifyProduct } from "@/lib/shopify";
 import { trackQuizStarted } from "@/lib/klaviyo";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Tooltip,
   TooltipContent,
@@ -360,6 +361,14 @@ const SleepQuiz = () => {
   const navigate = useNavigate();
   const { addItem } = useCartStore();
 
+  // Account existence check state
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+  const [accountExists, setAccountExists] = useState(false);
+  const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
+  const [password, setPassword] = useState("");
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
   useEffect(() => {
     trackQuizStarted();
     const loadProducts = async () => {
@@ -414,9 +423,106 @@ const SleepQuiz = () => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
+  // Check if email already has an account
+  const checkEmailExists = useCallback(async (emailToCheck: string) => {
+    if (!isValidEmail(emailToCheck)) return;
+    
+    setIsCheckingEmail(true);
+    try {
+      // Check if a sleep profile exists for this email
+      const { data, error } = await supabase
+        .from('sleep_profiles')
+        .select('email')
+        .eq('email', emailToCheck.toLowerCase().trim())
+        .maybeSingle();
+      
+      if (data) {
+        setAccountExists(true);
+        toast.info("An account already exists with this email", {
+          description: "Enter your password to continue, or use a different email.",
+          duration: 5000,
+        });
+      } else {
+        setAccountExists(false);
+        setShowPasswordPrompt(false);
+        setPassword("");
+      }
+    } catch (error) {
+      console.error("Error checking email:", error);
+    } finally {
+      setIsCheckingEmail(false);
+    }
+  }, []);
+
+  // Handle email input with debounced check
+  const handleEmailChange = useCallback((newEmail: string) => {
+    setEmail(newEmail);
+    setAccountExists(false);
+    setShowPasswordPrompt(false);
+    setIsAuthenticated(false);
+    setPassword("");
+  }, []);
+
+  // Debounced email check
+  useEffect(() => {
+    if (!isValidEmail(email)) return;
+    
+    const timer = setTimeout(() => {
+      checkEmailExists(email);
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [email, checkEmailExists]);
+
+  // Handle authentication with password
+  const handleAuthenticate = async () => {
+    if (!password.trim()) {
+      toast.error("Please enter your password");
+      return;
+    }
+    
+    setIsAuthenticating(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password: password,
+      });
+      
+      if (error) {
+        toast.error("Authentication failed", {
+          description: error.message === "Invalid login credentials" 
+            ? "Incorrect password. Please try again." 
+            : error.message,
+        });
+        return;
+      }
+      
+      if (data.user) {
+        setIsAuthenticated(true);
+        setShowPasswordPrompt(false);
+        toast.success("Authenticated successfully!", {
+          description: "Your quiz results will be saved to your account.",
+        });
+      }
+    } catch (error) {
+      console.error("Authentication error:", error);
+      toast.error("Authentication failed. Please try again.");
+    } finally {
+      setIsAuthenticating(false);
+    }
+  };
+
   const canProceed = useCallback(() => {
     if (step > QUIZ_QUESTIONS.length) {
-      return isValidEmail(email);
+      // Email step - require valid email
+      if (!isValidEmail(email)) return false;
+      
+      // If account exists and user wants to create profile, they need to authenticate
+      if (accountExists && createSleepCoachProfile && !isAuthenticated) {
+        return false;
+      }
+      
+      return true;
     }
     
     const question = QUIZ_QUESTIONS[step - 1];
@@ -431,7 +537,7 @@ const SleepQuiz = () => {
       return typeof answer === "number";
     }
     return !!answer;
-  }, [step, answers, email]);
+  }, [step, answers, email, accountExists, createSleepCoachProfile, isAuthenticated]);
 
   const handleNext = () => {
     if (step <= QUIZ_QUESTIONS.length) {
@@ -825,12 +931,82 @@ const SleepQuiz = () => {
                       type="email"
                       placeholder="your@email.com"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => handleEmailChange(e.target.value)}
                       className="pl-12 h-14 text-base rounded-xl border-border focus:border-primary"
                     />
+                    {isCheckingEmail && (
+                      <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground animate-spin" />
+                    )}
                   </div>
                   
-                  {email && isValidEmail(email) && (
+                  {/* Account exists notification */}
+                  {accountExists && isValidEmail(email) && (
+                    <div className="p-4 rounded-xl border-2 border-amber-500/50 bg-amber-500/10">
+                      <div className="flex items-start gap-3">
+                        <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="font-medium text-foreground">Account already exists</p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            A Sleep Coach profile is already registered with this email.
+                          </p>
+                          
+                          {!isAuthenticated && (
+                            <div className="mt-3 space-y-3">
+                              {!showPasswordPrompt ? (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setShowPasswordPrompt(true)}
+                                  className="w-full"
+                                >
+                                  <Lock className="w-4 h-4 mr-2" />
+                                  Continue with this email
+                                </Button>
+                              ) : (
+                                <div className="space-y-3">
+                                  <div className="relative">
+                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                      type="password"
+                                      placeholder="Enter your password"
+                                      value={password}
+                                      onChange={(e) => setPassword(e.target.value)}
+                                      onKeyDown={(e) => e.key === 'Enter' && handleAuthenticate()}
+                                      className="pl-10 h-12 text-base rounded-lg"
+                                    />
+                                  </div>
+                                  <Button
+                                    onClick={handleAuthenticate}
+                                    disabled={isAuthenticating || !password.trim()}
+                                    className="w-full"
+                                    size="sm"
+                                  >
+                                    {isAuthenticating ? (
+                                      <>
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        Verifying...
+                                      </>
+                                    ) : (
+                                      "Verify & Continue"
+                                    )}
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          
+                          {isAuthenticated && (
+                            <div className="mt-3 flex items-center gap-2 text-success">
+                              <CheckCircle className="h-4 w-4" />
+                              <span className="text-sm font-medium">Authenticated successfully</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {email && isValidEmail(email) && (!accountExists || isAuthenticated) && (
                     <div 
                       className="flex items-start space-x-3 p-4 rounded-xl border-2 border-primary/30 bg-primary/5 cursor-pointer"
                       onClick={() => setCreateSleepCoachProfile(!createSleepCoachProfile)}
@@ -844,10 +1020,15 @@ const SleepQuiz = () => {
                       <div className="flex-1">
                         <Label htmlFor="sleepCoach" className="cursor-pointer flex items-center gap-2">
                           <Sparkles className="h-4 w-4 text-primary" />
-                          <span className="font-semibold text-foreground">Create AI Sleep Coach Profile</span>
+                          <span className="font-semibold text-foreground">
+                            {accountExists ? "Update AI Sleep Coach Profile" : "Create AI Sleep Coach Profile"}
+                          </span>
                         </Label>
                         <p className="text-sm text-muted-foreground mt-1">
-                          Get a personalized 7-day sleep improvement plan based on your quiz answers.
+                          {accountExists 
+                            ? "Update your existing sleep profile with your latest quiz answers."
+                            : "Get a personalized 7-day sleep improvement plan based on your quiz answers."
+                          }
                         </p>
                       </div>
                     </div>
