@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.daily-sleep-sync]
 verify_jwt = false
+
+[functions.debug-sleep-sync]
+verify_jwt = false
