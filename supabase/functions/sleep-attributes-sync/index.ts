@@ -10,7 +10,7 @@
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { SCHEMA_VERSION } from "../_shared/types.ts";
+import { SCHEMA_VERSION, SleepSyncSource } from "../_shared/types.ts";
 import {
   corsHeaders,
   requireEnvVar,
@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
     // Determine authentication method
     let email: string | null = null;
     let isInternalCall = false;
-    let source = "manual";
+    let source: SleepSyncSource = "manual";
 
     // Check for internal service token (for service-to-service calls)
     const internalToken = req.headers.get('x-internal-token');
