@@ -674,7 +674,7 @@ const SleepCoachDashboard = () => {
                             {data.logs.length > 0 ? ` and ${data.logs.length} logged nights` : ''}.
                           </p>
                         </div>
-                        <Button onClick={handleGeneratePlan} disabled={isGeneratingPlan}>
+                        <Button onClick={() => handleGeneratePlan()} disabled={isGeneratingPlan}>
                           {isGeneratingPlan ? (
                             <>
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
