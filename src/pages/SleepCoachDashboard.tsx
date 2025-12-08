@@ -23,7 +23,7 @@ import { SleepLogTable } from "@/components/sleep-coach/SleepLogTable";
 import { CoachPlanDisplay } from "@/components/sleep-coach/CoachPlanDisplay";
 import { StreakDisplay } from "@/components/sleep-coach/StreakDisplay";
 import { SleepHistorySection } from "@/components/sleep-coach/SleepHistorySection";
-import { SleepProgressChart } from "@/components/sleep-coach/SleepProgressChart";
+import { SleepProgressChart, TimeRange as ChartTimeRange } from "@/components/sleep-coach/SleepProgressChart";
 import { ShareProgressModal } from "@/components/sleep-coach/ShareProgressModal";
 
 /**
@@ -76,6 +76,7 @@ const SleepCoachDashboard = () => {
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [shareRange, setShareRange] = useState<ChartTimeRange>("30d");
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -602,7 +603,10 @@ const SleepCoachDashboard = () => {
                   {/* Sleep Progress Chart with Share */}
                   <SleepProgressChart 
                     logs={data.logs}
-                    onShareClick={() => setIsShareModalOpen(true)}
+                    onShareClick={(range) => {
+                      setShareRange(range);
+                      setIsShareModalOpen(true);
+                    }}
                   />
                   
                   {/* Weekly Sleep History */}
@@ -618,6 +622,7 @@ const SleepCoachDashboard = () => {
                     isOpen={isShareModalOpen}
                     onClose={() => setIsShareModalOpen(false)}
                     logs={data.logs}
+                    initialRange={shareRange === "custom" ? "30d" : shareRange}
                   />
                 </>
               )}

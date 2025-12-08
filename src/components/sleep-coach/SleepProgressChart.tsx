@@ -15,7 +15,7 @@ export type TimeRange = "7d" | "30d" | "90d" | "12m" | "custom";
 
 interface SleepProgressChartProps {
   logs: SleepLog[];
-  onShareClick?: () => void;
+  onShareClick?: (range: TimeRange) => void;
 }
 
 export const SleepProgressChart = ({ logs, onShareClick }: SleepProgressChartProps) => {
@@ -239,7 +239,7 @@ export const SleepProgressChart = ({ logs, onShareClick }: SleepProgressChartPro
                 variant="outline"
                 size="sm"
                 className="h-7 text-xs gap-1"
-                onClick={onShareClick}
+                onClick={() => onShareClick(timeRange)}
               >
                 <Share2 className="h-3 w-3" />
                 Share
