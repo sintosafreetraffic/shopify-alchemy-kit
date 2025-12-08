@@ -368,6 +368,7 @@ const SleepQuiz = () => {
   const [password, setPassword] = useState("");
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isSendingReset, setIsSendingReset] = useState(false);
 
   useEffect(() => {
     trackQuizStarted();
@@ -509,6 +510,38 @@ const SleepQuiz = () => {
       toast.error("Authentication failed. Please try again.");
     } finally {
       setIsAuthenticating(false);
+    }
+  };
+
+  // Handle forgot password
+  const handleForgotPassword = async () => {
+    if (!isValidEmail(email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+    
+    setIsSendingReset(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+        redirectTo: `${window.location.origin}/auth?reset=true`,
+      });
+      
+      if (error) {
+        toast.error("Failed to send reset email", {
+          description: error.message,
+        });
+        return;
+      }
+      
+      toast.success("Password reset email sent!", {
+        description: "Check your inbox for a link to reset your password.",
+        duration: 6000,
+      });
+    } catch (error) {
+      console.error("Reset password error:", error);
+      toast.error("Failed to send reset email. Please try again.");
+    } finally {
+      setIsSendingReset(false);
     }
   };
 
@@ -963,7 +996,7 @@ const SleepQuiz = () => {
                                   Continue with this email
                                 </Button>
                               ) : (
-                                <div className="space-y-3">
+                              <div className="space-y-3">
                                   <div className="relative">
                                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                     <Input
@@ -990,6 +1023,14 @@ const SleepQuiz = () => {
                                       "Verify & Continue"
                                     )}
                                   </Button>
+                                  <button
+                                    type="button"
+                                    onClick={handleForgotPassword}
+                                    disabled={isSendingReset}
+                                    className="w-full text-sm text-primary hover:text-primary/80 hover:underline transition-colors disabled:opacity-50"
+                                  >
+                                    {isSendingReset ? "Sending reset link..." : "Forgot password?"}
+                                  </button>
                                 </div>
                               )}
                             </div>
