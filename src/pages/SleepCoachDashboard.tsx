@@ -65,6 +65,8 @@ function calculateStreak(logs: SleepLog[]): number {
 const SleepCoachDashboard = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [isCheckingAccess, setIsCheckingAccess] = useState(false);
+  const [accessDenied, setAccessDenied] = useState<{ reason: string; hasPurchased: boolean } | null>(null);
   const [email, setEmail] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [showWizard, setShowWizard] = useState(false);
@@ -88,6 +90,48 @@ const SleepCoachDashboard = () => {
     generateCoachPlan
   } = useSleepApi();
 
+  // Check access when authenticated
+  const checkAccess = useCallback(async (session: any) => {
+    if (!session?.access_token) return;
+    
+    setIsCheckingAccess(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-sleep-coach-access`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+        }
+      );
+      
+      const data = await response.json();
+      console.log('[SleepCoach] Access check result:', data);
+      
+      if (!data.hasAccess) {
+        if (data.accessReason === 'quiz_required') {
+          toast.info("Complete the Sleep Quiz first", {
+            description: "Before we create your personalized AI sleep plan, we need a short sleep assessment.",
+            duration: 6000,
+          });
+          navigate('/sleep-quiz?returnTo=/sleep-coach');
+          return;
+        }
+        // Other access denial reasons
+        setAccessDenied({ reason: data.accessReason, hasPurchased: data.hasPurchased });
+      } else {
+        setAccessDenied(null);
+      }
+    } catch (error) {
+      console.error('[SleepCoach] Access check error:', error);
+    } finally {
+      setIsCheckingAccess(false);
+    }
+  }, [navigate]);
+
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -95,24 +139,31 @@ const SleepCoachDashboard = () => {
       if (session?.user) {
         setIsAuthenticated(true);
         setEmail(session.user.email || null);
+        // Check access after confirming authentication
+        await checkAccess(session);
       }
       setIsCheckingAuth(false);
     };
 
     checkAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         setIsAuthenticated(true);
         setEmail(session.user.email || null);
+        // Re-check access on auth state change
+        if (event === 'SIGNED_IN') {
+          await checkAccess(session);
+        }
       } else {
         setIsAuthenticated(false);
         setEmail(null);
+        setAccessDenied(null);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [checkAccess]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -199,12 +250,14 @@ const SleepCoachDashboard = () => {
   // Calculate streak from logs
   const streak = calculateStreak(data.logs);
 
-  if (isCheckingAuth) {
+  if (isCheckingAuth || isCheckingAccess) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading...</p>
+          <p className="text-muted-foreground">
+            {isCheckingAccess ? "Verifying access..." : "Loading..."}
+          </p>
         </div>
       </div>
     );
