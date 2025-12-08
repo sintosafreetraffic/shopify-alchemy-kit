@@ -214,7 +214,7 @@ export const CoachPlanDisplay = ({ plan, onGeneratePlan, loading }: CoachPlanDis
         <div className="mt-6 pt-4 border-t border-border/50 text-xs text-muted-foreground">
           <span>Generated: {new Date(plan.generated_at).toLocaleDateString()}</span>
           <span className="mx-2">•</span>
-          <span>Plan auto-updates when sleep quality changes or weekly</span>
+          <span>This plan uses your sleep quiz assessment and logged sleep data</span>
         </div>
       </CardContent>
     </Card>

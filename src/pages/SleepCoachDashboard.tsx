@@ -583,7 +583,8 @@ const SleepCoachDashboard = () => {
                         <div>
                           <h3 className="text-lg font-semibold mb-2">No AI Plan Generated Yet</h3>
                           <p className="text-muted-foreground max-w-md mx-auto">
-                            Generate your personalized 7-day sleep plan based on your profile and sleep logs.
+                            Generate your personalized 7-day sleep plan based on your sleep quiz assessment
+                            {data.logs.length > 0 ? ` and ${data.logs.length} logged nights` : ''}.
                           </p>
                         </div>
                         <Button onClick={handleGeneratePlan} disabled={isGeneratingPlan}>
