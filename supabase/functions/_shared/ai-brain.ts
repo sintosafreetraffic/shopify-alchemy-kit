@@ -415,10 +415,17 @@ export function deriveQuizIssues(quizAnswers: Record<string, any>): string[] {
     issues.push("Frequent position changes suggesting comfort or support issues");
   }
 
-  // Environment issues
-  if (roomBrightness === "bright" || roomBrightness === "dim") {
-    issues.push("Light exposure may be reducing deep sleep quality");
+  // Environment / Light issues - add appropriate severity based on brightness level
+  // Check for duplicates before adding (case-insensitive)
+  const hasLightIssue = issues.some(i => i.toLowerCase().includes("light"));
+  if (!hasLightIssue) {
+    if (roomBrightness === "bright") {
+      issues.push("Light exposure may be reducing deep sleep quality");
+    } else if (roomBrightness === "dim") {
+      issues.push("Light exposure may be slightly reducing deep sleep quality");
+    }
   }
+
   if (sleepTemperature === "hot") {
     issues.push("Sleep temperature affecting sleep continuity");
   }
@@ -498,6 +505,53 @@ export function generateAlignmentInsights(quizAnswers: Record<string, any>): str
 }
 
 /**
+ * Ensure mask recommendation is present when light issues are detected
+ * This is a post-processing step to guarantee consistency
+ */
+function ensureMaskRecommendation(
+  recommendations: Array<{ product: string; reason: string; priority: string }>,
+  quizAnswers: Record<string, any>,
+  scores: QuizScores,
+  detectedIssues: string[]
+): Array<{ product: string; reason: string; priority: string }> {
+  const roomBrightness = quizAnswers.roomBrightness || "";
+  const environmentScore = scores?.environmentScore ?? 100;
+  
+  // Check if light-related issue exists
+  const hasLightIssue = 
+    roomBrightness === "bright" ||
+    roomBrightness === "dim" ||
+    detectedIssues.some(i => i.toLowerCase().includes("light"));
+  
+  // Check if mask should be recommended
+  if (hasLightIssue || environmentScore < 80) {
+    // Check if mask is already recommended
+    const alreadyRecommended = recommendations.some(
+      r => r.product.toLowerCase().includes("silk deep sleep mask") || 
+           r.product.toLowerCase().includes("sleep mask")
+    );
+    
+    if (!alreadyRecommended) {
+      const priority = (roomBrightness === "bright" || environmentScore < 70) ? "high" : "medium";
+      
+      const reason = hasLightIssue
+        ? "Because you reported light exposure affecting your deep sleep"
+        : "Your sleep environment could benefit from better light control";
+      
+      recommendations.push({
+        product: "Rise By Night™ Silk Deep Sleep Mask",
+        reason,
+        priority
+      });
+      
+      console.log("[AI Brain] Added mask recommendation due to light/environment issues");
+    }
+  }
+  
+  return recommendations;
+}
+
+/**
  * Analyze sleep quiz and recommend products with fallback
  */
 export async function analyzeQuizForRecommendations(
@@ -534,15 +588,26 @@ Pillow Satisfaction: ${quizAnswers.pillowSatisfaction ?? 5}/10`;
       
       // Validate required fields exist
       if (s.assessment && Array.isArray(s.recommendations)) {
+        let recommendations = s.recommendations.map((r: any) => ({
+          product: String(r.product || "Rise By Night™ Ergonomic Sleep Pillow"),
+          reason: String(r.reason || "Recommended for better sleep"),
+          priority: String(r.priority || "high"),
+        }));
+        
+        // Post-process: ensure mask is recommended when light issues detected
+        recommendations = ensureMaskRecommendation(recommendations, quizAnswers, scores, detectedIssues);
+        
+        // Update bundle recommendation if we added a product
+        const bundleRecommended = recommendations.length >= 2 || Boolean(s.bundleRecommended);
+        const bundleReason = bundleRecommended 
+          ? (s.bundleReason || "The Complete Sleep Bundle includes all our products at a discounted price.")
+          : "";
+        
         return {
           assessment: String(s.assessment),
-          recommendations: s.recommendations.map((r: any) => ({
-            product: String(r.product || "Rise By Night™ Ergonomic Sleep Pillow"),
-            reason: String(r.reason || "Recommended for better sleep"),
-            priority: String(r.priority || "high"),
-          })),
-          bundleRecommended: Boolean(s.bundleRecommended),
-          bundleReason: String(s.bundleReason || ""),
+          recommendations,
+          bundleRecommended,
+          bundleReason,
           // Add deterministic extended fields
           scores,
           detectedIssues,
@@ -560,12 +625,19 @@ Pillow Satisfaction: ${quizAnswers.pillowSatisfaction ?? 5}/10`;
 
   // Return safe fallback with extended fields
   console.log("[AI Brain] Using fallback quiz recommendation");
-  const fallback = getDefaultQuizRecommendation({
-    sleepPosition: quizAnswers.sleepPosition || "",
-    painPoints: quizAnswers.painAreas || quizAnswers.painPoints || [],
-    pillowIssues: quizAnswers.pillowIssues || quizAnswers.sleepEquipment || [],
-    sleepGoals: quizAnswers.sleepGoals || [],
-  });
+  const fallback = getDefaultQuizRecommendation(
+    {
+      sleepPosition: quizAnswers.sleepPosition || "",
+      painPoints: quizAnswers.painAreas || quizAnswers.painPoints || [],
+      pillowIssues: quizAnswers.pillowIssues || quizAnswers.sleepEquipment || [],
+      sleepGoals: quizAnswers.sleepGoals || [],
+    },
+    {
+      roomBrightness: quizAnswers.roomBrightness || "",
+      environmentScore: scores.environmentScore,
+      detectedIssues,
+    }
+  );
   return {
     ...fallback,
     scores,
@@ -578,12 +650,19 @@ Pillow Satisfaction: ${quizAnswers.pillowSatisfaction ?? 5}/10`;
 /**
  * Default quiz recommendation fallback
  */
-function getDefaultQuizRecommendation(quizAnswers: {
-  sleepPosition: string;
-  painPoints: string[];
-  pillowIssues: string[];
-  sleepGoals: string[];
-}) {
+function getDefaultQuizRecommendation(
+  quizAnswers: {
+    sleepPosition: string;
+    painPoints: string[];
+    pillowIssues: string[];
+    sleepGoals: string[];
+  },
+  options?: {
+    roomBrightness?: string;
+    environmentScore?: number;
+    detectedIssues?: string[];
+  }
+) {
   const recommendations: Array<{ product: string; reason: string; priority: string }> = [];
   
   // Always recommend pillow
@@ -606,16 +685,36 @@ function getDefaultQuizRecommendation(quizAnswers: {
     });
   }
 
-  // Add sleep mask if mentioned
-  const needsMask = quizAnswers.pillowIssues.some(i => 
+  // Determine if mask is needed based on multiple factors
+  const roomBrightness = options?.roomBrightness || "";
+  const environmentScore = options?.environmentScore ?? 100;
+  const detectedIssues = options?.detectedIssues || [];
+  
+  const hasLightIssueFromEquipment = quizAnswers.pillowIssues.some(i => 
     i.toLowerCase().includes("light") || i.toLowerCase().includes("dark")
   );
+  const hasLightIssueFromBrightness = roomBrightness === "bright" || roomBrightness === "dim";
+  const hasLightIssueFromDetected = detectedIssues.some(i => i.toLowerCase().includes("light"));
+  const hasLowEnvironmentScore = environmentScore < 80;
+  
+  const needsMask = hasLightIssueFromEquipment || hasLightIssueFromBrightness || hasLightIssueFromDetected || hasLowEnvironmentScore;
   
   if (needsMask) {
+    // Determine priority based on severity
+    const priority = (roomBrightness === "bright" || environmentScore < 70) ? "high" : "medium";
+    
+    // Build reason based on the detected issue
+    let reason = "Blocks light for deeper, uninterrupted sleep";
+    if (hasLightIssueFromBrightness || hasLightIssueFromDetected) {
+      reason = "Because you reported light exposure affecting your deep sleep";
+    } else if (hasLowEnvironmentScore) {
+      reason = "Your sleep environment could benefit from better light control";
+    }
+    
     recommendations.push({
       product: "Rise By Night™ Silk Deep Sleep Mask",
-      reason: "Blocks light for deeper, uninterrupted sleep",
-      priority: "medium"
+      reason,
+      priority
     });
   }
 
