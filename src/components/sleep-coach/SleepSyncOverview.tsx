@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { 
   TrendingUp, 
@@ -11,9 +12,12 @@ import {
   Flame,
   Moon,
   Bed,
-  ThermometerSun
+  ThermometerSun,
+  RefreshCw,
+  Loader2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface SleepSyncState {
   schema_version: number;
@@ -51,6 +55,7 @@ interface SleepSyncState {
 
 interface SleepSyncOverviewProps {
   email: string;
+  onRefresh?: () => void;
 }
 
 function TrendIcon({ trend }: { trend: string }) {
@@ -68,33 +73,54 @@ function TrendBadge({ trend }: { trend: string }) {
   );
 }
 
-export function SleepSyncOverview({ email }: SleepSyncOverviewProps) {
+export function SleepSyncOverview({ email, onRefresh }: SleepSyncOverviewProps) {
   const [state, setState] = useState<SleepSyncState | null>(null);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+
+  const fetchState = useCallback(async () => {
+    try {
+      const { data } = await supabase
+        .from('sleep_attributes_state')
+        .select('data')
+        .eq('email', email)
+        .single();
+      
+      if (data?.data) {
+        setState(data.data as unknown as SleepSyncState);
+      }
+    } catch (error) {
+      console.error('Failed to fetch sleep sync state:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [email]);
 
   useEffect(() => {
-    const fetchState = async () => {
-      try {
-        const { data } = await supabase
-          .from('sleep_attributes_state')
-          .select('data')
-          .eq('email', email)
-          .single();
-        
-        if (data?.data) {
-          setState(data.data as unknown as SleepSyncState);
-        }
-      } catch (error) {
-        console.error('Failed to fetch sleep sync state:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (email) {
       fetchState();
     }
-  }, [email]);
+  }, [email, fetchState]);
+
+  const handleManualSync = async () => {
+    setSyncing(true);
+    try {
+      const { error } = await supabase.functions.invoke('sleep-attributes-sync', {
+        body: { source: 'manual', email },
+      });
+      
+      if (error) throw error;
+      
+      toast.success('Sleep data synced successfully');
+      await fetchState();
+      onRefresh?.();
+    } catch (error) {
+      console.error('Sync error:', error);
+      toast.error('Failed to sync sleep data');
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -112,9 +138,22 @@ export function SleepSyncOverview({ email }: SleepSyncOverviewProps) {
   if (!state) {
     return (
       <Card>
-        <CardContent className="p-6 text-center text-muted-foreground">
-          <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
-          <p>No sync data available yet. Log your first night's sleep!</p>
+        <CardContent className="p-6 text-center space-y-4">
+          <Activity className="h-8 w-8 mx-auto opacity-50 text-muted-foreground" />
+          <p className="text-muted-foreground">No sync data available yet.</p>
+          <Button onClick={handleManualSync} disabled={syncing} size="sm">
+            {syncing ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Syncing...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Sync Now
+              </>
+            )}
+          </Button>
         </CardContent>
       </Card>
     );
@@ -132,13 +171,29 @@ export function SleepSyncOverview({ email }: SleepSyncOverviewProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Activity className="h-5 w-5" />
-          SleepSync Overview
-        </CardTitle>
-        <CardDescription>
-          Your personalized sleep intelligence across all layers
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              SleepSync Overview
+            </CardTitle>
+            <CardDescription>
+              Your personalized sleep intelligence across all layers
+            </CardDescription>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleManualSync} 
+            disabled={syncing}
+          >
+            {syncing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Trends Section */}

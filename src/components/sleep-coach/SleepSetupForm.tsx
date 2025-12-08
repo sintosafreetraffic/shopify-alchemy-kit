@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Bed, Moon, Users, Shirt } from 'lucide-react';
+import { Loader2, Bed, Moon, Users, Shirt, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -72,6 +72,20 @@ export function SleepSetupForm({ email, initialValues, onSave }: SleepSetupFormP
     pillow_type: initialValues?.pillow_type || 'standard',
   });
 
+  // Update form when initialValues change
+  useEffect(() => {
+    if (initialValues) {
+      setValues(prev => ({
+        mattress_thickness: initialValues.mattress_thickness || prev.mattress_thickness,
+        mattress_firmness: initialValues.mattress_firmness || prev.mattress_firmness,
+        bed_height: initialValues.bed_height || prev.bed_height,
+        co_sleeping: initialValues.co_sleeping || prev.co_sleeping,
+        bedding_material: initialValues.bedding_material || prev.bedding_material,
+        pillow_type: initialValues.pillow_type || prev.pillow_type,
+      }));
+    }
+  }, [initialValues]);
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -86,18 +100,21 @@ export function SleepSetupForm({ email, initialValues, onSave }: SleepSetupFormP
 
       if (updateError) throw updateError;
 
-      // Trigger Sleep Sync with setup_update source
+      // Trigger Sleep Sync with setup_update source (includes email)
       try {
-        await supabase.functions.invoke('sleep-attributes-sync', {
-          body: { source: 'setup_update' },
+        const { error: syncError } = await supabase.functions.invoke('sleep-attributes-sync', {
+          body: { source: 'setup_update', email },
         });
+        if (syncError) {
+          console.error('Sleep Sync error:', syncError);
+        }
       } catch (syncErr) {
-        console.error('Sleep Sync error:', syncErr);
+        console.error('Sleep Sync invoke error:', syncErr);
       }
 
       toast.success('Sleep setup saved successfully');
       onSave?.();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Save error:', error);
       toast.error('Failed to save sleep setup');
     } finally {
@@ -263,10 +280,13 @@ export function SleepSetupForm({ email, initialValues, onSave }: SleepSetupFormP
           {saving ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Saving...
+              Saving & Syncing...
             </>
           ) : (
-            'Save Sleep Setup'
+            <>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Save Sleep Setup
+            </>
           )}
         </Button>
       </CardContent>
