@@ -43,6 +43,18 @@ interface SleepProfile {
   purchase_count?: number;
   delivery_date?: string;
   products_owned?: string[];
+  quiz_completed?: boolean;
+  quiz_completed_at?: string;
+}
+
+// Quiz snapshot for traceability
+interface QuizSnapshot {
+  sleep_position: string;
+  pain_points: string[];
+  temperature_preference: string;
+  stress_level: string;
+  wake_up_condition: string;
+  quiz_completed_at?: string;
 }
 
 interface SleepLog {
@@ -132,6 +144,16 @@ Deno.serve(async (req) => {
       parsed = getDefaultSleepPlan();
     }
 
+    // Build quiz snapshot for traceability
+    const quizSnapshot: QuizSnapshot | null = profile ? {
+      sleep_position: profile.sleep_position,
+      pain_points: profile.pain_points || [],
+      temperature_preference: profile.temperature_preference,
+      stress_level: profile.stress_level,
+      wake_up_condition: profile.wake_up_condition,
+      quiz_completed_at: profile.quiz_completed_at,
+    } : null;
+
     // Save to database using authenticated email
     const validUntil = new Date();
     validUntil.setDate(validUntil.getDate() + 7);
@@ -141,7 +163,10 @@ Deno.serve(async (req) => {
       .insert({
         email,
         plan_type: planType,
-        sleep_plan: parsed.weeklyPlan,
+        sleep_plan: {
+          ...parsed.weeklyPlan,
+          quiz_snapshot: quizSnapshot, // Store quiz snapshot with the plan for traceability
+        },
         encouragement_message: parsed.encouragement,
         main_focus_this_week: parsed.focusAreas,
         recommended_pdfs: parsed.pdfs || ['Ergonomic Sleep Guide', 'Pain Relief Stretches'],
@@ -149,7 +174,7 @@ Deno.serve(async (req) => {
         whatsapp_messages: [],
         klaviyo_events: [],
         spine_health_score: parsed.spineScore,
-        raw_ai_response: JSON.stringify(parsed),
+        raw_ai_response: JSON.stringify({ ...parsed, quiz_snapshot: quizSnapshot }),
         valid_until: validUntil.toISOString(),
       })
       .select()
@@ -226,24 +251,73 @@ Deno.serve(async (req) => {
 function buildUserContext(profile: SleepProfile | null, logs: SleepLog[], trends: TrendData): string {
   if (!profile) return 'New user with no profile data. Create a general sleep improvement plan focused on pillow positioning and sleep hygiene.';
   
-  return `User Profile:
-- Sleep Position: ${profile.sleep_position}
-- Pain Points: ${profile.pain_points?.join(', ') || 'None specified'}
-- Temperature Preference: ${profile.temperature_preference}
-- Stress Level: ${profile.stress_level}
-- Wake Up Condition: ${profile.wake_up_condition}
-- Products Owned: ${profile.products_owned?.join(', ') || 'Not specified'}
+  // Build detailed quiz-derived context
+  const quizContext = `
+=== SLEEP QUIZ ASSESSMENT DATA ===
+The user completed a comprehensive sleep quiz. Use this baseline profile to personalize the plan:
 
-Sleep Data (${logs.length} nights logged):
-- Average Sleep Quality: ${trends.avgSleepQuality.toFixed(1)}/10
-- Average Pain Level: ${trends.avgPain.toFixed(1)}/10
-- Trend: ${trends.trend}
-- Hot Nights: ${trends.hotNights}
-- Stressed Nights: ${trends.stressedNights}
-- Good Nights (7+): ${trends.goodNights}
-- Poor Nights (≤4): ${trends.poorNights}
+Sleep Position: ${profile.sleep_position}
+- If "side": emphasize pillow height for neck-shoulder gap, knee pillow for hip alignment
+- If "back": focus on neck curve support, proper pillow loft
+- If "stomach": gentle transition suggestions, lower pillow recommendations
+- If "mixed": versatile positioning guidance
 
-Create a personalized 7-day plan addressing their specific pain points and sleep position.`;
+Pain Points: ${profile.pain_points?.length ? profile.pain_points.join(', ') : 'None reported'}
+- "neck": Include cervical stretches, pillow positioning for neck support
+- "shoulders": Address shoulder rotation, side-sleeping pressure relief
+- "lower_back": Hip alignment, knee pillow usage, morning stretches for lumbar
+- "hips": Leg positioning, knee pillow between legs for side sleepers
+
+Temperature Preference: ${profile.temperature_preference}
+- "cold": User runs hot - include cooling tips, breathable bedding advice
+- "warm": User runs cold - layer suggestions, warm-up routines
+- "neutral": Standard temperature guidance
+
+Stress Level: ${profile.stress_level}
+- "high": Emphasize wind-down routines, breathing exercises, screen-free time
+- "medium": Moderate relaxation techniques, consistent bedtime
+- "low": Focus more on physical optimization than mental
+
+Wake Up Condition: ${profile.wake_up_condition}
+- "stiff": Morning mobility routines, pre-sleep stretching
+- "tired": Sleep quality optimization, possible sleep debt
+- "energized": Maintain current good habits
+- "neutral": General optimization
+
+Quiz Completed: ${profile.quiz_completed_at ? new Date(profile.quiz_completed_at).toLocaleDateString() : 'Recently'}
+Products Owned: ${profile.products_owned?.join(', ') || 'Not specified'}
+`;
+
+  // Build logging context if logs exist
+  const logsContext = logs.length > 0 ? `
+=== SLEEP LOG DATA (${logs.length} nights) ===
+Use this real behavioral data to refine recommendations:
+
+Average Sleep Quality: ${trends.avgSleepQuality.toFixed(1)}/10
+Average Morning Pain: ${trends.avgPain.toFixed(1)}/10
+Trend: ${trends.trend} ${trends.trend === 'improving' ? '📈' : trends.trend === 'worsening' ? '📉' : '➡️'}
+Hot Nights: ${trends.hotNights}/${logs.length} (${Math.round(trends.hotNights/logs.length*100)}%)
+Stressed Nights: ${trends.stressedNights}/${logs.length} (${Math.round(trends.stressedNights/logs.length*100)}%)
+Good Nights (7+): ${trends.goodNights}
+Poor Nights (≤4): ${trends.poorNights}
+` : `
+=== SLEEP LOG DATA ===
+No sleep logs yet. Base plan entirely on quiz data.
+`;
+
+  return `${quizContext}
+${logsContext}
+
+=== PLAN GENERATION INSTRUCTIONS ===
+1. Use sleep_position to tailor pillow and positioning advice for EVERY day
+2. Use pain_points to decide which areas to focus on (neck vs shoulders vs lower_back vs hips)
+3. Use temperature_preference and any hot night data for environment adjustments
+4. Use stress_level and wake_up_condition to modulate wind-down routine intensity
+5. If logs show declining trend, adjust plan to address specific issues
+6. Make morning tasks 5-10 min mobility/stretching focused on their pain points
+7. Make evening tasks relaxing, especially for high stress users
+
+Create a personalized 7-day plan that clearly reflects their quiz profile combined with any logging data.`;
 }
 
 function calculateTrends(logs: SleepLog[]): TrendData {
