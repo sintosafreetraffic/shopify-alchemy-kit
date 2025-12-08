@@ -728,12 +728,120 @@ function getDefaultQuizRecommendation(
   };
 }
 
+// Exported interface for snapshots used by plan generation
+export interface ProfileSnapshot {
+  sleep_position: string;
+  pain_points: string[];
+  temperature_preference: string;
+  stress_level: string;
+  wake_up_condition: string;
+  products_owned: string[];
+  quiz_completed_at?: string;
+}
+
+export interface LogsSnapshot {
+  nights_logged: number;
+  avg_sleep_quality: number;
+  avg_morning_pain: number;
+  trend: 'improving' | 'stable' | 'worsening';
+  hot_nights: number;
+  stressed_nights: number;
+  good_nights: number;
+  poor_nights: number;
+  last_log_date?: string;
+}
+
+/**
+ * Build structured context for sleep plan that enforces hard constraints
+ */
+export function buildSleepPlanContext(
+  profileSnapshot: ProfileSnapshot,
+  logsSnapshot: LogsSnapshot,
+  planType: string = "initial"
+): string {
+  const productsOwnedList = profileSnapshot.products_owned?.length > 0 
+    ? profileSnapshot.products_owned.join(', ') 
+    : 'None - user has not purchased any Rise By Night products yet';
+
+  // Determine plan type based on data
+  const isRecoveryPlan = logsSnapshot.avg_sleep_quality < 5 || logsSnapshot.avg_morning_pain >= 5;
+  const hasNoLogs = logsSnapshot.nights_logged === 0;
+  
+  return `
+=== PROFILE SNAPSHOT (DO NOT CONTRADICT) ===
+sleep_position: ${profileSnapshot.sleep_position}
+pain_points: ${profileSnapshot.pain_points?.join(', ') || 'None reported'}
+stress_level: ${profileSnapshot.stress_level || 'medium'}
+wake_up_condition: ${profileSnapshot.wake_up_condition || 'neutral'}
+temperature_preference: ${profileSnapshot.temperature_preference || 'neutral'}
+products_owned: [${productsOwnedList}]
+
+=== LOG SNAPSHOT (LAST 7–14 DAYS) ===
+nights_logged: ${logsSnapshot.nights_logged}
+avg_sleep_quality: ${logsSnapshot.avg_sleep_quality.toFixed(1)}/10
+avg_morning_pain: ${logsSnapshot.avg_morning_pain.toFixed(1)}/10
+trend: ${logsSnapshot.trend}
+hot_nights: ${logsSnapshot.hot_nights}
+stressed_nights: ${logsSnapshot.stressed_nights}
+good_nights (7+): ${logsSnapshot.good_nights}
+poor_nights (≤4): ${logsSnapshot.poor_nights}
+${logsSnapshot.last_log_date ? `last_log_date: ${logsSnapshot.last_log_date}` : ''}
+
+=== HARD CONSTRAINTS – YOU MUST OBEY THESE ===
+1. SLEEP POSITION: The user sleeps on their ${profileSnapshot.sleep_position}. 
+   - NEVER describe them as a "side sleeper" if sleep_position is "back", and vice versa.
+   - Tailor ALL pillow positioning advice to their ACTUAL sleep position.
+
+2. PRODUCTS OWNED: Only reference products the user ACTUALLY owns: [${productsOwnedList}]
+   - If "Ergonomic Pillow" is NOT in products_owned, do NOT give tasks assuming they have it. You may suggest it ONCE as a recommendation.
+   - If "Knee Pillow" is NOT in products_owned, do NOT assign daily tasks that require it.
+   - If "Sleep Mask" is NOT in products_owned, do NOT reference using it in evening routines.
+
+3. PLAN TYPE${isRecoveryPlan ? ' (RECOVERY)' : ' (MAINTENANCE)'}:
+   ${isRecoveryPlan ? `- avg_sleep_quality is ${logsSnapshot.avg_sleep_quality.toFixed(1)} OR avg_morning_pain is ${logsSnapshot.avg_morning_pain.toFixed(1)}
+   - This is a RECOVERY plan, NOT a maintenance plan.
+   - Do NOT say "you're doing great" or "low pain levels" - acknowledge their challenges.
+   - Focus the week on stabilization, identifying triggers, and gradual improvement.` : 
+   `- Sleep quality is good (${logsSnapshot.avg_sleep_quality.toFixed(1)}) and pain is manageable (${logsSnapshot.avg_morning_pain.toFixed(1)}).
+   - This is a MAINTENANCE plan - celebrate their progress and optimize further.`}
+
+4. TREND HANDLING:
+   ${logsSnapshot.trend === 'worsening' ? 
+   `- Trend is WORSENING. Acknowledge this gently and focus on identifying triggers and stabilization.
+   - Do NOT use overly positive language that ignores the decline.` :
+   logsSnapshot.trend === 'improving' ?
+   `- Trend is IMPROVING. Celebrate their progress and encourage continuation.` :
+   `- Trend is STABLE. Maintain current good habits while exploring optimizations.`}
+
+5. NO LOGS YET:
+   ${hasNoLogs ? 
+   `- The user has NO sleep logs yet. Base the plan entirely on their quiz profile.
+   - Clearly state that logging will refine future plans.
+   - Encourage them to start logging tonight.` : ''}
+
+${planType === 'weekly_update' ? '6. This is a WEEKLY UPDATE plan - reference progress from previous week if applicable.' : ''}
+
+=== PLAN GENERATION INSTRUCTIONS ===
+Create a 7-day plan that:
+- Uses sleep_position to tailor pillow and positioning advice for EVERY day
+- Addresses the specific pain_points mentioned (${profileSnapshot.pain_points?.join(', ') || 'none'})
+- Respects temperature_preference for environment adjustments
+- Modulates wind-down intensity based on stress_level (${profileSnapshot.stress_level})
+- Makes morning tasks 5-10 min focused on their pain points
+- Makes evening tasks relaxing, especially for high stress users
+- ONLY references products they actually own
+
+Return a structured JSON response.`;
+}
+
 /**
  * Call AI for sleep plan with tool calling (structured output)
  */
 export async function callSleepPlanAI(
   userContext: string,
-  planType: string = "initial"
+  planType: string = "initial",
+  profileSnapshot?: ProfileSnapshot,
+  logsSnapshot?: LogsSnapshot
 ): Promise<{
   weeklyPlan: any;
   encouragement: string;
@@ -749,21 +857,29 @@ export async function callSleepPlanAI(
     throw new Error("AI service not configured - OPENAI_API_KEY missing");
   }
 
-  const systemPrompt = `You are Rise by Night's AI Sleep Coach. Create a personalized 7-day sleep improvement plan for customers who purchased Rise By Night ergonomic pillows.
+  // Use structured context if snapshots provided, otherwise fall back to legacy userContext
+  const contextToUse = (profileSnapshot && logsSnapshot) 
+    ? buildSleepPlanContext(profileSnapshot, logsSnapshot, planType)
+    : userContext;
+
+  const systemPrompt = `You are Rise by Night's AI Sleep Coach. Create a personalized 7-day sleep improvement plan.
 
 Your goal is to help users improve their sleep quality through:
-1. Proper pillow positioning and sleep posture
-2. Evening wind-down routines
-3. Morning stretching to reduce stiffness
-4. Temperature and environment optimization
+1. Proper pillow positioning and sleep posture tailored to THEIR sleep position
+2. Evening wind-down routines appropriate for their stress level
+3. Morning stretching to reduce stiffness targeting their specific pain points
+4. Temperature and environment optimization based on their preferences
 
 ${BRAND_GUIDELINES}
 
-${planType === 'weekly_update' ? 'This is a weekly update. If improving, celebrate and maintain. If declining, offer gentle adjustments.' : ''}
+CRITICAL: You MUST read and follow ALL hard constraints in the user context. 
+Do NOT contradict the profile data. Do NOT assume products they don't own.
+
+${planType === 'weekly_update' ? 'This is a weekly update. If improving, celebrate. If declining, offer gentle adjustments.' : ''}
 
 Create specific, actionable tasks. Morning tasks should take 5-10 minutes. Evening tasks should be relaxing pre-sleep activities.`;
 
-  console.log(`[AI Brain] Sleep Plan - Model: gpt-4o, Type: ${planType}`);
+  console.log(`[AI Brain] Sleep Plan - Model: gpt-4o, Type: ${planType}, HasSnapshots: ${!!(profileSnapshot && logsSnapshot)}`);
 
   try {
     const response = await fetch(OPENAI_API_URL, {

@@ -2,12 +2,15 @@
  * Coach Generate Sleep Plan Edge Function
  * 
  * Generates personalized 7-day sleep plans using AI Brain (OpenAI).
- * Uses deterministic Sleep Sync attributes for metrics.
+ * Plans are always in sync with profile + logs, never contradict hard data.
+ * 
+ * Features:
+ * - Stores profile_snapshot, logs_snapshot at generation time
+ * - Validates AI output against user data
+ * - Tracks generated_reason for regeneration logic
  * 
  * Access is gated via hasSleepCoachAccess.
  * All queries use the authenticated user's email.
- * 
- * Uses OPENAI_API_KEY via centralized AI Brain - NO Lovable AI.
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -25,7 +28,12 @@ import {
   createAuthErrorResponse,
   createAccessDeniedResponse,
 } from "../_shared/auth.ts";
-import { callSleepPlanAI, getDefaultSleepPlan } from "../_shared/ai-brain.ts";
+import { 
+  callSleepPlanAI, 
+  getDefaultSleepPlan,
+  ProfileSnapshot,
+  LogsSnapshot,
+} from "../_shared/ai-brain.ts";
 import {
   generateSleepAttributes,
   buildSleepSyncEvent,
@@ -45,16 +53,7 @@ interface SleepProfile {
   products_owned?: string[];
   quiz_completed?: boolean;
   quiz_completed_at?: string;
-}
-
-// Quiz snapshot for traceability
-interface QuizSnapshot {
-  sleep_position: string;
-  pain_points: string[];
-  temperature_preference: string;
-  stress_level: string;
-  wake_up_condition: string;
-  quiz_completed_at?: string;
+  quiz_data?: any;
 }
 
 interface SleepLog {
@@ -64,16 +63,6 @@ interface SleepLog {
   felt_hot: boolean;
   felt_stressed: boolean;
   notes: string | null;
-}
-
-interface TrendData {
-  avgSleepQuality: number;
-  avgPain: number;
-  trend: 'improving' | 'stable' | 'worsening';
-  hotNights: number;
-  stressedNights: number;
-  goodNights: number;
-  poorNights: number;
 }
 
 Deno.serve(async (req) => {
@@ -114,11 +103,11 @@ Deno.serve(async (req) => {
       return createAccessDeniedResponse();
     }
 
-    const { planType = 'initial' } = await req.json();
+    const { planType = 'initial', reason = 'manual' } = await req.json();
 
-    console.log(`[coach-generate-sleep-plan] Generating ${planType} plan for: ${email}`);
+    console.log(`[coach-generate-sleep-plan] Generating ${planType} plan for: ${email}, reason: ${reason}`);
 
-    // Fetch profile and logs using authenticated email only
+    // === STEP 1: Fetch fresh profile and logs ===
     const [profileResult, logsResult] = await Promise.all([
       supabase.from('sleep_profiles').select('*').eq('email', email).single(),
       supabase.from('sleep_logs').select('*').eq('email', email).order('date', { ascending: false }).limit(14),
@@ -127,57 +116,55 @@ Deno.serve(async (req) => {
     const profile: SleepProfile | null = profileResult.data;
     const logs: SleepLog[] = logsResult.data || [];
 
-    // Calculate trends deterministically
-    const trends = calculateTrends(logs);
+    // === STEP 2: Build authoritative snapshots ===
+    const profileSnapshot: ProfileSnapshot = {
+      sleep_position: profile?.sleep_position || 'side',
+      pain_points: profile?.pain_points || [],
+      temperature_preference: profile?.temperature_preference || 'neutral',
+      stress_level: profile?.stress_level || 'medium',
+      wake_up_condition: profile?.wake_up_condition || 'neutral',
+      products_owned: profile?.products_owned || [],
+      quiz_completed_at: profile?.quiz_completed_at,
+    };
 
-    // === PLAN CONTEXT SUMMARY LOG ===
-    // This proves quiz data flows into the plan generation
+    const logsSnapshot: LogsSnapshot = calculateLogsSnapshot(logs);
+
+    // === LOG: Plan context summary ===
     console.log('[SleepCoach] Plan context summary', {
       email,
-      quiz_profile: profile ? {
-        sleep_position: profile.sleep_position,
-        pain_points: profile.pain_points,
-        temperature_preference: profile.temperature_preference,
-        stress_level: profile.stress_level,
-        wake_up_condition: profile.wake_up_condition,
-        quiz_completed: profile.quiz_completed,
-        quiz_completed_at: profile.quiz_completed_at,
-      } : null,
-      log_summary: {
-        nights: logs.length,
-        avgSleepQuality: trends.avgSleepQuality.toFixed(1),
-        avgPain: trends.avgPain.toFixed(1),
-        trend: trends.trend,
-        hotNights: trends.hotNights,
-        stressedNights: trends.stressedNights,
+      profileSnapshot: {
+        sleep_position: profileSnapshot.sleep_position,
+        pain_points: profileSnapshot.pain_points,
+        products_owned: profileSnapshot.products_owned,
+      },
+      logsSnapshot: {
+        nights_logged: logsSnapshot.nights_logged,
+        avg_sleep_quality: logsSnapshot.avg_sleep_quality.toFixed(1),
+        avg_morning_pain: logsSnapshot.avg_morning_pain.toFixed(1),
+        trend: logsSnapshot.trend,
       },
     });
-    
-    // Build user context for AI
-    const userContext = buildUserContext(profile, logs, trends);
 
-    // Call AI Brain for sleep plan generation (OpenAI)
-    console.log('[AI Brain] Calling for plan generation with quiz-based persona + log behavioral data');
+    // === STEP 3: Call AI Brain with structured snapshots ===
+    console.log('[AI Brain] Calling with hard constraints and snapshots');
     let parsed;
     try {
-      parsed = await callSleepPlanAI(userContext, planType);
+      // Pass snapshots for structured context with hard constraints
+      parsed = await callSleepPlanAI('', planType, profileSnapshot, logsSnapshot);
       console.log('[AI Brain] Plan generated successfully');
+      
+      // === STEP 4: Validate and sanitize AI output ===
+      parsed = validateAndSanitizePlan(parsed, profileSnapshot, logsSnapshot);
     } catch (aiError) {
       console.error('[AI Brain] Error, using fallback:', aiError);
       parsed = getDefaultSleepPlan();
     }
 
-    // Build quiz snapshot for traceability
-    const quizSnapshot: QuizSnapshot | null = profile ? {
-      sleep_position: profile.sleep_position,
-      pain_points: profile.pain_points || [],
-      temperature_preference: profile.temperature_preference,
-      stress_level: profile.stress_level,
-      wake_up_condition: profile.wake_up_condition,
-      quiz_completed_at: profile.quiz_completed_at,
-    } : null;
+    // === STEP 5: Calculate spine score from data ===
+    const spineScore = calculateSpineScore(profileSnapshot, logsSnapshot);
+    parsed.spineScore = spineScore;
 
-    // Save to database using authenticated email
+    // === STEP 6: Save to database with snapshots ===
     const validUntil = new Date();
     validUntil.setDate(validUntil.getDate() + 7);
 
@@ -186,10 +173,7 @@ Deno.serve(async (req) => {
       .insert({
         email,
         plan_type: planType,
-        sleep_plan: {
-          ...parsed.weeklyPlan,
-          quiz_snapshot: quizSnapshot, // Store quiz snapshot with the plan for traceability
-        },
+        sleep_plan: parsed.weeklyPlan,
         encouragement_message: parsed.encouragement,
         main_focus_this_week: parsed.focusAreas,
         recommended_pdfs: parsed.pdfs || ['Ergonomic Sleep Guide', 'Pain Relief Stretches'],
@@ -197,8 +181,13 @@ Deno.serve(async (req) => {
         whatsapp_messages: [],
         klaviyo_events: [],
         spine_health_score: parsed.spineScore,
-        raw_ai_response: JSON.stringify({ ...parsed, quiz_snapshot: quizSnapshot }),
+        raw_ai_response: JSON.stringify(parsed),
         valid_until: validUntil.toISOString(),
+        // NEW: Store snapshots for traceability
+        profile_snapshot: profileSnapshot,
+        logs_snapshot: logsSnapshot,
+        trend_at_generation: logsSnapshot.trend,
+        generated_reason: reason,
       })
       .select()
       .single();
@@ -215,12 +204,13 @@ Deno.serve(async (req) => {
       try {
         await sendKlaviyoEvent(KLAVIYO_PRIVATE_API_KEY, email, 'RBN_SleepPlan_Created', {
           plan_type: planType,
+          generated_reason: reason,
           focus_areas: parsed.focusAreas?.join(', ') || '',
           encouragement: parsed.encouragement || '',
           spine_score: parsed.spineScore || 0,
+          trend_at_generation: logsSnapshot.trend,
           morning_task: parsed.todayActions.find((a: any) => a.time === 'morning')?.action || '',
           evening_task: parsed.todayActions.find((a: any) => a.time === 'evening')?.action || '',
-          week_day1_focus: parsed.weeklyPlan?.day1?.focus || '',
           valid_until: validUntil.toISOString(),
         });
         console.log('[Klaviyo] RBN_SleepPlan_Created event sent');
@@ -271,84 +261,21 @@ Deno.serve(async (req) => {
   }
 });
 
-function buildUserContext(profile: SleepProfile | null, logs: SleepLog[], trends: TrendData): string {
-  if (!profile) return 'New user with no profile data. Create a general sleep improvement plan focused on pillow positioning and sleep hygiene.';
-  
-  // Build detailed quiz-derived context
-  const quizContext = `
-=== SLEEP QUIZ ASSESSMENT DATA ===
-The user completed a comprehensive sleep quiz. Use this baseline profile to personalize the plan:
-
-Sleep Position: ${profile.sleep_position}
-- If "side": emphasize pillow height for neck-shoulder gap, knee pillow for hip alignment
-- If "back": focus on neck curve support, proper pillow loft
-- If "stomach": gentle transition suggestions, lower pillow recommendations
-- If "mixed": versatile positioning guidance
-
-Pain Points: ${profile.pain_points?.length ? profile.pain_points.join(', ') : 'None reported'}
-- "neck": Include cervical stretches, pillow positioning for neck support
-- "shoulders": Address shoulder rotation, side-sleeping pressure relief
-- "lower_back": Hip alignment, knee pillow usage, morning stretches for lumbar
-- "hips": Leg positioning, knee pillow between legs for side sleepers
-
-Temperature Preference: ${profile.temperature_preference}
-- "cold": User runs hot - include cooling tips, breathable bedding advice
-- "warm": User runs cold - layer suggestions, warm-up routines
-- "neutral": Standard temperature guidance
-
-Stress Level: ${profile.stress_level}
-- "high": Emphasize wind-down routines, breathing exercises, screen-free time
-- "medium": Moderate relaxation techniques, consistent bedtime
-- "low": Focus more on physical optimization than mental
-
-Wake Up Condition: ${profile.wake_up_condition}
-- "stiff": Morning mobility routines, pre-sleep stretching
-- "tired": Sleep quality optimization, possible sleep debt
-- "energized": Maintain current good habits
-- "neutral": General optimization
-
-Quiz Completed: ${profile.quiz_completed_at ? new Date(profile.quiz_completed_at).toLocaleDateString() : 'Recently'}
-Products Owned: ${profile.products_owned?.join(', ') || 'Not specified'}
-`;
-
-  // Build logging context if logs exist
-  const logsContext = logs.length > 0 ? `
-=== SLEEP LOG DATA (${logs.length} nights) ===
-Use this real behavioral data to refine recommendations:
-
-Average Sleep Quality: ${trends.avgSleepQuality.toFixed(1)}/10
-Average Morning Pain: ${trends.avgPain.toFixed(1)}/10
-Trend: ${trends.trend} ${trends.trend === 'improving' ? '📈' : trends.trend === 'worsening' ? '📉' : '➡️'}
-Hot Nights: ${trends.hotNights}/${logs.length} (${Math.round(trends.hotNights/logs.length*100)}%)
-Stressed Nights: ${trends.stressedNights}/${logs.length} (${Math.round(trends.stressedNights/logs.length*100)}%)
-Good Nights (7+): ${trends.goodNights}
-Poor Nights (≤4): ${trends.poorNights}
-` : `
-=== SLEEP LOG DATA ===
-No sleep logs yet. Base plan entirely on quiz data.
-`;
-
-  return `${quizContext}
-${logsContext}
-
-=== PLAN GENERATION INSTRUCTIONS ===
-IMPORTANT: Use the quiz-based sleep profile as the baseline persona for this user.
-Use sleep logs as real-world behavior that can confirm or modify the quiz picture.
-
-1. Use sleep_position to tailor pillow and positioning advice for EVERY day
-2. Use pain_points to decide which areas to focus on (neck vs shoulders vs lower_back vs hips)
-3. Use temperature_preference and any hot night data for environment adjustments
-4. Use stress_level and wake_up_condition to modulate wind-down routine intensity
-5. If logs show declining trend, adjust plan to address specific issues
-6. Make morning tasks 5-10 min mobility/stretching focused on their pain points
-7. Make evening tasks relaxing, especially for high stress users
-
-Create a personalized 7-day plan that clearly reflects their quiz profile combined with any logging data.`;
-}
-
-function calculateTrends(logs: SleepLog[]): TrendData {
+/**
+ * Calculate logs snapshot from sleep logs
+ */
+function calculateLogsSnapshot(logs: SleepLog[]): LogsSnapshot {
   if (logs.length === 0) {
-    return { avgSleepQuality: 5, avgPain: 5, trend: 'stable', hotNights: 0, stressedNights: 0, goodNights: 0, poorNights: 0 };
+    return {
+      nights_logged: 0,
+      avg_sleep_quality: 5,
+      avg_morning_pain: 5,
+      trend: 'stable',
+      hot_nights: 0,
+      stressed_nights: 0,
+      good_nights: 0,
+      poor_nights: 0,
+    };
   }
 
   const avgSleepQuality = logs.reduce((sum, l) => sum + l.sleep_quality, 0) / logs.length;
@@ -369,5 +296,156 @@ function calculateTrends(logs: SleepLog[]): TrendData {
     else if (olderAvg - recentAvg > 0.5) trend = 'worsening';
   }
 
-  return { avgSleepQuality, avgPain, trend, hotNights, stressedNights, goodNights, poorNights };
+  return {
+    nights_logged: logs.length,
+    avg_sleep_quality: avgSleepQuality,
+    avg_morning_pain: avgPain,
+    trend,
+    hot_nights: hotNights,
+    stressed_nights: stressedNights,
+    good_nights: goodNights,
+    poor_nights: poorNights,
+    last_log_date: logs[0]?.date,
+  };
+}
+
+/**
+ * Validate and sanitize AI-generated plan against user data
+ */
+function validateAndSanitizePlan(
+  plan: any,
+  profileSnapshot: ProfileSnapshot,
+  logsSnapshot: LogsSnapshot
+): any {
+  const warnings: string[] = [];
+  
+  // Check encouragement message for contradictions
+  if (plan.encouragement) {
+    const isRecoveryNeeded = logsSnapshot.avg_sleep_quality < 5 || logsSnapshot.avg_morning_pain >= 5;
+    
+    if (isRecoveryNeeded) {
+      const positivePatterns = /doing great|low pain|excellent|amazing progress|fantastic/gi;
+      if (positivePatterns.test(plan.encouragement)) {
+        warnings.push('Overly positive encouragement for recovery scenario');
+        // Sanitize by adjusting message
+        plan.encouragement = plan.encouragement
+          .replace(/doing great/gi, 'making progress')
+          .replace(/low pain/gi, 'managing pain')
+          .replace(/excellent/gi, 'good')
+          .replace(/amazing progress/gi, 'steady progress');
+      }
+    }
+  }
+
+  // Check weekly plan for product references user doesn't own
+  const productsOwned = profileSnapshot.products_owned || [];
+  const hasErgonomicPillow = productsOwned.some(p => p.toLowerCase().includes('ergonomic') && p.toLowerCase().includes('pillow'));
+  const hasKneePillow = productsOwned.some(p => p.toLowerCase().includes('knee'));
+  const hasSleepMask = productsOwned.some(p => p.toLowerCase().includes('mask'));
+
+  if (plan.weeklyPlan) {
+    for (const dayKey of Object.keys(plan.weeklyPlan)) {
+      const day = plan.weeklyPlan[dayKey];
+      if (!day) continue;
+
+      // Check for knee pillow references
+      if (!hasKneePillow) {
+        const kneePillowPattern = /knee pillow|between your knees|knee pad/gi;
+        if (day.morningTask && kneePillowPattern.test(day.morningTask)) {
+          warnings.push(`Day ${dayKey} morning task references knee pillow user doesn't own`);
+          day.morningTask = day.morningTask.replace(kneePillowPattern, 'a pillow');
+        }
+        if (day.eveningTask && kneePillowPattern.test(day.eveningTask)) {
+          warnings.push(`Day ${dayKey} evening task references knee pillow user doesn't own`);
+          day.eveningTask = day.eveningTask.replace(kneePillowPattern, 'a pillow');
+        }
+        if (day.tip && kneePillowPattern.test(day.tip)) {
+          day.tip = day.tip.replace(kneePillowPattern, 'a pillow');
+        }
+      }
+
+      // Check for sleep mask references
+      if (!hasSleepMask) {
+        const sleepMaskPattern = /sleep mask|eye mask|silk mask/gi;
+        if (day.morningTask && sleepMaskPattern.test(day.morningTask)) {
+          day.morningTask = day.morningTask.replace(sleepMaskPattern, 'dark environment');
+        }
+        if (day.eveningTask && sleepMaskPattern.test(day.eveningTask)) {
+          day.eveningTask = day.eveningTask.replace(sleepMaskPattern, 'dark environment');
+        }
+      }
+    }
+  }
+
+  // Check for sleep position contradictions
+  const userPosition = profileSnapshot.sleep_position?.toLowerCase();
+  if (plan.weeklyPlan && userPosition) {
+    const wrongPositionMap: Record<string, RegExp> = {
+      'back': /side sleeper|sleeping on your side/gi,
+      'side': /back sleeper|sleeping on your back/gi,
+      'stomach': /side sleeper|back sleeper/gi,
+    };
+    
+    const wrongPattern = wrongPositionMap[userPosition];
+    if (wrongPattern) {
+      for (const dayKey of Object.keys(plan.weeklyPlan)) {
+        const day = plan.weeklyPlan[dayKey];
+        if (!day) continue;
+        
+        const correctTerm = userPosition === 'back' ? 'back sleeper' : 
+                           userPosition === 'side' ? 'side sleeper' : 
+                           userPosition === 'stomach' ? 'stomach sleeper' : 'sleeper';
+        
+        ['morningTask', 'eveningTask', 'tip'].forEach(field => {
+          if (day[field] && wrongPattern.test(day[field])) {
+            warnings.push(`Day ${dayKey} ${field} has wrong sleep position reference`);
+            day[field] = day[field].replace(wrongPattern, correctTerm);
+          }
+        });
+      }
+    }
+  }
+
+  if (warnings.length > 0) {
+    console.log('[Validation] Plan sanitization applied:', warnings);
+  }
+
+  return plan;
+}
+
+/**
+ * Calculate spine score from profile and logs data
+ */
+function calculateSpineScore(
+  profileSnapshot: ProfileSnapshot,
+  logsSnapshot: LogsSnapshot
+): number {
+  let score = 70; // Base score
+
+  // Pain points penalty
+  const painCount = profileSnapshot.pain_points?.filter(p => p !== 'none').length || 0;
+  score -= painCount * 5;
+
+  // Sleep quality bonus/penalty
+  if (logsSnapshot.nights_logged > 0) {
+    if (logsSnapshot.avg_sleep_quality >= 7) score += 15;
+    else if (logsSnapshot.avg_sleep_quality >= 5) score += 5;
+    else score -= 10;
+
+    // Pain penalty
+    if (logsSnapshot.avg_morning_pain >= 7) score -= 15;
+    else if (logsSnapshot.avg_morning_pain >= 5) score -= 8;
+    else if (logsSnapshot.avg_morning_pain <= 3) score += 5;
+
+    // Trend bonus/penalty
+    if (logsSnapshot.trend === 'improving') score += 10;
+    else if (logsSnapshot.trend === 'worsening') score -= 10;
+  }
+
+  // Products owned bonus
+  const productsCount = profileSnapshot.products_owned?.length || 0;
+  score += productsCount * 3;
+
+  // Clamp to 0-100
+  return Math.max(0, Math.min(100, score));
 }

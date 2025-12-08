@@ -67,15 +67,19 @@ export type Database = {
           email: string
           encouragement_message: string | null
           generated_at: string
+          generated_reason: string | null
           id: string
           klaviyo_events: Json | null
+          logs_snapshot: Json | null
           main_focus_this_week: string[] | null
           plan_type: string | null
+          profile_snapshot: Json | null
           raw_ai_response: string | null
           recommended_actions_today: Json | null
           recommended_pdfs: string[] | null
           sleep_plan: Json | null
           spine_health_score: number | null
+          trend_at_generation: string | null
           valid_until: string | null
           whatsapp_messages: string[] | null
         }
@@ -84,15 +88,19 @@ export type Database = {
           email: string
           encouragement_message?: string | null
           generated_at?: string
+          generated_reason?: string | null
           id?: string
           klaviyo_events?: Json | null
+          logs_snapshot?: Json | null
           main_focus_this_week?: string[] | null
           plan_type?: string | null
+          profile_snapshot?: Json | null
           raw_ai_response?: string | null
           recommended_actions_today?: Json | null
           recommended_pdfs?: string[] | null
           sleep_plan?: Json | null
           spine_health_score?: number | null
+          trend_at_generation?: string | null
           valid_until?: string | null
           whatsapp_messages?: string[] | null
         }
@@ -101,15 +109,19 @@ export type Database = {
           email?: string
           encouragement_message?: string | null
           generated_at?: string
+          generated_reason?: string | null
           id?: string
           klaviyo_events?: Json | null
+          logs_snapshot?: Json | null
           main_focus_this_week?: string[] | null
           plan_type?: string | null
+          profile_snapshot?: Json | null
           raw_ai_response?: string | null
           recommended_actions_today?: Json | null
           recommended_pdfs?: string[] | null
           sleep_plan?: Json | null
           spine_health_score?: number | null
+          trend_at_generation?: string | null
           valid_until?: string | null
           whatsapp_messages?: string[] | null
         }

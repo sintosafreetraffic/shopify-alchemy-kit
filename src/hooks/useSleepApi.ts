@@ -279,12 +279,12 @@ export function useSleepApi() {
     }
   };
 
-  const generateCoachPlan = async (email: string, planType = 'initial'): Promise<CoachPlan | null> => {
+  const generateCoachPlan = async (email: string, planType = 'initial', reason = 'manual'): Promise<CoachPlan | null> => {
     setLoading(true);
     setError(null);
     try {
       const { data, error: err } = await supabase.functions.invoke('coach-generate-sleep-plan', {
-        body: { email, planType },
+        body: { email, planType, reason },
       });
       
       if (err) throw err;
@@ -294,6 +294,20 @@ export function useSleepApi() {
       return null;
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkPlanRefresh = async (): Promise<{ shouldRegenerate: boolean; reason: string } | null> => {
+    try {
+      const { data, error: err } = await supabase.functions.invoke('check-plan-refresh', {
+        body: {},
+      });
+      
+      if (err) throw err;
+      return data;
+    } catch (e: any) {
+      console.error('checkPlanRefresh error:', e);
+      return null;
     }
   };
 
@@ -367,6 +381,7 @@ export function useSleepApi() {
     checkDateExists,
     generateCoachPlan,
     fetchCoachPlan,
+    checkPlanRefresh,
     getWhatsAppMessage,
     evaluateEngagement,
   };
