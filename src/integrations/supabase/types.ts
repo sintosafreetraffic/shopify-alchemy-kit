@@ -18,10 +18,13 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          last_payout_at: string | null
           level: number | null
           monthly_revenue_generated: number | null
           monthly_sales_count: number | null
           parent_affiliate_id: string | null
+          payout_threshold: number | null
+          pending_payout_amount: number | null
           referral_code: string
           status: string | null
           tier: string | null
@@ -34,10 +37,13 @@ export type Database = {
         Insert: {
           created_at?: string | null
           id?: string
+          last_payout_at?: string | null
           level?: number | null
           monthly_revenue_generated?: number | null
           monthly_sales_count?: number | null
           parent_affiliate_id?: string | null
+          payout_threshold?: number | null
+          pending_payout_amount?: number | null
           referral_code: string
           status?: string | null
           tier?: string | null
@@ -50,10 +56,13 @@ export type Database = {
         Update: {
           created_at?: string | null
           id?: string
+          last_payout_at?: string | null
           level?: number | null
           monthly_revenue_generated?: number | null
           monthly_sales_count?: number | null
           parent_affiliate_id?: string | null
+          payout_threshold?: number | null
+          pending_payout_amount?: number | null
           referral_code?: string
           status?: string | null
           tier?: string | null
@@ -481,6 +490,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       whatsapp_message_logs: {
         Row: {
           created_at: string
@@ -549,8 +579,16 @@ export type Database = {
     }
     Functions: {
       get_auth_email: { Args: never; Returns: string }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
+      app_role: "admin" | "moderator" | "user"
       log_source: "manual" | "whatsapp"
       sleep_position: "side" | "back" | "stomach" | "mixed"
       stress_level: "low" | "medium" | "high"
@@ -683,6 +721,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "moderator", "user"],
       log_source: ["manual", "whatsapp"],
       sleep_position: ["side", "back", "stomach", "mixed"],
       stress_level: ["low", "medium", "high"],

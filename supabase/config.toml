@@ -12,6 +12,12 @@ verify_jwt = false
 [functions.affiliate-monthly-summary]
 verify_jwt = false
 
+[functions.affiliate-tier-recalc]
+verify_jwt = false
+
+[functions.affiliate-payout-check]
+verify_jwt = false
+
 [functions.sleep-plan-reminder]
 verify_jwt = false
 
