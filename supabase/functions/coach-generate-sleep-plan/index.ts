@@ -36,9 +36,9 @@ import {
 } from "../_shared/ai-brain.ts";
 import {
   generateSleepAttributes,
-  buildSleepSyncEvent,
-  sendKlaviyoEvent,
+  fullSleepSync,
 } from "../_shared/sleep-sync.ts";
+import { SleepSyncSource, SleepAttributes } from "../_shared/types.ts";
 
 interface SleepProfile {
   email: string;
@@ -107,61 +107,104 @@ Deno.serve(async (req) => {
 
     console.log(`[coach-generate-sleep-plan] Generating ${planType} plan for: ${email}, reason: ${reason}`);
 
-    // === STEP 1: Fetch fresh profile and logs ===
-    const [profileResult, logsResult] = await Promise.all([
+    // === STEP 1: Fetch fresh profile, logs, and 3-layer attributes ===
+    const [profileResult, logsResult, attrsResult] = await Promise.all([
       supabase.from('sleep_profiles').select('*').eq('email', email).single(),
       supabase.from('sleep_logs').select('*').eq('email', email).order('date', { ascending: false }).limit(14),
+      supabase.from('sleep_attributes_state').select('data').eq('email', email).maybeSingle(),
     ]);
 
     const profile: SleepProfile | null = profileResult.data;
     const logs: SleepLog[] = logsResult.data || [];
+    
+    // Get or generate 3-layer attributes
+    let sleepAttributes: SleepAttributes;
+    if (attrsResult.data?.data) {
+      sleepAttributes = attrsResult.data.data as SleepAttributes;
+      console.log('[coach-generate-sleep-plan] Using existing 3-layer attributes');
+    } else {
+      sleepAttributes = await generateSleepAttributes(supabase, email, 'sleep_plan' as SleepSyncSource);
+      console.log('[coach-generate-sleep-plan] Generated fresh 3-layer attributes');
+    }
 
-    // === STEP 2: Build authoritative snapshots ===
+    // === STEP 2: Build authoritative snapshots with 3-layer data ===
     const profileSnapshot: ProfileSnapshot = {
-      sleep_position: profile?.sleep_position || 'side',
-      pain_points: profile?.pain_points || [],
-      temperature_preference: profile?.temperature_preference || 'neutral',
-      stress_level: profile?.stress_level || 'medium',
-      wake_up_condition: profile?.wake_up_condition || 'neutral',
-      products_owned: profile?.products_owned || [],
+      sleep_position: sleepAttributes.sleep_position || profile?.sleep_position || 'side',
+      pain_points: sleepAttributes.pain_points || profile?.pain_points || [],
+      temperature_preference: sleepAttributes.temperature_preference || profile?.temperature_preference || 'neutral',
+      stress_level: sleepAttributes.stress_level || profile?.stress_level || 'medium',
+      wake_up_condition: sleepAttributes.wake_up_condition || profile?.wake_up_condition || 'neutral',
+      products_owned: sleepAttributes.products_owned || profile?.products_owned || [],
       quiz_completed_at: profile?.quiz_completed_at,
+      // Layer 2: Environment data for AI context
+      mattress_firmness: sleepAttributes.mattress_firmness,
+      mattress_thickness: sleepAttributes.mattress_thickness,
+      bed_height: sleepAttributes.bed_height,
+      co_sleeping: sleepAttributes.co_sleeping,
+      bedding_material: sleepAttributes.bedding_material,
+      pillow_type: sleepAttributes.pillow_type,
+      room_brightness: sleepAttributes.room_brightness,
+      room_noise: sleepAttributes.room_noise,
     };
 
     const logsSnapshot: LogsSnapshot = calculateLogsSnapshot(logs);
+    
+    // Add Layer 3 dynamic state to logs snapshot
+    const enhancedLogsSnapshot: LogsSnapshot = {
+      ...logsSnapshot,
+      // Override with 3-layer calculated values for consistency
+      avg_sleep_quality: sleepAttributes.avg_sleep_quality_7d ?? logsSnapshot.avg_sleep_quality,
+      avg_morning_pain: sleepAttributes.avg_pain_7d ?? logsSnapshot.avg_morning_pain,
+      trend: sleepAttributes.sleep_trend !== 'unknown' ? sleepAttributes.sleep_trend : logsSnapshot.trend,
+      // Layer 3 additions
+      streak_days: sleepAttributes.streak_days,
+      pain_trend: sleepAttributes.pain_trend,
+      risk_level: sleepAttributes.risk_level,
+      engagement_level: sleepAttributes.engagement_level,
+      sleep_stress_level: sleepAttributes.sleep_stress_level,
+      temperature_sensitive: sleepAttributes.temperature_sensitive,
+    };
 
-    // === LOG: Plan context summary ===
-    console.log('[SleepCoach] Plan context summary', {
+    // === LOG: Plan context summary with 3-layer data ===
+    console.log('[SleepCoach] 3-layer plan context summary', {
       email,
       profileSnapshot: {
         sleep_position: profileSnapshot.sleep_position,
         pain_points: profileSnapshot.pain_points,
         products_owned: profileSnapshot.products_owned,
+        environment: {
+          mattress_firmness: profileSnapshot.mattress_firmness,
+          room_brightness: profileSnapshot.room_brightness,
+          co_sleeping: profileSnapshot.co_sleeping,
+        },
       },
       logsSnapshot: {
         nights_logged: logsSnapshot.nights_logged,
-        avg_sleep_quality: logsSnapshot.avg_sleep_quality.toFixed(1),
-        avg_morning_pain: logsSnapshot.avg_morning_pain.toFixed(1),
-        trend: logsSnapshot.trend,
+        avg_sleep_quality: enhancedLogsSnapshot.avg_sleep_quality?.toFixed(1),
+        avg_morning_pain: enhancedLogsSnapshot.avg_morning_pain?.toFixed(1),
+        trend: enhancedLogsSnapshot.trend,
+        streak_days: enhancedLogsSnapshot.streak_days,
+        risk_level: enhancedLogsSnapshot.risk_level,
       },
     });
 
-    // === STEP 3: Call AI Brain with structured snapshots ===
-    console.log('[AI Brain] Calling with hard constraints and snapshots');
+    // === STEP 3: Call AI Brain with structured snapshots + 3-layer context ===
+    console.log('[AI Brain] Calling with 3-layer context and hard constraints');
     let parsed;
     try {
-      // Pass snapshots for structured context with hard constraints
-      parsed = await callSleepPlanAI('', planType, profileSnapshot, logsSnapshot);
+      // Pass enhanced snapshots with full 3-layer context
+      parsed = await callSleepPlanAI('', planType, profileSnapshot, enhancedLogsSnapshot);
       console.log('[AI Brain] Plan generated successfully');
       
       // === STEP 4: Validate and sanitize AI output ===
-      parsed = validateAndSanitizePlan(parsed, profileSnapshot, logsSnapshot);
+      parsed = validateAndSanitizePlan(parsed, profileSnapshot, enhancedLogsSnapshot);
     } catch (aiError) {
       console.error('[AI Brain] Error, using fallback:', aiError);
       parsed = getDefaultSleepPlan();
     }
 
     // === STEP 5: Calculate spine score from data ===
-    const spineScore = calculateSpineScore(profileSnapshot, logsSnapshot);
+    const spineScore = calculateSpineScore(profileSnapshot, enhancedLogsSnapshot);
     parsed.spineScore = spineScore;
 
     // === STEP 6: Save to database with snapshots ===
@@ -183,10 +226,10 @@ Deno.serve(async (req) => {
         spine_health_score: parsed.spineScore,
         raw_ai_response: JSON.stringify(parsed),
         valid_until: validUntil.toISOString(),
-        // NEW: Store snapshots for traceability
+        // NEW: Store snapshots for traceability (includes 3-layer data)
         profile_snapshot: profileSnapshot,
-        logs_snapshot: logsSnapshot,
-        trend_at_generation: logsSnapshot.trend,
+        logs_snapshot: enhancedLogsSnapshot,
+        trend_at_generation: enhancedLogsSnapshot.trend,
         generated_reason: reason,
       })
       .select()
@@ -199,56 +242,22 @@ Deno.serve(async (req) => {
 
     console.log('[coach-generate-sleep-plan] Plan saved:', plan.id);
 
-    // Send Klaviyo event for plan creation
-    if (KLAVIYO_PRIVATE_API_KEY && parsed.todayActions?.length > 0) {
-      try {
-        await sendKlaviyoEvent(KLAVIYO_PRIVATE_API_KEY, email, 'RBN_SleepPlan_Created', {
-          plan_type: planType,
-          generated_reason: reason,
-          focus_areas: parsed.focusAreas?.join(', ') || '',
-          encouragement: parsed.encouragement || '',
-          spine_score: parsed.spineScore || 0,
-          trend_at_generation: logsSnapshot.trend,
-          morning_task: parsed.todayActions.find((a: any) => a.time === 'morning')?.action || '',
-          evening_task: parsed.todayActions.find((a: any) => a.time === 'evening')?.action || '',
-          valid_until: validUntil.toISOString(),
-        });
-        console.log('[Klaviyo] RBN_SleepPlan_Created event sent');
-      } catch (klaviyoError) {
-        console.error('[Klaviyo] Failed to send plan event:', klaviyoError);
-      }
-    }
-
-    // TRIGGER SLEEP SYNC after plan creation
+    // TRIGGER FULL SLEEP SYNC after plan creation (handles Klaviyo events + profile update)
     try {
-      console.log('[Sleep Sync] Triggering for plan generation:', email);
-      const sleepSyncAttrs = await generateSleepAttributes(supabase, email);
-      const sleepSyncEvent = buildSleepSyncEvent(sleepSyncAttrs, "sleep_plan_generated");
-      
-      // Store attributes
-      await supabase
-        .from('sleep_attributes_state')
-        .upsert({
-          email,
-          data: sleepSyncAttrs,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'email' });
-
-      await supabase
-        .from('sleep_attributes_history')
-        .insert({ email, data: sleepSyncAttrs });
+      console.log('[Sleep Sync] Triggering fullSleepSync for plan generation:', email);
+      const { attributes: syncedAttrs, event: sleepSyncEvent } = await fullSleepSync(
+        supabase,
+        email,
+        'sleep_plan' as SleepSyncSource,
+        KLAVIYO_PRIVATE_API_KEY || undefined
+      );
+      console.log('[Sleep Sync] Full sync completed after plan generation');
 
       // Update plan with klaviyo_events
       await supabase
         .from('coach_plans')
         .update({ klaviyo_events: [sleepSyncEvent] })
         .eq('id', plan.id);
-
-      // Send Sleep Sync event to Klaviyo
-      if (KLAVIYO_PRIVATE_API_KEY) {
-        await sendKlaviyoEvent(KLAVIYO_PRIVATE_API_KEY, email, sleepSyncEvent.eventName, sleepSyncEvent.payload);
-        console.log('[Sleep Sync] RBN_SleepSync_Updated event sent');
-      }
     } catch (syncError) {
       console.error('[Sleep Sync] Error:', syncError);
       // Non-blocking

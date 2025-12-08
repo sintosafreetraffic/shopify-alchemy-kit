@@ -737,18 +737,34 @@ export interface ProfileSnapshot {
   wake_up_condition: string;
   products_owned: string[];
   quiz_completed_at?: string;
+  // Layer 2: Environment fields (optional for backwards compatibility)
+  mattress_firmness?: string;
+  mattress_thickness?: string;
+  bed_height?: string;
+  co_sleeping?: string;
+  bedding_material?: string;
+  pillow_type?: string;
+  room_brightness?: string;
+  room_noise?: string;
 }
 
 export interface LogsSnapshot {
   nights_logged: number;
   avg_sleep_quality: number;
   avg_morning_pain: number;
-  trend: 'improving' | 'stable' | 'worsening';
+  trend: 'improving' | 'stable' | 'worsening' | 'unknown';
   hot_nights: number;
   stressed_nights: number;
   good_nights: number;
   poor_nights: number;
   last_log_date?: string;
+  // Layer 3: Dynamic state fields (optional for backwards compatibility)
+  streak_days?: number;
+  pain_trend?: 'improving' | 'stable' | 'worsening' | 'unknown';
+  risk_level?: 'low' | 'medium' | 'high';
+  engagement_level?: 'low' | 'medium' | 'high';
+  sleep_stress_level?: 'low' | 'medium' | 'high';
+  temperature_sensitive?: boolean;
 }
 
 /**
