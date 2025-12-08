@@ -16,7 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Shield, ArrowLeft, Loader2, DollarSign, Users, CheckCircle, Clock, Wallet } from "lucide-react";
+import { Shield, ArrowLeft, Loader2, DollarSign, Users, CheckCircle, Clock, Wallet, History } from "lucide-react";
 import { format } from "date-fns";
 
 interface AffiliateWithPayout {
@@ -33,6 +33,18 @@ interface AffiliateWithPayout {
   status: string | null;
 }
 
+interface RecentPayout {
+  id: string;
+  affiliate_id: string;
+  amount: number;
+  currency: string;
+  processed_at: string;
+  processed_by_user_id: string | null;
+  method: string;
+  note: string | null;
+  referral_code?: string;
+}
+
 const tierConfig: Record<string, { icon: string; color: string }> = {
   bronze: { icon: "🥉", color: "text-amber-700" },
   silver: { icon: "🥈", color: "text-slate-600" },
@@ -46,6 +58,7 @@ export default function AdminAffiliatePayouts() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [affiliates, setAffiliates] = useState<AffiliateWithPayout[]>([]);
+  const [recentPayouts, setRecentPayouts] = useState<RecentPayout[]>([]);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [selectedAffiliate, setSelectedAffiliate] = useState<AffiliateWithPayout | null>(null);
@@ -57,6 +70,7 @@ export default function AdminAffiliatePayouts() {
   useEffect(() => {
     if (isAdmin) {
       loadAffiliates();
+      loadRecentPayouts();
     }
   }, [isAdmin]);
 
@@ -107,6 +121,41 @@ export default function AdminAffiliatePayouts() {
     setLoading(false);
   }
 
+  async function loadRecentPayouts() {
+    // Fetch recent payouts with affiliate info
+    const { data: payouts, error } = await supabase
+      .from("affiliate_payouts")
+      .select("*")
+      .order("processed_at", { ascending: false })
+      .limit(20);
+
+    if (error) {
+      console.error("Error loading recent payouts:", error);
+      return;
+    }
+
+    // Fetch affiliate referral codes
+    if (payouts && payouts.length > 0) {
+      const affiliateIds = [...new Set(payouts.map(p => p.affiliate_id))];
+      const { data: affiliatesData } = await supabase
+        .from("affiliates")
+        .select("id, referral_code")
+        .in("id", affiliateIds);
+
+      const codeMap: Record<string, string> = {};
+      affiliatesData?.forEach(a => {
+        codeMap[a.id] = a.referral_code;
+      });
+
+      setRecentPayouts(payouts.map(p => ({
+        ...p,
+        referral_code: codeMap[p.affiliate_id] || "Unknown"
+      })));
+    } else {
+      setRecentPayouts([]);
+    }
+  }
+
   function isReadyForPayout(affiliate: AffiliateWithPayout): boolean {
     const pending = affiliate.pending_payout_amount || 0;
     const threshold = affiliate.payout_threshold || 50;
@@ -133,46 +182,20 @@ export default function AdminAffiliatePayouts() {
     setProcessingId(selectedAffiliate.id);
 
     try {
-      // Step A: Select eligible commissions
-      const { data: eligibleCommissions, error: fetchError } = await supabase
-        .from("commissions")
-        .select("id")
-        .eq("affiliate_id", selectedAffiliate.id)
-        .eq("fraud_flag", false)
-        .in("status", ["pending", "approved"]);
+      // Call the edge function to process payout atomically
+      const { data, error } = await supabase.functions.invoke('affiliate-api', {
+        body: { 
+          action: 'process-payout', 
+          data: { affiliateId: selectedAffiliate.id } 
+        }
+      });
 
-      if (fetchError) {
-        throw new Error(`Failed to fetch commissions: ${fetchError.message}`);
+      if (error) {
+        throw new Error(error.message || 'Failed to process payout');
       }
 
-      if (!eligibleCommissions || eligibleCommissions.length === 0) {
-        toast.info("No eligible commissions to process");
-        setProcessingId(null);
-        return;
-      }
-
-      // Step B: Mark those commissions as paid
-      const commissionIds = eligibleCommissions.map((c) => c.id);
-      const { error: updateCommError } = await supabase
-        .from("commissions")
-        .update({ status: "paid" })
-        .in("id", commissionIds);
-
-      if (updateCommError) {
-        throw new Error(`Failed to update commissions: ${updateCommError.message}`);
-      }
-
-      // Step C: Update affiliate row - reset pending, set last_payout_at
-      const { error: updateAffError } = await supabase
-        .from("affiliates")
-        .update({
-          pending_payout_amount: 0,
-          last_payout_at: new Date().toISOString(),
-        })
-        .eq("id", selectedAffiliate.id);
-
-      if (updateAffError) {
-        throw new Error(`Failed to update affiliate: ${updateAffError.message}`);
+      if (data?.error) {
+        throw new Error(data.error);
       }
 
       toast.success("Payout recorded successfully");
@@ -185,6 +208,9 @@ export default function AdminAffiliatePayouts() {
             : a
         )
       );
+
+      // Reload recent payouts
+      loadRecentPayouts();
     } catch (error) {
       console.error("Error processing payout:", error);
       toast.error(error instanceof Error ? error.message : "Error processing payout");
@@ -392,6 +418,58 @@ export default function AdminAffiliatePayouts() {
                 </TableHeader>
                 <TableBody>
                   {belowThresholdAffiliates.map((affiliate) => renderAffiliateRow(affiliate, false))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recent Payouts Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <History className="h-5 w-5 text-muted-foreground" />
+              Recent Payouts
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            {recentPayouts.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No payouts processed yet
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Affiliate</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Currency</TableHead>
+                    <TableHead>Method</TableHead>
+                    <TableHead>Note</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {recentPayouts.map((payout) => (
+                    <TableRow key={payout.id}>
+                      <TableCell className="text-sm">
+                        {format(new Date(payout.processed_at), "MMM d, yyyy HH:mm")}
+                      </TableCell>
+                      <TableCell className="font-medium">{payout.referral_code}</TableCell>
+                      <TableCell className="font-semibold text-green-600">
+                        ${payout.amount.toFixed(2)}
+                      </TableCell>
+                      <TableCell>{payout.currency}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="capitalize">
+                          {payout.method.replace('_', ' ')}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {payout.note || "-"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             )}
