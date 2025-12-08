@@ -1,16 +1,27 @@
 /**
  * Affiliate Payout Check Edge Function
  * 
- * CRON Schedule: Daily at 02:15 UTC (after tier recalculation at 02:00)
- * Endpoint: POST /functions/v1/affiliate-payout-check
- * Authorization: Bearer CRON_SECRET
+ * @description Calculates pending payout amounts for all active affiliates and
+ *              triggers RBN_Affiliate_Payout_Ready Klaviyo event when threshold is met.
+ *              Does NOT process actual payouts - manual payout processing only for now.
  * 
- * Purpose:
- * - Calculate pending payout amounts for all active affiliates
- * - Trigger RBN_Affiliate_Payout_Ready Klaviyo event when threshold is met
- * - Does NOT process actual payouts (manual for now)
+ * @schedule Daily CRON job at 02:15 UTC via pg_cron (after tier recalc at 02:00)
+ * @endpoint POST /functions/v1/affiliate-payout-check
  * 
- * To modify schedule: Update the pg_cron entry in Supabase SQL editor
+ * @auth Accepts either:
+ *       - Authorization: Bearer <CRON_SECRET> header
+ *       - Internal pg_cron calls identified by X-Supabase-Internal: true or pg_net User-Agent
+ * 
+ * @env SUPABASE_URL - Supabase project URL
+ * @env SUPABASE_SERVICE_ROLE_KEY - Service role key for admin operations
+ * @env KLAVIYO_PRIVATE_API_KEY - (Optional) For sending payout ready events
+ * @env CRON_SECRET - Secret for validating external CRON calls
+ * 
+ * @payoutLogic
+ *   - Only counts commissions where fraud_flag = false AND status IN ('pending', 'approved')
+ *   - Explicitly excludes status IN ('rejected', 'flagged')
+ *   - Overwrites pending_payout_amount with fresh calculation (not incremental)
+ *   - Does NOT touch last_payout_at (reserved for manual payout processing)
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -20,6 +31,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+/**
+ * Validate CRON_SECRET from Authorization header
+ */
 function validateCronSecret(authHeader: string | null): boolean {
   if (!authHeader) return false;
   const token = authHeader.replace("Bearer ", "");
@@ -46,21 +60,27 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Validate CRON_SECRET for authorization
-    // Allow both Authorization header and internal pg_cron calls
+    // ============================================================
+    // AUTH BLOCK: Validate request authorization
+    // Accepts either:
+    //   1. Authorization: Bearer <CRON_SECRET> header (for manual/external calls)
+    //   2. Internal pg_cron calls identified by:
+    //      - X-Supabase-Internal: true header, OR
+    //      - User-Agent containing 'pg_net' (Supabase internal HTTP client)
+    // ============================================================
     const authHeader = req.headers.get("Authorization");
     const isInternalCron = req.headers.get("X-Supabase-Internal") === "true" || 
                            (req.headers.get("User-Agent") || "").includes("pg_net");
     
     if (!isInternalCron && !validateCronSecret(authHeader)) {
-      console.error("[affiliate-payout-check] Invalid or missing CRON_SECRET");
+      console.error("[affiliate-payout-check] Unauthorized: Invalid or missing CRON_SECRET");
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log("[affiliate-payout-check] Starting payout check...");
+    console.log("[affiliate-payout-check] Auth OK - Starting payout check...");
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -86,23 +106,29 @@ Deno.serve(async (req) => {
     for (const affiliate of affiliates || []) {
       affiliatesChecked++;
 
-      // Calculate pending payout amount (eligible commissions)
+      // ============================================================
+      // PAYOUT CALCULATION: Only count eligible commissions
+      // - fraud_flag = false (not flagged for fraud)
+      // - status IN ('pending', 'approved') (excludes 'rejected', 'flagged')
+      // ============================================================
       const { data: commissions, error: commError } = await supabase
         .from("commissions")
-        .select("amount")
+        .select("amount, status")
         .eq("affiliate_id", affiliate.id)
-        .in("status", ["pending", "approved"])
-        .eq("fraud_flag", false);
+        .eq("fraud_flag", false)
+        .in("status", ["pending", "approved"]);
 
       if (commError) {
         console.error(`[affiliate-payout-check] Error fetching commissions for ${affiliate.id}:`, commError);
         continue;
       }
 
+      // Calculate fresh pending amount (overwrites, not incremental)
       const pendingAmount = commissions?.reduce((sum, c) => sum + Number(c.amount || 0), 0) || 0;
       const threshold = Number(affiliate.payout_threshold) || 50;
 
-      // Update pending_payout_amount in affiliates table
+      // Update pending_payout_amount in affiliates table (always overwrite with fresh sum)
+      // Note: last_payout_at is NOT touched here - reserved for manual payout processing
       const { error: updateError } = await supabase
         .from("affiliates")
         .update({ pending_payout_amount: pendingAmount })
@@ -127,7 +153,7 @@ Deno.serve(async (req) => {
         const email = userData?.user?.email;
 
         if (email) {
-          // Send Klaviyo event
+          // Send Klaviyo RBN_Affiliate_Payout_Ready event with full payload
           await sendKlaviyoPayoutReadyEvent({
             email,
             affiliate_code: affiliate.referral_code,
@@ -137,6 +163,8 @@ Deno.serve(async (req) => {
             total_commissions: Number(affiliate.total_commissions) || 0,
             monthly_sales_count: affiliate.monthly_sales_count || 0,
             monthly_revenue_generated: Number(affiliate.monthly_revenue_generated) || 0,
+            is_above_threshold: true,
+            payout_mode: "manual",
           });
         }
       }
@@ -165,6 +193,10 @@ Deno.serve(async (req) => {
   }
 });
 
+/**
+ * Send RBN_Affiliate_Payout_Ready event to Klaviyo
+ * Includes full payout context for email automation
+ */
 async function sendKlaviyoPayoutReadyEvent(data: {
   email: string;
   affiliate_code: string;
@@ -174,6 +206,8 @@ async function sendKlaviyoPayoutReadyEvent(data: {
   total_commissions: number;
   monthly_sales_count: number;
   monthly_revenue_generated: number;
+  is_above_threshold: boolean;
+  payout_mode: string;
 }) {
   const klaviyoKey = Deno.env.get("KLAVIYO_PRIVATE_API_KEY");
   if (!klaviyoKey) {
@@ -205,6 +239,8 @@ async function sendKlaviyoPayoutReadyEvent(data: {
                 sales_count: data.monthly_sales_count,
                 revenue_generated: data.monthly_revenue_generated,
               },
+              is_above_threshold: data.is_above_threshold,
+              payout_mode: data.payout_mode,
               ready_at: new Date().toISOString(),
             },
             time: new Date().toISOString(),
