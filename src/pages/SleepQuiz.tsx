@@ -385,23 +385,99 @@ interface ProductRecommendation {
   priority: "high" | "medium" | "low";
 }
 
+interface SleepScores {
+  alignmentScore: number;
+  environmentScore: number;
+  consistencyScore: number;
+}
+
 interface AnalysisResult {
   assessment: string;
   recommendations: ProductRecommendation[];
   bundleRecommended: boolean;
   bundleReason?: string;
   profileCreated?: boolean;
-  // Extended fields for richer UI (all optional for backward compatibility)
+  // Extended fields from backend (all optional for backward compatibility)
   detectedIssues?: string[];
-  environmentInsights?: string[];
   alignmentInsights?: string[];
-  scores?: {
-    alignmentScore?: number;
-    environmentScore?: number;
-    consistencyScore?: number;
-  };
+  scores?: SleepScores;
   expertSummary?: string;
 }
+
+// Helper: Convert clinical issue to plain + clinical pair
+interface IssuePresentation {
+  plain: string;
+  clinical: string;
+}
+
+const ISSUE_PLAIN_MAPPINGS: Record<string, string> = {
+  "Cervical strain risk from inadequate neck support": "Your current pillow is probably putting extra strain on your neck.",
+  "Shoulder pressure points not properly addressed": "Your shoulders may not be getting the pressure relief they need.",
+  "Spinal misalignment during sleep affecting lower body": "Your lower back and hips may be out of alignment during sleep.",
+  "Multiple pillows indicating incorrect pillow height": "Using multiple pillows suggests your main pillow isn't the right height.",
+  "Current pillow not meeting support requirements": "Your current pillow isn't providing the support you need.",
+  "Soft mattress + side sleeping may create neck–shoulder gap issues": "Your soft mattress and side sleeping likely leave a gap between your neck and shoulder.",
+  "Frequent position changes suggesting comfort or support issues": "Tossing and turning often means your body is searching for comfort.",
+  "Light exposure may be reducing deep sleep quality": "Light in your room may be disrupting your deep sleep cycles.",
+  "Sleep temperature affecting sleep continuity": "Sleeping too warm may be waking you up during the night.",
+  "Frequent night awakenings fragmenting sleep cycles": "Waking up often is fragmenting your sleep and reducing recovery.",
+};
+
+const convertToIssuePresentation = (issue: string): IssuePresentation => ({
+  plain: ISSUE_PLAIN_MAPPINGS[issue] || "This may be contributing to discomfort during the night.",
+  clinical: issue,
+});
+
+// Helper: Get score label
+const getScoreLabel = (score: number): { label: string; color: string } => {
+  if (score >= 85) return { label: "Excellent", color: "text-success" };
+  if (score >= 70) return { label: "Good", color: "text-primary" };
+  if (score >= 50) return { label: "Needs improvement", color: "text-amber-500" };
+  return { label: "Critical", color: "text-destructive" };
+};
+
+// Helper: Get score explanation
+const getScoreExplanation = (dimension: "alignment" | "environment" | "consistency", score: number): string => {
+  if (dimension === "alignment") {
+    return score < 70 ? "Your neck/hip support likely isn't optimal yet." : "Your body alignment looks reasonably good.";
+  }
+  if (dimension === "environment") {
+    return score < 70 ? "Light, noise, or temperature may be disrupting deep sleep." : "Your sleep environment is well-optimized.";
+  }
+  return score < 70 ? "Irregular bedtimes or frequent wake-ups are fragmenting sleep." : "Your sleep consistency is solid.";
+};
+
+// Helper: Get "Because you..." reasons for each product
+const getProductReasons = (productName: string, answers: Record<string, string | string[] | number>): string[] => {
+  const reasons: string[] = [];
+  const name = productName.toLowerCase();
+  const painAreas = answers.painAreas as string[] || [];
+  const sleepPosition = answers.sleepPosition as string;
+  const pillowSatisfaction = answers.pillowSatisfaction as number ?? 5;
+  const mattressFirmness = answers.mattressFirmness as string;
+  const roomBrightness = answers.roomBrightness as string;
+
+  if (name.includes("ergonomic") && name.includes("pillow") && !name.includes("knee")) {
+    if (painAreas.includes("neck")) reasons.push("Reported neck pain or stiffness");
+    if (sleepPosition === "side") reasons.push("Sleep mainly on your side, needing extra neck-shoulder support");
+    if (sleepPosition === "back") reasons.push("Sleep on your back, needing cervical curve support");
+    if (pillowSatisfaction <= 4) reasons.push("Are not satisfied with your current pillow support");
+    if (mattressFirmness === "soft") reasons.push("Have a softer mattress requiring adjusted pillow height");
+  }
+
+  if (name.includes("knee")) {
+    if (painAreas.includes("lower_back")) reasons.push("Experience lower back discomfort at night");
+    if (painAreas.includes("hips")) reasons.push("Reported hip pain or pressure");
+    if (sleepPosition === "side") reasons.push("Sleep on your side, where leg alignment affects your spine");
+  }
+
+  if (name.includes("mask") || name.includes("sleep mask")) {
+    if (roomBrightness === "bright") reasons.push("Described your bedroom as quite bright at night");
+    if (roomBrightness === "dim") reasons.push("Have some ambient light in your room");
+  }
+
+  return reasons.slice(0, 2);
+};
 
 // Helper to derive detected issues from answers
 const deriveDetectedIssues = (answers: Record<string, string | string[] | number>): string[] => {
@@ -1353,7 +1429,7 @@ const SleepQuiz = () => {
                   </p>
                 </div>
 
-                {/* Section 1: What We Detected */}
+                {/* Section 1: What We Detected - Plain + Clinical */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <div className="h-8 w-8 rounded-full bg-amber-500/10 flex items-center justify-center">
@@ -1362,13 +1438,19 @@ const SleepQuiz = () => {
                     <h3 className="text-lg font-semibold">What We Detected</h3>
                   </div>
                   <Card className="p-5 bg-amber-500/5 border-amber-500/20">
-                    <ul className="space-y-2">
-                      {(results.detectedIssues || deriveDetectedIssues(answers)).map((issue, idx) => (
-                        <li key={idx} className="flex items-start gap-3">
-                          <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 flex-shrink-0" />
-                          <span className="text-foreground text-sm">{issue}</span>
-                        </li>
-                      ))}
+                    <ul className="space-y-4">
+                      {(results.detectedIssues || deriveDetectedIssues(answers)).slice(0, 3).map((issue, idx) => {
+                        const presentation = convertToIssuePresentation(issue);
+                        return (
+                          <li key={idx} className="space-y-1">
+                            <div className="flex items-start gap-3">
+                              <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 flex-shrink-0" />
+                              <span className="text-foreground text-sm font-medium">{presentation.plain}</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground ml-4">{presentation.clinical}</p>
+                          </li>
+                        );
+                      })}
                     </ul>
                   </Card>
                 </div>
@@ -1401,7 +1483,7 @@ const SleepQuiz = () => {
                   </Card>
                 </div>
 
-                {/* Section 3: Sleep Quality Scores */}
+                {/* Section 3: Sleep Quality Scores with Labels */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center">
@@ -1409,49 +1491,77 @@ const SleepQuiz = () => {
                     </div>
                     <h3 className="text-lg font-semibold">Sleep Quality Analysis</h3>
                   </div>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     {(() => {
                       const scores = results.scores || calculateDerivedScores(answers);
+                      const alignmentLabel = getScoreLabel(scores.alignmentScore ?? 0);
+                      const environmentLabel = getScoreLabel(scores.environmentScore ?? 0);
+                      const consistencyLabel = getScoreLabel(scores.consistencyScore ?? 0);
+                      
                       return (
                         <>
-                          <Card className="p-4 text-center">
+                          <Card className="p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm font-medium">Alignment</span>
+                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full bg-secondary ${alignmentLabel.color}`}>
+                                {alignmentLabel.label}
+                              </span>
+                            </div>
                             <div className="text-2xl font-bold text-primary mb-1">
                               {scores.alignmentScore ?? 0}
                               <span className="text-sm font-normal text-muted-foreground">/100</span>
                             </div>
-                            <p className="text-xs text-muted-foreground">Alignment Score</p>
-                            <div className="w-full bg-secondary rounded-full h-1.5 mt-2">
+                            <div className="w-full bg-secondary rounded-full h-1.5 mb-2">
                               <div 
                                 className="bg-primary h-full rounded-full transition-all" 
                                 style={{ width: `${scores.alignmentScore ?? 0}%` }}
                               />
                             </div>
+                            <p className="text-xs text-muted-foreground">
+                              {getScoreExplanation("alignment", scores.alignmentScore ?? 0)}
+                            </p>
                           </Card>
-                          <Card className="p-4 text-center">
+                          <Card className="p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm font-medium">Environment</span>
+                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full bg-secondary ${environmentLabel.color}`}>
+                                {environmentLabel.label}
+                              </span>
+                            </div>
                             <div className="text-2xl font-bold text-primary mb-1">
                               {scores.environmentScore ?? 0}
                               <span className="text-sm font-normal text-muted-foreground">/100</span>
                             </div>
-                            <p className="text-xs text-muted-foreground">Environment</p>
-                            <div className="w-full bg-secondary rounded-full h-1.5 mt-2">
+                            <div className="w-full bg-secondary rounded-full h-1.5 mb-2">
                               <div 
                                 className="bg-primary h-full rounded-full transition-all" 
                                 style={{ width: `${scores.environmentScore ?? 0}%` }}
                               />
                             </div>
+                            <p className="text-xs text-muted-foreground">
+                              {getScoreExplanation("environment", scores.environmentScore ?? 0)}
+                            </p>
                           </Card>
-                          <Card className="p-4 text-center">
+                          <Card className="p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm font-medium">Consistency</span>
+                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full bg-secondary ${consistencyLabel.color}`}>
+                                {consistencyLabel.label}
+                              </span>
+                            </div>
                             <div className="text-2xl font-bold text-primary mb-1">
                               {scores.consistencyScore ?? 0}
                               <span className="text-sm font-normal text-muted-foreground">/100</span>
                             </div>
-                            <p className="text-xs text-muted-foreground">Consistency</p>
-                            <div className="w-full bg-secondary rounded-full h-1.5 mt-2">
+                            <div className="w-full bg-secondary rounded-full h-1.5 mb-2">
                               <div 
                                 className="bg-primary h-full rounded-full transition-all" 
                                 style={{ width: `${scores.consistencyScore ?? 0}%` }}
                               />
                             </div>
+                            <p className="text-xs text-muted-foreground">
+                              {getScoreExplanation("consistency", scores.consistencyScore ?? 0)}
+                            </p>
                           </Card>
                         </>
                       );
@@ -1475,6 +1585,7 @@ const SleepQuiz = () => {
                       const product = getProductByName(rec.product);
                       const productImage = product?.node.images?.edges?.[0]?.node.url;
                       const clinicalDescription = getClinicalProductDescription(rec.product, answers.sleepPosition as string);
+                      const productReasons = getProductReasons(rec.product, answers);
                       
                       return (
                         <Card key={index} className="p-5 hover:shadow-md transition-shadow overflow-hidden">
@@ -1501,6 +1612,19 @@ const SleepQuiz = () => {
                                   {rec.priority} priority
                                 </span>
                               </div>
+                              
+                              {/* Because you... section */}
+                              {productReasons.length > 0 && (
+                                <div className="mb-2">
+                                  <p className="text-xs font-medium text-muted-foreground mb-1">Because you:</p>
+                                  <ul className="text-xs text-muted-foreground space-y-0.5 list-disc list-inside">
+                                    {productReasons.map((reason, rIdx) => (
+                                      <li key={rIdx}>{reason}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                              
                               <p className="text-muted-foreground text-sm mb-3 leading-relaxed">
                                 {clinicalDescription}
                               </p>
@@ -1565,8 +1689,8 @@ const SleepQuiz = () => {
                       </h4>
                       <p className="text-muted-foreground text-sm mb-4">
                         {results.profileCreated 
-                          ? `We've used your ${visibleQuestions.length}-point assessment to prepare a personalized 7-day sleep improvement plan. Your plan includes daily routines, environment adjustments, and progress tracking.`
-                          : "Create a free account to access your personalized 7-day sleep improvement plan, daily routines, and progress tracking based on your assessment."
+                          ? `We've used your ${visibleQuestions.length}-point assessment and your profile as a ${(answers.sleepPosition as string) || 'combination'} sleeper${(answers.painAreas as string[])?.filter(p => p !== 'none').length > 0 ? ` with ${(answers.painAreas as string[])[0]?.replace('_', ' ')} concerns` : ''} to prepare a personalized 7-day sleep improvement plan.`
+                          : `Based on your ${visibleQuestions.length}-point assessment as a ${(answers.sleepPosition as string) || 'combination'} sleeper, we've prepared a personalized 7-day sleep improvement plan. Create a free account to access it.`
                         }
                       </p>
                       
