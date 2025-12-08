@@ -115,65 +115,14 @@ interface AffiliateGoal {
 
 interface ResourceItem {
   id: string;
-  category: 'Getting Started' | 'Content Ideas' | 'Brand Assets' | 'FAQ';
+  category: string;
   title: string;
   description: string;
-  linkLabel?: string;
-  linkUrl?: string;
-  badge?: string;
+  link_label: string | null;
+  link_url: string | null;
+  badge: string | null;
+  sort_order: number;
 }
-
-// Static affiliate resources configuration
-const affiliateResources: ResourceItem[] = [
-  {
-    id: 'start-here',
-    category: 'Getting Started',
-    title: 'How the Affiliate Program Works',
-    description: 'Share your unique referral link with your audience. When someone makes a purchase through your link, you earn a commission based on your tier level (10-25%).',
-    badge: 'Recommended'
-  },
-  {
-    id: 'product-page',
-    category: 'Getting Started',
-    title: 'Main Product Page',
-    description: 'Link directly to our bestselling Ergonomic Sleep Pillow product page for the highest conversion rates.',
-    linkLabel: 'Visit Product Page',
-    linkUrl: 'https://www.risebynight.com/product/ergonomic-pillow'
-  },
-  {
-    id: 'content-tips',
-    category: 'Content Ideas',
-    title: 'Content Best Practices',
-    description: 'Focus on pain relief benefits, sleep quality improvements, and personal testimonials. Our customers respond best to authentic stories about overcoming neck pain and poor sleep.',
-  },
-  {
-    id: 'social-hooks',
-    category: 'Content Ideas',
-    title: 'Social Media Hooks',
-    description: 'Try hooks like "I finally fixed my morning neck pain" or "The pillow that changed my sleep quality" - personal transformation stories convert best.',
-  },
-  {
-    id: 'brand-assets',
-    category: 'Brand Assets',
-    title: 'Logos, Images & Creatives',
-    description: 'Download our official brand assets including logos, product images, and social media templates.',
-    linkLabel: 'Access Brand Assets',
-    linkUrl: 'https://example.com/rise-by-night-affiliate-assets',
-    badge: 'New'
-  },
-  {
-    id: 'faq-commissions',
-    category: 'FAQ',
-    title: 'When do I get paid?',
-    description: 'Commissions are processed monthly once your pending balance reaches the $50 threshold. Payouts are sent via PayPal or bank transfer.',
-  },
-  {
-    id: 'faq-tracking',
-    category: 'FAQ',
-    title: 'How are referrals tracked?',
-    description: 'Our system uses cookies to track visitors who click your referral link. They have 30 days to complete a purchase for you to receive credit.',
-  }
-];
 
 const tierConfig: Record<string, { color: string; bgColor: string; borderColor: string; icon: string }> = {
   'bronze': { color: 'text-amber-700', bgColor: 'bg-amber-100', borderColor: 'border-amber-300', icon: '🥉' },
@@ -216,6 +165,8 @@ const AffiliateDashboard = () => {
   const [goalsLoading, setGoalsLoading] = useState(false);
   const [goalTarget, setGoalTarget] = useState("");
   const [savingGoal, setSavingGoal] = useState(false);
+  const [resources, setResources] = useState<ResourceItem[]>([]);
+  const [resourcesLoading, setResourcesLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -274,12 +225,13 @@ const AffiliateDashboard = () => {
       if (stats) setMonthlyStats(stats);
       if (breakdown) setCommissionBreakdown(breakdown);
 
-      // Fetch leaderboard, analytics, and payout history if affiliate exists
+      // Fetch leaderboard, analytics, payout history, goals, and resources if affiliate exists
       if (affiliate) {
         fetchLeaderboard();
         fetchAnalytics();
         fetchPayoutHistory(affiliate.id);
         fetchGoals();
+        fetchResources();
       }
     } catch (error) {
       console.error("Error fetching affiliate data:", error);
@@ -383,6 +335,28 @@ const AffiliateDashboard = () => {
       console.error("Error fetching goals:", error);
     } finally {
       setGoalsLoading(false);
+    }
+  };
+
+  const fetchResources = async () => {
+    setResourcesLoading(true);
+    try {
+      const response = await supabase.functions.invoke('affiliate-api', {
+        body: { action: 'get-resources', data: {} }
+      });
+
+      if (response.error) {
+        console.error("Error fetching resources:", response.error);
+        return;
+      }
+
+      if (response.data?.resources) {
+        setResources(response.data.resources);
+      }
+    } catch (error) {
+      console.error("Error fetching resources:", error);
+    } finally {
+      setResourcesLoading(false);
     }
   };
 
@@ -1009,57 +983,68 @@ const AffiliateDashboard = () => {
             <p className="text-sm text-muted-foreground">Everything you need to promote Rise By Night</p>
           </CardHeader>
           <CardContent>
-            <div className="space-y-6">
-              {(['Getting Started', 'Content Ideas', 'Brand Assets', 'FAQ'] as const).map(category => {
-                const categoryResources = affiliateResources.filter(r => r.category === category);
-                if (categoryResources.length === 0) return null;
-                
-                const categoryIcons = {
-                  'Getting Started': <Sparkles className="h-4 w-4" />,
-                  'Content Ideas': <FileText className="h-4 w-4" />,
-                  'Brand Assets': <Image className="h-4 w-4" />,
-                  'FAQ': <BookOpen className="h-4 w-4" />
-                };
-                
-                return (
-                  <div key={category}>
-                    <h4 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
-                      {categoryIcons[category]}
-                      {category}
-                    </h4>
-                    <div className="grid gap-3 md:grid-cols-2">
-                      {categoryResources.map(resource => (
-                        <div 
-                          key={resource.id}
-                          className="p-4 rounded-lg border bg-secondary/30 hover:bg-secondary/50 transition-colors"
-                        >
-                          <div className="flex items-start justify-between gap-2 mb-2">
-                            <h5 className="font-medium text-sm">{resource.title}</h5>
-                            {resource.badge && (
-                              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary shrink-0">
-                                {resource.badge}
-                              </span>
+            {resourcesLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : resources.length === 0 ? (
+              <div className="text-center py-8">
+                <BookOpen className="h-8 w-8 mx-auto mb-2 text-muted-foreground/40" />
+                <p className="text-muted-foreground">No resources are available yet. Check back soon for affiliate guides and assets.</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {(['Getting Started', 'Content Ideas', 'Brand Assets', 'FAQ'] as const).map(category => {
+                  const categoryResources = resources.filter(r => r.category === category);
+                  if (categoryResources.length === 0) return null;
+                  
+                  const categoryIcons: Record<string, React.ReactNode> = {
+                    'Getting Started': <Sparkles className="h-4 w-4" />,
+                    'Content Ideas': <FileText className="h-4 w-4" />,
+                    'Brand Assets': <Image className="h-4 w-4" />,
+                    'FAQ': <BookOpen className="h-4 w-4" />
+                  };
+                  
+                  return (
+                    <div key={category}>
+                      <h4 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+                        {categoryIcons[category]}
+                        {category}
+                      </h4>
+                      <div className="grid gap-3 md:grid-cols-2">
+                        {categoryResources.map(resource => (
+                          <div 
+                            key={resource.id}
+                            className="p-4 rounded-lg border bg-secondary/30 hover:bg-secondary/50 transition-colors"
+                          >
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <h5 className="font-medium text-sm">{resource.title}</h5>
+                              {resource.badge && (
+                                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary shrink-0">
+                                  {resource.badge}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground mb-3">{resource.description}</p>
+                            {resource.link_url && resource.link_label && (
+                              <a 
+                                href={resource.link_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                              >
+                                {resource.link_label}
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
                             )}
                           </div>
-                          <p className="text-xs text-muted-foreground mb-3">{resource.description}</p>
-                          {resource.linkUrl && resource.linkLabel && (
-                            <a 
-                              href={resource.linkUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                            >
-                              {resource.linkLabel}
-                              <ExternalLink className="h-3 w-3" />
-                            </a>
-                          )}
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </CardContent>
         </Card>
 

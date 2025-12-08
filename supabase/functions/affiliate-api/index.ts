@@ -28,7 +28,8 @@ const actionSchema = z.object({
     'get-analytics',
     'process-payout',
     'get-goals',
-    'set-goal'
+    'set-goal',
+    'get-resources'
   ]),
   data: z.record(z.unknown()).optional(),
 });
@@ -1078,6 +1079,24 @@ Deno.serve(async (req) => {
 
           return createSuccessResponse({ goal: newGoal, action: 'created' });
         }
+      }
+
+      case 'get-resources': {
+        // Fetch all active affiliate resources
+        const { data: resources, error: resourcesError } = await supabaseAdmin
+          .from('affiliate_resources')
+          .select('id, category, title, description, link_label, link_url, badge, sort_order')
+          .eq('is_active', true)
+          .order('category', { ascending: true })
+          .order('sort_order', { ascending: true })
+          .order('created_at', { ascending: true });
+
+        if (resourcesError) {
+          console.error('[affiliate-api] Error fetching resources:', resourcesError);
+          throw resourcesError;
+        }
+
+        return createSuccessResponse({ resources: resources || [] });
       }
 
       default:
