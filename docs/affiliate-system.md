@@ -392,24 +392,83 @@ The "Your Goals" section in the Affiliate Dashboard displays:
 
 ---
 
-## Affiliate Resources
+## Tier Email Flows
 
-A static resources hub is available in the Affiliate Dashboard to help affiliates promote Rise By Night effectively.
+Klaviyo email flows are triggered by the `RBN_Affiliate_Tier_Updated` event. Use the `tier_change_context` property to branch flows:
 
-### Resource Categories
+| Flow | tier_change_context | Description |
+|------|---------------------|-------------|
+| Tier Upgrade | `upgrade_from_lower_tier` | Celebratory email when affiliate moves up a tier |
+| Tier Downgrade | `downgrade_from_higher_tier` | Supportive email with action plan when tier drops |
+| Diamond Maintenance | `maintained_top_tier` | VIP recognition for Diamond affiliates |
 
-1. **Getting Started**: Program overview and product links
-2. **Content Ideas**: Best practices and social media hooks
-3. **Brand Assets**: Links to logos, images, and creative templates
-4. **FAQ**: Common questions about payments and tracking
+For detailed email templates, subject lines, and body structure, see **[docs/affiliate-tier-email-templates.md](./affiliate-tier-email-templates.md)**.
 
-### Current Implementation
+---
 
-Resources are defined as a static configuration (`affiliateResources`) in the dashboard code. This can be extended in the future to be database-driven and admin-editable.
+## Affiliate Resources (Database-Driven)
 
-### UI Location
+The Affiliate Resources section in the dashboard is database-driven, allowing admins to manage resources without code changes.
 
-The "Affiliate Resources" section appears in the Affiliate Dashboard, displaying resource cards grouped by category with optional external links.
+### affiliate_resources Table
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | uuid | Primary key |
+| category | text | Resource category (Getting Started, Content Ideas, Brand Assets, FAQ) |
+| title | text | Resource title |
+| description | text | Resource description |
+| link_label | text | Optional button label |
+| link_url | text | Optional button URL |
+| badge | text | Optional badge (e.g., "Recommended", "New") |
+| is_active | boolean | Whether resource is visible (default: true) |
+| sort_order | integer | Display order within category |
+| created_at | timestamp | Creation timestamp |
+| updated_at | timestamp | Last update timestamp |
+
+### RLS Policies
+
+- **SELECT**: All authenticated users can read active resources (`is_active = true`)
+- **INSERT/UPDATE/DELETE**: Only users with `admin` role can modify resources
+
+### Example Resources
+
+| Category | Title | Description |
+|----------|-------|-------------|
+| Getting Started | How the Affiliate Program Works | Overview of commission structure and referral links |
+| Getting Started | Main Product Page | Link to bestselling Ergonomic Sleep Pillow |
+| Content Ideas | Content Best Practices | Tips for authentic promotion |
+| Content Ideas | Social Media Hooks | Example hooks for social posts |
+| Brand Assets | Logos, Images & Creatives | Link to downloadable brand assets |
+| FAQ | When do I get paid? | Payment schedule and thresholds |
+| FAQ | How are referrals tracked? | Cookie tracking and attribution window |
+
+### API Action
+
+The `get-resources` action in `affiliate-api` returns all active resources sorted by category and sort_order:
+
+```json
+{
+  "resources": [
+    {
+      "id": "...",
+      "category": "Getting Started",
+      "title": "How the Affiliate Program Works",
+      "description": "...",
+      "link_label": null,
+      "link_url": null,
+      "badge": "Recommended",
+      "sort_order": 1
+    }
+  ]
+}
+```
+
+### Admin Management
+
+Resources can be managed via:
+1. Supabase dashboard (direct SQL or table editor)
+2. Future: Admin UI at `/admin/affiliate-resources`
 
 ---
 

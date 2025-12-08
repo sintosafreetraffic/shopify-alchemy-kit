@@ -102,6 +102,48 @@ export type Database = {
           },
         ]
       }
+      affiliate_resources: {
+        Row: {
+          badge: string | null
+          category: string
+          created_at: string
+          description: string
+          id: string
+          is_active: boolean
+          link_label: string | null
+          link_url: string | null
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          badge?: string | null
+          category: string
+          created_at?: string
+          description: string
+          id?: string
+          is_active?: boolean
+          link_label?: string | null
+          link_url?: string | null
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          badge?: string | null
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          is_active?: boolean
+          link_label?: string | null
+          link_url?: string | null
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       affiliates: {
         Row: {
           created_at: string | null
