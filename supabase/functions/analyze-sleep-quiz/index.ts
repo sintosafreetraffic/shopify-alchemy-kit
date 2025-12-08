@@ -337,6 +337,8 @@ Deno.serve(async (req) => {
           stress_level: stressLevel,
           wake_up_condition: wakeUpCondition,
           temperature_preference: temperaturePreference,
+          quiz_completed: true,
+          quiz_completed_at: new Date().toISOString(),
         };
 
         if (!existingProfile) {

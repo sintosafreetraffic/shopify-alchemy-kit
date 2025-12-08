@@ -53,6 +53,7 @@ Deno.serve(async (req) => {
     let accessReason = '';
     let affiliateSales = 0;
     let hasPurchased = false;
+    let quizCompleted = false;
 
     console.log(`[verify-sleep-coach-access] Checking for authenticated user: ${email}`);
 
@@ -111,28 +112,41 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Check 3: Does user have an existing sleep profile? (fallback for demo/testing)
-    if (!hasAccess) {
-      const { data: profile } = await supabase
-        .from('sleep_profiles')
-        .select('email')
-        .eq('email', email.toLowerCase())
-        .single();
+    // Check 3: Does user have an existing sleep profile with quiz completed?
+    const { data: profile } = await supabase
+      .from('sleep_profiles')
+      .select('email, quiz_completed, quiz_completed_at')
+      .eq('email', email.toLowerCase())
+      .maybeSingle();
 
-      if (profile) {
+    if (profile) {
+      quizCompleted = profile.quiz_completed === true;
+      console.log(`[Auth] User has existing sleep profile, quiz_completed=${quizCompleted}`);
+      
+      // Only grant access via profile if they have no other qualifying reason
+      // AND they've completed the quiz
+      if (!hasAccess && quizCompleted) {
         hasAccess = true;
         accessReason = 'profile_exists';
-        console.log(`[Auth] User has existing sleep profile`);
       }
     }
 
-    console.log(`[verify-sleep-coach-access] Complete: hasAccess=${hasAccess}, reason=${accessReason}`);
+    // Final access check: user must have qualifying reason AND completed quiz
+    // If they have a qualifying reason but haven't completed quiz, deny access
+    if (hasAccess && !quizCompleted) {
+      console.log(`[verify-sleep-coach-access] User qualifies but quiz not completed`);
+      hasAccess = false;
+      accessReason = 'quiz_required';
+    }
+
+    console.log(`[verify-sleep-coach-access] Complete: hasAccess=${hasAccess}, reason=${accessReason}, quizCompleted=${quizCompleted}`);
 
     return createSuccessResponse({
       hasAccess,
       accessReason,
       affiliateSales,
       hasPurchased,
+      quizCompleted,
     });
   } catch (error: any) {
     console.error('[verify-sleep-coach-access] Error:', error);

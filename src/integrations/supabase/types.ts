@@ -355,6 +355,8 @@ export type Database = {
           pain_points: string[] | null
           products_owned: string[] | null
           purchase_count: number | null
+          quiz_completed: boolean | null
+          quiz_completed_at: string | null
           sleep_position: Database["public"]["Enums"]["sleep_position"]
           stress_level: Database["public"]["Enums"]["stress_level"] | null
           temperature_preference:
@@ -375,6 +377,8 @@ export type Database = {
           pain_points?: string[] | null
           products_owned?: string[] | null
           purchase_count?: number | null
+          quiz_completed?: boolean | null
+          quiz_completed_at?: string | null
           sleep_position?: Database["public"]["Enums"]["sleep_position"]
           stress_level?: Database["public"]["Enums"]["stress_level"] | null
           temperature_preference?:
@@ -395,6 +399,8 @@ export type Database = {
           pain_points?: string[] | null
           products_owned?: string[] | null
           purchase_count?: number | null
+          quiz_completed?: boolean | null
+          quiz_completed_at?: string | null
           sleep_position?: Database["public"]["Enums"]["sleep_position"]
           stress_level?: Database["public"]["Enums"]["stress_level"] | null
           temperature_preference?:

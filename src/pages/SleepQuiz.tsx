@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Loader2, CheckCircle, AlertCircle, ShoppingCart, Mail, Sparkles, Info, Moon, ArrowLeft, ArrowRight, Lock } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { useCartStore } from "@/stores/cartStore";
 import { fetchProducts, ShopifyProduct } from "@/lib/shopify";
@@ -359,6 +359,8 @@ const SleepQuiz = () => {
   const [results, setResults] = useState<AnalysisResult | null>(null);
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const returnTo = searchParams.get('returnTo');
   const { addItem } = useCartStore();
 
   // Account existence check state
@@ -1156,11 +1158,36 @@ const SleepQuiz = () => {
                   </Card>
                 )}
 
+                {/* Primary CTA when coming from Sleep Coach redirect */}
+                {results.profileCreated && returnTo === '/sleep-coach' && (
+                  <Card className="p-6 bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+                    <div className="flex items-start gap-4">
+                      <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                        <Sparkles className="w-6 h-6 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-lg mb-2">Your AI Sleep Coach is Ready!</h4>
+                        <p className="text-muted-foreground mb-4">
+                          Your personalized 7-day sleep improvement plan has been created based on your 22-point assessment.
+                        </p>
+                        <Button
+                          onClick={() => navigate('/sleep-coach')}
+                          className="w-full rounded-lg"
+                          size="lg"
+                        >
+                          <Sparkles className="w-4 h-4 mr-2" />
+                          Continue to My Sleep Coach
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                )}
+
                 <div className="flex gap-4 pt-4">
                   <Button variant="outline" onClick={() => navigate("/")} className="flex-1 rounded-lg">
                     Back to Home
                   </Button>
-                  {results.profileCreated ? (
+                  {results.profileCreated && returnTo !== '/sleep-coach' ? (
                     <Button 
                       onClick={() => navigate(`/auth?returnTo=/sleep-coach&email=${encodeURIComponent(email)}&context=sleep-coach`)} 
                       className="flex-1 rounded-lg"
@@ -1168,11 +1195,11 @@ const SleepQuiz = () => {
                       <Sparkles className="w-4 h-4 mr-2" />
                       View Sleep Plan
                     </Button>
-                  ) : (
+                  ) : !results.profileCreated ? (
                     <Button onClick={() => navigate("/product/ergonomic-pillow")} className="flex-1 rounded-lg">
                       View Products
                     </Button>
-                  )}
+                  ) : null}
                 </div>
               </div>
             )}
