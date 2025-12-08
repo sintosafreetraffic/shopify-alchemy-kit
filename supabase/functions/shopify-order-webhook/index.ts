@@ -14,9 +14,9 @@ import {
   createSuccessResponse,
 } from "../_shared/env.ts";
 import {
-  syncAndStoreAttributes,
-  sendKlaviyoEvent,
+  fullSleepSync,
 } from "../_shared/sleep-sync.ts";
+import { SleepSyncSource } from "../_shared/types.ts";
 
 const KLAVIYO_LIST_ID = "UEJzEU";
 
@@ -268,15 +268,16 @@ Deno.serve(async (req: Request): Promise<Response> => {
       }),
     });
 
-    // TRIGGER SLEEP SYNC - Use centralized syncAndStoreAttributes
-    console.log("[Sleep Sync] Triggering for order:", email);
+    // TRIGGER FULL SLEEP SYNC - Use fullSleepSync for complete 3-layer sync
+    console.log("[Sleep Sync] Triggering fullSleepSync for order:", email);
     try {
-      // Use single source of truth for Sleep Sync
-      const { attributes, event } = await syncAndStoreAttributes(supabase, email, "shopify_order");
-      
-      // Send Sleep Sync event to Klaviyo
-      await sendKlaviyoEvent(KLAVIYO_PRIVATE_API_KEY, email, event.eventName, event.payload);
-      console.log("[Sleep Sync] Completed for:", email);
+      await fullSleepSync(
+        supabase,
+        email,
+        'shopify' as SleepSyncSource,
+        KLAVIYO_PRIVATE_API_KEY
+      );
+      console.log("[Sleep Sync] fullSleepSync completed for:", email);
     } catch (syncError) {
       console.error("[Sleep Sync] Error:", syncError);
       // Non-blocking
