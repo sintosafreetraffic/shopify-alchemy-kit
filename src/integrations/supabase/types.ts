@@ -19,9 +19,13 @@ export type Database = {
           created_at: string | null
           id: string
           level: number | null
+          monthly_revenue_generated: number | null
+          monthly_sales_count: number | null
           parent_affiliate_id: string | null
           referral_code: string
           status: string | null
+          tier: string | null
+          tier_expires_at: string | null
           total_commissions: number | null
           total_referrals: number | null
           updated_at: string | null
@@ -31,9 +35,13 @@ export type Database = {
           created_at?: string | null
           id?: string
           level?: number | null
+          monthly_revenue_generated?: number | null
+          monthly_sales_count?: number | null
           parent_affiliate_id?: string | null
           referral_code: string
           status?: string | null
+          tier?: string | null
+          tier_expires_at?: string | null
           total_commissions?: number | null
           total_referrals?: number | null
           updated_at?: string | null
@@ -43,9 +51,13 @@ export type Database = {
           created_at?: string | null
           id?: string
           level?: number | null
+          monthly_revenue_generated?: number | null
+          monthly_sales_count?: number | null
           parent_affiliate_id?: string | null
           referral_code?: string
           status?: string | null
+          tier?: string | null
+          tier_expires_at?: string | null
           total_commissions?: number | null
           total_referrals?: number | null
           updated_at?: string | null
@@ -140,8 +152,13 @@ export type Database = {
           affiliate_id: string
           amount: number
           created_at: string | null
+          customer_email: string | null
+          customer_ip: string | null
+          fraud_flag: boolean | null
+          fraud_reason: string | null
           id: string
           level: number
+          order_amount: number | null
           order_id: string
           referral_id: string | null
           status: string | null
@@ -150,8 +167,13 @@ export type Database = {
           affiliate_id: string
           amount: number
           created_at?: string | null
+          customer_email?: string | null
+          customer_ip?: string | null
+          fraud_flag?: boolean | null
+          fraud_reason?: string | null
           id?: string
           level: number
+          order_amount?: number | null
           order_id: string
           referral_id?: string | null
           status?: string | null
@@ -160,8 +182,13 @@ export type Database = {
           affiliate_id?: string
           amount?: number
           created_at?: string | null
+          customer_email?: string | null
+          customer_ip?: string | null
+          fraud_flag?: boolean | null
+          fraud_reason?: string | null
           id?: string
           level?: number
+          order_amount?: number | null
           order_id?: string
           referral_id?: string | null
           status?: string | null
