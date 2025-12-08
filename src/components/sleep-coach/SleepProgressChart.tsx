@@ -15,11 +15,12 @@ export type TimeRange = "7d" | "30d" | "90d" | "12m" | "custom";
 
 interface SleepProgressChartProps {
   logs: SleepLog[];
+  initialRange?: TimeRange;
   onShareClick?: (range: TimeRange) => void;
 }
 
-export const SleepProgressChart = ({ logs, onShareClick }: SleepProgressChartProps) => {
-  const [timeRange, setTimeRange] = useState<TimeRange>("30d");
+export const SleepProgressChart = ({ logs, initialRange = "30d", onShareClick }: SleepProgressChartProps) => {
+  const [timeRange, setTimeRange] = useState<TimeRange>(initialRange);
   const [customRange, setCustomRange] = useState<DateRange | undefined>();
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 

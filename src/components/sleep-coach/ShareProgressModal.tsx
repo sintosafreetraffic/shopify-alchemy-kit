@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
-import { Download, Share2, Loader2, Moon, Link2 } from "lucide-react";
+import { Download, Share2, Loader2, Moon, Link2, Sparkles, Check } from "lucide-react";
 import { format, subDays, subMonths, parseISO, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { toPng } from "html-to-image";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 type ShareRange = "7d" | "30d" | "90d" | "12m";
 type ShareMetric = "both" | "quality" | "pain";
@@ -24,12 +25,20 @@ export const ShareProgressModal = ({ isOpen, onClose, logs, initialRange = "30d"
   const [range, setRange] = useState<ShareRange>(initialRange);
   const [metric, setMetric] = useState<ShareMetric>("both");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isCelebrating, setIsCelebrating] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
 
   // Reset range when initialRange changes (modal opens with new range)
   useEffect(() => {
     setRange(initialRange);
   }, [initialRange]);
+
+  // Auto-clear celebration after timeout
+  useEffect(() => {
+    if (!isCelebrating) return;
+    const t = setTimeout(() => setIsCelebrating(false), 1800);
+    return () => clearTimeout(t);
+  }, [isCelebrating]);
 
   const filteredData = useMemo(() => {
     const today = new Date();
@@ -97,6 +106,7 @@ export const ShareProgressModal = ({ isOpen, onClose, logs, initialRange = "30d"
       link.click();
 
       toast.success("Image downloaded!");
+      setIsCelebrating(true);
     } catch (error) {
       console.error("Error generating image:", error);
       toast.error("Failed to generate image");
@@ -131,6 +141,7 @@ export const ShareProgressModal = ({ isOpen, onClose, logs, initialRange = "30d"
       });
 
       toast.success("Shared successfully!");
+      setIsCelebrating(true);
     } catch (error) {
       if ((error as Error).name !== "AbortError") {
         console.error("Error sharing:", error);
@@ -148,6 +159,7 @@ export const ShareProgressModal = ({ isOpen, onClose, logs, initialRange = "30d"
       try {
         await navigator.clipboard.writeText(shareUrl);
         toast.success("Link copied to clipboard!");
+        setIsCelebrating(true);
       } catch (error) {
         console.error("Failed to copy:", error);
         toast.error("Unable to copy link. Please try again.");
@@ -216,7 +228,22 @@ export const ShareProgressModal = ({ isOpen, onClose, logs, initialRange = "30d"
           </div>
 
           {/* Preview */}
-          <div className="border border-border/50 rounded-xl overflow-hidden shadow-lg">
+          <div className="border border-border/50 rounded-xl overflow-hidden shadow-lg relative">
+            {/* Celebration overlay */}
+            <div
+              className={cn(
+                "absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/90 backdrop-blur-sm transition-all duration-300 pointer-events-none",
+                isCelebrating ? "opacity-100" : "opacity-0"
+              )}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="h-5 w-5 text-amber-400 animate-pulse" />
+                <Check className="h-6 w-6 text-green-400" />
+                <Sparkles className="h-5 w-5 text-amber-400 animate-pulse" />
+              </div>
+              <p className="text-white/90 font-medium text-sm">Nice! Ready to share 🌙</p>
+            </div>
+            
             <div
               ref={previewRef}
               className="bg-gradient-to-br from-slate-900 to-slate-800 p-6"
