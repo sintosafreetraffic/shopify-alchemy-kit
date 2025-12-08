@@ -8,6 +8,7 @@ export interface QuizData {
   mattressFirmness?: string;
   sleepEquipment?: string[];
   painAreas?: string[];
+  painPoints?: string[];
   painSeverity?: number;
   nightAwakenings?: string;
   sleepTemperature?: string;
@@ -24,6 +25,7 @@ export interface QuizData {
   snoring?: string;
   triedMethods?: string[];
   pillowSatisfaction?: number;
+  pillowIssues?: string[];
 }
 
 export interface SleepAssessment {
