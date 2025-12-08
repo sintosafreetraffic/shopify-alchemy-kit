@@ -482,7 +482,7 @@ const SleepCoachDashboard = () => {
                           variant="ghost"
                           size="sm"
                           onClick={handleRetakeQuiz}
-                          className="text-xs text-muted-foreground hover:text-primary"
+                          className="text-xs text-muted-foreground hover:text-primary-foreground hover:bg-primary"
                         >
                           <ClipboardEdit className="h-3 w-3 mr-1" />
                           Update Assessment
