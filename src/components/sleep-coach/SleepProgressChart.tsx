@@ -7,7 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceDot } from "recharts";
 import { BarChart3, CalendarIcon, Share2 } from "lucide-react";
-import { format, subDays, subMonths, isAfter, isBefore, parseISO } from "date-fns";
+import { format, subDays, subMonths, parseISO, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { DateRange } from "react-day-picker";
 
@@ -56,12 +56,8 @@ export const SleepProgressChart = ({ logs, onShareClick }: SleepProgressChartPro
     }
 
     return logs.filter((log) => {
-      const logDate = parseISO(log.date);
-      // Compare dates only (ignore time component)
-      const logDateStart = new Date(logDate);
-      logDateStart.setHours(0, 0, 0, 0);
-      
-      return logDateStart >= startDate && logDateStart <= endDate;
+      const logDate = startOfDay(parseISO(log.date));
+      return isWithinInterval(logDate, { start: startOfDay(startDate), end: endOfDay(endDate) });
     });
   }, [logs, timeRange, customRange]);
 
@@ -356,7 +352,7 @@ export const SleepProgressChart = ({ logs, onShareClick }: SleepProgressChartPro
         )}
         
         <p className="text-xs text-muted-foreground text-center mt-2">
-          Higher quality is better • Lower pain is better
+          Higher sleep quality is better • Lower morning pain is better
         </p>
       </CardContent>
     </Card>
