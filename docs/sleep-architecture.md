@@ -133,12 +133,46 @@ Main sync endpoint. Accepts `source` parameter.
 Generates AI sleep plan using all 3 layers.
 
 **Flow:**
-1. Fetch profile + logs
-2. Build snapshots
-3. Call AI Brain with hard constraints
+1. Fetch profile + logs + latest `sleep_attributes_state`
+2. Build snapshots with environment data
+3. Call AI Brain with 3-layer context and hard constraints
 4. Validate/sanitize output
 5. Save plan with snapshots
 6. Trigger `fullSleepSync` with source `sleep_plan`
+
+**3-Layer AI Prompt Context:**
+The AI prompt explicitly references all layers:
+
+```
+LAYER 1 - IDENTITY:
+- Sleep position: {side/back/stomach/mixed}
+- Pain points: {lower_back, neck, shoulders, etc.}
+- Temperature preference: {cold/neutral/warm}
+- Stress level: {low/medium/high}
+- Products owned: {ergonomic_pillow, knee_pillow, sleep_mask}
+
+LAYER 2 - ENVIRONMENT:
+- Mattress: {thickness} thickness, {firmness} firmness
+- Bed height: {low/standard/high}
+- Co-sleeping: {alone/partner/pet/both}
+- Bedding: {cotton/bamboo/silk/synthetic}
+- Pillow type: {standard/memory_foam/contour/down}
+- Room brightness: {dark/dim/moderate/bright}
+- Room noise: {quiet/some/moderate/noisy}
+
+LAYER 3 - DYNAMIC STATE:
+- Sleep trend: {improving/stable/declining} (7d vs 14d avg)
+- Pain trend: {improving/stable/worsening}
+- Current streak: {X} days
+- Risk level: {low/medium/high}
+- Engagement level: {low/medium/high}
+- Upsell score: {0-100}
+```
+
+**Tone Adjustment:**
+- High risk → Urgent, encouraging, focus on quick wins
+- Medium risk → Balanced, educational
+- Low risk → Optimistic, maintain momentum
 
 ### `analyze-sleep-quiz`
 Processes quiz answers, creates profile.
@@ -259,3 +293,22 @@ Displays current 3-layer state.
 4. **AI Brain uses snapshots** - never raw database queries in prompts
 5. **Validate AI output** against user data before saving
 6. **Log everything** with `[Sleep Sync]` prefix for debugging
+
+## Trigger Implementation Summary
+
+| Trigger Point | Edge Function | Source | When |
+|---------------|---------------|--------|------|
+| Manual sync | `sleep-attributes-sync` | `manual` | User clicks sync button |
+| Sleep log | `useSleepApi.ts` → `sleep-attributes-sync` | `sleep_log` | After log insert |
+| Quiz completion | `analyze-sleep-quiz` | `quiz` | After quiz processing |
+| Shopify order | `shopify-order-webhook` | `shopify` | After order processing |
+| Sleep setup save | `SleepSetupForm` → `sleep-attributes-sync` | `setup_update` | After form save |
+| Plan generation | `coach-generate-sleep-plan` | `sleep_plan` | After AI plan saved |
+
+## Testing Checklist
+
+- [ ] Complete quiz → verify `sleep_attributes_state` created with quiz source
+- [ ] Log sleep → verify attributes updated with `sleep_log` source
+- [ ] Save sleep setup → verify environment fields sync
+- [ ] Generate plan → verify plan tracking fields update
+- [ ] Check Klaviyo → verify `RBN_SleepSync_Updated` events and `rbn_*` profile properties
