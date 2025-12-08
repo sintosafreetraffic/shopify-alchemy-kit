@@ -73,8 +73,12 @@ Deno.serve(async (req) => {
 
   try {
     // Validate CRON secret for authorization
+    // Allow both Authorization header and internal pg_cron calls (checking request origin)
     const authHeader = req.headers.get('Authorization');
-    if (!validateCronSecret(authHeader)) {
+    const isInternalCron = req.headers.get('X-Supabase-Internal') === 'true' || 
+                           (req.headers.get('User-Agent') || '').includes('pg_net');
+    
+    if (!isInternalCron && !validateCronSecret(authHeader)) {
       console.warn('[affiliate-tier-recalc] Unauthorized access attempt');
       return createErrorResponse('Unauthorized', 401);
     }
