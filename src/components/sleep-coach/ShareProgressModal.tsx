@@ -1,11 +1,11 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { SleepLog } from "@/hooks/useSleepApi";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
-import { Download, Share2, Loader2, Moon } from "lucide-react";
+import { Download, Share2, Loader2, Moon, Link2 } from "lucide-react";
 import { format, subDays, subMonths, parseISO, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { toPng } from "html-to-image";
 import { toast } from "sonner";
@@ -25,6 +25,11 @@ export const ShareProgressModal = ({ isOpen, onClose, logs, initialRange = "30d"
   const [metric, setMetric] = useState<ShareMetric>("both");
   const [isGenerating, setIsGenerating] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
+
+  // Reset range when initialRange changes (modal opens with new range)
+  useEffect(() => {
+    setRange(initialRange);
+  }, [initialRange]);
 
   const filteredData = useMemo(() => {
     const today = new Date();
@@ -133,6 +138,22 @@ export const ShareProgressModal = ({ isOpen, onClose, logs, initialRange = "30d"
       }
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleCopyLink = async () => {
+    const shareUrl = `${window.location.origin}/sleep-coach?progressRange=${range}`;
+    
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success("Link copied to clipboard!");
+      } catch (error) {
+        console.error("Failed to copy:", error);
+        toast.error("Unable to copy link. Please try again.");
+      }
+    } else {
+      toast.error("Copy is not supported in this browser.");
     }
   };
 
@@ -304,9 +325,9 @@ export const ShareProgressModal = ({ isOpen, onClose, logs, initialRange = "30d"
           </div>
 
           {/* Actions */}
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
-              className="flex-1"
+              className="flex-1 min-w-[140px]"
               onClick={handleDownload}
               disabled={isGenerating || filteredData.length === 0}
             >
@@ -326,6 +347,14 @@ export const ShareProgressModal = ({ isOpen, onClose, logs, initialRange = "30d"
                 <Share2 className="h-4 w-4" />
               </Button>
             )}
+            <Button
+              variant="outline"
+              onClick={handleCopyLink}
+              className="gap-2"
+            >
+              <Link2 className="h-4 w-4" />
+              <span className="hidden sm:inline">Copy link</span>
+            </Button>
           </div>
         </div>
       </DialogContent>
