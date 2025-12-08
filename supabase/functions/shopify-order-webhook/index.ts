@@ -98,23 +98,80 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+    // Extract product names from line items and map to our product categories
+    const extractProductsOwned = (lineItems: any[]): string[] => {
+      const productsOwned: string[] = [];
+      
+      for (const item of lineItems || []) {
+        const title = (item.title || "").toLowerCase();
+        const productName = (item.product_id ? item.name : item.title || "").toLowerCase();
+        
+        // Map Shopify product titles to our product categories
+        if (title.includes("ergonomic") && (title.includes("sleep") || title.includes("pillow")) && !title.includes("knee")) {
+          if (!productsOwned.includes("Ergonomic Pillow")) {
+            productsOwned.push("Ergonomic Pillow");
+          }
+        }
+        if (title.includes("knee") && title.includes("pillow")) {
+          if (!productsOwned.includes("Knee Pillow")) {
+            productsOwned.push("Knee Pillow");
+          }
+        }
+        if (title.includes("sleep") && title.includes("mask")) {
+          if (!productsOwned.includes("Sleep Mask")) {
+            productsOwned.push("Sleep Mask");
+          }
+        }
+        // Also check variant names for bundles
+        const variantTitle = (item.variant_title || "").toLowerCase();
+        if (variantTitle.includes("bundle") || title.includes("bundle")) {
+          // Bundles typically include multiple products
+          if (!productsOwned.includes("Ergonomic Pillow")) {
+            productsOwned.push("Ergonomic Pillow");
+          }
+        }
+      }
+      
+      console.log("[Shopify] Extracted products from order:", productsOwned);
+      return productsOwned;
+    };
+
+    const newProductsFromOrder = extractProductsOwned(order.line_items);
+
     // Update sleep profile with purchase info
     const { data: existingProfile } = await supabase
       .from('sleep_profiles')
-      .select('email, purchase_count')
+      .select('email, purchase_count, products_owned')
       .eq('email', email)
       .maybeSingle();
 
     if (existingProfile) {
-      // Update purchase count
+      // Merge existing products with new products (avoid duplicates)
+      const existingProducts = existingProfile.products_owned || [];
+      const mergedProducts = [...new Set([...existingProducts, ...newProductsFromOrder])];
+      
+      // Update purchase count and products owned
       await supabase
         .from('sleep_profiles')
         .update({
           purchase_count: (existingProfile.purchase_count || 0) + 1,
           delivery_date: new Date().toISOString().split('T')[0],
+          products_owned: mergedProducts,
         })
         .eq('email', email);
-      console.log("[Shopify] Updated purchase count for:", email);
+      console.log("[Shopify] Updated profile for:", email, "Products owned:", mergedProducts);
+    } else {
+      // Create new profile if none exists
+      await supabase
+        .from('sleep_profiles')
+        .insert({
+          email,
+          purchase_count: 1,
+          delivery_date: new Date().toISOString().split('T')[0],
+          products_owned: newProductsFromOrder,
+          sleep_position: 'side', // Default
+        });
+      console.log("[Shopify] Created new profile for:", email, "Products owned:", newProductsFromOrder);
     }
 
     // Create or update profile in Klaviyo
