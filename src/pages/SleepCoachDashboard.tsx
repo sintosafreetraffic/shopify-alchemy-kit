@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -76,8 +76,18 @@ const SleepCoachDashboard = () => {
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [shareRange, setShareRange] = useState<ChartTimeRange>("30d");
   const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Parse progressRange from URL on mount
+  const initialProgressRange = useMemo((): ChartTimeRange => {
+    const urlRange = searchParams.get('progressRange');
+    if (urlRange && ['7d', '30d', '90d', '12m'].includes(urlRange)) {
+      return urlRange as ChartTimeRange;
+    }
+    return '30d';
+  }, []); // Only compute once on mount
+  
+  const [shareRange, setShareRange] = useState<ChartTimeRange>(initialProgressRange);
   const navigate = useNavigate();
 
   // Check for quiz retake notification
@@ -603,6 +613,7 @@ const SleepCoachDashboard = () => {
                   {/* Sleep Progress Chart with Share */}
                   <SleepProgressChart 
                     logs={data.logs}
+                    initialRange={initialProgressRange}
                     onShareClick={(range) => {
                       setShareRange(range);
                       setIsShareModalOpen(true);
