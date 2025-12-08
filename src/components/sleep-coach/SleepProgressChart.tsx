@@ -65,18 +65,77 @@ export const SleepProgressChart = ({ logs, onShareClick }: SleepProgressChartPro
     });
   }, [logs, timeRange, customRange]);
 
+  // Generate all dates in the range for the X-axis
   const chartData = useMemo(() => {
-    return [...filteredLogs]
-      .sort((a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime())
-      .map((log) => ({
-        date: format(parseISO(log.date), "MMM d"),
-        fullDate: log.date,
-        quality: log.sleep_quality,
-        pain: log.pain_level_morning,
-        feltHot: log.felt_hot,
-        feltStressed: log.felt_stressed,
-      }));
-  }, [filteredLogs]);
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    
+    let startDate: Date;
+    let endDate = today;
+
+    if (timeRange === "custom" && customRange?.from) {
+      startDate = new Date(customRange.from);
+      startDate.setHours(0, 0, 0, 0);
+      endDate = customRange.to ? new Date(customRange.to) : new Date(today);
+      endDate.setHours(23, 59, 59, 999);
+    } else {
+      switch (timeRange) {
+        case "7d":
+          startDate = subDays(today, 6);
+          break;
+        case "30d":
+          startDate = subDays(today, 29);
+          break;
+        case "90d":
+          startDate = subDays(today, 89);
+          break;
+        case "12m":
+          startDate = subMonths(today, 12);
+          break;
+        default:
+          startDate = subDays(today, 29);
+      }
+      startDate.setHours(0, 0, 0, 0);
+    }
+
+    // Create a map of existing logs by date
+    const logsByDate = new Map<string, SleepLog>();
+    logs.forEach((log) => {
+      logsByDate.set(log.date, log);
+    });
+
+    // Generate all dates in the range
+    const allDates: { date: string; fullDate: string; quality: number | null; pain: number | null; feltHot: boolean; feltStressed: boolean }[] = [];
+    const currentDate = new Date(startDate);
+    
+    while (currentDate <= endDate) {
+      const dateStr = format(currentDate, "yyyy-MM-dd");
+      const log = logsByDate.get(dateStr);
+      
+      // Adjust label format based on range for readability
+      let displayFormat = "MMM d";
+      if (timeRange === "12m") {
+        // For 12 months, only show month labels for the 1st of each month
+        displayFormat = currentDate.getDate() === 1 ? "MMM" : "";
+      } else if (timeRange === "90d") {
+        // For 90 days, show every ~7th day
+        displayFormat = "M/d";
+      }
+      
+      allDates.push({
+        date: displayFormat ? format(currentDate, displayFormat) : "",
+        fullDate: dateStr,
+        quality: log ? log.sleep_quality : null,
+        pain: log ? log.pain_level_morning : null,
+        feltHot: log?.felt_hot || false,
+        feltStressed: log?.felt_stressed || false,
+      });
+      
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return allDates;
+  }, [logs, timeRange, customRange]);
 
   const stats = useMemo(() => {
     if (filteredLogs.length === 0) {
@@ -236,7 +295,8 @@ export const SleepProgressChart = ({ logs, onShareClick }: SleepProgressChartPro
                   dataKey="date"
                   tick={{ fontSize: 10 }}
                   className="fill-muted-foreground"
-                  interval="preserveStartEnd"
+                  interval={timeRange === "12m" ? 30 : timeRange === "90d" ? 7 : timeRange === "30d" ? 3 : 0}
+                  tickFormatter={(value) => value || ""}
                 />
                 <YAxis
                   domain={[0, 10]}
@@ -245,7 +305,10 @@ export const SleepProgressChart = ({ logs, onShareClick }: SleepProgressChartPro
                   className="fill-muted-foreground"
                   width={30}
                 />
-                <Tooltip content={<CustomTooltip />} />
+                <Tooltip 
+                  content={<CustomTooltip />} 
+                  formatter={(value) => value !== null ? value : "No data"}
+                />
                 <Legend wrapperStyle={{ fontSize: "12px" }} />
                 <Line
                   type="monotone"
@@ -253,7 +316,17 @@ export const SleepProgressChart = ({ logs, onShareClick }: SleepProgressChartPro
                   name="Sleep Quality"
                   stroke="hsl(var(--primary))"
                   strokeWidth={2}
-                  dot={{ fill: "hsl(var(--primary))", strokeWidth: 0, r: 3 }}
+                  dot={(props: any) => {
+                    if (props.payload.quality === null) return null;
+                    return (
+                      <circle
+                        cx={props.cx}
+                        cy={props.cy}
+                        r={3}
+                        fill="hsl(var(--primary))"
+                      />
+                    );
+                  }}
                   activeDot={{ r: 5 }}
                   connectNulls
                 />
@@ -263,7 +336,17 @@ export const SleepProgressChart = ({ logs, onShareClick }: SleepProgressChartPro
                   name="Pain Level"
                   stroke="hsl(0 84% 60%)"
                   strokeWidth={2}
-                  dot={{ fill: "hsl(0 84% 60%)", strokeWidth: 0, r: 3 }}
+                  dot={(props: any) => {
+                    if (props.payload.pain === null) return null;
+                    return (
+                      <circle
+                        cx={props.cx}
+                        cy={props.cy}
+                        r={3}
+                        fill="hsl(0 84% 60%)"
+                      />
+                    );
+                  }}
                   activeDot={{ r: 5 }}
                   connectNulls
                 />
