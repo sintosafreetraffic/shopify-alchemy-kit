@@ -46,9 +46,13 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Validate CRON_SECRET
+    // Validate CRON_SECRET for authorization
+    // Allow both Authorization header and internal pg_cron calls
     const authHeader = req.headers.get("Authorization");
-    if (!validateCronSecret(authHeader)) {
+    const isInternalCron = req.headers.get("X-Supabase-Internal") === "true" || 
+                           (req.headers.get("User-Agent") || "").includes("pg_net");
+    
+    if (!isInternalCron && !validateCronSecret(authHeader)) {
       console.error("[affiliate-payout-check] Invalid or missing CRON_SECRET");
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
