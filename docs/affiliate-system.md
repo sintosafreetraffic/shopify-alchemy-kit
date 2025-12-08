@@ -222,8 +222,54 @@ Triggered when pending payout exceeds threshold (daily CRON).
 Currently, payouts are processed manually:
 
 1. Run `affiliate-payout-check` CRON to identify ready affiliates
-2. Review pending payouts in admin dashboard
-3. Process payment externally (PayPal, bank transfer, etc.)
-4. Update `last_payout_at` and mark commissions as `paid`
+2. Navigate to `/admin/affiliate-payouts` to review pending payouts
+3. For each affiliate ready for payout:
+   - Click "Mark payout processed"
+   - Confirm the action in the modal
+   - This marks all eligible commissions as `paid` and resets `pending_payout_amount` to 0
+4. Process actual payment externally (PayPal, bank transfer, etc.)
 
-**Note**: Automatic payout processing may be implemented in future versions.
+**Note**: The admin payout UI only records the payout in the system. Actual money transfer must be done externally.
+
+---
+
+## Affiliate Leaderboard
+
+The affiliate dashboard includes a leaderboard showing top performers.
+
+### Features
+
+- **Top 10 ranking** by 30-day revenue (`monthly_revenue_generated`)
+- **Privacy-safe**: No emails or user IDs exposed
+  - Other affiliates shown as "Partner #XXXX" (last 4 chars of referral code)
+  - Current user shown as "You"
+- **Data displayed per entry**:
+  - Rank (1-10)
+  - Display label
+  - 30-day revenue
+  - Tier (with icon)
+  - Total commissions earned
+
+### API Endpoint
+
+- **Action**: `get-leaderboard`
+- **Auth**: Requires authenticated user
+- **Response**:
+  - `is_affiliate`: boolean (false if user hasn't joined program)
+  - `leaderboard`: array of top 10 entries
+  - `current_user_referral_code`: string (if affiliate)
+
+### Update Frequency
+
+Leaderboard data reflects real-time database values. The `monthly_revenue_generated` field is recalculated by the `affiliate-tier-daily-recalc` CRON job at 02:00 UTC daily.
+
+---
+
+## Admin Routes
+
+| Route | Purpose |
+|-------|---------|
+| `/admin/affiliate-fraud` | Review and resolve flagged commissions |
+| `/admin/affiliate-payouts` | Process manual payouts for eligible affiliates |
+
+Both routes require `admin` role verification via `has_role()` function.

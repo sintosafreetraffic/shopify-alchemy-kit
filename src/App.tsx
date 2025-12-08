@@ -30,6 +30,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import AboutUs from "./pages/AboutUs";
 import TrackOrder from "./pages/TrackOrder";
 import AdminAffiliateFraud from "./pages/AdminAffiliateFraud";
+import AdminAffiliatePayouts from "./pages/AdminAffiliatePayouts";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -71,6 +72,7 @@ const AppContent = () => {
           <Route path="/about" element={<AboutUs />} />
           <Route path="/track" element={<TrackOrder />} />
           <Route path="/admin/affiliate-fraud" element={<AdminAffiliateFraud />} />
+          <Route path="/admin/affiliate-payouts" element={<AdminAffiliatePayouts />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

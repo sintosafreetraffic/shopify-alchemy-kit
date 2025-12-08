@@ -23,7 +23,8 @@ const actionSchema = z.object({
     'become-affiliate',
     'check-invite-code',
     'track-referral',
-    'record-commission'
+    'record-commission',
+    'get-leaderboard'
   ]),
   data: z.record(z.unknown()).optional(),
 });
@@ -674,6 +675,60 @@ Deno.serve(async (req) => {
           tier: tierInfo.tier,
           fraudFlagged: fraudCheck.isFraudulent,
           fraudReason: fraudCheck.reason
+        });
+      }
+
+      case 'get-leaderboard': {
+        // Get current user's affiliate record (if any)
+        const { data: currentAffiliate } = await supabaseAdmin
+          .from('affiliates')
+          .select('id, referral_code')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (!currentAffiliate) {
+          // User is not an affiliate
+          return createSuccessResponse({
+            is_affiliate: false,
+            leaderboard: [],
+            message: 'Join the affiliate program to appear on the leaderboard.'
+          });
+        }
+
+        // Get top 10 affiliates by monthly_revenue_generated
+        const { data: topAffiliates, error: leaderboardError } = await supabaseAdmin
+          .from('affiliates')
+          .select('id, referral_code, tier, monthly_sales_count, monthly_revenue_generated, total_commissions')
+          .eq('status', 'active')
+          .order('monthly_revenue_generated', { ascending: false })
+          .limit(10);
+
+        if (leaderboardError) {
+          console.error('[affiliate-api] Error fetching leaderboard:', leaderboardError);
+          throw leaderboardError;
+        }
+
+        // Build privacy-safe leaderboard
+        const leaderboard = (topAffiliates || []).map((affiliate, index) => {
+          const isCurrentUser = affiliate.id === currentAffiliate.id;
+          // Create anonymized display label using last 4 chars of referral code
+          const codeSnippet = affiliate.referral_code.slice(-4).toUpperCase();
+          
+          return {
+            rank: index + 1,
+            display_label: isCurrentUser ? 'You' : `Partner #${codeSnippet}`,
+            tier: affiliate.tier || 'bronze',
+            monthly_sales_count: affiliate.monthly_sales_count || 0,
+            monthly_revenue_generated: affiliate.monthly_revenue_generated || 0,
+            total_commissions: affiliate.total_commissions || 0,
+            is_current_user: isCurrentUser
+          };
+        });
+
+        return createSuccessResponse({
+          is_affiliate: true,
+          leaderboard,
+          current_user_referral_code: currentAffiliate.referral_code
         });
       }
 
