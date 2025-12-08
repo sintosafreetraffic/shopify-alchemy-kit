@@ -310,27 +310,214 @@ export async function generateWhatsAppTip(
   }
 }
 
-/**
- * Analyze sleep quiz and recommend products with fallback
- */
-export async function analyzeQuizForRecommendations(
-  quizAnswers: {
-    sleepPosition: string;
-    painPoints: string[];
-    pillowIssues: string[];
-    sleepGoals: string[];
-  }
-): Promise<{
+// Interface for quiz scores
+export interface QuizScores {
+  alignmentScore: number;
+  environmentScore: number;
+  consistencyScore: number;
+}
+
+// Interface for extended quiz analysis result
+export interface QuizAnalysisResult {
   assessment: string;
   recommendations: Array<{ product: string; reason: string; priority: string }>;
   bundleRecommended: boolean;
   bundleReason: string;
-}> {
+  // Extended fields
+  detectedIssues?: string[];
+  alignmentInsights?: string[];
+  scores?: QuizScores;
+  expertSummary?: string;
+}
+
+/**
+ * Calculate deterministic quiz scores from answers
+ */
+export function calculateQuizScores(quizAnswers: Record<string, any>): QuizScores {
+  const painAreas = quizAnswers.painAreas || quizAnswers.painPoints || [];
+  const pillowSatisfaction = quizAnswers.pillowSatisfaction ?? 5;
+  const roomBrightness = quizAnswers.roomBrightness || "";
+  const roomNoise = quizAnswers.roomNoise || "";
+  const sleepTemperature = quizAnswers.sleepTemperature || "";
+  const sleepLatency = quizAnswers.sleepLatency || "";
+  const nightAwakenings = quizAnswers.nightAwakenings || "";
+  const movesOften = quizAnswers.movesOften || "";
+
+  // Alignment score (based on pain, pillow satisfaction, movement)
+  let alignmentScore = 100;
+  alignmentScore -= (painAreas.filter((p: string) => p !== "none").length) * 12;
+  alignmentScore -= (10 - pillowSatisfaction) * 5;
+  if (movesOften === "often") alignmentScore -= 15;
+  if (movesOften === "always") alignmentScore -= 25;
+
+  // Environment score
+  let environmentScore = 100;
+  if (roomBrightness === "bright") environmentScore -= 25;
+  if (roomBrightness === "dim") environmentScore -= 10;
+  if (roomNoise === "noisy") environmentScore -= 20;
+  if (roomNoise === "some") environmentScore -= 8;
+  if (sleepTemperature === "hot") environmentScore -= 20;
+  if (sleepTemperature === "cold") environmentScore -= 10;
+
+  // Consistency score
+  let consistencyScore = 100;
+  if (sleepLatency === "slow") consistencyScore -= 20;
+  if (sleepLatency === "very_slow") consistencyScore -= 35;
+  if (nightAwakenings === "twice") consistencyScore -= 20;
+  if (nightAwakenings === "frequently") consistencyScore -= 35;
+
+  return {
+    alignmentScore: Math.max(0, Math.min(100, alignmentScore)),
+    environmentScore: Math.max(0, Math.min(100, environmentScore)),
+    consistencyScore: Math.max(0, Math.min(100, consistencyScore)),
+  };
+}
+
+/**
+ * Derive clinical issues from quiz answers (deterministic)
+ */
+export function deriveQuizIssues(quizAnswers: Record<string, any>): string[] {
+  const issues: string[] = [];
+  const painAreas = quizAnswers.painAreas || quizAnswers.painPoints || [];
+  const pillowCount = quizAnswers.pillowCount || "";
+  const mattressFirmness = quizAnswers.mattressFirmness || "";
+  const sleepPosition = quizAnswers.sleepPosition || "";
+  const movesOften = quizAnswers.movesOften || "";
+  const roomBrightness = quizAnswers.roomBrightness || "";
+  const sleepTemperature = quizAnswers.sleepTemperature || "";
+  const nightAwakenings = quizAnswers.nightAwakenings || "";
+  const pillowSatisfaction = quizAnswers.pillowSatisfaction ?? 5;
+
+  // Pain-related issues
+  if (painAreas.includes("neck")) {
+    issues.push("Cervical strain risk from inadequate neck support");
+  }
+  if (painAreas.includes("shoulders")) {
+    issues.push("Shoulder pressure points not properly addressed");
+  }
+  if (painAreas.includes("lower_back") || painAreas.includes("hips")) {
+    issues.push("Spinal misalignment during sleep affecting lower body");
+  }
+
+  // Pillow-related issues
+  if (pillowCount === "2" || pillowCount === "3") {
+    issues.push("Multiple pillows indicating incorrect pillow height");
+  }
+  if (pillowSatisfaction <= 4) {
+    issues.push("Current pillow not meeting support requirements");
+  }
+
+  // Position + mattress issues
+  if (sleepPosition === "side" && mattressFirmness === "soft") {
+    issues.push("Soft mattress + side sleeping may create neck–shoulder gap issues");
+  }
+  if (movesOften === "often" || movesOften === "always") {
+    issues.push("Frequent position changes suggesting comfort or support issues");
+  }
+
+  // Environment issues
+  if (roomBrightness === "bright" || roomBrightness === "dim") {
+    issues.push("Light exposure may be reducing deep sleep quality");
+  }
+  if (sleepTemperature === "hot") {
+    issues.push("Sleep temperature affecting sleep continuity");
+  }
+  if (nightAwakenings === "twice" || nightAwakenings === "frequently") {
+    issues.push("Frequent night awakenings fragmenting sleep cycles");
+  }
+
+  return issues.slice(0, 5);
+}
+
+/**
+ * Generate expert summary from quiz data (deterministic)
+ */
+export function generateExpertSummary(quizAnswers: Record<string, any>, scores: QuizScores): string {
+  const sleepPosition = quizAnswers.sleepPosition || "combination";
+  const painAreas = quizAnswers.painAreas || quizAnswers.painPoints || [];
+  const hasPain = painAreas.some((p: string) => p !== "none");
+  
+  const positionText = sleepPosition === "side" ? "side sleeper" : 
+                       sleepPosition === "back" ? "back sleeper" : 
+                       sleepPosition === "stomach" ? "stomach sleeper" : "combination sleeper";
+  
+  let summary = `As a ${positionText}`;
+  
+  if (hasPain) {
+    const mainPain = painAreas.find((p: string) => p !== "none") || "discomfort";
+    summary += ` experiencing ${mainPain.replace("_", " ")} issues`;
+  }
+  
+  summary += ", your current sleep setup";
+  
+  if (scores.alignmentScore < 60) {
+    summary += " shows significant alignment concerns that may be contributing to discomfort.";
+  } else if (scores.alignmentScore < 80) {
+    summary += " has room for improvement in spinal alignment.";
+  } else {
+    summary += " has good foundational alignment.";
+  }
+  
+  if (scores.environmentScore < 70) {
+    summary += " Your sleep environment may also be affecting deep sleep quality.";
+  }
+  
+  return summary;
+}
+
+/**
+ * Generate alignment insights (deterministic)
+ */
+export function generateAlignmentInsights(quizAnswers: Record<string, any>): string[] {
+  const insights: string[] = [];
+  const sleepPosition = quizAnswers.sleepPosition || "";
+  const mattressFirmness = quizAnswers.mattressFirmness || "";
+  const pillowCount = quizAnswers.pillowCount || "";
+  const painAreas = quizAnswers.painAreas || quizAnswers.painPoints || [];
+
+  if (sleepPosition === "side") {
+    insights.push("Side sleepers need extra pillow height to fill the neck-shoulder gap");
+    if (mattressFirmness === "soft") {
+      insights.push("Softer mattresses cause more shoulder sinking, requiring height adjustment");
+    }
+  } else if (sleepPosition === "back") {
+    insights.push("Back sleepers need moderate loft to maintain cervical curve");
+  } else if (sleepPosition === "stomach") {
+    insights.push("Stomach sleepers benefit from a flatter pillow to prevent neck extension");
+  }
+
+  if (pillowCount === "2" || pillowCount === "3") {
+    insights.push("Using multiple pillows suggests your primary pillow lacks adequate support");
+  }
+
+  if (painAreas.includes("lower_back") || painAreas.includes("hips")) {
+    insights.push("Lower body pain often indicates hip rotation during side sleeping");
+  }
+
+  return insights.slice(0, 3);
+}
+
+/**
+ * Analyze sleep quiz and recommend products with fallback
+ */
+export async function analyzeQuizForRecommendations(
+  quizAnswers: Record<string, any>
+): Promise<QuizAnalysisResult> {
+  // Calculate deterministic values first
+  const scores = calculateQuizScores(quizAnswers);
+  const detectedIssues = deriveQuizIssues(quizAnswers);
+  const expertSummary = generateExpertSummary(quizAnswers, scores);
+  const alignmentInsights = generateAlignmentInsights(quizAnswers);
+
   const userPrompt = `Sleep Quiz Responses:
 Sleep Position: ${quizAnswers.sleepPosition}
-Pain Points: ${quizAnswers.painPoints.join(", ") || "None"}
-Pillow Issues: ${quizAnswers.pillowIssues.join(", ") || "None"}
-Sleep Goals: ${quizAnswers.sleepGoals.join(", ") || "None"}`;
+Pain Points: ${(quizAnswers.painAreas || quizAnswers.painPoints || []).join(", ") || "None"}
+Pillow Issues: ${(quizAnswers.pillowIssues || quizAnswers.sleepEquipment || []).join(", ") || "None"}
+Sleep Goals: ${(quizAnswers.sleepGoals || []).join(", ") || "None"}
+Mattress Firmness: ${quizAnswers.mattressFirmness || "Unknown"}
+Room Brightness: ${quizAnswers.roomBrightness || "Unknown"}
+Night Awakenings: ${quizAnswers.nightAwakenings || "Unknown"}
+Pillow Satisfaction: ${quizAnswers.pillowSatisfaction ?? 5}/10`;
 
   try {
     const result = await callSleepCoachAI({
@@ -356,6 +543,11 @@ Sleep Goals: ${quizAnswers.sleepGoals.join(", ") || "None"}`;
           })),
           bundleRecommended: Boolean(s.bundleRecommended),
           bundleReason: String(s.bundleReason || ""),
+          // Add deterministic extended fields
+          scores,
+          detectedIssues,
+          expertSummary,
+          alignmentInsights,
         };
       }
     }
@@ -366,9 +558,21 @@ Sleep Goals: ${quizAnswers.sleepGoals.join(", ") || "None"}`;
     console.error("[AI Brain] Quiz recommendation error:", error);
   }
 
-  // Return safe fallback
+  // Return safe fallback with extended fields
   console.log("[AI Brain] Using fallback quiz recommendation");
-  return getDefaultQuizRecommendation(quizAnswers);
+  const fallback = getDefaultQuizRecommendation({
+    sleepPosition: quizAnswers.sleepPosition || "",
+    painPoints: quizAnswers.painAreas || quizAnswers.painPoints || [],
+    pillowIssues: quizAnswers.pillowIssues || quizAnswers.sleepEquipment || [],
+    sleepGoals: quizAnswers.sleepGoals || [],
+  });
+  return {
+    ...fallback,
+    scores,
+    detectedIssues,
+    expertSummary,
+    alignmentInsights,
+  };
 }
 
 /**
