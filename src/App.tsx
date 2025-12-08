@@ -31,6 +31,7 @@ import AboutUs from "./pages/AboutUs";
 import TrackOrder from "./pages/TrackOrder";
 import AdminAffiliateFraud from "./pages/AdminAffiliateFraud";
 import AdminAffiliatePayouts from "./pages/AdminAffiliatePayouts";
+import AdminAffiliateResources from "./pages/AdminAffiliateResources";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -73,6 +74,7 @@ const AppContent = () => {
           <Route path="/track" element={<TrackOrder />} />
           <Route path="/admin/affiliate-fraud" element={<AdminAffiliateFraud />} />
           <Route path="/admin/affiliate-payouts" element={<AdminAffiliatePayouts />} />
+          <Route path="/admin/affiliate-resources" element={<AdminAffiliateResources />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

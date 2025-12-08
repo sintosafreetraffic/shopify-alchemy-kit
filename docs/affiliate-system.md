@@ -404,6 +404,8 @@ Klaviyo email flows are triggered by the `RBN_Affiliate_Tier_Updated` event. Use
 
 For detailed email templates, subject lines, and body structure, see **[docs/affiliate-tier-email-templates.md](./affiliate-tier-email-templates.md)**.
 
+For step-by-step Klaviyo implementation instructions (for agencies), see **[docs/klaviyo-tier-flows-setup.md](./klaviyo-tier-flows-setup.md)**.
+
 ---
 
 ## Affiliate Resources (Database-Driven)
@@ -467,8 +469,8 @@ The `get-resources` action in `affiliate-api` returns all active resources sorte
 ### Admin Management
 
 Resources can be managed via:
-1. Supabase dashboard (direct SQL or table editor)
-2. Future: Admin UI at `/admin/affiliate-resources`
+1. **Admin UI** at `/admin/affiliate-resources` (full CRUD with filters)
+2. Supabase dashboard (direct SQL or table editor)
 
 ---
 
@@ -478,5 +480,6 @@ Resources can be managed via:
 |-------|---------|
 | `/admin/affiliate-fraud` | Review and resolve flagged commissions |
 | `/admin/affiliate-payouts` | Process manual payouts for eligible affiliates |
+| `/admin/affiliate-resources` | Manage affiliate resources (CRUD) |
 
-Both routes require `admin` role verification via `has_role()` function.
+All routes require `admin` role verification via `has_role()` function.
