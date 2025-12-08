@@ -1,9 +1,27 @@
 /**
  * Affiliate Tier Recalculation Edge Function
  * 
- * Monthly cron job to recalculate all affiliate tiers based on 30-day rolling performance.
- * Sends Klaviyo events for tier changes.
- * Requires CRON_SECRET for authorization.
+ * @description Recalculates all affiliate tiers based on 30-day rolling performance.
+ *              Updates tier status and sends Klaviyo events for any tier changes.
+ * 
+ * @schedule Daily CRON job at 02:00 UTC via pg_cron
+ * @endpoint POST /functions/v1/affiliate-tier-recalc
+ * 
+ * @auth Accepts either:
+ *       - Authorization: Bearer <CRON_SECRET> header
+ *       - Internal pg_cron calls identified by X-Supabase-Internal: true or pg_net User-Agent
+ * 
+ * @env SUPABASE_URL - Supabase project URL
+ * @env SUPABASE_SERVICE_ROLE_KEY - Service role key for admin operations
+ * @env KLAVIYO_PRIVATE_API_KEY - (Optional) For sending tier change events
+ * @env CRON_SECRET - Secret for validating external CRON calls
+ * 
+ * @tierStructure
+ *   - Bronze: 10% (default, 0-9 sales)
+ *   - Silver: 15% (10-24 sales in last 30 days)
+ *   - Gold: 20% (25-49 sales in last 30 days)
+ *   - Platinum: 25% (50+ sales in last 30 days)
+ *   - Diamond: 25% (invite-only, manually assigned)
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -21,7 +39,10 @@ interface TierInfo {
   commissionRate: number;
 }
 
-// NEW TIER SYSTEM: 10% base, 15% silver, 20% gold, 25% platinum
+/**
+ * Calculate affiliate tier based on 30-day direct sales performance
+ * Diamond status is preserved if manually set (invite-only tier)
+ */
 function calculateTier(directSalesLast30Days: number, isDiamond: boolean): TierInfo {
   if (isDiamond) return { tier: 'diamond', commissionRate: 25 };
   if (directSalesLast30Days >= 50) return { tier: 'platinum', commissionRate: 25 };
@@ -30,6 +51,9 @@ function calculateTier(directSalesLast30Days: number, isDiamond: boolean): TierI
   return { tier: 'bronze', commissionRate: 10 };
 }
 
+/**
+ * Send event to Klaviyo for affiliate tier changes
+ */
 async function sendKlaviyoEvent(
   apiKey: string,
   email: string,
@@ -72,8 +96,14 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Validate CRON secret for authorization
-    // Allow both Authorization header and internal pg_cron calls (checking request origin)
+    // ============================================================
+    // AUTH BLOCK: Validate request authorization
+    // Accepts either:
+    //   1. Authorization: Bearer <CRON_SECRET> header (for manual/external calls)
+    //   2. Internal pg_cron calls identified by:
+    //      - X-Supabase-Internal: true header, OR
+    //      - User-Agent containing 'pg_net' (Supabase internal HTTP client)
+    // ============================================================
     const authHeader = req.headers.get('Authorization');
     const isInternalCron = req.headers.get('X-Supabase-Internal') === 'true' || 
                            (req.headers.get('User-Agent') || '').includes('pg_net');
@@ -83,14 +113,14 @@ Deno.serve(async (req) => {
       return createErrorResponse('Unauthorized', 401);
     }
 
+    console.log('[affiliate-tier-recalc] Auth OK - Starting tier recalculation...');
+
     // Load environment variables
     const supabaseUrl = requireEnvVar('SUPABASE_URL');
     const supabaseServiceKey = requireEnvVar('SUPABASE_SERVICE_ROLE_KEY');
     const KLAVIYO_PRIVATE_API_KEY = getEnvVar('KLAVIYO_PRIVATE_API_KEY');
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-
-    console.log('[affiliate-tier-recalc] Starting tier recalculation...');
 
     // Get all active affiliates
     const { data: affiliates, error: affError } = await supabaseAdmin
@@ -125,13 +155,14 @@ Deno.serve(async (req) => {
     for (const affiliate of affiliates) {
       const email = userEmailMap[affiliate.user_id];
       
-      // Get direct sales in last 30 days (excluding fraud)
+      // Get direct sales in last 30 days (excluding fraud and rejected)
       const { data: directSalesData } = await supabaseAdmin
         .from('commissions')
         .select('id, order_amount')
         .eq('affiliate_id', affiliate.id)
         .eq('level', 1)
         .eq('fraud_flag', false)
+        .in('status', ['pending', 'approved'])
         .gte('created_at', thirtyDaysAgo.toISOString());
 
       const directSalesLast30Days = directSalesData?.length || 0;

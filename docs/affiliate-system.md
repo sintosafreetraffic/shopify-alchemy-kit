@@ -1,0 +1,229 @@
+# Affiliate System Overview
+
+This document provides a comprehensive overview of the Rise By Night affiliate system architecture, including commission logic, CRON jobs, fraud controls, and Klaviyo integration.
+
+---
+
+## Commission Structure
+
+### Tier-Based Commission Rates (Level 1 - Direct Sales)
+
+| Tier     | Commission Rate | Requirement                    |
+|----------|-----------------|--------------------------------|
+| Bronze   | 10%             | Default (0-9 sales/30 days)    |
+| Silver   | 15%             | 10-24 sales in last 30 days   |
+| Gold     | 20%             | 25-49 sales in last 30 days   |
+| Platinum | 25%             | 50+ sales in last 30 days     |
+| Diamond  | 25%             | Invite-only (manually assigned)|
+
+### Level 2 Commission (Sub-Affiliate Sales)
+
+- **Fixed 5%** on all sales made by affiliates you referred
+- Calculated when a referred affiliate makes a sale
+- Independent of tier status
+
+### Commission Calculation Example
+
+```
+Order: $100 product sale
+Affiliate Tier: Gold (20%)
+
+Level 1 (direct sale):     $100 × 20% = $20.00
+Level 2 (sub-affiliate):   $100 × 5%  = $5.00 (to parent affiliate)
+```
+
+---
+
+## CRON Jobs
+
+### 1. affiliate-tier-daily-recalc
+
+- **Schedule**: Daily at 02:00 UTC
+- **Purpose**: Recalculates all affiliate tiers based on 30-day rolling sales performance
+- **Actions**:
+  - Counts direct sales (Level 1) in the last 30 days
+  - Updates tier and tier_expires_at
+  - Sends `RBN_Affiliate_Tier_Updated` Klaviyo event on tier changes
+
+### 2. affiliate-payout-daily-check
+
+- **Schedule**: Daily at 02:15 UTC (after tier recalc)
+- **Purpose**: Calculates pending payout amounts and notifies affiliates when threshold is met
+- **Actions**:
+  - Sums all eligible commissions (fraud_flag=false, status IN pending/approved)
+  - Updates pending_payout_amount in affiliates table
+  - Sends `RBN_Affiliate_Payout_Ready` Klaviyo event when threshold is met
+
+### Authentication Method
+
+Both CRON jobs accept authorization via:
+
+1. **Authorization Header**: `Bearer <CRON_SECRET>`
+2. **Internal pg_cron**: Identified by `X-Supabase-Internal: true` header or `pg_net` User-Agent
+
+---
+
+## Fraud Controls
+
+### Automatic Detection
+
+The `shopify-order-webhook` edge function implements fraud detection:
+
+1. **Email Self-Referral Block**
+   - Checks if customer email matches affiliate's registered email
+   - Flags: `self_referral_email`
+
+2. **6-Hour Same Identity Protection**
+   - Blocks repeat purchases from same email OR IP within 6 hours
+   - Flags: `repeated_purchase_same_identity`
+
+### Manual Review
+
+- **Admin Route**: `/admin/affiliate-fraud`
+- **Access**: Requires `admin` role in `user_roles` table
+- **Actions**:
+  - **Mark as Legit**: Clears fraud flags, recalculates affiliate totals
+  - **Confirm Fraud**: Sets status to `rejected`, preserves fraud_flag
+
+### Commission Status Flow
+
+```
+Order received → "pending"
+    ↓
+Fraud detected? → "flagged" (fraud_flag=true)
+    ↓
+Admin review:
+  - Legit → "pending" (fraud_flag=false)
+  - Fraud → "rejected" (fraud_flag=true)
+    ↓
+Payout processed → "paid"
+```
+
+---
+
+## Klaviyo Events
+
+### RBN_Affiliate_Joined
+
+Triggered when a new affiliate signs up.
+
+**Properties**:
+- `affiliate_code`: Referral code
+- `tier`: Starting tier (bronze)
+- `joined_at`: Timestamp
+
+### RBN_Affiliate_First_Sale
+
+Triggered on an affiliate's first successful sale.
+
+**Properties**:
+- `affiliate_code`: Referral code
+- `tier`: Current tier
+- `order_amount`: Sale amount
+- `commission_earned`: Commission amount
+
+### RBN_Affiliate_Tier_Updated
+
+Triggered when an affiliate's tier changes (daily CRON).
+
+**Properties**:
+- `affiliate_code`: Referral code
+- `old_tier`: Previous tier
+- `new_tier`: New tier
+- `tier`: Current tier (alias)
+- `commission_rate`: New rate percentage
+- `earnings`: Total lifetime commissions
+- `monthly_performance`: { sales, revenue }
+- `tier_direction`: "up" or "down"
+- `updated_at`: Timestamp
+
+### RBN_Affiliate_Payout_Ready
+
+Triggered when pending payout exceeds threshold (daily CRON).
+
+**Properties**:
+- `affiliate_code`: Referral code
+- `tier`: Current tier
+- `pending_payout_amount`: Amount ready for payout
+- `payout_threshold`: Configured threshold
+- `total_commissions`: Lifetime total
+- `monthly_performance`: { sales_count, revenue_generated }
+- `is_above_threshold`: true
+- `payout_mode`: "manual"
+- `ready_at`: Timestamp
+
+---
+
+## Database Schema
+
+### affiliates
+
+| Column                    | Type      | Description                        |
+|---------------------------|-----------|------------------------------------|
+| id                        | uuid      | Primary key                        |
+| user_id                   | uuid      | Reference to auth.users            |
+| referral_code             | text      | Unique affiliate code              |
+| status                    | text      | active, inactive, suspended        |
+| tier                      | text      | bronze, silver, gold, platinum, diamond |
+| tier_expires_at           | timestamp | When current tier expires          |
+| total_commissions         | numeric   | Lifetime earnings                  |
+| total_referrals           | integer   | Count of Level 1 sales             |
+| pending_payout_amount     | numeric   | Current unpaid balance             |
+| payout_threshold          | numeric   | Minimum for payout (default: $50)  |
+| last_payout_at            | timestamp | Last payout date                   |
+| monthly_sales_count       | integer   | Sales in rolling 30 days           |
+| monthly_revenue_generated | numeric   | Revenue in rolling 30 days         |
+| parent_affiliate_id       | uuid      | For Level 2 tracking               |
+| level                     | integer   | 1 or 2 (affiliate level)           |
+
+### commissions
+
+| Column         | Type    | Description                           |
+|----------------|---------|---------------------------------------|
+| id             | uuid    | Primary key                           |
+| affiliate_id   | uuid    | Reference to affiliates               |
+| order_id       | text    | Shopify order ID                      |
+| order_amount   | numeric | Total order value                     |
+| amount         | numeric | Commission amount                     |
+| level          | integer | 1 (direct) or 2 (sub-affiliate)       |
+| status         | text    | pending, approved, rejected, paid     |
+| fraud_flag     | boolean | True if flagged for fraud             |
+| fraud_reason   | text    | Reason for flagging                   |
+| customer_email | text    | For fraud detection                   |
+| customer_ip    | text    | For fraud detection                   |
+
+---
+
+## Environment Variables
+
+### Required for Edge Functions
+
+- `SUPABASE_URL`: Project URL
+- `SUPABASE_SERVICE_ROLE_KEY`: Admin access key
+- `CRON_SECRET`: Authorization for CRON jobs
+
+### Optional
+
+- `KLAVIYO_PRIVATE_API_KEY`: For Klaviyo event delivery
+
+---
+
+## Security Considerations
+
+1. **RLS Policies**: All tables have Row-Level Security enabled
+2. **Admin Access**: Fraud panel requires `admin` role verification via `has_role()` function
+3. **CRON Auth**: Edge functions validate either CRON_SECRET or internal pg_cron headers
+4. **Fraud Detection**: Automatic flagging prevents self-referral and rapid repeat purchases
+
+---
+
+## Payout Processing (Manual)
+
+Currently, payouts are processed manually:
+
+1. Run `affiliate-payout-check` CRON to identify ready affiliates
+2. Review pending payouts in admin dashboard
+3. Process payment externally (PayPal, bank transfer, etc.)
+4. Update `last_payout_at` and mark commissions as `paid`
+
+**Note**: Automatic payout processing may be implemented in future versions.
