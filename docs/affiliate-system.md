@@ -472,6 +472,23 @@ Resources can be managed via:
 1. **Admin UI** at `/admin/affiliate-resources` (full CRUD with filters)
 2. Supabase dashboard (direct SQL or table editor)
 
+### Seed Data
+
+New environments are bootstrapped with default affiliate resources via a SQL migration:
+
+**Migration file**: `supabase/migrations/*_seed_affiliate_resources.sql`
+
+The migration:
+- Creates a unique constraint on `(category, title)` to enable idempotent inserts
+- Uses `ON CONFLICT DO NOTHING` to safely re-run without duplicates
+- Seeds 8 default resources across all 4 categories (Getting Started, Content Ideas, Brand Assets, FAQ)
+
+Default seeded resources include:
+- **Getting Started**: Program overview and dashboard guide
+- **Content Ideas**: Best performing hooks and short-form video ideas
+- **Brand Assets**: Logos/brand kit and product images
+- **FAQ**: Payouts FAQ and tracking/attribution FAQ
+
 ---
 
 ## Admin Routes
@@ -483,3 +500,5 @@ Resources can be managed via:
 | `/admin/affiliate-resources` | Manage affiliate resources (CRUD) |
 
 All routes require `admin` role verification via `has_role()` function.
+
+All admin pages include an `AdminNav` component providing quick navigation between admin tools.
