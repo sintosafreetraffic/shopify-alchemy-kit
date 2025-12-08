@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { AlertTriangle, CheckCircle, XCircle, Shield, ArrowLeft, Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import { AdminNav } from "@/components/AdminNav";
 
 interface FlaggedCommission {
   id: string;
@@ -315,6 +316,9 @@ export default function AdminAffiliateFraud() {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-6">
+        {/* Admin Navigation */}
+        <AdminNav />
+
         {/* Header */}
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate("/")}>

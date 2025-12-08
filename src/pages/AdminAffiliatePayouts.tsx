@@ -18,6 +18,7 @@ import {
 import { toast } from "sonner";
 import { Shield, ArrowLeft, Loader2, DollarSign, Users, CheckCircle, Clock, Wallet, History } from "lucide-react";
 import { format } from "date-fns";
+import { AdminNav } from "@/components/AdminNav";
 
 interface AffiliateWithPayout {
   id: string;
@@ -303,6 +304,9 @@ export default function AdminAffiliatePayouts() {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-6">
+        {/* Admin Navigation */}
+        <AdminNav />
+
         {/* Header */}
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate("/")}>

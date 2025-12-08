@@ -37,6 +37,7 @@ import {
 import { toast } from "sonner";
 import { Shield, ArrowLeft, Loader2, Plus, Pencil, Trash2, BookOpen, Filter } from "lucide-react";
 import { format } from "date-fns";
+import { AdminNav } from "@/components/AdminNav";
 
 interface AffiliateResource {
   id: string;
@@ -315,6 +316,9 @@ export default function AdminAffiliateResources() {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-6">
+        {/* Admin Navigation */}
+        <AdminNav />
+
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
