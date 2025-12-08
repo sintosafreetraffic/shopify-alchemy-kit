@@ -25,36 +25,43 @@ export const SleepProgressChart = ({ logs, onShareClick }: SleepProgressChartPro
 
   const filteredLogs = useMemo(() => {
     const today = new Date();
+    today.setHours(23, 59, 59, 999); // End of today
+    
     let startDate: Date;
     let endDate = today;
 
     if (timeRange === "custom" && customRange?.from) {
-      startDate = customRange.from;
-      endDate = customRange.to || today;
+      startDate = new Date(customRange.from);
+      startDate.setHours(0, 0, 0, 0);
+      endDate = customRange.to ? new Date(customRange.to) : new Date(today);
+      endDate.setHours(23, 59, 59, 999);
     } else {
       switch (timeRange) {
         case "7d":
-          startDate = subDays(today, 7);
+          startDate = subDays(today, 6); // 7 days including today
           break;
         case "30d":
-          startDate = subDays(today, 30);
+          startDate = subDays(today, 29); // 30 days including today
           break;
         case "90d":
-          startDate = subDays(today, 90);
+          startDate = subDays(today, 89); // 90 days including today
           break;
         case "12m":
           startDate = subMonths(today, 12);
           break;
         default:
-          startDate = subDays(today, 30);
+          startDate = subDays(today, 29);
       }
+      startDate.setHours(0, 0, 0, 0);
     }
 
     return logs.filter((log) => {
       const logDate = parseISO(log.date);
-      return isAfter(logDate, startDate) && isBefore(logDate, endDate) || 
-             format(logDate, 'yyyy-MM-dd') === format(startDate, 'yyyy-MM-dd') ||
-             format(logDate, 'yyyy-MM-dd') === format(endDate, 'yyyy-MM-dd');
+      // Compare dates only (ignore time component)
+      const logDateStart = new Date(logDate);
+      logDateStart.setHours(0, 0, 0, 0);
+      
+      return logDateStart >= startDate && logDateStart <= endDate;
     });
   }, [logs, timeRange, customRange]);
 
