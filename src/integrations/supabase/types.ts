@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      affiliate_goals: {
+        Row: {
+          affiliate_id: string
+          created_at: string
+          currency: string
+          goal_type: string
+          id: string
+          period_end: string
+          period_start: string
+          target_amount: number
+          updated_at: string
+        }
+        Insert: {
+          affiliate_id: string
+          created_at?: string
+          currency?: string
+          goal_type: string
+          id?: string
+          period_end: string
+          period_start: string
+          target_amount: number
+          updated_at?: string
+        }
+        Update: {
+          affiliate_id?: string
+          created_at?: string
+          currency?: string
+          goal_type?: string
+          id?: string
+          period_end?: string
+          period_start?: string
+          target_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_goals_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       affiliate_payouts: {
         Row: {
           affiliate_id: string

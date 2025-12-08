@@ -3,8 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Copy, Users, DollarSign, Loader2, Award, Share2, TrendingUp, Check, Sparkles, UserPlus, ShieldCheck, AlertTriangle, Package, Trophy, BarChart3, History, Wallet } from "lucide-react";
+import { Copy, Users, DollarSign, Loader2, Award, Share2, TrendingUp, Check, Sparkles, UserPlus, ShieldCheck, AlertTriangle, Package, Trophy, BarChart3, History, Wallet, Target, BookOpen, FileText, ExternalLink, Image } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from "recharts";
@@ -101,6 +102,79 @@ interface PayoutHistoryEntry {
   note: string | null;
 }
 
+interface AffiliateGoal {
+  id: string;
+  goal_type: string;
+  target_amount: number;
+  currency: string;
+  period_start: string;
+  period_end: string;
+  current_progress: number;
+  progress_percentage: number;
+}
+
+interface ResourceItem {
+  id: string;
+  category: 'Getting Started' | 'Content Ideas' | 'Brand Assets' | 'FAQ';
+  title: string;
+  description: string;
+  linkLabel?: string;
+  linkUrl?: string;
+  badge?: string;
+}
+
+// Static affiliate resources configuration
+const affiliateResources: ResourceItem[] = [
+  {
+    id: 'start-here',
+    category: 'Getting Started',
+    title: 'How the Affiliate Program Works',
+    description: 'Share your unique referral link with your audience. When someone makes a purchase through your link, you earn a commission based on your tier level (10-25%).',
+    badge: 'Recommended'
+  },
+  {
+    id: 'product-page',
+    category: 'Getting Started',
+    title: 'Main Product Page',
+    description: 'Link directly to our bestselling Ergonomic Sleep Pillow product page for the highest conversion rates.',
+    linkLabel: 'Visit Product Page',
+    linkUrl: 'https://www.risebynight.com/product/ergonomic-pillow'
+  },
+  {
+    id: 'content-tips',
+    category: 'Content Ideas',
+    title: 'Content Best Practices',
+    description: 'Focus on pain relief benefits, sleep quality improvements, and personal testimonials. Our customers respond best to authentic stories about overcoming neck pain and poor sleep.',
+  },
+  {
+    id: 'social-hooks',
+    category: 'Content Ideas',
+    title: 'Social Media Hooks',
+    description: 'Try hooks like "I finally fixed my morning neck pain" or "The pillow that changed my sleep quality" - personal transformation stories convert best.',
+  },
+  {
+    id: 'brand-assets',
+    category: 'Brand Assets',
+    title: 'Logos, Images & Creatives',
+    description: 'Download our official brand assets including logos, product images, and social media templates.',
+    linkLabel: 'Access Brand Assets',
+    linkUrl: 'https://example.com/rise-by-night-affiliate-assets',
+    badge: 'New'
+  },
+  {
+    id: 'faq-commissions',
+    category: 'FAQ',
+    title: 'When do I get paid?',
+    description: 'Commissions are processed monthly once your pending balance reaches the $50 threshold. Payouts are sent via PayPal or bank transfer.',
+  },
+  {
+    id: 'faq-tracking',
+    category: 'FAQ',
+    title: 'How are referrals tracked?',
+    description: 'Our system uses cookies to track visitors who click your referral link. They have 30 days to complete a purchase for you to receive credit.',
+  }
+];
+
 const tierConfig: Record<string, { color: string; bgColor: string; borderColor: string; icon: string }> = {
   'bronze': { color: 'text-amber-700', bgColor: 'bg-amber-100', borderColor: 'border-amber-300', icon: '🥉' },
   'silver': { color: 'text-slate-600', bgColor: 'bg-slate-100', borderColor: 'border-slate-300', icon: '🥈' },
@@ -138,6 +212,10 @@ const AffiliateDashboard = () => {
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [payoutHistory, setPayoutHistory] = useState<PayoutHistoryEntry[]>([]);
   const [payoutHistoryLoading, setPayoutHistoryLoading] = useState(false);
+  const [goals, setGoals] = useState<AffiliateGoal[]>([]);
+  const [goalsLoading, setGoalsLoading] = useState(false);
+  const [goalTarget, setGoalTarget] = useState("");
+  const [savingGoal, setSavingGoal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -201,6 +279,7 @@ const AffiliateDashboard = () => {
         fetchLeaderboard();
         fetchAnalytics();
         fetchPayoutHistory(affiliate.id);
+        fetchGoals();
       }
     } catch (error) {
       console.error("Error fetching affiliate data:", error);
@@ -277,6 +356,79 @@ const AffiliateDashboard = () => {
       console.error("Error fetching payout history:", error);
     } finally {
       setPayoutHistoryLoading(false);
+    }
+  };
+
+  const fetchGoals = async () => {
+    setGoalsLoading(true);
+    try {
+      const response = await supabase.functions.invoke('affiliate-api', {
+        body: { action: 'get-goals', data: {} }
+      });
+
+      if (response.error) {
+        console.error("Error fetching goals:", response.error);
+        return;
+      }
+
+      if (response.data?.goals) {
+        setGoals(response.data.goals);
+        // Pre-fill the input with current goal if exists
+        const commissionGoal = response.data.goals.find((g: AffiliateGoal) => g.goal_type === '30d_commission');
+        if (commissionGoal) {
+          setGoalTarget(commissionGoal.target_amount.toString());
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching goals:", error);
+    } finally {
+      setGoalsLoading(false);
+    }
+  };
+
+  const saveGoal = async () => {
+    const targetAmount = parseFloat(goalTarget);
+    if (isNaN(targetAmount) || targetAmount <= 0) {
+      toast({
+        title: "Invalid amount",
+        description: "Please enter a positive number for your goal.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSavingGoal(true);
+    try {
+      const response = await supabase.functions.invoke('affiliate-api', {
+        body: { 
+          action: 'set-goal', 
+          data: { 
+            goal_type: '30d_commission',
+            target_amount: targetAmount 
+          } 
+        }
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      toast({
+        title: "Goal saved!",
+        description: `Your 30-day commission goal is now $${targetAmount.toFixed(2)}.`,
+      });
+
+      // Refresh goals
+      await fetchGoals();
+    } catch (error) {
+      console.error("Error saving goal:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save goal. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingGoal(false);
     }
   };
 
@@ -765,6 +917,149 @@ const AffiliateDashboard = () => {
                 </TableBody>
               </Table>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Goal Tracking Section */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Target className="h-5 w-5 text-purple-600" />
+              Your Goals
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">Set a 30-day target and track your progress</p>
+          </CardHeader>
+          <CardContent>
+            {goalsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Current Goal Progress */}
+                {goals.length > 0 ? (
+                  goals.filter(g => g.goal_type === '30d_commission').map(goal => (
+                    <div key={goal.id} className="p-4 rounded-lg bg-purple-50 border border-purple-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">30-Day Commission Goal</span>
+                        <span className="text-xs text-muted-foreground">
+                          {format(parseISO(goal.period_start), 'MMM d')} - {format(parseISO(goal.period_end), 'MMM d')}
+                        </span>
+                      </div>
+                      <div className="flex items-end justify-between mb-2">
+                        <div>
+                          <span className="text-2xl font-bold text-purple-700">${goal.current_progress.toFixed(2)}</span>
+                          <span className="text-sm text-muted-foreground"> / ${goal.target_amount.toFixed(2)}</span>
+                        </div>
+                        <span className="text-sm font-medium text-purple-600">{goal.progress_percentage.toFixed(0)}%</span>
+                      </div>
+                      <Progress value={goal.progress_percentage} className="h-3" />
+                      {goal.progress_percentage >= 100 ? (
+                        <p className="text-sm text-green-600 mt-2 flex items-center gap-1">
+                          <Check className="h-4 w-4" />
+                          Goal achieved! Great work!
+                        </p>
+                      ) : (
+                        <p className="text-sm text-muted-foreground mt-2">
+                          ${(goal.target_amount - goal.current_progress).toFixed(2)} more to reach your goal
+                        </p>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-4">
+                    <Target className="h-8 w-8 mx-auto mb-2 text-muted-foreground/40" />
+                    <p className="text-muted-foreground text-sm">Set your first 30-day commission goal to stay focused and track your progress.</p>
+                  </div>
+                )}
+
+                {/* Set/Update Goal Form */}
+                <div className="border-t pt-4">
+                  <label className="text-sm font-medium mb-2 block">Set Commission Goal (30 days)</label>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                      <Input
+                        type="number"
+                        placeholder="500"
+                        value={goalTarget}
+                        onChange={(e) => setGoalTarget(e.target.value)}
+                        className="pl-7"
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
+                    <Button onClick={saveGoal} disabled={savingGoal}>
+                      {savingGoal ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Goal'}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Affiliate Resources Section */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <BookOpen className="h-5 w-5 text-blue-600" />
+              Affiliate Resources
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">Everything you need to promote Rise By Night</p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              {(['Getting Started', 'Content Ideas', 'Brand Assets', 'FAQ'] as const).map(category => {
+                const categoryResources = affiliateResources.filter(r => r.category === category);
+                if (categoryResources.length === 0) return null;
+                
+                const categoryIcons = {
+                  'Getting Started': <Sparkles className="h-4 w-4" />,
+                  'Content Ideas': <FileText className="h-4 w-4" />,
+                  'Brand Assets': <Image className="h-4 w-4" />,
+                  'FAQ': <BookOpen className="h-4 w-4" />
+                };
+                
+                return (
+                  <div key={category}>
+                    <h4 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+                      {categoryIcons[category]}
+                      {category}
+                    </h4>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {categoryResources.map(resource => (
+                        <div 
+                          key={resource.id}
+                          className="p-4 rounded-lg border bg-secondary/30 hover:bg-secondary/50 transition-colors"
+                        >
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <h5 className="font-medium text-sm">{resource.title}</h5>
+                            {resource.badge && (
+                              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary shrink-0">
+                                {resource.badge}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground mb-3">{resource.description}</p>
+                          {resource.linkUrl && resource.linkLabel && (
+                            <a 
+                              href={resource.linkUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                            >
+                              {resource.linkLabel}
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
 
