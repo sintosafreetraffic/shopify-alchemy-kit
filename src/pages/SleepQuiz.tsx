@@ -3,12 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { Loader2, CheckCircle, AlertCircle, ShoppingCart, Mail, Sparkles, Info, Moon, ArrowLeft, ArrowRight, Lock, Check } from "lucide-react";
+import { Loader2, CheckCircle, AlertCircle, ShoppingCart, Mail, Sparkles, Info, Moon, ArrowLeft, ArrowRight, Lock, Check, Eye, EyeOff } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { useCartStore } from "@/stores/cartStore";
 import { fetchProducts, ShopifyProduct } from "@/lib/shopify";
 import { trackQuizStarted } from "@/lib/klaviyo";
+import { supabase } from "@/integrations/supabase/client";
+import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator";
 import {
   Tooltip,
   TooltipContent,
@@ -619,6 +621,14 @@ const SleepQuiz = () => {
   const returnTo = searchParams.get('returnTo');
   const { addItem } = useCartStore();
 
+  // Account creation state for results page
+  const [showAccountForm, setShowAccountForm] = useState(false);
+  const [accountExists, setAccountExists] = useState<boolean | null>(null);
+  const [isCheckingAccount, setIsCheckingAccount] = useState(false);
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   // Get visible questions based on current answers
   const visibleQuestions = getVisibleQuestions(answers);
   const TOTAL_STEPS = visibleQuestions.length + 1; // +1 for email step
@@ -704,7 +714,103 @@ const SleepQuiz = () => {
     setEmail(newEmail);
   }, []);
 
+  // Check if account exists when user clicks to unlock Sleep Coach
+  const handleUnlockSleepCoach = async () => {
+    setShowAccountForm(true);
+    setIsCheckingAccount(true);
+    
+    try {
+      const { data } = await supabase
+        .from('sleep_profiles')
+        .select('email')
+        .eq('email', email.toLowerCase().trim())
+        .maybeSingle();
+      
+      setAccountExists(!!data);
+    } catch (error) {
+      console.error("Error checking account:", error);
+      setAccountExists(false);
+    } finally {
+      setIsCheckingAccount(false);
+    }
+  };
 
+  // Handle login or signup
+  const handleAccountSubmit = async () => {
+    if (!password.trim()) {
+      toast.error("Please enter a password");
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      if (accountExists) {
+        // Login
+        const { error } = await supabase.auth.signInWithPassword({
+          email: email.trim().toLowerCase(),
+          password: password,
+        });
+        
+        if (error) {
+          toast.error("Login failed", {
+            description: error.message === "Invalid login credentials" 
+              ? "Incorrect password. Please try again." 
+              : error.message,
+          });
+          return;
+        }
+        
+        toast.success("Logged in successfully!");
+        navigate('/sleep-coach');
+      } else {
+        // Signup
+        const { error } = await supabase.auth.signUp({
+          email: email.trim().toLowerCase(),
+          password: password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/sleep-coach`,
+          },
+        });
+        
+        if (error) {
+          toast.error("Signup failed", { description: error.message });
+          return;
+        }
+        
+        toast.success("Account created!", {
+          description: "Redirecting to your Sleep Coach...",
+        });
+        navigate('/sleep-coach');
+      }
+    } catch (error) {
+      console.error("Auth error:", error);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Handle forgot password
+  const handleForgotPassword = async () => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+        redirectTo: `${window.location.origin}/auth?reset=true`,
+      });
+      
+      if (error) {
+        toast.error("Failed to send reset email", { description: error.message });
+        return;
+      }
+      
+      toast.success("Password reset email sent!", {
+        description: "Check your inbox for a link to reset your password.",
+      });
+    } catch (error) {
+      console.error("Reset password error:", error);
+      toast.error("Failed to send reset email.");
+    }
+  };
   const canProceed = useCallback(() => {
     if (isEmailStep) {
       // Email step - only require valid email
@@ -1447,11 +1553,11 @@ const SleepQuiz = () => {
                   </Card>
                 )}
 
-                {/* Section 6: Sleep Coach CTA - Always show with account creation option */}
-                <Card className="p-6 bg-gradient-to-br from-success/10 via-success/5 to-transparent border-success/20">
+                {/* Section 6: Sleep Coach CTA - Always show with inline account creation */}
+                <Card className="p-6 bg-gradient-to-br from-primary/5 via-background to-background border-primary/30">
                   <div className="flex items-start gap-4">
-                    <div className="h-12 w-12 rounded-full bg-success/20 flex items-center justify-center flex-shrink-0">
-                      <Moon className="w-6 h-6 text-success" />
+                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Moon className="w-6 h-6 text-primary" />
                     </div>
                     <div className="flex-1">
                       <h4 className="font-semibold text-lg mb-2">
@@ -1463,24 +1569,112 @@ const SleepQuiz = () => {
                           : "Create a free account to access your personalized 7-day sleep improvement plan, daily routines, and progress tracking based on your assessment."
                         }
                       </p>
+                      
                       {results.profileCreated ? (
                         <Button
                           onClick={() => navigate('/sleep-coach')}
-                          className="w-full rounded-lg bg-success hover:bg-success/90"
+                          className="w-full rounded-lg"
                           size="lg"
                         >
                           <Sparkles className="w-4 h-4 mr-2" />
                           Continue to My Sleep Coach
                         </Button>
-                      ) : (
+                      ) : !showAccountForm ? (
                         <Button 
-                          onClick={() => navigate(`/auth?returnTo=/sleep-quiz&email=${encodeURIComponent(email)}&context=sleep-coach`)} 
-                          className="w-full rounded-lg bg-success hover:bg-success/90"
+                          onClick={handleUnlockSleepCoach}
+                          className="w-full rounded-lg"
                           size="lg"
                         >
                           <Lock className="w-4 h-4 mr-2" />
-                          Create Free Account
+                          Unlock Sleep Coach
                         </Button>
+                      ) : (
+                        <div className="space-y-4">
+                          {isCheckingAccount ? (
+                            <div className="flex items-center justify-center py-4">
+                              <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                              <span className="ml-2 text-sm text-muted-foreground">Checking account...</span>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="p-3 rounded-lg bg-secondary/50 border border-border">
+                                <p className="text-sm font-medium text-foreground mb-1">
+                                  {accountExists ? "Welcome back!" : "Create your account"}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {accountExists 
+                                    ? `Enter your password to access your Sleep Coach (${email})`
+                                    : `Enter a password to create your account (${email})`
+                                  }
+                                </p>
+                              </div>
+                              
+                              <div className="relative">
+                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                <Input
+                                  type={showPassword ? "text" : "password"}
+                                  placeholder={accountExists ? "Enter your password" : "Create a password"}
+                                  value={password}
+                                  onChange={(e) => setPassword(e.target.value)}
+                                  onKeyDown={(e) => e.key === 'Enter' && handleAccountSubmit()}
+                                  className="pl-12 pr-12 h-12 text-base rounded-lg border-border"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setShowPassword(!showPassword)}
+                                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                >
+                                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                </button>
+                              </div>
+                              
+                              {!accountExists && password && (
+                                <PasswordStrengthIndicator password={password} />
+                              )}
+                              
+                              <Button 
+                                onClick={handleAccountSubmit}
+                                disabled={isSubmitting || !password.trim()}
+                                className="w-full rounded-lg"
+                                size="lg"
+                              >
+                                {isSubmitting ? (
+                                  <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    {accountExists ? "Logging in..." : "Creating account..."}
+                                  </>
+                                ) : (
+                                  <>
+                                    <Sparkles className="w-4 h-4 mr-2" />
+                                    {accountExists ? "Login & Access Sleep Coach" : "Create Account & Continue"}
+                                  </>
+                                )}
+                              </Button>
+                              
+                              {accountExists && (
+                                <button
+                                  type="button"
+                                  onClick={handleForgotPassword}
+                                  className="w-full text-sm text-primary hover:text-primary/80 hover:underline transition-colors"
+                                >
+                                  Forgot password?
+                                </button>
+                              )}
+                              
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShowAccountForm(false);
+                                  setPassword("");
+                                  setAccountExists(null);
+                                }}
+                                className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
+                              >
+                                Cancel
+                              </button>
+                            </>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
