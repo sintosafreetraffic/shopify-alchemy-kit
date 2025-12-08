@@ -393,7 +393,140 @@ interface AnalysisResult {
   bundleRecommended: boolean;
   bundleReason?: string;
   profileCreated?: boolean;
+  // Extended fields for richer UI (all optional for backward compatibility)
+  detectedIssues?: string[];
+  environmentInsights?: string[];
+  alignmentInsights?: string[];
+  scores?: {
+    alignmentScore?: number;
+    environmentScore?: number;
+    consistencyScore?: number;
+  };
+  expertSummary?: string;
 }
+
+// Helper to derive detected issues from answers
+const deriveDetectedIssues = (answers: Record<string, string | string[] | number>): string[] => {
+  const issues: string[] = [];
+  const painAreas = answers.painAreas as string[] || [];
+  const pillowCount = answers.pillowCount as string;
+  const mattressFirmness = answers.mattressFirmness as string;
+  const sleepPosition = answers.sleepPosition as string;
+  const movesOften = answers.movesOften as string;
+  const roomBrightness = answers.roomBrightness as string;
+  const sleepTemperature = answers.sleepTemperature as string;
+  const nightAwakenings = answers.nightAwakenings as string;
+  const pillowSatisfaction = answers.pillowSatisfaction as number;
+
+  // Pain-related issues
+  if (painAreas.includes("neck")) {
+    issues.push("Cervical strain risk from inadequate neck support");
+  }
+  if (painAreas.includes("shoulders")) {
+    issues.push("Shoulder pressure points not properly addressed");
+  }
+  if (painAreas.includes("lower_back") || painAreas.includes("hips")) {
+    issues.push("Spinal misalignment during sleep affecting lower body");
+  }
+
+  // Pillow-related issues
+  if (pillowCount === "2" || pillowCount === "3") {
+    issues.push("Multiple pillows indicating incorrect pillow height");
+  }
+  if (pillowSatisfaction <= 4) {
+    issues.push("Current pillow not meeting support requirements");
+  }
+
+  // Position + mattress issues
+  if (sleepPosition === "side" && mattressFirmness === "soft") {
+    issues.push("Soft mattress + side sleeping may create neck–shoulder gap issues");
+  }
+  if (movesOften === "often" || movesOften === "always") {
+    issues.push("Frequent position changes suggesting comfort or support issues");
+  }
+
+  // Environment issues
+  if (roomBrightness === "bright" || roomBrightness === "dim") {
+    issues.push("Light exposure may be reducing deep sleep quality");
+  }
+  if (sleepTemperature === "hot") {
+    issues.push("Sleep temperature affecting sleep continuity");
+  }
+  if (nightAwakenings === "twice" || nightAwakenings === "frequently") {
+    issues.push("Frequent night awakenings fragmenting sleep cycles");
+  }
+
+  return issues.slice(0, 5); // Limit to 5 most relevant
+};
+
+// Helper to generate clinical product descriptions
+const getClinicalProductDescription = (productName: string, sleepPosition?: string): string => {
+  const name = productName.toLowerCase();
+  
+  if (name.includes("ergonomic") && name.includes("pillow") && !name.includes("knee")) {
+    if (sleepPosition === "side") {
+      return "Engineered with a cervical contour to maintain neutral spine alignment. The elevated side zones fill the neck–shoulder gap critical for side sleepers.";
+    } else if (sleepPosition === "back") {
+      return "Features graduated loft zones that cradle the cervical spine while supporting natural neck curvature for back sleepers.";
+    }
+    return "Supports the cervical curve and maintains neutral spinal alignment. Memory foam core adapts to your unique head and neck profile.";
+  }
+  
+  if (name.includes("knee")) {
+    return "Positions the legs to reduce hip rotation and maintain lumbar alignment. Particularly effective for side sleepers on softer mattresses.";
+  }
+  
+  if (name.includes("mask") || name.includes("sleep mask")) {
+    return "Blocks early-morning light exposure that disrupts REM cycles and melatonin production. Contoured design prevents pressure on eyelids.";
+  }
+  
+  if (name.includes("bundle")) {
+    return "Complete sleep optimization system addressing cervical support, spinal alignment, and light control for comprehensive sleep quality improvement.";
+  }
+  
+  return "Designed to address specific sleep quality factors identified in your assessment.";
+};
+
+// Helper to calculate derived scores
+const calculateDerivedScores = (answers: Record<string, string | string[] | number>) => {
+  const painAreas = answers.painAreas as string[] || [];
+  const pillowSatisfaction = answers.pillowSatisfaction as number ?? 5;
+  const roomBrightness = answers.roomBrightness as string;
+  const roomNoise = answers.roomNoise as string;
+  const sleepTemperature = answers.sleepTemperature as string;
+  const sleepLatency = answers.sleepLatency as string;
+  const nightAwakenings = answers.nightAwakenings as string;
+  const movesOften = answers.movesOften as string;
+
+  // Alignment score (based on pain, pillow satisfaction, movement)
+  let alignmentScore = 100;
+  alignmentScore -= painAreas.filter(p => p !== "none").length * 12;
+  alignmentScore -= (10 - pillowSatisfaction) * 5;
+  if (movesOften === "often") alignmentScore -= 15;
+  if (movesOften === "always") alignmentScore -= 25;
+
+  // Environment score
+  let environmentScore = 100;
+  if (roomBrightness === "bright") environmentScore -= 25;
+  if (roomBrightness === "dim") environmentScore -= 10;
+  if (roomNoise === "noisy") environmentScore -= 20;
+  if (roomNoise === "some") environmentScore -= 8;
+  if (sleepTemperature === "hot") environmentScore -= 20;
+  if (sleepTemperature === "cold") environmentScore -= 10;
+
+  // Consistency score
+  let consistencyScore = 100;
+  if (sleepLatency === "slow") consistencyScore -= 20;
+  if (sleepLatency === "very_slow") consistencyScore -= 35;
+  if (nightAwakenings === "twice") consistencyScore -= 20;
+  if (nightAwakenings === "frequently") consistencyScore -= 35;
+
+  return {
+    alignmentScore: Math.max(0, Math.min(100, alignmentScore)),
+    environmentScore: Math.max(0, Math.min(100, environmentScore)),
+    consistencyScore: Math.max(0, Math.min(100, consistencyScore)),
+  };
+};
 
 // Get visible questions based on branching logic
 const getVisibleQuestions = (answers: Record<string, string | string[] | number>) => {
@@ -884,16 +1017,6 @@ const SleepQuiz = () => {
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "high":
-        return "text-success";
-      case "medium":
-        return "text-primary";
-      default:
-        return "text-muted-foreground";
-    }
-  };
 
   const contextualInsight = currentQuestion ? getContextualInsight(currentQuestion.id, answers) : null;
 
@@ -1363,30 +1486,148 @@ const SleepQuiz = () => {
               </div>
             )}
 
-            {/* Results Step */}
+            {/* Results Step - Expert-Level Assessment */}
             {isResultsStep && results && (
-              <div className="space-y-6">
+              <div className="space-y-8">
+                {/* Header */}
                 <div className="text-center">
-                  <CheckCircle className="w-16 h-16 text-success mx-auto mb-4" />
-                  <h2 className="text-2xl font-semibold mb-2">Your Sleep Assessment</h2>
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-success/10 mb-4">
+                    <CheckCircle className="w-8 h-8 text-success" />
+                  </div>
+                  <h2 className="text-2xl md:text-3xl font-bold mb-2">Your Personalized Sleep Assessment</h2>
+                  <p className="text-muted-foreground max-w-md mx-auto">
+                    Based on your answers, we analyzed your pain profile, sleep position, and environment.
+                  </p>
                 </div>
 
-                <Card className="p-6 bg-primary/5 border-primary/20">
-                  <p className="text-foreground leading-relaxed">{results.assessment}</p>
-                </Card>
+                {/* Section 1: What We Detected */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="h-8 w-8 rounded-full bg-amber-500/10 flex items-center justify-center">
+                      <AlertCircle className="w-4 h-4 text-amber-500" />
+                    </div>
+                    <h3 className="text-lg font-semibold">What We Detected</h3>
+                  </div>
+                  <Card className="p-5 bg-amber-500/5 border-amber-500/20">
+                    <ul className="space-y-2">
+                      {(results.detectedIssues || deriveDetectedIssues(answers)).map((issue, idx) => (
+                        <li key={idx} className="flex items-start gap-3">
+                          <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 flex-shrink-0" />
+                          <span className="text-foreground text-sm">{issue}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </Card>
+                </div>
 
-                <div>
-                  <h3 className="text-xl font-semibold mb-4">Recommended Products</h3>
+                {/* Section 2: Expert Interpretation */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Sparkles className="w-4 h-4 text-primary" />
+                    </div>
+                    <h3 className="text-lg font-semibold">Expert Interpretation</h3>
+                  </div>
+                  <Card className="p-5 bg-primary/5 border-primary/20">
+                    <p className="text-foreground leading-relaxed">
+                      {results.expertSummary || results.assessment}
+                    </p>
+                    {results.alignmentInsights && results.alignmentInsights.length > 0 && (
+                      <div className="mt-4 pt-4 border-t border-primary/10">
+                        <p className="text-sm font-medium text-primary mb-2">Alignment Insights:</p>
+                        <ul className="space-y-1">
+                          {results.alignmentInsights.map((insight, idx) => (
+                            <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
+                              <Check className="w-3 h-3 text-primary mt-1 flex-shrink-0" />
+                              {insight}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </Card>
+                </div>
+
+                {/* Section 3: Sleep Quality Scores */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center">
+                      <Moon className="w-4 h-4 text-foreground" />
+                    </div>
+                    <h3 className="text-lg font-semibold">Sleep Quality Analysis</h3>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    {(() => {
+                      const scores = results.scores || calculateDerivedScores(answers);
+                      return (
+                        <>
+                          <Card className="p-4 text-center">
+                            <div className="text-2xl font-bold text-primary mb-1">
+                              {scores.alignmentScore ?? 0}
+                              <span className="text-sm font-normal text-muted-foreground">/100</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">Alignment Score</p>
+                            <div className="w-full bg-secondary rounded-full h-1.5 mt-2">
+                              <div 
+                                className="bg-primary h-full rounded-full transition-all" 
+                                style={{ width: `${scores.alignmentScore ?? 0}%` }}
+                              />
+                            </div>
+                          </Card>
+                          <Card className="p-4 text-center">
+                            <div className="text-2xl font-bold text-primary mb-1">
+                              {scores.environmentScore ?? 0}
+                              <span className="text-sm font-normal text-muted-foreground">/100</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">Environment</p>
+                            <div className="w-full bg-secondary rounded-full h-1.5 mt-2">
+                              <div 
+                                className="bg-primary h-full rounded-full transition-all" 
+                                style={{ width: `${scores.environmentScore ?? 0}%` }}
+                              />
+                            </div>
+                          </Card>
+                          <Card className="p-4 text-center">
+                            <div className="text-2xl font-bold text-primary mb-1">
+                              {scores.consistencyScore ?? 0}
+                              <span className="text-sm font-normal text-muted-foreground">/100</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">Consistency</p>
+                            <div className="w-full bg-secondary rounded-full h-1.5 mt-2">
+                              <div 
+                                className="bg-primary h-full rounded-full transition-all" 
+                                style={{ width: `${scores.consistencyScore ?? 0}%` }}
+                              />
+                            </div>
+                          </Card>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                {/* Section 4: Recommended Products */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="h-8 w-8 rounded-full bg-success/10 flex items-center justify-center">
+                      <ShoppingCart className="w-4 h-4 text-success" />
+                    </div>
+                    <h3 className="text-lg font-semibold">Recommended Solutions</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Based on your assessment, these products address your specific sleep quality factors.
+                  </p>
                   <div className="space-y-4">
                     {results.recommendations.map((rec, index) => {
                       const product = getProductByName(rec.product);
                       const productImage = product?.node.images?.edges?.[0]?.node.url;
+                      const clinicalDescription = getClinicalProductDescription(rec.product, answers.sleepPosition as string);
                       
                       return (
-                        <Card key={index} className="p-5 hover:shadow-md transition-shadow">
+                        <Card key={index} className="p-5 hover:shadow-md transition-shadow overflow-hidden">
                           <div className="flex items-start gap-4">
                             {productImage && (
-                              <div className="w-20 h-20 flex-shrink-0 bg-secondary/30 rounded-lg overflow-hidden">
+                              <div className="w-24 h-24 flex-shrink-0 bg-secondary/30 rounded-lg overflow-hidden">
                                 <img
                                   src={productImage}
                                   alt={rec.product}
@@ -1395,13 +1636,21 @@ const SleepQuiz = () => {
                               </div>
                             )}
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h4 className="font-semibold text-lg">{rec.product}</h4>
-                                <span className={`text-xs font-semibold uppercase ${getPriorityColor(rec.priority)}`}>
-                                  {rec.priority}
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <h4 className="font-semibold text-base leading-tight">{rec.product}</h4>
+                                <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-full flex-shrink-0 ${
+                                  rec.priority === 'high' 
+                                    ? 'bg-success/10 text-success' 
+                                    : rec.priority === 'medium' 
+                                      ? 'bg-primary/10 text-primary' 
+                                      : 'bg-secondary text-muted-foreground'
+                                }`}>
+                                  {rec.priority} priority
                                 </span>
                               </div>
-                              <p className="text-muted-foreground text-sm mb-3">{rec.reason}</p>
+                              <p className="text-muted-foreground text-sm mb-3 leading-relaxed">
+                                {clinicalDescription}
+                              </p>
                               <Button
                                 onClick={() => handleAddToCart(rec.product)}
                                 size="sm"
@@ -1418,16 +1667,30 @@ const SleepQuiz = () => {
                   </div>
                 </div>
 
-                {results.bundleRecommended && results.bundleReason && (
-                  <Card className="p-6 bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+                {/* Section 5: Bundle Recommendation */}
+                {results.bundleRecommended && (
+                  <Card className="p-6 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-primary/20">
                     <div className="flex items-start gap-4">
-                      <AlertCircle className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
+                      <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                        <Sparkles className="w-6 h-6 text-primary" />
+                      </div>
                       <div className="flex-1">
-                        <h4 className="font-semibold text-lg mb-2">Bundle Recommendation</h4>
-                        <p className="text-muted-foreground mb-4">{results.bundleReason}</p>
+                        <h4 className="font-semibold text-lg mb-2">Complete Sleep Setup for You</h4>
+                        <p className="text-muted-foreground text-sm mb-4">
+                          {results.bundleReason || "This comprehensive setup addresses multiple factors identified in your assessment."}
+                        </p>
+                        <div className="mb-4 p-3 bg-background/50 rounded-lg">
+                          <p className="text-xs font-medium text-foreground mb-2">This setup addresses:</p>
+                          <div className="flex flex-wrap gap-2">
+                            <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">Cervical Support</span>
+                            <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">Spinal Alignment</span>
+                            <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">Light Control</span>
+                          </div>
+                        </div>
                         <Button
                           onClick={() => handleAddToCart("Complete Sleep Bundle")}
                           className="w-full rounded-lg"
+                          size="lg"
                         >
                           <ShoppingCart className="w-4 h-4 mr-2" />
                           Add Complete Sleep Bundle
@@ -1437,48 +1700,53 @@ const SleepQuiz = () => {
                   </Card>
                 )}
 
-                {/* Primary CTA when coming from Sleep Coach redirect */}
-                {results.profileCreated && returnTo === '/sleep-coach' && (
-                  <Card className="p-6 bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+                {/* Section 6: Sleep Coach CTA */}
+                {results.profileCreated && (
+                  <Card className="p-6 bg-gradient-to-br from-success/10 via-success/5 to-transparent border-success/20">
                     <div className="flex items-start gap-4">
-                      <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                        <Sparkles className="w-6 h-6 text-primary" />
+                      <div className="h-12 w-12 rounded-full bg-success/20 flex items-center justify-center flex-shrink-0">
+                        <Moon className="w-6 h-6 text-success" />
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-semibold text-lg mb-2">Your AI Sleep Coach is Ready!</h4>
-                        <p className="text-muted-foreground mb-4">
-                          Your personalized 7-day sleep improvement plan has been created based on your assessment.
+                        <h4 className="font-semibold text-lg mb-2">Your AI Sleep Coach Is Ready</h4>
+                        <p className="text-muted-foreground text-sm mb-4">
+                          We've used your {visibleQuestions.length}-point assessment to prepare a personalized 7-day sleep improvement plan. 
+                          Your plan includes daily routines, environment adjustments, and progress tracking.
                         </p>
-                        <Button
-                          onClick={() => navigate('/sleep-coach')}
-                          className="w-full rounded-lg"
-                          size="lg"
-                        >
-                          <Sparkles className="w-4 h-4 mr-2" />
-                          Continue to My Sleep Coach
-                        </Button>
+                        {returnTo === '/sleep-coach' ? (
+                          <Button
+                            onClick={() => navigate('/sleep-coach')}
+                            className="w-full rounded-lg bg-success hover:bg-success/90"
+                            size="lg"
+                          >
+                            <Sparkles className="w-4 h-4 mr-2" />
+                            Continue to My Sleep Coach
+                          </Button>
+                        ) : (
+                          <Button 
+                            onClick={() => navigate(`/auth?returnTo=/sleep-coach&email=${encodeURIComponent(email)}&context=sleep-coach`)} 
+                            className="w-full rounded-lg bg-success hover:bg-success/90"
+                            size="lg"
+                          >
+                            <Sparkles className="w-4 h-4 mr-2" />
+                            Access My Sleep Coach
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </Card>
                 )}
 
-                <div className="flex gap-4 pt-4">
+                {/* Footer Actions */}
+                <div className="flex gap-4 pt-4 border-t border-border">
                   <Button variant="outline" onClick={() => navigate("/")} className="flex-1 rounded-lg">
                     Back to Home
                   </Button>
-                  {results.profileCreated && returnTo !== '/sleep-coach' ? (
-                    <Button 
-                      onClick={() => navigate(`/auth?returnTo=/sleep-coach&email=${encodeURIComponent(email)}&context=sleep-coach`)} 
-                      className="flex-1 rounded-lg"
-                    >
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      View Sleep Plan
-                    </Button>
-                  ) : !results.profileCreated ? (
+                  {!results.profileCreated && (
                     <Button onClick={() => navigate("/product/ergonomic-pillow")} className="flex-1 rounded-lg">
                       View Products
                     </Button>
-                  ) : null}
+                  )}
                 </div>
               </div>
             )}
