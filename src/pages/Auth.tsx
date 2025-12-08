@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "@/hooks/use-toast";
 import { Moon, ShoppingBag, Users, AlertCircle } from "lucide-react";
 import logo from "@/assets/moon-logo-yellow-transparent.png";
+import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -177,6 +178,7 @@ const Auth = () => {
                 required
                 minLength={6}
               />
+              {isSignUp && <PasswordStrengthIndicator password={password} />}
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Loading..." : isSignUp ? "Create Account" : "Sign In"}
