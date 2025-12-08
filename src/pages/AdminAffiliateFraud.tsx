@@ -1,0 +1,448 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import { AlertTriangle, CheckCircle, XCircle, Shield, ArrowLeft } from "lucide-react";
+import { format } from "date-fns";
+
+interface FlaggedCommission {
+  id: string;
+  affiliate_id: string;
+  amount: number;
+  order_amount: number | null;
+  level: number;
+  fraud_flag: boolean;
+  fraud_reason: string | null;
+  customer_email: string | null;
+  customer_ip: string | null;
+  status: string | null;
+  created_at: string | null;
+  order_id: string;
+  affiliate?: {
+    referral_code: string;
+    user_id: string;
+  };
+}
+
+interface Affiliate {
+  id: string;
+  referral_code: string;
+}
+
+export default function AdminAffiliateFraud() {
+  const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [commissions, setCommissions] = useState<FlaggedCommission[]>([]);
+  const [affiliates, setAffiliates] = useState<Affiliate[]>([]);
+  const [affiliateEmails, setAffiliateEmails] = useState<Record<string, string>>({});
+  
+  // Filters
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [selectedAffiliate, setSelectedAffiliate] = useState<string>("all");
+  const [selectedReason, setSelectedReason] = useState<string>("all");
+
+  // Summary stats
+  const [totalFlagged, setTotalFlagged] = useState(0);
+  const [totalAmount, setTotalAmount] = useState(0);
+
+  useEffect(() => {
+    checkAdminAccess();
+  }, []);
+
+  useEffect(() => {
+    if (isAdmin) {
+      loadData();
+    }
+  }, [isAdmin, dateFrom, dateTo, selectedAffiliate, selectedReason]);
+
+  async function checkAdminAccess() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast.error("Please sign in to access this page");
+      navigate("/auth");
+      return;
+    }
+
+    // Check if user has admin role using the has_role function
+    const { data, error } = await supabase.rpc("has_role", {
+      _user_id: user.id,
+      _role: "admin",
+    });
+
+    if (error) {
+      console.error("Error checking admin role:", error);
+      toast.error("Error verifying admin access");
+      navigate("/");
+      return;
+    }
+
+    if (!data) {
+      toast.error("Admin access required");
+      navigate("/");
+      return;
+    }
+
+    setIsAdmin(true);
+    setLoading(false);
+  }
+
+  async function loadData() {
+    setLoading(true);
+
+    // Load affiliates for filter dropdown
+    const { data: affData } = await supabase
+      .from("affiliates")
+      .select("id, referral_code, user_id");
+
+    if (affData) {
+      setAffiliates(affData);
+      
+      // Get emails for each affiliate
+      const emails: Record<string, string> = {};
+      for (const aff of affData) {
+        const { data: userData } = await supabase.auth.admin.getUserById(aff.user_id);
+        if (userData?.user?.email) {
+          emails[aff.id] = userData.user.email;
+        }
+      }
+      setAffiliateEmails(emails);
+    }
+
+    // Build query for flagged commissions
+    let query = supabase
+      .from("commissions")
+      .select(`
+        id, affiliate_id, amount, order_amount, level, fraud_flag, fraud_reason,
+        customer_email, customer_ip, status, created_at, order_id
+      `)
+      .or("fraud_flag.eq.true,status.eq.flagged")
+      .order("created_at", { ascending: false });
+
+    if (dateFrom) {
+      query = query.gte("created_at", dateFrom);
+    }
+    if (dateTo) {
+      query = query.lte("created_at", dateTo + "T23:59:59");
+    }
+    if (selectedAffiliate !== "all") {
+      query = query.eq("affiliate_id", selectedAffiliate);
+    }
+    if (selectedReason !== "all") {
+      query = query.eq("fraud_reason", selectedReason);
+    }
+
+    const { data: commData, error } = await query;
+
+    if (error) {
+      console.error("Error loading commissions:", error);
+      toast.error("Error loading data");
+    } else {
+      // Enrich with affiliate data
+      const enriched = (commData || []).map((c) => ({
+        ...c,
+        affiliate: affData?.find((a) => a.id === c.affiliate_id),
+      }));
+      setCommissions(enriched);
+      setTotalFlagged(enriched.length);
+      setTotalAmount(enriched.reduce((sum, c) => sum + Number(c.amount || 0), 0));
+    }
+
+    setLoading(false);
+  }
+
+  async function markAsLegit(commission: FlaggedCommission) {
+    const { error } = await supabase
+      .from("commissions")
+      .update({
+        fraud_flag: false,
+        fraud_reason: null,
+        status: "pending",
+      })
+      .eq("id", commission.id);
+
+    if (error) {
+      toast.error("Error updating commission");
+      return;
+    }
+
+    // Re-add to affiliate totals
+    if (commission.level === 1) {
+      const { data: affiliate } = await supabase
+        .from("affiliates")
+        .select("total_commissions, total_referrals, monthly_sales_count, monthly_revenue_generated")
+        .eq("id", commission.affiliate_id)
+        .maybeSingle();
+
+      if (affiliate) {
+        await supabase
+          .from("affiliates")
+          .update({
+            total_commissions: (Number(affiliate.total_commissions) || 0) + Number(commission.amount),
+            total_referrals: (affiliate.total_referrals || 0) + 1,
+            monthly_sales_count: (affiliate.monthly_sales_count || 0) + 1,
+            monthly_revenue_generated: (Number(affiliate.monthly_revenue_generated) || 0) + Number(commission.order_amount || 0),
+          })
+          .eq("id", commission.affiliate_id);
+      }
+    } else {
+      // Level 2 - just update total_commissions
+      const { data: affiliate } = await supabase
+        .from("affiliates")
+        .select("total_commissions")
+        .eq("id", commission.affiliate_id)
+        .maybeSingle();
+
+      if (affiliate) {
+        await supabase
+          .from("affiliates")
+          .update({
+            total_commissions: (Number(affiliate.total_commissions) || 0) + Number(commission.amount),
+          })
+          .eq("id", commission.affiliate_id);
+      }
+    }
+
+    toast.success("Commission marked as legitimate");
+    loadData();
+  }
+
+  async function confirmFraud(commission: FlaggedCommission) {
+    const { error } = await supabase
+      .from("commissions")
+      .update({
+        fraud_flag: true,
+        status: "rejected",
+      })
+      .eq("id", commission.id);
+
+    if (error) {
+      toast.error("Error updating commission");
+      return;
+    }
+
+    toast.success("Commission confirmed as fraud");
+    loadData();
+  }
+
+  const fraudReasons = [
+    "self_referral_email",
+    "self_referral_ip",
+    "repeated_purchase_same_identity",
+    "suspicious_activity",
+  ];
+
+  if (isAdmin === null || loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <Shield className="h-6 w-6 text-destructive" />
+              Fraud Review Panel
+            </h1>
+            <p className="text-muted-foreground">Review and resolve flagged commissions</p>
+          </div>
+        </div>
+
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Flagged Commissions
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-destructive">{totalFlagged}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Total Flagged Amount
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-destructive">${totalAmount.toFixed(2)}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filters */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Filters</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label className="text-sm text-muted-foreground mb-1 block">Date From</label>
+                <Input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-sm text-muted-foreground mb-1 block">Date To</label>
+                <Input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-sm text-muted-foreground mb-1 block">Affiliate</label>
+                <Select value={selectedAffiliate} onValueChange={setSelectedAffiliate}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All affiliates" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All affiliates</SelectItem>
+                    {affiliates.map((aff) => (
+                      <SelectItem key={aff.id} value={aff.id}>
+                        {aff.referral_code}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm text-muted-foreground mb-1 block">Fraud Reason</label>
+                <Select value={selectedReason} onValueChange={setSelectedReason}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All reasons" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All reasons</SelectItem>
+                    {fraudReasons.map((reason) => (
+                      <SelectItem key={reason} value={reason}>
+                        {reason.replace(/_/g, " ")}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Commissions Table */}
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Affiliate</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Order</TableHead>
+                  <TableHead>Level</TableHead>
+                  <TableHead>Fraud Reason</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>IP</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {commissions.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                      No flagged commissions found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  commissions.map((commission) => (
+                    <TableRow key={commission.id}>
+                      <TableCell>
+                        <div className="font-medium">{commission.affiliate?.referral_code || "—"}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {affiliateEmails[commission.affiliate_id] || "—"}
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-medium">${Number(commission.amount).toFixed(2)}</TableCell>
+                      <TableCell>${Number(commission.order_amount || 0).toFixed(2)}</TableCell>
+                      <TableCell>
+                        <Badge variant={commission.level === 1 ? "default" : "secondary"}>
+                          L{commission.level}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="destructive" className="text-xs">
+                          {commission.fraud_reason?.replace(/_/g, " ") || "flagged"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm">{commission.customer_email || "—"}</TableCell>
+                      <TableCell className="text-sm font-mono">{commission.customer_ip || "—"}</TableCell>
+                      <TableCell className="text-sm">
+                        {commission.created_at
+                          ? format(new Date(commission.created_at), "MMM d, yyyy HH:mm")
+                          : "—"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            commission.status === "rejected"
+                              ? "destructive"
+                              : commission.status === "pending"
+                              ? "secondary"
+                              : "outline"
+                          }
+                        >
+                          {commission.status || "unknown"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex gap-2 justify-end">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                            onClick={() => markAsLegit(commission)}
+                          >
+                            <CheckCircle className="h-4 w-4 mr-1" />
+                            Legit
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => confirmFraud(commission)}
+                          >
+                            <XCircle className="h-4 w-4 mr-1" />
+                            Fraud
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
