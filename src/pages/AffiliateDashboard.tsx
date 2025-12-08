@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Copy, Users, DollarSign, Loader2, Award, Share2, TrendingUp, Check, Sparkles, UserPlus, ShieldCheck, AlertTriangle, Package, Trophy, BarChart3, History, Wallet, Target, BookOpen, FileText, ExternalLink, Image } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -163,8 +164,10 @@ const AffiliateDashboard = () => {
   const [payoutHistoryLoading, setPayoutHistoryLoading] = useState(false);
   const [goals, setGoals] = useState<AffiliateGoal[]>([]);
   const [goalsLoading, setGoalsLoading] = useState(false);
-  const [goalTarget, setGoalTarget] = useState("");
+  const [commissionGoalTarget, setCommissionGoalTarget] = useState("");
+  const [revenueGoalTarget, setRevenueGoalTarget] = useState("");
   const [savingGoal, setSavingGoal] = useState(false);
+  const [activeGoalTab, setActiveGoalTab] = useState<"commission" | "revenue">("commission");
   const [resources, setResources] = useState<ResourceItem[]>([]);
   const [resourcesLoading, setResourcesLoading] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -325,10 +328,14 @@ const AffiliateDashboard = () => {
 
       if (response.data?.goals) {
         setGoals(response.data.goals);
-        // Pre-fill the input with current goal if exists
+        // Pre-fill inputs with current goals if they exist
         const commissionGoal = response.data.goals.find((g: AffiliateGoal) => g.goal_type === '30d_commission');
+        const revenueGoal = response.data.goals.find((g: AffiliateGoal) => g.goal_type === '30d_revenue');
         if (commissionGoal) {
-          setGoalTarget(commissionGoal.target_amount.toString());
+          setCommissionGoalTarget(commissionGoal.target_amount.toString());
+        }
+        if (revenueGoal) {
+          setRevenueGoalTarget(revenueGoal.target_amount.toString());
         }
       }
     } catch (error) {
@@ -360,8 +367,10 @@ const AffiliateDashboard = () => {
     }
   };
 
-  const saveGoal = async () => {
-    const targetAmount = parseFloat(goalTarget);
+  const saveGoal = async (goalType: '30d_commission' | '30d_revenue') => {
+    const targetValue = goalType === '30d_commission' ? commissionGoalTarget : revenueGoalTarget;
+    const targetAmount = parseFloat(targetValue);
+    
     if (isNaN(targetAmount) || targetAmount <= 0) {
       toast({
         title: "Invalid amount",
@@ -377,7 +386,7 @@ const AffiliateDashboard = () => {
         body: { 
           action: 'set-goal', 
           data: { 
-            goal_type: '30d_commission',
+            goal_type: goalType,
             target_amount: targetAmount 
           } 
         }
@@ -387,9 +396,10 @@ const AffiliateDashboard = () => {
         throw new Error(response.error.message);
       }
 
+      const goalLabel = goalType === '30d_commission' ? 'commission' : 'revenue';
       toast({
         title: "Goal saved!",
-        description: `Your 30-day commission goal is now $${targetAmount.toFixed(2)}.`,
+        description: `Your 30-day ${goalLabel} goal is now $${targetAmount.toFixed(2)}.`,
       });
 
       // Refresh goals
@@ -405,6 +415,10 @@ const AffiliateDashboard = () => {
       setSavingGoal(false);
     }
   };
+
+  // Derive goals by type
+  const commissionGoal = goals.find(g => g.goal_type === '30d_commission');
+  const revenueGoal = goals.find(g => g.goal_type === '30d_revenue');
 
   const becomeAffiliate = async () => {
     setJoining(true);
@@ -901,7 +915,7 @@ const AffiliateDashboard = () => {
               <Target className="h-5 w-5 text-purple-600" />
               Your Goals
             </CardTitle>
-            <p className="text-sm text-muted-foreground">Set a 30-day target and track your progress</p>
+            <p className="text-sm text-muted-foreground">Set 30-day targets and track your progress</p>
           </CardHeader>
           <CardContent>
             {goalsLoading ? (
@@ -909,66 +923,128 @@ const AffiliateDashboard = () => {
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
             ) : (
-              <div className="space-y-6">
-                {/* Current Goal Progress */}
-                {goals.length > 0 ? (
-                  goals.filter(g => g.goal_type === '30d_commission').map(goal => (
-                    <div key={goal.id} className="p-4 rounded-lg bg-purple-50 border border-purple-200">
+              <Tabs value={activeGoalTab} onValueChange={(v) => setActiveGoalTab(v as "commission" | "revenue")}>
+                <TabsList className="grid w-full grid-cols-2 mb-4">
+                  <TabsTrigger value="commission">Commission Goal</TabsTrigger>
+                  <TabsTrigger value="revenue">Revenue Goal</TabsTrigger>
+                </TabsList>
+
+                {/* Commission Goal Tab */}
+                <TabsContent value="commission" className="space-y-4">
+                  {commissionGoal ? (
+                    <div className="p-4 rounded-lg bg-purple-50 border border-purple-200">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium">30-Day Commission Goal</span>
                         <span className="text-xs text-muted-foreground">
-                          {format(parseISO(goal.period_start), 'MMM d')} - {format(parseISO(goal.period_end), 'MMM d')}
+                          {format(parseISO(commissionGoal.period_start), 'MMM d')} - {format(parseISO(commissionGoal.period_end), 'MMM d')}
                         </span>
                       </div>
                       <div className="flex items-end justify-between mb-2">
                         <div>
-                          <span className="text-2xl font-bold text-purple-700">${goal.current_progress.toFixed(2)}</span>
-                          <span className="text-sm text-muted-foreground"> / ${goal.target_amount.toFixed(2)}</span>
+                          <span className="text-2xl font-bold text-purple-700">${commissionGoal.current_progress.toFixed(2)}</span>
+                          <span className="text-sm text-muted-foreground"> / ${commissionGoal.target_amount.toFixed(2)}</span>
                         </div>
-                        <span className="text-sm font-medium text-purple-600">{goal.progress_percentage.toFixed(0)}%</span>
+                        <span className="text-sm font-medium text-purple-600">{commissionGoal.progress_percentage.toFixed(0)}%</span>
                       </div>
-                      <Progress value={goal.progress_percentage} className="h-3" />
-                      {goal.progress_percentage >= 100 ? (
+                      <Progress value={commissionGoal.progress_percentage} className="h-3" />
+                      {commissionGoal.progress_percentage >= 100 ? (
                         <p className="text-sm text-green-600 mt-2 flex items-center gap-1">
                           <Check className="h-4 w-4" />
                           Goal achieved! Great work!
                         </p>
                       ) : (
                         <p className="text-sm text-muted-foreground mt-2">
-                          ${(goal.target_amount - goal.current_progress).toFixed(2)} more to reach your goal
+                          ${(commissionGoal.target_amount - commissionGoal.current_progress).toFixed(2)} more to reach your goal
                         </p>
                       )}
                     </div>
-                  ))
-                ) : (
-                  <div className="text-center py-4">
-                    <Target className="h-8 w-8 mx-auto mb-2 text-muted-foreground/40" />
-                    <p className="text-muted-foreground text-sm">Set your first 30-day commission goal to stay focused and track your progress.</p>
-                  </div>
-                )}
-
-                {/* Set/Update Goal Form */}
-                <div className="border-t pt-4">
-                  <label className="text-sm font-medium mb-2 block">Set Commission Goal (30 days)</label>
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                      <Input
-                        type="number"
-                        placeholder="500"
-                        value={goalTarget}
-                        onChange={(e) => setGoalTarget(e.target.value)}
-                        className="pl-7"
-                        min="0"
-                        step="0.01"
-                      />
+                  ) : (
+                    <div className="text-center py-4">
+                      <Target className="h-8 w-8 mx-auto mb-2 text-muted-foreground/40" />
+                      <p className="text-muted-foreground text-sm">Set your first 30-day commission goal to stay focused.</p>
                     </div>
-                    <Button onClick={saveGoal} disabled={savingGoal}>
-                      {savingGoal ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Goal'}
-                    </Button>
+                  )}
+                  
+                  <div className="border-t pt-4">
+                    <label className="text-sm font-medium mb-2 block">Set Commission Goal (30 days)</label>
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                        <Input
+                          type="number"
+                          placeholder="500"
+                          value={commissionGoalTarget}
+                          onChange={(e) => setCommissionGoalTarget(e.target.value)}
+                          className="pl-7"
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                      <Button onClick={() => saveGoal('30d_commission')} disabled={savingGoal}>
+                        {savingGoal ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Goal'}
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </div>
+                </TabsContent>
+
+                {/* Revenue Goal Tab */}
+                <TabsContent value="revenue" className="space-y-4">
+                  {revenueGoal ? (
+                    <div className="p-4 rounded-lg bg-green-50 border border-green-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">30-Day Revenue Goal</span>
+                        <span className="text-xs text-muted-foreground">
+                          {format(parseISO(revenueGoal.period_start), 'MMM d')} - {format(parseISO(revenueGoal.period_end), 'MMM d')}
+                        </span>
+                      </div>
+                      <div className="flex items-end justify-between mb-2">
+                        <div>
+                          <span className="text-2xl font-bold text-green-700">${revenueGoal.current_progress.toFixed(2)}</span>
+                          <span className="text-sm text-muted-foreground"> / ${revenueGoal.target_amount.toFixed(2)}</span>
+                        </div>
+                        <span className="text-sm font-medium text-green-600">{revenueGoal.progress_percentage.toFixed(0)}%</span>
+                      </div>
+                      <Progress value={revenueGoal.progress_percentage} className="h-3" />
+                      {revenueGoal.progress_percentage >= 100 ? (
+                        <p className="text-sm text-green-600 mt-2 flex items-center gap-1">
+                          <Check className="h-4 w-4" />
+                          Goal achieved! Great work!
+                        </p>
+                      ) : (
+                        <p className="text-sm text-muted-foreground mt-2">
+                          ${(revenueGoal.target_amount - revenueGoal.current_progress).toFixed(2)} more to reach your goal
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4">
+                      <TrendingUp className="h-8 w-8 mx-auto mb-2 text-muted-foreground/40" />
+                      <p className="text-muted-foreground text-sm">Set your first 30-day revenue goal to track your impact.</p>
+                    </div>
+                  )}
+                  
+                  <div className="border-t pt-4">
+                    <label className="text-sm font-medium mb-2 block">Set Revenue Goal (30 days)</label>
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                        <Input
+                          type="number"
+                          placeholder="2000"
+                          value={revenueGoalTarget}
+                          onChange={(e) => setRevenueGoalTarget(e.target.value)}
+                          className="pl-7"
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                      <Button onClick={() => saveGoal('30d_revenue')} disabled={savingGoal}>
+                        {savingGoal ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Goal'}
+                      </Button>
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
             )}
           </CardContent>
         </Card>
