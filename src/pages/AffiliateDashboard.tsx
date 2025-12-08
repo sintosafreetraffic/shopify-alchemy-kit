@@ -4,9 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Copy, Users, DollarSign, Loader2, Award, Share2, TrendingUp, Check, Sparkles, UserPlus, ShieldCheck, AlertTriangle, Package, Trophy } from "lucide-react";
+import { Copy, Users, DollarSign, Loader2, Award, Share2, TrendingUp, Check, Sparkles, UserPlus, ShieldCheck, AlertTriangle, Package, Trophy, BarChart3, History, Wallet } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from "recharts";
+import { format, parseISO } from "date-fns";
 
 // Production domain for referral links
 const SITE_URL = "https://www.risebynight.com";
@@ -76,6 +78,29 @@ interface LeaderboardEntry {
   is_current_user: boolean;
 }
 
+interface DailyAnalytics {
+  date: string;
+  sales_count: number;
+  commission_amount: number;
+}
+
+interface AnalyticsData {
+  daily: DailyAnalytics[];
+  totals: {
+    total_30d_sales: number;
+    total_30d_commissions: number;
+  };
+}
+
+interface PayoutHistoryEntry {
+  id: string;
+  amount: number;
+  currency: string;
+  processed_at: string;
+  method: string;
+  note: string | null;
+}
+
 const tierConfig: Record<string, { color: string; bgColor: string; borderColor: string; icon: string }> = {
   'bronze': { color: 'text-amber-700', bgColor: 'bg-amber-100', borderColor: 'border-amber-300', icon: '🥉' },
   'silver': { color: 'text-slate-600', bgColor: 'bg-slate-100', borderColor: 'border-slate-300', icon: '🥈' },
@@ -109,6 +134,10 @@ const AffiliateDashboard = () => {
   });
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [payoutHistory, setPayoutHistory] = useState<PayoutHistoryEntry[]>([]);
+  const [payoutHistoryLoading, setPayoutHistoryLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -167,9 +196,11 @@ const AffiliateDashboard = () => {
       if (stats) setMonthlyStats(stats);
       if (breakdown) setCommissionBreakdown(breakdown);
 
-      // Fetch leaderboard if affiliate exists
+      // Fetch leaderboard, analytics, and payout history if affiliate exists
       if (affiliate) {
         fetchLeaderboard();
+        fetchAnalytics();
+        fetchPayoutHistory(affiliate.id);
       }
     } catch (error) {
       console.error("Error fetching affiliate data:", error);
@@ -202,6 +233,50 @@ const AffiliateDashboard = () => {
       console.error("Error fetching leaderboard:", error);
     } finally {
       setLeaderboardLoading(false);
+    }
+  };
+
+  const fetchAnalytics = async () => {
+    setAnalyticsLoading(true);
+    try {
+      const response = await supabase.functions.invoke('affiliate-api', {
+        body: { action: 'get-analytics', data: {} }
+      });
+
+      if (response.error) {
+        console.error("Error fetching analytics:", response.error);
+        return;
+      }
+
+      if (response.data?.analytics) {
+        setAnalytics(response.data.analytics);
+      }
+    } catch (error) {
+      console.error("Error fetching analytics:", error);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
+  const fetchPayoutHistory = async (affiliateId: string) => {
+    setPayoutHistoryLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('affiliate_payouts')
+        .select('id, amount, currency, processed_at, method, note')
+        .eq('affiliate_id', affiliateId)
+        .order('processed_at', { ascending: false });
+
+      if (error) {
+        console.error("Error fetching payout history:", error);
+        return;
+      }
+
+      setPayoutHistory(data || []);
+    } catch (error) {
+      console.error("Error fetching payout history:", error);
+    } finally {
+      setPayoutHistoryLoading(false);
     }
   };
 
@@ -557,6 +632,141 @@ const AffiliateDashboard = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Performance Analytics Section */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <BarChart3 className="h-5 w-5 text-blue-600" />
+              Performance Analytics (Last 30 Days)
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">Track your daily sales and commissions</p>
+          </CardHeader>
+          <CardContent>
+            {analyticsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : !analytics || analytics.totals.total_30d_sales === 0 ? (
+              <div className="text-center py-12">
+                <BarChart3 className="h-8 w-8 mx-auto mb-2 text-muted-foreground/40" />
+                <p className="text-muted-foreground">No analytics data yet. Once you generate sales, your 30-day performance will appear here.</p>
+              </div>
+            ) : (
+              <>
+                {/* Summary Cards */}
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">
+                    <div className="text-xs text-muted-foreground mb-1">Sales (30d)</div>
+                    <div className="text-2xl font-bold text-blue-700">{analytics.totals.total_30d_sales}</div>
+                  </div>
+                  <div className="p-4 rounded-lg bg-green-50 border border-green-200">
+                    <div className="text-xs text-muted-foreground mb-1">Commissions (30d)</div>
+                    <div className="text-2xl font-bold text-green-700">${analytics.totals.total_30d_commissions.toFixed(2)}</div>
+                  </div>
+                </div>
+
+                {/* Chart */}
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={analytics.daily} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorCommission" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis 
+                        dataKey="date" 
+                        tick={{ fontSize: 10 }} 
+                        tickFormatter={(value) => format(parseISO(value), 'MMM d')}
+                        interval={6}
+                        stroke="hsl(var(--muted-foreground))"
+                      />
+                      <YAxis 
+                        tick={{ fontSize: 10 }} 
+                        tickFormatter={(value) => `$${value}`}
+                        stroke="hsl(var(--muted-foreground))"
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--background))', 
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px',
+                          fontSize: '12px'
+                        }}
+                        formatter={(value: number, name: string) => [
+                          name === 'commission_amount' ? `$${value.toFixed(2)}` : value,
+                          name === 'commission_amount' ? 'Commission' : 'Sales'
+                        ]}
+                        labelFormatter={(label) => format(parseISO(label), 'MMM d, yyyy')}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="commission_amount" 
+                        stroke="hsl(var(--primary))" 
+                        fillOpacity={1}
+                        fill="url(#colorCommission)" 
+                        strokeWidth={2}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Payout History Section */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Wallet className="h-5 w-5 text-green-600" />
+              Payout History
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">Your processed payouts</p>
+          </CardHeader>
+          <CardContent>
+            {payoutHistoryLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : payoutHistory.length === 0 ? (
+              <div className="text-center py-8">
+                <History className="h-8 w-8 mx-auto mb-2 text-muted-foreground/40" />
+                <p className="text-muted-foreground">No payouts processed yet. Once your pending amount reaches the threshold and is paid out, it will appear here.</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Currency</TableHead>
+                    <TableHead>Method</TableHead>
+                    <TableHead>Note</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {payoutHistory.map((payout) => (
+                    <TableRow key={payout.id}>
+                      <TableCell className="text-sm">
+                        {format(new Date(payout.processed_at), "MMM d, yyyy")}
+                      </TableCell>
+                      <TableCell className="font-semibold text-green-600">
+                        ${payout.amount.toFixed(2)}
+                      </TableCell>
+                      <TableCell>{payout.currency}</TableCell>
+                      <TableCell className="capitalize">{payout.method.replace('_', ' ')}</TableCell>
+                      <TableCell className="text-muted-foreground">{payout.note || "-"}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Referral & Invite Links */}
         <div className="grid gap-6 lg:grid-cols-2">

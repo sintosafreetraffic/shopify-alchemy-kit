@@ -24,7 +24,9 @@ const actionSchema = z.object({
     'check-invite-code',
     'track-referral',
     'record-commission',
-    'get-leaderboard'
+    'get-leaderboard',
+    'get-analytics',
+    'process-payout'
   ]),
   data: z.record(z.unknown()).optional(),
 });
@@ -729,6 +731,206 @@ Deno.serve(async (req) => {
           is_affiliate: true,
           leaderboard,
           current_user_referral_code: currentAffiliate.referral_code
+        });
+      }
+
+      case 'get-analytics': {
+        // Get current user's affiliate record
+        const { data: affiliate } = await supabaseAdmin
+          .from('affiliates')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (!affiliate) {
+          return createSuccessResponse({
+            analytics: {
+              daily: [],
+              totals: { total_30d_sales: 0, total_30d_commissions: 0 }
+            }
+          });
+        }
+
+        // Get commissions for the last 30 days
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        const { data: commissions, error: commError } = await supabaseAdmin
+          .from('commissions')
+          .select('amount, created_at, level')
+          .eq('affiliate_id', affiliate.id)
+          .eq('level', 1)
+          .eq('fraud_flag', false)
+          .in('status', ['pending', 'approved', 'paid'])
+          .gte('created_at', thirtyDaysAgo.toISOString())
+          .order('created_at', { ascending: true });
+
+        if (commError) {
+          console.error('[affiliate-api] Error fetching analytics:', commError);
+          throw commError;
+        }
+
+        // Group by day
+        const dailyMap: Record<string, { sales_count: number; commission_amount: number }> = {};
+        
+        // Initialize all 30 days
+        for (let i = 29; i >= 0; i--) {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          const dateStr = date.toISOString().split('T')[0];
+          dailyMap[dateStr] = { sales_count: 0, commission_amount: 0 };
+        }
+
+        // Aggregate commissions
+        let total30dSales = 0;
+        let total30dCommissions = 0;
+
+        for (const comm of commissions || []) {
+          const dateStr = new Date(comm.created_at).toISOString().split('T')[0];
+          if (dailyMap[dateStr]) {
+            dailyMap[dateStr].sales_count += 1;
+            dailyMap[dateStr].commission_amount += Number(comm.amount) || 0;
+          }
+          total30dSales += 1;
+          total30dCommissions += Number(comm.amount) || 0;
+        }
+
+        const daily = Object.entries(dailyMap)
+          .map(([date, data]) => ({ date, ...data }))
+          .sort((a, b) => a.date.localeCompare(b.date));
+
+        return createSuccessResponse({
+          analytics: {
+            daily,
+            totals: {
+              total_30d_sales: total30dSales,
+              total_30d_commissions: total30dCommissions
+            }
+          }
+        });
+      }
+
+      case 'process-payout': {
+        // This action requires admin privileges
+        const { data: isAdmin } = await supabaseAdmin.rpc('has_role', {
+          _user_id: user.id,
+          _role: 'admin'
+        });
+
+        if (!isAdmin) {
+          return createErrorResponse('Admin privileges required', 403);
+        }
+
+        const affiliateId = (data as any)?.affiliateId;
+        if (!affiliateId) {
+          return createErrorResponse('affiliateId required', 400);
+        }
+
+        // Get affiliate data
+        const { data: affiliate, error: affError } = await supabaseAdmin
+          .from('affiliates')
+          .select('*')
+          .eq('id', affiliateId)
+          .single();
+
+        if (affError || !affiliate) {
+          return createErrorResponse('Affiliate not found', 404);
+        }
+
+        const payoutAmount = affiliate.pending_payout_amount || 0;
+        if (payoutAmount <= 0) {
+          return createErrorResponse('No pending payout amount', 400);
+        }
+
+        // Step A: Select eligible commissions
+        const { data: eligibleCommissions, error: fetchError } = await supabaseAdmin
+          .from('commissions')
+          .select('id')
+          .eq('affiliate_id', affiliateId)
+          .eq('fraud_flag', false)
+          .in('status', ['pending', 'approved']);
+
+        if (fetchError) {
+          throw new Error(`Failed to fetch commissions: ${fetchError.message}`);
+        }
+
+        // Step B: Mark those commissions as paid
+        if (eligibleCommissions && eligibleCommissions.length > 0) {
+          const commissionIds = eligibleCommissions.map((c) => c.id);
+          const { error: updateCommError } = await supabaseAdmin
+            .from('commissions')
+            .update({ status: 'paid' })
+            .in('id', commissionIds);
+
+          if (updateCommError) {
+            throw new Error(`Failed to update commissions: ${updateCommError.message}`);
+          }
+        }
+
+        const processedAt = new Date().toISOString();
+
+        // Step C: Insert payout record
+        const { error: payoutInsertError } = await supabaseAdmin
+          .from('affiliate_payouts')
+          .insert({
+            affiliate_id: affiliateId,
+            amount: payoutAmount,
+            currency: 'USD',
+            processed_at: processedAt,
+            processed_by_user_id: user.id,
+            method: 'manual_review',
+            note: null
+          });
+
+        if (payoutInsertError) {
+          console.error('[affiliate-api] Error inserting payout record:', payoutInsertError);
+          // Continue even if payout record fails - the commission updates are more important
+        }
+
+        // Step D: Update affiliate row - reset pending, set last_payout_at
+        const { error: updateAffError } = await supabaseAdmin
+          .from('affiliates')
+          .update({
+            pending_payout_amount: 0,
+            last_payout_at: processedAt,
+          })
+          .eq('id', affiliateId);
+
+        if (updateAffError) {
+          throw new Error(`Failed to update affiliate: ${updateAffError.message}`);
+        }
+
+        // Step E: Send Klaviyo event
+        if (KLAVIYO_PRIVATE_API_KEY) {
+          const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers();
+          const affiliateUser = authUsers?.users?.find((u: any) => u.id === affiliate.user_id);
+          
+          if (affiliateUser?.email) {
+            await sendKlaviyoEvent(KLAVIYO_PRIVATE_API_KEY, affiliateUser.email, 'RBN_Affiliate_Payout_Processed', {
+              affiliate_code: affiliate.referral_code,
+              tier: affiliate.tier || 'bronze',
+              payout_amount: payoutAmount,
+              total_commissions: (affiliate.total_commissions || 0),
+              pending_payout_amount: 0,
+              payout_threshold: affiliate.payout_threshold || 50,
+              monthly_performance: {
+                sales_count: affiliate.monthly_sales_count || 0,
+                revenue_generated: affiliate.monthly_revenue_generated || 0
+              },
+              processed_at: processedAt,
+              processed_by_admin: {
+                admin_user_id: user.id
+              },
+              payout_mode: 'manual',
+              payout_method: 'manual_review'
+            });
+          }
+        }
+
+        return createSuccessResponse({ 
+          success: true, 
+          payout_amount: payoutAmount,
+          processed_at: processedAt
         });
       }
 

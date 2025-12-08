@@ -265,6 +265,69 @@ Leaderboard data reflects real-time database values. The `monthly_revenue_genera
 
 ---
 
+## Payout Notifications
+
+When an admin processes a payout via `/admin/affiliate-payouts`, the system sends an `RBN_Affiliate_Payout_Processed` Klaviyo event.
+
+**Event Properties**:
+- `affiliate_code`: Referral code
+- `tier`: Current tier
+- `payout_amount`: Amount just processed
+- `total_commissions`: Lifetime total after payout
+- `pending_payout_amount`: 0 (reset after payout)
+- `payout_threshold`: Configured threshold
+- `monthly_performance`: { sales_count, revenue_generated }
+- `processed_at`: Timestamp
+- `processed_by_admin`: { admin_user_id }
+- `payout_mode`: "manual"
+- `payout_method`: "manual_review" (default)
+
+---
+
+## Payout History
+
+### affiliate_payouts Table
+
+Stores a ledger of all processed payouts for audit and display purposes.
+
+| Column               | Type      | Description                        |
+|----------------------|-----------|------------------------------------|
+| id                   | uuid      | Primary key                        |
+| affiliate_id         | uuid      | Reference to affiliates            |
+| amount               | numeric   | Payout amount                      |
+| currency             | text      | Currency (default: USD)            |
+| processed_at         | timestamp | When payout was processed          |
+| processed_by_user_id | uuid      | Admin who processed the payout     |
+| method               | text      | Payout method (manual_review, etc) |
+| note                 | text      | Optional notes                     |
+
+### Views
+
+- **Affiliate Dashboard**: Affiliates see their own payout history under "Payout History" section
+- **Admin Payouts Page**: Admins see "Recent Payouts" showing last 20 payouts across all affiliates
+
+---
+
+## Analytics & Charts
+
+The Affiliate Dashboard includes a "Performance Analytics (Last 30 Days)" section with visual charts.
+
+### get-analytics API Action
+
+- **Action**: `get-analytics`
+- **Auth**: Requires authenticated affiliate
+- **Response**:
+  - `daily`: Array of { date, sales_count, commission_amount } for last 30 days
+  - `totals`: { total_30d_sales, total_30d_commissions }
+
+### Data Displayed
+
+- **Summary Cards**: 30-day sales count and commission totals
+- **Area Chart**: Daily commission amounts over the 30-day window
+- Filters: Only counts non-fraud commissions with status in (pending, approved, paid)
+
+---
+
 ## Admin Routes
 
 | Route | Purpose |
