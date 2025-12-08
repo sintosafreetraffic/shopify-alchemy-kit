@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Moon, Sun, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface SleepLogFormProps {
   email: string;
@@ -15,7 +16,8 @@ interface SleepLogFormProps {
 }
 
 export const SleepLogForm = ({ email, onSubmit, loading }: SleepLogFormProps) => {
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const today = new Date().toISOString().split('T')[0];
+  const [date, setDate] = useState(today);
   const [sleepQuality, setSleepQuality] = useState(5);
   const [painLevel, setPainLevel] = useState(3);
   const [timeToSleep, setTimeToSleep] = useState<string>("");
@@ -24,8 +26,23 @@ export const SleepLogForm = ({ email, onSubmit, loading }: SleepLogFormProps) =>
   const [feltStressed, setFeltStressed] = useState(false);
   const [notes, setNotes] = useState("");
 
+  const handleDateChange = (newDate: string) => {
+    // Validate date is not in the future
+    if (newDate > today) {
+      toast.error("Cannot log sleep for future dates");
+      return;
+    }
+    setDate(newDate);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Double-check date validation on submit
+    if (date > today) {
+      toast.error("Cannot log sleep for future dates");
+      return;
+    }
     
     const log = {
       email,
@@ -72,9 +89,11 @@ export const SleepLogForm = ({ email, onSubmit, loading }: SleepLogFormProps) =>
               id="date"
               type="date"
               value={date}
-              onChange={(e) => setDate(e.target.value)}
+              max={today}
+              onChange={(e) => handleDateChange(e.target.value)}
               className="mt-1.5"
             />
+            <p className="text-xs text-muted-foreground mt-1">You can only log sleep for today or past dates</p>
           </div>
 
           <div>

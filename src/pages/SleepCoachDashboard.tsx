@@ -609,6 +609,8 @@ const SleepCoachDashboard = () => {
                   <SleepHistorySection 
                     logs={data.logs}
                     trends={data.trends}
+                    onUpdateLog={handleUpdateLog}
+                    onDeleteLog={handleDeleteLog}
                   />
                   
                   {/* Share Modal */}

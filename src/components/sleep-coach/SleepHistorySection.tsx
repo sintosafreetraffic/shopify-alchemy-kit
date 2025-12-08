@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import { SleepLog, TrendData } from "@/hooks/useSleepApi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Calendar, TrendingUp, TrendingDown, Minus, Flame, Brain } from "lucide-react";
 import { startOfWeek, parseISO, isWithinInterval, endOfWeek, addDays } from "date-fns";
 import { SleepHistoryWeekNavigator } from "./SleepHistoryWeekNavigator";
@@ -10,9 +9,11 @@ import { SleepHistoryWeekTable } from "./SleepHistoryWeekTable";
 interface SleepHistorySectionProps {
   logs: SleepLog[];
   trends: TrendData;
+  onUpdateLog?: (id: string, log: Partial<SleepLog>) => Promise<boolean>;
+  onDeleteLog?: (id: string) => Promise<boolean>;
 }
 
-export const SleepHistorySection = ({ logs, trends }: SleepHistorySectionProps) => {
+export const SleepHistorySection = ({ logs, trends, onUpdateLog, onDeleteLog }: SleepHistorySectionProps) => {
   const [currentWeekStart, setCurrentWeekStart] = useState(() => 
     startOfWeek(new Date(), { weekStartsOn: 1 })
   );
@@ -129,7 +130,12 @@ export const SleepHistorySection = ({ logs, trends }: SleepHistorySectionProps) 
             No sleep logs yet. Start tracking your sleep above!
           </div>
         ) : (
-          <SleepHistoryWeekTable logs={weekLogs} weekStart={currentWeekStart} />
+          <SleepHistoryWeekTable 
+            logs={weekLogs} 
+            weekStart={currentWeekStart}
+            onUpdateLog={onUpdateLog}
+            onDeleteLog={onDeleteLog}
+          />
         )}
       </CardContent>
     </Card>
