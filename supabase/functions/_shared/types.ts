@@ -30,7 +30,11 @@ export type SleepSyncSource =
   | "sleep_plan_generated"
   | "manual"
   | "daily_cron"
-  | "email_signup";
+  | "email_signup"
+  | "internal"
+  | "quiz"
+  | "shopify"
+  | "sleep_plan";
 
 /**
  * EnvironmentProfile - Semi-static sleep setup fields

@@ -12,5 +12,7 @@ export { ProfileForm } from './ProfileForm';
 export { ProfileWizard } from './ProfileWizard';
 export { CoachPlanDisplay } from './CoachPlanDisplay';
 export { WhatsAppSettings } from './WhatsAppSettings';
+export { SleepSetupForm } from './SleepSetupForm';
+export { SleepSyncOverview } from './SleepSyncOverview';
 // SleepReportSummary is intentionally not exported here to allow lazy loading
 // Import it directly: import { SleepReportSummary } from '@/components/sleep-coach/SleepReportSummary';

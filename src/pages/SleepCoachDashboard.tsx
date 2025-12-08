@@ -25,6 +25,8 @@ import { StreakDisplay } from "@/components/sleep-coach/StreakDisplay";
 import { SleepHistorySection } from "@/components/sleep-coach/SleepHistorySection";
 import { SleepProgressChart, TimeRange as ChartTimeRange } from "@/components/sleep-coach/SleepProgressChart";
 import { ShareProgressModal } from "@/components/sleep-coach/ShareProgressModal";
+import { SleepSetupForm } from "@/components/sleep-coach/SleepSetupForm";
+import { SleepSyncOverview } from "@/components/sleep-coach/SleepSyncOverview";
 
 /**
  * Calculate consecutive logging streak from logs based on created_at dates
@@ -728,6 +730,25 @@ const SleepCoachDashboard = () => {
                       Edit Profile
                     </Button>
                   </div>
+                  
+                  {/* Sleep Setup & Sync Section */}
+                  {email && (
+                    <div className="grid gap-6 lg:grid-cols-2 mt-8">
+                      <SleepSetupForm
+                        email={email}
+                        initialValues={{
+                          mattress_thickness: data.profile.mattress_thickness || 'medium',
+                          mattress_firmness: data.profile.mattress_firmness || 'medium',
+                          bed_height: data.profile.bed_height || 'standard',
+                          co_sleeping: data.profile.co_sleeping || 'alone',
+                          bedding_material: data.profile.bedding_material || 'cotton',
+                          pillow_type: data.profile.pillow_type || 'standard',
+                        }}
+                        onSave={refetch}
+                      />
+                      <SleepSyncOverview email={email} onRefresh={refetch} />
+                    </div>
+                  )}
                 </>
               )}
             </TabsContent>

@@ -64,6 +64,14 @@ export interface SleepProfile {
   sleep_assessment?: SleepAssessment;
   created_at: string;
   updated_at: string;
+  // Layer 2: Semi-static environment fields
+  mattress_thickness?: string;
+  mattress_firmness?: string;
+  bed_height?: string;
+  co_sleeping?: string;
+  bedding_material?: string;
+  pillow_type?: string;
+  environment_updated_at?: string;
 }
 
 export interface SleepLog {

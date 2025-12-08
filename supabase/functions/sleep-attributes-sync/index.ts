@@ -19,8 +19,7 @@ import {
   createSuccessResponse,
 } from "../_shared/env.ts";
 import {
-  syncAndStoreAttributes,
-  sendKlaviyoEvent,
+  fullSleepSync,
 } from "../_shared/sleep-sync.ts";
 
 Deno.serve(async (req) => {
@@ -45,16 +44,21 @@ Deno.serve(async (req) => {
     let isInternalCall = false;
     let source: SleepSyncSource = "manual";
 
+    // Clone request to read body potentially multiple times
+    const bodyText = await req.text();
+    let requestBody: { email?: string; source?: SleepSyncSource } = {};
+    try {
+      requestBody = bodyText ? JSON.parse(bodyText) : {};
+    } catch {
+      // Ignore parse errors
+    }
+
     // Check for internal service token (for service-to-service calls)
     const internalToken = req.headers.get('x-internal-token');
     if (internalToken && CRON_SECRET && internalToken === CRON_SECRET) {
       isInternalCall = true;
-      // For internal calls, email comes from request body
-      if (req.method === 'POST') {
-        const body = await req.json().catch(() => ({}));
-        email = body.email;
-        source = body.source || "internal";
-      }
+      email = requestBody.email || null;
+      source = requestBody.source || "internal";
     }
 
     // If not internal, require JWT auth
@@ -74,14 +78,9 @@ Deno.serve(async (req) => {
       }
       email = user.email;
       
-      // Get source from body for non-internal calls
-      if (req.method === 'POST') {
-        try {
-          const body = await req.json().catch(() => ({}));
-          source = body.source || "manual";
-        } catch {
-          // Body might already be consumed
-        }
+      // Get source from parsed body
+      if (req.method === 'POST' && requestBody.source) {
+        source = requestBody.source;
       }
     }
 
@@ -91,25 +90,19 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // POST /sync - Generate and store attributes using centralized function
+    // POST /sync - Generate and store attributes using fullSleepSync
     if (req.method === 'POST' && (path === 'sync' || path === 'sleep-attributes-sync')) {
-      console.log(`[Sleep Sync] Generating attributes for: ${email}, source: ${source}`);
+      console.log(`[Sleep Sync] Full sync triggered for: ${email}, source: ${source}`);
       
-      // Use single source of truth for Sleep Sync
-      const { attributes, event } = await syncAndStoreAttributes(supabase, email, source);
+      // Use fullSleepSync for complete 3-layer sync + Klaviyo
+      const { attributes, event } = await fullSleepSync(
+        supabase,
+        email,
+        source,
+        KLAVIYO_PRIVATE_API_KEY || undefined
+      );
 
-      // Send to Klaviyo if configured
-      if (KLAVIYO_PRIVATE_API_KEY) {
-        try {
-          await sendKlaviyoEvent(KLAVIYO_PRIVATE_API_KEY, email, event.eventName, event.payload);
-          console.log('[Sleep Sync] Klaviyo event sent successfully');
-        } catch (klaviyoError) {
-          console.error('[Sleep Sync] Klaviyo error:', klaviyoError);
-          // Non-blocking
-        }
-      }
-
-      console.log(`[Sleep Sync] Attributes synced successfully for: ${email}`);
+      console.log(`[Sleep Sync] Full sync completed for: ${email}`);
       return createSuccessResponse({
         success: true,
         email,
@@ -148,8 +141,9 @@ Deno.serve(async (req) => {
       return createErrorResponse('Method not allowed', 405);
     }
 
-  } catch (error: any) {
-    console.error('[Sleep Sync] Error:', error);
-    return createErrorResponse(error.message, 500);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[Sleep Sync] Error:', errorMessage);
+    return createErrorResponse(errorMessage, 500);
   }
 });
