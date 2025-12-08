@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Copy, Users, DollarSign, Loader2, Award, Share2, TrendingUp, Check, Sparkles, UserPlus, ShieldCheck, AlertTriangle, Package } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Copy, Users, DollarSign, Loader2, Award, Share2, TrendingUp, Check, Sparkles, UserPlus, ShieldCheck, AlertTriangle, Package, Trophy } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -65,6 +66,16 @@ interface MonthlyStats {
   revenue: number;
 }
 
+interface LeaderboardEntry {
+  rank: number;
+  display_label: string;
+  tier: string;
+  monthly_sales_count: number;
+  monthly_revenue_generated: number;
+  total_commissions: number;
+  is_current_user: boolean;
+}
+
 const tierConfig: Record<string, { color: string; bgColor: string; borderColor: string; icon: string }> = {
   'bronze': { color: 'text-amber-700', bgColor: 'bg-amber-100', borderColor: 'border-amber-300', icon: '🥉' },
   'silver': { color: 'text-slate-600', bgColor: 'bg-slate-100', borderColor: 'border-slate-300', icon: '🥈' },
@@ -96,6 +107,8 @@ const AffiliateDashboard = () => {
     pending: { count: 0, total: 0 },
     paid: { count: 0, total: 0 }
   });
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -153,6 +166,11 @@ const AffiliateDashboard = () => {
       setDirectSalesLast30(directSalesLast30Days || 0);
       if (stats) setMonthlyStats(stats);
       if (breakdown) setCommissionBreakdown(breakdown);
+
+      // Fetch leaderboard if affiliate exists
+      if (affiliate) {
+        fetchLeaderboard();
+      }
     } catch (error) {
       console.error("Error fetching affiliate data:", error);
       toast({
@@ -162,6 +180,28 @@ const AffiliateDashboard = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchLeaderboard = async () => {
+    setLeaderboardLoading(true);
+    try {
+      const response = await supabase.functions.invoke('affiliate-api', {
+        body: { action: 'get-leaderboard', data: {} }
+      });
+
+      if (response.error) {
+        console.error("Error fetching leaderboard:", response.error);
+        return;
+      }
+
+      if (response.data?.leaderboard) {
+        setLeaderboard(response.data.leaderboard);
+      }
+    } catch (error) {
+      console.error("Error fetching leaderboard:", error);
+    } finally {
+      setLeaderboardLoading(false);
     }
   };
 
@@ -580,6 +620,88 @@ const AffiliateDashboard = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Leaderboard Section */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Trophy className="h-5 w-5 text-yellow-600" />
+              Leaderboard
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">Top partners by 30-day revenue</p>
+          </CardHeader>
+          <CardContent>
+            {leaderboardLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : leaderboard.length === 0 ? (
+              <div className="text-center py-8">
+                <Trophy className="h-8 w-8 mx-auto mb-2 text-muted-foreground/40" />
+                <p className="text-muted-foreground">No leaderboard data yet. Start sharing your link to climb the ranks.</p>
+              </div>
+            ) : (
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-16">Rank</TableHead>
+                      <TableHead>Partner</TableHead>
+                      <TableHead>30-Day Revenue</TableHead>
+                      <TableHead>Tier</TableHead>
+                      <TableHead className="text-right">Total Earned</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {leaderboard.map((entry) => {
+                      const entryTierConfig = tierConfig[entry.tier] || tierConfig.bronze;
+                      return (
+                        <TableRow 
+                          key={entry.rank} 
+                          className={entry.is_current_user ? 'bg-primary/5 border-l-2 border-l-primary' : ''}
+                        >
+                          <TableCell>
+                            <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold ${
+                              entry.rank === 1 
+                                ? 'bg-yellow-100 text-yellow-700' 
+                                : entry.rank === 2 
+                                ? 'bg-slate-100 text-slate-600'
+                                : entry.rank === 3
+                                ? 'bg-amber-100 text-amber-700'
+                                : 'bg-secondary text-muted-foreground'
+                            }`}>
+                              {entry.rank}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className={entry.is_current_user ? 'font-semibold text-primary' : ''}>
+                              {entry.display_label}
+                            </span>
+                          </TableCell>
+                          <TableCell className="font-medium text-green-600">
+                            ${entry.monthly_revenue_generated.toFixed(2)}
+                          </TableCell>
+                          <TableCell>
+                            <span className="flex items-center gap-1">
+                              <span>{entryTierConfig.icon}</span>
+                              <span className={`capitalize ${entryTierConfig.color}`}>{entry.tier}</span>
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            ${entry.total_commissions.toFixed(2)}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+                <p className="text-xs text-muted-foreground mt-4 text-center">
+                  Leaderboard ranks are based on the last 30 days of revenue and update daily.
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Sub-Affiliates Section */}
         <Card className="border-0 shadow-sm">
