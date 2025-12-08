@@ -6,9 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { 
   Loader2, Lock, ShoppingBag, Users, Moon, LogOut, AlertCircle, 
   RefreshCw, LayoutDashboard, ListChecks, Sparkles, User, 
-  TrendingUp, TrendingDown, Minus, Flame, Brain
+  TrendingUp, TrendingDown, Minus, Flame, Brain, ClipboardEdit
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useSleepDashboardData } from "@/hooks/useSleepDashboardData";
 import { useSleepApi, SleepProfile, SleepLog } from "@/hooks/useSleepApi";
@@ -72,7 +72,11 @@ const SleepCoachDashboard = () => {
   const [showWizard, setShowWizard] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+
+  // Check for quiz retake notification
+  const quizUpdated = searchParams.get('quizUpdated') === 'true';
 
   // Load dashboard data - this hook handles fetching once after auth
   const { data, loading: dataLoading, error: dataError, refetch } = useSleepDashboardData(
@@ -165,9 +169,26 @@ const SleepCoachDashboard = () => {
     return () => subscription.unsubscribe();
   }, [checkAccess]);
 
+  // Show toast if user just retook the quiz
+  useEffect(() => {
+    if (quizUpdated && isAuthenticated && !isCheckingAccess) {
+      toast.success("Sleep profile updated!", {
+        description: "Your sleep assessment has been updated. Generate a new plan to see personalized recommendations.",
+        duration: 8000,
+      });
+      // Clear the query param
+      setSearchParams({});
+    }
+  }, [quizUpdated, isAuthenticated, isCheckingAccess, setSearchParams]);
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     navigate("/");
+  };
+
+  // Navigate to retake quiz
+  const handleRetakeQuiz = () => {
+    navigate('/sleep-quiz?returnTo=/sleep-coach&mode=retake&quizUpdated=true');
   };
 
   // Profile wizard completion handler
@@ -438,7 +459,18 @@ const SleepCoachDashboard = () => {
                   {/* Profile Summary */}
                   <Card>
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-lg">Your Sleep Profile</CardTitle>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg">Your Sleep Profile</CardTitle>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleRetakeQuiz}
+                          className="text-xs text-muted-foreground hover:text-primary"
+                        >
+                          <ClipboardEdit className="h-3 w-3 mr-1" />
+                          Update Assessment
+                        </Button>
+                      </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
