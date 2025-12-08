@@ -221,15 +221,17 @@ export function useSleepApi() {
       const { error: err } = await supabase.from('sleep_logs').insert(log as any);
       if (err) throw err;
 
-      // Trigger Sleep Sync after successful log submission
+      // Trigger fullSleepSync after successful log submission
       if (log.email) {
         try {
+          console.log('[useSleepApi] Triggering full sync after log submission');
           await supabase.functions.invoke('sleep-attributes-sync', {
-            body: { source: 'sleep_log_submission' },
+            body: { source: 'sleep_log', email: log.email },
           });
+          console.log('[useSleepApi] Sleep sync triggered successfully');
         } catch (syncErr) {
-          console.error('Sleep Sync error:', syncErr);
-          // Non-blocking
+          console.error('[useSleepApi] Sleep Sync error:', syncErr);
+          // Non-blocking - don't fail the log submission
         }
       }
 
