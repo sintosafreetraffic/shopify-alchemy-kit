@@ -769,6 +769,7 @@ export interface LogsSnapshot {
 
 /**
  * Build structured context for sleep plan that enforces hard constraints
+ * Uses all 3 layers: Identity, Environment, and Dynamic State
  */
 export function buildSleepPlanContext(
   profileSnapshot: ProfileSnapshot,
@@ -782,9 +783,11 @@ export function buildSleepPlanContext(
   // Determine plan type based on data
   const isRecoveryPlan = logsSnapshot.avg_sleep_quality < 5 || logsSnapshot.avg_morning_pain >= 5;
   const hasNoLogs = logsSnapshot.nights_logged === 0;
+  const isHighRisk = logsSnapshot.risk_level === 'high';
+  const isLowRisk = logsSnapshot.risk_level === 'low';
   
   return `
-=== PROFILE SNAPSHOT (DO NOT CONTRADICT) ===
+=== LAYER 1: STATIC IDENTITY (DO NOT CONTRADICT) ===
 sleep_position: ${profileSnapshot.sleep_position}
 pain_points: ${profileSnapshot.pain_points?.join(', ') || 'None reported'}
 stress_level: ${profileSnapshot.stress_level || 'medium'}
@@ -792,57 +795,109 @@ wake_up_condition: ${profileSnapshot.wake_up_condition || 'neutral'}
 temperature_preference: ${profileSnapshot.temperature_preference || 'neutral'}
 products_owned: [${productsOwnedList}]
 
-=== LOG SNAPSHOT (LAST 7–14 DAYS) ===
+=== LAYER 2: SLEEP ENVIRONMENT ===
+mattress_firmness: ${profileSnapshot.mattress_firmness || 'medium'}
+mattress_thickness: ${profileSnapshot.mattress_thickness || 'medium'}
+bed_height: ${profileSnapshot.bed_height || 'standard'}
+co_sleeping: ${profileSnapshot.co_sleeping || 'alone'}
+bedding_material: ${profileSnapshot.bedding_material || 'cotton'}
+pillow_type: ${profileSnapshot.pillow_type || 'standard'}
+room_brightness: ${profileSnapshot.room_brightness || 'dark'}
+room_noise: ${profileSnapshot.room_noise || 'quiet'}
+
+=== LAYER 3: DYNAMIC STATE (LAST 7–14 DAYS) ===
 nights_logged: ${logsSnapshot.nights_logged}
-avg_sleep_quality: ${logsSnapshot.avg_sleep_quality.toFixed(1)}/10
-avg_morning_pain: ${logsSnapshot.avg_morning_pain.toFixed(1)}/10
-trend: ${logsSnapshot.trend}
+avg_sleep_quality: ${logsSnapshot.avg_sleep_quality?.toFixed?.(1) ?? logsSnapshot.avg_sleep_quality}/10
+avg_morning_pain: ${logsSnapshot.avg_morning_pain?.toFixed?.(1) ?? logsSnapshot.avg_morning_pain}/10
+sleep_trend: ${logsSnapshot.trend}
+pain_trend: ${logsSnapshot.pain_trend || 'unknown'}
 hot_nights: ${logsSnapshot.hot_nights}
 stressed_nights: ${logsSnapshot.stressed_nights}
 good_nights (7+): ${logsSnapshot.good_nights}
 poor_nights (≤4): ${logsSnapshot.poor_nights}
+streak_days: ${logsSnapshot.streak_days ?? 0}
+engagement_level: ${logsSnapshot.engagement_level || 'low'}
+risk_level: ${logsSnapshot.risk_level || 'low'}
+temperature_sensitive: ${logsSnapshot.temperature_sensitive ?? false}
 ${logsSnapshot.last_log_date ? `last_log_date: ${logsSnapshot.last_log_date}` : ''}
 
 === HARD CONSTRAINTS – YOU MUST OBEY THESE ===
-1. SLEEP POSITION: The user sleeps on their ${profileSnapshot.sleep_position}. 
-   - NEVER describe them as a "side sleeper" if sleep_position is "back", and vice versa.
-   - Tailor ALL pillow positioning advice to their ACTUAL sleep position.
 
-2. PRODUCTS OWNED: Only reference products the user ACTUALLY owns: [${productsOwnedList}]
-   - If "Ergonomic Pillow" is NOT in products_owned, do NOT give tasks assuming they have it. You may suggest it ONCE as a recommendation.
+1. SLEEP POSITION + ENVIRONMENT COMBO: The user is a ${profileSnapshot.sleep_position} sleeper with a ${profileSnapshot.mattress_firmness || 'medium'} ${profileSnapshot.mattress_thickness || 'medium'}-thickness mattress.
+   - Tailor ALL pillow positioning and posture advice to this specific combo.
+   - A ${profileSnapshot.sleep_position} sleeper on a ${profileSnapshot.mattress_firmness || 'medium'} mattress needs different pillow height than on soft.
+   - NEVER describe them as a different sleep position type.
+
+2. CO-SLEEPING CONTEXT: ${profileSnapshot.co_sleeping === 'alone' 
+   ? 'User sleeps ALONE - full bed space is available for positioning changes.' 
+   : profileSnapshot.co_sleeping === 'partner'
+   ? 'User shares bed with a PARTNER - be mindful of noise/movement in evening routines. Morning stretches should be quiet.'
+   : profileSnapshot.co_sleeping === 'pet'
+   ? 'User sleeps with a PET - bed space may be limited. Suggest containable positioning adjustments.'
+   : 'User has PARTNER + PET - be very mindful of space and noise in all recommendations.'}
+
+3. ROOM ENVIRONMENT: The user sleeps in a ${profileSnapshot.room_brightness || 'dark'} room with ${profileSnapshot.room_noise || 'quiet'} noise levels.
+   ${profileSnapshot.room_brightness === 'bright' || profileSnapshot.room_brightness === 'dim' 
+     ? '- Light exposure is a factor. Recommend blackout solutions or our Sleep Mask if they don\'t own one.' 
+     : '- Darkness is good. Focus on other optimization areas.'}
+   ${profileSnapshot.room_noise === 'noisy' || profileSnapshot.room_noise === 'some_noise'
+     ? '- Noise may be disrupting sleep. Suggest white noise or earplugs if appropriate.'
+     : ''}
+
+4. PRODUCTS OWNED: Only reference products the user ACTUALLY owns: [${productsOwnedList}]
+   - If "Ergonomic Pillow" is NOT in products_owned, do NOT give tasks assuming they have it.
    - If "Knee Pillow" is NOT in products_owned, do NOT assign daily tasks that require it.
    - If "Sleep Mask" is NOT in products_owned, do NOT reference using it in evening routines.
+   - You may suggest a product ONCE as a recommendation if relevant.
 
-3. PLAN TYPE${isRecoveryPlan ? ' (RECOVERY)' : ' (MAINTENANCE)'}:
-   ${isRecoveryPlan ? `- avg_sleep_quality is ${logsSnapshot.avg_sleep_quality.toFixed(1)} OR avg_morning_pain is ${logsSnapshot.avg_morning_pain.toFixed(1)}
+5. TREND + RISK ASSESSMENT:
+   ${isHighRisk ? `- RISK LEVEL IS HIGH. The user may be at risk of frustration or churn.
+   - Tone should be EXTRA supportive and empathetic. Acknowledge their struggles.
+   - Focus on quick wins and achievable goals. Don't overwhelm them.
+   - Celebrate ANY small improvement.` : ''}
+   ${logsSnapshot.trend === 'worsening' || logsSnapshot.pain_trend === 'worsening' ? 
+   `- ${logsSnapshot.trend === 'worsening' ? 'Sleep trend is WORSENING.' : ''} ${logsSnapshot.pain_trend === 'worsening' ? 'Pain trend is WORSENING.' : ''}
+   - Acknowledge this gently. Focus on identifying triggers and stabilization.
+   - Do NOT use overly positive language that ignores the decline.` :
+   logsSnapshot.trend === 'improving' ?
+   `- Trend is IMPROVING. Celebrate their progress and encourage continuation.
+   - Reference their streak of ${logsSnapshot.streak_days ?? 0} days if > 3.` :
+   `- Trend is STABLE. Maintain current good habits while exploring optimizations.`}
+   ${isLowRisk && logsSnapshot.engagement_level === 'high' ? 
+   `- User is LOW RISK with HIGH ENGAGEMENT - they're doing great! 
+   - Tone can be more aspirational. Suggest advanced optimizations.` : ''}
+
+6. PLAN TYPE${isRecoveryPlan ? ' (RECOVERY)' : ' (MAINTENANCE)'}:
+   ${isRecoveryPlan ? `- avg_sleep_quality is ${logsSnapshot.avg_sleep_quality?.toFixed?.(1) ?? logsSnapshot.avg_sleep_quality} OR avg_morning_pain is ${logsSnapshot.avg_morning_pain?.toFixed?.(1) ?? logsSnapshot.avg_morning_pain}
    - This is a RECOVERY plan, NOT a maintenance plan.
    - Do NOT say "you're doing great" or "low pain levels" - acknowledge their challenges.
    - Focus the week on stabilization, identifying triggers, and gradual improvement.` : 
-   `- Sleep quality is good (${logsSnapshot.avg_sleep_quality.toFixed(1)}) and pain is manageable (${logsSnapshot.avg_morning_pain.toFixed(1)}).
+   `- Sleep quality is good and pain is manageable.
    - This is a MAINTENANCE plan - celebrate their progress and optimize further.`}
 
-4. TREND HANDLING:
-   ${logsSnapshot.trend === 'worsening' ? 
-   `- Trend is WORSENING. Acknowledge this gently and focus on identifying triggers and stabilization.
-   - Do NOT use overly positive language that ignores the decline.` :
-   logsSnapshot.trend === 'improving' ?
-   `- Trend is IMPROVING. Celebrate their progress and encourage continuation.` :
-   `- Trend is STABLE. Maintain current good habits while exploring optimizations.`}
+7. TEMPERATURE SENSITIVITY: ${logsSnapshot.temperature_sensitive 
+   ? `User is TEMPERATURE SENSITIVE (${logsSnapshot.hot_nights} hot nights). 
+   - Emphasize cooling strategies in evening routines.
+   - Reference their ${profileSnapshot.bedding_material || 'cotton'} bedding - suggest breathable options if not already using.`
+   : 'Temperature is not a major issue for this user.'}
 
-5. NO LOGS YET:
+8. NO LOGS YET:
    ${hasNoLogs ? 
-   `- The user has NO sleep logs yet. Base the plan entirely on their quiz profile.
+   `- The user has NO sleep logs yet. Base the plan entirely on their profile.
    - Clearly state that logging will refine future plans.
    - Encourage them to start logging tonight.` : ''}
 
-${planType === 'weekly_update' ? '6. This is a WEEKLY UPDATE plan - reference progress from previous week if applicable.' : ''}
+${planType === 'weekly_update' ? '9. This is a WEEKLY UPDATE plan - reference progress from previous week if applicable.' : ''}
 
 === PLAN GENERATION INSTRUCTIONS ===
 Create a 7-day plan that:
-- Uses sleep_position to tailor pillow and positioning advice for EVERY day
+- Uses sleep_position + mattress_firmness combo to tailor pillow and positioning advice
 - Addresses the specific pain_points mentioned (${profileSnapshot.pain_points?.join(', ') || 'none'})
-- Respects temperature_preference for environment adjustments
+- Respects temperature_preference and temperature_sensitive flag for environment adjustments
 - Modulates wind-down intensity based on stress_level (${profileSnapshot.stress_level})
+- Considers co_sleeping arrangement for noise/movement sensitivity
+- Adjusts tone based on risk_level (${logsSnapshot.risk_level || 'low'}) and engagement_level (${logsSnapshot.engagement_level || 'low'})
+- References streak_days (${logsSnapshot.streak_days ?? 0}) to build momentum
 - Makes morning tasks 5-10 min focused on their pain points
 - Makes evening tasks relaxing, especially for high stress users
 - ONLY references products they actually own

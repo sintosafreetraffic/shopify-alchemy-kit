@@ -19,9 +19,10 @@ import {
 } from "../_shared/env.ts";
 import { analyzeQuizForRecommendations } from "../_shared/ai-brain.ts";
 import {
-  syncAndStoreAttributes,
+  fullSleepSync,
   sendKlaviyoEvent,
 } from "../_shared/sleep-sync.ts";
+import { SleepSyncSource } from "../_shared/types.ts";
 
 // Input validation schema - supports both legacy and new 22-question format
 const answersSchema = z.object({
@@ -447,15 +448,18 @@ Deno.serve(async (req) => {
           }
         }
 
-        // TRIGGER SLEEP SYNC using centralized function
-        if ((profileCreated || profileUpdated) && KLAVIYO_PRIVATE_API_KEY && profileEmailToUse) {
-          console.log("[Sleep Sync] Triggering for quiz completion:", profileEmailToUse);
+        // TRIGGER FULL SLEEP SYNC using centralized function
+        if ((profileCreated || profileUpdated) && profileEmailToUse) {
+          console.log("[Sleep Sync] Triggering fullSleepSync for quiz completion:", profileEmailToUse);
           try {
-            // Use single source of truth for Sleep Sync
-            const { attributes, event } = await syncAndStoreAttributes(supabase, profileEmailToUse, "quiz_completion");
-            
-            await sendKlaviyoEvent(KLAVIYO_PRIVATE_API_KEY, profileEmailToUse, event.eventName, event.payload);
-            console.log("[Sleep Sync] Completed for:", profileEmailToUse);
+            // Use fullSleepSync for complete 3-layer sync + Klaviyo
+            await fullSleepSync(
+              supabase,
+              profileEmailToUse,
+              'quiz' as SleepSyncSource,
+              KLAVIYO_PRIVATE_API_KEY || undefined
+            );
+            console.log("[Sleep Sync] fullSleepSync completed for:", profileEmailToUse);
           } catch (syncError) {
             console.error("[Sleep Sync] Error:", syncError);
           }
