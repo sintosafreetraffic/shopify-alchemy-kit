@@ -5,7 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { Loader2, CheckCircle, AlertCircle, ShoppingCart, Mail, Sparkles, Info, Moon, ArrowLeft, ArrowRight, Lock } from "lucide-react";
+import { Loader2, CheckCircle, AlertCircle, ShoppingCart, Mail, Sparkles, Info, Moon, ArrowLeft, ArrowRight, Lock, Check } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { useCartStore } from "@/stores/cartStore";
@@ -18,6 +18,41 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator";
+
+// Section configuration for grouped perception
+const SECTIONS = [
+  { 
+    id: "sleep_habits", 
+    name: "How you sleep", 
+    description: "Understanding your sleep patterns",
+    questions: ["sleepPosition", "movesOften", "pillowCount", "mattressFirmness", "sleepEquipment"]
+  },
+  { 
+    id: "pain_profile", 
+    name: "Pain profile", 
+    description: "Identifying discomfort patterns",
+    questions: ["painAreas", "painSeverity", "nightAwakenings"]
+  },
+  { 
+    id: "pillow_problems", 
+    name: "Your pillow problems", 
+    description: "What's not working for you",
+    questions: ["triedMethods", "pillowSatisfaction", "snoring"]
+  },
+  { 
+    id: "environment", 
+    name: "Sleep environment & habits", 
+    description: "Your bedroom and routines",
+    questions: ["sleepTemperature", "roomBrightness", "roomNoise", "sleepLatency", "sleepHours", "eveningScreenUse", "sleepClothing"]
+  },
+  { 
+    id: "personal", 
+    name: "Personal details & plan delivery", 
+    description: "Tailoring your recommendations",
+    questions: ["ageGroup", "gender", "coSleeping", "sleepGoals", "email"]
+  },
+];
 
 // Question configuration with tooltips
 const QUIZ_QUESTIONS = [
@@ -26,6 +61,7 @@ const QUIZ_QUESTIONS = [
     question: "What's your primary sleep position?",
     tooltip: "Your pillow height and contour depth depend entirely on your sleep position. This is one of the biggest predictors of neck pain.",
     type: "radio",
+    autoAdvance: true,
     options: [
       { value: "back", label: "Back sleeper" },
       { value: "side", label: "Side sleeper" },
@@ -38,6 +74,7 @@ const QUIZ_QUESTIONS = [
     question: "Do you change positions often during the night?",
     tooltip: "Frequent turning usually means your pillow or mattress isn't supporting your spine properly.",
     type: "radio",
+    autoAdvance: true,
     options: [
       { value: "rarely", label: "Rarely — I stay in one position" },
       { value: "sometimes", label: "Sometimes — A few times per night" },
@@ -50,6 +87,7 @@ const QUIZ_QUESTIONS = [
     question: "How many pillows do you currently sleep with?",
     tooltip: "Stacking pillows is a major sign your current pillow height is incorrect.",
     type: "radio",
+    autoAdvance: true,
     options: [
       { value: "1", label: "1 pillow" },
       { value: "2", label: "2 pillows" },
@@ -62,6 +100,7 @@ const QUIZ_QUESTIONS = [
     question: "How would you describe your mattress firmness?",
     tooltip: "Mattress firmness affects how deep your shoulder sinks, which changes the ideal pillow height.",
     type: "radio",
+    autoAdvance: true,
     options: [
       { value: "soft", label: "Soft — I sink in quite a bit" },
       { value: "medium", label: "Medium — Balanced support" },
@@ -108,12 +147,18 @@ const QUIZ_QUESTIONS = [
     min: 0,
     max: 10,
     labels: { 0: "No pain", 5: "Moderate", 10: "Severe" },
+    // Only show if user has pain
+    showIf: (answers: Record<string, unknown>) => {
+      const painAreas = answers.painAreas as string[] || [];
+      return painAreas.length > 0 && !painAreas.includes("none");
+    },
   },
   {
     id: "nightAwakenings",
     question: "How often do you wake up during the night?",
     tooltip: "Night awakenings indicate misalignment, overheating, or environmental disturbances.",
     type: "radio",
+    autoAdvance: true,
     options: [
       { value: "never", label: "Rarely or never" },
       { value: "once", label: "Once per night" },
@@ -126,6 +171,7 @@ const QUIZ_QUESTIONS = [
     question: "Do you typically sleep hot, cold, or neutral?",
     tooltip: "Temperature is one of the biggest factors affecting deep sleep quality.",
     type: "radio",
+    autoAdvance: true,
     options: [
       { value: "hot", label: "Hot — I often wake up sweating" },
       { value: "cold", label: "Cold — I usually feel chilly" },
@@ -137,6 +183,7 @@ const QUIZ_QUESTIONS = [
     question: "How bright is your sleep environment?",
     tooltip: "Light exposure reduces melatonin and leads to shallow sleep. This helps us recommend masks if needed.",
     type: "radio",
+    autoAdvance: true,
     options: [
       { value: "dark", label: "Very dark — I can't see anything" },
       { value: "dim", label: "Dimly lit — Some ambient light" },
@@ -148,6 +195,7 @@ const QUIZ_QUESTIONS = [
     question: "What are the noise levels in your bedroom?",
     tooltip: "Noise disruption fragments your deep sleep and increases morning fatigue.",
     type: "radio",
+    autoAdvance: true,
     options: [
       { value: "quiet", label: "Very quiet" },
       { value: "some", label: "Some background noise" },
@@ -159,6 +207,7 @@ const QUIZ_QUESTIONS = [
     question: "How long does it typically take you to fall asleep?",
     tooltip: "Sleep latency reveals stress levels, environment mismatch, or poor pillow alignment.",
     type: "radio",
+    autoAdvance: true,
     options: [
       { value: "quick", label: "Less than 15 minutes" },
       { value: "normal", label: "15-30 minutes" },
@@ -171,6 +220,7 @@ const QUIZ_QUESTIONS = [
     question: "How many hours of sleep do you average per night?",
     tooltip: "This allows your AI Sleep Coach to adjust recovery recommendations.",
     type: "radio",
+    autoAdvance: true,
     options: [
       { value: "under5", label: "Under 5 hours" },
       { value: "5to6", label: "5-6 hours" },
@@ -184,6 +234,7 @@ const QUIZ_QUESTIONS = [
     question: "Do you use screens (phone, TV, laptop) before bed?",
     tooltip: "Screens suppress melatonin and shift your circadian rhythm.",
     type: "radio",
+    autoAdvance: true,
     options: [
       { value: "never", label: "Rarely or never" },
       { value: "sometimes", label: "Sometimes — A few times a week" },
@@ -197,6 +248,7 @@ const QUIZ_QUESTIONS = [
     tooltip: "Certain sleep issues increase with age. This improves personalization but is optional.",
     type: "radio",
     optional: true,
+    autoAdvance: true,
     options: [
       { value: "18-24", label: "18-24" },
       { value: "25-34", label: "25-34" },
@@ -213,6 +265,7 @@ const QUIZ_QUESTIONS = [
     tooltip: "Gender influences shoulder width and optimal pillow height. You may skip this.",
     type: "radio",
     optional: true,
+    autoAdvance: true,
     options: [
       { value: "male", label: "Male" },
       { value: "female", label: "Female" },
@@ -225,6 +278,7 @@ const QUIZ_QUESTIONS = [
     question: "What do you typically wear to bed?",
     tooltip: "This helps us understand temperature regulation and overheating patterns.",
     type: "radio",
+    autoAdvance: true,
     options: [
       { value: "minimal", label: "Minimal — Underwear or nothing" },
       { value: "light", label: "Light — T-shirt and shorts" },
@@ -266,6 +320,7 @@ const QUIZ_QUESTIONS = [
     question: "How often do you snore?",
     tooltip: "Snoring often comes from airway angle, which can be improved with the right pillow height.",
     type: "radio",
+    autoAdvance: true,
     options: [
       { value: "never", label: "Never or rarely" },
       { value: "sometimes", label: "Sometimes" },
@@ -299,8 +354,6 @@ const QUIZ_QUESTIONS = [
     labels: { 0: "Very unsatisfied", 5: "Neutral", 10: "Very satisfied" },
   },
 ];
-
-const TOTAL_STEPS = QUIZ_QUESTIONS.length + 1; // +1 for email step
 
 interface QuizPayload {
   sleepPosition: string;
@@ -342,8 +395,79 @@ interface AnalysisResult {
   profileCreated?: boolean;
 }
 
+// Get visible questions based on branching logic
+const getVisibleQuestions = (answers: Record<string, string | string[] | number>) => {
+  return QUIZ_QUESTIONS.filter(q => {
+    if (q.showIf) {
+      return q.showIf(answers);
+    }
+    return true;
+  });
+};
+
+// Get current section info
+const getCurrentSectionInfo = (currentQuestionId: string, answers: Record<string, string | string[] | number>) => {
+  const visibleQuestions = getVisibleQuestions(answers);
+  const questionIndex = visibleQuestions.findIndex(q => q.id === currentQuestionId);
+  
+  for (let i = 0; i < SECTIONS.length; i++) {
+    const section = SECTIONS[i];
+    if (section.questions.includes(currentQuestionId)) {
+      // Count visible questions in this section
+      const visibleInSection = section.questions.filter(qId => 
+        visibleQuestions.some(vq => vq.id === qId)
+      );
+      const posInSection = visibleInSection.indexOf(currentQuestionId) + 1;
+      
+      return {
+        sectionIndex: i,
+        sectionName: section.name,
+        sectionDescription: section.description,
+        positionInSection: posInSection,
+        totalInSection: visibleInSection.length,
+        isFirstInSection: posInSection === 1,
+        isLastInSection: posInSection === visibleInSection.length,
+      };
+    }
+  }
+  return null;
+};
+
+// Get progress microcopy based on section
+const getProgressMicrocopy = (sectionIndex: number, completedSections: number[]) => {
+  const messages = [
+    "Great start! Let's understand how you sleep.",
+    "Nice progress! We're building your profile.",
+    "Halfway there! 👌 Your plan is taking shape.",
+    "Almost done! Just a few environment details.",
+    "Final step! We're ready to create your plan.",
+  ];
+  return messages[Math.min(sectionIndex, messages.length - 1)];
+};
+
+// Get contextual insight based on answers
+const getContextualInsight = (questionId: string, answers: Record<string, string | string[] | number>) => {
+  const painAreas = answers.painAreas as string[] || [];
+  const sleepPosition = answers.sleepPosition as string;
+  const roomBrightness = answers.roomBrightness as string;
+  
+  if (questionId === "nightAwakenings" && painAreas.length > 0 && !painAreas.includes("none")) {
+    return "We're already spotting patterns in your pain profile…";
+  }
+  if (questionId === "sleepHours" && roomBrightness && roomBrightness !== "dark") {
+    return "Your sleep environment might be affecting your deep sleep — we'll address this in your plan.";
+  }
+  if (questionId === "sleepGoals") {
+    return "We've matched your answers to a specific pillow setup and coaching plan.";
+  }
+  if (questionId === "pillowSatisfaction" && sleepPosition === "side") {
+    return "Side sleepers often need specialized support — we're noting this.";
+  }
+  return null;
+};
+
 const SleepQuiz = () => {
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(0); // 0-indexed for questions
   const [answers, setAnswers] = useState<Record<string, string | string[] | number>>({
     sleepEquipment: [],
     painAreas: [],
@@ -358,6 +482,7 @@ const SleepQuiz = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [results, setResults] = useState<AnalysisResult | null>(null);
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
+  const [completedSections, setCompletedSections] = useState<number[]>([]);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const returnTo = searchParams.get('returnTo');
@@ -371,6 +496,18 @@ const SleepQuiz = () => {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isSendingReset, setIsSendingReset] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+
+  // Get visible questions based on current answers
+  const visibleQuestions = getVisibleQuestions(answers);
+  const TOTAL_STEPS = visibleQuestions.length + 1; // +1 for email step
+  const currentQuestion = step < visibleQuestions.length ? visibleQuestions[step] : null;
+  const isEmailStep = step === visibleQuestions.length;
+  const isResultsStep = step > visibleQuestions.length;
+  const progressPercent = Math.round(((step + 1) / TOTAL_STEPS) * 100);
+
+  // Section info for current question
+  const sectionInfo = currentQuestion ? getCurrentSectionInfo(currentQuestion.id, answers) : null;
 
   useEffect(() => {
     trackQuizStarted();
@@ -385,8 +522,23 @@ const SleepQuiz = () => {
     loadProducts();
   }, []);
 
+  // Track completed sections
+  useEffect(() => {
+    if (sectionInfo && sectionInfo.isLastInSection && !completedSections.includes(sectionInfo.sectionIndex)) {
+      setCompletedSections(prev => [...prev, sectionInfo.sectionIndex]);
+    }
+  }, [sectionInfo, completedSections]);
+
   const handleRadioChange = useCallback((questionId: string, value: string) => {
     setAnswers(prev => ({ ...prev, [questionId]: value }));
+    
+    // Auto-advance for radio questions
+    const question = QUIZ_QUESTIONS.find(q => q.id === questionId);
+    if (question?.autoAdvance) {
+      setTimeout(() => {
+        setStep(prev => prev + 1);
+      }, 300); // Small delay for visual feedback
+    }
   }, []);
 
   const handleCheckboxChange = useCallback((questionId: string, value: string, maxSelections?: number) => {
@@ -432,7 +584,6 @@ const SleepQuiz = () => {
     
     setIsCheckingEmail(true);
     try {
-      // Check if a sleep profile exists for this email
       const { data, error } = await supabase
         .from('sleep_profiles')
         .select('email')
@@ -548,7 +699,7 @@ const SleepQuiz = () => {
   };
 
   const canProceed = useCallback(() => {
-    if (step > QUIZ_QUESTIONS.length) {
+    if (isEmailStep) {
       // Email step - require valid email
       if (!isValidEmail(email)) return false;
       
@@ -560,22 +711,23 @@ const SleepQuiz = () => {
       return true;
     }
     
-    const question = QUIZ_QUESTIONS[step - 1];
-    if (question.optional) return true;
+    if (!currentQuestion) return false;
     
-    const answer = answers[question.id];
+    if (currentQuestion.optional) return true;
     
-    if (question.type === "checkbox") {
+    const answer = answers[currentQuestion.id];
+    
+    if (currentQuestion.type === "checkbox") {
       return Array.isArray(answer) && answer.length > 0;
     }
-    if (question.type === "slider") {
+    if (currentQuestion.type === "slider") {
       return typeof answer === "number";
     }
     return !!answer;
-  }, [step, answers, email, accountExists, createSleepCoachProfile, isAuthenticated]);
+  }, [isEmailStep, currentQuestion, answers, email, accountExists, createSleepCoachProfile, isAuthenticated]);
 
   const handleNext = () => {
-    if (step <= QUIZ_QUESTIONS.length) {
+    if (step < visibleQuestions.length) {
       setStep(step + 1);
     } else {
       analyzeQuiz();
@@ -583,8 +735,15 @@ const SleepQuiz = () => {
   };
 
   const handleBack = () => {
-    if (step > 1) {
+    if (step > 0) {
       setStep(step - 1);
+    }
+  };
+
+  // Handle continue for checkbox questions
+  const handleCheckboxContinue = () => {
+    if (canProceed()) {
+      setStep(step + 1);
     }
   };
 
@@ -621,7 +780,6 @@ const SleepQuiz = () => {
     const quizPayload = buildQuizPayload();
     
     try {
-      // Send to analyze-sleep-quiz
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-sleep-quiz`,
         {
@@ -644,7 +802,7 @@ const SleepQuiz = () => {
 
       const data = await response.json();
       setResults(data);
-      setStep(TOTAL_STEPS + 1);
+      setStep(visibleQuestions.length + 1);
 
       // Enrich Klaviyo profile if email provided
       if (isValidEmail(email)) {
@@ -734,10 +892,7 @@ const SleepQuiz = () => {
     }
   };
 
-  const currentQuestion = step <= QUIZ_QUESTIONS.length ? QUIZ_QUESTIONS[step - 1] : null;
-  const progressPercent = Math.round((step / TOTAL_STEPS) * 100);
-  const isEmailStep = step === QUIZ_QUESTIONS.length + 1;
-  const isResultsStep = step > TOTAL_STEPS;
+  const contextualInsight = currentQuestion ? getContextualInsight(currentQuestion.id, answers) : null;
 
   const renderQuestionContent = () => {
     if (!currentQuestion) return null;
@@ -783,10 +938,12 @@ const SleepQuiz = () => {
     }
     
     if (type === "checkbox") {
+      const currentAnswers = (answers[id] as string[]) || [];
+      const hasSelection = currentAnswers.length > 0;
+      
       return (
         <div className="space-y-3">
           {options?.map((option) => {
-            const currentAnswers = (answers[id] as string[]) || [];
             const isChecked = currentAnswers.includes(option.value);
             
             return (
@@ -800,14 +957,14 @@ const SleepQuiz = () => {
                 onClick={() => handleCheckboxChange(id, option.value, maxSelections)}
               >
                 <div 
-                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                  className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
                     isChecked 
                       ? "border-primary bg-primary" 
                       : "border-muted-foreground"
                   }`}
                 >
                   {isChecked && (
-                    <div className="w-2 h-2 rounded-full bg-primary-foreground" />
+                    <Check className="w-3 h-3 text-primary-foreground" />
                   )}
                 </div>
                 <span className="flex-1 text-base text-foreground">
@@ -816,6 +973,17 @@ const SleepQuiz = () => {
               </div>
             );
           })}
+          
+          {/* Inline continue button for checkbox */}
+          {hasSelection && (
+            <Button 
+              onClick={handleCheckboxContinue}
+              className="w-full mt-4 h-12 rounded-xl"
+            >
+              Continue
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          )}
         </div>
       );
     }
@@ -845,6 +1013,15 @@ const SleepQuiz = () => {
               <span>{labels[max!]}</span>
             </div>
           )}
+          
+          {/* Continue button for slider */}
+          <Button 
+            onClick={handleNext}
+            className="w-full mt-6 h-12 rounded-xl"
+          >
+            Continue
+            <ArrowRight className="w-4 h-4 ml-2" />
+          </Button>
         </div>
       );
     }
@@ -868,21 +1045,71 @@ const SleepQuiz = () => {
             </p>
           </div>
 
-          {/* Progress Bar */}
+          {/* Section-based Progress */}
           {!isResultsStep && (
             <div className="mb-8">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-foreground">
-                  Step {step} of {TOTAL_STEPS}
-                </span>
-                <span className="text-sm text-muted-foreground font-medium">{progressPercent}%</span>
-              </div>
+              {/* Section indicator */}
+              {sectionInfo && (
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-primary">
+                      Step {sectionInfo.sectionIndex + 1} of 5
+                    </span>
+                    <span className="text-sm text-muted-foreground">—</span>
+                    <span className="text-sm font-medium text-foreground">
+                      {sectionInfo.sectionName}
+                    </span>
+                  </div>
+                  <span className="text-sm text-muted-foreground font-medium">{progressPercent}%</span>
+                </div>
+              )}
+              
+              {isEmailStep && (
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-primary">Step 5 of 5</span>
+                    <span className="text-sm text-muted-foreground">—</span>
+                    <span className="text-sm font-medium text-foreground">Personal details & plan delivery</span>
+                  </div>
+                  <span className="text-sm text-muted-foreground font-medium">{progressPercent}%</span>
+                </div>
+              )}
+              
+              {/* Progress bar */}
               <div className="w-full bg-secondary rounded-full h-2.5 overflow-hidden">
                 <div
                   className="bg-primary h-full rounded-full transition-all duration-500 ease-out"
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
+              
+              {/* Section completion indicators */}
+              <div className="flex justify-between mt-3">
+                {SECTIONS.slice(0, 5).map((section, idx) => (
+                  <div key={section.id} className="flex items-center gap-1">
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${
+                      completedSections.includes(idx) 
+                        ? "bg-success text-success-foreground" 
+                        : sectionInfo?.sectionIndex === idx 
+                          ? "bg-primary text-primary-foreground" 
+                          : "bg-secondary text-muted-foreground"
+                    }`}>
+                      {completedSections.includes(idx) ? (
+                        <Check className="w-3 h-3" />
+                      ) : (
+                        idx + 1
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Progress microcopy */}
+              {sectionInfo && (
+                <p className="text-sm text-muted-foreground text-center mt-4">
+                  {getProgressMicrocopy(sectionInfo.sectionIndex, completedSections)}
+                </p>
+              )}
             </div>
           )}
 
@@ -915,7 +1142,8 @@ const SleepQuiz = () => {
                       className="max-w-xs p-4 text-sm bg-popover border border-border shadow-lg"
                       sideOffset={8}
                     >
-                      <p className="text-popover-foreground leading-relaxed">
+                      <p className="font-medium text-popover-foreground mb-1">Why we ask this</p>
+                      <p className="text-popover-foreground/80 leading-relaxed">
                         {currentQuestion.tooltip}
                       </p>
                     </TooltipContent>
@@ -926,19 +1154,44 @@ const SleepQuiz = () => {
                 <div className="min-h-[200px]">
                   {renderQuestionContent()}
                 </div>
+                
+                {/* Contextual insight */}
+                {contextualInsight && (
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+                    <Sparkles className="w-4 h-4 text-primary flex-shrink-0" />
+                    <p className="text-sm text-primary">{contextualInsight}</p>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Email Step */}
+            {/* Email Step - Reward Framing */}
             {isEmailStep && !isAnalyzing && (
               <div className="space-y-6">
+                {/* Plan building banner */}
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
+                  <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Your plan is being created</p>
+                    <p className="text-xs text-muted-foreground">Just a few final details so we can deliver it to you.</p>
+                  </div>
+                </div>
+                
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <h2 className="text-xl md:text-2xl font-semibold text-foreground">
-                      Get Your Personalized Results
+                      {returnTo === '/sleep-coach' 
+                        ? "Unlock Your AI Sleep Coach" 
+                        : "Where should we send your results?"
+                      }
                     </h2>
                     <p className="text-muted-foreground mt-2">
-                      Enter your email to receive your sleep assessment and unlock exclusive recommendations.
+                      {returnTo === '/sleep-coach'
+                        ? "Enter your email to unlock instant access to your personalized 7-day sleep improvement plan."
+                        : "We'll email your personalized sleep assessment, product fit, and your first free Sleep Optimization Tip."
+                      }
                     </p>
                   </div>
                   <Tooltip delayDuration={0}>
@@ -952,7 +1205,8 @@ const SleepQuiz = () => {
                       className="max-w-xs p-4 text-sm bg-popover border border-border shadow-lg"
                       sideOffset={8}
                     >
-                      <p className="text-popover-foreground leading-relaxed">
+                      <p className="font-medium text-popover-foreground mb-1">Why we ask this</p>
+                      <p className="text-popover-foreground/80 leading-relaxed">
                         Your email helps us save your assessment and send personalized sleep tips. We never spam.
                       </p>
                     </TooltipContent>
@@ -970,72 +1224,79 @@ const SleepQuiz = () => {
                       className="pl-12 h-14 text-base rounded-xl border-border focus:border-primary"
                     />
                     {isCheckingEmail && (
-                      <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground animate-spin" />
+                      <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
                     )}
                   </div>
                   
                   {/* Account exists notification */}
-                  {accountExists && isValidEmail(email) && (
-                    <div className="p-4 rounded-xl border-2 border-amber-500/50 bg-amber-500/10">
+                  {accountExists && createSleepCoachProfile && (
+                    <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
                       <div className="flex items-start gap-3">
                         <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
                         <div className="flex-1">
-                          <p className="font-medium text-foreground">Account already exists</p>
+                          <p className="text-sm font-medium text-foreground">Account already exists</p>
                           <p className="text-sm text-muted-foreground mt-1">
-                            A Sleep Coach profile is already registered with this email.
+                            {isAuthenticated 
+                              ? "Great! Your quiz results will be saved to your existing account."
+                              : "Please enter your password to update your sleep profile, or use a different email."
+                            }
                           </p>
                           
                           {!isAuthenticated && (
-                            <div className="mt-3 space-y-3">
-                              {!showPasswordPrompt ? (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => setShowPasswordPrompt(true)}
-                                  className="w-full"
-                                >
-                                  <Lock className="w-4 h-4 mr-2" />
-                                  Continue with this email
-                                </Button>
-                              ) : (
-                              <div className="space-y-3">
-                                  <div className="relative">
-                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                      type="password"
-                                      placeholder="Enter your password"
-                                      value={password}
-                                      onChange={(e) => setPassword(e.target.value)}
-                                      onKeyDown={(e) => e.key === 'Enter' && handleAuthenticate()}
-                                      className="pl-10 h-12 text-base rounded-lg"
-                                    />
-                                  </div>
-                                  <Button
-                                    onClick={handleAuthenticate}
-                                    disabled={isAuthenticating || !password.trim()}
-                                    className="w-full"
-                                    size="sm"
-                                  >
-                                    {isAuthenticating ? (
-                                      <>
-                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                        Verifying...
-                                      </>
-                                    ) : (
-                                      "Verify & Continue"
-                                    )}
-                                  </Button>
-                                  <button
-                                    type="button"
-                                    onClick={handleForgotPassword}
-                                    disabled={isSendingReset}
-                                    className="w-full text-sm text-primary hover:text-primary/80 hover:underline transition-colors disabled:opacity-50"
-                                  >
-                                    {isSendingReset ? "Sending reset link..." : "Forgot password?"}
-                                  </button>
+                            showPasswordPrompt ? (
+                              isAuthenticated ? (
+                                <div className="mt-3 flex items-center gap-2 text-success">
+                                  <CheckCircle className="h-4 w-4" />
+                                  <span className="text-sm font-medium">Authenticated</span>
                                 </div>
-                              )}
-                            </div>
+                              ) : (
+                              <div className="space-y-3 mt-3">
+                                <div className="relative">
+                                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                  <Input
+                                    type="password"
+                                    placeholder="Enter your password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleAuthenticate()}
+                                    className="pl-10 h-12 text-base rounded-lg"
+                                  />
+                                </div>
+                                <Button
+                                  onClick={handleAuthenticate}
+                                  disabled={isAuthenticating || !password.trim()}
+                                  className="w-full"
+                                  size="sm"
+                                >
+                                  {isAuthenticating ? (
+                                    <>
+                                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                      Verifying...
+                                    </>
+                                  ) : (
+                                    "Verify & Continue"
+                                  )}
+                                </Button>
+                                <button
+                                  type="button"
+                                  onClick={handleForgotPassword}
+                                  disabled={isSendingReset}
+                                  className="w-full text-sm text-primary hover:text-primary/80 hover:underline transition-colors disabled:opacity-50"
+                                >
+                                  {isSendingReset ? "Sending reset link..." : "Forgot password?"}
+                                </button>
+                              </div>
+                              )
+                            ) : (
+                              <Button
+                                onClick={() => setShowPasswordPrompt(true)}
+                                variant="outline"
+                                size="sm"
+                                className="mt-3"
+                              >
+                                Enter Password
+                              </Button>
+                            )
                           )}
                           
                           {isAuthenticated && (
@@ -1046,6 +1307,23 @@ const SleepQuiz = () => {
                           )}
                         </div>
                       </div>
+                    </div>
+                  )}
+                  
+                  {/* New account password */}
+                  {email && isValidEmail(email) && !accountExists && createSleepCoachProfile && (
+                    <div className="space-y-3">
+                      <div className="relative">
+                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                        <Input
+                          type="password"
+                          placeholder="Create a password"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          className="pl-12 h-14 text-base rounded-xl border-border focus:border-primary"
+                        />
+                      </div>
+                      <PasswordStrengthIndicator password={newPassword} />
                     </div>
                   )}
                   
@@ -1168,7 +1446,7 @@ const SleepQuiz = () => {
                       <div className="flex-1">
                         <h4 className="font-semibold text-lg mb-2">Your AI Sleep Coach is Ready!</h4>
                         <p className="text-muted-foreground mb-4">
-                          Your personalized 7-day sleep improvement plan has been created based on your 22-point assessment.
+                          Your personalized 7-day sleep improvement plan has been created based on your assessment.
                         </p>
                         <Button
                           onClick={() => navigate('/sleep-coach')}
@@ -1213,31 +1491,45 @@ const SleepQuiz = () => {
                 </div>
                 <p className="text-lg font-semibold mt-6">Analyzing your sleep profile...</p>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Creating personalized recommendations based on 22 data points
+                  Creating personalized recommendations based on your answers
                 </p>
               </div>
             )}
 
-            {/* Navigation Buttons */}
+            {/* Navigation Buttons - Only for non-auto-advance questions */}
             {!isResultsStep && !isAnalyzing && (
               <div className="flex gap-4 mt-8 pt-6 border-t border-border">
                 <Button 
                   variant="outline" 
                   onClick={handleBack} 
-                  disabled={step === 1}
+                  disabled={step === 0}
                   className="flex-1 h-12 rounded-xl"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back
                 </Button>
-                <Button
-                  onClick={handleNext}
-                  disabled={!canProceed() && !currentQuestion?.optional}
-                  className="flex-1 h-12 rounded-xl"
-                >
-                  {isEmailStep ? "Get My Results" : "Next"}
-                  {!isEmailStep && <ArrowRight className="w-4 h-4 ml-2" />}
-                </Button>
+                {/* Only show Next button for email step or if question doesn't auto-advance */}
+                {(isEmailStep || (currentQuestion && (currentQuestion.type === "checkbox" || currentQuestion.type === "slider"))) ? null : (
+                  currentQuestion?.optional && (
+                    <Button
+                      onClick={handleNext}
+                      variant="ghost"
+                      className="flex-1 h-12 rounded-xl"
+                    >
+                      Skip
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  )
+                )}
+                {isEmailStep && (
+                  <Button
+                    onClick={handleNext}
+                    disabled={!canProceed()}
+                    className="flex-1 h-12 rounded-xl"
+                  >
+                    {returnTo === '/sleep-coach' ? "Unlock My Sleep Coach" : "Get My Results"}
+                  </Button>
+                )}
               </div>
             )}
           </Card>
