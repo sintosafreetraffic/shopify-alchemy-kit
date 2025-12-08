@@ -360,11 +360,18 @@ export type Database = {
       }
       sleep_profiles: {
         Row: {
+          bed_height: string | null
+          bedding_material: string | null
+          co_sleeping: string | null
           created_at: string
           delivery_date: string | null
           email: string
+          environment_updated_at: string | null
           id: string
+          mattress_firmness: string | null
+          mattress_thickness: string | null
           pain_points: string[] | null
+          pillow_type: string | null
           products_owned: string[] | null
           purchase_count: number | null
           quiz_completed: boolean | null
@@ -384,11 +391,18 @@ export type Database = {
           whatsapp_phone: string | null
         }
         Insert: {
+          bed_height?: string | null
+          bedding_material?: string | null
+          co_sleeping?: string | null
           created_at?: string
           delivery_date?: string | null
           email: string
+          environment_updated_at?: string | null
           id?: string
+          mattress_firmness?: string | null
+          mattress_thickness?: string | null
           pain_points?: string[] | null
+          pillow_type?: string | null
           products_owned?: string[] | null
           purchase_count?: number | null
           quiz_completed?: boolean | null
@@ -408,11 +422,18 @@ export type Database = {
           whatsapp_phone?: string | null
         }
         Update: {
+          bed_height?: string | null
+          bedding_material?: string | null
+          co_sleeping?: string | null
           created_at?: string
           delivery_date?: string | null
           email?: string
+          environment_updated_at?: string | null
           id?: string
+          mattress_firmness?: string | null
+          mattress_thickness?: string | null
           pain_points?: string[] | null
+          pillow_type?: string | null
           products_owned?: string[] | null
           purchase_count?: number | null
           quiz_completed?: boolean | null
