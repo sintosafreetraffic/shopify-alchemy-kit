@@ -6,21 +6,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
 import { Download, Share2, Loader2, Moon } from "lucide-react";
-import { format, subDays, subMonths, parseISO, isAfter, isBefore } from "date-fns";
+import { format, subDays, subMonths, parseISO, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { toPng } from "html-to-image";
 import { toast } from "sonner";
+
+type ShareRange = "7d" | "30d" | "90d" | "12m";
+type ShareMetric = "both" | "quality" | "pain";
 
 interface ShareProgressModalProps {
   isOpen: boolean;
   onClose: () => void;
   logs: SleepLog[];
+  initialRange?: ShareRange;
 }
 
-type ShareRange = "7d" | "30d" | "90d" | "12m";
-type ShareMetric = "both" | "quality" | "pain";
-
-export const ShareProgressModal = ({ isOpen, onClose, logs }: ShareProgressModalProps) => {
-  const [range, setRange] = useState<ShareRange>("30d");
+export const ShareProgressModal = ({ isOpen, onClose, logs, initialRange = "30d" }: ShareProgressModalProps) => {
+  const [range, setRange] = useState<ShareRange>(initialRange);
   const [metric, setMetric] = useState<ShareMetric>("both");
   const [isGenerating, setIsGenerating] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
@@ -47,9 +48,8 @@ export const ShareProgressModal = ({ isOpen, onClose, logs }: ShareProgressModal
     }
 
     const filtered = logs.filter((log) => {
-      const logDate = parseISO(log.date);
-      return (isAfter(logDate, startDate) || format(logDate, 'yyyy-MM-dd') === format(startDate, 'yyyy-MM-dd')) &&
-             (isBefore(logDate, today) || format(logDate, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd'));
+      const logDate = startOfDay(parseISO(log.date));
+      return isWithinInterval(logDate, { start: startOfDay(startDate), end: endOfDay(today) });
     });
 
     return filtered
@@ -195,11 +195,11 @@ export const ShareProgressModal = ({ isOpen, onClose, logs }: ShareProgressModal
           </div>
 
           {/* Preview */}
-          <div className="border rounded-lg overflow-hidden">
+          <div className="border border-border/50 rounded-xl overflow-hidden shadow-lg">
             <div
               ref={previewRef}
               className="bg-gradient-to-br from-slate-900 to-slate-800 p-6"
-              style={{ aspectRatio: "4/5" }}
+              style={{ aspectRatio: "4 / 5" }}
             >
               {/* Header */}
               <div className="flex items-center gap-2 mb-2">
@@ -233,8 +233,8 @@ export const ShareProgressModal = ({ isOpen, onClose, logs }: ShareProgressModal
               {/* Chart */}
               <div className="bg-white/5 rounded-lg p-3">
                 {filteredData.length === 0 ? (
-                  <div className="h-[180px] flex items-center justify-center text-white/50 text-sm">
-                    No data in this period
+                  <div className="h-[180px] flex items-center justify-center text-white/50 text-sm text-center px-4">
+                    No sleep data in this period yet. Log a few nights to generate your shareable progress card.
                   </div>
                 ) : (
                   <div className="h-[180px]">
