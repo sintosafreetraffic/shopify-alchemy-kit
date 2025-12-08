@@ -199,6 +199,22 @@ Deno.serve(async (req) => {
       if (oldTier !== newTierInfo.tier) {
         tierChanges.push({ email, oldTier, newTier: newTierInfo.tier });
 
+        // Determine tier direction and context
+        const tierOrder = ['bronze', 'silver', 'gold', 'platinum', 'diamond'];
+        const oldTierIndex = tierOrder.indexOf(oldTier);
+        const newTierIndex = tierOrder.indexOf(newTierInfo.tier);
+        const tierDirection = newTierIndex > oldTierIndex ? 'up' : 'down';
+        
+        // Compute tier_change_context for fine-grained Klaviyo flow branching
+        let tierChangeContext = 'unknown';
+        if (newTierInfo.tier === 'diamond' && oldTier === 'diamond') {
+          tierChangeContext = 'maintained_top_tier';
+        } else if (newTierIndex > oldTierIndex) {
+          tierChangeContext = 'upgrade_from_lower_tier';
+        } else {
+          tierChangeContext = 'downgrade_from_higher_tier';
+        }
+
         // Send Klaviyo event for tier change
         if (KLAVIYO_PRIVATE_API_KEY && email) {
           await sendKlaviyoEvent(KLAVIYO_PRIVATE_API_KEY, email, 'RBN_Affiliate_Tier_Updated', {
@@ -212,7 +228,8 @@ Deno.serve(async (req) => {
               sales: directSalesLast30Days,
               revenue: monthlyRevenue
             },
-            tier_direction: directSalesLast30Days > (affiliate.monthly_sales_count || 0) ? 'up' : 'down',
+            tier_direction: tierDirection,
+            tier_change_context: tierChangeContext,
             updated_at: now.toISOString(),
           });
         }

@@ -124,18 +124,27 @@ Triggered on an affiliate's first successful sale.
 
 ### RBN_Affiliate_Tier_Updated
 
-Triggered when an affiliate's tier changes (daily CRON).
+Triggered when an affiliate's tier changes (daily CRON at 02:00 UTC). This event fires **only when the tier actually changes** - not on every recalculation.
 
 **Properties**:
 - `affiliate_code`: Referral code
 - `old_tier`: Previous tier
 - `new_tier`: New tier
-- `tier`: Current tier (alias)
-- `commission_rate`: New rate percentage
+- `tier`: Current tier (alias of new_tier)
+- `commission_rate`: New commission rate percentage
 - `earnings`: Total lifetime commissions
 - `monthly_performance`: { sales, revenue }
-- `tier_direction`: "up" or "down"
+- `tier_direction`: `"up"` or `"down"` - indicates direction of tier change
+- `tier_change_context`: Fine-grained context for Klaviyo flow branching:
+  - `"upgrade_from_lower_tier"` - Bronze → Silver, Silver → Gold, Gold → Platinum, etc.
+  - `"downgrade_from_higher_tier"` - Any tier decrease (e.g., Gold → Silver)
+  - `"maintained_top_tier"` - Staying at Diamond (if event is sent for Diamond maintenance)
 - `updated_at`: Timestamp
+
+**Common Use Cases for Email Flows**:
+- "Congratulations! You've unlocked Gold tier - enjoy 20% commission on all sales"
+- "Heads up: Your tier has changed. Here's how to get back on track"
+- Segmented messaging based on `tier_change_context` for upgrade vs. downgrade scenarios
 
 ### RBN_Affiliate_Payout_Ready
 
@@ -151,6 +160,23 @@ Triggered when pending payout exceeds threshold (daily CRON).
 - `is_above_threshold`: true
 - `payout_mode`: "manual"
 - `ready_at`: Timestamp
+
+### RBN_Affiliate_Payout_Processed
+
+Triggered when an admin processes a payout via `/admin/affiliate-payouts`.
+
+**Properties**:
+- `affiliate_code`: Referral code
+- `tier`: Current tier
+- `payout_amount`: Amount just processed
+- `total_commissions`: Lifetime total after payout
+- `pending_payout_amount`: 0 (reset after payout)
+- `payout_threshold`: Configured threshold
+- `monthly_performance`: { sales_count, revenue_generated }
+- `processed_at`: Timestamp
+- `processed_by_admin`: { admin_user_id }
+- `payout_mode`: "manual"
+- `payout_method`: "manual_review" (default)
 
 ---
 
@@ -191,6 +217,33 @@ Triggered when pending payout exceeds threshold (daily CRON).
 | fraud_reason   | text    | Reason for flagging                   |
 | customer_email | text    | For fraud detection                   |
 | customer_ip    | text    | For fraud detection                   |
+
+### affiliate_payouts
+
+| Column               | Type      | Description                        |
+|----------------------|-----------|------------------------------------|
+| id                   | uuid      | Primary key                        |
+| affiliate_id         | uuid      | Reference to affiliates            |
+| amount               | numeric   | Payout amount                      |
+| currency             | text      | Currency (default: USD)            |
+| processed_at         | timestamp | When payout was processed          |
+| processed_by_user_id | uuid      | Admin who processed the payout     |
+| method               | text      | Payout method (manual_review, etc) |
+| note                 | text      | Optional notes                     |
+
+### affiliate_goals
+
+| Column        | Type      | Description                            |
+|---------------|-----------|----------------------------------------|
+| id            | uuid      | Primary key                            |
+| affiliate_id  | uuid      | Reference to affiliates                |
+| goal_type     | text      | Type of goal (30d_commission, 30d_revenue) |
+| target_amount | numeric   | Target amount to achieve               |
+| currency      | text      | Currency (default: USD)                |
+| period_start  | date      | Start of goal tracking period          |
+| period_end    | date      | End of goal tracking period            |
+| created_at    | timestamp | When goal was created                  |
+| updated_at    | timestamp | When goal was last updated             |
 
 ---
 
@@ -233,6 +286,19 @@ Currently, payouts are processed manually:
 
 ---
 
+## Payout History
+
+### affiliate_payouts Table
+
+Stores a ledger of all processed payouts for audit and display purposes.
+
+### Views
+
+- **Affiliate Dashboard**: Affiliates see their own payout history under "Payout History" section
+- **Admin Payouts Page**: Admins see "Recent Payouts" showing last 20 payouts across all affiliates
+
+---
+
 ## Affiliate Leaderboard
 
 The affiliate dashboard includes a leaderboard showing top performers.
@@ -265,49 +331,6 @@ Leaderboard data reflects real-time database values. The `monthly_revenue_genera
 
 ---
 
-## Payout Notifications
-
-When an admin processes a payout via `/admin/affiliate-payouts`, the system sends an `RBN_Affiliate_Payout_Processed` Klaviyo event.
-
-**Event Properties**:
-- `affiliate_code`: Referral code
-- `tier`: Current tier
-- `payout_amount`: Amount just processed
-- `total_commissions`: Lifetime total after payout
-- `pending_payout_amount`: 0 (reset after payout)
-- `payout_threshold`: Configured threshold
-- `monthly_performance`: { sales_count, revenue_generated }
-- `processed_at`: Timestamp
-- `processed_by_admin`: { admin_user_id }
-- `payout_mode`: "manual"
-- `payout_method`: "manual_review" (default)
-
----
-
-## Payout History
-
-### affiliate_payouts Table
-
-Stores a ledger of all processed payouts for audit and display purposes.
-
-| Column               | Type      | Description                        |
-|----------------------|-----------|------------------------------------|
-| id                   | uuid      | Primary key                        |
-| affiliate_id         | uuid      | Reference to affiliates            |
-| amount               | numeric   | Payout amount                      |
-| currency             | text      | Currency (default: USD)            |
-| processed_at         | timestamp | When payout was processed          |
-| processed_by_user_id | uuid      | Admin who processed the payout     |
-| method               | text      | Payout method (manual_review, etc) |
-| note                 | text      | Optional notes                     |
-
-### Views
-
-- **Affiliate Dashboard**: Affiliates see their own payout history under "Payout History" section
-- **Admin Payouts Page**: Admins see "Recent Payouts" showing last 20 payouts across all affiliates
-
----
-
 ## Analytics & Charts
 
 The Affiliate Dashboard includes a "Performance Analytics (Last 30 Days)" section with visual charts.
@@ -325,6 +348,68 @@ The Affiliate Dashboard includes a "Performance Analytics (Last 30 Days)" sectio
 - **Summary Cards**: 30-day sales count and commission totals
 - **Area Chart**: Daily commission amounts over the 30-day window
 - Filters: Only counts non-fraud commissions with status in (pending, approved, paid)
+
+---
+
+## Affiliate Goal Tracking
+
+Affiliates can set personal 30-day goals and track their progress in the dashboard.
+
+### affiliate_goals Table
+
+Stores goal definitions for each affiliate:
+
+- `goal_type`: Currently supports `30d_commission` (30-day commission target) and `30d_revenue` (30-day revenue target)
+- `target_amount`: The target amount to achieve
+- `period_start` / `period_end`: The 30-day rolling window for the goal
+
+### API Actions
+
+#### get-goals
+
+- **Action**: `get-goals`
+- **Auth**: Requires authenticated affiliate
+- **Response**:
+  - `goals`: Array of active goals with computed `current_progress` and `progress_percentage`
+
+#### set-goal
+
+- **Action**: `set-goal`
+- **Auth**: Requires authenticated affiliate
+- **Input**: `{ goal_type, target_amount }`
+- **Behavior**:
+  - If a goal of that type exists for the current period, updates it
+  - Otherwise, creates a new goal with a 30-day period starting today
+- **Response**: `{ goal, action: 'created' | 'updated' }`
+
+### Dashboard UI
+
+The "Your Goals" section in the Affiliate Dashboard displays:
+- Current goal progress with a visual progress bar
+- Percentage of goal achieved
+- Amount remaining to reach the goal
+- A form to set or update the 30-day commission target
+
+---
+
+## Affiliate Resources
+
+A static resources hub is available in the Affiliate Dashboard to help affiliates promote Rise By Night effectively.
+
+### Resource Categories
+
+1. **Getting Started**: Program overview and product links
+2. **Content Ideas**: Best practices and social media hooks
+3. **Brand Assets**: Links to logos, images, and creative templates
+4. **FAQ**: Common questions about payments and tracking
+
+### Current Implementation
+
+Resources are defined as a static configuration (`affiliateResources`) in the dashboard code. This can be extended in the future to be database-driven and admin-editable.
+
+### UI Location
+
+The "Affiliate Resources" section appears in the Affiliate Dashboard, displaying resource cards grouped by category with optional external links.
 
 ---
 

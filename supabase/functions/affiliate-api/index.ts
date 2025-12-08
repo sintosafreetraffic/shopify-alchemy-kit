@@ -26,7 +26,9 @@ const actionSchema = z.object({
     'record-commission',
     'get-leaderboard',
     'get-analytics',
-    'process-payout'
+    'process-payout',
+    'get-goals',
+    'set-goal'
   ]),
   data: z.record(z.unknown()).optional(),
 });
@@ -932,6 +934,150 @@ Deno.serve(async (req) => {
           payout_amount: payoutAmount,
           processed_at: processedAt
         });
+      }
+
+      case 'get-goals': {
+        // Get current user's affiliate record
+        const { data: affiliate } = await supabaseAdmin
+          .from('affiliates')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (!affiliate) {
+          return createSuccessResponse({ goals: [] });
+        }
+
+        const today = new Date().toISOString().split('T')[0];
+
+        // Get active goals (where today is within period)
+        const { data: goals, error: goalsError } = await supabaseAdmin
+          .from('affiliate_goals')
+          .select('*')
+          .eq('affiliate_id', affiliate.id)
+          .lte('period_start', today)
+          .gte('period_end', today)
+          .order('created_at', { ascending: false });
+
+        if (goalsError) {
+          console.error('[affiliate-api] Error fetching goals:', goalsError);
+          throw goalsError;
+        }
+
+        // Get 30-day analytics for progress calculation
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        const { data: commissions } = await supabaseAdmin
+          .from('commissions')
+          .select('amount, order_amount')
+          .eq('affiliate_id', affiliate.id)
+          .eq('level', 1)
+          .eq('fraud_flag', false)
+          .in('status', ['pending', 'approved', 'paid'])
+          .gte('created_at', thirtyDaysAgo.toISOString());
+
+        const total30dCommissions = (commissions || []).reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
+        const total30dRevenue = (commissions || []).reduce((sum, c) => sum + (Number(c.order_amount) || 0), 0);
+
+        // Add progress to each goal
+        const goalsWithProgress = (goals || []).map(goal => {
+          let currentProgress = 0;
+          if (goal.goal_type === '30d_commission') {
+            currentProgress = total30dCommissions;
+          } else if (goal.goal_type === '30d_revenue') {
+            currentProgress = total30dRevenue;
+          }
+          return {
+            ...goal,
+            current_progress: currentProgress,
+            progress_percentage: goal.target_amount > 0 
+              ? Math.min(100, (currentProgress / goal.target_amount) * 100) 
+              : 0
+          };
+        });
+
+        return createSuccessResponse({ goals: goalsWithProgress });
+      }
+
+      case 'set-goal': {
+        // Get current user's affiliate record
+        const { data: affiliate } = await supabaseAdmin
+          .from('affiliates')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (!affiliate) {
+          return createErrorResponse('Not an affiliate', 403);
+        }
+
+        const goalType = (data as any)?.goal_type || '30d_commission';
+        const targetAmount = Number((data as any)?.target_amount) || 0;
+
+        if (targetAmount <= 0) {
+          return createErrorResponse('Target amount must be positive', 400);
+        }
+
+        // Define period: rolling 30-day window from today
+        const periodStart = new Date();
+        const periodEnd = new Date();
+        periodEnd.setDate(periodEnd.getDate() + 30);
+
+        const periodStartStr = periodStart.toISOString().split('T')[0];
+        const periodEndStr = periodEnd.toISOString().split('T')[0];
+
+        // Check if a goal of this type already exists for overlapping period
+        const { data: existingGoals } = await supabaseAdmin
+          .from('affiliate_goals')
+          .select('id')
+          .eq('affiliate_id', affiliate.id)
+          .eq('goal_type', goalType)
+          .gte('period_end', periodStartStr)
+          .lte('period_start', periodEndStr);
+
+        if (existingGoals && existingGoals.length > 0) {
+          // Update existing goal
+          const { data: updatedGoal, error: updateError } = await supabaseAdmin
+            .from('affiliate_goals')
+            .update({
+              target_amount: targetAmount,
+              period_start: periodStartStr,
+              period_end: periodEndStr,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingGoals[0].id)
+            .select()
+            .single();
+
+          if (updateError) {
+            console.error('[affiliate-api] Error updating goal:', updateError);
+            throw updateError;
+          }
+
+          return createSuccessResponse({ goal: updatedGoal, action: 'updated' });
+        } else {
+          // Create new goal
+          const { data: newGoal, error: insertError } = await supabaseAdmin
+            .from('affiliate_goals')
+            .insert({
+              affiliate_id: affiliate.id,
+              goal_type: goalType,
+              target_amount: targetAmount,
+              currency: 'USD',
+              period_start: periodStartStr,
+              period_end: periodEndStr
+            })
+            .select()
+            .single();
+
+          if (insertError) {
+            console.error('[affiliate-api] Error creating goal:', insertError);
+            throw insertError;
+          }
+
+          return createSuccessResponse({ goal: newGoal, action: 'created' });
+        }
       }
 
       default:
