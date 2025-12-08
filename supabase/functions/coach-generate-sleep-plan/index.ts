@@ -129,12 +129,35 @@ Deno.serve(async (req) => {
 
     // Calculate trends deterministically
     const trends = calculateTrends(logs);
+
+    // === PLAN CONTEXT SUMMARY LOG ===
+    // This proves quiz data flows into the plan generation
+    console.log('[SleepCoach] Plan context summary', {
+      email,
+      quiz_profile: profile ? {
+        sleep_position: profile.sleep_position,
+        pain_points: profile.pain_points,
+        temperature_preference: profile.temperature_preference,
+        stress_level: profile.stress_level,
+        wake_up_condition: profile.wake_up_condition,
+        quiz_completed: profile.quiz_completed,
+        quiz_completed_at: profile.quiz_completed_at,
+      } : null,
+      log_summary: {
+        nights: logs.length,
+        avgSleepQuality: trends.avgSleepQuality.toFixed(1),
+        avgPain: trends.avgPain.toFixed(1),
+        trend: trends.trend,
+        hotNights: trends.hotNights,
+        stressedNights: trends.stressedNights,
+      },
+    });
     
     // Build user context for AI
     const userContext = buildUserContext(profile, logs, trends);
 
     // Call AI Brain for sleep plan generation (OpenAI)
-    console.log('[AI Brain] Calling for plan generation');
+    console.log('[AI Brain] Calling for plan generation with quiz-based persona + log behavioral data');
     let parsed;
     try {
       parsed = await callSleepPlanAI(userContext, planType);
@@ -309,6 +332,9 @@ No sleep logs yet. Base plan entirely on quiz data.
 ${logsContext}
 
 === PLAN GENERATION INSTRUCTIONS ===
+IMPORTANT: Use the quiz-based sleep profile as the baseline persona for this user.
+Use sleep logs as real-world behavior that can confirm or modify the quiz picture.
+
 1. Use sleep_position to tailor pillow and positioning advice for EVERY day
 2. Use pain_points to decide which areas to focus on (neck vs shoulders vs lower_back vs hips)
 3. Use temperature_preference and any hot night data for environment adjustments

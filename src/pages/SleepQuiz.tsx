@@ -695,6 +695,8 @@ const SleepQuiz = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const returnTo = searchParams.get('returnTo');
+  const isRetake = searchParams.get('mode') === 'retake';
+  const shouldNotifyQuizUpdated = searchParams.get('quizUpdated') === 'true';
   const { addItem } = useCartStore();
 
   // Account creation state for results page
@@ -838,14 +840,19 @@ const SleepQuiz = () => {
         }
         
         toast.success("Logged in successfully!");
-        navigate('/sleep-coach');
+        // Navigate with quizUpdated param if this was a retake
+        if (isRetake || shouldNotifyQuizUpdated) {
+          navigate('/sleep-coach?quizUpdated=true');
+        } else {
+          navigate('/sleep-coach');
+        }
       } else {
         // Signup
         const { error } = await supabase.auth.signUp({
           email: email.trim().toLowerCase(),
           password: password,
           options: {
-            emailRedirectTo: `${window.location.origin}/sleep-coach`,
+            emailRedirectTo: `${window.location.origin}/sleep-coach${isRetake ? '?quizUpdated=true' : ''}`,
           },
         });
         
@@ -857,7 +864,12 @@ const SleepQuiz = () => {
         toast.success("Account created!", {
           description: "Redirecting to your Sleep Coach...",
         });
-        navigate('/sleep-coach');
+        // Navigate with quizUpdated param if this was a retake
+        if (isRetake || shouldNotifyQuizUpdated) {
+          navigate('/sleep-coach?quizUpdated=true');
+        } else {
+          navigate('/sleep-coach');
+        }
       }
     } catch (error) {
       console.error("Auth error:", error);
@@ -1696,7 +1708,7 @@ const SleepQuiz = () => {
                       
                       {results.profileCreated ? (
                         <Button
-                          onClick={() => navigate('/sleep-coach')}
+                          onClick={() => navigate(isRetake || shouldNotifyQuizUpdated ? '/sleep-coach?quizUpdated=true' : '/sleep-coach')}
                           className="w-full rounded-lg"
                           size="lg"
                         >
