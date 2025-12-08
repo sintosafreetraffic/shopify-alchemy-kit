@@ -339,6 +339,18 @@ Deno.serve(async (req) => {
           temperature_preference: temperaturePreference,
           quiz_completed: true,
           quiz_completed_at: new Date().toISOString(),
+          // Store full quiz data and AI assessment
+          quiz_data: sanitizedAnswers,
+          sleep_assessment: {
+            assessment: analysis.assessment,
+            expertSummary: analysis.expertSummary,
+            detectedIssues: analysis.detectedIssues,
+            alignmentInsights: analysis.alignmentInsights,
+            scores: analysis.scores,
+            recommendations: analysis.recommendations,
+            bundleRecommended: analysis.bundleRecommended,
+            bundleReason: analysis.bundleReason,
+          },
         };
 
         if (!existingProfile) {

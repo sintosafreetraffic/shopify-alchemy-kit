@@ -357,6 +357,8 @@ export type Database = {
           purchase_count: number | null
           quiz_completed: boolean | null
           quiz_completed_at: string | null
+          quiz_data: Json | null
+          sleep_assessment: Json | null
           sleep_position: Database["public"]["Enums"]["sleep_position"]
           stress_level: Database["public"]["Enums"]["stress_level"] | null
           temperature_preference:
@@ -379,6 +381,8 @@ export type Database = {
           purchase_count?: number | null
           quiz_completed?: boolean | null
           quiz_completed_at?: string | null
+          quiz_data?: Json | null
+          sleep_assessment?: Json | null
           sleep_position?: Database["public"]["Enums"]["sleep_position"]
           stress_level?: Database["public"]["Enums"]["stress_level"] | null
           temperature_preference?:
@@ -401,6 +405,8 @@ export type Database = {
           purchase_count?: number | null
           quiz_completed?: boolean | null
           quiz_completed_at?: string | null
+          quiz_data?: Json | null
+          sleep_assessment?: Json | null
           sleep_position?: Database["public"]["Enums"]["sleep_position"]
           stress_level?: Database["public"]["Enums"]["stress_level"] | null
           temperature_preference?:
