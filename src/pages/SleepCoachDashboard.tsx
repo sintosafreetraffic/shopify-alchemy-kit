@@ -22,6 +22,9 @@ import { SleepLogForm } from "@/components/sleep-coach/SleepLogForm";
 import { SleepLogTable } from "@/components/sleep-coach/SleepLogTable";
 import { CoachPlanDisplay } from "@/components/sleep-coach/CoachPlanDisplay";
 import { StreakDisplay } from "@/components/sleep-coach/StreakDisplay";
+import { SleepHistorySection } from "@/components/sleep-coach/SleepHistorySection";
+import { SleepProgressChart } from "@/components/sleep-coach/SleepProgressChart";
+import { ShareProgressModal } from "@/components/sleep-coach/ShareProgressModal";
 
 /**
  * Calculate consecutive logging streak from logs based on created_at dates
@@ -72,6 +75,7 @@ const SleepCoachDashboard = () => {
   const [showWizard, setShowWizard] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -594,11 +598,24 @@ const SleepCoachDashboard = () => {
                       loading={apiLoading}
                     />
                   )}
-                  <SleepLogTable 
-                    logs={data.logs} 
+                  
+                  {/* Sleep Progress Chart with Share */}
+                  <SleepProgressChart 
+                    logs={data.logs}
+                    onShareClick={() => setIsShareModalOpen(true)}
+                  />
+                  
+                  {/* Weekly Sleep History */}
+                  <SleepHistorySection 
+                    logs={data.logs}
                     trends={data.trends}
-                    onUpdateLog={handleUpdateLog}
-                    onDeleteLog={handleDeleteLog}
+                  />
+                  
+                  {/* Share Modal */}
+                  <ShareProgressModal
+                    isOpen={isShareModalOpen}
+                    onClose={() => setIsShareModalOpen(false)}
+                    logs={data.logs}
                   />
                 </>
               )}
