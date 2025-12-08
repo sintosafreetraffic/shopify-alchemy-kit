@@ -257,31 +257,92 @@ Deno.serve(async (req) => {
           });
         }
 
-        await fetch("https://a.klaviyo.com/api/events/", {
-          method: "POST",
-          headers: {
-            "Authorization": `Klaviyo-API-Key ${KLAVIYO_PRIVATE_API_KEY}`,
-            "Content-Type": "application/json",
-            "revision": "2024-02-15",
-          },
-          body: JSON.stringify({
-            data: {
-              type: "event",
-              attributes: {
-                profile: { $email: trackingEmail },
-                metric: { name: "Completed Sleep Quiz" },
-                properties: {
-                  sleep_position: answers.sleepPosition,
-                  pain_points: answers.painPoints,
-                  assessment: analysis.assessment,
-                  recommendations: analysis.recommendations,
-                  bundle_recommended: analysis.bundleRecommended,
-                },
-              },
-            },
-          }),
-        });
-        console.log("[Klaviyo] Quiz completion tracked for:", trackingEmail);
+        /**
+         * RBN_SleepQuiz_Completed Event
+         * 
+         * Structured event for Klaviyo email automation.
+         * See docs/klaviyo-sleep-quiz-email.md for email template guidance.
+         * 
+         * Properties available in Klaviyo templates:
+         * - {{ event.sleep_position }} - Primary sleep position
+         * - {{ event.pain_points }} - Comma-separated pain areas
+         * - {{ event.temperature_preference }} - e.g., "cool", "warm"
+         * - {{ event.room_brightness }} - e.g., "dark", "dim", "bright"
+         * - {{ event.stress_level }} - From quiz
+         * - {{ event.wake_up_condition }} - e.g., "stiff", "refreshed"
+         * - {{ event.detected_issues }} - Array of top 3-5 detected issues
+         * - {{ event.alignment_score }} - 0-100
+         * - {{ event.environment_score }} - 0-100
+         * - {{ event.consistency_score }} - 0-100
+         * - {{ event.primary_recommendation }} - First recommended product
+         * - {{ event.secondary_recommendation }} - Second recommended product
+         * - {{ event.quiz_completed_at }} - ISO timestamp
+         * - {{ event.has_sleep_coach_access }} - Boolean
+         * - {{ event.results_url }} - URL to results page
+         * - {{ event.sleep_quiz_version }} - e.g., "v2"
+         */
+        const frontendBase = "https://www.risebynight.com";
+        const resultsUrl = `${frontendBase}/sleep-coach?from=quiz_email&email=${encodeURIComponent(trackingEmail)}`;
+        
+        // Determine stress level from quiz
+        const hasStressGoal = (sanitizedAnswers.sleepGoals || []).some((g: string) => 
+          g.toLowerCase().includes('stress') || g.toLowerCase().includes('better sleep')
+        );
+        const quizStressLevel = hasStressGoal ? 'high' : 'medium';
+        
+        // Determine wake up condition
+        const hasPainForWakeup = sanitizedAnswers.painAreas.some((p: string) => 
+          p.toLowerCase() !== 'no pain' && p.toLowerCase() !== 'none'
+        );
+        const wantsRefreshedForWakeup = (sanitizedAnswers.sleepGoals || []).includes('Wake up refreshed');
+        let quizWakeUpCondition = 'neutral';
+        if (hasPainForWakeup) quizWakeUpCondition = 'stiff';
+        else if (!wantsRefreshedForWakeup) quizWakeUpCondition = 'tired';
+        else if (!hasPainForWakeup && wantsRefreshedForWakeup) quizWakeUpCondition = 'energized';
+        
+        // Determine temperature preference
+        let quizTempPref = 'neutral';
+        if (sanitizedAnswers.sleepTemperature === 'hot') quizTempPref = 'cool';
+        else if (sanitizedAnswers.sleepTemperature === 'cold') quizTempPref = 'warm';
+        
+        const quizCompletedPayload = {
+          // User profile data
+          sleep_position: sanitizedAnswers.sleepPosition,
+          pain_points: (sanitizedAnswers.painAreas || []).filter((p: string) => p !== 'none').join(', '),
+          temperature_preference: quizTempPref,
+          room_brightness: sanitizedAnswers.roomBrightness || 'unknown',
+          stress_level: quizStressLevel,
+          wake_up_condition: quizWakeUpCondition,
+          
+          // Analysis results
+          detected_issues: (analysis.detectedIssues || []).slice(0, 5),
+          alignment_score: analysis.scores?.alignmentScore ?? null,
+          environment_score: analysis.scores?.environmentScore ?? null,
+          consistency_score: analysis.scores?.consistencyScore ?? null,
+          
+          // Recommendations
+          primary_recommendation: analysis.recommendations?.[0]?.product || null,
+          secondary_recommendation: analysis.recommendations?.[1]?.product || null,
+          
+          // Meta
+          quiz_completed_at: new Date().toISOString(),
+          has_sleep_coach_access: false, // Will be updated after profile creation check
+          results_url: resultsUrl,
+          sleep_quiz_version: "v2",
+          
+          // Legacy fields for backwards compatibility
+          assessment: analysis.assessment,
+          recommendations: analysis.recommendations,
+          bundle_recommended: analysis.bundleRecommended,
+        };
+        
+        await sendKlaviyoEvent(
+          KLAVIYO_PRIVATE_API_KEY,
+          trackingEmail,
+          "RBN_SleepQuiz_Completed",
+          quizCompletedPayload
+        );
+        console.log("[Klaviyo] RBN_SleepQuiz_Completed event sent for:", trackingEmail);
       } catch (klaviyoError) {
         console.error("[Klaviyo] Tracking error:", klaviyoError);
       }
