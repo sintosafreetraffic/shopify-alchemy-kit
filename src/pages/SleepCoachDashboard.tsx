@@ -293,7 +293,7 @@ const SleepCoachDashboard = () => {
     }
   }, [email, generateCoachPlan, refetch]);
 
-  // Check plan refresh status after data loads
+  // Check plan refresh status after data loads - only once when profile loads
   useEffect(() => {
     if (isAuthenticated && !dataLoading && data.profile && !isCheckingAccess) {
       checkPlanRefresh().then(result => {
@@ -303,7 +303,8 @@ const SleepCoachDashboard = () => {
         }
       });
     }
-  }, [isAuthenticated, dataLoading, data.profile, isCheckingAccess, checkPlanRefresh]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, dataLoading, data.profile?.id, isCheckingAccess]);
 
   // Calculate streak from logs
   const streak = calculateStreak(data.logs);
