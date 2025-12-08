@@ -176,10 +176,12 @@ const SleepCoachDashboard = () => {
         description: "Your sleep assessment has been updated. Generate a new plan to see personalized recommendations.",
         duration: 8000,
       });
-      // Clear the query param
-      setSearchParams({});
+      // Clear only the quizUpdated param, preserve others
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('quizUpdated');
+      setSearchParams(newParams, { replace: true });
     }
-  }, [quizUpdated, isAuthenticated, isCheckingAccess, setSearchParams]);
+  }, [quizUpdated, isAuthenticated, isCheckingAccess, searchParams, setSearchParams]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
