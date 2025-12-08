@@ -287,9 +287,13 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Create Sleep Coach profile if email available
+    // Always update quiz_data and sleep_assessment for existing profiles
+    // OR create new profile if createProfile is true
     let profileCreated = false;
-    if (createProfile && profileEmail) {
+    let profileUpdated = false;
+    const profileEmailToUse = profileEmail || (email ? email.toLowerCase().trim() : null);
+    
+    if (profileEmailToUse) {
       const sleepPositionMap: Record<string, string> = {
         'back': 'back',
         'side': 'side',
@@ -327,19 +331,11 @@ Deno.serve(async (req) => {
         const { data: existingProfile } = await supabase
           .from('sleep_profiles')
           .select('email')
-          .eq('email', profileEmail)
+          .eq('email', profileEmailToUse)
           .single();
 
-        const profileData = {
-          email: profileEmail,
-          sleep_position: sleepPositionMap[answers.sleepPosition] || 'mixed',
-          pain_points: painData.filter((p: string) => p.toLowerCase() !== 'no pain' && p.toLowerCase() !== 'none'),
-          stress_level: stressLevel,
-          wake_up_condition: wakeUpCondition,
-          temperature_preference: temperaturePreference,
-          quiz_completed: true,
-          quiz_completed_at: new Date().toISOString(),
-          // Store full quiz data and AI assessment
+        // Build quiz data and assessment
+        const quizDataPayload = {
           quiz_data: sanitizedAnswers,
           sleep_assessment: {
             assessment: analysis.assessment,
@@ -351,29 +347,54 @@ Deno.serve(async (req) => {
             bundleRecommended: analysis.bundleRecommended,
             bundleReason: analysis.bundleReason,
           },
+          quiz_completed: true,
+          quiz_completed_at: new Date().toISOString(),
         };
 
-        if (!existingProfile) {
+        if (existingProfile) {
+          // Always update existing profile with new quiz data
+          const updateData = {
+            ...quizDataPayload,
+            sleep_position: sleepPositionMap[answers.sleepPosition] || 'mixed',
+            pain_points: painData.filter((p: string) => p.toLowerCase() !== 'no pain' && p.toLowerCase() !== 'none'),
+            stress_level: stressLevel,
+            wake_up_condition: wakeUpCondition,
+            temperature_preference: temperaturePreference,
+          };
+          
+          const { error } = await supabase.from('sleep_profiles').update(updateData).eq('email', profileEmailToUse);
+          if (!error) {
+            profileUpdated = true;
+            console.log("[analyze-sleep-quiz] Sleep Coach profile updated with quiz data for:", profileEmailToUse);
+          }
+        } else if (createProfile) {
+          // Create new profile only if explicitly requested
+          const profileData = {
+            email: profileEmailToUse,
+            sleep_position: sleepPositionMap[answers.sleepPosition] || 'mixed',
+            pain_points: painData.filter((p: string) => p.toLowerCase() !== 'no pain' && p.toLowerCase() !== 'none'),
+            stress_level: stressLevel,
+            wake_up_condition: wakeUpCondition,
+            temperature_preference: temperaturePreference,
+            ...quizDataPayload,
+          };
+
           const { error } = await supabase.from('sleep_profiles').insert(profileData);
           if (!error) {
             profileCreated = true;
-            console.log("[analyze-sleep-quiz] Sleep Coach profile created for:", profileEmail);
+            console.log("[analyze-sleep-quiz] Sleep Coach profile created for:", profileEmailToUse);
           }
-        } else {
-          await supabase.from('sleep_profiles').update(profileData).eq('email', profileEmail);
-          profileCreated = true;
-          console.log("[analyze-sleep-quiz] Sleep Coach profile updated for:", profileEmail);
         }
 
         // TRIGGER SLEEP SYNC using centralized function
-        if (profileCreated && KLAVIYO_PRIVATE_API_KEY) {
-          console.log("[Sleep Sync] Triggering for quiz completion:", profileEmail);
+        if ((profileCreated || profileUpdated) && KLAVIYO_PRIVATE_API_KEY && profileEmailToUse) {
+          console.log("[Sleep Sync] Triggering for quiz completion:", profileEmailToUse);
           try {
             // Use single source of truth for Sleep Sync
-            const { attributes, event } = await syncAndStoreAttributes(supabase, profileEmail, "quiz_completion");
+            const { attributes, event } = await syncAndStoreAttributes(supabase, profileEmailToUse, "quiz_completion");
             
-            await sendKlaviyoEvent(KLAVIYO_PRIVATE_API_KEY, profileEmail, event.eventName, event.payload);
-            console.log("[Sleep Sync] Completed for:", profileEmail);
+            await sendKlaviyoEvent(KLAVIYO_PRIVATE_API_KEY, profileEmailToUse, event.eventName, event.payload);
+            console.log("[Sleep Sync] Completed for:", profileEmailToUse);
           } catch (syncError) {
             console.error("[Sleep Sync] Error:", syncError);
           }
@@ -383,7 +404,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    return createSuccessResponse({ ...analysis, profileCreated });
+    return createSuccessResponse({ ...analysis, profileCreated, profileUpdated });
   } catch (error) {
     console.error("[analyze-sleep-quiz] Error:", error);
     return createErrorResponse(error instanceof Error ? error.message : "Unknown error", 500);
