@@ -433,16 +433,19 @@ const getCurrentSectionInfo = (currentQuestionId: string, answers: Record<string
   return null;
 };
 
-// Get progress microcopy based on section
-const getProgressMicrocopy = (sectionIndex: number, completedSections: number[]) => {
-  const messages = [
-    "Great start! Let's understand how you sleep.",
-    "Nice progress! We're building your profile.",
-    "Halfway there! 👌 Your plan is taking shape.",
-    "Almost done! Just a few environment details.",
-    "Final step! We're ready to create your plan.",
-  ];
-  return messages[Math.min(sectionIndex, messages.length - 1)];
+// Get progress microcopy based on actual progress percentage
+const getProgressMicrocopy = (progressPercent: number) => {
+  if (progressPercent < 25) {
+    return "Great start! Let's understand how you sleep.";
+  } else if (progressPercent < 50) {
+    return "Nice progress! We're building your profile.";
+  } else if (progressPercent < 70) {
+    return "Halfway there! 👌 Your plan is taking shape.";
+  } else if (progressPercent < 90) {
+    return "Almost done! Just a few more questions.";
+  } else {
+    return "Final step! We're ready to create your plan.";
+  }
 };
 
 // Get contextual insight based on answers
@@ -1105,11 +1108,9 @@ const SleepQuiz = () => {
               </div>
               
               {/* Progress microcopy */}
-              {sectionInfo && (
-                <p className="text-sm text-muted-foreground text-center mt-4">
-                  {getProgressMicrocopy(sectionInfo.sectionIndex, completedSections)}
-                </p>
-              )}
+              <p className="text-sm text-muted-foreground text-center mt-4">
+                {getProgressMicrocopy(progressPercent)}
+              </p>
             </div>
           )}
 
