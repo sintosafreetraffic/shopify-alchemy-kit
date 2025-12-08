@@ -1,6 +1,50 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+export interface QuizData {
+  sleepPosition?: string;
+  movesOften?: string;
+  pillowCount?: string;
+  mattressFirmness?: string;
+  sleepEquipment?: string[];
+  painAreas?: string[];
+  painSeverity?: number;
+  nightAwakenings?: string;
+  sleepTemperature?: string;
+  roomBrightness?: string;
+  roomNoise?: string;
+  sleepLatency?: string;
+  sleepHours?: string;
+  eveningScreenUse?: string;
+  ageGroup?: string;
+  gender?: string;
+  sleepClothing?: string;
+  coSleeping?: string[];
+  sleepGoals?: string[];
+  snoring?: string;
+  triedMethods?: string[];
+  pillowSatisfaction?: number;
+}
+
+export interface SleepAssessment {
+  assessment?: string;
+  expertSummary?: string;
+  detectedIssues?: string[];
+  alignmentInsights?: string[];
+  scores?: {
+    alignmentScore: number;
+    environmentScore: number;
+    consistencyScore: number;
+  };
+  recommendations?: Array<{
+    product: string;
+    reason: string;
+    priority: string;
+  }>;
+  bundleRecommended?: boolean;
+  bundleReason?: string;
+}
+
 export interface SleepProfile {
   id: string;
   email: string;
@@ -14,6 +58,8 @@ export interface SleepProfile {
   products_owned: string[];
   whatsapp_enabled: boolean;
   whatsapp_phone: string | null;
+  quiz_data?: QuizData;
+  sleep_assessment?: SleepAssessment;
   created_at: string;
   updated_at: string;
 }
@@ -87,14 +133,17 @@ export function useSleepApi() {
     setLoading(true);
     setError(null);
     try {
+      // Convert to database-compatible format (exclude custom fields that aren't in DB schema)
+      const dbProfile: Record<string, any> = { ...profile };
+      
       const { data, error: err } = await supabase
         .from('sleep_profiles')
-        .upsert(profile, { onConflict: 'email' })
+        .upsert(dbProfile as any, { onConflict: 'email' })
         .select()
         .single();
       
       if (err) throw err;
-      return data as SleepProfile;
+      return data as unknown as SleepProfile;
     } catch (e: any) {
       setError(e.message);
       return null;
