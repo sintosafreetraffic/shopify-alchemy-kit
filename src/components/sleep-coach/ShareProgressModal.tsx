@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useEffect } from "react";
+import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import { SleepLog } from "@/hooks/useSleepApi";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { format, subDays, subMonths, parseISO, isWithinInterval, startOfDay, end
 import { toPng } from "html-to-image";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { trackSleepProgressShared } from "@/lib/klaviyo";
 
 type ShareRange = "7d" | "30d" | "90d" | "12m";
 type ShareMetric = "both" | "quality" | "pain";
@@ -89,7 +90,7 @@ export const ShareProgressModal = ({ isOpen, onClose, logs, initialRange = "30d"
     return { avgQuality, avgPain };
   }, [filteredData]);
 
-  const handleDownload = async () => {
+  const handleDownload = useCallback(async () => {
     if (!previewRef.current) return;
 
     setIsGenerating(true);
@@ -107,15 +108,16 @@ export const ShareProgressModal = ({ isOpen, onClose, logs, initialRange = "30d"
 
       toast.success("Image downloaded!");
       setIsCelebrating(true);
+      trackSleepProgressShared({ method: "download", range, metric });
     } catch (error) {
       console.error("Error generating image:", error);
       toast.error("Failed to generate image");
     } finally {
       setIsGenerating(false);
     }
-  };
+  }, [range, metric]);
 
-  const handleShare = async () => {
+  const handleShare = useCallback(async () => {
     if (!previewRef.current) return;
 
     if (!navigator.share) {
@@ -142,6 +144,7 @@ export const ShareProgressModal = ({ isOpen, onClose, logs, initialRange = "30d"
 
       toast.success("Shared successfully!");
       setIsCelebrating(true);
+      trackSleepProgressShared({ method: "native_share", range, metric });
     } catch (error) {
       if ((error as Error).name !== "AbortError") {
         console.error("Error sharing:", error);
@@ -150,9 +153,9 @@ export const ShareProgressModal = ({ isOpen, onClose, logs, initialRange = "30d"
     } finally {
       setIsGenerating(false);
     }
-  };
+  }, [handleDownload, range, metric]);
 
-  const handleCopyLink = async () => {
+  const handleCopyLink = useCallback(async () => {
     const shareUrl = `${window.location.origin}/sleep-coach?progressRange=${range}`;
     
     if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
@@ -160,6 +163,7 @@ export const ShareProgressModal = ({ isOpen, onClose, logs, initialRange = "30d"
         await navigator.clipboard.writeText(shareUrl);
         toast.success("Link copied to clipboard!");
         setIsCelebrating(true);
+        trackSleepProgressShared({ method: "copy_link", range, metric });
       } catch (error) {
         console.error("Failed to copy:", error);
         toast.error("Unable to copy link. Please try again.");
@@ -167,7 +171,45 @@ export const ShareProgressModal = ({ isOpen, onClose, logs, initialRange = "30d"
     } else {
       toast.error("Copy is not supported in this browser.");
     }
-  };
+  }, [range, metric]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Escape to close
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+
+      // Enter to download
+      if (e.key === "Enter" && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        handleDownload();
+        return;
+      }
+
+      // Cmd/Ctrl + S to download
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        handleDownload();
+        return;
+      }
+
+      // Cmd/Ctrl + C to copy link
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "c") {
+        e.preventDefault();
+        handleCopyLink();
+        return;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose, handleDownload, handleCopyLink]);
 
   const rangeOptions = [
     { value: "7d", label: "Last 7 days" },
@@ -383,6 +425,11 @@ export const ShareProgressModal = ({ isOpen, onClose, logs, initialRange = "30d"
               <span className="hidden sm:inline">Copy link</span>
             </Button>
           </div>
+
+          {/* Keyboard shortcuts hint */}
+          <p className="text-xs text-muted-foreground text-center">
+            Shortcuts: Enter / ⌘S / Ctrl+S to download, ⌘C / Ctrl+C to copy link, Esc to close
+          </p>
         </div>
       </DialogContent>
     </Dialog>

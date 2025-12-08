@@ -98,3 +98,30 @@ export const trackQuizStarted = () => {
     console.warn("Klaviyo trackQuizStarted failed:", error);
   }
 };
+
+/**
+ * Track "Sleep Progress Shared" event when user shares their progress
+ */
+export const trackSleepProgressShared = (payload: {
+  method: "download" | "native_share" | "copy_link";
+  range: "7d" | "30d" | "90d" | "12m";
+  metric: "both" | "quality" | "pain";
+}) => {
+  if (!initKlaviyo()) return;
+
+  try {
+    window._klOnsite!.push([
+      "track",
+      "Sleep Progress Shared",
+      {
+        method: payload.method,
+        range: payload.range,
+        metric: payload.metric,
+        URL: window.location.href,
+        timestamp: new Date().toISOString(),
+      },
+    ]);
+  } catch (error) {
+    console.warn("Klaviyo trackSleepProgressShared failed:", error);
+  }
+};
