@@ -3,31 +3,64 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Calendar, FileText, Clock, Heart, Target, Loader2 } from "lucide-react";
+import { Sparkles, Calendar, FileText, Clock, Heart, Target, Loader2, AlertTriangle, RefreshCw } from "lucide-react";
 
 interface CoachPlanDisplayProps {
   plan: CoachPlan | null;
-  onGeneratePlan: () => void;
+  onGeneratePlan: (reason?: string) => void;
   loading?: boolean;
+  refreshStatus?: { shouldRegenerate: boolean; reason: string } | null;
+  isAutoRefreshing?: boolean;
 }
 
-export const CoachPlanDisplay = ({ plan, onGeneratePlan, loading }: CoachPlanDisplayProps) => {
+const REFRESH_REASON_MESSAGES: Record<string, string> = {
+  no_plan: "No plan exists yet",
+  expired: "Your weekly plan has ended",
+  quiz_updated: "Your sleep assessment was updated",
+  product_changed: "New products were added to your profile",
+  quality_declined: "Your sleep quality has declined significantly",
+  pain_increased: "Your pain levels have increased",
+  trend_worsening: "Your sleep trend is worsening",
+  stale: "Your plan is over a week old",
+};
+
+export const CoachPlanDisplay = ({ 
+  plan, 
+  onGeneratePlan, 
+  loading, 
+  refreshStatus,
+  isAutoRefreshing 
+}: CoachPlanDisplayProps) => {
   // Check if plan exists but has empty sleep_plan data
   const hasPlanData = plan?.sleep_plan && Object.keys(plan.sleep_plan).length > 0;
   
   // Check if plan is expired (week is over)
   const isPlanExpired = plan?.valid_until ? new Date(plan.valid_until) < new Date() : false;
   
+  // Check if plan is stale (older than 7 days)
+  const planAgeDays = plan?.generated_at 
+    ? (Date.now() - new Date(plan.generated_at).getTime()) / (1000 * 60 * 60 * 24)
+    : 0;
+  const isPlanStale = planAgeDays > 7;
+  
+  // Show refresh notification if needed
+  const showRefreshNotice = refreshStatus?.shouldRegenerate && !loading && !isAutoRefreshing;
+  const refreshReasonMessage = refreshStatus?.reason 
+    ? REFRESH_REASON_MESSAGES[refreshStatus.reason] || "Your plan needs updating"
+    : null;
+
   if (!plan || !hasPlanData) {
     return (
       <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
         <CardContent className="py-12 text-center">
-          {loading ? (
+          {loading || isAutoRefreshing ? (
             <>
               <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Generating Your Sleep Plan...</h3>
+              <h3 className="text-lg font-semibold mb-2">
+                {isAutoRefreshing ? "Refreshing Your Sleep Plan..." : "Generating Your Sleep Plan..."}
+              </h3>
               <p className="text-muted-foreground max-w-md mx-auto">
-                Our AI is creating a personalized 7-day plan based on your profile.
+                Our AI is creating a personalized 7-day plan based on your profile and sleep logs.
               </p>
             </>
           ) : (
@@ -37,6 +70,10 @@ export const CoachPlanDisplay = ({ plan, onGeneratePlan, loading }: CoachPlanDis
               <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                 Your personalized AI sleep plan will be generated automatically based on your profile and sleep logs.
               </p>
+              <Button onClick={() => onGeneratePlan('manual')}>
+                <Sparkles className="h-4 w-4 mr-2" />
+                Generate My Plan
+              </Button>
             </>
           )}
         </CardContent>
@@ -64,18 +101,52 @@ export const CoachPlanDisplay = ({ plan, onGeneratePlan, loading }: CoachPlanDis
             )}
           </div>
         </CardTitle>
-        {plan.valid_until && (
+        
+        {/* Refresh notification banner */}
+        {showRefreshNotice && (
+          <div className="mt-3 flex items-center gap-3 bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
+            <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                {refreshReasonMessage}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Generate a new plan to get updated recommendations.
+              </p>
+            </div>
+            <Button 
+              size="sm" 
+              onClick={() => onGeneratePlan(refreshStatus?.reason || 'manual')} 
+              disabled={loading}
+              className="flex-shrink-0"
+            >
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-2" />
+              )}
+              Refresh Plan
+            </Button>
+          </div>
+        )}
+        
+        {/* Standard validity info */}
+        {plan.valid_until && !showRefreshNotice && (
           <div className="mt-2">
             {isPlanExpired ? (
               <div className="flex items-center gap-3">
                 <p className="text-sm text-amber-600 dark:text-amber-400">
                   Your weekly plan has ended. Generate a new plan for this week!
                 </p>
-                <Button size="sm" onClick={onGeneratePlan} disabled={loading}>
+                <Button size="sm" onClick={() => onGeneratePlan('expired')} disabled={loading}>
                   {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Sparkles className="h-4 w-4 mr-2" />}
                   Generate New Plan
                 </Button>
               </div>
+            ) : isPlanStale ? (
+              <p className="text-xs text-amber-600 dark:text-amber-400">
+                Based on data from {Math.floor(planAgeDays)} days ago – consider refreshing after your latest logs.
+              </p>
             ) : (
               <p className="text-xs text-muted-foreground">
                 Plan valid until {new Date(plan.valid_until).toLocaleDateString()}
@@ -214,7 +285,7 @@ export const CoachPlanDisplay = ({ plan, onGeneratePlan, loading }: CoachPlanDis
         <div className="mt-6 pt-4 border-t border-border/50 text-xs text-muted-foreground">
           <span>Generated: {new Date(plan.generated_at).toLocaleDateString()}</span>
           <span className="mx-2">•</span>
-          <span>This plan uses your sleep quiz assessment and logged sleep data</span>
+          <span>This plan uses your latest sleep quiz assessment and the last 7 days of logged sleep</span>
         </div>
       </CardContent>
     </Card>

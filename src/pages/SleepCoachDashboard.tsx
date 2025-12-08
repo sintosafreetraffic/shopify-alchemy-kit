@@ -106,8 +106,13 @@ const SleepCoachDashboard = () => {
     addLog,
     updateLog,
     deleteLog,
-    generateCoachPlan
+    generateCoachPlan,
+    checkPlanRefresh
   } = useSleepApi();
+
+  // Plan refresh status
+  const [refreshStatus, setRefreshStatus] = useState<{ shouldRegenerate: boolean; reason: string } | null>(null);
+  const [isAutoRefreshing, setIsAutoRefreshing] = useState(false);
 
   // Check access when authenticated
   const checkAccess = useCallback(async (session: any) => {
@@ -269,13 +274,14 @@ const SleepCoachDashboard = () => {
   }, [deleteLog, refetch]);
 
   // Coach plan generation handler
-  const handleGeneratePlan = useCallback(async () => {
+  const handleGeneratePlan = useCallback(async (reason = 'manual') => {
     if (!email) return;
     setIsGeneratingPlan(true);
     try {
-      const plan = await generateCoachPlan(email, 'weekly');
+      const plan = await generateCoachPlan(email, 'weekly', reason);
       if (plan) {
         toast.success("New sleep plan generated!");
+        setRefreshStatus(null); // Clear refresh status after successful generation
         await refetch();
       } else {
         toast.error("Failed to generate plan");
@@ -284,6 +290,18 @@ const SleepCoachDashboard = () => {
       setIsGeneratingPlan(false);
     }
   }, [email, generateCoachPlan, refetch]);
+
+  // Check plan refresh status after data loads
+  useEffect(() => {
+    if (isAuthenticated && !dataLoading && data.profile && !isCheckingAccess) {
+      checkPlanRefresh().then(result => {
+        if (result) {
+          setRefreshStatus(result);
+          console.log('[SleepCoach] Plan refresh check:', result);
+        }
+      });
+    }
+  }, [isAuthenticated, dataLoading, data.profile, isCheckingAccess, checkPlanRefresh]);
 
   // Calculate streak from logs
   const streak = calculateStreak(data.logs);
