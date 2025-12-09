@@ -1,3 +1,4 @@
+// Performance: Using OptimizedImage for lazy loading with WebP
 import { Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -7,6 +8,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import OptimizedImage from "@/components/OptimizedImage";
 import erikAvatar from "@/assets/reviewer-erik.webp";
 import sofieAvatar from "@/assets/reviewer-sofie.webp";
 import coupleAvatar from "@/assets/reviewer-mark-maria.webp";
@@ -91,12 +93,12 @@ export const ReviewsSection = () => {
               <CarouselItem key={index} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/3">
                 <div className="bg-secondary/20 rounded-xl p-6 border h-full">
                   <div className="flex flex-col items-center text-center mb-4">
-                    <img 
+                    <OptimizedImage 
                       src={review.avatar} 
                       alt={review.name}
+                      width={112}
+                      height={112}
                       className="w-28 h-28 rounded-full object-cover mb-3 ring-4 ring-primary/10"
-                      loading="lazy"
-                      decoding="async"
                     />
                     <div>
                       <div className="flex items-center justify-center gap-2 mb-1">

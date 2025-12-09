@@ -1,6 +1,7 @@
-// Performance: Updated to use WebP variants for better compression
+// Performance: Using OptimizedImage for lazy loading with WebP
 import comparisonImage from "@/assets/comparison-new-updated.webp";
 import comparisonChart from "@/assets/comparison-them.webp";
+import OptimizedImage from "@/components/OptimizedImage";
 
 export const Comparison = () => {
   return (
@@ -14,22 +15,22 @@ export const Comparison = () => {
         </div>
         
         <div className="rounded-xl overflow-hidden shadow-2xl mb-12 max-w-4xl mx-auto">
-          <img 
+          <OptimizedImage 
             src={comparisonImage} 
             alt="Rise By Night pillow comparison showing ergonomic neck support vs regular pillows that cause stiffness with detailed benefits" 
+            width={800}
+            height={500}
             className="w-full"
-            loading="lazy"
-            decoding="async"
           />
         </div>
 
         <div className="rounded-xl overflow-hidden shadow-2xl max-w-3xl mx-auto">
-          <img 
+          <OptimizedImage 
             src={comparisonChart} 
             alt="Rise By Night vs regular pillows detailed comparison chart"
+            width={700}
+            height={400}
             className="w-full"
-            loading="lazy"
-            decoding="async"
           />
         </div>
       </div>

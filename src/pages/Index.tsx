@@ -1,15 +1,30 @@
+// Performance: Heavy sections with carousels are lazy-loaded
+import { Suspense, lazy } from "react";
 import { Hero } from "@/components/Hero";
 import { UrgencyBanner } from "@/components/UrgencyBanner";
 import { Benefits } from "@/components/Benefits";
-import { VideoSection } from "@/components/VideoSection";
 import { Guarantee } from "@/components/Guarantee";
 import { Features } from "@/components/Features";
 import { FAQ } from "@/components/FAQ";
-import { ReviewsSection } from "@/components/ReviewsSection";
 import { LookInside } from "@/components/LookInside";
 import { PainReliefSection } from "@/components/PainReliefSection";
 import { ChiropractorEndorsement } from "@/components/ChiropractorEndorsement";
 import { StickyAddToCart } from "@/components/StickyAddToCart";
+
+// Lazy load sections with carousels to reduce initial bundle
+const ReviewsSection = lazy(() => 
+  import("@/components/ReviewsSection").then(mod => ({ default: mod.ReviewsSection }))
+);
+const VideoSection = lazy(() => 
+  import("@/components/VideoSection").then(mod => ({ default: mod.VideoSection }))
+);
+
+// Fallback for lazy-loaded sections
+const SectionFallback = () => (
+  <div className="py-8 flex items-center justify-center text-sm text-muted-foreground">
+    Loading...
+  </div>
+);
 
 const Index = () => {
   return (
@@ -21,8 +36,12 @@ const Index = () => {
       <PainReliefSection />
       <ChiropractorEndorsement />
       <LookInside />
-      <ReviewsSection />
-      <VideoSection />
+      <Suspense fallback={<SectionFallback />}>
+        <ReviewsSection />
+      </Suspense>
+      <Suspense fallback={<SectionFallback />}>
+        <VideoSection />
+      </Suspense>
       <FAQ />
       <Guarantee />
       <StickyAddToCart productType="ergonomic-pillow" />

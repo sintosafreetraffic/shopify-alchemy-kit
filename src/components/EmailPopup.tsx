@@ -1,8 +1,10 @@
+// Performance: Using OptimizedImage for lazy loading
 import { useState } from "react";
 import { X, Copy, Check, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { setEnhancedMatch, trackLead } from "@/lib/pinterest";
+import OptimizedImage from "@/components/OptimizedImage";
 import logo from "@/assets/risebynight-logo-popup.png";
 import moonIcon from "@/assets/moon-icon-popup.webp";
 
@@ -90,7 +92,7 @@ export const EmailPopup = ({
           className="fixed bottom-6 right-6 z-50 rounded-full bg-background p-3 shadow-lg border border-border hover:scale-110 transition-transform duration-200"
           aria-label="Open discount popup"
         >
-          <img src={moonIcon} alt="" className="h-10 w-10" />
+          <OptimizedImage src={moonIcon} alt="" width={40} height={40} className="h-10 w-10" />
         </button>
       )}
 
@@ -112,7 +114,7 @@ export const EmailPopup = ({
                 {isSuccess ? (
                   /* Success State */
                   <div className="flex flex-col items-center text-center pt-4">
-                    <img src={logo} alt="Rise By Night" className="h-10 mb-6" />
+                    <OptimizedImage src={logo} alt="Rise By Night" width={160} height={40} className="h-10 mb-6" />
                     <h3 className="mb-3 text-2xl font-black uppercase tracking-tight text-foreground">
                       Thanks For Signing Up!
                     </h3>
@@ -142,7 +144,7 @@ export const EmailPopup = ({
                   <div className="pt-4">
                     {/* Logo */}
                     <div className="flex justify-center mb-6">
-                      <img src={logo} alt="Rise By Night" className="h-10" />
+                      <OptimizedImage src={logo} alt="Rise By Night" width={160} height={40} className="h-10" />
                     </div>
 
                     {/* Content */}

@@ -1,10 +1,11 @@
-// Performance: Updated images to use WebP variants for better compression
+// Performance: Updated images to use WebP variants + OptimizedImage component
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowRight, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { fetchProducts, type ShopifyProduct } from "@/lib/shopify";
+import OptimizedImage from "@/components/OptimizedImage";
 // Using WebP variants where available for better performance
 import pillowMain from "@/assets/ergonomic-pillow-main-hero.webp";
 import kneePillowMain from "@/assets/knee-pillow-main-new.webp";
@@ -126,12 +127,12 @@ export const ProductGallery = () => {
                       </span>
                     </div>
                     <div className="bg-gradient-to-br from-primary/10 to-primary/5 p-8 h-full flex items-center justify-center">
-                      <img 
+                      <OptimizedImage 
                         src={completeSleepBundle} 
                         alt={bundleProduct.node.title} 
+                        width={600}
+                        height={400}
                         className="w-full object-contain" 
-                        loading="lazy" 
-                        decoding="async" 
                       />
                     </div>
                   </div>
@@ -214,7 +215,7 @@ export const ProductGallery = () => {
                     </div>
                   )}
                   <div className="bg-gradient-to-b from-primary/5 to-background p-8">
-                    <img src={product.image} alt={product.name} className="w-full h-64 object-contain" loading="lazy" decoding="async" />
+                    <OptimizedImage src={product.image} alt={product.name} width={600} height={256} className="w-full h-64 object-contain" />
                   </div>
                 </div>
 

@@ -4,6 +4,7 @@ import { Progress } from "@/components/ui/progress";
 import { ArrowRight, Moon, Heart, Sparkles, Shield, Users, Award } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ProductGallery } from "@/components/ProductGallery";
+import OptimizedImage from "@/components/OptimizedImage";
 import heroLogo from "@/assets/moon-logo-new.png";
 import lifestyleHero from "@/assets/lifestyle-hero-desktop.webp";
 import lifestyleHeroMobile from "@/assets/home-hero-mobile.webp";
@@ -15,15 +16,13 @@ export default function Home() {
       <section className="relative w-full">
         {/* Desktop Image - LCP image with explicit dimensions */}
         <div className="hidden md:block relative">
-          <img
+          <OptimizedImage
             src={lifestyleHero}
             alt="Peaceful sleep with Rise By Night"
+            width={1920}
+            height={1080}
+            priority
             className="w-full h-[60vh] md:h-[70vh] object-cover"
-            width="1920"
-            height="1080"
-            loading="eager"
-            fetchPriority="high"
-            decoding="async"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/40 flex items-center justify-center">
             <div className="animate-fade-in text-center">
@@ -41,15 +40,13 @@ export default function Home() {
 
         {/* Mobile Image - LCP image with explicit dimensions */}
         <div className="block md:hidden relative">
-          <img
+          <OptimizedImage
             src={lifestyleHeroMobile}
             alt="Peaceful sleep with Rise By Night"
+            width={750}
+            height={1000}
+            priority
             className="w-full h-[60vh] object-cover"
-            width="750"
-            height="1000"
-            loading="eager"
-            fetchPriority="high"
-            decoding="async"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/40 flex items-center justify-center px-4">
             <div className="animate-fade-in text-center">
@@ -71,7 +68,7 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center space-y-8">
             <div className="inline-flex items-center justify-center w-24 h-24 mb-4">
-              <img src={heroLogo} alt="Rise By Night" className="w-full h-full object-contain" width="96" height="96" loading="eager" fetchPriority="high" decoding="async" />
+              <OptimizedImage src={heroLogo} alt="Rise By Night" width={96} height={96} priority className="w-full h-full object-contain" />
             </div>
 
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight">
