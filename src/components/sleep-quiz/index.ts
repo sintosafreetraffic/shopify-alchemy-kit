@@ -1,4 +1,5 @@
 export { QuizProgress } from "./QuizProgress";
+export { default as QuizResults } from "./QuizResults";
 export { QuizQuestion } from "./QuizQuestion";
 export { QuizEmailStep } from "./QuizEmailStep";
 export { QuizLoading } from "./QuizLoading";

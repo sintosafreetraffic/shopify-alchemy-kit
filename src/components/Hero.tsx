@@ -1,3 +1,4 @@
+// Performance: Using WebP images with lazy loading for below-fold content
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, Shield, Moon, Truck, Loader2, Star, Users } from "lucide-react";
@@ -11,7 +12,8 @@ import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import { trackPageVisit } from "@/lib/pinterest";
 import { trackViewedProduct } from "@/lib/klaviyo";
-import testimonialAvatar from "@/assets/testimonial.png";
+// Using WebP variants for better compression
+import testimonialAvatar from "@/assets/testimonial-new-updated.webp";
 import eyeMaskGift from "@/assets/eye-mask-gift-new.webp";
 import consumerChoiceBadge from "@/assets/consumer-choice-badge-transparent.png";
 

@@ -1,21 +1,21 @@
-import { useState, useEffect, useCallback, memo } from "react";
+// Performance: SleepQuiz split into smaller components for better code splitting
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Loader2, CheckCircle, AlertCircle, ShoppingCart, Sparkles, Moon, ArrowLeft, ArrowRight, Lock, Eye, EyeOff } from "lucide-react";
+import { CheckCircle, Moon, ArrowLeft, ArrowRight } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { useCartStore } from "@/stores/cartStore";
 import { fetchProducts, ShopifyProduct } from "@/lib/shopify";
 import { trackQuizStarted } from "@/lib/klaviyo";
 import { supabase } from "@/integrations/supabase/client";
-import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import {
   QuizProgress,
   QuizQuestion,
   QuizEmailStep,
   QuizLoading,
+  QuizResults,
   QUIZ_QUESTIONS,
   type QuizAnswers,
   type AnalysisResult,
@@ -24,13 +24,6 @@ import {
   getCurrentSectionInfo,
   getContextualInsight,
   isValidEmail,
-  calculateDerivedScores,
-  deriveDetectedIssues,
-  convertToIssuePresentation,
-  getScoreLabel,
-  getScoreExplanation,
-  getProductReasons,
-  getClinicalProductDescription,
 } from "@/components/sleep-quiz";
 
 const SleepQuiz = () => {
@@ -275,106 +268,32 @@ const SleepQuiz = () => {
 
             {isAnalyzing && <QuizLoading />}
 
-            {/* Results - keeping inline for now as it's complex */}
+            {/* Results - extracted to QuizResults component */}
             {isResultsStep && results && !isAnalyzing && (
-              <div className="space-y-6">
-                <div className="text-center pb-4 border-b border-border">
-                  <CheckCircle className="w-12 h-12 text-success mx-auto mb-3" />
-                  <h2 className="text-2xl font-bold mb-2">Your Sleep Assessment</h2>
-                  <p className="text-muted-foreground">Personalized analysis based on your {visibleQuestions.length} responses</p>
-                </div>
-
-                {/* Assessment Summary */}
-                <div className="p-4 rounded-xl bg-secondary/30 border border-border">
-                  <p className="text-foreground leading-relaxed">{results.assessment}</p>
-                </div>
-
-                {/* Detected Issues */}
-                {(results.detectedIssues || deriveDetectedIssues(answers)).length > 0 && (
-                  <div className="space-y-3">
-                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                      <AlertCircle className="w-5 h-5 text-amber-500" />
-                      Areas for Improvement
-                    </h3>
-                    <div className="space-y-2">
-                      {(results.detectedIssues || deriveDetectedIssues(answers)).map((issue, idx) => {
-                        const presentation = convertToIssuePresentation(issue);
-                        return (
-                          <div key={idx} className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                            <p className="text-sm font-medium text-foreground">{presentation.plain}</p>
-                            <p className="text-xs text-muted-foreground mt-1 italic">{presentation.clinical}</p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Sleep Coach CTA */}
-                <Card className="p-6 bg-gradient-to-br from-primary/5 via-background to-background border-primary/30">
-                  <div className="flex items-start gap-4">
-                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <Moon className="w-6 h-6 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-lg mb-2">
-                        {results.profileCreated ? "Your AI Sleep Coach Is Ready" : "Unlock Your AI Sleep Coach"}
-                      </h4>
-                      <p className="text-muted-foreground text-sm mb-4">
-                        {results.profileCreated ? "Access your personalized 7-day sleep improvement plan." : "Create a free account to access your personalized plan."}
-                      </p>
-                      
-                      {results.profileCreated ? (
-                        <Button onClick={() => navigate(isRetake || shouldNotifyQuizUpdated ? '/sleep-coach?quizUpdated=true' : '/sleep-coach')} className="w-full rounded-lg" size="lg">
-                          <Sparkles className="w-4 h-4 mr-2" />
-                          Continue to My Sleep Coach
-                        </Button>
-                      ) : !showAccountForm ? (
-                        <Button onClick={handleUnlockSleepCoach} className="w-full rounded-lg" size="lg">
-                          <Lock className="w-4 h-4 mr-2" />
-                          Unlock Sleep Coach
-                        </Button>
-                      ) : (
-                        <div className="space-y-4">
-                          {isCheckingAccount ? (
-                            <div className="flex items-center justify-center py-4">
-                              <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                              <span className="ml-2 text-sm text-muted-foreground">Checking account...</span>
-                            </div>
-                          ) : (
-                            <>
-                              <div className="p-3 rounded-lg bg-secondary/50 border border-border">
-                                <p className="text-sm font-medium">{accountExists ? "Welcome back!" : "Create your account"}</p>
-                                <p className="text-xs text-muted-foreground">{accountExists ? `Enter your password (${email})` : `Enter a password (${email})`}</p>
-                              </div>
-                              <div className="relative">
-                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                <Input type={showPassword ? "text" : "password"} placeholder={accountExists ? "Enter your password" : "Create a password"} value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAccountSubmit()} className="pl-12 pr-12 h-12" />
-                                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                                </button>
-                              </div>
-                              {!accountExists && password && <PasswordStrengthIndicator password={password} />}
-                              <Button onClick={handleAccountSubmit} disabled={isSubmitting || !password.trim()} className="w-full rounded-lg" size="lg">
-                                {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
-                                {accountExists ? "Login & Access Sleep Coach" : "Create Account & Continue"}
-                              </Button>
-                              {accountExists && <button onClick={handleForgotPassword} className="w-full text-sm text-primary hover:underline">Forgot password?</button>}
-                              <button onClick={() => { setShowAccountForm(false); setPassword(""); setAccountExists(null); }} className="w-full text-sm text-muted-foreground hover:text-foreground">Cancel</button>
-                            </>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-
-                {/* Footer Actions */}
-                <div className="flex gap-4 pt-4 border-t border-border">
-                  <Button variant="outline" onClick={() => navigate("/")} className="flex-1 rounded-lg">Back to Home</Button>
-                  {!results.profileCreated && <Button onClick={() => navigate("/product/ergonomic-pillow")} className="flex-1 rounded-lg">View Products</Button>}
-                </div>
-              </div>
+              <QuizResults
+                results={results}
+                answers={answers}
+                visibleQuestionCount={visibleQuestions.length}
+                isRetake={isRetake}
+                shouldNotifyQuizUpdated={shouldNotifyQuizUpdated}
+                email={email}
+                showAccountForm={showAccountForm}
+                setShowAccountForm={setShowAccountForm}
+                accountExists={accountExists}
+                isCheckingAccount={isCheckingAccount}
+                password={password}
+                setPassword={setPassword}
+                showPassword={showPassword}
+                setShowPassword={setShowPassword}
+                isSubmitting={isSubmitting}
+                onUnlockSleepCoach={handleUnlockSleepCoach}
+                onAccountSubmit={handleAccountSubmit}
+                onForgotPassword={handleForgotPassword}
+                onGoToSleepCoach={() => navigate(isRetake || shouldNotifyQuizUpdated ? '/sleep-coach?quizUpdated=true' : '/sleep-coach')}
+                onBackToHome={() => navigate("/")}
+                onViewProducts={() => navigate("/product/ergonomic-pillow")}
+                onCancelAccountForm={() => { setShowAccountForm(false); setPassword(""); setAccountExists(null); }}
+              />
             )}
 
             {/* Navigation Buttons */}

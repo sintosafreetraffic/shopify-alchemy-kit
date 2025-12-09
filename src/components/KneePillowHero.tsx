@@ -1,10 +1,11 @@
+// Performance: Using cached products hook and WebP images
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, Shield, Moon, Truck, Loader2, Star } from "lucide-react";
 import { PolicyAccordion } from "./PolicyAccordion";
 import { useState, useEffect, useRef } from "react";
 import { useCartStore } from "@/stores/cartStore";
-import { fetchProducts } from "@/lib/shopify";
+import { useShopifyProducts } from "@/hooks/useShopifyProducts";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import { trackPageVisit } from "@/lib/pinterest";
@@ -15,39 +16,28 @@ import { KneePillowImageCarousel } from "./KneePillowImageCarousel";
 
 export const KneePillowHero = () => {
   const [selectedBundle, setSelectedBundle] = useState<"1" | "2">("2");
-  const [product, setProduct] = useState<ShopifyProduct | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { addItem, setCartOpen } = useCartStore();
   const hasTrackedView = useRef(false);
 
+  // Use centralized cached product data
+  const { data: products, isLoading: productsLoading } = useShopifyProducts(10);
+  const product = products?.find(p => p.node.title.toLowerCase().includes('knee')) || null;
+
+  // Track product view once when product is loaded
   useEffect(() => {
-    const loadProduct = async () => {
-      try {
-        const products = await fetchProducts(10);
-        const kneePillow = products.find(p => p.node.title.toLowerCase().includes('knee'));
-        if (kneePillow) {
-          setProduct(kneePillow);
-          // Track Pinterest PageVisit with product ID
-          trackPageVisit(kneePillow.node.id);
-          
-          // Track Klaviyo Viewed Product (only once per page load)
-          if (!hasTrackedView.current) {
-            hasTrackedView.current = true;
-            trackViewedProduct({
-              id: kneePillow.node.id,
-              title: kneePillow.node.title,
-              price: parseFloat(kneePillow.node.variants.edges[0]?.node.price.amount || "0"),
-              sku: kneePillow.node.variants.edges[0]?.node.id || "",
-              imageUrl: kneePillow.node.images?.edges?.[0]?.node?.url || "",
-            });
-          }
-        }
-      } catch (error) {
-        console.error("Error loading product:", error);
-      }
-    };
-    loadProduct();
-  }, []);
+    if (product && !hasTrackedView.current) {
+      hasTrackedView.current = true;
+      trackPageVisit(product.node.id);
+      trackViewedProduct({
+        id: product.node.id,
+        title: product.node.title,
+        price: parseFloat(product.node.variants.edges[0]?.node.price.amount || "0"),
+        sku: product.node.variants.edges[0]?.node.id || "",
+        imageUrl: product.node.images?.edges?.[0]?.node?.url || "",
+      });
+    }
+  }, [product]);
 
   const handleAddToCart = async () => {
     if (!product) {
