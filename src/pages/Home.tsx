@@ -26,7 +26,7 @@ export default function Home() {
             <div className="animate-fade-in text-center">
               <h2 className="text-5xl md:text-6xl lg:text-7xl font-bold mb-2 md:mb-3">
                 <span className="bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent drop-shadow-lg">
-                  Cyber Monday
+                  Christmas
                 </span>
               </h2>
               <p className="text-3xl md:text-4xl lg:text-5xl font-semibold text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">
@@ -50,7 +50,7 @@ export default function Home() {
             <div className="animate-fade-in text-center">
               <h2 className="text-3xl sm:text-4xl font-bold mb-2">
                 <span className="bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent drop-shadow-lg">
-                  Cyber Monday
+                  Christmas
                 </span>
               </h2>
               <p className="text-xl sm:text-2xl font-semibold text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">
@@ -274,7 +274,7 @@ export default function Home() {
               </p>
               <div className="inline-block bg-primary-foreground/10 px-4 py-2 rounded-full">
                 <p className="text-sm md:text-base font-medium">
-                  🎉 Limited Cyber Monday Offer: Buy 1 Get 1 <span className="font-bold">FREE</span> on select products
+                  🎉 Limited Christmas Offer: Buy 1 Get 1 <span className="font-bold">FREE</span> on select products
                 </p>
               </div>
             </div>

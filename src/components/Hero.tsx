@@ -98,7 +98,7 @@ export const Hero = () => {
       quantity: 1,
       price: productPrice,
       originalPrice: productPrice * 2,
-      discount: "CYBER MONDAY",
+      discount: "CHRISTMAS",
       savings: 0,
       freeGift: "+ FREE Gift",
       freeGiftValue: "$29.99"
@@ -225,7 +225,7 @@ export const Hero = () => {
             </div>
 
             <div className="border-t border-b py-3 my-1.5 space-y-2">
-              <p className="text-center font-bold text-sm md:text-base tracking-wide">🎉 LIMITED CYBER MONDAY OFFER 🎉</p>
+              <p className="text-center font-bold text-sm md:text-base tracking-wide">🎉 LIMITED CHRISTMAS OFFER 🎉</p>
               <CountdownTimerDisplay />
               
               <div className="grid grid-cols-2 gap-3 mb-2">

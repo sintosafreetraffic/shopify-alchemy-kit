@@ -105,7 +105,7 @@ export const KneePillowHero = () => {
       quantity: 1,
       price: variant1Pillow ? parseFloat(variant1Pillow.price.amount) : 69.99,
       originalPrice: variant1Pillow?.compareAtPrice ? parseFloat(variant1Pillow.compareAtPrice.amount) : null,
-      discount: "CYBER MONDAY",
+      discount: "CHRISTMAS",
       savings: 0,
       freeGift: "+ FREE Gift",
       note: "Perfect for trying it out"
@@ -114,7 +114,7 @@ export const KneePillowHero = () => {
       quantity: 2,
       price: variant2Pillows ? parseFloat(variant2Pillows.price.amount) : 69.99,
       originalPrice: variant2Pillows?.compareAtPrice ? parseFloat(variant2Pillows.compareAtPrice.amount) : null,
-      discount: "CYBER MONDAY 1+1",
+      discount: "CHRISTMAS 1+1",
       savings: variant2Pillows?.compareAtPrice ? parseFloat(variant2Pillows.compareAtPrice.amount) - parseFloat(variant2Pillows.price.amount) : 0,
       freeGift: "+ FREE GIFT 2X",
       note: "Best Value - Buy 1 Get 1 FREE!"
@@ -225,7 +225,7 @@ export const KneePillowHero = () => {
 
             {/* Limited Time Offer */}
             <div className="border-t border-b py-3 my-1.5 space-y-2">
-              <p className="text-center font-bold text-sm md:text-base tracking-wide">🎉 LIMITED CYBER MONDAY OFFER 🎉</p>
+              <p className="text-center font-bold text-sm md:text-base tracking-wide">🎉 LIMITED CHRISTMAS OFFER 🎉</p>
               
               <div className="grid grid-cols-2 gap-3 mb-2">
                 <button
