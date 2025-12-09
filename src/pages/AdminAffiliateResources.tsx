@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -35,7 +36,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Shield, ArrowLeft, Loader2, Plus, Pencil, Trash2, BookOpen, Filter } from "lucide-react";
+import { Shield, ArrowLeft, Loader2, Plus, Pencil, Trash2, BookOpen, Filter, CheckCircle, XCircle } from "lucide-react";
 import { format } from "date-fns";
 import { AdminNav } from "@/components/AdminNav";
 
@@ -98,6 +99,11 @@ export default function AdminAffiliateResources() {
   const [resourceToDelete, setResourceToDelete] = useState<AffiliateResource | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [bulkProcessing, setBulkProcessing] = useState(false);
+
   useEffect(() => {
     checkAdminAccess();
   }, []);
@@ -107,6 +113,11 @@ export default function AdminAffiliateResources() {
       loadResources();
     }
   }, [isAdmin]);
+
+  // Clear selection when filters change
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [categoryFilter, activeFilter]);
 
   async function checkAdminAccess() {
     const { data: { user } } = await supabase.auth.getUser();
@@ -162,6 +173,26 @@ export default function AdminAffiliateResources() {
     if (activeFilter === "inactive" && resource.is_active) return false;
     return true;
   });
+
+  // Derived selection helpers
+  const allSelected = filteredResources.length > 0 && filteredResources.every(r => selectedIds.includes(r.id));
+  const someSelected = selectedIds.length > 0 && !allSelected;
+
+  function toggleSelectAll() {
+    if (allSelected) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredResources.map(r => r.id));
+    }
+  }
+
+  function toggleSelectOne(id: string) {
+    setSelectedIds(prev => 
+      prev.includes(id) 
+        ? prev.filter(i => i !== id)
+        : [...prev, id]
+    );
+  }
 
   function openCreateDialog() {
     setEditingResource(null);
@@ -283,6 +314,63 @@ export default function AdminAffiliateResources() {
     }
   }
 
+  // Bulk action handlers
+  async function handleBulkSetActive(isActive: boolean) {
+    if (selectedIds.length === 0) return;
+
+    setBulkProcessing(true);
+    try {
+      const { error } = await supabase
+        .from("affiliate_resources")
+        .update({ 
+          is_active: isActive,
+          updated_at: new Date().toISOString()
+        })
+        .in("id", selectedIds);
+
+      if (error) throw error;
+
+      // Optimistic update
+      setResources(prev => prev.map(r => 
+        selectedIds.includes(r.id) ? { ...r, is_active: isActive } : r
+      ));
+      setSelectedIds([]);
+      toast.success(isActive ? "Selected resources activated" : "Selected resources deactivated");
+    } catch (error) {
+      console.error("Error updating resources:", error);
+      toast.error("Failed to update selected resources");
+      await loadResources(); // Resync on failure
+    } finally {
+      setBulkProcessing(false);
+    }
+  }
+
+  async function handleBulkDelete() {
+    if (selectedIds.length === 0) return;
+
+    setBulkProcessing(true);
+    try {
+      const { error } = await supabase
+        .from("affiliate_resources")
+        .delete()
+        .in("id", selectedIds);
+
+      if (error) throw error;
+
+      // Optimistic update
+      setResources(prev => prev.filter(r => !selectedIds.includes(r.id)));
+      setSelectedIds([]);
+      setBulkDeleteDialogOpen(false);
+      toast.success("Selected resources deleted");
+    } catch (error) {
+      console.error("Error deleting resources:", error);
+      toast.error("Failed to delete selected resources");
+      await loadResources(); // Resync on failure
+    } finally {
+      setBulkProcessing(false);
+    }
+  }
+
   // Loading state
   if (isAdmin === null) {
     return (
@@ -386,6 +474,47 @@ export default function AdminAffiliateResources() {
           {/* Resources Table */}
           <Card className="lg:col-span-3">
             <CardContent className="p-0">
+              {/* Bulk Actions Toolbar */}
+              {!loading && filteredResources.length > 0 && (
+                <div className="flex items-center justify-between px-4 py-3 border-b">
+                  <div className="text-sm text-muted-foreground">
+                    {selectedIds.length > 0 
+                      ? `${selectedIds.length} selected`
+                      : `Showing ${filteredResources.length} of ${resources.length} resources`
+                    }
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      disabled={selectedIds.length === 0 || bulkProcessing}
+                      onClick={() => handleBulkSetActive(true)}
+                    >
+                      <CheckCircle className="h-4 w-4 mr-1" />
+                      Activate
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      disabled={selectedIds.length === 0 || bulkProcessing}
+                      onClick={() => handleBulkSetActive(false)}
+                    >
+                      <XCircle className="h-4 w-4 mr-1" />
+                      Deactivate
+                    </Button>
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      disabled={selectedIds.length === 0 || bulkProcessing}
+                      onClick={() => setBulkDeleteDialogOpen(true)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {loading ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -402,6 +531,14 @@ export default function AdminAffiliateResources() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-[40px] px-2">
+                        <Checkbox 
+                          checked={allSelected}
+                          onCheckedChange={toggleSelectAll}
+                          aria-label="Select all"
+                          className={someSelected ? "opacity-50" : ""}
+                        />
+                      </TableHead>
                       <TableHead>Category</TableHead>
                       <TableHead>Title</TableHead>
                       <TableHead>Badge</TableHead>
@@ -414,6 +551,13 @@ export default function AdminAffiliateResources() {
                   <TableBody>
                     {filteredResources.map((resource) => (
                       <TableRow key={resource.id}>
+                        <TableCell className="px-2">
+                          <Checkbox 
+                            checked={selectedIds.includes(resource.id)}
+                            onCheckedChange={() => toggleSelectOne(resource.id)}
+                            aria-label={`Select ${resource.title}`}
+                          />
+                        </TableCell>
                         <TableCell>
                           <Badge variant="outline" className="font-normal">
                             {resource.category}
@@ -498,10 +642,10 @@ export default function AdminAffiliateResources() {
           
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Category *</Label>
+              <Label htmlFor="category">Category</Label>
               <Select 
                 value={formData.category} 
-                onValueChange={(val) => setFormData(prev => ({ ...prev, category: val }))}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -515,8 +659,9 @@ export default function AdminAffiliateResources() {
             </div>
 
             <div className="space-y-2">
-              <Label>Title *</Label>
+              <Label htmlFor="title">Title *</Label>
               <Input
+                id="title"
                 value={formData.title}
                 onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                 placeholder="Resource title"
@@ -524,8 +669,9 @@ export default function AdminAffiliateResources() {
             </div>
 
             <div className="space-y-2">
-              <Label>Description *</Label>
+              <Label htmlFor="description">Description *</Label>
               <Textarea
+                id="description"
                 value={formData.description}
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 placeholder="Brief description of the resource"
@@ -535,16 +681,18 @@ export default function AdminAffiliateResources() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Link Label</Label>
+                <Label htmlFor="link_label">Link Label</Label>
                 <Input
+                  id="link_label"
                   value={formData.link_label}
                   onChange={(e) => setFormData(prev => ({ ...prev, link_label: e.target.value }))}
-                  placeholder="e.g. Open guide"
+                  placeholder="e.g. View guide"
                 />
               </div>
               <div className="space-y-2">
-                <Label>Link URL</Label>
+                <Label htmlFor="link_url">Link URL</Label>
                 <Input
+                  id="link_url"
                   value={formData.link_url}
                   onChange={(e) => setFormData(prev => ({ ...prev, link_url: e.target.value }))}
                   placeholder="https://..."
@@ -554,30 +702,32 @@ export default function AdminAffiliateResources() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Badge</Label>
+                <Label htmlFor="badge">Badge (optional)</Label>
                 <Input
+                  id="badge"
                   value={formData.badge}
                   onChange={(e) => setFormData(prev => ({ ...prev, badge: e.target.value }))}
-                  placeholder="e.g. Recommended, New"
+                  placeholder="e.g. Recommended"
                 />
               </div>
               <div className="space-y-2">
-                <Label>Sort Order</Label>
+                <Label htmlFor="sort_order">Sort Order</Label>
                 <Input
+                  id="sort_order"
                   type="number"
                   value={formData.sort_order}
                   onChange={(e) => setFormData(prev => ({ ...prev, sort_order: parseInt(e.target.value) || 0 }))}
-                  min="0"
                 />
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               <Switch
+                id="is_active"
                 checked={formData.is_active}
                 onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_active: checked }))}
               />
-              <Label>Active (visible to affiliates)</Label>
+              <Label htmlFor="is_active">Active (visible to affiliates)</Label>
             </div>
           </div>
 
@@ -586,20 +736,14 @@ export default function AdminAffiliateResources() {
               Cancel
             </Button>
             <Button onClick={handleSave} disabled={saving}>
-              {saving ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                editingResource ? "Update" : "Create"
-              )}
+              {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {editingResource ? "Update" : "Create"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Single Delete Confirmation */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -610,19 +754,36 @@ export default function AdminAffiliateResources() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
+            <AlertDialogAction 
               onClick={handleDelete}
-              disabled={deleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleting}
             >
-              {deleting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                "Delete"
-              )}
+              {deleting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Delete Confirmation */}
+      <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedIds.length} Resources</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {selectedIds.length} selected resource{selectedIds.length > 1 ? 's' : ''}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleBulkDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={bulkProcessing}
+            >
+              {bulkProcessing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Delete {selectedIds.length} Resource{selectedIds.length > 1 ? 's' : ''}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
