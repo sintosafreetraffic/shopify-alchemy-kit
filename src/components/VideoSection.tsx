@@ -216,7 +216,7 @@ export const VideoSection = () => {
     {
       id: 5,
       src: "/videos/video_5.mp4",
-      poster: "/videos/thumbnails/video_5.webp",
+      poster: "/videos/thumbnails/video_5_thumb.webp",
       title: "Customer experience",
       views: "1.9M"
     }
