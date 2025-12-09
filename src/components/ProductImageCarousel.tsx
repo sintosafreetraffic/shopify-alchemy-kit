@@ -1,6 +1,6 @@
 // Performance: All images use WebP format for better compression
-// Product demo video uses preload="none" until interaction
-import { useState, useEffect } from "react";
+// Product demo video uses image-first poster with click-to-play
+import { useState, useEffect, useRef } from "react";
 // All images are already WebP format for optimal performance
 import pillowHeroNew from "@/assets/ergonomic-pillow-main-hero.webp";
 import pillowBenefitsNew from "@/assets/pillow-benefits-new.webp";
@@ -16,16 +16,56 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel";
 import { ImageModal } from "./ImageModal";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Play } from "lucide-react";
+import { useInView } from "@/hooks/useInView";
+
+// Video poster component with click-to-play behavior
+interface VideoPosterProps {
+  videoSrc: string;
+  alt: string;
+  posterSrc: string;
+  width: number;
+  height: number;
+  onPlayClick: () => void;
+  className?: string;
+}
+
+const VideoPoster = ({ posterSrc, alt, width, height, onPlayClick, className = "" }: VideoPosterProps) => {
+  return (
+    <div 
+      className={`relative w-full h-full cursor-pointer group ${className}`}
+      onClick={onPlayClick}
+    >
+      <img
+        src={posterSrc}
+        alt={alt}
+        className="w-full h-full object-cover"
+        loading="lazy"
+        decoding="async"
+        width={width}
+        height={height}
+      />
+      <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
+        <div className="w-16 h-16 rounded-full bg-black/60 flex items-center justify-center group-hover:scale-110 transition-transform">
+          <Play className="w-8 h-8 text-white ml-1" fill="white" />
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const ProductImageCarousel = () => {
   const [expandedImageIndex, setExpandedImageIndex] = useState<number | null>(null);
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
+  const [selectedVideoSrc, setSelectedVideoSrc] = useState<string | null>(null);
+
   // Multiple views of the Rise By Night pillow (desktop order)
   const images = [
     { url: pillowHeroNew, alt: "Rise By Night ergonomic pillow main view", type: "image" },
-    { url: "/videos/product-demo.mp4", alt: "Rise By Night pillow demonstration", type: "video" },
+    { url: "/videos/product-demo.mp4", alt: "Rise By Night pillow demonstration", type: "video", poster: pillowHeroNew },
     { url: pillowBenefitsNew, alt: "Rise By Night ergonomic pillow benefits - relieves neck & back pain, reduces sleep apnea, reduces acid reflux, relieves shoulders", type: "image" },
     { url: pillowEasyCleaning, alt: "Rise By Night pillow - easy cleaning and maintenance with removable cover", type: "image" },
     { url: neckPainSpine, alt: "Rise By Night pillow - neck pain and spine alignment relief", type: "image" },
@@ -56,6 +96,11 @@ export const ProductImageCarousel = () => {
     }
   };
 
+  const handleVideoClick = (videoSrc: string) => {
+    setSelectedVideoSrc(videoSrc);
+    setVideoModalOpen(true);
+  };
+
   // Track carousel position
   useEffect(() => {
     if (!api) return;
@@ -80,25 +125,14 @@ export const ProductImageCarousel = () => {
                   onClick={() => item.type === "image" && openImageModal(item.url, true)}
                 >
                   {item.type === "video" ? (
-                    <div className="relative w-full h-full">
-                      <video
-                        src={item.url}
-                        autoPlay
-                        loop
-                        muted
-                        playsInline
-                        preload="none"
-                        className="w-full h-auto object-cover"
-                        aria-label={item.alt}
-                        width={800}
-                        height={800}
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="w-12 h-12 rounded-full bg-black/50 flex items-center justify-center">
-                          <Play className="w-6 h-6 text-white ml-0.5" fill="white" />
-                        </div>
-                      </div>
-                    </div>
+                    <VideoPoster
+                      videoSrc={item.url}
+                      alt={item.alt}
+                      posterSrc={(item as any).poster || pillowHeroNew}
+                      width={800}
+                      height={800}
+                      onPlayClick={() => handleVideoClick(item.url)}
+                    />
                   ) : (
                     <img
                       src={item.url}
@@ -134,11 +168,11 @@ export const ProductImageCarousel = () => {
             >
               {item.type === "video" ? (
                 <>
-                  <video
-                    src={item.url}
+                  <img
+                    src={(item as any).poster || pillowHeroNew}
+                    alt={`Thumbnail ${index + 1}`}
                     className="w-full h-full object-cover"
-                    muted
-                    preload="none"
+                    loading="lazy"
                     width={48}
                     height={48}
                   />
@@ -152,6 +186,8 @@ export const ProductImageCarousel = () => {
                   alt={`Thumbnail ${index + 1}`}
                   className="w-full h-full object-cover"
                   loading="lazy"
+                  width={48}
+                  height={48}
                 />
               )}
             </button>
@@ -163,67 +199,31 @@ export const ProductImageCarousel = () => {
       <div className="hidden md:block">
         {/* First large image */}
         <div className="overflow-hidden rounded-xl relative cursor-pointer hover:opacity-90 transition-opacity" onClick={() => images[0]?.type === "image" && openImageModal(images[0].url, false)}>
-          {images[0]?.type === "video" ? (
-            <div className="relative w-full h-full">
-              <video
-                src={images[0].url}
-                autoPlay
-                loop
-                muted
-                playsInline
-                preload="none"
-                className="w-full h-full object-cover rounded-xl"
-                aria-label={images[0].alt}
-                width={1200}
-                height={900}
-              />
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="w-16 h-16 rounded-full bg-black/50 flex items-center justify-center">
-                  <Play className="w-8 h-8 text-white ml-1" fill="white" />
-                </div>
-              </div>
-            </div>
-          ) : (
-            <img
-              src={images[0]?.url}
-              alt={images[0]?.alt}
-              className="w-full h-full object-cover rounded-xl"
-              loading="eager"
-              fetchPriority="high"
-              decoding="async"
-              width="1200"
-              height="900"
-            />
-          )}
+          <img
+            src={images[0]?.url}
+            alt={images[0]?.alt}
+            className="w-full h-full object-cover rounded-xl"
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
+            width="1200"
+            height="900"
+          />
         </div>
 
         {/* Two images side by side */}
         <div className="grid grid-cols-2 gap-0">
-          <div className="overflow-hidden rounded-xl aspect-square cursor-pointer hover:opacity-90 transition-opacity" onClick={() => {
-            if (images[1]?.type === "image") {
-              openImageModal(images[1].url, false);
-            }
-          }}>
+          <div className="overflow-hidden rounded-xl aspect-square cursor-pointer hover:opacity-90 transition-opacity">
             {images[1]?.type === "video" ? (
-              <div className="relative w-full h-full">
-                <video
-                  src={images[1].url}
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  preload="none"
-                  className="w-full h-full object-cover rounded-xl"
-                  aria-label={images[1].alt}
-                  width={600}
-                  height={600}
-                />
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="w-12 h-12 rounded-full bg-black/50 flex items-center justify-center">
-                    <Play className="w-6 h-6 text-white ml-0.5" fill="white" />
-                  </div>
-                </div>
-              </div>
+              <VideoPoster
+                videoSrc={images[1].url}
+                alt={images[1].alt}
+                posterSrc={(images[1] as any).poster || pillowHeroNew}
+                width={600}
+                height={600}
+                onPlayClick={() => handleVideoClick(images[1].url)}
+                className="rounded-xl"
+              />
             ) : (
               <img
                 src={images[1]?.url}
@@ -233,6 +233,7 @@ export const ProductImageCarousel = () => {
                 decoding="async"
                 width="600"
                 height="600"
+                onClick={() => openImageModal(images[1].url, false)}
               />
             )}
           </div>
@@ -312,6 +313,25 @@ export const ProductImageCarousel = () => {
         currentIndex={expandedImageIndex ?? 0}
         onNavigate={setExpandedImageIndex}
       />
+
+      {/* Video Modal */}
+      <Dialog open={videoModalOpen} onOpenChange={setVideoModalOpen}>
+        <DialogContent className="max-w-3xl p-0 bg-black">
+          {selectedVideoSrc && (
+            <video 
+              src={selectedVideoSrc}
+              className="w-full aspect-video"
+              controls
+              autoPlay
+              playsInline
+              muted
+              preload="auto"
+              width={1280}
+              height={720}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
