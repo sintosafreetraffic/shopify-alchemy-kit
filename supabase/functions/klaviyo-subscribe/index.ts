@@ -3,6 +3,7 @@
  * 
  * Handles email popup signups and triggers Sleep Sync.
  * Uses centralized env/cors helpers and syncAndStoreAttributes.
+ * Includes rate limiting to prevent abuse.
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -19,6 +20,28 @@ import {
   sendKlaviyoEvent,
 } from "../_shared/sleep-sync.ts";
 
+// Simple in-memory rate limiter (resets on function cold start)
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_MAX = 5; // Max requests per window
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute window
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  
+  if (!entry || now > entry.resetTime) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+  
+  if (entry.count >= RATE_LIMIT_MAX) {
+    return false;
+  }
+  
+  entry.count++;
+  return true;
+}
+
 // Input validation schema
 const subscribeSchema = z.object({
   email: z.string().email("Invalid email format").max(255, "Email too long"),
@@ -30,6 +53,16 @@ Deno.serve(async (req: Request): Promise<Response> => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Rate limiting check
+  const clientIP = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || 
+                   req.headers.get("x-real-ip") || 
+                   "unknown";
+  
+  if (!checkRateLimit(clientIP)) {
+    console.warn("[Klaviyo] Rate limit exceeded for IP:", clientIP);
+    return createErrorResponse("Too many requests. Please try again later.", 429);
   }
 
   try {
