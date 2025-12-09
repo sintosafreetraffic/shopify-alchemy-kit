@@ -1,5 +1,5 @@
 // Performance: Videos use preload="none" and intersection observer for deferred loading
-import { Play, Loader2 } from "lucide-react";
+import { Play, Loader2, Hand } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
@@ -73,6 +73,9 @@ const VideoCard = ({ video, onVideoClick }: VideoCardProps) => {
     }
   };
 
+  // Show tap hint only on touch devices, when in view, and before video starts
+  const showTapHint = isTouch && isInView && !hasStarted;
+
   return (
     <div 
       ref={containerRef}
@@ -138,6 +141,16 @@ const VideoCard = ({ video, onVideoClick }: VideoCardProps) => {
             <Loader2 className="h-8 w-8 animate-spin text-white" />
           </div>
         )}
+        {/* Mobile tap hint */}
+        <div 
+          className={cn(
+            "pointer-events-none absolute top-3 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full bg-black/60 text-xs text-white backdrop-blur-sm flex items-center gap-1.5 transition-opacity duration-200",
+            showTapHint ? "opacity-100" : "opacity-0"
+          )}
+        >
+          <Hand className="w-3 h-3" />
+          <span>Tap to preview</span>
+        </div>
         <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
           <p className="text-white font-semibold">{video.title}</p>
           <p className="text-white/80 text-sm">{video.views} views</p>
