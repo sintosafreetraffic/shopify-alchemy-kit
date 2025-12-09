@@ -1,7 +1,8 @@
 export { SleepLogForm } from './SleepLogForm';
 export { StreakDisplay } from './StreakDisplay';
 export { SleepLogTable } from './SleepLogTable';
-export { SleepHistoryChart } from './SleepHistoryChart';
+// Note: SleepHistoryChart is unused - kept for potential future use
+// Charts are now lazy-loaded directly in consuming components for better bundle splitting
 export { SleepHistorySection } from './SleepHistorySection';
 export { SleepHistoryWeekNavigator } from './SleepHistoryWeekNavigator';
 export { SleepHistoryWeekTable } from './SleepHistoryWeekTable';
@@ -14,5 +15,5 @@ export { CoachPlanDisplay } from './CoachPlanDisplay';
 export { WhatsAppSettings } from './WhatsAppSettings';
 export { SleepSetupForm } from './SleepSetupForm';
 export { SleepSyncOverview } from './SleepSyncOverview';
-// SleepReportSummary is intentionally not exported here to allow lazy loading
-// Import it directly: import { SleepReportSummary } from '@/components/sleep-coach/SleepReportSummary';
+// SleepReportSummary and chart components are intentionally not exported here to allow lazy loading
+// Import them directly when needed

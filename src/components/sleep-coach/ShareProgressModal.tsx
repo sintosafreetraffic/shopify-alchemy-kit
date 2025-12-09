@@ -1,16 +1,19 @@
-import { useState, useRef, useMemo, useEffect, useCallback } from "react";
+// Performance: Chart component is lazy-loaded to reduce initial bundle size
+import { useState, useRef, useMemo, useEffect, useCallback, Suspense, lazy } from "react";
 import { SleepLog } from "@/hooks/useSleepApi";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
-import { Download, Share2, Loader2, Moon, Link2, Sparkles, Check } from "lucide-react";
+import { Download, Share2, Loader2, Moon, Link2, Sparkles, Check, BarChart3 } from "lucide-react";
 import { format, subDays, subMonths, parseISO, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { toPng } from "html-to-image";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { trackSleepProgressShared } from "@/lib/klaviyo";
+
+// Lazy load the chart component
+const ShareProgressChart = lazy(() => import("./ShareProgressChart"));
 
 type ShareRange = "7d" | "30d" | "90d" | "12m";
 type ShareMetric = "both" | "quality" | "pain";
@@ -328,44 +331,13 @@ export const ShareProgressModal = ({ isOpen, onClose, logs, initialRange = "30d"
                   </div>
                 ) : (
                   <div className="h-[180px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={filteredData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                        <XAxis
-                          dataKey="date"
-                          tick={{ fontSize: 9, fill: "rgba(255,255,255,0.5)" }}
-                          axisLine={{ stroke: "rgba(255,255,255,0.2)" }}
-                          tickLine={false}
-                          interval="preserveStartEnd"
-                        />
-                        <YAxis
-                          domain={[0, 10]}
-                          tick={{ fontSize: 9, fill: "rgba(255,255,255,0.5)" }}
-                          axisLine={{ stroke: "rgba(255,255,255,0.2)" }}
-                          tickLine={false}
-                        />
-                        {(metric === "both" || metric === "quality") && (
-                          <Line
-                            type="monotone"
-                            dataKey="quality"
-                            stroke="#60a5fa"
-                            strokeWidth={2}
-                            dot={false}
-                            connectNulls
-                          />
-                        )}
-                        {(metric === "both" || metric === "pain") && (
-                          <Line
-                            type="monotone"
-                            dataKey="pain"
-                            stroke="#f87171"
-                            strokeWidth={2}
-                            dot={false}
-                            connectNulls
-                          />
-                        )}
-                      </LineChart>
-                    </ResponsiveContainer>
+                    <Suspense fallback={
+                      <div className="h-full flex items-center justify-center">
+                        <BarChart3 className="h-6 w-6 text-white/30 animate-pulse" />
+                      </div>
+                    }>
+                      <ShareProgressChart data={filteredData} metric={metric} />
+                    </Suspense>
                   </div>
                 )}
               </div>
