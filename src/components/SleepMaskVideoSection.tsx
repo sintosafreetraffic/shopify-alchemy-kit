@@ -4,15 +4,18 @@ import { useState, useRef, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { useInView } from "@/hooks/useInView";
+import { cn } from "@/lib/utils";
+
+interface VideoItem {
+  id: number;
+  src: string;
+  poster: string;
+  title: string;
+  views: string;
+}
 
 interface VideoCardProps {
-  video: {
-    id: number;
-    src: string;
-    poster: string;
-    title: string;
-    views: string;
-  };
+  video: VideoItem;
   onVideoClick: (src: string) => void;
 }
 
@@ -20,6 +23,7 @@ const VideoCard = ({ video, onVideoClick }: VideoCardProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const { ref: containerRef, isInView } = useInView<HTMLDivElement>({ threshold: 0.3 });
   const [isBuffering, setIsBuffering] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
 
   // Pause and reset video when out of view
   useEffect(() => {
@@ -27,6 +31,7 @@ const VideoCard = ({ video, onVideoClick }: VideoCardProps) => {
       videoRef.current.pause();
       videoRef.current.currentTime = 0;
       setIsBuffering(false);
+      setHasStarted(false);
     }
   }, [isInView]);
 
@@ -42,6 +47,7 @@ const VideoCard = ({ video, onVideoClick }: VideoCardProps) => {
       videoRef.current.pause();
       videoRef.current.currentTime = 0;
       setIsBuffering(false);
+      setHasStarted(false);
     }
   };
 
@@ -61,7 +67,10 @@ const VideoCard = ({ video, onVideoClick }: VideoCardProps) => {
             ref={videoRef}
             src={video.src}
             poster={video.poster}
-            className="w-full h-full object-cover"
+            className={cn(
+              "w-full h-full object-cover transition-opacity duration-300",
+              hasStarted ? "opacity-100" : "opacity-0"
+            )}
             loop
             muted
             playsInline
@@ -71,7 +80,10 @@ const VideoCard = ({ video, onVideoClick }: VideoCardProps) => {
             onLoadStart={() => setIsBuffering(true)}
             onWaiting={() => setIsBuffering(true)}
             onCanPlay={() => setIsBuffering(false)}
-            onPlaying={() => setIsBuffering(false)}
+            onPlaying={() => {
+              setIsBuffering(false);
+              setHasStarted(true);
+            }}
             onLoadedData={() => setIsBuffering(false)}
           />
         ) : (
@@ -83,6 +95,14 @@ const VideoCard = ({ video, onVideoClick }: VideoCardProps) => {
             width={360}
             height={640}
             className="w-full h-full object-cover"
+          />
+        )}
+        {/* Poster shown until video starts playing */}
+        {isInView && !hasStarted && (
+          <img
+            src={video.poster}
+            alt={video.title}
+            className="absolute inset-0 w-full h-full object-cover"
           />
         )}
         <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-transparent transition-colors">
@@ -118,9 +138,18 @@ const VideoSkeleton = () => (
 export const SleepMaskVideoSection = () => {
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [isModalBuffering, setIsModalBuffering] = useState(false);
+  const [modalHasStarted, setModalHasStarted] = useState(false);
   const { ref: sectionRef, isInView: sectionInView } = useInView<HTMLElement>({ threshold: 0.1 });
   
-  const videos = [
+  // Reset modal state when closing
+  useEffect(() => {
+    if (!selectedVideo) {
+      setIsModalBuffering(false);
+      setModalHasStarted(false);
+    }
+  }, [selectedVideo]);
+
+  const videos: VideoItem[] = [
     {
       id: 1,
       src: "/videos/video_1.mp4",
@@ -205,7 +234,10 @@ export const SleepMaskVideoSection = () => {
             <div className="relative">
               <video 
                 src={selectedVideo}
-                className="w-full aspect-[9/16] max-h-[80vh]"
+                className={cn(
+                  "w-full aspect-[9/16] max-h-[80vh] transition-opacity duration-300",
+                  modalHasStarted ? "opacity-100" : "opacity-0"
+                )}
                 controls
                 autoPlay
                 playsInline
@@ -215,7 +247,10 @@ export const SleepMaskVideoSection = () => {
                 onLoadStart={() => setIsModalBuffering(true)}
                 onWaiting={() => setIsModalBuffering(true)}
                 onCanPlay={() => setIsModalBuffering(false)}
-                onPlaying={() => setIsModalBuffering(false)}
+                onPlaying={() => {
+                  setIsModalBuffering(false);
+                  setModalHasStarted(true);
+                }}
                 onLoadedData={() => setIsModalBuffering(false)}
               />
               {isModalBuffering && (
