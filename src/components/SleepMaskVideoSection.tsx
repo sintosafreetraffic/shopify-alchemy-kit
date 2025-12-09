@@ -1,16 +1,9 @@
 // Performance: Videos use preload="none" and intersection observer for deferred loading
-import { Play } from "lucide-react";
+import { Play, Loader2 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { useInView } from "@/hooks/useInView";
-
-// Import poster images
-import sleepMaskHeroWebp from "@/assets/sleep-mask-lifestyle-hero.webp";
-import sleepMaskBenefitsWebp from "@/assets/sleep-mask-benefits-new.webp";
-import sleepMaskProductWebp from "@/assets/sleep-mask-product-shot.webp";
-import sleepMaskReadingWebp from "@/assets/sleep-mask-lifestyle-reading.webp";
-import sleepMaskSittingWebp from "@/assets/sleep-mask-lifestyle-sitting.webp";
 
 interface VideoCardProps {
   video: {
@@ -26,12 +19,14 @@ interface VideoCardProps {
 const VideoCard = ({ video, onVideoClick }: VideoCardProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const { ref: containerRef, isInView } = useInView<HTMLDivElement>({ threshold: 0.3 });
+  const [isBuffering, setIsBuffering] = useState(false);
 
   // Pause and reset video when out of view
   useEffect(() => {
     if (!isInView && videoRef.current) {
       videoRef.current.pause();
       videoRef.current.currentTime = 0;
+      setIsBuffering(false);
     }
   }, [isInView]);
 
@@ -46,6 +41,7 @@ const VideoCard = ({ video, onVideoClick }: VideoCardProps) => {
     if (videoRef.current) {
       videoRef.current.pause();
       videoRef.current.currentTime = 0;
+      setIsBuffering(false);
     }
   };
 
@@ -55,7 +51,11 @@ const VideoCard = ({ video, onVideoClick }: VideoCardProps) => {
       className="relative group cursor-pointer overflow-hidden rounded-xl"
       onClick={() => onVideoClick(video.src)}
     >
-      <div className="aspect-[9/16] relative bg-muted">
+      <div 
+        className="aspect-[9/16] relative bg-muted"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
         {isInView ? (
           <video 
             ref={videoRef}
@@ -68,8 +68,11 @@ const VideoCard = ({ video, onVideoClick }: VideoCardProps) => {
             preload="none"
             width={360}
             height={640}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
+            onLoadStart={() => setIsBuffering(true)}
+            onWaiting={() => setIsBuffering(true)}
+            onCanPlay={() => setIsBuffering(false)}
+            onPlaying={() => setIsBuffering(false)}
+            onLoadedData={() => setIsBuffering(false)}
           />
         ) : (
           <img
@@ -87,6 +90,12 @@ const VideoCard = ({ video, onVideoClick }: VideoCardProps) => {
             <Play className="w-6 h-6 text-black ml-0.5" fill="currentColor" />
           </div>
         </div>
+        {/* Buffering spinner */}
+        {isBuffering && (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40">
+            <Loader2 className="h-8 w-8 animate-spin text-white" />
+          </div>
+        )}
         <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
           <p className="text-white font-semibold">{video.title}</p>
           <p className="text-white/80 text-sm">{video.views} views</p>
@@ -108,41 +117,42 @@ const VideoSkeleton = () => (
 
 export const SleepMaskVideoSection = () => {
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+  const [isModalBuffering, setIsModalBuffering] = useState(false);
   const { ref: sectionRef, isInView: sectionInView } = useInView<HTMLElement>({ threshold: 0.1 });
   
   const videos = [
     {
       id: 1,
       src: "/videos/video_1.mp4",
-      poster: sleepMaskHeroWebp,
+      poster: "/videos/thumbnails/sleepmask-video-1.webp",
       title: "Complete darkness",
       views: "2.1M"
     },
     {
       id: 2,
       src: "/videos/video_2.mp4",
-      poster: sleepMaskBenefitsWebp,
+      poster: "/videos/thumbnails/sleepmask-video-2.webp",
       title: "Perfect fit demo",
       views: "1.7M"
     },
     {
       id: 3,
       src: "/videos/video_3.mp4",
-      poster: sleepMaskProductWebp,
+      poster: "/videos/thumbnails/sleepmask-video-3.webp",
       title: "Wake up refreshed",
       views: "2.5M"
     },
     {
       id: 4,
       src: "/videos/video_4.mp4",
-      poster: sleepMaskReadingWebp,
+      poster: "/videos/thumbnails/sleepmask-video-4.webp",
       title: "Real customer reviews",
       views: "1.9M"
     },
     {
       id: 5,
       src: "/videos/video_5.mp4",
-      poster: sleepMaskSittingWebp,
+      poster: "/videos/thumbnails/sleepmask-video-5.webp",
       title: "Travel essential",
       views: "1.4M"
     }
@@ -192,16 +202,28 @@ export const SleepMaskVideoSection = () => {
       <Dialog open={!!selectedVideo} onOpenChange={() => setSelectedVideo(null)}>
         <DialogContent className="max-w-2xl p-0 bg-black">
           {selectedVideo && (
-            <video 
-              src={selectedVideo}
-              className="w-full aspect-[9/16] max-h-[80vh]"
-              controls
-              autoPlay
-              playsInline
-              preload="auto"
-              width={720}
-              height={1280}
-            />
+            <div className="relative">
+              <video 
+                src={selectedVideo}
+                className="w-full aspect-[9/16] max-h-[80vh]"
+                controls
+                autoPlay
+                playsInline
+                preload="auto"
+                width={720}
+                height={1280}
+                onLoadStart={() => setIsModalBuffering(true)}
+                onWaiting={() => setIsModalBuffering(true)}
+                onCanPlay={() => setIsModalBuffering(false)}
+                onPlaying={() => setIsModalBuffering(false)}
+                onLoadedData={() => setIsModalBuffering(false)}
+              />
+              {isModalBuffering && (
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40">
+                  <Loader2 className="h-10 w-10 animate-spin text-white" />
+                </div>
+              )}
+            </div>
           )}
         </DialogContent>
       </Dialog>
