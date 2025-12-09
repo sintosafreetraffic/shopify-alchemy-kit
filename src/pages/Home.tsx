@@ -83,7 +83,7 @@ export default function Home() {
             </p>
 
             <div className="flex flex-wrap justify-center gap-4 pt-4">
-              <Link to="/product">
+              <Link to="/product/ergonomic-pillow">
                 <Button size="lg" className="text-lg px-8">
                   Explore Our Bestseller <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
