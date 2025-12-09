@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { useInView } from "@/hooks/useInView";
+import { useIsTouchDevice } from "@/hooks/useIsTouchDevice";
 import { cn } from "@/lib/utils";
 
 interface VideoItem {
@@ -24,6 +25,7 @@ const VideoCard = ({ video, onVideoClick }: VideoCardProps) => {
   const { ref: containerRef, isInView } = useInView<HTMLDivElement>({ threshold: 0.3 });
   const [isBuffering, setIsBuffering] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
+  const isTouch = useIsTouchDevice();
 
   // Pause and reset video when out of view
   useEffect(() => {
@@ -36,14 +38,16 @@ const VideoCard = ({ video, onVideoClick }: VideoCardProps) => {
   }, [isInView]);
 
   const handleMouseEnter = () => {
-    if (isInView && videoRef.current) {
+    // Only use hover on non-touch devices
+    if (!isTouch && isInView && videoRef.current) {
       videoRef.current.load();
       videoRef.current.play();
     }
   };
 
   const handleMouseLeave = () => {
-    if (videoRef.current) {
+    // Only use hover on non-touch devices
+    if (!isTouch && videoRef.current) {
       videoRef.current.pause();
       videoRef.current.currentTime = 0;
       setIsBuffering(false);
@@ -51,11 +55,29 @@ const VideoCard = ({ video, onVideoClick }: VideoCardProps) => {
     }
   };
 
+  const handleClick = () => {
+    if (isTouch) {
+      // Touch device: first tap starts preview, second tap opens modal
+      if (!hasStarted) {
+        if (isInView && videoRef.current) {
+          videoRef.current.load();
+          videoRef.current.play();
+        }
+        return;
+      }
+      // Already playing - open modal
+      onVideoClick(video.src);
+    } else {
+      // Desktop: single click opens modal
+      onVideoClick(video.src);
+    }
+  };
+
   return (
     <div 
       ref={containerRef}
       className="relative group cursor-pointer overflow-hidden rounded-xl"
-      onClick={() => onVideoClick(video.src)}
+      onClick={handleClick}
     >
       <div 
         className="aspect-[9/16] relative bg-muted"
