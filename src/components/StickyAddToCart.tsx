@@ -308,8 +308,8 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
 
                       {/* Color Picker Dropdown */}
                       {showColorPicker && (
-                        <div className="absolute bottom-full mb-2 right-0 bg-background border border-border rounded-lg shadow-lg p-2 z-[110]">
-                          <div className="grid grid-cols-3 gap-2">
+                        <div className="absolute bottom-full mb-2 right-0 bg-background border border-border rounded-lg shadow-lg p-3 z-[110] min-w-[280px]">
+                          <div className="grid grid-cols-3 gap-3">
                             {colors.map((color) => (
                               <button
                                 key={color.value}
@@ -317,11 +317,11 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                                   setSelectedColor(color.value);
                                   setShowColorPicker(false);
                                 }}
-                                className={`flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-primary/10 transition-colors ${
-                                  selectedColor === color.value ? "bg-primary/10" : ""
+                                className={`flex flex-col items-center gap-1.5 p-2 rounded-lg hover:bg-primary/10 transition-colors ${
+                                  selectedColor === color.value ? "bg-primary/20 ring-2 ring-primary" : ""
                                 }`}
                               >
-                                <div className="w-12 h-12 rounded-lg border-2 border-border overflow-hidden bg-background flex items-center justify-center relative">
+                                <div className="w-14 h-14 rounded-lg border-2 border-border overflow-hidden bg-background flex items-center justify-center relative">
                                   <img 
                                     src={color.image} 
                                     alt={color.name}
@@ -329,11 +329,11 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                                   />
                                   {selectedColor === color.value && (
                                     <div className="absolute inset-0 bg-primary/10 flex items-center justify-center">
-                                      <Check className="w-4 h-4 text-primary" />
+                                      <Check className="w-5 h-5 text-primary" />
                                     </div>
                                   )}
                                 </div>
-                                <span className="text-xs font-medium whitespace-nowrap">{color.name}</span>
+                                <span className="text-xs font-medium text-center">{color.name}</span>
                               </button>
                             ))}
                           </div>
