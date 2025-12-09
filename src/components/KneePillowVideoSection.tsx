@@ -1,14 +1,9 @@
 // Performance: Videos use preload="none" and intersection observer for deferred loading
-import { Play } from "lucide-react";
+import { Play, Loader2 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { useInView } from "@/hooks/useInView";
-
-// Import poster images
-import kneePillowHeroWebp from "@/assets/knee-pillow-main-hero.webp";
-import kneePillowLifestyleWebp from "@/assets/knee-pillow-hero-lifestyle.webp";
-import kneePillowFeaturesWebp from "@/assets/knee-pillow-features-callout.webp";
 
 interface VideoCardProps {
   video: {
@@ -24,12 +19,14 @@ interface VideoCardProps {
 const VideoCard = ({ video, onVideoClick }: VideoCardProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const { ref: containerRef, isInView } = useInView<HTMLDivElement>({ threshold: 0.3 });
+  const [isBuffering, setIsBuffering] = useState(false);
 
   // Pause and reset video when out of view
   useEffect(() => {
     if (!isInView && videoRef.current) {
       videoRef.current.pause();
       videoRef.current.currentTime = 0;
+      setIsBuffering(false);
     }
   }, [isInView]);
 
@@ -44,6 +41,7 @@ const VideoCard = ({ video, onVideoClick }: VideoCardProps) => {
     if (videoRef.current) {
       videoRef.current.pause();
       videoRef.current.currentTime = 0;
+      setIsBuffering(false);
     }
   };
 
@@ -53,7 +51,11 @@ const VideoCard = ({ video, onVideoClick }: VideoCardProps) => {
       className="relative group cursor-pointer overflow-hidden rounded-xl"
       onClick={() => onVideoClick(video.src)}
     >
-      <div className="aspect-[9/16] relative bg-muted">
+      <div 
+        className="aspect-[9/16] relative bg-muted"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
         {isInView ? (
           <video 
             ref={videoRef}
@@ -66,8 +68,11 @@ const VideoCard = ({ video, onVideoClick }: VideoCardProps) => {
             preload="none"
             width={360}
             height={640}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
+            onLoadStart={() => setIsBuffering(true)}
+            onWaiting={() => setIsBuffering(true)}
+            onCanPlay={() => setIsBuffering(false)}
+            onPlaying={() => setIsBuffering(false)}
+            onLoadedData={() => setIsBuffering(false)}
           />
         ) : (
           <img
@@ -85,6 +90,12 @@ const VideoCard = ({ video, onVideoClick }: VideoCardProps) => {
             <Play className="w-6 h-6 text-black ml-0.5" fill="currentColor" />
           </div>
         </div>
+        {/* Buffering spinner */}
+        {isBuffering && (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40">
+            <Loader2 className="h-8 w-8 animate-spin text-white" />
+          </div>
+        )}
         <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
           <p className="text-white font-semibold">{video.title}</p>
           <p className="text-white/80 text-sm">{video.views} views</p>
@@ -106,27 +117,28 @@ const VideoSkeleton = () => (
 
 export const KneePillowVideoSection = () => {
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+  const [isModalBuffering, setIsModalBuffering] = useState(false);
   const { ref: sectionRef, isInView: sectionInView } = useInView<HTMLElement>({ threshold: 0.1 });
   
   const videos = [
     {
       id: 2,
       src: "/videos/knee-video-2.mp4",
-      poster: kneePillowHeroWebp,
+      poster: "/videos/thumbnails/knee-video-2.webp",
       title: "Hip support explained",
       views: "1.5M"
     },
     {
       id: 3,
       src: "/videos/knee-video-3.mp4",
-      poster: kneePillowLifestyleWebp,
+      poster: "/videos/thumbnails/knee-video-3.webp",
       title: "Wake up pain-free",
       views: "2.3M"
     },
     {
       id: 4,
       src: "/videos/knee-video-4.mp4",
-      poster: kneePillowFeaturesWebp,
+      poster: "/videos/thumbnails/knee-video-4.webp",
       title: "Real customer results",
       views: "1.8M"
     }
@@ -176,16 +188,28 @@ export const KneePillowVideoSection = () => {
       <Dialog open={!!selectedVideo} onOpenChange={() => setSelectedVideo(null)}>
         <DialogContent className="max-w-2xl p-0 bg-black">
           {selectedVideo && (
-            <video 
-              src={selectedVideo}
-              className="w-full aspect-[9/16] max-h-[80vh]"
-              controls
-              autoPlay
-              playsInline
-              preload="auto"
-              width={720}
-              height={1280}
-            />
+            <div className="relative">
+              <video 
+                src={selectedVideo}
+                className="w-full aspect-[9/16] max-h-[80vh]"
+                controls
+                autoPlay
+                playsInline
+                preload="auto"
+                width={720}
+                height={1280}
+                onLoadStart={() => setIsModalBuffering(true)}
+                onWaiting={() => setIsModalBuffering(true)}
+                onCanPlay={() => setIsModalBuffering(false)}
+                onPlaying={() => setIsModalBuffering(false)}
+                onLoadedData={() => setIsModalBuffering(false)}
+              />
+              {isModalBuffering && (
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40">
+                  <Loader2 className="h-10 w-10 animate-spin text-white" />
+                </div>
+              )}
+            </div>
           )}
         </DialogContent>
       </Dialog>
