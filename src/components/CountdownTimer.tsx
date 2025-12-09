@@ -57,7 +57,7 @@ const calculateTimeLeft = () => {
 
 export const useCountdownTimer = () => {
   const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft());
-  const [saleName] = useState("CYBER MONDAY");
+  const [saleName] = useState("CHRISTMAS");
 
   useEffect(() => {
     // Calculate immediately on mount
