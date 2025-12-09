@@ -65,7 +65,7 @@ export const ProductImageCarousel = () => {
   // Multiple views of the Rise By Night pillow (desktop order)
   const images = [
     { url: pillowHeroNew, alt: "Rise By Night ergonomic pillow main view", type: "image" },
-    { url: "/videos/product-demo.mp4", alt: "Rise By Night pillow demonstration", type: "video", poster: pillowHeroNew },
+    { url: "/videos/product-demo.mp4", alt: "Rise By Night pillow demonstration", type: "video", poster: "/videos/thumbnails/product-video-thumb.webp" },
     { url: pillowBenefitsNew, alt: "Rise By Night ergonomic pillow benefits - relieves neck & back pain, reduces sleep apnea, reduces acid reflux, relieves shoulders", type: "image" },
     { url: pillowEasyCleaning, alt: "Rise By Night pillow - easy cleaning and maintenance with removable cover", type: "image" },
     { url: neckPainSpine, alt: "Rise By Night pillow - neck pain and spine alignment relief", type: "image" },
