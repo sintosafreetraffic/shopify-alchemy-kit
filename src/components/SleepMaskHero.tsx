@@ -78,25 +78,25 @@ export const SleepMaskHero = () => {
 
     setIsCheckingOut(true);
     try {
-      // Find the variant that matches selected color and quantity
+      // Always use the "1 Mask" variant and set cart quantity
       const variant = product.node.variants.edges.find(v => {
         const colorMatch = v.node.selectedOptions.find(opt => opt.name === "Color")?.value === selectedColor;
-        const quantityMatch = v.node.selectedOptions.find(opt => opt.name === "Quantity")?.value === `${quantity} Mask${quantity > 1 ? 's' : ''}`;
+        const quantityMatch = v.node.selectedOptions.find(opt => opt.name === "Quantity")?.value === "1 Mask";
         return colorMatch && quantityMatch;
       })?.node;
 
       if (!variant) {
-        toast.error("Selected variant not available");
+        toast.error("Selected color not available");
         return;
       }
       
       const cartItem = {
         product,
         variantId: variant.id,
-        variantTitle: variant.title,
+        variantTitle: `${selectedColor} / 1 Mask`,
         price: variant.price,
         compareAtPrice: variant.compareAtPrice,
-        quantity: 1, // Quantity is in the variant itself
+        quantity: quantity, // Use the selected quantity
         selectedOptions: variant.selectedOptions
       };
       
@@ -122,15 +122,15 @@ export const SleepMaskHero = () => {
   // Get available colors from product
   const availableColors = product?.node.options.find(opt => opt.name === "Color")?.values || [];
   
-  // Find the variant price for selected color and quantity
-  const selectedVariant = product?.node.variants.edges.find(v => {
+  // Find the base price per mask (using "1 Mask" variant)
+  const basePriceVariant = product?.node.variants.edges.find(v => {
     const colorMatch = v.node.selectedOptions.find(opt => opt.name === "Color")?.value === selectedColor;
-    const quantityMatch = v.node.selectedOptions.find(opt => opt.name === "Quantity")?.value === `${quantity} Mask${quantity > 1 ? 's' : ''}`;
+    const quantityMatch = v.node.selectedOptions.find(opt => opt.name === "Quantity")?.value === "1 Mask";
     return colorMatch && quantityMatch;
   })?.node;
 
-  const productPrice = selectedVariant ? parseFloat(selectedVariant.price.amount) : 29.99;
-  const totalPrice = productPrice;
+  const pricePerMask = basePriceVariant ? parseFloat(basePriceVariant.price.amount) : 29.99;
+  const totalPrice = pricePerMask * quantity;
 
   return (
     <section className="pt-0 pb-3 md:pb-6 bg-background overflow-visible">
@@ -292,7 +292,7 @@ export const SleepMaskHero = () => {
                 <span className="text-2xl font-bold text-primary">${totalPrice.toFixed(2)}</span>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                {quantity} mask{quantity > 1 ? 's' : ''} × ${(productPrice / quantity).toFixed(2)} each
+                {quantity} mask{quantity > 1 ? 's' : ''} × ${pricePerMask.toFixed(2)} each
               </p>
             </div>
 
