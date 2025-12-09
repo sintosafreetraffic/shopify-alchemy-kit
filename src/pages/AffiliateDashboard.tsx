@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,12 +11,11 @@ import { toast } from "@/hooks/use-toast";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from "recharts";
 import { format, parseISO } from "date-fns";
-import { useAffiliateDashboard } from "@/hooks/useAffiliateDashboard";
-import type { AffiliateGoal } from "@/hooks/useAffiliateDashboard";
 
 // Production domain for referral links
 const SITE_URL = "https://www.risebynight.com";
 
+// ============ Type Definitions ============
 interface AffiliateData {
   id: string;
   referral_code: string;
@@ -105,8 +104,29 @@ interface PayoutHistoryEntry {
   note: string | null;
 }
 
-// Types imported from useAffiliateDashboard hook
+interface AffiliateGoal {
+  id: string;
+  goal_type: string;
+  target_amount: number;
+  currency: string;
+  period_start: string;
+  period_end: string;
+  current_progress: number;
+  progress_percentage: number;
+}
 
+interface ResourceItem {
+  id: string;
+  category: string;
+  title: string;
+  description: string;
+  link_label: string | null;
+  link_url: string | null;
+  badge: string | null;
+  sort_order: number;
+}
+
+// ============ Tier Configuration ============
 const tierConfig: Record<string, { color: string; bgColor: string; borderColor: string; icon: string }> = {
   'bronze': { color: 'text-amber-700', bgColor: 'bg-amber-100', borderColor: 'border-amber-300', icon: '🥉' },
   'silver': { color: 'text-slate-600', bgColor: 'bg-slate-100', borderColor: 'border-slate-300', icon: '🥈' },
@@ -115,7 +135,6 @@ const tierConfig: Record<string, { color: string; bgColor: string; borderColor: 
   'diamond': { color: 'text-cyan-700', bgColor: 'bg-gradient-to-r from-cyan-100 to-blue-100', borderColor: 'border-cyan-400', icon: '👑' },
 };
 
-// Updated tier rates: 10%, 15%, 20%, 25%
 const allTiers = [
   { name: 'bronze', displayName: 'Bronze', rate: 10, requirement: 'Default' },
   { name: 'silver', displayName: 'Silver', rate: 15, requirement: '10+ sales' },
@@ -124,61 +143,187 @@ const allTiers = [
   { name: 'diamond', displayName: 'Diamond', rate: 25, requirement: 'Invite only' },
 ];
 
+// ============ Default Values ============
+const DEFAULT_TIER_INFO: TierInfo = {
+  tier: 'bronze',
+  commissionRate: 10,
+  nextTier: 'silver',
+  salesNeeded: 10
+};
+
+const DEFAULT_BREAKDOWN: CommissionBreakdown = {
+  level1: { count: 0, total: 0 },
+  level2: { count: 0, total: 0 },
+  pending: { count: 0, total: 0 },
+  paid: { count: 0, total: 0 }
+};
+
 const AffiliateDashboard = () => {
-  const [user, setUser] = useState<any>(null);
-  const [commissionGoalTarget, setCommissionGoalTarget] = useState("");
-  const [revenueGoalTarget, setRevenueGoalTarget] = useState("");
-  const [savingGoal, setSavingGoal] = useState(false);
-  const [activeGoalTab, setActiveGoalTab] = useState<"commission" | "revenue">("commission");
-  const [joining, setJoining] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [inviteCopied, setInviteCopied] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const inviteCode = searchParams.get('invite');
 
-  // Use optimized hook for parallel data fetching
-  const { 
-    data: dashboardData, 
-    loading, 
-    secondaryLoading,
-    fetchDashboardData,
-    refetch
-  } = useAffiliateDashboard();
+  // ============ Auth & UI State ============
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [joining, setJoining] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [inviteCopied, setInviteCopied] = useState(false);
 
-  // Destructure dashboard data for compatibility
-  const {
-    affiliate: affiliateData,
-    commissions,
-    subAffiliates,
-    tierInfo,
-    directSalesLast30,
-    monthlyStats,
-    commissionBreakdown,
-    leaderboard,
-    analytics,
-    payoutHistory,
-    goals,
-    resources,
-  } = dashboardData;
+  // ============ Primary Data State ============
+  const [affiliateData, setAffiliateData] = useState<AffiliateData | null>(null);
+  const [commissions, setCommissions] = useState<Commission[]>([]);
+  const [subAffiliates, setSubAffiliates] = useState<SubAffiliate[]>([]);
+  const [tierInfo, setTierInfo] = useState<TierInfo>(DEFAULT_TIER_INFO);
+  const [directSalesLast30, setDirectSalesLast30] = useState(0);
+  const [monthlyStats, setMonthlyStats] = useState<MonthlyStats>({ sales: 0, revenue: 0 });
+  const [commissionBreakdown, setCommissionBreakdown] = useState<CommissionBreakdown>(DEFAULT_BREAKDOWN);
 
-  // Pre-fill goal inputs when goals load
-  useEffect(() => {
-    const commissionGoal = goals.find((g: AffiliateGoal) => g.goal_type === '30d_commission');
-    const revenueGoal = goals.find((g: AffiliateGoal) => g.goal_type === '30d_revenue');
-    if (commissionGoal) {
-      setCommissionGoalTarget(commissionGoal.target_amount.toString());
+  // ============ Secondary Data State (loaded in parallel) ============
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(true);
+  
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
+  
+  const [payoutHistory, setPayoutHistory] = useState<PayoutHistoryEntry[]>([]);
+  const [payoutHistoryLoading, setPayoutHistoryLoading] = useState(true);
+  
+  const [goals, setGoals] = useState<AffiliateGoal[]>([]);
+  const [goalsLoading, setGoalsLoading] = useState(true);
+  
+  const [resources, setResources] = useState<ResourceItem[]>([]);
+  const [resourcesLoading, setResourcesLoading] = useState(true);
+
+  // ============ Goal Form State ============
+  const [commissionGoalTarget, setCommissionGoalTarget] = useState("");
+  const [revenueGoalTarget, setRevenueGoalTarget] = useState("");
+  const [savingGoal, setSavingGoal] = useState(false);
+  const [activeGoalTab, setActiveGoalTab] = useState<"commission" | "revenue">("commission");
+
+  // ============ Data Fetching ============
+  
+  /**
+   * Fetch secondary data in parallel (leaderboard, analytics, goals, resources, payouts)
+   */
+  const fetchSecondaryData = useCallback(async (affiliateId: string) => {
+    // Set all secondary loading states
+    setLeaderboardLoading(true);
+    setAnalyticsLoading(true);
+    setGoalsLoading(true);
+    setResourcesLoading(true);
+    setPayoutHistoryLoading(true);
+
+    const [leaderboardRes, analyticsRes, goalsRes, resourcesRes, payoutRes] = await Promise.all([
+      supabase.functions.invoke('affiliate-api', { body: { action: 'get-leaderboard', data: {} } }),
+      supabase.functions.invoke('affiliate-api', { body: { action: 'get-analytics', data: {} } }),
+      supabase.functions.invoke('affiliate-api', { body: { action: 'get-goals', data: {} } }),
+      supabase.functions.invoke('affiliate-api', { body: { action: 'get-resources', data: {} } }),
+      supabase
+        .from('affiliate_payouts')
+        .select('id, amount, currency, processed_at, method, note')
+        .eq('affiliate_id', affiliateId)
+        .order('processed_at', { ascending: false }),
+    ]);
+
+    // Update leaderboard
+    if (leaderboardRes.data?.leaderboard) {
+      setLeaderboard(leaderboardRes.data.leaderboard);
     }
-    if (revenueGoal) {
-      setRevenueGoalTarget(revenueGoal.target_amount.toString());
-    }
-  }, [goals]);
+    setLeaderboardLoading(false);
 
-  useEffect(() => {
-    checkAuth();
+    // Update analytics
+    if (analyticsRes.data?.analytics) {
+      setAnalytics(analyticsRes.data.analytics);
+    }
+    setAnalyticsLoading(false);
+
+    // Update goals + pre-fill inputs
+    if (goalsRes.data?.goals) {
+      const fetchedGoals = goalsRes.data.goals;
+      setGoals(fetchedGoals);
+      const commissionGoal = fetchedGoals.find((g: AffiliateGoal) => g.goal_type === '30d_commission');
+      const revenueGoal = fetchedGoals.find((g: AffiliateGoal) => g.goal_type === '30d_revenue');
+      if (commissionGoal) {
+        setCommissionGoalTarget(commissionGoal.target_amount.toString());
+      }
+      if (revenueGoal) {
+        setRevenueGoalTarget(revenueGoal.target_amount.toString());
+      }
+    }
+    setGoalsLoading(false);
+
+    // Update resources
+    if (resourcesRes.data?.resources) {
+      setResources(resourcesRes.data.resources);
+    }
+    setResourcesLoading(false);
+
+    // Update payout history
+    if (payoutRes.data) {
+      setPayoutHistory(payoutRes.data);
+    }
+    setPayoutHistoryLoading(false);
   }, []);
 
-  const checkAuth = async () => {
+  /**
+   * Fetch primary affiliate data, then trigger secondary fetch in parallel
+   */
+  const fetchAffiliateData = useCallback(async () => {
+    setLoading(true);
+
+    try {
+      const response = await supabase.functions.invoke('affiliate-api', {
+        body: { action: 'get-affiliate', data: {} }
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      const {
+        affiliate,
+        commissions: commissionsData,
+        tierInfo: tierData,
+        directSalesLast30Days,
+        subAffiliates: subAffiliatesData,
+        monthlyStats: stats,
+        commissionBreakdown: breakdown
+      } = response.data;
+
+      // Set primary data
+      setAffiliateData(affiliate || null);
+      setCommissions(commissionsData || []);
+      setSubAffiliates(subAffiliatesData || []);
+      setTierInfo(tierData || DEFAULT_TIER_INFO);
+      setDirectSalesLast30(directSalesLast30Days || 0);
+      setMonthlyStats(stats || { sales: 0, revenue: 0 });
+      setCommissionBreakdown(breakdown || DEFAULT_BREAKDOWN);
+
+      // Primary data loaded - show UI immediately
+      setLoading(false);
+
+      // If affiliate exists, fetch secondary data in parallel
+      if (affiliate?.id) {
+        fetchSecondaryData(affiliate.id);
+      } else {
+        // No affiliate, clear secondary loading states
+        setLeaderboardLoading(false);
+        setAnalyticsLoading(false);
+        setGoalsLoading(false);
+        setResourcesLoading(false);
+        setPayoutHistoryLoading(false);
+      }
+    } catch (error) {
+      console.error("Error fetching affiliate data:", error);
+      setLoading(false);
+    }
+  }, [fetchSecondaryData]);
+
+  /**
+   * Check authentication and load data
+   */
+  const checkAuth = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session) {
@@ -190,10 +335,14 @@ const AffiliateDashboard = () => {
     }
 
     setUser(session.user);
-    fetchDashboardData();
-  };
+    fetchAffiliateData();
+  }, [inviteCode, navigate, fetchAffiliateData]);
 
-  // All fetch functions are now handled by useAffiliateDashboard hook
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  // ============ Actions ============
 
   const saveGoal = async (goalType: '30d_commission' | '30d_revenue') => {
     const targetValue = goalType === '30d_commission' ? commissionGoalTarget : revenueGoalTarget;
@@ -230,8 +379,15 @@ const AffiliateDashboard = () => {
         description: `Your 30-day ${goalLabel} goal is now $${targetAmount.toFixed(2)}.`,
       });
 
-      // Refresh all dashboard data
-      await refetch();
+      // Refresh goals
+      if (affiliateData?.id) {
+        const goalsRes = await supabase.functions.invoke('affiliate-api', {
+          body: { action: 'get-goals', data: {} }
+        });
+        if (goalsRes.data?.goals) {
+          setGoals(goalsRes.data.goals);
+        }
+      }
     } catch (error) {
       console.error("Error saving goal:", error);
       toast({
@@ -243,10 +399,6 @@ const AffiliateDashboard = () => {
       setSavingGoal(false);
     }
   };
-
-  // Derive goals by type
-  const commissionGoal = goals.find(g => g.goal_type === '30d_commission');
-  const revenueGoal = goals.find(g => g.goal_type === '30d_revenue');
 
   const becomeAffiliate = async () => {
     setJoining(true);
@@ -273,8 +425,8 @@ const AffiliateDashboard = () => {
           : "You are now an affiliate. Welcome to the program!",
       });
 
-      // Refresh dashboard data to show the new affiliate info
-      await refetch();
+      // Refresh all data
+      await fetchAffiliateData();
     } catch (error) {
       console.error("Error becoming affiliate:", error);
       toast({
@@ -305,6 +457,11 @@ const AffiliateDashboard = () => {
     setTimeout(() => setInviteCopied(false), 2000);
   };
 
+  // ============ Computed Values ============
+
+  const commissionGoal = goals.find(g => g.goal_type === '30d_commission');
+  const revenueGoal = goals.find(g => g.goal_type === '30d_revenue');
+
   const getProgressToNextTier = () => {
     if (tierInfo.tier === 'diamond' || tierInfo.tier === 'platinum') return 100;
     const thresholds: Record<string, number> = { 'bronze': 10, 'silver': 25, 'gold': 50 };
@@ -318,6 +475,8 @@ const AffiliateDashboard = () => {
     return tier.charAt(0).toUpperCase() + tier.slice(1);
   };
 
+  // ============ Loading State ============
+
   if (loading) {
     return (
       <div className="min-h-screen bg-secondary/30 flex items-center justify-center">
@@ -328,6 +487,8 @@ const AffiliateDashboard = () => {
       </div>
     );
   }
+
+  // ============ Not An Affiliate State ============
 
   if (!affiliateData) {
     return (
@@ -359,80 +520,70 @@ const AffiliateDashboard = () => {
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
                   <div className="flex items-center gap-3 mb-2">
-                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                      <span className="text-sm font-bold text-primary">L1</span>
+                    <div className="p-2 bg-primary/10 rounded-full">
+                      <DollarSign className="h-5 w-5 text-primary" />
                     </div>
-                    <span className="font-semibold">Direct Referrals</span>
+                    <div>
+                      <p className="font-semibold">Direct Sales</p>
+                      <p className="text-2xl font-bold text-primary">10-25%</p>
+                    </div>
                   </div>
-                  <p className="text-2xl font-bold text-primary">10-25%</p>
-                  <p className="text-sm text-muted-foreground">Based on your tier level</p>
+                  <p className="text-sm text-muted-foreground">Commission on sales from your referral link</p>
                 </div>
-                <div className="p-4 rounded-lg bg-secondary border">
+                <div className="p-4 rounded-lg bg-secondary/50 border">
                   <div className="flex items-center gap-3 mb-2">
-                    <div className="w-8 h-8 rounded-full bg-muted-foreground/20 flex items-center justify-center">
-                      <span className="text-sm font-bold text-muted-foreground">L2</span>
+                    <div className="p-2 bg-secondary rounded-full">
+                      <Users className="h-5 w-5 text-muted-foreground" />
                     </div>
-                    <span className="font-semibold">Sub-Affiliates</span>
+                    <div>
+                      <p className="font-semibold">Sub-Affiliate Sales</p>
+                      <p className="text-2xl font-bold">5%</p>
+                    </div>
                   </div>
-                  <p className="text-2xl font-bold">5%</p>
-                  <p className="text-sm text-muted-foreground">Fixed rate on referrals' sales</p>
+                  <p className="text-sm text-muted-foreground">Commission on sales from affiliates you recruit</p>
                 </div>
               </div>
 
-              <div className="border-t pt-6">
-                <h3 className="font-semibold mb-4 flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-primary" />
+              <div className="space-y-3">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <Award className="h-4 w-4" />
                   Performance Tiers
                 </h3>
-                <div className="space-y-2">
-                  {allTiers.map((tier) => (
-                    <div key={tier.name} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors">
-                      <div className="flex items-center gap-3">
-                        <span className="text-lg">{tierConfig[tier.name]?.icon}</span>
+                <div className="grid gap-2">
+                  {allTiers.map((tier, index) => (
+                    <div key={tier.name} className={`flex items-center justify-between p-3 rounded-lg ${tierConfig[tier.name]?.bgColor || 'bg-secondary/30'} border ${tierConfig[tier.name]?.borderColor || 'border-border'}`}>
+                      <div className="flex items-center gap-2">
+                        <span>{tierConfig[tier.name]?.icon}</span>
                         <span className="font-medium">{tier.displayName}</span>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <span className="text-sm text-muted-foreground">{tier.requirement}</span>
-                        <span className="font-bold text-primary">{tier.rate}%</span>
+                      <div className="text-right">
+                        <span className="font-bold">{tier.rate}%</span>
+                        <span className="text-xs text-muted-foreground ml-2">({tier.requirement})</span>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="border-t pt-6">
-                <h3 className="font-semibold mb-3">Program Benefits</h3>
-                <ul className="space-y-2">
-                  {[
-                    'Unique referral link to track all your sales',
-                    'Invite other affiliates and earn 5% on their sales',
-                    'Real-time dashboard to monitor earnings',
-                    'Monthly payouts via PayPal or bank transfer',
-                    'No minimum payout threshold'
-                  ].map((benefit, i) => (
-                    <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Check className="h-4 w-4 text-success shrink-0" />
-                      {benefit}
-                    </li>
-                  ))}
-                </ul>
+              <div className="pt-4">
+                <Button 
+                  onClick={becomeAffiliate} 
+                  disabled={joining}
+                  className="w-full h-12 text-lg"
+                >
+                  {joining ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Joining...
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="mr-2 h-5 w-5" />
+                      Join Affiliate Program
+                    </>
+                  )}
+                </Button>
               </div>
-
-              <Button 
-                onClick={becomeAffiliate} 
-                className="w-full h-12 text-base" 
-                size="lg"
-                disabled={joining}
-              >
-                {joining ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Joining...
-                  </>
-                ) : (
-                  "Join Affiliate Program"
-                )}
-              </Button>
             </CardContent>
           </Card>
         </div>
@@ -440,166 +591,194 @@ const AffiliateDashboard = () => {
     );
   }
 
+  // ============ Main Dashboard ============
+
   const currentTierConfig = tierConfig[tierInfo.tier] || tierConfig['bronze'];
 
   return (
     <div className="min-h-screen bg-secondary/30">
-      {/* Header */}
-      <div className="bg-background border-b">
-        <div className="container mx-auto px-4 py-6 md:py-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold">Affiliate Dashboard</h1>
-              <p className="text-muted-foreground">Welcome back! Here's your performance overview.</p>
-            </div>
-            <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border ${currentTierConfig.bgColor} ${currentTierConfig.borderColor}`}>
-              <span className="text-xl">{currentTierConfig.icon}</span>
-              <span className={`font-semibold ${currentTierConfig.color}`}>{formatTierName(tierInfo.tier)} Partner</span>
-            </div>
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold">Affiliate Dashboard</h1>
+            <p className="text-muted-foreground">Welcome back, partner!</p>
+          </div>
+          <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${currentTierConfig.bgColor} ${currentTierConfig.borderColor} border`}>
+            <span className="text-xl">{currentTierConfig.icon}</span>
+            <span className={`font-semibold ${currentTierConfig.color}`}>
+              {formatTierName(tierInfo.tier)} Partner
+            </span>
+            <span className="text-sm text-muted-foreground">({tierInfo.commissionRate}%)</span>
           </div>
         </div>
-      </div>
 
-      <div className="container mx-auto px-4 py-6 md:py-8 space-y-6">
         {/* Stats Grid */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
-                  <Users className="h-6 w-6 text-blue-600" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 rounded-full">
+                  <DollarSign className="h-5 w-5 text-green-600" />
                 </div>
-                <span className="text-xs font-medium text-muted-foreground bg-secondary px-2 py-1 rounded">All Time</span>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Earnings</p>
+                  <p className="text-2xl font-bold">${(affiliateData.total_commissions || 0).toFixed(2)}</p>
+                </div>
               </div>
-              <p className="text-3xl font-bold mb-1">{affiliateData.total_referrals || 0}</p>
-              <p className="text-sm text-muted-foreground">Total Referrals</p>
             </CardContent>
           </Card>
-
-          <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
-                  <DollarSign className="h-6 w-6 text-green-600" />
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-full">
+                  <Package className="h-5 w-5 text-blue-600" />
                 </div>
-                <span className="text-xs font-medium text-muted-foreground bg-secondary px-2 py-1 rounded">Lifetime</span>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Referrals</p>
+                  <p className="text-2xl font-bold">{affiliateData.total_referrals || 0}</p>
+                </div>
               </div>
-              <p className="text-3xl font-bold mb-1">${(affiliateData.total_commissions || 0).toFixed(2)}</p>
-              <p className="text-sm text-muted-foreground">Total Earnings</p>
             </CardContent>
           </Card>
-
-          <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
-                  <Award className="h-6 w-6 text-purple-600" />
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-100 rounded-full">
+                  <TrendingUp className="h-5 w-5 text-purple-600" />
                 </div>
-                <span className="text-xs font-medium text-muted-foreground bg-secondary px-2 py-1 rounded">Current Rate</span>
+                <div>
+                  <p className="text-sm text-muted-foreground">30-Day Sales</p>
+                  <p className="text-2xl font-bold">{monthlyStats.sales}</p>
+                </div>
               </div>
-              <p className="text-3xl font-bold mb-1">{tierInfo.commissionRate}%</p>
-              <p className="text-sm text-muted-foreground">Commission Rate</p>
             </CardContent>
           </Card>
-
-          <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center">
-                  <UserPlus className="h-6 w-6 text-orange-600" />
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-amber-100 rounded-full">
+                  <Users className="h-5 w-5 text-amber-600" />
                 </div>
-                <span className="text-xs font-medium text-muted-foreground bg-secondary px-2 py-1 rounded">Team</span>
+                <div>
+                  <p className="text-sm text-muted-foreground">Sub-Affiliates</p>
+                  <p className="text-2xl font-bold">{subAffiliates.length}</p>
+                </div>
               </div>
-              <p className="text-3xl font-bold mb-1">{subAffiliates.length}</p>
-              <p className="text-sm text-muted-foreground">Sub-Affiliates</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Tier Progress & Commission Breakdown */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Tier Progress Widget */}
-          <Card className="border-0 shadow-sm">
-            <CardHeader className="pb-3">
+        {/* Referral Links */}
+        <div className="grid md:grid-cols-2 gap-6 mb-8">
+          <Card>
+            <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
-                <TrendingUp className="h-5 w-5 text-yellow-600" />
+                <Share2 className="h-5 w-5 text-primary" />
+                Your Referral Link
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-2">
+                <Input 
+                  value={`${SITE_URL}?ref=${affiliateData.referral_code}`}
+                  readOnly
+                  className="font-mono text-sm"
+                />
+                <Button onClick={copyReferralLink} variant="outline">
+                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">Share this link to earn commissions on sales</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <UserPlus className="h-5 w-5 text-blue-600" />
+                Invite Affiliates
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-2">
+                <Input 
+                  value={`${SITE_URL}/affiliate-dashboard?invite=${affiliateData.referral_code}`}
+                  readOnly
+                  className="font-mono text-sm"
+                />
+                <Button onClick={copyInviteLink} variant="outline">
+                  {inviteCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">Earn 5% on sales from affiliates you recruit</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Tier Progress */}
+        {tierInfo.nextTier && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Award className="h-5 w-5 text-yellow-600" />
                 Tier Progress
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="mb-4 p-4 rounded-lg bg-secondary/50">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">30-Day Performance</span>
-                  <span className="text-sm text-muted-foreground">{directSalesLast30} sales</span>
+              <div className="space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span>{formatTierName(tierInfo.tier)}</span>
+                  <span>{formatTierName(tierInfo.nextTier)}</span>
                 </div>
-                <div className="text-xs text-muted-foreground mb-1">
-                  ${monthlyStats.revenue.toFixed(2)} revenue generated
-                </div>
-              </div>
-              
-              {tierInfo.nextTier && tierInfo.salesNeeded > 0 ? (
-                <div className="space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="font-medium flex items-center gap-1">
-                      {currentTierConfig.icon} {formatTierName(tierInfo.tier)}
-                    </span>
-                    <span className="font-medium">{tierInfo.nextTier}</span>
-                  </div>
-                  <Progress value={getProgressToNextTier()} className="h-3" />
-                  <p className="text-sm text-muted-foreground text-center">
-                    {tierInfo.salesNeeded} more sales to unlock {tierInfo.nextTier}
-                  </p>
-                </div>
-              ) : (
-                <div className="text-center py-4">
-                  <span className="text-2xl mb-2 block">{currentTierConfig.icon}</span>
-                  <p className="font-medium">You've reached {formatTierName(tierInfo.tier)}!</p>
-                  <p className="text-sm text-muted-foreground">Maximum tier achieved</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Commission Breakdown Widget */}
-          <Card className="border-0 shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <DollarSign className="h-5 w-5 text-green-600" />
-                Commission Breakdown
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
-                  <div className="text-xs text-muted-foreground mb-1">Direct Sales (L1)</div>
-                  <div className="font-bold text-primary">${commissionBreakdown.level1.total.toFixed(2)}</div>
-                  <div className="text-xs text-muted-foreground">{commissionBreakdown.level1.count} sales</div>
-                </div>
-                <div className="p-3 rounded-lg bg-orange-50 border border-orange-200">
-                  <div className="text-xs text-muted-foreground mb-1">Sub-Affiliate (L2)</div>
-                  <div className="font-bold text-orange-700">${commissionBreakdown.level2.total.toFixed(2)}</div>
-                  <div className="text-xs text-muted-foreground">{commissionBreakdown.level2.count} sales</div>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 rounded-lg bg-yellow-50 border border-yellow-200">
-                  <div className="text-xs text-muted-foreground mb-1">Pending</div>
-                  <div className="font-bold text-yellow-700">${commissionBreakdown.pending.total.toFixed(2)}</div>
-                  <div className="text-xs text-muted-foreground">{commissionBreakdown.pending.count} awaiting</div>
-                </div>
-                <div className="p-3 rounded-lg bg-green-50 border border-green-200">
-                  <div className="text-xs text-muted-foreground mb-1">Paid Out</div>
-                  <div className="font-bold text-green-700">${commissionBreakdown.paid.total.toFixed(2)}</div>
-                  <div className="text-xs text-muted-foreground">{commissionBreakdown.paid.count} payouts</div>
-                </div>
+                <Progress value={getProgressToNextTier()} className="h-3" />
+                <p className="text-sm text-muted-foreground text-center">
+                  {tierInfo.salesNeeded > 0 
+                    ? `${tierInfo.salesNeeded} more sales needed for ${formatTierName(tierInfo.nextTier)} tier`
+                    : `You've reached ${formatTierName(tierInfo.tier)} tier!`
+                  }
+                </p>
               </div>
             </CardContent>
           </Card>
-        </div>
+        )}
 
-        {/* Performance Analytics Section */}
-        <Card className="border-0 shadow-sm">
-          <CardHeader className="pb-3">
+        {/* Commission Breakdown */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <DollarSign className="h-5 w-5 text-green-600" />
+              Commission Breakdown
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="p-4 bg-blue-50 rounded-lg text-center">
+                <p className="text-sm text-muted-foreground">Level 1</p>
+                <p className="text-xl font-bold">${commissionBreakdown.level1.total.toFixed(2)}</p>
+                <p className="text-xs text-muted-foreground">{commissionBreakdown.level1.count} sales</p>
+              </div>
+              <div className="p-4 bg-purple-50 rounded-lg text-center">
+                <p className="text-sm text-muted-foreground">Level 2</p>
+                <p className="text-xl font-bold">${commissionBreakdown.level2.total.toFixed(2)}</p>
+                <p className="text-xs text-muted-foreground">{commissionBreakdown.level2.count} sales</p>
+              </div>
+              <div className="p-4 bg-amber-50 rounded-lg text-center">
+                <p className="text-sm text-muted-foreground">Pending</p>
+                <p className="text-xl font-bold">${commissionBreakdown.pending.total.toFixed(2)}</p>
+                <p className="text-xs text-muted-foreground">{commissionBreakdown.pending.count} commissions</p>
+              </div>
+              <div className="p-4 bg-green-50 rounded-lg text-center">
+                <p className="text-sm text-muted-foreground">Paid</p>
+                <p className="text-xl font-bold">${commissionBreakdown.paid.total.toFixed(2)}</p>
+                <p className="text-xs text-muted-foreground">{commissionBreakdown.paid.count} commissions</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Analytics Section */}
+        <Card className="mb-8">
+          <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <BarChart3 className="h-5 w-5 text-blue-600" />
               Performance Analytics (Last 30 Days)
@@ -607,7 +786,7 @@ const AffiliateDashboard = () => {
             <p className="text-sm text-muted-foreground">Track your daily sales and commissions</p>
           </CardHeader>
           <CardContent>
-            {secondaryLoading ? (
+            {analyticsLoading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
@@ -618,61 +797,36 @@ const AffiliateDashboard = () => {
               </div>
             ) : (
               <>
-                {/* Summary Cards */}
                 <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">
-                    <div className="text-xs text-muted-foreground mb-1">Sales (30d)</div>
-                    <div className="text-2xl font-bold text-blue-700">{analytics.totals.total_30d_sales}</div>
+                  <div className="p-4 bg-blue-50 rounded-lg text-center">
+                    <p className="text-sm text-muted-foreground">30-Day Sales</p>
+                    <p className="text-2xl font-bold">{analytics.totals.total_30d_sales}</p>
                   </div>
-                  <div className="p-4 rounded-lg bg-green-50 border border-green-200">
-                    <div className="text-xs text-muted-foreground mb-1">Commissions (30d)</div>
-                    <div className="text-2xl font-bold text-green-700">${analytics.totals.total_30d_commissions.toFixed(2)}</div>
+                  <div className="p-4 bg-green-50 rounded-lg text-center">
+                    <p className="text-sm text-muted-foreground">30-Day Commissions</p>
+                    <p className="text-2xl font-bold">${analytics.totals.total_30d_commissions.toFixed(2)}</p>
                   </div>
                 </div>
-
-                {/* Chart */}
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={analytics.daily} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="colorCommission" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <AreaChart data={analytics.daily}>
+                      <CartesianGrid strokeDasharray="3 3" />
                       <XAxis 
                         dataKey="date" 
-                        tick={{ fontSize: 10 }} 
-                        tickFormatter={(value) => format(parseISO(value), 'MMM d')}
-                        interval={6}
-                        stroke="hsl(var(--muted-foreground))"
+                        tickFormatter={(value) => format(parseISO(value), 'MM/dd')}
+                        tick={{ fontSize: 12 }}
                       />
-                      <YAxis 
-                        tick={{ fontSize: 10 }} 
-                        tickFormatter={(value) => `$${value}`}
-                        stroke="hsl(var(--muted-foreground))"
-                      />
+                      <YAxis tick={{ fontSize: 12 }} />
                       <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: 'hsl(var(--background))', 
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px',
-                          fontSize: '12px'
-                        }}
-                        formatter={(value: number, name: string) => [
-                          name === 'commission_amount' ? `$${value.toFixed(2)}` : value,
-                          name === 'commission_amount' ? 'Commission' : 'Sales'
-                        ]}
-                        labelFormatter={(label) => format(parseISO(label), 'MMM d, yyyy')}
+                        labelFormatter={(value) => format(parseISO(value as string), 'MMM d, yyyy')}
+                        formatter={(value: number) => [`$${value.toFixed(2)}`, 'Commission']}
                       />
                       <Area 
                         type="monotone" 
                         dataKey="commission_amount" 
-                        stroke="hsl(var(--primary))" 
-                        fillOpacity={1}
-                        fill="url(#colorCommission)" 
-                        strokeWidth={2}
+                        stroke="#3b82f6" 
+                        fill="#3b82f6" 
+                        fillOpacity={0.2}
                       />
                     </AreaChart>
                   </ResponsiveContainer>
@@ -682,9 +836,9 @@ const AffiliateDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Payout History Section */}
-        <Card className="border-0 shadow-sm">
-          <CardHeader className="pb-3">
+        {/* Payout History */}
+        <Card className="mb-8">
+          <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Wallet className="h-5 w-5 text-green-600" />
               Payout History
@@ -692,14 +846,14 @@ const AffiliateDashboard = () => {
             <p className="text-sm text-muted-foreground">Your processed payouts</p>
           </CardHeader>
           <CardContent>
-            {secondaryLoading ? (
+            {payoutHistoryLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
             ) : payoutHistory.length === 0 ? (
               <div className="text-center py-8">
                 <History className="h-8 w-8 mx-auto mb-2 text-muted-foreground/40" />
-                <p className="text-muted-foreground">No payouts processed yet. Once your pending amount reaches the threshold and is paid out, it will appear here.</p>
+                <p className="text-muted-foreground">No payouts yet. Once you reach the payout threshold, your payouts will appear here.</p>
               </div>
             ) : (
               <Table>
@@ -707,7 +861,6 @@ const AffiliateDashboard = () => {
                   <TableRow>
                     <TableHead>Date</TableHead>
                     <TableHead>Amount</TableHead>
-                    <TableHead>Currency</TableHead>
                     <TableHead>Method</TableHead>
                     <TableHead>Note</TableHead>
                   </TableRow>
@@ -715,15 +868,10 @@ const AffiliateDashboard = () => {
                 <TableBody>
                   {payoutHistory.map((payout) => (
                     <TableRow key={payout.id}>
-                      <TableCell className="text-sm">
-                        {format(new Date(payout.processed_at), "MMM d, yyyy")}
-                      </TableCell>
-                      <TableCell className="font-semibold text-green-600">
-                        ${payout.amount.toFixed(2)}
-                      </TableCell>
-                      <TableCell>{payout.currency}</TableCell>
-                      <TableCell className="capitalize">{payout.method.replace('_', ' ')}</TableCell>
-                      <TableCell className="text-muted-foreground">{payout.note || "-"}</TableCell>
+                      <TableCell>{format(parseISO(payout.processed_at), 'MMM d, yyyy')}</TableCell>
+                      <TableCell className="font-medium">${payout.amount.toFixed(2)} {payout.currency}</TableCell>
+                      <TableCell>{payout.method}</TableCell>
+                      <TableCell className="text-muted-foreground">{payout.note || '-'}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -732,9 +880,9 @@ const AffiliateDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Goal Tracking Section */}
-        <Card className="border-0 shadow-sm">
-          <CardHeader className="pb-3">
+        {/* Goals Section */}
+        <Card className="mb-8">
+          <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Target className="h-5 w-5 text-purple-600" />
               Your Goals
@@ -742,7 +890,7 @@ const AffiliateDashboard = () => {
             <p className="text-sm text-muted-foreground">Set 30-day targets and track your progress</p>
           </CardHeader>
           <CardContent>
-            {secondaryLoading ? (
+            {goalsLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
@@ -752,118 +900,60 @@ const AffiliateDashboard = () => {
                   <TabsTrigger value="commission">Commission Goal</TabsTrigger>
                   <TabsTrigger value="revenue">Revenue Goal</TabsTrigger>
                 </TabsList>
-
-                {/* Commission Goal Tab */}
-                <TabsContent value="commission" className="space-y-4">
-                  {commissionGoal ? (
-                    <div className="p-4 rounded-lg bg-purple-50 border border-purple-200">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium">30-Day Commission Goal</span>
-                        <span className="text-xs text-muted-foreground">
-                          {format(parseISO(commissionGoal.period_start), 'MMM d')} - {format(parseISO(commissionGoal.period_end), 'MMM d')}
-                        </span>
-                      </div>
-                      <div className="flex items-end justify-between mb-2">
-                        <div>
-                          <span className="text-2xl font-bold text-purple-700">${commissionGoal.current_progress.toFixed(2)}</span>
-                          <span className="text-sm text-muted-foreground"> / ${commissionGoal.target_amount.toFixed(2)}</span>
+                <TabsContent value="commission">
+                  <div className="space-y-4">
+                    {commissionGoal ? (
+                      <div className="p-4 bg-purple-50 rounded-lg">
+                        <div className="flex justify-between mb-2">
+                          <span className="font-medium">Target: ${commissionGoal.target_amount.toFixed(2)}</span>
+                          <span className="text-sm text-muted-foreground">{commissionGoal.progress_percentage.toFixed(0)}%</span>
                         </div>
-                        <span className="text-sm font-medium text-purple-600">{commissionGoal.progress_percentage.toFixed(0)}%</span>
+                        <Progress value={commissionGoal.progress_percentage} className="h-2 mb-2" />
+                        <p className="text-sm text-muted-foreground">
+                          ${commissionGoal.current_progress.toFixed(2)} of ${commissionGoal.target_amount.toFixed(2)}
+                        </p>
                       </div>
-                      <Progress value={commissionGoal.progress_percentage} className="h-3" />
-                      {commissionGoal.progress_percentage >= 100 ? (
-                        <p className="text-sm text-green-600 mt-2 flex items-center gap-1">
-                          <Check className="h-4 w-4" />
-                          Goal achieved! Great work!
-                        </p>
-                      ) : (
-                        <p className="text-sm text-muted-foreground mt-2">
-                          ${(commissionGoal.target_amount - commissionGoal.current_progress).toFixed(2)} more to reach your goal
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="text-center py-4">
-                      <Target className="h-8 w-8 mx-auto mb-2 text-muted-foreground/40" />
-                      <p className="text-muted-foreground text-sm">Set your first 30-day commission goal to stay focused.</p>
-                    </div>
-                  )}
-                  
-                  <div className="border-t pt-4">
-                    <label className="text-sm font-medium mb-2 block">Set Commission Goal (30 days)</label>
+                    ) : (
+                      <p className="text-muted-foreground text-center py-4">No commission goal set yet.</p>
+                    )}
                     <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                        <Input
-                          type="number"
-                          placeholder="500"
-                          value={commissionGoalTarget}
-                          onChange={(e) => setCommissionGoalTarget(e.target.value)}
-                          className="pl-7"
-                          min="0"
-                          step="0.01"
-                        />
-                      </div>
+                      <Input
+                        type="number"
+                        placeholder="Enter target amount"
+                        value={commissionGoalTarget}
+                        onChange={(e) => setCommissionGoalTarget(e.target.value)}
+                      />
                       <Button onClick={() => saveGoal('30d_commission')} disabled={savingGoal}>
-                        {savingGoal ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Goal'}
+                        {savingGoal ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Set Goal'}
                       </Button>
                     </div>
                   </div>
                 </TabsContent>
-
-                {/* Revenue Goal Tab */}
-                <TabsContent value="revenue" className="space-y-4">
-                  {revenueGoal ? (
-                    <div className="p-4 rounded-lg bg-green-50 border border-green-200">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium">30-Day Revenue Goal</span>
-                        <span className="text-xs text-muted-foreground">
-                          {format(parseISO(revenueGoal.period_start), 'MMM d')} - {format(parseISO(revenueGoal.period_end), 'MMM d')}
-                        </span>
-                      </div>
-                      <div className="flex items-end justify-between mb-2">
-                        <div>
-                          <span className="text-2xl font-bold text-green-700">${revenueGoal.current_progress.toFixed(2)}</span>
-                          <span className="text-sm text-muted-foreground"> / ${revenueGoal.target_amount.toFixed(2)}</span>
+                <TabsContent value="revenue">
+                  <div className="space-y-4">
+                    {revenueGoal ? (
+                      <div className="p-4 bg-green-50 rounded-lg">
+                        <div className="flex justify-between mb-2">
+                          <span className="font-medium">Target: ${revenueGoal.target_amount.toFixed(2)}</span>
+                          <span className="text-sm text-muted-foreground">{revenueGoal.progress_percentage.toFixed(0)}%</span>
                         </div>
-                        <span className="text-sm font-medium text-green-600">{revenueGoal.progress_percentage.toFixed(0)}%</span>
+                        <Progress value={revenueGoal.progress_percentage} className="h-2 mb-2" />
+                        <p className="text-sm text-muted-foreground">
+                          ${revenueGoal.current_progress.toFixed(2)} of ${revenueGoal.target_amount.toFixed(2)}
+                        </p>
                       </div>
-                      <Progress value={revenueGoal.progress_percentage} className="h-3" />
-                      {revenueGoal.progress_percentage >= 100 ? (
-                        <p className="text-sm text-green-600 mt-2 flex items-center gap-1">
-                          <Check className="h-4 w-4" />
-                          Goal achieved! Great work!
-                        </p>
-                      ) : (
-                        <p className="text-sm text-muted-foreground mt-2">
-                          ${(revenueGoal.target_amount - revenueGoal.current_progress).toFixed(2)} more to reach your goal
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="text-center py-4">
-                      <TrendingUp className="h-8 w-8 mx-auto mb-2 text-muted-foreground/40" />
-                      <p className="text-muted-foreground text-sm">Set your first 30-day revenue goal to track your impact.</p>
-                    </div>
-                  )}
-                  
-                  <div className="border-t pt-4">
-                    <label className="text-sm font-medium mb-2 block">Set Revenue Goal (30 days)</label>
+                    ) : (
+                      <p className="text-muted-foreground text-center py-4">No revenue goal set yet.</p>
+                    )}
                     <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                        <Input
-                          type="number"
-                          placeholder="2000"
-                          value={revenueGoalTarget}
-                          onChange={(e) => setRevenueGoalTarget(e.target.value)}
-                          className="pl-7"
-                          min="0"
-                          step="0.01"
-                        />
-                      </div>
+                      <Input
+                        type="number"
+                        placeholder="Enter target amount"
+                        value={revenueGoalTarget}
+                        onChange={(e) => setRevenueGoalTarget(e.target.value)}
+                      />
                       <Button onClick={() => saveGoal('30d_revenue')} disabled={savingGoal}>
-                        {savingGoal ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Goal'}
+                        {savingGoal ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Set Goal'}
                       </Button>
                     </div>
                   </div>
@@ -873,9 +963,9 @@ const AffiliateDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Affiliate Resources Section */}
-        <Card className="border-0 shadow-sm">
-          <CardHeader className="pb-3">
+        {/* Resources Section */}
+        <Card className="mb-8">
+          <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <BookOpen className="h-5 w-5 text-blue-600" />
               Affiliate Resources
@@ -883,7 +973,7 @@ const AffiliateDashboard = () => {
             <p className="text-sm text-muted-foreground">Everything you need to promote Rise By Night</p>
           </CardHeader>
           <CardContent>
-            {secondaryLoading ? (
+            {resourcesLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
@@ -893,127 +983,36 @@ const AffiliateDashboard = () => {
                 <p className="text-muted-foreground">No resources are available yet. Check back soon for affiliate guides and assets.</p>
               </div>
             ) : (
-              <div className="space-y-6">
-                {(['Getting Started', 'Content Ideas', 'Brand Assets', 'FAQ'] as const).map(category => {
-                  const categoryResources = resources.filter(r => r.category === category);
-                  if (categoryResources.length === 0) return null;
-                  
-                  const categoryIcons: Record<string, React.ReactNode> = {
-                    'Getting Started': <Sparkles className="h-4 w-4" />,
-                    'Content Ideas': <FileText className="h-4 w-4" />,
-                    'Brand Assets': <Image className="h-4 w-4" />,
-                    'FAQ': <BookOpen className="h-4 w-4" />
-                  };
-                  
-                  return (
-                    <div key={category}>
-                      <h4 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
-                        {categoryIcons[category]}
-                        {category}
-                      </h4>
-                      <div className="grid gap-3 md:grid-cols-2">
-                        {categoryResources.map(resource => (
-                          <div 
-                            key={resource.id}
-                            className="p-4 rounded-lg border bg-secondary/30 hover:bg-secondary/50 transition-colors"
-                          >
-                            <div className="flex items-start justify-between gap-2 mb-2">
-                              <h5 className="font-medium text-sm">{resource.title}</h5>
-                              {resource.badge && (
-                                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary shrink-0">
-                                  {resource.badge}
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-xs text-muted-foreground mb-3">{resource.description}</p>
-                            {resource.link_url && resource.link_label && (
-                              <a 
-                                href={resource.link_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                              >
-                                {resource.link_label}
-                                <ExternalLink className="h-3 w-3" />
-                              </a>
-                            )}
-                          </div>
-                        ))}
-                      </div>
+              <div className="grid md:grid-cols-2 gap-4">
+                {resources.map((resource) => (
+                  <div key={resource.id} className="p-4 border rounded-lg">
+                    <div className="flex items-start justify-between mb-2">
+                      <h4 className="font-medium">{resource.title}</h4>
+                      {resource.badge && (
+                        <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">{resource.badge}</span>
+                      )}
                     </div>
-                  );
-                })}
+                    <p className="text-sm text-muted-foreground mb-3">{resource.description}</p>
+                    {resource.link_url && (
+                      <a 
+                        href={resource.link_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary hover:underline flex items-center gap-1"
+                      >
+                        {resource.link_label || 'View'} <ExternalLink className="h-3 w-3" />
+                      </a>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Referral & Invite Links */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Share2 className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold">Your Referral Link</h3>
-                  <p className="text-sm text-muted-foreground">Share to earn commissions on sales</p>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    readOnly
-                    value={`${SITE_URL}?ref=${affiliateData.referral_code}`}
-                    className="flex-1 px-4 py-3 border rounded-lg bg-secondary/50 text-sm font-mono truncate"
-                  />
-                  <Button onClick={copyReferralLink} size="lg" className="shrink-0 px-6">
-                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Code: <span className="font-mono font-semibold">{affiliateData.referral_code}</span>
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-sm border-orange-200 bg-gradient-to-br from-orange-50/50 to-background">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
-                  <UserPlus className="h-5 w-5 text-orange-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold">Invite Sub-Affiliates</h3>
-                  <p className="text-sm text-muted-foreground">Earn 5% on their sales</p>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    readOnly
-                    value={`${SITE_URL}/affiliate-dashboard?invite=${affiliateData.referral_code}`}
-                    className="flex-1 px-4 py-3 border rounded-lg bg-secondary/50 text-sm font-mono truncate"
-                  />
-                  <Button onClick={copyInviteLink} size="lg" variant="outline" className="shrink-0 px-6 border-orange-300 hover:bg-orange-50">
-                    {inviteCopied ? <Check className="h-4 w-4 text-orange-600" /> : <Copy className="h-4 w-4" />}
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Share this link to invite other affiliates and build your team
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Leaderboard Section */}
-        <Card className="border-0 shadow-sm">
-          <CardHeader className="pb-3">
+        {/* Leaderboard */}
+        <Card className="mb-8">
+          <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Trophy className="h-5 w-5 text-yellow-600" />
               Leaderboard
@@ -1021,266 +1020,104 @@ const AffiliateDashboard = () => {
             <p className="text-sm text-muted-foreground">Top partners by 30-day revenue</p>
           </CardHeader>
           <CardContent>
-            {secondaryLoading ? (
+            {leaderboardLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
             ) : leaderboard.length === 0 ? (
               <div className="text-center py-8">
                 <Trophy className="h-8 w-8 mx-auto mb-2 text-muted-foreground/40" />
-                <p className="text-muted-foreground">No leaderboard data yet. Start sharing your link to climb the ranks.</p>
+                <p className="text-muted-foreground">No leaderboard data available yet.</p>
               </div>
             ) : (
-              <>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-16">Rank</TableHead>
-                      <TableHead>Partner</TableHead>
-                      <TableHead>30-Day Revenue</TableHead>
-                      <TableHead>Tier</TableHead>
-                      <TableHead className="text-right">Total Earned</TableHead>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-16">Rank</TableHead>
+                    <TableHead>Partner</TableHead>
+                    <TableHead>Tier</TableHead>
+                    <TableHead className="text-right">30-Day Revenue</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {leaderboard.map((entry) => (
+                    <TableRow key={entry.rank} className={entry.is_current_user ? 'bg-primary/5' : ''}>
+                      <TableCell className="font-medium">
+                        {entry.rank <= 3 ? ['🥇', '🥈', '🥉'][entry.rank - 1] : `#${entry.rank}`}
+                      </TableCell>
+                      <TableCell className={entry.is_current_user ? 'font-semibold' : ''}>
+                        {entry.display_label}
+                        {entry.is_current_user && <span className="ml-2 text-xs text-primary">(You)</span>}
+                      </TableCell>
+                      <TableCell>
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${tierConfig[entry.tier]?.bgColor || 'bg-secondary'}`}>
+                          {tierConfig[entry.tier]?.icon} {formatTierName(entry.tier)}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        ${entry.monthly_revenue_generated.toFixed(2)}
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {leaderboard.map((entry) => {
-                      const entryTierConfig = tierConfig[entry.tier] || tierConfig.bronze;
-                      return (
-                        <TableRow 
-                          key={entry.rank} 
-                          className={entry.is_current_user ? 'bg-primary/5 border-l-2 border-l-primary' : ''}
-                        >
-                          <TableCell>
-                            <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold ${
-                              entry.rank === 1 
-                                ? 'bg-yellow-100 text-yellow-700' 
-                                : entry.rank === 2 
-                                ? 'bg-slate-100 text-slate-600'
-                                : entry.rank === 3
-                                ? 'bg-amber-100 text-amber-700'
-                                : 'bg-secondary text-muted-foreground'
-                            }`}>
-                              {entry.rank}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <span className={entry.is_current_user ? 'font-semibold text-primary' : ''}>
-                              {entry.display_label}
-                            </span>
-                          </TableCell>
-                          <TableCell className="font-medium text-green-600">
-                            ${entry.monthly_revenue_generated.toFixed(2)}
-                          </TableCell>
-                          <TableCell>
-                            <span className="flex items-center gap-1">
-                              <span>{entryTierConfig.icon}</span>
-                              <span className={`capitalize ${entryTierConfig.color}`}>{entry.tier}</span>
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            ${entry.total_commissions.toFixed(2)}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-                <p className="text-xs text-muted-foreground mt-4 text-center">
-                  Leaderboard ranks are based on the last 30 days of revenue and update daily.
-                </p>
-              </>
+                  ))}
+                </TableBody>
+              </Table>
             )}
           </CardContent>
         </Card>
 
-        {/* Sub-Affiliates Section */}
-        <Card className="border-0 shadow-sm">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
-                <UserPlus className="h-5 w-5 text-orange-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold">Your Team (Sub-Affiliates)</h3>
-                <p className="text-sm text-muted-foreground">Affiliates you've invited - earn 5% on their sales</p>
-              </div>
-            </div>
-            
-            {subAffiliates.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="w-16 h-16 rounded-full bg-secondary mx-auto mb-4 flex items-center justify-center">
-                  <UserPlus className="h-8 w-8 text-muted-foreground/40" />
-                </div>
-                <p className="font-medium text-muted-foreground mb-1">No sub-affiliates yet</p>
-                <p className="text-sm text-muted-foreground">Share your invite link above to build your team!</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {subAffiliates.map((subAffiliate) => (
-                  <div
-                    key={subAffiliate.id}
-                    className="flex items-center justify-between p-4 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
-                        <Users className="h-5 w-5 text-orange-600" />
-                      </div>
-                      <div>
-                        <p className="font-medium">{subAffiliate.email}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {subAffiliate.total_referrals} referrals · ${(subAffiliate.total_commissions || 0).toFixed(2)} earned
-                          {subAffiliate.tier && ` · ${tierConfig[subAffiliate.tier]?.icon || ''} ${formatTierName(subAffiliate.tier)}`}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <span className={`inline-block text-xs font-medium px-3 py-1 rounded-full ${
-                        subAffiliate.status === 'active' 
-                          ? 'bg-green-100 text-green-700' 
-                          : 'bg-secondary text-muted-foreground'
-                      }`}>
-                        {subAffiliate.status.charAt(0).toUpperCase() + subAffiliate.status.slice(1)}
-                      </span>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Joined {new Date(subAffiliate.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Commission Rates & Tiers */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-6">
-              <h3 className="font-semibold mb-4">Commission Structure</h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-primary/20">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                      <span className="text-xs font-bold text-primary">L1</span>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium">Direct Sales</span>
-                      <p className="text-xs text-muted-foreground">Based on your tier</p>
-                    </div>
-                  </div>
-                  <span className="font-bold text-primary">{tierInfo.commissionRate}%</span>
-                </div>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-orange-50 border border-orange-200">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-orange-200 flex items-center justify-center">
-                      <span className="text-xs font-bold text-orange-700">L2</span>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium">Sub-Affiliate Sales</span>
-                      <p className="text-xs text-muted-foreground">Fixed rate</p>
-                    </div>
-                  </div>
-                  <span className="font-bold text-orange-700">5%</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-6">
-              <h3 className="font-semibold mb-4">Performance Tiers</h3>
-              <div className="space-y-2">
-                {allTiers.map((tier) => (
-                  <div 
-                    key={tier.name} 
-                    className={`flex items-center justify-between p-3 rounded-lg transition-colors ${
-                      tierInfo.tier === tier.name 
-                        ? `${tierConfig[tier.name]?.bgColor} ${tierConfig[tier.name]?.borderColor} border` 
-                        : 'bg-secondary/50 hover:bg-secondary'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span>{tierConfig[tier.name]?.icon}</span>
-                      <span className={`text-sm ${tierInfo.tier === tier.name ? 'font-semibold' : ''}`}>{tier.displayName}</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs text-muted-foreground">{tier.requirement}</span>
-                      <span className={`font-bold ${tierInfo.tier === tier.name ? 'text-primary' : ''}`}>{tier.rate}%</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Commission History */}
-        <Card className="border-0 shadow-sm">
-          <CardContent className="p-6">
-            <h3 className="font-semibold mb-4">Commission History</h3>
+        {/* Recent Commissions */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <History className="h-5 w-5 text-slate-600" />
+              Recent Commissions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
             {commissions.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="w-16 h-16 rounded-full bg-secondary mx-auto mb-4 flex items-center justify-center">
-                  <DollarSign className="h-8 w-8 text-muted-foreground/40" />
-                </div>
-                <p className="font-medium text-muted-foreground mb-1">No commissions yet</p>
-                <p className="text-sm text-muted-foreground">Share your referral link to start earning!</p>
+              <div className="text-center py-8">
+                <DollarSign className="h-8 w-8 mx-auto mb-2 text-muted-foreground/40" />
+                <p className="text-muted-foreground">No commissions yet. Share your referral link to start earning!</p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {commissions.map((commission) => (
-                  <div
-                    key={commission.id}
-                    className={`flex items-center justify-between p-4 rounded-lg transition-colors ${
-                      commission.fraud_flag 
-                        ? 'bg-red-50 border border-red-200' 
-                        : 'bg-secondary/50 hover:bg-secondary'
-                    }`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        commission.fraud_flag 
-                          ? 'bg-red-100'
-                          : commission.level === 1 ? 'bg-primary/10' : 'bg-orange-100'
-                      }`}>
-                        {commission.fraud_flag ? (
-                          <AlertTriangle className="h-5 w-5 text-red-600" />
-                        ) : (
-                          <DollarSign className={`h-5 w-5 ${commission.level === 1 ? 'text-primary' : 'text-orange-600'}`} />
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-semibold">${commission.amount.toFixed(2)}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {commission.level === 1 ? 'Direct sale' : 'Sub-affiliate sale'}
-                          {commission.order_amount && ` · $${commission.order_amount.toFixed(2)} order`}
-                        </p>
-                        {commission.fraud_flag && commission.fraud_reason && (
-                          <p className="text-xs text-red-600 mt-1">
-                            Flagged: {commission.fraud_reason.replace(/_/g, ' ')}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <span className={`inline-block text-xs font-medium px-3 py-1 rounded-full ${
-                        commission.fraud_flag
-                          ? 'bg-red-100 text-red-700'
-                          : commission.status === 'paid' 
-                          ? 'bg-green-100 text-green-700'
-                          : commission.status === 'pending'
-                          ? 'bg-yellow-100 text-yellow-700'
-                          : 'bg-secondary text-muted-foreground'
-                      }`}>
-                        {commission.fraud_flag ? 'Flagged' : commission.status.charAt(0).toUpperCase() + commission.status.slice(1)}
-                      </span>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {new Date(commission.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Order</TableHead>
+                    <TableHead>Level</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Commission</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {commissions.slice(0, 10).map((commission) => (
+                    <TableRow key={commission.id}>
+                      <TableCell>{format(parseISO(commission.created_at), 'MMM d, yyyy')}</TableCell>
+                      <TableCell>${(commission.order_amount || 0).toFixed(2)}</TableCell>
+                      <TableCell>Level {commission.level}</TableCell>
+                      <TableCell>
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
+                          commission.fraud_flag 
+                            ? 'bg-red-100 text-red-700' 
+                            : commission.status === 'paid'
+                            ? 'bg-green-100 text-green-700'
+                            : commission.status === 'approved'
+                            ? 'bg-blue-100 text-blue-700'
+                            : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          {commission.fraud_flag ? (
+                            <><AlertTriangle className="h-3 w-3" /> Flagged</>
+                          ) : (
+                            <>{commission.status === 'paid' ? <Check className="h-3 w-3" /> : null} {commission.status}</>
+                          )}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right font-medium">${commission.amount.toFixed(2)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
           </CardContent>
         </Card>
