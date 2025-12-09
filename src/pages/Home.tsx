@@ -1,3 +1,4 @@
+// Performance: Hero images use WebP with explicit dimensions and eager loading for LCP
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ArrowRight, Moon, Heart, Sparkles, Shield, Users, Award } from "lucide-react";
@@ -12,12 +13,14 @@ export default function Home() {
     <div className="min-h-screen">
       {/* Lifestyle Hero Image */}
       <section className="relative w-full">
-        {/* Desktop Image */}
+        {/* Desktop Image - LCP image with explicit dimensions */}
         <div className="hidden md:block relative">
           <img
             src={lifestyleHero}
             alt="Peaceful sleep with Rise By Night"
             className="w-full h-[60vh] md:h-[70vh] object-cover"
+            width="1920"
+            height="1080"
             loading="eager"
             fetchPriority="high"
             decoding="async"
@@ -36,12 +39,14 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Mobile Image */}
+        {/* Mobile Image - LCP image with explicit dimensions */}
         <div className="block md:hidden relative">
           <img
             src={lifestyleHeroMobile}
             alt="Peaceful sleep with Rise By Night"
             className="w-full h-[60vh] object-cover"
+            width="750"
+            height="1000"
             loading="eager"
             fetchPriority="high"
             decoding="async"

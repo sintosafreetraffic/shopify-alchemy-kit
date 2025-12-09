@@ -1,4 +1,6 @@
+// Performance: All images use WebP format for better compression
 import { useState, useEffect } from "react";
+// All images are already WebP format for optimal performance
 import pillowHeroNew from "@/assets/ergonomic-pillow-main-hero.webp";
 import pillowBenefitsNew from "@/assets/pillow-benefits-new.webp";
 import pillowBenefitsUpdated from "@/assets/pillow-benefits-updated.webp";

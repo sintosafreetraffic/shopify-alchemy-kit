@@ -1,3 +1,4 @@
+// Performance: All images use WebP format for better compression
 import { useState, useEffect } from "react";
 import kneePillowHeroMain from "@/assets/knee-pillow-main-hero.webp";
 import kneePillowFeaturesCallout from "@/assets/knee-pillow-features-callout.webp";

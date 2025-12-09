@@ -1,12 +1,14 @@
+// Performance: Updated images to use WebP variants for better compression
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowRight, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { fetchProducts, type ShopifyProduct } from "@/lib/shopify";
-import pillowMain from "@/assets/optisleep-pillow-main.png";
-import kneePillowMain from "@/assets/knee-pillow-new.png";
-import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
+// Using WebP variants where available for better performance
+import pillowMain from "@/assets/ergonomic-pillow-main-hero.webp";
+import kneePillowMain from "@/assets/knee-pillow-main-new.webp";
+import eyeMaskGift from "@/assets/eye-mask-gift-new.webp";
 import completeSleepBundle from "@/assets/complete-sleep-bundle-updated.webp";
 
 export const ProductGallery = () => {

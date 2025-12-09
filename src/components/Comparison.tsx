@@ -1,4 +1,5 @@
-import comparisonImage from "@/assets/comparison.png";
+// Performance: Updated to use WebP variants for better compression
+import comparisonImage from "@/assets/comparison-new-updated.webp";
 import comparisonChart from "@/assets/comparison-them.webp";
 
 export const Comparison = () => {
