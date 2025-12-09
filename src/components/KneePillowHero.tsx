@@ -1,9 +1,10 @@
 // Performance: Using cached products hook and WebP images
+// Carousel is lazy-loaded to reduce initial bundle size
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Shield, Moon, Truck, Loader2, Star } from "lucide-react";
+import { Check, Shield, Moon, Truck, Loader2, Star, ImageIcon } from "lucide-react";
 import { PolicyAccordion } from "./PolicyAccordion";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense, lazy } from "react";
 import { useCartStore } from "@/stores/cartStore";
 import { useShopifyProducts } from "@/hooks/useShopifyProducts";
 import type { ShopifyProduct } from "@/lib/shopify";
@@ -12,7 +13,18 @@ import { trackPageVisit } from "@/lib/pinterest";
 import { trackViewedProduct } from "@/lib/klaviyo";
 import { CountdownTimerDisplay } from "./CountdownTimer";
 import eyeMaskGift from "@/assets/eye-mask-gift-new.webp";
-import { KneePillowImageCarousel } from "./KneePillowImageCarousel";
+
+// Lazy load the image carousel to reduce initial bundle
+const KneePillowImageCarousel = lazy(() => 
+  import("./KneePillowImageCarousel").then(mod => ({ default: mod.KneePillowImageCarousel }))
+);
+
+// Carousel loading fallback
+const CarouselFallback = () => (
+  <div className="w-full aspect-square bg-muted/30 rounded-xl flex items-center justify-center animate-pulse">
+    <ImageIcon className="h-12 w-12 text-muted-foreground/40" />
+  </div>
+);
 
 export const KneePillowHero = () => {
   const [selectedBundle, setSelectedBundle] = useState<"1" | "2">("2");
@@ -116,7 +128,9 @@ export const KneePillowHero = () => {
       <div className="container mx-auto px-4 max-w-7xl overflow-visible">
         {/* Mobile Layout: Carousel at top, then title */}
         <div className="md:hidden space-y-3 md:space-y-4 mb-4 md:mb-6">
-          <KneePillowImageCarousel />
+          <Suspense fallback={<CarouselFallback />}>
+            <KneePillowImageCarousel />
+          </Suspense>
           
           {/* Mobile Title Section */}
           <div className="space-y-0">
@@ -158,7 +172,9 @@ export const KneePillowHero = () => {
         <div className="grid md:grid-cols-2 gap-6 lg:gap-10 md:items-start">
           {/* Scrollable Product Images Column - Desktop Only */}
           <div className="hidden md:block relative order-2 md:order-1">
-            <KneePillowImageCarousel />
+            <Suspense fallback={<CarouselFallback />}>
+              <KneePillowImageCarousel />
+            </Suspense>
           </div>
           
           {/* Sticky Product Details Column */}

@@ -1,11 +1,11 @@
 // Performance: Using WebP images with lazy loading for below-fold content
+// Carousel is lazy-loaded to reduce initial bundle size
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Shield, Moon, Truck, Loader2, Star, Users } from "lucide-react";
-import { ProductImageCarousel } from "./ProductImageCarousel";
+import { Check, Shield, Moon, Truck, Loader2, Star, Users, ImageIcon } from "lucide-react";
 import { PolicyAccordion } from "./PolicyAccordion";
 import { CountdownTimerDisplay } from "./CountdownTimer";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense, lazy } from "react";
 import { useCartStore } from "@/stores/cartStore";
 import { useShopifyProducts } from "@/hooks/useShopifyProducts";
 import type { ShopifyProduct } from "@/lib/shopify";
@@ -16,6 +16,18 @@ import { trackViewedProduct } from "@/lib/klaviyo";
 import testimonialAvatar from "@/assets/testimonial-new-updated.webp";
 import eyeMaskGift from "@/assets/eye-mask-gift-new.webp";
 import consumerChoiceBadge from "@/assets/consumer-choice-badge-transparent.png";
+
+// Lazy load the image carousel to reduce initial bundle
+const ProductImageCarousel = lazy(() => 
+  import("./ProductImageCarousel").then(mod => ({ default: mod.ProductImageCarousel }))
+);
+
+// Carousel loading fallback
+const CarouselFallback = () => (
+  <div className="w-full aspect-square bg-muted/30 rounded-xl flex items-center justify-center animate-pulse">
+    <ImageIcon className="h-12 w-12 text-muted-foreground/40" />
+  </div>
+);
 
 export const Hero = () => {
   const [selectedBundle, setSelectedBundle] = useState<"1" | "2">("2");
@@ -112,7 +124,9 @@ export const Hero = () => {
       <div className="container mx-auto px-4 max-w-7xl overflow-visible">
         {/* Mobile Layout: Carousel at top, then title */}
         <div className="md:hidden space-y-3 md:space-y-4 mb-0 md:mb-6">
-          <ProductImageCarousel />
+          <Suspense fallback={<CarouselFallback />}>
+            <ProductImageCarousel />
+          </Suspense>
           
           {/* Mobile Title Section */}
           <div className="space-y-0">
@@ -154,7 +168,9 @@ export const Hero = () => {
         <div className="grid md:grid-cols-2 gap-6 lg:gap-10 md:items-start">
           {/* Scrollable Product Images Column - Desktop Only */}
           <div className="hidden md:block relative order-2 md:order-1">
-            <ProductImageCarousel />
+            <Suspense fallback={<CarouselFallback />}>
+              <ProductImageCarousel />
+            </Suspense>
           </div>
           
           {/* Sticky Product Details Column */}
