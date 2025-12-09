@@ -2,6 +2,7 @@
  * Klaviyo Event Edge Function
  * 
  * Tracks custom events in Klaviyo.
+ * Requires JWT authentication - users can only send events for their own email.
  */
 
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
@@ -11,6 +12,7 @@ import {
   createErrorResponse,
   createSuccessResponse,
 } from "../_shared/env.ts";
+import { authenticateRequest } from "../_shared/auth.ts";
 
 const eventSchema = z.object({
   email: z.string().email("Invalid email format").max(255, "Email too long"),
@@ -25,6 +27,17 @@ Deno.serve(async (req) => {
 
   try {
     const KLAVIYO_PRIVATE_API_KEY = requireEnvVar('KLAVIYO_PRIVATE_API_KEY');
+    const SUPABASE_URL = requireEnvVar('SUPABASE_URL');
+    const SUPABASE_ANON_KEY = requireEnvVar('SUPABASE_ANON_KEY');
+
+    // Authenticate the request
+    const authHeader = req.headers.get('Authorization');
+    const authResult = await authenticateRequest(authHeader, SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    if (authResult.error) {
+      console.error("[klaviyo-event] Auth error:", authResult.error);
+      return createErrorResponse(authResult.error, authResult.status);
+    }
 
     const rawBody = await req.json();
     const parseResult = eventSchema.safeParse(rawBody);
@@ -35,6 +48,12 @@ Deno.serve(async (req) => {
     }
     
     const { email, event, properties } = parseResult.data;
+
+    // Security check: users can only send events for their own email
+    if (authResult.user?.email?.toLowerCase() !== email.toLowerCase()) {
+      console.error("[klaviyo-event] Email mismatch:", authResult.user?.email, "vs", email);
+      return createErrorResponse("You can only send events for your own email", 403);
+    }
 
     console.log(`[Klaviyo] Tracking event "${event}" for ${email}`);
 
