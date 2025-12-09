@@ -10,7 +10,7 @@ interface AdminNavItem {
 
 const adminNavItems: AdminNavItem[] = [
   {
-    label: "Fraud Review",
+    label: "Fraud",
     path: "/admin/affiliate-fraud",
     icon: <AlertTriangle className="h-4 w-4" />,
   },
