@@ -440,7 +440,30 @@ export const CartDrawer = () => {
                             <h4 className="font-semibold text-sm leading-tight line-clamp-2">
                               {item.product.node.title.replace('RiseByNight', 'Rise By Night™')}
                             </h4>
-                            {item.selectedOptions.filter(option => option.value.toLowerCase() !== 'default title').length > 0 && (
+                            {/* Color swatch for sleep masks */}
+                            {item.product.node.title.toLowerCase().includes('silk deep sleep mask') && (
+                              <div className="flex items-center gap-1.5 mt-1">
+                                {item.selectedOptions.filter(opt => opt.name === 'Color').map(colorOpt => (
+                                  <div key={colorOpt.value} className="flex items-center gap-1.5">
+                                    <div className="w-5 h-5 rounded-full border border-border overflow-hidden flex-shrink-0">
+                                      {sleepMaskColorImages[colorOpt.value] ? (
+                                        <img 
+                                          src={sleepMaskColorImages[colorOpt.value]} 
+                                          alt={colorOpt.value}
+                                          className="w-full h-full object-cover"
+                                        />
+                                      ) : (
+                                        <div className="w-full h-full bg-muted" />
+                                      )}
+                                    </div>
+                                    <span className="text-xs text-muted-foreground">{colorOpt.value}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {/* Other variant options (non-sleep mask or non-color options) */}
+                            {!item.product.node.title.toLowerCase().includes('silk deep sleep mask') && 
+                             item.selectedOptions.filter(option => option.value.toLowerCase() !== 'default title').length > 0 && (
                               <p className="text-xs text-muted-foreground mt-0.5">
                                 {item.selectedOptions
                                   .filter(option => option.value.toLowerCase() !== 'default title')
