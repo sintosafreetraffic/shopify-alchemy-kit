@@ -1,3 +1,5 @@
+// Performance: Heavy sections with carousels are lazy-loaded
+import { Suspense, lazy } from "react";
 import { UrgencyBanner } from "@/components/UrgencyBanner";
 import { Guarantee } from "@/components/Guarantee";
 import { StickyAddToCart } from "@/components/StickyAddToCart";
@@ -7,9 +9,22 @@ import { KneePillowBenefits } from "@/components/KneePillowBenefits";
 import { KneePillowPainRelief } from "@/components/KneePillowPainRelief";
 import { KneePillowChiropractorEndorsement } from "@/components/KneePillowChiropractorEndorsement";
 import { KneePillowLookInside } from "@/components/KneePillowLookInside";
-import { ReviewsSection } from "@/components/ReviewsSection";
-import { KneePillowVideoSection } from "@/components/KneePillowVideoSection";
 import { KneePillowFAQ } from "@/components/KneePillowFAQ";
+
+// Lazy load sections with carousels to reduce initial bundle
+const ReviewsSection = lazy(() => 
+  import("@/components/ReviewsSection").then(mod => ({ default: mod.ReviewsSection }))
+);
+const KneePillowVideoSection = lazy(() => 
+  import("@/components/KneePillowVideoSection").then(mod => ({ default: mod.KneePillowVideoSection }))
+);
+
+// Fallback for lazy-loaded sections
+const SectionFallback = () => (
+  <div className="py-8 flex items-center justify-center text-sm text-muted-foreground">
+    Loading...
+  </div>
+);
 
 const KneePillowProduct = () => {
   return (
@@ -21,8 +36,12 @@ const KneePillowProduct = () => {
       <KneePillowPainRelief />
       <KneePillowChiropractorEndorsement />
       <KneePillowLookInside />
-      <ReviewsSection />
-      <KneePillowVideoSection />
+      <Suspense fallback={<SectionFallback />}>
+        <ReviewsSection />
+      </Suspense>
+      <Suspense fallback={<SectionFallback />}>
+        <KneePillowVideoSection />
+      </Suspense>
       <KneePillowFAQ />
       <Guarantee />
       <StickyAddToCart productType="knee-pillow" />

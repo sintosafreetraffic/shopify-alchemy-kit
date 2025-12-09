@@ -1,5 +1,7 @@
+// Performance: Using OptimizedImage for lazy loading with WebP
 import pillowLayers from "@/assets/pillow-layers-new.webp";
 import { useState } from "react";
+import OptimizedImage from "@/components/OptimizedImage";
 
 const components = [
   {
@@ -71,12 +73,12 @@ export const LookInside = () => {
             {/* Center Column - Image with Numbered Buttons */}
             <div className="relative flex items-center justify-center py-8">
               <div className="max-w-md mx-auto relative">
-              <img
+              <OptimizedImage
                 src={pillowLayers}
                 alt="Rise By Night pillow exploded view showing all internal layers and materials"
+                width={400}
+                height={300}
                 className="w-full relative z-0"
-                loading="lazy"
-                decoding="async"
               />
 
               {/* Number indicators with connecting lines */}
@@ -199,12 +201,12 @@ export const LookInside = () => {
           {/* Mobile Layout with Interactive Buttons */}
           <div className="lg:hidden space-y-8">
             <div className="max-w-md mx-auto mb-8 relative">
-              <img
+              <OptimizedImage
                 src={pillowLayers}
                 alt="Rise By Night pillow exploded view showing all internal layers and materials"
+                width={400}
+                height={300}
                 className="w-full relative z-0"
-                loading="lazy"
-                decoding="async"
               />
 
               {/* Number indicators with connecting lines */}

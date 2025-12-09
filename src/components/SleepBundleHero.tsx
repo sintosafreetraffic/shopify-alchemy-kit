@@ -1,3 +1,4 @@
+// Performance: Using OptimizedImage for optimized loading
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +8,7 @@ import bundleImage from "@/assets/complete-sleep-bundle-updated.webp";
 import { fetchProducts, type ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import { trackViewedProduct } from "@/lib/klaviyo";
+import OptimizedImage from "@/components/OptimizedImage";
 
 export const SleepBundleHero = () => {
   const [selectedBundle, setSelectedBundle] = useState<"single" | "double">("single");
@@ -98,12 +100,13 @@ export const SleepBundleHero = () => {
           {/* Left Column - Product Images */}
           <div className="lg:sticky lg:top-24 lg:self-start">
             <div className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8">
-              <img
+              <OptimizedImage
                 src={bundleImage}
                 alt="Rise By Night Complete Sleep Bundle"
+                width={600}
+                height={450}
+                priority
                 className="w-full h-auto object-contain"
-                loading="eager"
-                decoding="async"
               />
             </div>
           </div>
