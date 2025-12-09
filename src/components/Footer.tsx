@@ -12,6 +12,8 @@ export const Footer = () => {
             <img 
               src={logo} 
               alt="Rise By Night" 
+              width={48}
+              height={48}
               className="h-12 w-auto"
               loading="lazy"
               decoding="async"

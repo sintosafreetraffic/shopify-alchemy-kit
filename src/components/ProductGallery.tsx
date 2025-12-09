@@ -215,7 +215,7 @@ export const ProductGallery = () => {
                     </div>
                   )}
                   <div className="bg-gradient-to-b from-primary/5 to-background p-8">
-                    <OptimizedImage src={product.image} alt={product.name} width={600} height={256} className="w-full h-64 object-contain" />
+                    <OptimizedImage src={product.image} alt={product.name} width={256} height={256} className="w-full h-64 object-contain" />
                   </div>
                 </div>
 
