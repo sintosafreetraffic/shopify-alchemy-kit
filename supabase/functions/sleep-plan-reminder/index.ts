@@ -20,8 +20,19 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // ============================================================
+    // AUTH BLOCK: Validate request authorization
+    // Accepts either:
+    //   1. Authorization: Bearer <CRON_SECRET> header (for manual/external calls)
+    //   2. Internal pg_cron calls identified by:
+    //      - X-Supabase-Internal: true header, OR
+    //      - User-Agent containing 'pg_net' (Supabase internal HTTP client)
+    // ============================================================
     const authHeader = req.headers.get('Authorization');
-    if (!validateCronSecret(authHeader)) {
+    const isInternalCron = req.headers.get('X-Supabase-Internal') === 'true' || 
+                           (req.headers.get('User-Agent') || '').includes('pg_net');
+    
+    if (!isInternalCron && !validateCronSecret(authHeader)) {
       console.warn('[sleep-plan-reminder] Unauthorized access attempt');
       return createErrorResponse('Unauthorized', 401);
     }

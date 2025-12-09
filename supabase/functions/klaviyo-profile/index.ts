@@ -3,19 +3,25 @@
  * 
  * Creates/updates Klaviyo profiles for WhatsApp settings and properties.
  * Uses centralized env/cors helpers.
+ * 
+ * REQUIRES JWT AUTHENTICATION - Only authenticated users can update their own profile.
  */
 
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
   corsHeaders,
   requireEnvVar,
   createErrorResponse,
   createSuccessResponse,
 } from "../_shared/env.ts";
+import {
+  authenticateRequest,
+  createAuthErrorResponse,
+} from "../_shared/auth.ts";
 
-// Input validation schema
+// Input validation schema (email removed - derived from JWT)
 const profileSchema = z.object({
-  email: z.string().email("Invalid email format").max(255, "Email too long"),
   properties: z.record(z.unknown()).optional().default({}),
   phone_number: z.string().max(20, "Phone number too long").optional(),
   whatsapp_enabled: z.boolean().optional().default(false),
@@ -28,8 +34,27 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Use centralized env helper
+    // Use centralized env helpers
+    const SUPABASE_URL = requireEnvVar('SUPABASE_URL');
+    const SUPABASE_ANON_KEY = requireEnvVar('SUPABASE_ANON_KEY');
     const KLAVIYO_PRIVATE_API_KEY = requireEnvVar('KLAVIYO_PRIVATE_API_KEY');
+
+    // ============================================================
+    // AUTH BLOCK: Require JWT authentication
+    // Users can only update their own Klaviyo profile
+    // ============================================================
+    const authHeader = req.headers.get('Authorization');
+    const authResult = await authenticateRequest(authHeader, SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    if (authResult.error || !authResult.user) {
+      return createAuthErrorResponse(authResult.error || 'Unauthorized', authResult.status);
+    }
+
+    // Use authenticated user's email - ignore any email in request body
+    const email = authResult.user.email;
+    if (!email) {
+      return createErrorResponse('User email not available', 400);
+    }
 
     // Validate input
     const rawBody = await req.json();
@@ -40,7 +65,7 @@ Deno.serve(async (req) => {
       return createErrorResponse("Invalid input", 400);
     }
     
-    const { email, properties, phone_number, whatsapp_enabled } = parseResult.data;
+    const { properties, phone_number, whatsapp_enabled } = parseResult.data;
 
     console.log(`[Klaviyo] Updating profile for ${email}, WhatsApp: ${whatsapp_enabled}`);
 
