@@ -154,6 +154,8 @@ export const Header = () => {
           <img 
             src={logo} 
             alt="Rise By Night - Ergonomic Sleep Pillow" 
+            width={200}
+            height={40}
             className="h-8 md:h-10 w-auto object-contain"
             loading="eager"
             decoding="async"
