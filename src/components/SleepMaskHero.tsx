@@ -1,21 +1,33 @@
+// Performance: Carousel is lazy-loaded to reduce initial bundle size
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Shield, Moon, Truck, Loader2, Star, Minus, Plus } from "lucide-react";
+import { Check, Shield, Moon, Truck, Loader2, Star, Minus, Plus, ImageIcon } from "lucide-react";
 import { PolicyAccordion } from "./PolicyAccordion";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense, lazy } from "react";
 import { useCartStore } from "@/stores/cartStore";
 import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import { trackPageVisit } from "@/lib/pinterest";
 import { trackViewedProduct } from "@/lib/klaviyo";
-import { SleepMaskImageCarousel } from "./SleepMaskImageCarousel";
 import sleepMaskNavy from "@/assets/sleep-mask-navy.webp";
 import sleepMaskTurquoise from "@/assets/sleep-mask-turquoise.webp";
 import sleepMaskPink from "@/assets/sleep-mask-pink.webp";
 import sleepMaskGold from "@/assets/sleep-mask-gold.webp";
 import sleepMaskSilver from "@/assets/sleep-mask-silver.webp";
 import sleepMaskBlack from "@/assets/sleep-mask-black.webp";
+
+// Lazy load the image carousel to reduce initial bundle
+const SleepMaskImageCarousel = lazy(() => 
+  import("./SleepMaskImageCarousel").then(mod => ({ default: mod.SleepMaskImageCarousel }))
+);
+
+// Carousel loading fallback
+const CarouselFallback = () => (
+  <div className="w-full aspect-square bg-muted/30 rounded-xl flex items-center justify-center animate-pulse">
+    <ImageIcon className="h-12 w-12 text-muted-foreground/40" />
+  </div>
+);
 
 // Image mapping for colors
 const colorImages: Record<string, string> = {
@@ -137,7 +149,9 @@ export const SleepMaskHero = () => {
       <div className="container mx-auto px-4 max-w-7xl overflow-visible">
         {/* Mobile Layout: Carousel at top, then title */}
         <div className="md:hidden space-y-3 md:space-y-4 mb-4 md:mb-6">
-          <SleepMaskImageCarousel />
+          <Suspense fallback={<CarouselFallback />}>
+            <SleepMaskImageCarousel />
+          </Suspense>
           
           {/* Mobile Title Section */}
           <div className="space-y-0">
@@ -174,7 +188,9 @@ export const SleepMaskHero = () => {
         <div className="grid md:grid-cols-2 gap-6 lg:gap-10 md:items-start">
           {/* Scrollable Product Images Column - Desktop Only */}
           <div className="hidden md:block relative order-2 md:order-1">
-            <SleepMaskImageCarousel />
+            <Suspense fallback={<CarouselFallback />}>
+              <SleepMaskImageCarousel />
+            </Suspense>
             <PolicyAccordion />
           </div>
           
