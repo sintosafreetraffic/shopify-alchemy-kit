@@ -11,6 +11,8 @@ import { toast } from "@/hooks/use-toast";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from "recharts";
 import { format, parseISO } from "date-fns";
+import { useAffiliateDashboard } from "@/hooks/useAffiliateDashboard";
+import type { AffiliateGoal } from "@/hooks/useAffiliateDashboard";
 
 // Production domain for referral links
 const SITE_URL = "https://www.risebynight.com";
@@ -103,27 +105,7 @@ interface PayoutHistoryEntry {
   note: string | null;
 }
 
-interface AffiliateGoal {
-  id: string;
-  goal_type: string;
-  target_amount: number;
-  currency: string;
-  period_start: string;
-  period_end: string;
-  current_progress: number;
-  progress_percentage: number;
-}
-
-interface ResourceItem {
-  id: string;
-  category: string;
-  title: string;
-  description: string;
-  link_label: string | null;
-  link_url: string | null;
-  badge: string | null;
-  sort_order: number;
-}
+// Types imported from useAffiliateDashboard hook
 
 const tierConfig: Record<string, { color: string; bgColor: string; borderColor: string; icon: string }> = {
   'bronze': { color: 'text-amber-700', bgColor: 'bg-amber-100', borderColor: 'border-amber-300', icon: '🥉' },
@@ -211,124 +193,7 @@ const AffiliateDashboard = () => {
     fetchDashboardData();
   };
 
-  const fetchLeaderboard = async () => {
-    setLeaderboardLoading(true);
-    try {
-      const response = await supabase.functions.invoke('affiliate-api', {
-        body: { action: 'get-leaderboard', data: {} }
-      });
-
-      if (response.error) {
-        console.error("Error fetching leaderboard:", response.error);
-        return;
-      }
-
-      if (response.data?.leaderboard) {
-        setLeaderboard(response.data.leaderboard);
-      }
-    } catch (error) {
-      console.error("Error fetching leaderboard:", error);
-    } finally {
-      setLeaderboardLoading(false);
-    }
-  };
-
-  const fetchAnalytics = async () => {
-    setAnalyticsLoading(true);
-    try {
-      const response = await supabase.functions.invoke('affiliate-api', {
-        body: { action: 'get-analytics', data: {} }
-      });
-
-      if (response.error) {
-        console.error("Error fetching analytics:", response.error);
-        return;
-      }
-
-      if (response.data?.analytics) {
-        setAnalytics(response.data.analytics);
-      }
-    } catch (error) {
-      console.error("Error fetching analytics:", error);
-    } finally {
-      setAnalyticsLoading(false);
-    }
-  };
-
-  const fetchPayoutHistory = async (affiliateId: string) => {
-    setPayoutHistoryLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('affiliate_payouts')
-        .select('id, amount, currency, processed_at, method, note')
-        .eq('affiliate_id', affiliateId)
-        .order('processed_at', { ascending: false });
-
-      if (error) {
-        console.error("Error fetching payout history:", error);
-        return;
-      }
-
-      setPayoutHistory(data || []);
-    } catch (error) {
-      console.error("Error fetching payout history:", error);
-    } finally {
-      setPayoutHistoryLoading(false);
-    }
-  };
-
-  const fetchGoals = async () => {
-    setGoalsLoading(true);
-    try {
-      const response = await supabase.functions.invoke('affiliate-api', {
-        body: { action: 'get-goals', data: {} }
-      });
-
-      if (response.error) {
-        console.error("Error fetching goals:", response.error);
-        return;
-      }
-
-      if (response.data?.goals) {
-        setGoals(response.data.goals);
-        // Pre-fill inputs with current goals if they exist
-        const commissionGoal = response.data.goals.find((g: AffiliateGoal) => g.goal_type === '30d_commission');
-        const revenueGoal = response.data.goals.find((g: AffiliateGoal) => g.goal_type === '30d_revenue');
-        if (commissionGoal) {
-          setCommissionGoalTarget(commissionGoal.target_amount.toString());
-        }
-        if (revenueGoal) {
-          setRevenueGoalTarget(revenueGoal.target_amount.toString());
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching goals:", error);
-    } finally {
-      setGoalsLoading(false);
-    }
-  };
-
-  const fetchResources = async () => {
-    setResourcesLoading(true);
-    try {
-      const response = await supabase.functions.invoke('affiliate-api', {
-        body: { action: 'get-resources', data: {} }
-      });
-
-      if (response.error) {
-        console.error("Error fetching resources:", response.error);
-        return;
-      }
-
-      if (response.data?.resources) {
-        setResources(response.data.resources);
-      }
-    } catch (error) {
-      console.error("Error fetching resources:", error);
-    } finally {
-      setResourcesLoading(false);
-    }
-  };
+  // All fetch functions are now handled by useAffiliateDashboard hook
 
   const saveGoal = async (goalType: '30d_commission' | '30d_revenue') => {
     const targetValue = goalType === '30d_commission' ? commissionGoalTarget : revenueGoalTarget;
@@ -365,8 +230,8 @@ const AffiliateDashboard = () => {
         description: `Your 30-day ${goalLabel} goal is now $${targetAmount.toFixed(2)}.`,
       });
 
-      // Refresh goals
-      await fetchGoals();
+      // Refresh all dashboard data
+      await refetch();
     } catch (error) {
       console.error("Error saving goal:", error);
       toast({
@@ -408,12 +273,8 @@ const AffiliateDashboard = () => {
           : "You are now an affiliate. Welcome to the program!",
       });
 
-      setAffiliateData(response.data.affiliate);
-      if (response.data.tierInfo) setTierInfo(response.data.tierInfo);
-      setDirectSalesLast30(response.data.directSalesLast30Days || 0);
-      setSubAffiliates(response.data.subAffiliates || []);
-      if (response.data.monthlyStats) setMonthlyStats(response.data.monthlyStats);
-      if (response.data.commissionBreakdown) setCommissionBreakdown(response.data.commissionBreakdown);
+      // Refresh dashboard data to show the new affiliate info
+      await refetch();
     } catch (error) {
       console.error("Error becoming affiliate:", error);
       toast({
@@ -746,7 +607,7 @@ const AffiliateDashboard = () => {
             <p className="text-sm text-muted-foreground">Track your daily sales and commissions</p>
           </CardHeader>
           <CardContent>
-            {analyticsLoading ? (
+            {secondaryLoading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
@@ -831,7 +692,7 @@ const AffiliateDashboard = () => {
             <p className="text-sm text-muted-foreground">Your processed payouts</p>
           </CardHeader>
           <CardContent>
-            {payoutHistoryLoading ? (
+            {secondaryLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
@@ -881,7 +742,7 @@ const AffiliateDashboard = () => {
             <p className="text-sm text-muted-foreground">Set 30-day targets and track your progress</p>
           </CardHeader>
           <CardContent>
-            {goalsLoading ? (
+            {secondaryLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
@@ -1022,7 +883,7 @@ const AffiliateDashboard = () => {
             <p className="text-sm text-muted-foreground">Everything you need to promote Rise By Night</p>
           </CardHeader>
           <CardContent>
-            {resourcesLoading ? (
+            {secondaryLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
@@ -1160,7 +1021,7 @@ const AffiliateDashboard = () => {
             <p className="text-sm text-muted-foreground">Top partners by 30-day revenue</p>
           </CardHeader>
           <CardContent>
-            {leaderboardLoading ? (
+            {secondaryLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
