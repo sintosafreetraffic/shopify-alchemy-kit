@@ -212,7 +212,7 @@ export default function Home() {
                   <h3 className="text-xl font-bold">Reduced Snoring & Disruptions</h3>
                   <span className="text-2xl font-bold text-primary">86%</span>
                 </div>
-                <Progress value={86} className="h-3" />
+                <Progress value={86} className="h-3" aria-label="86% reduced snoring and disruptions" />
                 <p className="text-sm text-muted-foreground">
                   Reported less frequent snoring or nighttime disruptions.*
                 </p>
@@ -223,7 +223,7 @@ export default function Home() {
                   <h3 className="text-xl font-bold">Improved Sleep Quality</h3>
                   <span className="text-2xl font-bold text-primary">93%</span>
                 </div>
-                <Progress value={93} className="h-3" />
+                <Progress value={93} className="h-3" aria-label="93% improved sleep quality" />
                 <p className="text-sm text-muted-foreground">
                   Experienced deeper, more restful sleep each night, without sleep apnea.
                 </p>
@@ -234,7 +234,7 @@ export default function Home() {
                   <h3 className="text-xl font-bold">Relieved Chronic Neck Pain</h3>
                   <span className="text-2xl font-bold text-primary">96%</span>
                 </div>
-                <Progress value={96} className="h-3" />
+                <Progress value={96} className="h-3" aria-label="96% relieved chronic neck pain" />
                 <p className="text-sm text-muted-foreground">
                   Felt significant relief from chronic neck pain after just the first night.
                 </p>
@@ -245,7 +245,7 @@ export default function Home() {
                   <h3 className="text-xl font-bold">Enhanced Daily Focus</h3>
                   <span className="text-2xl font-bold text-primary">89%</span>
                 </div>
-                <Progress value={89} className="h-3" />
+                <Progress value={89} className="h-3" aria-label="89% enhanced daily focus" />
                 <p className="text-sm text-muted-foreground">
                   Noticed a remarkable boost in focus and productivity throughout their day.
                 </p>
