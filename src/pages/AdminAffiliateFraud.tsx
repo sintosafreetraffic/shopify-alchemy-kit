@@ -156,28 +156,26 @@ export default function AdminAffiliateFraud() {
 
   /**
    * Mark a flagged commission as legitimate
-   * Updates commission status and recalculates affiliate totals atomically
+   * Routes through edge function for proper RLS bypass
    */
   async function markAsLegit(commission: FlaggedCommission) {
     setActionLoading(commission.id);
 
     try {
-      // Step 1: Update the commission record
-      const { error: commissionError } = await supabase
-        .from("commissions")
-        .update({
-          fraud_flag: false,
-          fraud_reason: null,
-          status: "pending",
-        })
-        .eq("id", commission.id);
+      const { data, error } = await supabase.functions.invoke('affiliate-api', {
+        body: {
+          action: 'admin-mark-legit',
+          data: { commissionId: commission.id }
+        }
+      });
 
-      if (commissionError) {
-        throw new Error(`Failed to update commission: ${commissionError.message}`);
+      if (error) {
+        throw new Error(error.message || 'Failed to update commission');
       }
 
-      // Step 2: Recalculate affiliate totals based on all valid commissions
-      await recalculateAffiliateTotals(commission.affiliate_id);
+      if (data?.error) {
+        throw new Error(data.error);
+      }
 
       toast.success("Commission marked as legitimate");
       
@@ -198,22 +196,25 @@ export default function AdminAffiliateFraud() {
 
   /**
    * Confirm a commission as fraudulent
-   * Updates commission status to rejected
+   * Routes through edge function for proper RLS bypass
    */
   async function confirmFraud(commission: FlaggedCommission) {
     setActionLoading(commission.id);
 
     try {
-      const { error } = await supabase
-        .from("commissions")
-        .update({
-          fraud_flag: true,
-          status: "rejected",
-        })
-        .eq("id", commission.id);
+      const { data, error } = await supabase.functions.invoke('affiliate-api', {
+        body: {
+          action: 'admin-confirm-fraud',
+          data: { commissionId: commission.id }
+        }
+      });
 
       if (error) {
-        throw new Error(`Failed to update commission: ${error.message}`);
+        throw new Error(error.message || 'Failed to update commission');
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
       }
 
       toast.success("Commission confirmed as fraud");
@@ -234,48 +235,7 @@ export default function AdminAffiliateFraud() {
     }
   }
 
-  /**
-   * Recalculate all affiliate totals based on current valid commissions
-   * This ensures consistency after fraud status changes
-   */
-  async function recalculateAffiliateTotals(affiliateId: string) {
-    // Get all valid commissions for this affiliate
-    const { data: validCommissions, error: fetchError } = await supabase
-      .from("commissions")
-      .select("amount, order_amount, level")
-      .eq("affiliate_id", affiliateId)
-      .eq("fraud_flag", false)
-      .in("status", ["pending", "approved"]);
-
-    if (fetchError) {
-      console.error("Error fetching commissions for recalculation:", fetchError);
-      return;
-    }
-
-    // Calculate totals
-    const level1Commissions = validCommissions?.filter(c => c.level === 1) || [];
-    const allCommissions = validCommissions || [];
-
-    const totalCommissions = allCommissions.reduce((sum, c) => sum + Number(c.amount || 0), 0);
-    const totalReferrals = level1Commissions.length;
-    
-    // For monthly metrics, we'd need date filtering - for now update the ones we can
-    // The CRON job will recalculate monthly metrics accurately
-    
-    const { error: updateError } = await supabase
-      .from("affiliates")
-      .update({
-        total_commissions: totalCommissions,
-        total_referrals: totalReferrals,
-        // Note: monthly_sales_count and monthly_revenue_generated are recalculated by CRON
-      })
-      .eq("id", affiliateId);
-
-    if (updateError) {
-      console.error("Error updating affiliate totals:", updateError);
-    }
-  }
-
+  // recalculateAffiliateTotals is no longer needed client-side - handled by edge function
   const fraudReasons = [
     "self_referral_email",
     "self_referral_ip",

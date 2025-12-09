@@ -29,7 +29,9 @@ const actionSchema = z.object({
     'process-payout',
     'get-goals',
     'set-goal',
-    'get-resources'
+    'get-resources',
+    'admin-mark-legit',
+    'admin-confirm-fraud'
   ]),
   data: z.record(z.unknown()).optional(),
 });
@@ -1097,6 +1099,105 @@ Deno.serve(async (req) => {
         }
 
         return createSuccessResponse({ resources: resources || [] });
+      }
+
+      case 'admin-mark-legit': {
+        // Admin action: Mark a flagged commission as legitimate
+        const { data: isAdmin } = await supabaseAdmin.rpc('has_role', {
+          _user_id: user.id,
+          _role: 'admin'
+        });
+
+        if (!isAdmin) {
+          return createErrorResponse('Admin privileges required', 403);
+        }
+
+        const commissionId = (data as any)?.commissionId;
+        if (!commissionId) {
+          return createErrorResponse('commissionId required', 400);
+        }
+
+        // Get commission to find affiliate_id
+        const { data: commission, error: commError } = await supabaseAdmin
+          .from('commissions')
+          .select('affiliate_id, amount')
+          .eq('id', commissionId)
+          .single();
+
+        if (commError || !commission) {
+          return createErrorResponse('Commission not found', 404);
+        }
+
+        // Update commission to clear fraud flag
+        const { error: updateError } = await supabaseAdmin
+          .from('commissions')
+          .update({
+            fraud_flag: false,
+            fraud_reason: null,
+            status: 'pending',
+          })
+          .eq('id', commissionId);
+
+        if (updateError) {
+          console.error('[affiliate-api] Error marking legit:', updateError);
+          throw new Error(`Failed to update commission: ${updateError.message}`);
+        }
+
+        // Recalculate affiliate totals
+        const { data: validCommissions } = await supabaseAdmin
+          .from('commissions')
+          .select('amount, level')
+          .eq('affiliate_id', commission.affiliate_id)
+          .eq('fraud_flag', false)
+          .in('status', ['pending', 'approved']);
+
+        const level1Count = (validCommissions || []).filter(c => c.level === 1).length;
+        const totalCommissions = (validCommissions || []).reduce((sum, c) => sum + Number(c.amount || 0), 0);
+
+        await supabaseAdmin
+          .from('affiliates')
+          .update({
+            total_commissions: totalCommissions,
+            total_referrals: level1Count,
+          })
+          .eq('id', commission.affiliate_id);
+
+        console.log('[affiliate-api] Commission marked as legit:', commissionId);
+        return createSuccessResponse({ success: true, commissionId });
+      }
+
+      case 'admin-confirm-fraud': {
+        // Admin action: Confirm a commission as fraudulent
+        const { data: isAdmin } = await supabaseAdmin.rpc('has_role', {
+          _user_id: user.id,
+          _role: 'admin'
+        });
+
+        if (!isAdmin) {
+          return createErrorResponse('Admin privileges required', 403);
+        }
+
+        const commissionId = (data as any)?.commissionId;
+        if (!commissionId) {
+          return createErrorResponse('commissionId required', 400);
+        }
+
+        // Update commission to confirm fraud
+        const { error: updateError } = await supabaseAdmin
+          .from('commissions')
+          .update({
+            fraud_flag: true,
+            status: 'rejected',
+          })
+          .eq('id', commissionId);
+
+        if (updateError) {
+          console.error('[affiliate-api] Error confirming fraud:', updateError);
+          throw new Error(`Failed to update commission: ${updateError.message}`);
+        }
+
+        console.log('[affiliate-api] Commission confirmed as fraud:', commissionId);
+        return createSuccessResponse({ success: true, commissionId });
       }
 
       default:
