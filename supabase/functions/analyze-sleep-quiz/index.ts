@@ -94,36 +94,32 @@ Deno.serve(async (req) => {
       return createErrorResponse("AI service not configured", 500);
     }
 
-    // For quiz flow: profile creation uses email (no JWT required)
-    // If JWT provided, use authenticated email; otherwise use provided email
+    // For quiz flow: profile creation REQUIRES authentication
+    // This prevents attackers from overwriting profiles by knowing emails
     let profileEmail: string | null = null;
     
     if (createProfile) {
-      // Check if authenticated (optional for quiz flow)
+      // Authentication is REQUIRED for profile creation/updates
       const authHeader = req.headers.get("Authorization");
-      if (authHeader) {
-        try {
-          const authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-            global: { headers: { Authorization: authHeader } }
-          });
-          const { data: { user } } = await authClient.auth.getUser();
-          if (user?.email) {
-            profileEmail = user.email;
-            console.log("[analyze-sleep-quiz] Using authenticated email:", profileEmail);
-          }
-        } catch (e) {
-          console.log("[analyze-sleep-quiz] Auth check failed, using provided email");
+      if (!authHeader) {
+        console.log("[analyze-sleep-quiz] Profile creation requires authentication");
+        return createErrorResponse("Authentication required for profile creation. Please sign in first.", 401);
+      }
+      
+      try {
+        const authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+          global: { headers: { Authorization: authHeader } }
+        });
+        const { data: { user } } = await authClient.auth.getUser();
+        if (!user?.email) {
+          console.log("[analyze-sleep-quiz] Auth token valid but no email found");
+          return createErrorResponse("Valid authentication required for profile creation", 401);
         }
-      }
-      
-      // Fall back to provided email if no auth
-      if (!profileEmail && email) {
-        profileEmail = email.toLowerCase().trim();
-        console.log("[analyze-sleep-quiz] Using provided email for profile:", profileEmail);
-      }
-      
-      if (!profileEmail) {
-        return createErrorResponse("Email required for profile creation", 400);
+        profileEmail = user.email;
+        console.log("[analyze-sleep-quiz] Using authenticated email:", profileEmail);
+      } catch (e) {
+        console.log("[analyze-sleep-quiz] Auth verification failed:", e);
+        return createErrorResponse("Invalid or expired authentication token", 401);
       }
     }
 
