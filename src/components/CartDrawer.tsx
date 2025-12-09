@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,16 +31,15 @@ const sleepMaskColorImages: Record<string, string> = {
   "Silver": sleepMaskSilver,
   "Black": sleepMaskBlack,
 };
-import { fetchProducts, ShopifyProduct } from "@/lib/shopify";
+import { useRecommendedProducts, useProductPrices } from "@/hooks/useShopifyProducts";
+import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import { ImageModal } from "./ImageModal";
 
 export const CartDrawer = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [recommendedProducts, setRecommendedProducts] = useState<ShopifyProduct[]>([]);
   const [shouldBounce, setShouldBounce] = useState(false);
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
-  const [currentPrices, setCurrentPrices] = useState<Record<string, { price: string; compareAtPrice?: string }>>({});
   
   const { 
     items, 
@@ -52,6 +51,11 @@ export const CartDrawer = () => {
     setCartOpen,
     isCartOpen
   } = useCartStore();
+
+  // Use cached product data for recommendations and prices
+  const cartProductIds = useMemo(() => items.map(item => item.product.node.id), [items]);
+  const { data: recommendedProducts = [] } = useRecommendedProducts(cartProductIds, 3);
+  const { data: currentPrices = {} } = useProductPrices();
 
   // Sync local state with store state
   useEffect(() => {
@@ -149,45 +153,8 @@ export const CartDrawer = () => {
   const shippingCost = totalPrice >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
   const finalTotal = totalPrice + shippingCost;
 
-  // Fetch current prices and recommended products when cart opens
-  useEffect(() => {
-    const loadCartData = async () => {
-      console.log('Cart opened, loading current prices and recommendations...');
-      try {
-        const products = await fetchProducts(50);
-        console.log('Fetched products:', products.length);
-        
-        // Extract current prices for cart items
-        const priceMap: Record<string, { price: string; compareAtPrice?: string }> = {};
-        products.forEach(product => {
-          product.node.variants.edges.forEach(variantEdge => {
-            const variant = variantEdge.node;
-            priceMap[variant.id] = {
-              price: variant.price.amount,
-              compareAtPrice: variant.compareAtPrice?.amount
-            };
-          });
-        });
-        setCurrentPrices(priceMap);
-        console.log('Updated prices:', priceMap);
-        
-        // Filter out free gift products and products already in cart
-        const cartProductIds = items.map(item => item.product.node.id);
-        const filtered = products.filter(p => 
-          !p.node.title.toLowerCase().includes('free gift') &&
-          !cartProductIds.includes(p.node.id)
-        );
-        console.log('Filtered recommendations:', filtered.length, filtered.map(p => p.node.title));
-        setRecommendedProducts(filtered.slice(0, 3));
-      } catch (error) {
-        console.error('Failed to fetch cart data:', error);
-      }
-    };
-    
-    if (isOpen) {
-      loadCartData();
-    }
-  }, [isOpen, items]);
+  // Products are now fetched via useRecommendedProducts and useProductPrices hooks
+  // which use centralized caching - no need for manual fetch on cart open
 
   const handleAddRecommendation = (product: ShopifyProduct) => {
     const variant = product.node.variants.edges[0]?.node;

@@ -6,7 +6,7 @@ import { PolicyAccordion } from "./PolicyAccordion";
 import { CountdownTimerDisplay } from "./CountdownTimer";
 import { useState, useEffect, useRef } from "react";
 import { useCartStore } from "@/stores/cartStore";
-import { fetchProducts } from "@/lib/shopify";
+import { useShopifyProducts } from "@/hooks/useShopifyProducts";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import { trackPageVisit } from "@/lib/pinterest";
@@ -17,39 +17,28 @@ import consumerChoiceBadge from "@/assets/consumer-choice-badge-transparent.png"
 
 export const Hero = () => {
   const [selectedBundle, setSelectedBundle] = useState<"1" | "2">("2");
-  const [product, setProduct] = useState<ShopifyProduct | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { addItem, setCartOpen } = useCartStore();
   const hasTrackedView = useRef(false);
 
+  // Use centralized cached product data
+  const { data: products, isLoading: productsLoading } = useShopifyProducts(10);
+  const product = products?.[0] || null;
+
+  // Track product view once when product is loaded
   useEffect(() => {
-    const loadProduct = async () => {
-      try {
-        const products = await fetchProducts(1);
-        if (products.length > 0) {
-          setProduct(products[0]);
-          // Track Pinterest PageVisit with product ID
-          trackPageVisit(products[0].node.id);
-          
-          // Track Klaviyo Viewed Product (only once per page load)
-          if (!hasTrackedView.current) {
-            hasTrackedView.current = true;
-            const p = products[0];
-            trackViewedProduct({
-              id: p.node.id,
-              title: p.node.title,
-              price: parseFloat(p.node.variants.edges[0]?.node.price.amount || "0"),
-              sku: p.node.variants.edges[0]?.node.id || "",
-              imageUrl: p.node.images?.edges?.[0]?.node?.url || "",
-            });
-          }
-        }
-      } catch (error) {
-        console.error("Error loading product:", error);
-      }
-    };
-    loadProduct();
-  }, []);
+    if (product && !hasTrackedView.current) {
+      hasTrackedView.current = true;
+      trackPageVisit(product.node.id);
+      trackViewedProduct({
+        id: product.node.id,
+        title: product.node.title,
+        price: parseFloat(product.node.variants.edges[0]?.node.price.amount || "0"),
+        sku: product.node.variants.edges[0]?.node.id || "",
+        imageUrl: product.node.images?.edges?.[0]?.node?.url || "",
+      });
+    }
+  }, [product]);
 
   const handleAddToCart = async () => {
     if (!product) {
