@@ -1,4 +1,5 @@
 // Performance: All images use WebP format for better compression
+// Product demo video uses preload="none" until interaction
 import { useState, useEffect } from "react";
 // All images are already WebP format for optimal performance
 import pillowHeroNew from "@/assets/ergonomic-pillow-main-hero.webp";
@@ -15,6 +16,7 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel";
 import { ImageModal } from "./ImageModal";
+import { Play } from "lucide-react";
 
 export const ProductImageCarousel = () => {
   const [expandedImageIndex, setExpandedImageIndex] = useState<number | null>(null);
@@ -78,16 +80,25 @@ export const ProductImageCarousel = () => {
                   onClick={() => item.type === "image" && openImageModal(item.url, true)}
                 >
                   {item.type === "video" ? (
-                    <video
-                      src={item.url}
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      preload="none"
-                      className="w-full h-auto object-cover"
-                      aria-label={item.alt}
-                    />
+                    <div className="relative w-full h-full">
+                      <video
+                        src={item.url}
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        preload="none"
+                        className="w-full h-auto object-cover"
+                        aria-label={item.alt}
+                        width={800}
+                        height={800}
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="w-12 h-12 rounded-full bg-black/50 flex items-center justify-center">
+                          <Play className="w-6 h-6 text-white ml-0.5" fill="white" />
+                        </div>
+                      </div>
+                    </div>
                   ) : (
                     <img
                       src={item.url}
@@ -127,7 +138,9 @@ export const ProductImageCarousel = () => {
                     src={item.url}
                     className="w-full h-full object-cover"
                     muted
-                    preload="metadata"
+                    preload="none"
+                    width={48}
+                    height={48}
                   />
                   <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                     <div className="w-4 h-4 border-l-[6px] border-l-white border-y-[4px] border-y-transparent ml-0.5" />
@@ -151,16 +164,25 @@ export const ProductImageCarousel = () => {
         {/* First large image */}
         <div className="overflow-hidden rounded-xl relative cursor-pointer hover:opacity-90 transition-opacity" onClick={() => images[0]?.type === "image" && openImageModal(images[0].url, false)}>
           {images[0]?.type === "video" ? (
-            <video
-              src={images[0].url}
-              autoPlay
-              loop
-              muted
-              playsInline
-              preload="auto"
-              className="w-full h-full object-cover rounded-xl"
-              aria-label={images[0].alt}
-            />
+            <div className="relative w-full h-full">
+              <video
+                src={images[0].url}
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="none"
+                className="w-full h-full object-cover rounded-xl"
+                aria-label={images[0].alt}
+                width={1200}
+                height={900}
+              />
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="w-16 h-16 rounded-full bg-black/50 flex items-center justify-center">
+                  <Play className="w-8 h-8 text-white ml-1" fill="white" />
+                </div>
+              </div>
+            </div>
           ) : (
             <img
               src={images[0]?.url}
@@ -183,16 +205,25 @@ export const ProductImageCarousel = () => {
             }
           }}>
             {images[1]?.type === "video" ? (
-              <video
-                src={images[1].url}
-                autoPlay
-                loop
-                muted
-                playsInline
-                preload="none"
-                className="w-full h-full object-cover rounded-xl"
-                aria-label={images[1].alt}
-              />
+              <div className="relative w-full h-full">
+                <video
+                  src={images[1].url}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  preload="none"
+                  className="w-full h-full object-cover rounded-xl"
+                  aria-label={images[1].alt}
+                  width={600}
+                  height={600}
+                />
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="w-12 h-12 rounded-full bg-black/50 flex items-center justify-center">
+                    <Play className="w-6 h-6 text-white ml-0.5" fill="white" />
+                  </div>
+                </div>
+              </div>
             ) : (
               <img
                 src={images[1]?.url}

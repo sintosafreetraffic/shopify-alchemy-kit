@@ -1,3 +1,4 @@
+// Performance: Videos use preload="none" to defer loading until interaction
 import { Play } from "lucide-react";
 import { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -59,21 +60,16 @@ export const KneePillowVideoSection = () => {
                         loop
                         muted
                         playsInline
-                        preload="metadata"
-                        onMouseEnter={(e) => e.currentTarget.play()}
+                        preload="none"
+                        width={360}
+                        height={640}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.load();
+                          e.currentTarget.play();
+                        }}
                         onMouseLeave={(e) => {
                           e.currentTarget.pause();
                           e.currentTarget.currentTime = 0;
-                        }}
-                        onLoadedMetadata={(e) => {
-                          // Ensure first frame is visible
-                          e.currentTarget.currentTime = 0.1;
-                        }}
-                        onCanPlay={(e) => {
-                          // Fallback to ensure first frame shows
-                          if (e.currentTarget.currentTime === 0) {
-                            e.currentTarget.currentTime = 0.1;
-                          }
                         }}
                       />
                       <div className="absolute inset-0 flex items-center justify-center bg-primary/10 group-hover:bg-transparent transition-colors">
@@ -112,6 +108,8 @@ export const KneePillowVideoSection = () => {
               autoPlay
               playsInline
               preload="auto"
+              width={720}
+              height={1280}
             />
           )}
         </DialogContent>
