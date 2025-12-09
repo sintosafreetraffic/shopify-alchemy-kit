@@ -144,39 +144,53 @@ const allTiers = [
 
 const AffiliateDashboard = () => {
   const [user, setUser] = useState<any>(null);
-  const [affiliateData, setAffiliateData] = useState<AffiliateData | null>(null);
-  const [commissions, setCommissions] = useState<Commission[]>([]);
-  const [subAffiliates, setSubAffiliates] = useState<SubAffiliate[]>([]);
-  const [tierInfo, setTierInfo] = useState<TierInfo>({ tier: 'bronze', commissionRate: 10, nextTier: 'silver', salesNeeded: 10 });
-  const [directSalesLast30, setDirectSalesLast30] = useState(0);
-  const [monthlyStats, setMonthlyStats] = useState<MonthlyStats>({ sales: 0, revenue: 0 });
-  const [commissionBreakdown, setCommissionBreakdown] = useState<CommissionBreakdown>({
-    level1: { count: 0, total: 0 },
-    level2: { count: 0, total: 0 },
-    pending: { count: 0, total: 0 },
-    paid: { count: 0, total: 0 }
-  });
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
-  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
-  const [analyticsLoading, setAnalyticsLoading] = useState(false);
-  const [payoutHistory, setPayoutHistory] = useState<PayoutHistoryEntry[]>([]);
-  const [payoutHistoryLoading, setPayoutHistoryLoading] = useState(false);
-  const [goals, setGoals] = useState<AffiliateGoal[]>([]);
-  const [goalsLoading, setGoalsLoading] = useState(false);
   const [commissionGoalTarget, setCommissionGoalTarget] = useState("");
   const [revenueGoalTarget, setRevenueGoalTarget] = useState("");
   const [savingGoal, setSavingGoal] = useState(false);
   const [activeGoalTab, setActiveGoalTab] = useState<"commission" | "revenue">("commission");
-  const [resources, setResources] = useState<ResourceItem[]>([]);
-  const [resourcesLoading, setResourcesLoading] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
   const [copied, setCopied] = useState(false);
   const [inviteCopied, setInviteCopied] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const inviteCode = searchParams.get('invite');
+
+  // Use optimized hook for parallel data fetching
+  const { 
+    data: dashboardData, 
+    loading, 
+    secondaryLoading,
+    fetchDashboardData,
+    refetch
+  } = useAffiliateDashboard();
+
+  // Destructure dashboard data for compatibility
+  const {
+    affiliate: affiliateData,
+    commissions,
+    subAffiliates,
+    tierInfo,
+    directSalesLast30,
+    monthlyStats,
+    commissionBreakdown,
+    leaderboard,
+    analytics,
+    payoutHistory,
+    goals,
+    resources,
+  } = dashboardData;
+
+  // Pre-fill goal inputs when goals load
+  useEffect(() => {
+    const commissionGoal = goals.find((g: AffiliateGoal) => g.goal_type === '30d_commission');
+    const revenueGoal = goals.find((g: AffiliateGoal) => g.goal_type === '30d_revenue');
+    if (commissionGoal) {
+      setCommissionGoalTarget(commissionGoal.target_amount.toString());
+    }
+    if (revenueGoal) {
+      setRevenueGoalTarget(revenueGoal.target_amount.toString());
+    }
+  }, [goals]);
 
   useEffect(() => {
     checkAuth();
@@ -194,58 +208,7 @@ const AffiliateDashboard = () => {
     }
 
     setUser(session.user);
-    await fetchAffiliateData();
-  };
-
-  const fetchAffiliateData = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const response = await supabase.functions.invoke('affiliate-api', {
-        body: { action: 'get-affiliate', data: {} }
-      });
-
-      if (response.error) {
-        throw new Error(response.error.message);
-      }
-
-      const { 
-        affiliate, 
-        commissions: commissionsData, 
-        tierInfo: tierData, 
-        directSalesLast30Days, 
-        subAffiliates: subAffiliatesData,
-        monthlyStats: stats,
-        commissionBreakdown: breakdown
-      } = response.data;
-      
-      setAffiliateData(affiliate);
-      setCommissions(commissionsData || []);
-      setSubAffiliates(subAffiliatesData || []);
-      if (tierData) setTierInfo(tierData);
-      setDirectSalesLast30(directSalesLast30Days || 0);
-      if (stats) setMonthlyStats(stats);
-      if (breakdown) setCommissionBreakdown(breakdown);
-
-      // Fetch leaderboard, analytics, payout history, goals, and resources if affiliate exists
-      if (affiliate) {
-        fetchLeaderboard();
-        fetchAnalytics();
-        fetchPayoutHistory(affiliate.id);
-        fetchGoals();
-        fetchResources();
-      }
-    } catch (error) {
-      console.error("Error fetching affiliate data:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load affiliate data",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    fetchDashboardData();
   };
 
   const fetchLeaderboard = async () => {

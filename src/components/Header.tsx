@@ -2,46 +2,15 @@ import { CartDrawer } from "./CartDrawer";
 import { NavLink } from "./NavLink";
 import { Link } from "react-router-dom";
 import logo from "@/assets/risebynight-logo-new.png";
-import { useState, useEffect } from "react";
 import { Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useUIStore } from "@/stores/uiStore";
+import { useThrottledScroll } from "@/hooks/useThrottledScroll";
 
 export const Header = () => {
-  const [isVisible, setIsVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
-  const [isAtTop, setIsAtTop] = useState(true);
+  const { isVisible, isAtTop } = useThrottledScroll();
   const { isMobileMenuOpen, setMobileMenuOpen } = useUIStore();
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      
-      // Check if we're at the top
-      setIsAtTop(currentScrollY < 10);
-
-      // Show header when at top or scrolling up
-      if (currentScrollY < 10) {
-        setIsVisible(true);
-      } else if (currentScrollY < lastScrollY) {
-        // Scrolling up - show header and keep it visible
-        setIsVisible(true);
-      } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
-        // Scrolling down - hide header only when actively scrolling down
-        setIsVisible(false);
-      }
-      // When not scrolling (currentScrollY === lastScrollY), maintain current state
-
-      setLastScrollY(currentScrollY);
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, [lastScrollY]);
 
   return (
     <header 
