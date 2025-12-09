@@ -1,3 +1,4 @@
+import React, { Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,16 +10,15 @@ import { ScrollToTop } from "./components/ScrollToTop";
 import { UrgencyBanner } from "./components/UrgencyBanner";
 import { EmailPopup } from "./components/EmailPopup";
 import { useEmailPopup } from "./hooks/useEmailPopup";
+import { FullPageLoader } from "./components/FullPageLoader";
+
+// Eagerly loaded pages (core shopping experience)
 import Home from "./pages/Home";
 import Index from "./pages/Index";
 import KneePillowProduct from "./pages/KneePillowProduct";
 import SleepMaskProduct from "./pages/SleepMaskProduct";
 import SleepBundleProduct from "./pages/SleepBundleProduct";
-import SleepQuiz from "./pages/SleepQuiz";
 import Auth from "./pages/Auth";
-import AffiliateDashboard from "./pages/AffiliateDashboard";
-import SleepCoachDashboard from "./pages/SleepCoachDashboard";
-import SleepCoachDebug from "./pages/SleepCoachDebug";
 import Benefits from "./pages/Benefits";
 import Reviews from "./pages/Reviews";
 import FAQ from "./pages/FAQ";
@@ -29,10 +29,16 @@ import ReturnPolicy from "./pages/ReturnPolicy";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import AboutUs from "./pages/AboutUs";
 import TrackOrder from "./pages/TrackOrder";
-import AdminAffiliateFraud from "./pages/AdminAffiliateFraud";
-import AdminAffiliatePayouts from "./pages/AdminAffiliatePayouts";
-import AdminAffiliateResources from "./pages/AdminAffiliateResources";
 import NotFound from "./pages/NotFound";
+
+// Lazily loaded pages (heavy dashboards & features)
+const SleepQuiz = React.lazy(() => import("./pages/SleepQuiz"));
+const AffiliateDashboard = React.lazy(() => import("./pages/AffiliateDashboard"));
+const SleepCoachDashboard = React.lazy(() => import("./pages/SleepCoachDashboard"));
+const SleepCoachDebug = React.lazy(() => import("./pages/SleepCoachDebug"));
+const AdminAffiliateFraud = React.lazy(() => import("./pages/AdminAffiliateFraud"));
+const AdminAffiliatePayouts = React.lazy(() => import("./pages/AdminAffiliatePayouts"));
+const AdminAffiliateResources = React.lazy(() => import("./pages/AdminAffiliateResources"));
 
 const queryClient = new QueryClient();
 
@@ -50,33 +56,39 @@ const AppContent = () => {
       <UrgencyBanner />
       <Header />
       <main className="flex-1 pt-2">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/product/ergonomic-pillow" element={<Index />} />
-          <Route path="/product/knee-pillow" element={<KneePillowProduct />} />
-          <Route path="/product/sleep-mask" element={<SleepMaskProduct />} />
-          <Route path="/product/sleep-bundle" element={<SleepBundleProduct />} />
-          <Route path="/product" element={<Index />} />
-          <Route path="/sleep-quiz" element={<SleepQuiz />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/affiliate-dashboard" element={<AffiliateDashboard />} />
-          <Route path="/sleep-coach" element={<SleepCoachDashboard />} />
-          <Route path="/sleep-coach-debug" element={<SleepCoachDebug />} />
-          <Route path="/benefits" element={<Benefits />} />
-          <Route path="/reviews" element={<Reviews />} />
-          <Route path="/faq" element={<FAQ />} />
-          <Route path="/guarantee" element={<Guarantee />} />
-          <Route path="/shipping" element={<ShippingPolicy />} />
-          <Route path="/terms" element={<TermsConditions />} />
-          <Route path="/return-policy" element={<ReturnPolicy />} />
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-          <Route path="/about" element={<AboutUs />} />
-          <Route path="/track" element={<TrackOrder />} />
-          <Route path="/admin/affiliate-fraud" element={<AdminAffiliateFraud />} />
-          <Route path="/admin/affiliate-payouts" element={<AdminAffiliatePayouts />} />
-          <Route path="/admin/affiliate-resources" element={<AdminAffiliateResources />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <Suspense fallback={<FullPageLoader />}>
+          <Routes>
+            {/* Core shopping pages - eagerly loaded */}
+            <Route path="/" element={<Home />} />
+            <Route path="/product/ergonomic-pillow" element={<Index />} />
+            <Route path="/product/knee-pillow" element={<KneePillowProduct />} />
+            <Route path="/product/sleep-mask" element={<SleepMaskProduct />} />
+            <Route path="/product/sleep-bundle" element={<SleepBundleProduct />} />
+            <Route path="/product" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/benefits" element={<Benefits />} />
+            <Route path="/reviews" element={<Reviews />} />
+            <Route path="/faq" element={<FAQ />} />
+            <Route path="/guarantee" element={<Guarantee />} />
+            <Route path="/shipping" element={<ShippingPolicy />} />
+            <Route path="/terms" element={<TermsConditions />} />
+            <Route path="/return-policy" element={<ReturnPolicy />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/about" element={<AboutUs />} />
+            <Route path="/track" element={<TrackOrder />} />
+            
+            {/* Heavy pages - lazily loaded */}
+            <Route path="/sleep-quiz" element={<SleepQuiz />} />
+            <Route path="/affiliate-dashboard" element={<AffiliateDashboard />} />
+            <Route path="/sleep-coach" element={<SleepCoachDashboard />} />
+            <Route path="/sleep-coach-debug" element={<SleepCoachDebug />} />
+            <Route path="/admin/affiliate-fraud" element={<AdminAffiliateFraud />} />
+            <Route path="/admin/affiliate-payouts" element={<AdminAffiliatePayouts />} />
+            <Route path="/admin/affiliate-resources" element={<AdminAffiliateResources />} />
+            
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </main>
       <Footer />
       <EmailPopup
