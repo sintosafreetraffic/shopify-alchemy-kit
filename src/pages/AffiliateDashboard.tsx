@@ -1,4 +1,5 @@
-import { useEffect, useState, useCallback } from "react";
+// Performance: Chart component is lazy-loaded to reduce initial bundle size
+import { useEffect, useState, useCallback, Suspense, lazy } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,8 +10,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Copy, Users, DollarSign, Loader2, Award, Share2, TrendingUp, Check, Sparkles, UserPlus, ShieldCheck, AlertTriangle, Package, Trophy, BarChart3, History, Wallet, Target, BookOpen, FileText, ExternalLink, Image } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from "recharts";
 import { format, parseISO } from "date-fns";
+
+// Lazy load the chart component to reduce initial bundle size
+const AffiliateAnalyticsChart = lazy(() => import("@/components/affiliate/AffiliateAnalyticsChart"));
 
 // Production domain for referral links
 const SITE_URL = "https://www.risebynight.com";
@@ -796,42 +799,17 @@ const AffiliateDashboard = () => {
                 <p className="text-muted-foreground">No analytics data yet. Once you generate sales, your 30-day performance will appear here.</p>
               </div>
             ) : (
-              <>
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="p-4 bg-blue-50 rounded-lg text-center">
-                    <p className="text-sm text-muted-foreground">30-Day Sales</p>
-                    <p className="text-2xl font-bold">{analytics.totals.total_30d_sales}</p>
-                  </div>
-                  <div className="p-4 bg-green-50 rounded-lg text-center">
-                    <p className="text-sm text-muted-foreground">30-Day Commissions</p>
-                    <p className="text-2xl font-bold">${analytics.totals.total_30d_commissions.toFixed(2)}</p>
-                  </div>
+              <Suspense fallback={
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  <span className="ml-2 text-sm text-muted-foreground">Loading chart...</span>
                 </div>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={analytics.daily}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis 
-                        dataKey="date" 
-                        tickFormatter={(value) => format(parseISO(value), 'MM/dd')}
-                        tick={{ fontSize: 12 }}
-                      />
-                      <YAxis tick={{ fontSize: 12 }} />
-                      <Tooltip 
-                        labelFormatter={(value) => format(parseISO(value as string), 'MMM d, yyyy')}
-                        formatter={(value: number) => [`$${value.toFixed(2)}`, 'Commission']}
-                      />
-                      <Area 
-                        type="monotone" 
-                        dataKey="commission_amount" 
-                        stroke="#3b82f6" 
-                        fill="#3b82f6" 
-                        fillOpacity={0.2}
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </>
+              }>
+                <AffiliateAnalyticsChart 
+                  daily={analytics.daily} 
+                  totals={analytics.totals} 
+                />
+              </Suspense>
             )}
           </CardContent>
         </Card>

@@ -9,10 +9,14 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <link rel="icon" href="/favicon.png" type="image/png" />
 
-    <!-- Preload critical images for faster loading -->
-    <link rel="preload" as="image" href="/src/assets/lifestyle-hero.jpg" media="(min-width: 768px)" />
-    <link rel="preload" as="image" href="/src/assets/lifestyle-hero-mobile.jpg" media="(max-width: 767px)" />
-    <link rel="preload" as="image" href="/src/assets/sleep-mask-product-shot.png" />
+    <!-- Preload critical hero images for LCP optimization -->
+    <!-- Home page: Desktop hero image (lifestyle-hero-desktop.webp) -->
+    <link rel="preload" as="image" href="/src/assets/lifestyle-hero-desktop.webp" media="(min-width: 768px)" fetchpriority="high" />
+    <!-- Home page: Mobile hero image (home-hero-mobile.webp) -->
+    <link rel="preload" as="image" href="/src/assets/home-hero-mobile.webp" media="(max-width: 767px)" fetchpriority="high" />
+    <!-- Product page: Knee pillow hero (knee-pillow-main-hero.webp) -->
+    <link rel="preload" as="image" href="/src/assets/knee-pillow-main-hero.webp" />
+    <!-- Brand logo used on all pages -->
     <link rel="preload" as="image" href="/src/assets/moon-logo-new.png" />
 
     <title>RiseByNight™ - Ergonomic Sleep Pillow</title>

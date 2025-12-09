@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+// Performance: Chart components are lazy-loaded to reduce initial bundle size
+import { useState, useEffect, useCallback, useMemo, Suspense, lazy } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -6,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { 
   Loader2, Lock, ShoppingBag, Users, Moon, LogOut, AlertCircle, 
   RefreshCw, LayoutDashboard, ListChecks, Sparkles, User, 
-  TrendingUp, TrendingDown, Minus, Flame, Brain, ClipboardEdit
+  TrendingUp, TrendingDown, Minus, Flame, Brain, ClipboardEdit, BarChart3
 } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,10 +24,19 @@ import { SleepLogTable } from "@/components/sleep-coach/SleepLogTable";
 import { CoachPlanDisplay } from "@/components/sleep-coach/CoachPlanDisplay";
 import { StreakDisplay } from "@/components/sleep-coach/StreakDisplay";
 import { SleepHistorySection } from "@/components/sleep-coach/SleepHistorySection";
-import { SleepProgressChart, TimeRange as ChartTimeRange } from "@/components/sleep-coach/SleepProgressChart";
 import { ShareProgressModal } from "@/components/sleep-coach/ShareProgressModal";
 import { SleepSetupForm } from "@/components/sleep-coach/SleepSetupForm";
 import { SleepSyncOverview } from "@/components/sleep-coach/SleepSyncOverview";
+// Import TimeRange type directly for type safety (not lazy-loaded)
+import type { TimeRange } from "@/components/sleep-coach/SleepProgressChart";
+
+// Lazy load chart component to reduce initial bundle size
+const SleepProgressChart = lazy(() => 
+  import("@/components/sleep-coach/SleepProgressChart").then(mod => ({ default: mod.SleepProgressChart }))
+);
+
+// Type alias for external use
+type ChartTimeRange = TimeRange;
 
 /**
  * Calculate consecutive logging streak from logs based on created_at dates
@@ -631,15 +641,24 @@ const SleepCoachDashboard = () => {
                     />
                   )}
                   
-                  {/* Sleep Progress Chart with Share */}
-                  <SleepProgressChart 
-                    logs={data.logs}
-                    initialRange={initialProgressRange}
-                    onShareClick={(range) => {
-                      setShareRange(range);
-                      setIsShareModalOpen(true);
-                    }}
-                  />
+                  {/* Sleep Progress Chart with Share - Lazy loaded */}
+                  <Suspense fallback={
+                    <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+                      <CardContent className="py-12 flex flex-col items-center justify-center">
+                        <BarChart3 className="h-8 w-8 text-muted-foreground/50 mb-2" />
+                        <span className="text-sm text-muted-foreground">Loading chart...</span>
+                      </CardContent>
+                    </Card>
+                  }>
+                    <SleepProgressChart 
+                      logs={data.logs}
+                      initialRange={initialProgressRange}
+                      onShareClick={(range) => {
+                        setShareRange(range);
+                        setIsShareModalOpen(true);
+                      }}
+                    />
+                  </Suspense>
                   
                   {/* Weekly Sleep History */}
                   <SleepHistorySection 
