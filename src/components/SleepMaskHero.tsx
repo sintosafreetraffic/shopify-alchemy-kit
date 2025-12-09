@@ -143,7 +143,10 @@ export const SleepMaskHero = () => {
           <div className="space-y-0">
             {/* Enhanced Social Proof */}
             <div className="space-y-2 mb-3">
-              <div className="flex items-center gap-2">
+              <div 
+                className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' })}
+              >
                 <div className="flex">
                   {[...Array(5)].map((_, i) => (
                     <Star
@@ -184,7 +187,10 @@ export const SleepMaskHero = () => {
                 <h1 className="text-3xl md:text-5xl font-bold leading-tight">
                   Rise By Night™ Silk Deep Sleep Mask
                 </h1>
-                <div className="flex items-center gap-2">
+                <div 
+                  className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() => document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' })}
+                >
                   <div className="flex">
                     {[...Array(5)].map((_, i) => (
                       <Star

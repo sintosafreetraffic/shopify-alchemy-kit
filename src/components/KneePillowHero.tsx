@@ -132,7 +132,10 @@ export const KneePillowHero = () => {
           <div className="space-y-0">
             {/* Enhanced Social Proof */}
             <div className="space-y-2 mb-3">
-              <div className="flex items-center gap-2 flex-wrap">
+              <div 
+                className="flex items-center gap-2 flex-wrap cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' })}
+              >
                 <div className="flex">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <Star key={star} className="w-5 h-5 fill-yellow-500 text-yellow-500" />
@@ -175,7 +178,10 @@ export const KneePillowHero = () => {
             <div className="hidden md:flex flex-col gap-3">
               {/* Enhanced Social Proof */}
               <div className="space-y-2">
-                <div className="flex items-center gap-3 flex-wrap">
+                <div 
+                  className="flex items-center gap-3 flex-wrap cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() => document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' })}
+                >
                   <div className="flex">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <Star key={star} className="w-5 h-5 fill-yellow-500 text-yellow-500" />
