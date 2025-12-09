@@ -3,6 +3,9 @@
  * 
  * Simulates WhatsApp message generation for testing.
  * Uses centralized env/cors helpers and AI Brain for tip generation.
+ * 
+ * PROTECTED: Requires DEBUG_SECRET or CRON_SECRET for authorization.
+ * This is a debug/testing endpoint and should not be publicly accessible.
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -10,6 +13,7 @@ import {
   corsHeaders,
   requireEnvVar,
   hasOpenAIKey,
+  validateDebugSecret,
   createErrorResponse,
   createSuccessResponse,
 } from "../_shared/env.ts";
@@ -23,6 +27,16 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // ============================================================
+    // AUTH BLOCK: Validate debug/testing access
+    // Requires DEBUG_SECRET or CRON_SECRET for authorization
+    // ============================================================
+    const authHeader = req.headers.get('Authorization');
+    if (!validateDebugSecret(authHeader)) {
+      console.warn('[WhatsApp Simulate] Unauthorized access attempt');
+      return createErrorResponse('Unauthorized', 401);
+    }
+
     // Use centralized env helpers
     const SUPABASE_URL = requireEnvVar('SUPABASE_URL');
     const SUPABASE_SERVICE_ROLE_KEY = requireEnvVar('SUPABASE_SERVICE_ROLE_KEY');

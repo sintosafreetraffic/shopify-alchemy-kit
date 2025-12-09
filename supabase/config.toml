@@ -31,59 +31,89 @@ enable_signup = true
 double_confirm_changes = true
 enable_confirmations = false
 
+# ============================================================
+# EDGE FUNCTION JWT CONFIGURATION
+# ============================================================
+# PUBLIC ENDPOINTS (verify_jwt = false):
+# - Webhooks with their own signature verification
+# - Public email subscription endpoints (with rate limiting)
+# - Guest quiz analysis
+#
+# AUTHENTICATED ENDPOINTS (verify_jwt = true or omitted):
+# - User-facing features requiring login
+# - Endpoints that access user-specific data
+#
+# CRON/INTERNAL ENDPOINTS (verify_jwt = false but require CRON_SECRET):
+# - Scheduled jobs that validate CRON_SECRET internally
+# ============================================================
+
+# Affiliate API - Public but validates auth internally for sensitive actions
 [functions.affiliate-api]
 verify_jwt = false
 
+# CRON jobs - Public but require CRON_SECRET internally
 [functions.affiliate-tier-recalc]
 verify_jwt = false
 
 [functions.affiliate-payout-check]
 verify_jwt = false
 
-[functions.klaviyo-subscribe]
-verify_jwt = false
-
-[functions.klaviyo-profile]
-verify_jwt = false
-
-[functions.analyze-sleep-quiz]
-verify_jwt = false
-
-[functions.shopify-order-webhook]
+[functions.affiliate-monthly-summary]
 verify_jwt = false
 
 [functions.daily-sleep-sync]
 verify_jwt = false
 
-[functions.sleep-attributes-sync]
-verify_jwt = false
-
-[functions.coach-sleep-plan]
-verify_jwt = false
-
-[functions.coach-generate-sleep-plan]
-verify_jwt = false
-
-[functions.check-plan-refresh]
-verify_jwt = false
-
 [functions.sleep-plan-reminder]
 verify_jwt = false
 
-[functions.engagement-evaluate]
+# Public email subscription - Rate limited internally
+[functions.klaviyo-subscribe]
 verify_jwt = false
 
+# Guest quiz analysis - Rate limited, optional auth
+[functions.analyze-sleep-quiz]
+verify_jwt = false
+
+# Shopify webhook - Verifies HMAC signature internally
+[functions.shopify-order-webhook]
+verify_jwt = false
+
+# Klaviyo event sender - Internal use only
+[functions.klaviyo-event]
+verify_jwt = false
+
+# Klaviyo WhatsApp event - Internal use only
 [functions.klaviyo-whatsapp-event]
+verify_jwt = false
+
+# Sleep attributes sync - Validates JWT or internal token internally
+[functions.sleep-attributes-sync]
+verify_jwt = false
+
+# Coach endpoints - Require JWT authentication
+[functions.coach-sleep-plan]
+verify_jwt = true
+
+[functions.coach-generate-sleep-plan]
+verify_jwt = true
+
+[functions.check-plan-refresh]
+verify_jwt = true
+
+[functions.engagement-evaluate]
+verify_jwt = true
+
+[functions.verify-sleep-coach-access]
+verify_jwt = true
+
+# Klaviyo profile - Requires JWT (users can only update own profile)
+[functions.klaviyo-profile]
+verify_jwt = true
+
+# Debug endpoints - Require DEBUG_SECRET internally
+[functions.debug-sleep-sync]
 verify_jwt = false
 
 [functions.whatsapp-coach-simulate]
 verify_jwt = false
-
-[functions.debug-sleep-sync]
-verify_jwt = false
-
-[functions.affiliate-monthly-summary]
-verify_jwt = false
-
-[functions.check-plan-refresh]
-verify_jwt = true
