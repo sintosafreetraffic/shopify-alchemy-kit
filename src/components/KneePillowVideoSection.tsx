@@ -5,10 +5,16 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { useInView } from "@/hooks/useInView";
 
+// Import poster images
+import kneePillowHeroWebp from "@/assets/knee-pillow-main-hero.webp";
+import kneePillowLifestyleWebp from "@/assets/knee-pillow-hero-lifestyle.webp";
+import kneePillowFeaturesWebp from "@/assets/knee-pillow-features-callout.webp";
+
 interface VideoCardProps {
   video: {
     id: number;
     src: string;
+    poster: string;
     title: string;
     views: string;
   };
@@ -52,6 +58,7 @@ const VideoCard = ({ video, onVideoClick }: VideoCardProps) => {
           <video 
             ref={videoRef}
             src={video.src}
+            poster={video.poster}
             className="w-full h-full object-cover"
             loop
             muted
@@ -63,11 +70,19 @@ const VideoCard = ({ video, onVideoClick }: VideoCardProps) => {
             onMouseLeave={handleMouseLeave}
           />
         ) : (
-          <div className="w-full h-full bg-muted" />
+          <img
+            src={video.poster}
+            alt={video.title}
+            loading="lazy"
+            decoding="async"
+            width={360}
+            height={640}
+            className="w-full h-full object-cover"
+          />
         )}
-        <div className="absolute inset-0 flex items-center justify-center bg-primary/10 group-hover:bg-transparent transition-colors">
-          <div className="w-16 h-16 rounded-full bg-primary/80 flex items-center justify-center group-hover:scale-110 transition-transform">
-            <Play className="w-8 h-8 text-white ml-1" fill="white" />
+        <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-transparent transition-colors">
+          <div className="w-14 h-14 rounded-full bg-white/90 shadow-lg shadow-black/40 flex items-center justify-center group-hover:scale-105 transition-transform">
+            <Play className="w-6 h-6 text-black ml-0.5" fill="currentColor" />
           </div>
         </div>
         <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
@@ -79,6 +94,16 @@ const VideoCard = ({ video, onVideoClick }: VideoCardProps) => {
   );
 };
 
+const VideoSkeleton = () => (
+  <div className="w-full max-w-5xl mx-auto grid gap-4 md:grid-cols-3">
+    {Array.from({ length: 3 }).map((_, i) => (
+      <div key={i} className="flex flex-col gap-3">
+        <div className="aspect-[9/16] w-full rounded-xl bg-muted animate-pulse" />
+      </div>
+    ))}
+  </div>
+);
+
 export const KneePillowVideoSection = () => {
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const { ref: sectionRef, isInView: sectionInView } = useInView<HTMLElement>({ threshold: 0.1 });
@@ -87,18 +112,21 @@ export const KneePillowVideoSection = () => {
     {
       id: 2,
       src: "/videos/knee-video-2.mp4",
+      poster: kneePillowHeroWebp,
       title: "Hip support explained",
       views: "1.5M"
     },
     {
       id: 3,
       src: "/videos/knee-video-3.mp4",
+      poster: kneePillowLifestyleWebp,
       title: "Wake up pain-free",
       views: "2.3M"
     },
     {
       id: 4,
       src: "/videos/knee-video-4.mp4",
+      poster: kneePillowFeaturesWebp,
       title: "Real customer results",
       views: "1.8M"
     }
@@ -115,7 +143,7 @@ export const KneePillowVideoSection = () => {
             </p>
           </div>
 
-          {sectionInView && (
+          {sectionInView ? (
             <Carousel 
               className="w-full max-w-5xl mx-auto"
               opts={{
@@ -133,12 +161,8 @@ export const KneePillowVideoSection = () => {
               <CarouselPrevious />
               <CarouselNext />
             </Carousel>
-          )}
-
-          {!sectionInView && (
-            <div className="w-full max-w-5xl mx-auto h-64 flex items-center justify-center text-sm text-muted-foreground">
-              Loading videos…
-            </div>
+          ) : (
+            <VideoSkeleton />
           )}
 
           <div className="text-center mt-8">
