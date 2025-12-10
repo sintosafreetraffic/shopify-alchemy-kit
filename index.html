@@ -47,20 +47,22 @@
       content="The #1 rated orthopedic pillow. Scientifically proven to reduce neck pain and improve sleep quality."
     />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-    <!-- Klaviyo Onsite Script -->
+    <!-- Klaviyo Onsite Script - Deferred until after page load for performance -->
     <script type="text/javascript">
-      (function() {
-        var kl = document.createElement('script');
-        kl.type = 'text/javascript';
-        kl.async = true;
-        kl.src = 'https://a.klaviyo.com/media/js/onsite/onsite.js?company_id=ThHaCi';
-        var s = document.getElementsByTagName('script')[0];
-        if (s && s.parentNode) {
-          s.parentNode.insertBefore(kl, s);
-        } else {
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          var kl = document.createElement('script');
+          kl.type = 'text/javascript';
+          kl.async = true;
+          kl.src = 'https://a.klaviyo.com/media/js/onsite/onsite.js?company_id=ThHaCi';
+          var s = document.getElementsByTagName('script')[0];
+          if (s && s.parentNode) {
+            s.parentNode.insertBefore(kl, s);
+          } else {
           document.head.appendChild(kl);
         }
-      })();
+        }, 100); // Small delay after load
+      });
     </script>
 
     <!-- Microsoft Clarity -->
