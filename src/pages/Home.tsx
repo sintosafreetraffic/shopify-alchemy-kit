@@ -25,53 +25,47 @@ const SectionFallback = () => (
 export default function Home() {
   return (
     <div className="min-h-screen">
-      {/* Lifestyle Hero Image */}
+      {/* Lifestyle Hero Image - Responsive with art direction */}
       <section className="relative w-full">
-        {/* Desktop Image - LCP image with explicit dimensions */}
-        <div className="hidden md:block relative">
-          <OptimizedImage
+        <picture>
+          {/* Mobile-optimized image for screens under 768px */}
+          <source
+            media="(max-width: 767px)"
+            srcSet={lifestyleHeroMobile}
+            width={750}
+            height={1000}
+          />
+          {/* Desktop image for larger screens */}
+          <source
+            media="(min-width: 768px)"
+            srcSet={lifestyleHero}
+            width={1920}
+            height={1080}
+          />
+          {/* Fallback img with LCP optimization */}
+          <img
             src={lifestyleHero}
             alt="Peaceful sleep with Rise By Night"
             width={1920}
             height={1080}
-            priority
+            loading="eager"
+            fetchPriority="high"
+            decoding="sync"
             className="w-full h-[60vh] md:h-[70vh] object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/40 flex items-end justify-center pb-16">
-            <div className="animate-fade-in text-center">
-              <p className="text-3xl md:text-4xl lg:text-5xl font-semibold text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">
-                Buy 1 Get 1 Free
-              </p>
-              <Link to="/product/ergonomic-pillow">
-                <Button size="lg" className="mt-6 text-lg px-8 py-6">
-                  Get Yours Now
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Image - LCP image with explicit dimensions */}
-        <div className="block md:hidden relative">
-          <OptimizedImage
-            src={lifestyleHeroMobile}
-            alt="Peaceful sleep with Rise By Night"
-            width={750}
-            height={1000}
-            priority
-            className="w-full h-[60vh] object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/40 flex items-end justify-center pb-12 px-4">
-            <div className="animate-fade-in text-center">
-              <p className="text-xl sm:text-2xl font-semibold text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">
-                Buy 1 Get 1 Free
-              </p>
-              <Link to="/product/ergonomic-pillow">
-                <Button size="lg" className="mt-4 text-base px-6 py-5">
-                  Get Yours Now
-                </Button>
-              </Link>
-            </div>
+        </picture>
+        
+        {/* Overlay content */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/40 flex items-end justify-center pb-12 md:pb-16 px-4">
+          <div className="animate-fade-in text-center">
+            <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-semibold text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">
+              Buy 1 Get 1 Free
+            </p>
+            <Link to="/product/ergonomic-pillow">
+              <Button size="lg" className="mt-4 md:mt-6 text-base md:text-lg px-6 md:px-8 py-5 md:py-6">
+                Get Yours Now
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
