@@ -65,39 +65,49 @@
       });
     </script>
 
-    <!-- Microsoft Clarity -->
+    <!-- Microsoft Clarity - Deferred for FCP performance -->
     <script type="text/javascript">
-      (function(c,l,a,r,i,t,y){
-          c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-          t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-          y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-      })(window, document, "clarity", "script", "ue7ibjdmdj");
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          (function(c,l,a,r,i,t,y){
+              c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+              t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+              y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+          })(window, document, "clarity", "script", "ue7ibjdmdj");
+        }, 200);
+      });
     </script>
     
-    <!-- Pinterest Tag -->
+    <!-- Pinterest Tag - Deferred for FCP performance -->
     <script type="text/javascript">
-      !function(e){if(!window.pintrk){window.pintrk=function(){window.pintrk.queue.push(Array.prototype.slice.call(arguments))};var n=window.pintrk;n.queue=[],n.version="3.0";var t=document.createElement("script");t.async=!0,t.src=e;var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(t,r)}}("https://s.pinimg.com/ct/core.js");
-      pintrk('load', '2612541212823');
-      pintrk('page');
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          !function(e){if(!window.pintrk){window.pintrk=function(){window.pintrk.queue.push(Array.prototype.slice.call(arguments))};var n=window.pintrk;n.queue=[],n.version="3.0";var t=document.createElement("script");t.async=!0,t.src=e;var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(t,r)}}("https://s.pinimg.com/ct/core.js");
+          pintrk('load', '2612541212823');
+          pintrk('page');
+        }, 300);
+      });
     </script>
     <!-- end Pinterest Tag -->
     
-    <!-- Shopify Web Pixel Analytics -->
+    <!-- Shopify Web Pixel Analytics - Deferred for FCP performance -->
     <script type="text/javascript">
-      (function() {
-        var shopifyStore = 'lovable-project-swlbs.myshopify.com';
-        var script = document.createElement('script');
-        script.async = true;
-        script.src = 'https://cdn.shopify.com/shopifycloud/web-pixels-manager/latest/web-pixels-manager.js';
-        script.dataset.shopDomain = shopifyStore;
-        var firstScript = document.getElementsByTagName('script')[0];
-        firstScript.parentNode.insertBefore(script, firstScript);
-        
-        window.ShopifyAnalytics = window.ShopifyAnalytics || {};
-        window.ShopifyAnalytics.meta = window.ShopifyAnalytics.meta || {};
-        window.ShopifyAnalytics.meta.currency = 'USD';
-        window.ShopifyAnalytics.lib = window.ShopifyAnalytics.lib || {};
-      })();
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          var shopifyStore = 'lovable-project-swlbs.myshopify.com';
+          var script = document.createElement('script');
+          script.async = true;
+          script.src = 'https://cdn.shopify.com/shopifycloud/web-pixels-manager/latest/web-pixels-manager.js';
+          script.dataset.shopDomain = shopifyStore;
+          var firstScript = document.getElementsByTagName('script')[0];
+          firstScript.parentNode.insertBefore(script, firstScript);
+          
+          window.ShopifyAnalytics = window.ShopifyAnalytics || {};
+          window.ShopifyAnalytics.meta = window.ShopifyAnalytics.meta || {};
+          window.ShopifyAnalytics.meta.currency = 'USD';
+          window.ShopifyAnalytics.lib = window.ShopifyAnalytics.lib || {};
+        }, 400);
+      });
     </script>
   </head>
 
