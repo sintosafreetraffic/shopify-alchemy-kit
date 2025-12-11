@@ -1,4 +1,4 @@
-// Performance: Hero images use WebP with explicit dimensions and eager loading for LCP
+// Performance: Hero images use WebP with multi-resolution srcset and eager loading for LCP
 // Below-fold components are lazy loaded to reduce initial bundle
 import { Suspense, lazy } from "react";
 import { Button } from "@/components/ui/button";
@@ -7,8 +7,12 @@ import { ArrowRight, Moon, Heart, Sparkles, Shield, Users, Award } from "lucide-
 import { Link } from "react-router-dom";
 import OptimizedImage from "@/components/OptimizedImage";
 import heroLogo from "@/assets/moon-logo-new.webp";
-import lifestyleHero from "@/assets/hero-christmas-desktop.webp";
-import lifestyleHeroMobile from "@/assets/home-hero-mobile.webp";
+
+// Multi-resolution hero images for responsive loading
+import heroDesktop1920 from "@/assets/hero-christmas-desktop.webp";
+import heroDesktop1280 from "@/assets/hero-christmas-1280.webp";
+import heroDesktop768 from "@/assets/hero-christmas-768.webp";
+import heroMobile from "@/assets/hero-mobile-600.webp";
 
 // Lazy load below-fold components
 const ProductGallery = lazy(() => 
@@ -25,29 +29,43 @@ const SectionFallback = () => (
 export default function Home() {
   return (
     <div className="min-h-screen">
-      {/* Lifestyle Hero Image - Responsive with art direction */}
+      {/* Lifestyle Hero Image - Responsive with multi-resolution srcset */}
       <section className="relative w-full">
         <picture>
-          {/* Mobile-optimized image for screens under 768px */}
+          {/* Mobile: portrait orientation, optimized for small screens */}
           <source
             media="(max-width: 767px)"
-            srcSet={lifestyleHeroMobile}
-            width={750}
-            height={1000}
+            srcSet={heroMobile}
+            width={600}
+            height={800}
           />
-          {/* Desktop image for larger screens */}
+          {/* Tablet: medium desktop image */}
           <source
-            media="(min-width: 768px)"
-            srcSet={lifestyleHero}
+            media="(max-width: 1023px)"
+            srcSet={heroDesktop768}
+            width={768}
+            height={432}
+          />
+          {/* Small desktop: 1280px variant */}
+          <source
+            media="(max-width: 1439px)"
+            srcSet={heroDesktop1280}
+            width={1280}
+            height={720}
+          />
+          {/* Large desktop: full resolution */}
+          <source
+            media="(min-width: 1440px)"
+            srcSet={heroDesktop1920}
             width={1920}
             height={1080}
           />
           {/* Fallback img with LCP optimization */}
           <img
-            src={lifestyleHero}
+            src={heroDesktop1280}
             alt="Peaceful sleep with Rise By Night"
-            width={1920}
-            height={1080}
+            width={1280}
+            height={720}
             loading="eager"
             fetchPriority="high"
             decoding="sync"
