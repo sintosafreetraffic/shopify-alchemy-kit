@@ -1,6 +1,8 @@
+// Performance: Using OptimizedImage for lazy loading
 import kneePillowImage from "@/assets/knee-pillow-layers-new.png";
 import { useState } from "react";
 import { Shirt, Wind, MoveHorizontal } from "lucide-react";
+import OptimizedImage from "@/components/OptimizedImage";
 
 const components = [
   {
@@ -83,12 +85,12 @@ export const KneePillowLookInside = () => {
             {/* Center Column - Image */}
             <div className="relative flex items-center justify-center py-8">
               <div className="max-w-md mx-auto relative">
-                <img
+                <OptimizedImage
                   src={kneePillowImage}
                   alt="Rise By Night knee pillow showing ergonomic design and materials"
+                  width={400}
+                  height={300}
                   className="w-full relative z-0 rounded-xl"
-                  loading="lazy"
-                  decoding="async"
                 />
               </div>
             </div>
@@ -123,12 +125,12 @@ export const KneePillowLookInside = () => {
           {/* Mobile Layout */}
           <div className="lg:hidden space-y-8">
             <div className="max-w-md mx-auto mb-8">
-              <img
+              <OptimizedImage
                 src={kneePillowImage}
                 alt="Rise By Night knee pillow showing ergonomic design and materials"
+                width={400}
+                height={300}
                 className="w-full rounded-xl"
-                loading="lazy"
-                decoding="async"
               />
             </div>
 
