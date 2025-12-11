@@ -15,15 +15,8 @@
     <link rel="preconnect" href="https://a.klaviyo.com" crossorigin />
     <link rel="preconnect" href="https://cdn.shopify.com" crossorigin />
 
-    <!-- Preload critical hero images for LCP optimization -->
-    <!-- Home page: Desktop hero image (lifestyle-hero-desktop.webp) -->
-    <link rel="preload" as="image" href="/src/assets/lifestyle-hero-desktop.webp" media="(min-width: 768px)" fetchpriority="high" />
-    <!-- Home page: Mobile hero image (home-hero-mobile.webp) -->
-    <link rel="preload" as="image" href="/src/assets/home-hero-mobile.webp" media="(max-width: 767px)" fetchpriority="high" />
-    <!-- Product page: Knee pillow hero (knee-pillow-main-hero.webp) -->
-    <link rel="preload" as="image" href="/src/assets/knee-pillow-main-hero.webp" />
-    <!-- Brand logo used on all pages -->
-    <link rel="preload" as="image" href="/src/assets/moon-logo-new.png" />
+    <!-- Critical resource hints removed - Vite hashes filenames so static preloads don't work -->
+    <!-- LCP optimization handled via fetchpriority="high" on actual img elements -->
 
     <title>RiseByNight™ - Ergonomic Sleep Pillow</title>
     <meta

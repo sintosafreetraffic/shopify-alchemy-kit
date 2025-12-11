@@ -5,7 +5,7 @@ import { ArrowRight, Moon, Heart, Sparkles, Shield, Users, Award } from "lucide-
 import { Link } from "react-router-dom";
 import { ProductGallery } from "@/components/ProductGallery";
 import OptimizedImage from "@/components/OptimizedImage";
-import heroLogo from "@/assets/moon-logo-new.png";
+import heroLogo from "@/assets/moon-logo-new.webp";
 import lifestyleHero from "@/assets/lifestyle-hero-desktop.webp";
 import lifestyleHeroMobile from "@/assets/home-hero-mobile.webp";
 
