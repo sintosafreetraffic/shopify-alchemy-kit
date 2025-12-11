@@ -40,48 +40,45 @@
       content="The #1 rated orthopedic pillow. Scientifically proven to reduce neck pain and improve sleep quality."
     />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-    <!-- Klaviyo Onsite Script - Deferred until after page load for performance -->
+    <!-- Third-party scripts deferred until first user interaction for better TTI -->
     <script type="text/javascript">
-      window.addEventListener('load', function() {
-        setTimeout(function() {
+      (function() {
+        var scriptsLoaded = false;
+        function loadDeferredScripts() {
+          if (scriptsLoaded) return;
+          scriptsLoaded = true;
+          
+          // Klaviyo Onsite
           var kl = document.createElement('script');
-          kl.type = 'text/javascript';
           kl.async = true;
           kl.src = 'https://a.klaviyo.com/media/js/onsite/onsite.js?company_id=ThHaCi';
-          var s = document.getElementsByTagName('script')[0];
-          if (s && s.parentNode) {
-            s.parentNode.insertBefore(kl, s);
-          } else {
           document.head.appendChild(kl);
-        }
-        }, 100); // Small delay after load
-      });
-    </script>
-
-    <!-- Microsoft Clarity - Deferred for FCP performance -->
-    <script type="text/javascript">
-      window.addEventListener('load', function() {
-        setTimeout(function() {
+          
+          // Microsoft Clarity
           (function(c,l,a,r,i,t,y){
-              c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-              t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-              y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
           })(window, document, "clarity", "script", "ue7ibjdmdj");
-        }, 200);
-      });
-    </script>
-    
-    <!-- Pinterest Tag - Deferred for FCP performance -->
-    <script type="text/javascript">
-      window.addEventListener('load', function() {
-        setTimeout(function() {
+          
+          // Pinterest Tag
           !function(e){if(!window.pintrk){window.pintrk=function(){window.pintrk.queue.push(Array.prototype.slice.call(arguments))};var n=window.pintrk;n.queue=[],n.version="3.0";var t=document.createElement("script");t.async=!0,t.src=e;var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(t,r)}}("https://s.pinimg.com/ct/core.js");
           pintrk('load', '2612541212823');
           pintrk('page');
-        }, 300);
-      });
+          
+          // Cleanup listeners
+          window.removeEventListener('scroll', loadDeferredScripts);
+          window.removeEventListener('click', loadDeferredScripts);
+          window.removeEventListener('touchstart', loadDeferredScripts);
+        }
+        
+        // Load on first user interaction OR after 5s timeout (whichever comes first)
+        window.addEventListener('scroll', loadDeferredScripts, { passive: true, once: true });
+        window.addEventListener('click', loadDeferredScripts, { once: true });
+        window.addEventListener('touchstart', loadDeferredScripts, { passive: true, once: true });
+        setTimeout(loadDeferredScripts, 5000);
+      })();
     </script>
-    <!-- end Pinterest Tag -->
     
   </head>
 
