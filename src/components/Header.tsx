@@ -1,7 +1,7 @@
 import { CartDrawer } from "./CartDrawer";
 import { NavLink } from "./NavLink";
 import { Link } from "react-router-dom";
-import logo from "@/assets/risebynight-logo-new.png";
+import logo from "@/assets/risebynight-logo-new.webp";
 import { Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -158,6 +158,7 @@ export const Header = () => {
             height={40}
             className="h-8 md:h-10 w-auto object-contain"
             loading="eager"
+            fetchPriority="high"
             decoding="async"
           />
         </Link>
