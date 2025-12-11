@@ -4,7 +4,8 @@
  * Creates/updates Klaviyo profiles for WhatsApp settings and properties.
  * Uses centralized env/cors helpers.
  * 
- * REQUIRES JWT AUTHENTICATION - Only authenticated users can update their own profile.
+ * PUBLIC ENDPOINT - Validates email from request body for quiz flow.
+ * When authenticated, uses JWT email instead for security.
  */
 
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
@@ -17,11 +18,11 @@ import {
 } from "../_shared/env.ts";
 import {
   authenticateRequest,
-  createAuthErrorResponse,
 } from "../_shared/auth.ts";
 
-// Input validation schema (email removed - derived from JWT)
+// Input validation schema - email required for unauthenticated calls
 const profileSchema = z.object({
+  email: z.string().email("Invalid email format").optional(),
   properties: z.record(z.unknown()).optional().default({}),
   phone_number: z.string().max(20, "Phone number too long").optional(),
   whatsapp_enabled: z.boolean().optional().default(false),
@@ -39,24 +40,7 @@ Deno.serve(async (req) => {
     const SUPABASE_ANON_KEY = requireEnvVar('SUPABASE_ANON_KEY');
     const KLAVIYO_PRIVATE_API_KEY = requireEnvVar('KLAVIYO_PRIVATE_API_KEY');
 
-    // ============================================================
-    // AUTH BLOCK: Require JWT authentication
-    // Users can only update their own Klaviyo profile
-    // ============================================================
-    const authHeader = req.headers.get('Authorization');
-    const authResult = await authenticateRequest(authHeader, SUPABASE_URL, SUPABASE_ANON_KEY);
-    
-    if (authResult.error || !authResult.user) {
-      return createAuthErrorResponse(authResult.error || 'Unauthorized', authResult.status);
-    }
-
-    // Use authenticated user's email - ignore any email in request body
-    const email = authResult.user.email;
-    if (!email) {
-      return createErrorResponse('User email not available', 400);
-    }
-
-    // Validate input
+    // Validate input first
     const rawBody = await req.json();
     const parseResult = profileSchema.safeParse(rawBody);
     
@@ -64,9 +48,35 @@ Deno.serve(async (req) => {
       console.error("[Klaviyo] Validation error:", parseResult.error.errors);
       return createErrorResponse("Invalid input", 400);
     }
-    
-    const { properties, phone_number, whatsapp_enabled } = parseResult.data;
 
+    const { email: bodyEmail, properties, phone_number, whatsapp_enabled } = parseResult.data;
+
+    // ============================================================
+    // AUTH BLOCK: Optional JWT authentication
+    // If authenticated, use JWT email (more secure)
+    // Otherwise, require email in request body (for quiz flow)
+    // ============================================================
+    let email: string;
+    const authHeader = req.headers.get('Authorization');
+    
+    if (authHeader) {
+      const authResult = await authenticateRequest(authHeader, SUPABASE_URL, SUPABASE_ANON_KEY);
+      if (authResult.user?.email) {
+        email = authResult.user.email;
+        console.log(`[Klaviyo] Using authenticated email: ${email}`);
+      } else if (bodyEmail) {
+        email = bodyEmail;
+        console.log(`[Klaviyo] Auth failed, using body email: ${email}`);
+      } else {
+        return createErrorResponse('Email required', 400);
+      }
+    } else if (bodyEmail) {
+      email = bodyEmail;
+      console.log(`[Klaviyo] Using body email (unauthenticated): ${email}`);
+    } else {
+      return createErrorResponse('Email required', 400);
+    }
+    
     console.log(`[Klaviyo] Updating profile for ${email}, WhatsApp: ${whatsapp_enabled}`);
 
     // Find profile by email
