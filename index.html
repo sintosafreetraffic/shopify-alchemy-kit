@@ -83,25 +83,6 @@
     </script>
     <!-- end Pinterest Tag -->
     
-    <!-- Shopify Web Pixel Analytics - Deferred for FCP performance -->
-    <script type="text/javascript">
-      window.addEventListener('load', function() {
-        setTimeout(function() {
-          var shopifyStore = 'lovable-project-swlbs.myshopify.com';
-          var script = document.createElement('script');
-          script.async = true;
-          script.src = 'https://cdn.shopify.com/shopifycloud/web-pixels-manager/latest/web-pixels-manager.js';
-          script.dataset.shopDomain = shopifyStore;
-          var firstScript = document.getElementsByTagName('script')[0];
-          firstScript.parentNode.insertBefore(script, firstScript);
-          
-          window.ShopifyAnalytics = window.ShopifyAnalytics || {};
-          window.ShopifyAnalytics.meta = window.ShopifyAnalytics.meta || {};
-          window.ShopifyAnalytics.meta.currency = 'USD';
-          window.ShopifyAnalytics.lib = window.ShopifyAnalytics.lib || {};
-        }, 400);
-      });
-    </script>
   </head>
 
   <body>
