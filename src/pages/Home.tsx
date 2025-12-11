@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 import { ProductGallery } from "@/components/ProductGallery";
 import OptimizedImage from "@/components/OptimizedImage";
 import heroLogo from "@/assets/moon-logo-new.webp";
-import lifestyleHero from "@/assets/lifestyle-hero-desktop.webp";
+import lifestyleHero from "@/assets/hero-christmas-desktop.webp";
 import lifestyleHeroMobile from "@/assets/home-hero-mobile.webp";
 
 export default function Home() {
