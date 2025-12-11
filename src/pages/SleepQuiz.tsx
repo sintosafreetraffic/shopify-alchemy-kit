@@ -158,7 +158,7 @@ const SleepQuiz = () => {
 
     try {
       const { data, error } = await supabase.functions.invoke("analyze-sleep-quiz", {
-        body: quizPayload,
+        body: { answers: quizPayload, email: email.trim() },
       });
 
       if (error) throw error;
