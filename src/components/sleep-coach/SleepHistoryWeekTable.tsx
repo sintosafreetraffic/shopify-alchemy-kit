@@ -196,6 +196,7 @@ export const SleepHistoryWeekTable = ({ logs, weekStart, onUpdateLog, onDeleteLo
                       size="icon"
                       className="h-7 w-7"
                       onClick={() => openEditDialog(log)}
+                      aria-label={`Edit sleep log for ${format(day, "EEE, MMM d")}`}
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
@@ -209,6 +210,7 @@ export const SleepHistoryWeekTable = ({ logs, weekStart, onUpdateLog, onDeleteLo
                           size="icon"
                           className="h-7 w-7 text-destructive hover:text-destructive"
                           disabled={isDeleting === log.id}
+                          aria-label={`Delete sleep log for ${format(day, "EEE, MMM d")}`}
                         >
                           {isDeleting === log.id ? (
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />

@@ -131,9 +131,10 @@ const VideoCard = ({ video, onVideoClick }: VideoCardProps) => {
           />
         )}
         <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-transparent transition-colors">
-          <div className="w-14 h-14 rounded-full bg-white/90 shadow-lg shadow-black/40 flex items-center justify-center group-hover:scale-105 transition-transform">
+          <div className="w-14 h-14 rounded-full bg-white/90 shadow-lg shadow-black/40 flex items-center justify-center group-hover:scale-105 transition-transform" aria-hidden="true">
             <Play className="w-6 h-6 text-black ml-0.5" fill="currentColor" />
           </div>
+          <span className="sr-only">Play {video.title} video</span>
         </div>
         {/* Buffering spinner */}
         {isBuffering && (

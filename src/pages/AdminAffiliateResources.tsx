@@ -410,7 +410,7 @@ export default function AdminAffiliateResources() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+            <Button variant="ghost" size="icon" onClick={() => navigate("/")} aria-label="Go back to home">
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>

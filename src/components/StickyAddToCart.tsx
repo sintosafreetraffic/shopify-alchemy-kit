@@ -214,6 +214,8 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                   <div className="flex gap-2">
                     <button
                       onClick={() => setSelectedBundle("1")}
+                      aria-label={isSleepBundle ? "Select single bundle" : "Select 1 pillow"}
+                      aria-pressed={selectedBundle === "1"}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors relative overflow-hidden group ${
                         selectedBundle === "1"
                           ? "bg-primary text-primary-foreground"
@@ -221,16 +223,18 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                       }`}
                     >
                       <span className="flex items-center gap-1 transition-all duration-300 group-hover:-translate-y-8 group-hover:opacity-0">
-                        <Plus className="w-3 h-3" />
+                        <Plus className="w-3 h-3" aria-hidden="true" />
                         {isSleepBundle ? "Single Bundle" : "1 Pillow"}
                       </span>
-                      <span className="absolute inset-0 flex items-center justify-center gap-1 translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                      <span className="absolute inset-0 flex items-center justify-center gap-1 translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100" aria-hidden="true">
                         <Plus className="w-3 h-3" />
                         {isSleepBundle ? "Single Bundle" : "1 Pillow"}
                       </span>
                     </button>
                     <button
                       onClick={() => setSelectedBundle("2")}
+                      aria-label={isSleepBundle ? "Select double bundle" : "Select 2 pillows with free gift"}
+                      aria-pressed={selectedBundle === "2"}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors relative overflow-hidden group ${
                         selectedBundle === "2"
                           ? "bg-primary text-primary-foreground"
@@ -238,7 +242,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                       }`}
                     >
                       <span className="flex items-center gap-1 transition-all duration-300 group-hover:-translate-y-8 group-hover:opacity-0">
-                        <Plus className="w-3 h-3" />
+                        <Plus className="w-3 h-3" aria-hidden="true" />
                         {isSleepBundle ? (
                           "Double Bundle"
                         ) : (
@@ -248,7 +252,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                           </>
                         )}
                       </span>
-                      <span className="absolute inset-0 flex items-center justify-center gap-1 translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                      <span className="absolute inset-0 flex items-center justify-center gap-1 translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100" aria-hidden="true">
                         <Plus className="w-3 h-3" />
                         {isSleepBundle ? (
                           "Double Bundle"
@@ -274,15 +278,17 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                         className="h-7 w-7"
                         onClick={() => setQuantity(Math.max(1, quantity - 1))}
                         disabled={quantity <= 1}
+                        aria-label="Decrease quantity"
                       >
                         <Minus className="w-3 h-3" />
                       </Button>
-                      <span className="text-sm font-semibold min-w-[2rem] text-center">{quantity}</span>
+                      <span className="text-sm font-semibold min-w-[2rem] text-center" aria-live="polite">{quantity}</span>
                       <Button
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7"
                         onClick={() => setQuantity(quantity + 1)}
+                        aria-label="Increase quantity"
                       >
                         <Plus className="w-3 h-3" />
                       </Button>
@@ -292,6 +298,9 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                     <div className="relative">
                       <button
                         onClick={() => setShowColorPicker(!showColorPicker)}
+                        aria-label={`Select color, currently ${colors.find(c => c.value === selectedColor)?.name}`}
+                        aria-expanded={showColorPicker}
+                        aria-haspopup="listbox"
                         className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors"
                       >
                         <div className="w-8 h-8 rounded-lg border-2 border-border overflow-hidden bg-background flex items-center justify-center">

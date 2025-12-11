@@ -218,6 +218,7 @@ export const SleepLogTable = ({ logs, trends, onUpdateLog, onDeleteLog }: SleepL
                                 size="icon"
                                 className="h-8 w-8"
                                 onClick={() => openEditDialog(log)}
+                                aria-label={`Edit sleep log for ${log.date}`}
                               >
                                 <Pencil className="h-4 w-4" />
                               </Button>
@@ -229,6 +230,7 @@ export const SleepLogTable = ({ logs, trends, onUpdateLog, onDeleteLog }: SleepL
                                 className="h-8 w-8 text-destructive hover:text-destructive"
                                 onClick={() => handleDelete(log.id)}
                                 disabled={isDeleting === log.id}
+                                aria-label={`Delete sleep log for ${log.date}`}
                               >
                                 {isDeleting === log.id ? (
                                   <Loader2 className="h-4 w-4 animate-spin" />
