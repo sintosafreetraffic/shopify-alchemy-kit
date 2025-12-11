@@ -1,13 +1,26 @@
 // Performance: Hero images use WebP with explicit dimensions and eager loading for LCP
+// Below-fold components are lazy loaded to reduce initial bundle
+import { Suspense, lazy } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ArrowRight, Moon, Heart, Sparkles, Shield, Users, Award } from "lucide-react";
 import { Link } from "react-router-dom";
-import { ProductGallery } from "@/components/ProductGallery";
 import OptimizedImage from "@/components/OptimizedImage";
 import heroLogo from "@/assets/moon-logo-new.webp";
 import lifestyleHero from "@/assets/hero-christmas-desktop.webp";
 import lifestyleHeroMobile from "@/assets/home-hero-mobile.webp";
+
+// Lazy load below-fold components
+const ProductGallery = lazy(() => 
+  import("@/components/ProductGallery").then(mod => ({ default: mod.ProductGallery }))
+);
+
+// Fallback for lazy components
+const SectionFallback = () => (
+  <div className="py-16 flex items-center justify-center">
+    <div className="animate-pulse text-muted-foreground">Loading...</div>
+  </div>
+);
 
 export default function Home() {
   return (
@@ -145,8 +158,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Product Gallery */}
-      <ProductGallery />
+      {/* Product Gallery - Lazy Loaded */}
+      <Suspense fallback={<SectionFallback />}>
+        <ProductGallery />
+      </Suspense>
 
       {/* Why Choose Us */}
       <section className="py-16 md:py-24 bg-primary/5">
