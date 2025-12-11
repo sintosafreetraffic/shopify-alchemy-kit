@@ -37,6 +37,7 @@ export const SleepHistoryWeekNavigator = ({
         size="icon"
         onClick={handlePrevious}
         className="h-8 w-8"
+        aria-label="Previous week"
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
@@ -63,6 +64,7 @@ export const SleepHistoryWeekNavigator = ({
           onClick={handleNext}
           disabled={isNextDisabled}
           className="h-8 w-8"
+          aria-label="Next week"
         >
           <ChevronRight className="h-4 w-4" />
         </Button>

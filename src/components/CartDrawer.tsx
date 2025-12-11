@@ -450,6 +450,7 @@ export const CartDrawer = () => {
                             size="icon"
                             className="h-6 w-6 flex-shrink-0 -mt-0.5 -mr-0.5"
                             onClick={() => removeItem(item.variantId)}
+                            aria-label={`Remove ${item.product.node.title} from cart`}
                           >
                             <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
                           </Button>

@@ -23,7 +23,7 @@ export const Header = () => {
         <div className="absolute left-4 md:static flex items-center md:hidden">
           <Sheet open={isMobileMenuOpen} onOpenChange={setMobileMenuOpen} modal={false}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="mr-2">
+              <Button variant="ghost" size="icon" className="mr-2" aria-label="Open menu">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>

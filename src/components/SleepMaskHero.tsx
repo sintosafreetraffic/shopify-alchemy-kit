@@ -295,14 +295,16 @@ export const SleepMaskHero = () => {
                     size="icon"
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
                     disabled={quantity <= 1}
+                    aria-label="Decrease quantity"
                   >
                     <Minus className="w-4 h-4" />
                   </Button>
-                  <span className="text-2xl font-bold min-w-[3rem] text-center">{quantity}</span>
+                  <span className="text-2xl font-bold min-w-[3rem] text-center" aria-live="polite">{quantity}</span>
                   <Button
                     variant="outline"
                     size="icon"
                     onClick={() => setQuantity(quantity + 1)}
+                    aria-label="Increase quantity"
                   >
                     <Plus className="w-4 h-4" />
                   </Button>
