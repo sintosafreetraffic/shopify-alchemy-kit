@@ -107,9 +107,9 @@ verify_jwt = true
 [functions.verify-sleep-coach-access]
 verify_jwt = true
 
-# Klaviyo profile - Requires JWT (users can only update own profile)
+# Klaviyo profile - Public for quiz flow, validates email internally
 [functions.klaviyo-profile]
-verify_jwt = true
+verify_jwt = false
 
 # Debug endpoints - Require DEBUG_SECRET internally
 [functions.debug-sleep-sync]
