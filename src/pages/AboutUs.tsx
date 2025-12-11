@@ -1,5 +1,7 @@
+// Performance: Using OptimizedImage for lazy loading
 import { Heart, Target, Users } from "lucide-react";
 import moonIcon from "@/assets/moon-icon.png";
+import OptimizedImage from "@/components/OptimizedImage";
 
 export default function AboutUs() {
   return (
@@ -7,12 +9,13 @@ export default function AboutUs() {
       {/* Hero Section */}
       <section className="py-16 px-4 bg-primary/5">
         <div className="container mx-auto max-w-4xl text-center">
-          <img 
+          <OptimizedImage 
             src={moonIcon} 
             alt="Rise By Night Moon Logo" 
+            width={64}
+            height={64}
             className="w-16 h-16 mx-auto mb-6"
-            loading="eager"
-            decoding="async"
+            priority
           />
           <h1 className="text-4xl md:text-6xl font-bold mb-6">
             About Rise By Night

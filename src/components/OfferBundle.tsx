@@ -1,5 +1,7 @@
+// Performance: Using OptimizedImage for lazy loading
 import offerBundle from "@/assets/offer-bundle.png";
 import { Button } from "@/components/ui/button";
+import OptimizedImage from "@/components/OptimizedImage";
 
 export const OfferBundle = () => {
   const scrollToProducts = () => {
@@ -10,12 +12,12 @@ export const OfferBundle = () => {
     <section className="py-4 px-4 bg-background">
       <div className="container mx-auto max-w-2xl">
         <div className="rounded-xl overflow-hidden shadow-lg">
-          <img 
+          <OptimizedImage 
             src={offerBundle} 
             alt="Buy Rise By Night pillow and get free deep sleep mask, pillowcase, and neck roll"
+            width={672}
+            height={400}
             className="w-full"
-            loading="lazy"
-            decoding="async"
           />
         </div>
         <div className="text-center mt-4">

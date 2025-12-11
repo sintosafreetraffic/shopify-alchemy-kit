@@ -1,5 +1,7 @@
+// Performance: Using OptimizedImage for lazy loading
 import chiropractorImage from "@/assets/chiropractor-endorsement.jpg";
 import { CheckCircle2 } from "lucide-react";
+import OptimizedImage from "@/components/OptimizedImage";
 
 export const SleepMaskChiropractorEndorsement = () => {
   return (
@@ -7,9 +9,11 @@ export const SleepMaskChiropractorEndorsement = () => {
       <div className="container mx-auto max-w-6xl">
         <div className="grid md:grid-cols-2 gap-6 md:gap-12 items-center">
           <div className="order-2 md:order-1">
-            <img 
+            <OptimizedImage 
               src={chiropractorImage}
               alt="Sleep specialist endorsing Rise By Night Silk Deep Sleep Mask"
+              width={600}
+              height={400}
               className="w-full rounded-xl shadow-2xl"
             />
           </div>

@@ -1,8 +1,10 @@
+// Performance: Using OptimizedImage for lazy loading
 import { Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import testimonial from "@/assets/testimonial-hero-new.webp";
 import offerBundle from "@/assets/offer-bundle.png";
 import comparisonChart from "@/assets/comparison-new-updated.webp";
+import OptimizedImage from "@/components/OptimizedImage";
 import { useState, useEffect } from "react";
 import { useCartStore } from "@/stores/cartStore";
 import { fetchProducts } from "@/lib/shopify";
@@ -110,12 +112,12 @@ export const Features = () => {
                 feature.imagePosition === "right" ? "md:col-start-2" : ""
               }`}
             >
-              <img
+              <OptimizedImage
                 src={feature.image}
                 alt={feature.title}
+                width={672}
+                height={400}
                 className="w-full h-auto"
-                loading="lazy"
-                decoding="async"
               />
             </div>
 

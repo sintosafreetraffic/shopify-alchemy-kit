@@ -1,6 +1,8 @@
+// Performance: Using OptimizedImage for lazy loading
 import { Check } from "lucide-react";
 import kneePillowHero from "@/assets/knee-pillow-hero-new.png";
 import kneePillowCirculation from "@/assets/knee-pillow-circulation.png";
+import OptimizedImage from "@/components/OptimizedImage";
 
 const features: Array<{
   image: string;
@@ -50,12 +52,12 @@ export const KneePillowFeatures = () => {
                   feature.imagePosition === "right" ? "md:col-start-2" : ""
                 }`}
               >
-                <img
+                <OptimizedImage
                   src={feature.image}
                   alt={feature.title}
+                  width={600}
+                  height={400}
                   className="w-full rounded-lg shadow-lg"
-                  loading="lazy"
-                  decoding="async"
                 />
               </div>
               

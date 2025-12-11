@@ -1,6 +1,8 @@
+// Performance: Using OptimizedImage for lazy loading
 import logo from "@/assets/moon-icon.png";
 import { Mail, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
+import OptimizedImage from "@/components/OptimizedImage";
 
 export const Footer = () => {
   return (
@@ -9,14 +11,12 @@ export const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand Column */}
           <div className="space-y-4">
-            <img 
+            <OptimizedImage 
               src={logo} 
               alt="Rise By Night" 
               width={48}
               height={48}
               className="h-12 w-auto"
-              loading="lazy"
-              decoding="async"
             />
             <p className="text-sm text-muted-foreground">
               Transform your sleep with the #1 rated ergonomic pillow. Scientifically proven to reduce neck pain and help you wake up refreshed every morning.

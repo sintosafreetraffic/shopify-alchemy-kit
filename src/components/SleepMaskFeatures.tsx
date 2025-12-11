@@ -1,5 +1,7 @@
+// Performance: Using OptimizedImage for lazy loading
 import { Check } from "lucide-react";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
+import OptimizedImage from "@/components/OptimizedImage";
 
 const features: Array<{
   image: string;
@@ -50,12 +52,12 @@ export const SleepMaskFeatures = () => {
                 }`}
               >
                 <div className="bg-gradient-to-b from-background to-primary/10 p-12 rounded-lg">
-                  <img
+                  <OptimizedImage
                     src={feature.image}
                     alt={feature.title}
+                    width={400}
+                    height={300}
                     className="w-full"
-                    loading="lazy"
-                    decoding="async"
                   />
                 </div>
               </div>
