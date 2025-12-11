@@ -34,6 +34,11 @@ export default function Home() {
               <p className="text-3xl md:text-4xl lg:text-5xl font-semibold text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">
                 Buy 1 Get 1 Free
               </p>
+              <Link to="/product/ergonomic-pillow">
+                <Button size="lg" className="mt-6 text-lg px-8 py-6">
+                  Get Yours Now
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -58,6 +63,11 @@ export default function Home() {
               <p className="text-xl sm:text-2xl font-semibold text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">
                 Buy 1 Get 1 Free
               </p>
+              <Link to="/product/ergonomic-pillow">
+                <Button size="lg" className="mt-4 text-base px-6 py-5">
+                  Get Yours Now
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
