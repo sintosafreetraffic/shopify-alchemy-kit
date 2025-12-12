@@ -1,36 +1,42 @@
-# Cache static assets for 1 year (immutable)
+# Hashed static assets - cache for 1 year (immutable)
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
 
-# Cache images for 1 year
+# Public images - cache for 1 year  
 /images/*
   Cache-Control: public, max-age=31536000, immutable
 
-# Cache videos for 1 year
+# Public videos - cache for 1 year
 /videos/*
   Cache-Control: public, max-age=31536000, immutable
 
-# Cache JS and CSS for 1 year (Vite uses content hashing)
-/*.js
+# Vite hashed JS bundles - cache for 1 year
+/assets/*.js
   Cache-Control: public, max-age=31536000, immutable
 
-/*.css
+# Vite hashed CSS bundles - cache for 1 year
+/assets/*.css
   Cache-Control: public, max-age=31536000, immutable
 
-# Cache fonts for 1 year
+# Fonts - cache for 1 year
 /*.woff2
   Cache-Control: public, max-age=31536000, immutable
 
 /*.woff
   Cache-Control: public, max-age=31536000, immutable
 
-# HTML pages - short cache with revalidation
-/*.html
+# HTML documents - no cache to ensure fresh content
+/*
   Cache-Control: public, max-age=0, must-revalidate
 
-/
+# Override for index.html specifically
+/index.html
   Cache-Control: public, max-age=0, must-revalidate
 
 # Favicon - cache for 1 week
 /favicon.png
   Cache-Control: public, max-age=604800
+
+# Robots.txt - cache for 1 day
+/robots.txt
+  Cache-Control: public, max-age=86400
