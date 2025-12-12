@@ -53,17 +53,9 @@ export default function ReturnPolicy() {
               <h3 className="text-lg font-semibold">Step 2: Ship to Our Warehouse</h3>
               <p className="text-muted-foreground">
                 Pack the pillow in its original packaging (or any suitable box) and ship it to our 
-                warehouse. Return shipping costs are the responsibility of the customer.
+                warehouse. Return shipping costs are the responsibility of the customer. We'll provide 
+                you with the return address once you contact us.
               </p>
-              <div className="bg-muted/50 p-4 rounded-lg">
-                <p className="text-sm font-medium">Return Address:</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Rise By Night<br/>
-                  Loofdakstraat 10<br/>
-                  3036JN Rotterdam<br/>
-                  Netherlands
-                </p>
-              </div>
             </div>
 
             <div className="bg-card p-6 rounded-lg border space-y-4">
