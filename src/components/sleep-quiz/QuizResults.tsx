@@ -28,12 +28,15 @@ import {
   AlertCircle,
   Shield,
   Zap,
+  Brain,
 } from "lucide-react";
 import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator";
 import {
   type AnalysisResult,
   type QuizAnswers,
   type SleepAssessment,
+  type PersonaCluster,
+  PERSONA_DEFINITIONS,
   deriveDetectedIssues,
   convertToIssuePresentation,
 } from "@/components/sleep-quiz";
@@ -250,6 +253,47 @@ const QuizResults = memo(function QuizResults({
           </p>
         </div>
       </section>
+
+      {/* Section 1b: Your Sleep Persona */}
+      {assessment.persona.cluster && (
+        <section className="space-y-5">
+          <div className="flex items-center gap-4">
+            <div className="w-11 h-11 rounded-xl bg-violet-50 dark:bg-violet-950/40 flex items-center justify-center flex-shrink-0">
+              <Brain className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+            </div>
+            <div>
+              <h2 className="font-semibold text-lg text-foreground">Your Sleep Persona</h2>
+              <p className="text-sm text-primary font-medium">{assessment.persona.label || PERSONA_DEFINITIONS[assessment.persona.cluster as PersonaCluster]?.label}</p>
+            </div>
+          </div>
+          
+          <div className="p-5 rounded-2xl bg-violet-50/50 dark:bg-violet-950/20 border border-violet-200/50 dark:border-violet-800/30">
+            <p className="text-foreground/85 leading-relaxed text-[15px] mb-4">
+              {assessment.persona.description || PERSONA_DEFINITIONS[assessment.persona.cluster as PersonaCluster]?.description}
+            </p>
+            
+            {/* Why this persona matches */}
+            <div className="pt-4 border-t border-violet-200/40 dark:border-violet-700/30">
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {assessment.persona.rationale}
+              </p>
+            </div>
+          </div>
+
+          {/* Recommended Modules */}
+          {assessment.persona.recommended_modules && assessment.persona.recommended_modules.length > 0 && (
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-slate-100/70 dark:bg-slate-800/40">
+              <Sparkles className="w-4 h-4 text-violet-500 dark:text-violet-400 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-foreground/90 mb-1">Recommended Focus Modules</p>
+                <p className="text-xs text-muted-foreground">
+                  Modules {assessment.persona.recommended_modules.join(', ')} are tailored for your persona
+                </p>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Section 2: Alignment & Support */}
       <section className="space-y-5">

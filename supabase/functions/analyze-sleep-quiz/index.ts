@@ -341,7 +341,13 @@ Deno.serve(async (req) => {
           sleep_identity_label: structuredAssessment.sleepIdentity.label,
           sleep_identity_position: structuredAssessment.sleepIdentity.position,
           
-          // NEW: Segmentation priority flags
+          // NEW: Enhanced persona fields for segmentation and personalization
+          persona_cluster: structuredAssessment.persona.cluster,
+          persona_label: structuredAssessment.persona.label,
+          persona_description: structuredAssessment.persona.description,
+          recommended_modules: structuredAssessment.persona.recommended_modules,
+          
+          // Segmentation priority flags
           alignment_priority: structuredAssessment.alignment_priority,
           environment_priority: structuredAssessment.environment_priority,
           top_risk_drivers: structuredAssessment.top_risk_drivers,
@@ -360,7 +366,7 @@ Deno.serve(async (req) => {
           quiz_completed_at: new Date().toISOString(),
           has_sleep_coach_access: false, // Will be updated after profile creation check
           results_url: resultsUrl,
-          sleep_quiz_version: "v4",
+          sleep_quiz_version: "v5",
           
           // Legacy fields for backwards compatibility
           assessment: analysis.assessment,

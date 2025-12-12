@@ -13,7 +13,14 @@
 
 // ============ TYPES ============
 
-export type SleepPersona = "jason" | "mila" | "leo";
+// Legacy persona types (backwards compatibility)
+export type LegacyPersona = "jason" | "mila" | "leo";
+
+// New persona system with clearer naming
+export type PersonaCluster = "pain_sleeper" | "stress_insomnia" | "optimizer";
+
+// Keep SleepPersona for backward compatibility, but also export the new type
+export type SleepPersona = LegacyPersona;
 
 export interface SleepIdentity {
   position: "side" | "back" | "stomach" | "mixed";
@@ -33,7 +40,39 @@ export interface AssessmentScores {
 export interface PersonaResult {
   guess: SleepPersona;
   rationale: string;
+  // NEW: Enhanced persona fields
+  cluster: PersonaCluster;
+  label: string;
+  description: string;
+  recommended_modules: number[];
 }
+
+// Persona descriptions - reusable system-wide
+export const PERSONA_DEFINITIONS: Record<PersonaCluster, {
+  label: string;
+  description: string;
+  recommended_modules: number[];
+  legacyType: LegacyPersona;
+}> = {
+  pain_sleeper: {
+    label: "Pain Sleeper",
+    description: "A sleeper whose rest is shaped by physical tension and alignment challenges. Improving cervical and spinal support meaningfully enhances comfort and morning ease.",
+    recommended_modules: [4, 10, 11],
+    legacyType: "jason",
+  },
+  stress_insomnia: {
+    label: "Stress & Environment Sleeper",
+    description: "A sleeper whose rest is influenced by environmental cues and nervous-system activation. Calming routines and environmental control strengthen sleep continuity.",
+    recommended_modules: [6, 9],
+    legacyType: "mila",
+  },
+  optimizer: {
+    label: "Sleep Optimizer",
+    description: "A motivated sleeper focused on enhancing recovery, energy, and long-term performance through consistent, measurable sleep improvements.",
+    recommended_modules: [7, 8, 10],
+    legacyType: "leo",
+  },
+};
 
 export interface EnvironmentFindings {
   keyIssues: string[];
@@ -51,6 +90,7 @@ export interface ProductRecommendations {
   reasoning: string;
   recommendation_confidence: number; // 0–100
   fit_explanation: string; // "Why this setup fits your sleep identity"
+  persona_reasoning?: string; // NEW: why this persona matches
 }
 
 export interface CoachPreview {
@@ -66,7 +106,7 @@ export interface SleepAssessment {
   environmentFindings: EnvironmentFindings;
   productRecommendations: ProductRecommendations;
   coachPreview: CoachPreview;
-  // NEW: Segmentation fields for Klaviyo
+  // Segmentation fields for Klaviyo
   alignment_priority: boolean;
   environment_priority: boolean;
   top_risk_drivers: string[]; // Top 3 risk factors
@@ -75,13 +115,24 @@ export interface SleepAssessment {
 // ============ PERSONA DETECTION ============
 
 /**
+ * Map legacy persona type to new cluster
+ */
+function legacyToCluster(legacy: LegacyPersona): PersonaCluster {
+  switch (legacy) {
+    case "jason": return "pain_sleeper";
+    case "mila": return "stress_insomnia";
+    case "leo": return "optimizer";
+  }
+}
+
+/**
  * Detect user persona based on quiz answers (pure function)
  * 
- * Jason → High alignment risk + neck pain + desk work indicators
- * Mila → Sleep instability + light/temperature issues  
- * Leo → High motivation/engagement + performance goals
+ * Pain Sleeper (jason) → High alignment risk + neck pain + desk work indicators
+ * Stress/Insomnia (mila) → Sleep instability + light/temperature issues  
+ * Optimizer (leo) → High motivation/engagement + performance goals
  * 
- * Returns persona with calm, scientific rationale.
+ * Returns enhanced persona with cluster, label, description, and recommended modules.
  */
 export function detectPersona(quizAnswers: Record<string, any>): PersonaResult {
   const painAreas = quizAnswers.painAreas || quizAnswers.painPoints || [];
@@ -95,57 +146,73 @@ export function detectPersona(quizAnswers: Record<string, any>): PersonaResult {
   const painSeverity = quizAnswers.painSeverity ?? 5;
   
   // Calculate persona scores with refined weighting
-  let jasonScore = 0;
-  let milaScore = 0;
-  let leoScore = 0;
+  let painSleeperScore = 0;  // Jason-type
+  let stressInsomniaScore = 0;  // Mila-type
+  let optimizerScore = 0;  // Leo-type
   
-  // Jason indicators: alignment/pain focused
-  if (painAreas.includes("neck")) jasonScore += 4;
-  if (painAreas.includes("shoulders")) jasonScore += 3;
-  if (painAreas.includes("upper_back")) jasonScore += 3;
-  if (painSeverity >= 6) jasonScore += 3;
-  if (pillowSatisfaction <= 3) jasonScore += 3;
-  if (pillowSatisfaction <= 5 && pillowSatisfaction > 3) jasonScore += 1;
-  if (sleepGoals.includes("reduce_pain")) jasonScore += 3;
-  if (sleepGoals.includes("better_posture")) jasonScore += 2;
+  // Pain Sleeper indicators (alignment/pain focused)
+  if (painAreas.includes("neck")) painSleeperScore += 4;
+  if (painAreas.includes("shoulders")) painSleeperScore += 3;
+  if (painAreas.includes("upper_back")) painSleeperScore += 3;
+  if (painAreas.includes("lower_back")) painSleeperScore += 4;
+  if (painAreas.includes("hips")) painSleeperScore += 3;
+  if (painSeverity >= 6) painSleeperScore += 4;
+  if (painSeverity >= 4 && painSeverity < 6) painSleeperScore += 2;
+  if (pillowSatisfaction <= 3) painSleeperScore += 3;
+  if (pillowSatisfaction <= 5 && pillowSatisfaction > 3) painSleeperScore += 1;
+  if (sleepGoals.includes("reduce_pain")) painSleeperScore += 4;
+  if (sleepGoals.includes("better_posture")) painSleeperScore += 2;
   
-  // Mila indicators: environment/stability focused
-  if (roomBrightness === "bright") milaScore += 4;
-  if (roomBrightness === "dim") milaScore += 2;
-  if (sleepTemperature === "hot") milaScore += 4;
-  if (sleepTemperature === "cold") milaScore += 2;
-  if (nightAwakenings === "frequently") milaScore += 3;
-  if (nightAwakenings === "twice") milaScore += 2;
-  if (movesOften === "always") milaScore += 3;
-  if (movesOften === "often") milaScore += 2;
-  if (sleepGoals.includes("stay_asleep")) milaScore += 3;
+  // Stress/Insomnia indicators (environment/stability focused)
+  if (roomBrightness === "bright") stressInsomniaScore += 4;
+  if (roomBrightness === "dim") stressInsomniaScore += 2;
+  if (sleepTemperature === "hot") stressInsomniaScore += 4;
+  if (sleepTemperature === "cold") stressInsomniaScore += 2;
+  if (nightAwakenings === "frequently") stressInsomniaScore += 4;
+  if (nightAwakenings === "twice") stressInsomniaScore += 2;
+  if (movesOften === "always") stressInsomniaScore += 3;
+  if (movesOften === "often") stressInsomniaScore += 2;
+  if (sleepGoals.includes("stay_asleep")) stressInsomniaScore += 4;
+  if (sleepLatency === "very_slow") stressInsomniaScore += 3;
+  if (sleepLatency === "slow") stressInsomniaScore += 2;
   
-  // Leo indicators: performance/motivation focused
-  if (sleepGoals.includes("wake_refreshed")) leoScore += 3;
-  if (sleepGoals.includes("better_quality")) leoScore += 3;
-  if (sleepGoals.includes("fall_asleep_faster")) leoScore += 2;
-  if (sleepLatency === "quick" || sleepLatency === "normal") leoScore += 2;
-  if (sleepGoals.length >= 3) leoScore += 2;
-  if (pillowSatisfaction >= 7) leoScore += 1; // Already doing okay, wants optimization
+  // Optimizer indicators (performance/motivation focused)
+  if (sleepGoals.includes("wake_refreshed")) optimizerScore += 3;
+  if (sleepGoals.includes("better_quality")) optimizerScore += 3;
+  if (sleepGoals.includes("fall_asleep_faster")) optimizerScore += 2;
+  if (sleepLatency === "quick" || sleepLatency === "normal") optimizerScore += 2;
+  if (sleepGoals.length >= 3) optimizerScore += 2;
+  if (pillowSatisfaction >= 7) optimizerScore += 2; // Already doing okay, wants optimization
+  if (painSeverity <= 3 && painAreas.length === 0) optimizerScore += 2; // Low pain = optimizer focus
   
   // Determine winner with calm, scientific rationale
-  if (jasonScore >= milaScore && jasonScore >= leoScore) {
-    return {
-      guess: "jason",
-      rationale: "Your responses suggest that spinal alignment and neck support are your primary areas for improvement. Research shows that proper cervical positioning during sleep can meaningfully reduce morning tension and discomfort."
-    };
+  let cluster: PersonaCluster;
+  let legacyGuess: LegacyPersona;
+  let rationale: string;
+  
+  if (painSleeperScore >= stressInsomniaScore && painSleeperScore >= optimizerScore) {
+    cluster = "pain_sleeper";
+    legacyGuess = "jason";
+    rationale = "Your responses indicate that physical comfort and spinal alignment are your primary areas for improvement. Addressing cervical and lower body support can meaningfully reduce morning tension and discomfort.";
+  } else if (stressInsomniaScore >= painSleeperScore && stressInsomniaScore >= optimizerScore) {
+    cluster = "stress_insomnia";
+    legacyGuess = "mila";
+    rationale = "Your sleep patterns suggest that environmental factors and sleep continuity are influencing your rest quality. Optimizing your sleep environment and establishing calming routines can strengthen your natural sleep cycles.";
+  } else {
+    cluster = "optimizer";
+    legacyGuess = "leo";
+    rationale = "You're focused on enhancing your sleep quality for energy and performance. With targeted improvements to your sleep setup and consistent habits, you can maximize your body's natural recovery processes.";
   }
   
-  if (milaScore >= jasonScore && milaScore >= leoScore) {
-    return {
-      guess: "mila",
-      rationale: "Your sleep environment appears to be affecting your rest quality. Factors like light exposure, room temperature, and movement during sleep can fragment sleep cycles and reduce restorative deep sleep."
-    };
-  }
+  const definition = PERSONA_DEFINITIONS[cluster];
   
   return {
-    guess: "leo",
-    rationale: "You're focused on optimizing your sleep for energy and performance. With the right sleep setup and consistent habits, you can maximize your body's natural recovery processes and wake feeling more refreshed."
+    guess: legacyGuess,
+    rationale,
+    cluster,
+    label: definition.label,
+    description: definition.description,
+    recommended_modules: definition.recommended_modules,
   };
 }
 
@@ -509,6 +576,16 @@ export function generateProductRecommendations(
     reasoning = "The ergonomic pillow is designed to support your specific sleep position and address the alignment needs identified in your assessment.";
   }
   
+  // Generate persona-specific reasoning
+  let persona_reasoning = "";
+  if (persona === "jason") {
+    persona_reasoning = "As a Pain Sleeper, your physical comfort and alignment are the primary focus. This setup directly addresses your tension points and supports healthier spinal positioning throughout the night.";
+  } else if (persona === "mila") {
+    persona_reasoning = "As a Stress & Environment Sleeper, controlling environmental factors is key to your sleep quality. This recommendation creates optimal conditions for uninterrupted rest.";
+  } else {
+    persona_reasoning = "As a Sleep Optimizer, you're looking to maximize recovery and performance. This setup provides the foundation for measurable improvements in your sleep quality.";
+  }
+  
   // Generate fit explanation
   let fit_explanation = "";
   const positionLabel = sleepPosition === "side" ? "side sleeper" :
@@ -528,6 +605,7 @@ export function generateProductRecommendations(
     reasoning,
     recommendation_confidence,
     fit_explanation,
+    persona_reasoning,
   };
 }
 

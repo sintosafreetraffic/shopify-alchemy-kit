@@ -27,6 +27,7 @@ import { SleepHistorySection } from "@/components/sleep-coach/SleepHistorySectio
 import { ShareProgressModal } from "@/components/sleep-coach/ShareProgressModal";
 import { SleepSetupForm } from "@/components/sleep-coach/SleepSetupForm";
 import { SleepSyncOverview } from "@/components/sleep-coach/SleepSyncOverview";
+import { PersonaCard } from "@/components/sleep-coach/PersonaCard";
 // Import TimeRange type directly for type safety (not lazy-loaded)
 import type { TimeRange } from "@/components/sleep-coach/SleepProgressChart";
 
@@ -504,6 +505,17 @@ const SleepCoachDashboard = () => {
                 <NoProfileCTA />
               ) : (
                 <>
+                  {/* Persona Card - show if quiz assessment has persona data */}
+                  {data.profile.sleep_assessment && (data.profile.sleep_assessment as any)?.persona?.cluster && (
+                    <PersonaCard
+                      cluster={(data.profile.sleep_assessment as any).persona.cluster}
+                      label={(data.profile.sleep_assessment as any).persona.label}
+                      description={(data.profile.sleep_assessment as any).persona.description}
+                      recommendedModules={(data.profile.sleep_assessment as any).persona.recommended_modules}
+                      rationale={(data.profile.sleep_assessment as any).persona.rationale}
+                    />
+                  )}
+
                   {/* Profile Summary */}
                   <Card>
                     <CardHeader className="pb-3">
