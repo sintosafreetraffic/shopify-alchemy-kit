@@ -537,6 +537,10 @@ export type Database = {
           mattress_firmness: string | null
           mattress_thickness: string | null
           pain_points: string[] | null
+          persona_cluster: Database["public"]["Enums"]["persona_cluster"] | null
+          persona_label: string | null
+          persona_rationale: string | null
+          persona_recommended_modules: number[] | null
           pillow_type: string | null
           products_owned: string[] | null
           purchase_count: number | null
@@ -568,6 +572,12 @@ export type Database = {
           mattress_firmness?: string | null
           mattress_thickness?: string | null
           pain_points?: string[] | null
+          persona_cluster?:
+            | Database["public"]["Enums"]["persona_cluster"]
+            | null
+          persona_label?: string | null
+          persona_rationale?: string | null
+          persona_recommended_modules?: number[] | null
           pillow_type?: string | null
           products_owned?: string[] | null
           purchase_count?: number | null
@@ -599,6 +609,12 @@ export type Database = {
           mattress_firmness?: string | null
           mattress_thickness?: string | null
           pain_points?: string[] | null
+          persona_cluster?:
+            | Database["public"]["Enums"]["persona_cluster"]
+            | null
+          persona_label?: string | null
+          persona_rationale?: string | null
+          persona_recommended_modules?: number[] | null
           pillow_type?: string | null
           products_owned?: string[] | null
           purchase_count?: number | null
@@ -720,6 +736,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "moderator" | "user"
       log_source: "manual" | "whatsapp"
+      persona_cluster: "pain_sleeper" | "stress_insomnia" | "optimizer"
       sleep_position: "side" | "back" | "stomach" | "mixed"
       stress_level: "low" | "medium" | "high"
       temperature_preference: "cold" | "neutral" | "warm"
@@ -853,6 +870,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "moderator", "user"],
       log_source: ["manual", "whatsapp"],
+      persona_cluster: ["pain_sleeper", "stress_insomnia", "optimizer"],
       sleep_position: ["side", "back", "stomach", "mixed"],
       stress_level: ["low", "medium", "high"],
       temperature_preference: ["cold", "neutral", "warm"],

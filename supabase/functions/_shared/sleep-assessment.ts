@@ -22,6 +22,40 @@ export type PersonaCluster = "pain_sleeper" | "stress_insomnia" | "optimizer";
 // Keep SleepPersona for backward compatibility, but also export the new type
 export type SleepPersona = LegacyPersona;
 
+// Core need mapping for Klaviyo segmentation
+export type CoreNeed = "alignment" | "environment" | "optimization";
+
+// Klaviyo segmentation snapshot interface
+export interface KlaviyoSegmentationSnapshot {
+  persona_cluster: PersonaCluster;
+  persona_label: string;
+  core_need: CoreNeed;
+  primary_product: string;
+  secondary_product: string | null;
+  recommended_bundle: string | null;
+}
+
+/**
+ * Build a flat segmentation snapshot for Klaviyo flows
+ * This helper ensures stable fields for segmentation
+ */
+export function buildKlaviyoSegmentationSnapshot(assessment: SleepAssessment): KlaviyoSegmentationSnapshot {
+  const coreNeedMap: Record<PersonaCluster, CoreNeed> = {
+    pain_sleeper: "alignment",
+    stress_insomnia: "environment",
+    optimizer: "optimization",
+  };
+  
+  return {
+    persona_cluster: assessment.persona.cluster,
+    persona_label: assessment.persona.label,
+    core_need: coreNeedMap[assessment.persona.cluster],
+    primary_product: assessment.productRecommendations.primary_product,
+    secondary_product: assessment.productRecommendations.secondary_product || null,
+    recommended_bundle: assessment.productRecommendations.recommended_bundle || null,
+  };
+}
+
 export interface SleepIdentity {
   position: "side" | "back" | "stomach" | "mixed";
   label: string;
