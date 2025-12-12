@@ -267,23 +267,27 @@ Deno.serve(async (req) => {
          * Structured event for Klaviyo email automation.
          * See docs/klaviyo-sleep-quiz-email.md for email template guidance.
          * 
+         * All field names use lowercase_with_underscores for consistency.
+         * 
          * Properties available in Klaviyo templates:
          * - {{ event.sleep_position }} - Primary sleep position
          * - {{ event.pain_points }} - Comma-separated pain areas
-         * - {{ event.temperature_preference }} - e.g., "cool", "warm"
-         * - {{ event.room_brightness }} - e.g., "dark", "dim", "bright"
-         * - {{ event.stress_level }} - From quiz
-         * - {{ event.wake_up_condition }} - e.g., "stiff", "refreshed"
-         * - {{ event.detected_issues }} - Array of top 3-5 detected issues
-         * - {{ event.alignment_score }} - 0-100
+         * - {{ event.persona_guess }} - jason, mila, or leo
+         * - {{ event.alignment_priority }} - Boolean for segmentation
+         * - {{ event.environment_priority }} - Boolean for segmentation
+         * - {{ event.top_risk_drivers }} - Array of top 3 risk factors
+         * - {{ event.alignment_risk_score }} - 0-100
+         * - {{ event.neck_support_score }} - 0-100
+         * - {{ event.sleep_stability_score }} - 0-100
          * - {{ event.environment_score }} - 0-100
-         * - {{ event.consistency_score }} - 0-100
-         * - {{ event.primary_recommendation }} - First recommended product
-         * - {{ event.secondary_recommendation }} - Second recommended product
+         * - {{ event.light_sensitivity_score }} - 0-100
+         * - {{ event.temperature_disruption_score }} - 0-100
+         * - {{ event.recommendation_confidence }} - 0-100
+         * - {{ event.primary_product }} - ergonomic_pillow
+         * - {{ event.secondary_product }} - knee_pillow or silk_mask
+         * - {{ event.recommended_bundle }} - alignment_set, deep_sleep_set, or performance_set
          * - {{ event.quiz_completed_at }} - ISO timestamp
-         * - {{ event.has_sleep_coach_access }} - Boolean
          * - {{ event.results_url }} - URL to results page
-         * - {{ event.sleep_quiz_version }} - e.g., "v2"
          */
         const frontendBase = "https://www.risebynight.com";
         const resultsUrl = `${frontendBase}/sleep-coach?from=quiz_email&email=${encodeURIComponent(trackingEmail)}`;
@@ -324,21 +328,29 @@ Deno.serve(async (req) => {
           environment_score: analysis.scores?.environmentScore ?? null,
           consistency_score: analysis.scores?.consistencyScore ?? null,
           
-          // NEW: Extended assessment scores for Klaviyo segmentation
+          // Extended assessment scores for Klaviyo segmentation
           alignment_risk_score: structuredAssessment.scores.alignment_risk_score,
           neck_support_score: structuredAssessment.scores.neck_support_score,
           sleep_stability_score: structuredAssessment.scores.sleep_stability_score,
+          environment_score_v2: structuredAssessment.scores.environment_score,
           light_sensitivity_score: structuredAssessment.scores.light_sensitivity_score,
           temperature_disruption_score: structuredAssessment.scores.temperature_disruption_score,
           
-          // NEW: Persona for email personalization
+          // Persona and identity for email personalization
           persona_guess: structuredAssessment.persona.guess,
           sleep_identity_label: structuredAssessment.sleepIdentity.label,
+          sleep_identity_position: structuredAssessment.sleepIdentity.position,
           
-          // NEW: Structured product recommendations
+          // NEW: Segmentation priority flags
+          alignment_priority: structuredAssessment.alignment_priority,
+          environment_priority: structuredAssessment.environment_priority,
+          top_risk_drivers: structuredAssessment.top_risk_drivers,
+          
+          // Structured product recommendations
           primary_product: structuredAssessment.productRecommendations.primary_product,
           secondary_product: structuredAssessment.productRecommendations.secondary_product || null,
           recommended_bundle: structuredAssessment.productRecommendations.recommended_bundle || null,
+          recommendation_confidence: structuredAssessment.productRecommendations.recommendation_confidence,
           
           // Recommendations (legacy)
           primary_recommendation: analysis.recommendations?.[0]?.product || null,
@@ -348,7 +360,7 @@ Deno.serve(async (req) => {
           quiz_completed_at: new Date().toISOString(),
           has_sleep_coach_access: false, // Will be updated after profile creation check
           results_url: resultsUrl,
-          sleep_quiz_version: "v3",
+          sleep_quiz_version: "v4",
           
           // Legacy fields for backwards compatibility
           assessment: analysis.assessment,
