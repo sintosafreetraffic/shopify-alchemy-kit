@@ -336,16 +336,19 @@ Deno.serve(async (req) => {
           light_sensitivity_score: structuredAssessment.scores.light_sensitivity_score,
           temperature_disruption_score: structuredAssessment.scores.temperature_disruption_score,
           
-          // Persona and identity for email personalization
-          persona_guess: structuredAssessment.persona.guess,
+          // Sleep identity for personalization
           sleep_identity_label: structuredAssessment.sleepIdentity.label,
           sleep_identity_position: structuredAssessment.sleepIdentity.position,
           
-          // NEW: Enhanced persona fields for segmentation and personalization
+          // ===== NEW: Enhanced Persona Fields for Segmentation =====
           persona_cluster: structuredAssessment.persona.cluster,
           persona_label: structuredAssessment.persona.label,
           persona_description: structuredAssessment.persona.description,
+          persona_rationale: structuredAssessment.persona.rationale,
           recommended_modules: structuredAssessment.persona.recommended_modules,
+          
+          // Legacy persona field (backwards compatibility)
+          persona_guess: structuredAssessment.persona.guess,
           
           // Segmentation priority flags
           alignment_priority: structuredAssessment.alignment_priority,
@@ -357,6 +360,8 @@ Deno.serve(async (req) => {
           secondary_product: structuredAssessment.productRecommendations.secondary_product || null,
           recommended_bundle: structuredAssessment.productRecommendations.recommended_bundle || null,
           recommendation_confidence: structuredAssessment.productRecommendations.recommendation_confidence,
+          fit_explanation: structuredAssessment.productRecommendations.fit_explanation,
+          persona_reasoning: structuredAssessment.productRecommendations.persona_reasoning,
           
           // Recommendations (legacy)
           primary_recommendation: analysis.recommendations?.[0]?.product || null,
@@ -366,7 +371,7 @@ Deno.serve(async (req) => {
           quiz_completed_at: new Date().toISOString(),
           has_sleep_coach_access: false, // Will be updated after profile creation check
           results_url: resultsUrl,
-          sleep_quiz_version: "v5",
+          sleep_quiz_version: "v6",
           
           // Legacy fields for backwards compatibility
           assessment: analysis.assessment,

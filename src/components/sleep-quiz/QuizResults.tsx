@@ -37,6 +37,7 @@ import {
   type SleepAssessment,
   type PersonaCluster,
   PERSONA_DEFINITIONS,
+  MODULE_DEFINITIONS,
   deriveDetectedIssues,
   convertToIssuePresentation,
 } from "@/components/sleep-quiz";
@@ -263,7 +264,9 @@ const QuizResults = memo(function QuizResults({
             </div>
             <div>
               <h2 className="font-semibold text-lg text-foreground">Your Sleep Persona</h2>
-              <p className="text-sm text-primary font-medium">{assessment.persona.label || PERSONA_DEFINITIONS[assessment.persona.cluster as PersonaCluster]?.label}</p>
+              <p className="text-sm text-primary font-medium">
+                {assessment.persona.label || PERSONA_DEFINITIONS[assessment.persona.cluster as PersonaCluster]?.label}
+              </p>
             </div>
           </div>
           
@@ -274,7 +277,8 @@ const QuizResults = memo(function QuizResults({
             
             {/* Why this persona matches */}
             <div className="pt-4 border-t border-violet-200/40 dark:border-violet-700/30">
-              <p className="text-sm text-muted-foreground leading-relaxed">
+              <p className="text-xs font-medium text-muted-foreground mb-1">Why this matches you</p>
+              <p className="text-sm text-foreground/80 leading-relaxed">
                 {assessment.persona.rationale}
               </p>
             </div>
@@ -282,13 +286,33 @@ const QuizResults = memo(function QuizResults({
 
           {/* Recommended Modules */}
           {assessment.persona.recommended_modules && assessment.persona.recommended_modules.length > 0 && (
-            <div className="flex items-start gap-3 p-4 rounded-xl bg-slate-100/70 dark:bg-slate-800/40">
-              <Sparkles className="w-4 h-4 text-violet-500 dark:text-violet-400 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-foreground/90 mb-1">Recommended Focus Modules</p>
-                <p className="text-xs text-muted-foreground">
-                  Modules {assessment.persona.recommended_modules.join(', ')} are tailored for your persona
-                </p>
+            <div className="p-4 rounded-xl bg-slate-100/70 dark:bg-slate-800/40">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="w-4 h-4 text-violet-500 dark:text-violet-400" />
+                <p className="text-sm font-medium text-foreground/90">Recommended Focus Modules</p>
+              </div>
+              <div className="space-y-2">
+                {assessment.persona.recommended_modules.map((moduleNum) => {
+                  const moduleInfo = MODULE_DEFINITIONS[moduleNum];
+                  return (
+                    <div 
+                      key={moduleNum}
+                      className="flex items-center justify-between p-2 rounded-lg bg-white/60 dark:bg-slate-900/40"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-violet-200 dark:bg-violet-800/50 flex items-center justify-center text-xs font-medium text-violet-700 dark:text-violet-300">
+                          {moduleNum}
+                        </div>
+                        <span className="text-sm text-foreground/90">{moduleInfo?.name || `Module ${moduleNum}`}</span>
+                      </div>
+                      {moduleInfo?.description && (
+                        <span className="text-xs text-muted-foreground hidden sm:block">
+                          {moduleInfo.description}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -456,11 +480,22 @@ const QuizResults = memo(function QuizResults({
           )}
         </div>
 
-        {/* Why this fits */}
-        <div className="px-1 space-y-2">
+        {/* Why this fits + Persona reasoning */}
+        <div className="px-1 space-y-3">
           <p className="text-sm text-foreground/80 leading-relaxed italic">
             {assessment.productRecommendations.reasoning}
           </p>
+          
+          {/* Persona-specific reasoning */}
+          {assessment.productRecommendations.persona_reasoning && (
+            <div className="p-3 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/40 dark:border-emerald-800/30">
+              <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400 mb-1">Why this fits your persona</p>
+              <p className="text-sm text-emerald-800/80 dark:text-emerald-300/80 leading-relaxed">
+                {assessment.productRecommendations.persona_reasoning}
+              </p>
+            </div>
+          )}
+          
           {fitExplanation && (
             <p className="text-xs text-muted-foreground">
               {fitExplanation}
