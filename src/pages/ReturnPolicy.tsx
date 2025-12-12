@@ -30,7 +30,7 @@ export default function ReturnPolicy() {
             <div className="bg-primary/5 p-4 rounded-lg mt-4">
               <p className="text-sm font-medium text-primary">
                 ✓ Full 100 nights to try your pillow<br/>
-                ✓ Easy return pickup arranged by us<br/>
+                ✓ Easy return process - ship to our warehouse<br/>
                 ✓ Full refund processed within 5 business days<br/>
                 ✓ No questions asked
               </p>
@@ -50,12 +50,20 @@ export default function ReturnPolicy() {
             </div>
 
             <div className="bg-card p-6 rounded-lg border space-y-4">
-              <h3 className="text-lg font-semibold">Step 2: Free Pickup Arrangement</h3>
+              <h3 className="text-lg font-semibold">Step 2: Ship to Our Warehouse</h3>
               <p className="text-muted-foreground">
-                We'll arrange a free pickup from your address. You don't need to pay any shipping 
-                costs - we handle everything for you. Simply pack the pillow in its original packaging 
-                (or any suitable box) and our courier will collect it.
+                Pack the pillow in its original packaging (or any suitable box) and ship it to our 
+                warehouse. Return shipping costs are the responsibility of the customer.
               </p>
+              <div className="bg-muted/50 p-4 rounded-lg">
+                <p className="text-sm font-medium">Return Address:</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Rise By Night<br/>
+                  Loofdakstraat 10<br/>
+                  3036JN Rotterdam<br/>
+                  Netherlands
+                </p>
+              </div>
             </div>
 
             <div className="bg-card p-6 rounded-lg border space-y-4">
