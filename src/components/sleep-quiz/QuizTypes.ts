@@ -74,6 +74,8 @@ export interface ProductRecommendations {
   secondary_product?: SecondaryProduct;
   recommended_bundle?: RecommendedBundle;
   reasoning: string;
+  recommendation_confidence?: number; // 0–100
+  fit_explanation?: string; // "Why this setup fits your sleep identity"
 }
 
 export interface CoachPreview {
@@ -89,6 +91,10 @@ export interface SleepAssessment {
   environmentFindings: EnvironmentFindings;
   productRecommendations: ProductRecommendations;
   coachPreview: CoachPreview;
+  // Segmentation fields for Klaviyo
+  alignment_priority?: boolean;
+  environment_priority?: boolean;
+  top_risk_drivers?: string[];
 }
 
 // ============ Legacy Types ============
