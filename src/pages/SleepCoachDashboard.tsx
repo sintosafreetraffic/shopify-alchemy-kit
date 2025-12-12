@@ -505,16 +505,55 @@ const SleepCoachDashboard = () => {
                 <NoProfileCTA />
               ) : (
                 <>
-                  {/* Persona Card - show if quiz assessment has persona data */}
-                  {data.profile.sleep_assessment && (data.profile.sleep_assessment as any)?.persona?.cluster && (
-                    <PersonaCard
-                      cluster={(data.profile.sleep_assessment as any).persona.cluster}
-                      label={(data.profile.sleep_assessment as any).persona.label}
-                      description={(data.profile.sleep_assessment as any).persona.description}
-                      recommendedModules={(data.profile.sleep_assessment as any).persona.recommended_modules}
-                      rationale={(data.profile.sleep_assessment as any).persona.rationale}
-                    />
-                  )}
+                  {/* Persona Card - prefer stored persona fields, fallback to assessment */}
+                  {(() => {
+                    // Prefer persona from profile fields (single source of truth)
+                    const profilePersona = (data.profile as any)?.persona_cluster;
+                    const assessmentPersona = (data.profile.sleep_assessment as any)?.persona?.cluster;
+                    const cluster = profilePersona || assessmentPersona;
+                    
+                    if (!cluster) {
+                      // No persona - show CTA to take quiz
+                      return (
+                        <Card className="border-dashed border-2 border-primary/30 bg-primary/5">
+                          <CardContent className="py-6 text-center space-y-3">
+                            <Brain className="h-10 w-10 text-primary/60 mx-auto" />
+                            <div>
+                              <h3 className="font-semibold mb-1">Discover Your Sleep Persona</h3>
+                              <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                                Take the Sleep Assessment to unlock your persona and personalized module recommendations.
+                              </p>
+                            </div>
+                            <Link to="/sleep-quiz?returnTo=/sleep-coach">
+                              <Button size="sm">
+                                <Sparkles className="mr-2 h-4 w-4" />
+                                Take the Sleep Assessment
+                              </Button>
+                            </Link>
+                          </CardContent>
+                        </Card>
+                      );
+                    }
+                    
+                    // Use profile fields first, fallback to assessment
+                    const label = (data.profile as any)?.persona_label || 
+                      (data.profile.sleep_assessment as any)?.persona?.label;
+                    const rationale = (data.profile as any)?.persona_rationale || 
+                      (data.profile.sleep_assessment as any)?.persona?.rationale;
+                    const modules = (data.profile as any)?.persona_recommended_modules || 
+                      (data.profile.sleep_assessment as any)?.persona?.recommended_modules;
+                    const description = (data.profile.sleep_assessment as any)?.persona?.description;
+                    
+                    return (
+                      <PersonaCard
+                        cluster={cluster}
+                        label={label}
+                        description={description}
+                        recommendedModules={modules}
+                        rationale={rationale}
+                      />
+                    );
+                  })()}
 
                   {/* Profile Summary */}
                   <Card>

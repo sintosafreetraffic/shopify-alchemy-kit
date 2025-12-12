@@ -501,6 +501,28 @@ const QuizResults = memo(function QuizResults({
               {fitExplanation}
             </p>
           )}
+          
+          {/* Where this shows up in Sleep Coach */}
+          {assessment.persona.recommended_modules && assessment.persona.recommended_modules.length > 0 && (
+            <div className="p-3 rounded-xl bg-violet-50/50 dark:bg-violet-950/20 border border-violet-200/40 dark:border-violet-800/30">
+              <p className="text-xs font-medium text-violet-700 dark:text-violet-400 mb-2">Where this shows up in your Sleep Coach</p>
+              <p className="text-sm text-violet-800/80 dark:text-violet-300/80 leading-relaxed">
+                You'll work on this inside{' '}
+                {assessment.persona.recommended_modules.map((moduleNum, idx) => {
+                  const moduleInfo = MODULE_DEFINITIONS[moduleNum];
+                  const isLast = idx === assessment.persona.recommended_modules.length - 1;
+                  const isSecondToLast = idx === assessment.persona.recommended_modules.length - 2;
+                  return (
+                    <span key={moduleNum}>
+                      <strong>{moduleInfo?.name || `Module ${moduleNum}`}</strong>
+                      {isSecondToLast ? ' and ' : !isLast ? ', ' : ''}
+                    </span>
+                  );
+                })}
+                .
+              </p>
+            </div>
+          )}
         </div>
       </section>
 

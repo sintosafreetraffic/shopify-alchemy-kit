@@ -456,7 +456,7 @@ Deno.serve(async (req) => {
         };
 
         if (existingProfile) {
-          // Always update existing profile with new quiz data
+          // Always update existing profile with new quiz data + persona fields
           const updateData = {
             ...quizDataPayload,
             sleep_position: sleepPositionMap[answers.sleepPosition] || 'mixed',
@@ -464,12 +464,17 @@ Deno.serve(async (req) => {
             stress_level: stressLevel,
             wake_up_condition: wakeUpCondition,
             temperature_preference: temperaturePreference,
+            // NEW: Persist persona fields directly on profile
+            persona_cluster: structuredAssessment.persona.cluster,
+            persona_label: structuredAssessment.persona.label,
+            persona_rationale: structuredAssessment.persona.rationale,
+            persona_recommended_modules: structuredAssessment.persona.recommended_modules,
           };
           
           const { error } = await supabase.from('sleep_profiles').update(updateData).eq('email', profileEmailToUse);
           if (!error) {
             profileUpdated = true;
-            console.log("[analyze-sleep-quiz] Sleep Coach profile updated with quiz data for:", profileEmailToUse);
+            console.log("[analyze-sleep-quiz] Sleep Coach profile updated with quiz data + persona for:", profileEmailToUse);
           }
         } else if (createProfile) {
           // Create new profile only if explicitly requested
@@ -480,6 +485,11 @@ Deno.serve(async (req) => {
             stress_level: stressLevel,
             wake_up_condition: wakeUpCondition,
             temperature_preference: temperaturePreference,
+            // NEW: Persist persona fields directly on profile
+            persona_cluster: structuredAssessment.persona.cluster,
+            persona_label: structuredAssessment.persona.label,
+            persona_rationale: structuredAssessment.persona.rationale,
+            persona_recommended_modules: structuredAssessment.persona.recommended_modules,
             ...quizDataPayload,
           };
 

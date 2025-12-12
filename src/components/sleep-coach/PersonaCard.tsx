@@ -3,10 +3,14 @@
  * 
  * Displays the user's sleep persona with label, description, rationale, and recommended modules.
  * Uses calm, Scandinavian aesthetic matching the brand tone.
+ * 
+ * Updated to read from stored profile persona fields as single source of truth.
  */
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Moon, Zap, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Heart, Moon, Zap, Sparkles, ChevronRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import { type PersonaCluster, PERSONA_DEFINITIONS, MODULE_DEFINITIONS } from "@/components/sleep-quiz/QuizTypes";
 
 interface PersonaCardProps {
@@ -15,6 +19,7 @@ interface PersonaCardProps {
   description?: string;
   recommendedModules?: number[];
   rationale?: string;
+  showModuleLinks?: boolean;
 }
 
 // Icon mapping for personas
@@ -57,6 +62,7 @@ export function PersonaCard({
   description,
   recommendedModules,
   rationale,
+  showModuleLinks = true,
 }: PersonaCardProps) {
   // Get persona definition from cluster if available
   const definition = cluster ? PERSONA_DEFINITIONS[cluster] : null;
@@ -108,7 +114,7 @@ export function PersonaCard({
           </div>
         )}
 
-        {/* Recommended Modules */}
+        {/* Recommended Modules - Module Focus Strip */}
         {displayModules.length > 0 && (
           <div className="pt-3 border-t border-slate-200/40 dark:border-slate-700/30">
             <div className="flex items-center gap-2 mb-3">
@@ -116,23 +122,28 @@ export function PersonaCard({
               <p className="text-sm font-medium text-foreground/90">Recommended Focus Modules</p>
             </div>
             <div className="space-y-2">
-              {displayModules.map((moduleNum) => {
+              {displayModules.slice(0, 3).map((moduleNum) => {
                 const moduleInfo = MODULE_DEFINITIONS[moduleNum];
                 return (
                   <div 
                     key={moduleNum}
-                    className="flex items-center justify-between p-2 rounded-lg bg-slate-50/80 dark:bg-slate-900/30"
+                    className="flex items-center justify-between p-2 rounded-lg bg-slate-50/80 dark:bg-slate-900/30 group hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors"
                   >
                     <div className="flex items-center gap-2">
                       <div className={`w-6 h-6 rounded-full ${colors.iconBg} flex items-center justify-center text-xs font-medium ${colors.text}`}>
                         {moduleNum}
                       </div>
-                      <span className="text-sm text-foreground/90">{moduleInfo?.name || `Module ${moduleNum}`}</span>
+                      <div className="flex flex-col">
+                        <span className="text-sm text-foreground/90">{moduleInfo?.name || `Module ${moduleNum}`}</span>
+                        {moduleInfo?.description && (
+                          <span className="text-xs text-muted-foreground">
+                            {moduleInfo.description}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    {moduleInfo?.description && (
-                      <span className="text-xs text-muted-foreground hidden sm:block">
-                        {moduleInfo.description}
-                      </span>
+                    {showModuleLinks && (
+                      <ChevronRight className={`w-4 h-4 ${colors.text} opacity-50 group-hover:opacity-100 transition-opacity`} />
                     )}
                   </div>
                 );

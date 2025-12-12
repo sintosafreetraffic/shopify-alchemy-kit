@@ -47,6 +47,9 @@ export type PersonaCluster = "pain_sleeper" | "stress_insomnia" | "optimizer";
 // Keep SleepPersona for backward compatibility
 export type SleepPersona = LegacyPersona;
 
+// Core need for Klaviyo segmentation
+export type CoreNeed = "alignment" | "environment" | "optimization";
+
 // Persona definitions for frontend display
 export const PERSONA_DEFINITIONS: Record<PersonaCluster, {
   label: string;
@@ -83,6 +86,13 @@ export const MODULE_DEFINITIONS: Record<number, { name: string; description: str
   9: { name: "Evening Routine Reset", description: "Wind-down protocols for better sleep onset" },
   10: { name: "Morning Mobility", description: "Gentle morning movement practices" },
   11: { name: "Hip & Lower Body", description: "Lower body alignment techniques" },
+};
+
+// Core need mapping helper
+export const CORE_NEED_MAP: Record<PersonaCluster, CoreNeed> = {
+  pain_sleeper: "alignment",
+  stress_insomnia: "environment",
+  optimizer: "optimization",
 };
 
 export interface SleepIdentity {
