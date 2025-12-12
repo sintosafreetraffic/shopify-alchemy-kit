@@ -92,6 +92,9 @@ export default function Home() {
       <section className="relative py-20 md:py-32 bg-gradient-to-b from-background via-primary/5 to-background">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center space-y-8">
+            <div className="inline-flex items-center justify-center w-20 h-20 mb-4">
+              <Moon className="w-16 h-16 text-primary" fill="currentColor" />
+            </div>
 
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight">
               Transform Your Sleep,
