@@ -1,7 +1,8 @@
 /**
  * Analyze Sleep Quiz Edge Function
  * 
- * Analyzes quiz responses with AI (via AI Brain) and optionally creates Sleep Coach profile.
+ * Analyzes quiz responses with deterministic scoring and AI recommendations.
+ * Returns structured SleepAssessment for premium 5-section results display.
  * Triggers Sleep Sync after profile creation.
  * 
  * Uses centralized env/cors helpers, AI Brain, and syncAndStoreAttributes.
@@ -23,6 +24,7 @@ import {
   sendKlaviyoEvent,
 } from "../_shared/sleep-sync.ts";
 import { SleepSyncSource } from "../_shared/types.ts";
+import { buildSleepAssessment, type SleepAssessment } from "../_shared/sleep-assessment.ts";
 
 // Input validation schema - supports both legacy and new 22-question format
 const answersSchema = z.object({
@@ -166,6 +168,11 @@ Deno.serve(async (req) => {
     console.log("[analyze-sleep-quiz] Calling AI Brain for product recommendations");
     const analysis = await analyzeQuizForRecommendations(sanitizedAnswers);
     console.log("[analyze-sleep-quiz] AI analysis complete:", analysis.recommendations?.length, "recommendations");
+
+    // Build structured SleepAssessment using deterministic scoring
+    console.log("[analyze-sleep-quiz] Building structured SleepAssessment");
+    const structuredAssessment: SleepAssessment = buildSleepAssessment(sanitizedAnswers);
+    console.log("[analyze-sleep-quiz] SleepAssessment persona:", structuredAssessment.persona.guess);
 
     const trackingEmail = email;
     // profileEmail is already set above in the createProfile block
@@ -311,13 +318,29 @@ Deno.serve(async (req) => {
           stress_level: quizStressLevel,
           wake_up_condition: quizWakeUpCondition,
           
-          // Analysis results
+          // Analysis results (legacy)
           detected_issues: (analysis.detectedIssues || []).slice(0, 5),
           alignment_score: analysis.scores?.alignmentScore ?? null,
           environment_score: analysis.scores?.environmentScore ?? null,
           consistency_score: analysis.scores?.consistencyScore ?? null,
           
-          // Recommendations
+          // NEW: Extended assessment scores for Klaviyo segmentation
+          alignment_risk_score: structuredAssessment.scores.alignment_risk_score,
+          neck_support_score: structuredAssessment.scores.neck_support_score,
+          sleep_stability_score: structuredAssessment.scores.sleep_stability_score,
+          light_sensitivity_score: structuredAssessment.scores.light_sensitivity_score,
+          temperature_disruption_score: structuredAssessment.scores.temperature_disruption_score,
+          
+          // NEW: Persona for email personalization
+          persona_guess: structuredAssessment.persona.guess,
+          sleep_identity_label: structuredAssessment.sleepIdentity.label,
+          
+          // NEW: Structured product recommendations
+          primary_product: structuredAssessment.productRecommendations.primary_product,
+          secondary_product: structuredAssessment.productRecommendations.secondary_product || null,
+          recommended_bundle: structuredAssessment.productRecommendations.recommended_bundle || null,
+          
+          // Recommendations (legacy)
           primary_recommendation: analysis.recommendations?.[0]?.product || null,
           secondary_recommendation: analysis.recommendations?.[1]?.product || null,
           
@@ -325,7 +348,7 @@ Deno.serve(async (req) => {
           quiz_completed_at: new Date().toISOString(),
           has_sleep_coach_access: false, // Will be updated after profile creation check
           results_url: resultsUrl,
-          sleep_quiz_version: "v2",
+          sleep_quiz_version: "v3",
           
           // Legacy fields for backwards compatibility
           assessment: analysis.assessment,
@@ -465,7 +488,14 @@ Deno.serve(async (req) => {
       }
     }
 
-    return createSuccessResponse({ ...analysis, profileCreated, profileUpdated });
+    // Return combined response with legacy fields + new structured assessment
+    return createSuccessResponse({ 
+      ...analysis, 
+      profileCreated, 
+      profileUpdated,
+      // NEW: Structured assessment for premium 5-section UI
+      assessment: structuredAssessment,
+    });
   } catch (error) {
     console.error("[analyze-sleep-quiz] Error:", error);
     return createErrorResponse(error instanceof Error ? error.message : "Unknown error", 500);
