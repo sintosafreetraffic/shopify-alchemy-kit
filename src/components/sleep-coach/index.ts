@@ -15,5 +15,6 @@ export { CoachPlanDisplay } from './CoachPlanDisplay';
 export { WhatsAppSettings } from './WhatsAppSettings';
 export { SleepSetupForm } from './SleepSetupForm';
 export { SleepSyncOverview } from './SleepSyncOverview';
+export { PersonaCard } from './PersonaCard';
 // SleepReportSummary and chart components are intentionally not exported here to allow lazy loading
 // Import them directly when needed

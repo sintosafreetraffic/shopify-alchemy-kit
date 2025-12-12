@@ -38,7 +38,41 @@ export interface SleepScores {
 
 // ============ NEW: Structured Assessment Types ============
 
-export type SleepPersona = "jason" | "mila" | "leo";
+// Legacy persona types (backwards compatibility)
+export type LegacyPersona = "jason" | "mila" | "leo";
+
+// New persona system with clearer naming
+export type PersonaCluster = "pain_sleeper" | "stress_insomnia" | "optimizer";
+
+// Keep SleepPersona for backward compatibility
+export type SleepPersona = LegacyPersona;
+
+// Persona definitions for frontend display
+export const PERSONA_DEFINITIONS: Record<PersonaCluster, {
+  label: string;
+  description: string;
+  recommended_modules: number[];
+  legacyType: LegacyPersona;
+}> = {
+  pain_sleeper: {
+    label: "Pain Sleeper",
+    description: "A sleeper whose rest is shaped by physical tension and alignment challenges. Improving cervical and spinal support meaningfully enhances comfort and morning ease.",
+    recommended_modules: [4, 10, 11],
+    legacyType: "jason",
+  },
+  stress_insomnia: {
+    label: "Stress & Environment Sleeper",
+    description: "A sleeper whose rest is influenced by environmental cues and nervous-system activation. Calming routines and environmental control strengthen sleep continuity.",
+    recommended_modules: [6, 9],
+    legacyType: "mila",
+  },
+  optimizer: {
+    label: "Sleep Optimizer",
+    description: "A motivated sleeper focused on enhancing recovery, energy, and long-term performance through consistent, measurable sleep improvements.",
+    recommended_modules: [7, 8, 10],
+    legacyType: "leo",
+  },
+};
 
 export interface SleepIdentity {
   position: "side" | "back" | "stomach" | "mixed";
@@ -58,6 +92,11 @@ export interface AssessmentScores {
 export interface PersonaResult {
   guess: SleepPersona;
   rationale: string;
+  // NEW: Enhanced persona fields
+  cluster?: PersonaCluster;
+  label?: string;
+  description?: string;
+  recommended_modules?: number[];
 }
 
 export interface EnvironmentFindings {
@@ -76,6 +115,7 @@ export interface ProductRecommendations {
   reasoning: string;
   recommendation_confidence?: number; // 0–100
   fit_explanation?: string; // "Why this setup fits your sleep identity"
+  persona_reasoning?: string; // NEW: why this persona matches
 }
 
 export interface CoachPreview {
