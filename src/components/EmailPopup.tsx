@@ -114,7 +114,7 @@ export const EmailPopup = ({
                 {isSuccess ? (
                   /* Success State */
                   <div className="flex flex-col items-center text-center pt-4">
-                    <OptimizedImage src={logo} alt="Rise By Night" width={160} height={40} className="h-10 mb-6" />
+                    <img src={logo} alt="Rise By Night" className="h-8 w-auto mb-6" />
                     <h3 className="mb-3 text-2xl font-black uppercase tracking-tight text-foreground">
                       Thanks For Signing Up!
                     </h3>
@@ -144,7 +144,7 @@ export const EmailPopup = ({
                   <div className="pt-4">
                     {/* Logo */}
                     <div className="flex justify-center mb-6">
-                      <OptimizedImage src={logo} alt="Rise By Night" width={160} height={40} className="h-10" />
+                      <img src={logo} alt="Rise By Night" className="h-8 w-auto" />
                     </div>
 
                     {/* Content */}
