@@ -6,7 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { ArrowRight, Moon, Heart, Sparkles, Shield, Users, Award } from "lucide-react";
 import { Link } from "react-router-dom";
 import OptimizedImage from "@/components/OptimizedImage";
-import heroLogo from "@/assets/moon-logo-new.webp";
+import heroLogo from "@/assets/moon-logo-blue.webp";
 
 // Multi-resolution hero images for responsive loading
 import heroDesktop1920 from "@/assets/hero-christmas-desktop.webp";
