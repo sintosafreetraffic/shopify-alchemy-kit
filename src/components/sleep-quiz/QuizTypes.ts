@@ -74,6 +74,17 @@ export const PERSONA_DEFINITIONS: Record<PersonaCluster, {
   },
 };
 
+// Module definitions for display
+export const MODULE_DEFINITIONS: Record<number, { name: string; description: string }> = {
+  4: { name: "Alignment Fundamentals", description: "Core spinal alignment principles" },
+  6: { name: "Environment Optimization", description: "Light, noise, and temperature control" },
+  7: { name: "Temperature Regulation", description: "Optimal sleep temperature strategies" },
+  8: { name: "Deep Sleep Enhancement", description: "Maximizing restorative sleep phases" },
+  9: { name: "Evening Routine Reset", description: "Wind-down protocols for better sleep onset" },
+  10: { name: "Morning Mobility", description: "Gentle morning movement practices" },
+  11: { name: "Hip & Lower Body", description: "Lower body alignment techniques" },
+};
+
 export interface SleepIdentity {
   position: "side" | "back" | "stomach" | "mixed";
   label: string;
@@ -92,11 +103,12 @@ export interface AssessmentScores {
 export interface PersonaResult {
   guess: SleepPersona;
   rationale: string;
-  // NEW: Enhanced persona fields
-  cluster?: PersonaCluster;
-  label?: string;
-  description?: string;
-  recommended_modules?: number[];
+  // Enhanced persona fields
+  cluster: PersonaCluster;
+  label: string;
+  description: string;
+  recommended_modules: number[];
+  legacyType?: LegacyPersona;
 }
 
 export interface EnvironmentFindings {
@@ -113,9 +125,9 @@ export interface ProductRecommendations {
   secondary_product?: SecondaryProduct;
   recommended_bundle?: RecommendedBundle;
   reasoning: string;
-  recommendation_confidence?: number; // 0–100
-  fit_explanation?: string; // "Why this setup fits your sleep identity"
-  persona_reasoning?: string; // NEW: why this persona matches
+  recommendation_confidence: number; // 0–100
+  fit_explanation: string; // "Why this setup fits your sleep identity"
+  persona_reasoning: string; // Why this recommendation matches the persona
 }
 
 export interface CoachPreview {
@@ -132,9 +144,9 @@ export interface SleepAssessment {
   productRecommendations: ProductRecommendations;
   coachPreview: CoachPreview;
   // Segmentation fields for Klaviyo
-  alignment_priority?: boolean;
-  environment_priority?: boolean;
-  top_risk_drivers?: string[];
+  alignment_priority: boolean;
+  environment_priority: boolean;
+  top_risk_drivers: string[];
 }
 
 // ============ Legacy Types ============
