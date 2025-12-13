@@ -134,6 +134,24 @@ For building flows, use this flat segmentation snapshot:
 }
 ```
 
+### Recovery Sleeper (v7)
+
+```json
+{
+  "persona_cluster": "recovery_sleeper",
+  "persona_label": "Recovery Sleeper",
+  "persona_description": "A sleeper oriented toward physical restoration and training recovery. Temperature regulation, deep sleep optimization, and morning readiness support athletic and active lifestyles.",
+  "persona_rationale": "Your focus on physical recovery and performance tracking indicates a recovery-oriented approach to sleep. You already have a relatively stable sleep foundation. Optimizing deep sleep phases and temperature regulation can enhance your body's natural restoration processes.",
+  "recommended_modules": [7, 8, 10, 12],
+  "alignment_priority": false,
+  "environment_priority": false,
+  "primary_product": "ergonomic_pillow",
+  "secondary_product": "knee_pillow",
+  "recommended_bundle": "performance_set",
+  "persona_reasoning": "As a Recovery Sleeper, optimizing deep sleep and temperature regulation are essential for physical restoration. This setup supports consistent recovery and morning readiness for active lifestyles."
+}
+```
+
 ---
 
 ## Liquid Template Usage

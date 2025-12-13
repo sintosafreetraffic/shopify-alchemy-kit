@@ -555,6 +555,88 @@ const SleepCoachDashboard = () => {
                     );
                   })()}
 
+                  {/* Scores Snapshot - v7: Sleep Score Visualization */}
+                  {data.profile.sleep_assessment && (data.profile.sleep_assessment as any)?.scores && (
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <BarChart3 className="h-5 w-5 text-primary" />
+                          Scores Snapshot
+                        </CardTitle>
+                        <CardDescription>Key metrics from your sleep assessment</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          {/* Alignment Risk */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium text-foreground/90">Alignment Risk</span>
+                              <span className="text-xs text-muted-foreground">
+                                {100 - ((data.profile.sleep_assessment as any).scores.alignment_risk_score || 0)} / 100
+                              </span>
+                            </div>
+                            <div className="h-2 bg-muted/50 rounded-full overflow-hidden">
+                              <div 
+                                className={`h-full rounded-full transition-all duration-700 ease-out ${
+                                  100 - ((data.profile.sleep_assessment as any).scores.alignment_risk_score || 0) >= 75 
+                                    ? "bg-emerald-500/80" 
+                                    : 100 - ((data.profile.sleep_assessment as any).scores.alignment_risk_score || 0) >= 50 
+                                      ? "bg-amber-500/70" 
+                                      : "bg-rose-400/70"
+                                }`}
+                                style={{ width: `${100 - ((data.profile.sleep_assessment as any).scores.alignment_risk_score || 0)}%` }}
+                              />
+                            </div>
+                          </div>
+                          
+                          {/* Sleep Stability */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium text-foreground/90">Sleep Stability</span>
+                              <span className="text-xs text-muted-foreground">
+                                {(data.profile.sleep_assessment as any).scores.sleep_stability_score || 0} / 100
+                              </span>
+                            </div>
+                            <div className="h-2 bg-muted/50 rounded-full overflow-hidden">
+                              <div 
+                                className={`h-full rounded-full transition-all duration-700 ease-out ${
+                                  ((data.profile.sleep_assessment as any).scores.sleep_stability_score || 0) >= 75 
+                                    ? "bg-emerald-500/80" 
+                                    : ((data.profile.sleep_assessment as any).scores.sleep_stability_score || 0) >= 50 
+                                      ? "bg-amber-500/70" 
+                                      : "bg-rose-400/70"
+                                }`}
+                                style={{ width: `${(data.profile.sleep_assessment as any).scores.sleep_stability_score || 0}%` }}
+                              />
+                            </div>
+                          </div>
+                          
+                          {/* Environment */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium text-foreground/90">Environment</span>
+                              <span className="text-xs text-muted-foreground">
+                                {(data.profile.sleep_assessment as any).scores.environment_score || 0} / 100
+                              </span>
+                            </div>
+                            <div className="h-2 bg-muted/50 rounded-full overflow-hidden">
+                              <div 
+                                className={`h-full rounded-full transition-all duration-700 ease-out ${
+                                  ((data.profile.sleep_assessment as any).scores.environment_score || 0) >= 75 
+                                    ? "bg-emerald-500/80" 
+                                    : ((data.profile.sleep_assessment as any).scores.environment_score || 0) >= 50 
+                                      ? "bg-amber-500/70" 
+                                      : "bg-rose-400/70"
+                                }`}
+                                style={{ width: `${(data.profile.sleep_assessment as any).scores.environment_score || 0}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
                   {/* Profile Summary */}
                   <Card>
                     <CardHeader className="pb-3">
