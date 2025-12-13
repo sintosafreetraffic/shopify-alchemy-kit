@@ -303,10 +303,44 @@ Variants are assigned using a deterministic hash of `persona_cluster + experimen
 
 ---
 
+## Persona Landing Page URLs (v9)
+
+Use these URLs in email templates to link users to their personalized landing page:
+
+```liquid
+<a href="https://www.risebynight.com/persona/{{ event.persona_cluster | replace: '_', '-' }}">
+  View your {{ event.persona_label }} plan
+</a>
+```
+
+### URL Mapping
+
+| Persona Cluster | URL Slug | Full URL |
+|-----------------|----------|----------|
+| `pain_sleeper` | `pain-sleeper` | `/persona/pain-sleeper` |
+| `stress_insomnia` | `stress-sleeper` | `/persona/stress-sleeper` |
+| `optimizer` | `optimizer` | `/persona/optimizer` |
+| `recovery_sleeper` | `recovery-sleeper` | `/persona/recovery-sleeper` |
+
+### Example Liquid Block
+
+```liquid
+{% if event.persona_cluster %}
+  <p>
+    <a href="https://www.risebynight.com/persona/{{ event.persona_cluster | replace: '_', '-' }}">
+      View your complete {{ event.persona_label }} plan →
+    </a>
+  </p>
+{% endif %}
+```
+
+---
+
 ## Version History
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v9 | 2025-01 | Added persona landing page URLs for email templates. New route `/persona/:cluster` with URL slug mapping. |
 | v8 | 2025-01 | Added persona_experiment_variants for A/B testing infrastructure. Deterministic variant assignment per persona × experiment. |
 | v7 | 2025-01 | Added persona_name (Jason/Mila/Leo/Riley), persona_legacy_type, core_need fields. Added recovery_sleeper (Riley). Added Sleep Hygiene module (12). Refined optimizer detection with guardrails. Cache expiration (30 days). |
 | v6 | 2025-01 | Added persona_cluster, persona_label, persona_description, persona_rationale, recommended_modules, persona_reasoning |

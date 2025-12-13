@@ -7,6 +7,7 @@
  * Design: Neutral colors, clean spacing, scientific clarity, modern minimalism
  */
 import { memo, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -41,6 +42,7 @@ import {
   deriveDetectedIssues,
   convertToIssuePresentation,
 } from "@/components/sleep-quiz";
+import { CLUSTER_TO_URL_SLUG } from "@/data/personaLandingMocks";
 
 interface QuizResultsProps {
   results: AnalysisResult;
@@ -622,6 +624,11 @@ const QuizResults = memo(function QuizResults({
         </div>
       </Card>
 
+      {/* View My Plan CTA - appears when persona exists */}
+      {assessment.persona.cluster && (
+        <ViewMyPlanCTA personaCluster={assessment.persona.cluster} personaLabel={assessment.persona.label} />
+      )}
+
       {/* Footer Actions */}
       <footer className="flex gap-4 pt-6 border-t border-border/30">
         <Button
@@ -642,7 +649,29 @@ const QuizResults = memo(function QuizResults({
   );
 });
 
-// ============ ACCOUNT FORM ============
+// ============ VIEW MY PLAN CTA ============
+
+const ViewMyPlanCTA = ({ personaCluster, personaLabel }: { personaCluster: PersonaCluster; personaLabel: string }) => {
+  const navigate = useNavigate();
+  const slug = CLUSTER_TO_URL_SLUG[personaCluster] || personaCluster.replace("_", "-");
+  
+  return (
+    <Card className="p-5 border-primary/20 bg-primary/[0.03] hover:bg-primary/[0.06] cursor-pointer transition-colors group"
+      onClick={() => navigate(`/persona/${slug}`)}
+    >
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <p className="text-xs font-medium text-primary uppercase tracking-wider">Your Personalized Plan</p>
+          <p className="font-semibold text-foreground">View my {personaLabel} plan</p>
+          <p className="text-sm text-muted-foreground">
+            See your complete persona breakdown, focus areas, and 14-night roadmap
+          </p>
+        </div>
+        <ArrowRight className="w-5 h-5 text-primary opacity-60 group-hover:opacity-100 transition-opacity" />
+      </div>
+    </Card>
+  );
+};
 
 const AccountForm = ({
   isCheckingAccount,
