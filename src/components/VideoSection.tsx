@@ -41,7 +41,9 @@ const VideoCard = ({ video, onVideoClick }: VideoCardProps) => {
     // Only use hover on non-touch devices
     if (!isTouch && isInView && videoRef.current) {
       videoRef.current.load();
-      videoRef.current.play();
+      videoRef.current.play().catch(() => {
+        // Ignore AbortError when video is removed from DOM during play
+      });
     }
   };
 
@@ -61,7 +63,9 @@ const VideoCard = ({ video, onVideoClick }: VideoCardProps) => {
       if (!hasStarted) {
         if (isInView && videoRef.current) {
           videoRef.current.load();
-          videoRef.current.play();
+          videoRef.current.play().catch(() => {
+            // Ignore AbortError when video is removed from DOM during play
+          });
         }
         return;
       }
