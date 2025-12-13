@@ -1,6 +1,6 @@
 // Performance: Using OptimizedImage for lazy loading
 import { Heart, Target, Users } from "lucide-react";
-import moonIcon from "@/assets/moon-icon.png";
+import moonIcon from "@/assets/moon-icon-blue-new.png";
 import OptimizedImage from "@/components/OptimizedImage";
 
 export default function AboutUs() {
