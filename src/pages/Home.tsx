@@ -3,10 +3,10 @@
 import { Suspense, lazy } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { ArrowRight, Moon, Heart, Sparkles, Shield, Users, Award } from "lucide-react";
+import { ArrowRight, Heart, Sparkles, Shield, Users, Award } from "lucide-react";
 import { Link } from "react-router-dom";
 import OptimizedImage from "@/components/OptimizedImage";
-import heroLogo from "@/assets/moon-logo-blue.webp";
+import moonIcon from "@/assets/moon-icon-blue.png";
 
 // Multi-resolution hero images for responsive loading
 import heroDesktop1920 from "@/assets/hero-christmas-desktop.webp";
@@ -93,7 +93,7 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center space-y-8">
             <div className="inline-flex items-center justify-center w-20 h-20 mb-4">
-              <Moon className="w-16 h-16 text-primary" fill="currentColor" />
+              <img src={moonIcon} alt="Rise By Night" className="w-16 h-16 object-contain" />
             </div>
 
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight">
@@ -204,7 +204,7 @@ export default function Home() {
               </div>
 
               <div className="bg-background p-8 rounded-lg border">
-                <Moon className="w-12 h-12 text-primary mb-4" />
+                <img src={moonIcon} alt="" className="w-12 h-12 object-contain mb-4" />
                 <h3 className="text-2xl font-bold mb-3">100-Night Trial</h3>
                 <p className="text-muted-foreground text-lg">
                   Try our products risk-free for 100 nights. If you're not sleeping better, we'll refund you—no
