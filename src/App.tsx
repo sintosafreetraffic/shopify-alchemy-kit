@@ -37,6 +37,7 @@ const AffiliateDashboard = React.lazy(() => import("./pages/AffiliateDashboard")
 const SleepCoachDashboard = React.lazy(() => import("./pages/SleepCoachDashboard"));
 const SleepCoachDebug = React.lazy(() => import("./pages/SleepCoachDebug"));
 const SleepPersonaDebug = React.lazy(() => import("./pages/SleepPersonaDebug"));
+const SleepPersonaExperimentsDebug = React.lazy(() => import("./pages/SleepPersonaExperimentsDebug"));
 const AdminAffiliateFraud = React.lazy(() => import("./pages/AdminAffiliateFraud"));
 const AdminAffiliatePayouts = React.lazy(() => import("./pages/AdminAffiliatePayouts"));
 const AdminAffiliateResources = React.lazy(() => import("./pages/AdminAffiliateResources"));
@@ -84,6 +85,7 @@ const AppContent = () => {
             <Route path="/sleep-coach" element={<SleepCoachDashboard />} />
             <Route path="/sleep-coach-debug" element={<SleepCoachDebug />} />
             <Route path="/sleep-persona-debug" element={<SleepPersonaDebug />} />
+            <Route path="/sleep-persona-experiments-debug" element={<SleepPersonaExperimentsDebug />} />
             <Route path="/admin/affiliate-fraud" element={<AdminAffiliateFraud />} />
             <Route path="/admin/affiliate-payouts" element={<AdminAffiliatePayouts />} />
             <Route path="/admin/affiliate-resources" element={<AdminAffiliateResources />} />
