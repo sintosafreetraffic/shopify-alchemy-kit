@@ -1,4 +1,4 @@
-import React, { Suspense } from "react";
+import React, { Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -45,6 +45,31 @@ const AdminAffiliateResources = React.lazy(() => import("./pages/AdminAffiliateR
 
 const queryClient = new QueryClient();
 
+// Pinterest click ID capture utility
+const capturePinterestClickId = () => {
+  if (typeof window === "undefined") return;
+  
+  // Check if already captured this session
+  const sessionKey = "pinterest_epik_captured";
+  if (sessionStorage.getItem(sessionKey)) return;
+  
+  const urlParams = new URLSearchParams(window.location.search);
+  const epik = urlParams.get("epik");
+  
+  if (epik) {
+    // Save to localStorage
+    localStorage.setItem("pinterest_epik", epik);
+    
+    // Save to cookie (90 days expiry)
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + 90);
+    document.cookie = `_epik=${epik}; path=/; expires=${expiryDate.toUTCString()}; SameSite=Lax`;
+  }
+  
+  // Mark as captured for this session
+  sessionStorage.setItem(sessionKey, "true");
+};
+
 const AppContent = () => {
   const { isOpen, showTeaser, closePopup, openFromTeaser } = useEmailPopup({
     delay: 45000,
@@ -53,6 +78,11 @@ const AppContent = () => {
     exitIntent: true,
     storageKey: "risebynight_email_popup_v1",
   });
+
+  // Capture Pinterest click ID on initial load (once per session)
+  useEffect(() => {
+    capturePinterestClickId();
+  }, []);
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
