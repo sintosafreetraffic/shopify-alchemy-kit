@@ -34,6 +34,30 @@ const CORE_NEED_MAP: Record<PersonaCluster, CoreNeed> = {
   recovery_sleeper: "recovery",
 };
 
+/**
+ * Deterministic experiment variant assignment
+ * Uses hash-based allocation for stable A/B variant assignment
+ * 
+ * @param cluster - Persona cluster
+ * @param experimentKey - Experiment identifier
+ * @returns "A" or "B" variant
+ */
+function assignExperimentVariant(cluster: PersonaCluster | null | undefined, experimentKey: string): "A" | "B" {
+  if (!cluster) return "A";
+  
+  // Simple deterministic hash
+  const hashInput = `${cluster}:${experimentKey}`;
+  let hash = 0;
+  for (let i = 0; i < hashInput.length; i++) {
+    const char = hashInput.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  
+  // Map to A/B
+  return Math.abs(hash) % 2 === 0 ? "A" : "B";
+}
+
 // Input validation schema - supports both legacy and new 22-question format
 const answersSchema = z.object({
   // Core questions (legacy + new)
@@ -349,6 +373,9 @@ Deno.serve(async (req) => {
           sleep_identity_position: structuredAssessment.sleepIdentity.position,
           
           // ===== v7: Enhanced Persona Fields for Segmentation =====
+          // NOTE: persona_name is INTERNAL ONLY for Klaviyo segmentation.
+          // Do NOT use persona_name in customer-facing Liquid templates.
+          // Use persona_label or persona_cluster for customer-facing copy.
           persona_cluster: structuredAssessment.persona.cluster,
           persona_name: structuredAssessment.persona.name || PERSONA_HUMAN_NAMES[structuredAssessment.persona.cluster],
           persona_label: structuredAssessment.persona.label,
@@ -357,6 +384,13 @@ Deno.serve(async (req) => {
           persona_legacy_type: structuredAssessment.persona.legacyType,
           core_need: CORE_NEED_MAP[structuredAssessment.persona.cluster],
           recommended_modules: structuredAssessment.persona.recommended_modules,
+          
+          // ===== v8: Experiment Variant Assignments for A/B Testing =====
+          // Deterministic hash-based variant assignment per persona × experiment
+          persona_experiment_variants: {
+            coach_hero_v1: assignExperimentVariant(structuredAssessment.persona.cluster, "coach_hero_v1"),
+            quiz_results_hero_v1: assignExperimentVariant(structuredAssessment.persona.cluster, "quiz_results_hero_v1"),
+          },
           
           // Legacy persona field (backwards compatibility)
           persona_guess: structuredAssessment.persona.guess,
@@ -382,7 +416,7 @@ Deno.serve(async (req) => {
           quiz_completed_at: new Date().toISOString(),
           has_sleep_coach_access: false, // Will be updated after profile creation check
           results_url: resultsUrl,
-          sleep_quiz_version: "v7",
+          sleep_quiz_version: "v8",
           
           // Legacy fields for backwards compatibility
           assessment: analysis.assessment,

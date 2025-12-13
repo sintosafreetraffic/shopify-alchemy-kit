@@ -1,8 +1,8 @@
 # Klaviyo Sleep Quiz Event Reference
 
-## Event: `RBN_SleepQuiz_Completed` (v7)
+## Event: `RBN_SleepQuiz_Completed` (v8)
 
-This event is sent after a user completes the Rise By Night Sleep Quiz. It contains comprehensive persona, segmentation, and product recommendation data for email flow automation.
+This event is sent after a user completes the Rise By Night Sleep Quiz. It contains comprehensive persona, segmentation, product recommendation, and A/B experiment variant data for email flow automation.
 
 ---
 
@@ -258,10 +258,56 @@ In Klaviyo email templates, access these fields using:
 
 ---
 
+## A/B Experiment Variants (v8)
+
+The event includes deterministic experiment variant assignments for persona-based A/B testing.
+
+### Experiment Variant Fields
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `persona_experiment_variants` | object | Map of experiment keys to assigned variants |
+| `persona_experiment_variants.coach_hero_v1` | string | Variant for Sleep Coach Dashboard hero ("A" or "B") |
+| `persona_experiment_variants.quiz_results_hero_v1` | string | Variant for Quiz Results hero ("A" or "B") |
+
+### Example Payload
+
+```json
+{
+  "persona_cluster": "pain_sleeper",
+  "persona_label": "The Pain Sleeper",
+  "core_need": "alignment",
+  "persona_experiment_variants": {
+    "coach_hero_v1": "A",
+    "quiz_results_hero_v1": "B"
+  }
+}
+```
+
+### How Variants Are Assigned
+
+Variants are assigned using a deterministic hash of `persona_cluster + experimentKey`:
+- Same persona + same experiment always yields same variant
+- No flicker or reassignment between sessions
+- Evenly distributed across A/B (or A/B/C for future experiments)
+
+### Liquid Template Usage for Experiments
+
+```liquid
+{% if event.persona_experiment_variants.coach_hero_v1 == "A" %}
+  <h2>Your Personalized Sleep Coach</h2>
+{% else %}
+  <h2>Wake Up Feeling Better</h2>
+{% endif %}
+```
+
+---
+
 ## Version History
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v8 | 2025-01 | Added persona_experiment_variants for A/B testing infrastructure. Deterministic variant assignment per persona × experiment. |
 | v7 | 2025-01 | Added persona_name (Jason/Mila/Leo/Riley), persona_legacy_type, core_need fields. Added recovery_sleeper (Riley). Added Sleep Hygiene module (12). Refined optimizer detection with guardrails. Cache expiration (30 days). |
 | v6 | 2025-01 | Added persona_cluster, persona_label, persona_description, persona_rationale, recommended_modules, persona_reasoning |
 | v5 | 2024-12 | Added structured assessment scores |
