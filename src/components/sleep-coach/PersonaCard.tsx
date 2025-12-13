@@ -12,11 +12,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Heart, Moon, Zap, Sparkles, ChevronRight, Dumbbell } from "lucide-react";
 import { Link } from "react-router-dom";
-import { type PersonaCluster, PERSONA_DEFINITIONS, MODULE_DEFINITIONS, PERSONA_HUMAN_NAMES } from "@/components/sleep-quiz/QuizTypes";
+import { type PersonaCluster, PERSONA_DEFINITIONS, MODULE_DEFINITIONS } from "@/components/sleep-quiz/QuizTypes";
 
 interface PersonaCardProps {
   cluster?: PersonaCluster;
-  name?: string;              // Human name (Jason, Mila, Leo, Riley)
   label?: string;
   description?: string;
   recommendedModules?: number[];
@@ -67,7 +66,6 @@ const PERSONA_COLORS: Record<PersonaCluster, {
 
 export function PersonaCard({
   cluster,
-  name,
   label,
   description,
   recommendedModules,
@@ -77,7 +75,7 @@ export function PersonaCard({
   // Get persona definition from cluster if available
   const definition = cluster ? PERSONA_DEFINITIONS[cluster] : null;
   
-  const displayName = name || definition?.name || (cluster ? PERSONA_HUMAN_NAMES[cluster] : null);
+  // NOTE: Human names (Jason, Mila, Leo, Riley) are INTERNAL ONLY - never display in UI
   const displayLabel = label || definition?.label || "Your Sleep Persona";
   const displayDescription = description || definition?.description || "";
   const displayModules = recommendedModules || definition?.recommended_modules || [];
@@ -98,14 +96,6 @@ export function PersonaCard({
           <div className="flex-1">
             <CardTitle className="text-lg flex items-center gap-2 flex-wrap">
               <span>Your Sleep Persona</span>
-              {displayName && (
-                <Badge 
-                  variant="outline" 
-                  className={`text-xs font-semibold ${colors.text} border-current`}
-                >
-                  {displayName}
-                </Badge>
-              )}
               <Badge 
                 variant="secondary" 
                 className={`text-xs font-medium ${colors.iconBg} ${colors.text}`}

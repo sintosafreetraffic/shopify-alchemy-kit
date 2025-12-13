@@ -38,7 +38,6 @@ import {
   type PersonaCluster,
   PERSONA_DEFINITIONS,
   MODULE_DEFINITIONS,
-  PERSONA_HUMAN_NAMES,
   deriveDetectedIssues,
   convertToIssuePresentation,
 } from "@/components/sleep-quiz";
@@ -264,14 +263,7 @@ const QuizResults = memo(function QuizResults({
               <Brain className="w-5 h-5 text-violet-600 dark:text-violet-400" />
             </div>
             <div>
-              <h2 className="font-semibold text-lg text-foreground">
-                Your Sleep Persona
-                {(assessment.persona.name || PERSONA_HUMAN_NAMES[assessment.persona.cluster as PersonaCluster]) && (
-                  <span className="ml-2 text-primary font-bold">
-                    "{assessment.persona.name || PERSONA_HUMAN_NAMES[assessment.persona.cluster as PersonaCluster]}"
-                  </span>
-                )}
-              </h2>
+              <h2 className="font-semibold text-lg text-foreground">Your Sleep Persona</h2>
               <p className="text-sm text-primary font-medium">
                 {assessment.persona.label || PERSONA_DEFINITIONS[assessment.persona.cluster as PersonaCluster]?.label}
               </p>
