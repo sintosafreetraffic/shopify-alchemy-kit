@@ -28,6 +28,12 @@ export type SleepPersona = LegacyPersona;
 // Core need mapping for Klaviyo segmentation (v7: added recovery)
 export type CoreNeed = "alignment" | "environment" | "optimization" | "recovery";
 
+// v10: Persona confidence levels
+export type PersonaConfidenceLevel = "low" | "medium" | "high";
+
+// v10: Coach readiness labels
+export type CoachReadinessLabel = "Early Stage" | "Developing" | "Ready";
+
 // Core need mapping helper (v7: added recovery_sleeper)
 export const CORE_NEED_MAP: Record<PersonaCluster, CoreNeed> = {
   pain_sleeper: "alignment",
@@ -35,6 +41,33 @@ export const CORE_NEED_MAP: Record<PersonaCluster, CoreNeed> = {
   optimizer: "optimization",
   recovery_sleeper: "recovery",
 };
+
+/**
+ * Get persona confidence level from score
+ */
+export function getPersonaConfidenceLevel(confidence: number): PersonaConfidenceLevel {
+  if (confidence < 50) return "low";
+  if (confidence < 75) return "medium";
+  return "high";
+}
+
+/**
+ * Determine if persona-specific messaging should be shown
+ * Returns false when confidence < 50 (use neutral messaging instead)
+ */
+export function shouldPersonalizePersonaMessaging(confidence: number | null | undefined): boolean {
+  if (confidence === null || confidence === undefined) return false;
+  return confidence >= 50;
+}
+
+/**
+ * Get coach readiness label from score
+ */
+export function getCoachReadinessLabel(score: number): CoachReadinessLabel {
+  if (score < 40) return "Early Stage";
+  if (score < 70) return "Developing";
+  return "Ready";
+}
 
 // Klaviyo segmentation snapshot interface
 export interface KlaviyoSegmentationSnapshot {
@@ -112,6 +145,8 @@ export interface PersonaResult {
   legacyType: LegacyPersona;
   // v9: Confidence score (0-100) based on weighted signal strength
   confidence: number;
+  // v10: Confidence reasoning (1-2 sentences explaining confidence level)
+  confidence_reasoning: string;
 }
 
 // v9: Module relevance weighting
@@ -207,6 +242,10 @@ export interface ProductRecommendations {
   recommendation_confidence: number; // 0–100
   fit_explanation: string; // "Why this setup fits your sleep identity"
   persona_reasoning: string; // Why this recommendation matches the persona
+  // v10: Enhanced product fit scoring
+  product_fit_score: number;           // 0-100, how well products match user needs
+  product_fit_reasoning: string;        // Explanation of fit score
+  confidence_weighted_recommendation: boolean; // True if persona confidence >= 50
 }
 
 export interface CoachPreview {
@@ -229,6 +268,10 @@ export interface SleepAssessment {
   // v9: Extended metrics
   energy_potential_score?: number;     // 0-100, derived morning energy potential
   module_relevance?: ModuleRelevance[]; // Weighted module ordering
+  // v10: Coach readiness
+  coach_readiness_score: number;        // 0-100
+  coach_readiness_label: CoachReadinessLabel;
+  coach_readiness_rationale: string;
 }
 
 // ============ PERSONA DETECTION ============
@@ -496,6 +539,17 @@ export function detectPersona(quizAnswers: Record<string, any>, scores?: Assessm
     }
   }
   
+  // v10: Generate confidence reasoning
+  const confidenceLevel = getPersonaConfidenceLevel(confidence);
+  let confidence_reasoning = "";
+  if (confidenceLevel === "high") {
+    confidence_reasoning = `Your responses show clear ${cluster === "pain_sleeper" ? "alignment and comfort" : cluster === "stress_insomnia" ? "environmental sensitivity" : cluster === "recovery_sleeper" ? "recovery-focused" : "optimization"} signals with strong consistency across multiple indicators.`;
+  } else if (confidenceLevel === "medium") {
+    confidence_reasoning = `Your responses suggest ${cluster === "pain_sleeper" ? "alignment needs" : cluster === "stress_insomnia" ? "environmental factors" : cluster === "recovery_sleeper" ? "recovery focus" : "optimization goals"} as primary, though some secondary patterns were also detected.`;
+  } else {
+    confidence_reasoning = `Your sleep profile shows mixed signals. Recommendations are balanced across multiple areas rather than heavily personalized to one focus.`;
+  }
+  
   return {
     guess: definition.legacyType,
     rationale,
@@ -505,7 +559,8 @@ export function detectPersona(quizAnswers: Record<string, any>, scores?: Assessm
     description: definition.description,
     recommended_modules,
     legacyType: definition.legacyType,
-    confidence, // v9: Persona confidence score
+    confidence,
+    confidence_reasoning,
   };
 }
 
@@ -905,6 +960,23 @@ export function generateProductRecommendations(
     fit_explanation = `Designed for ${positionLabel}s, this recommendation addresses the key factors identified in your assessment for improved sleep quality.`;
   }
   
+  // v10: Calculate product fit score based on alignment between recommendations and needs
+  let product_fit_score = 50; // baseline
+  if (scores.alignment_risk_score >= 40 && secondary_product === "knee_pillow") product_fit_score += 20;
+  if (scores.light_sensitivity_score >= 60 && secondary_product === "silk_mask") product_fit_score += 20;
+  if (recommended_bundle) product_fit_score += 15;
+  if (painSeverity >= 5 && painAreas.length > 0) product_fit_score += 10;
+  product_fit_score = Math.min(100, product_fit_score);
+  
+  const product_fit_reasoning = product_fit_score >= 80 
+    ? "This setup strongly matches your identified sleep needs and has high potential to improve your rest quality."
+    : product_fit_score >= 60 
+    ? "This setup addresses your main sleep concerns and provides a solid foundation for improvement."
+    : "This setup provides general sleep support. Further assessment may refine recommendations.";
+  
+  // v10: Soft-limit upsells when confidence < 50 (neutral messaging)
+  const confidence_weighted_recommendation = true; // Will be adjusted by persona confidence in caller
+  
   return {
     primary_product,
     secondary_product,
@@ -913,6 +985,9 @@ export function generateProductRecommendations(
     recommendation_confidence,
     fit_explanation,
     persona_reasoning,
+    product_fit_score,
+    product_fit_reasoning,
+    confidence_weighted_recommendation,
   };
 }
 
@@ -1079,17 +1154,99 @@ export function buildSleepAssessment(quizAnswers: Record<string, any>): SleepAss
   const energy_potential_score = calculateEnergyPotentialScore(scores);
   const module_relevance = calculateModuleRelevance(persona, scores, quizAnswers);
   
+  // v10: Calculate coach readiness score
+  const coach_readiness = calculateCoachReadiness(quizAnswers, scores);
+  
+  // v10: Adjust product recommendations based on persona confidence
+  const adjustedProductRecommendations = {
+    ...productRecommendations,
+    confidence_weighted_recommendation: shouldPersonalizePersonaMessaging(persona.confidence),
+  };
+  
   return {
     sleepIdentity,
     scores,
     persona,
     environmentFindings,
-    productRecommendations,
+    productRecommendations: adjustedProductRecommendations,
     coachPreview,
     alignment_priority,
     environment_priority,
     top_risk_drivers,
     energy_potential_score,
     module_relevance,
+    coach_readiness_score: coach_readiness.score,
+    coach_readiness_label: coach_readiness.label,
+    coach_readiness_rationale: coach_readiness.rationale,
   };
+}
+
+// ============ v10: COACH READINESS CALCULATION ============
+
+/**
+ * Calculate Coach Readiness Score (0-100)
+ * 
+ * Based on:
+ * - Sleep schedule consistency (from quiz signals)
+ * - Environment stability  
+ * - Pillow satisfaction
+ * - Pain vs no pain baseline
+ * - Number of awakenings
+ * 
+ * Higher score = more ready for coaching improvements
+ */
+function calculateCoachReadiness(quizAnswers: Record<string, any>, scores: AssessmentScores): {
+  score: number;
+  label: CoachReadinessLabel;
+  rationale: string;
+} {
+  const pillowSatisfaction = quizAnswers.pillowSatisfaction ?? 5;
+  const nightAwakenings = quizAnswers.nightAwakenings || "";
+  const sleepLatency = quizAnswers.sleepLatency || "";
+  const painAreas = quizAnswers.painAreas || quizAnswers.painPoints || [];
+  const painSeverity = quizAnswers.painSeverity ?? 5;
+  
+  let score = 50; // baseline
+  
+  // Environment stability component (better environment = more ready)
+  score += Math.round(scores.environment_score * 0.2); // 0-20 points
+  
+  // Sleep stability component (more stable = more ready)
+  score += Math.round(scores.sleep_stability_score * 0.15); // 0-15 points
+  
+  // Pillow satisfaction (higher satisfaction = ready to optimize further)
+  if (pillowSatisfaction >= 7) score += 10;
+  else if (pillowSatisfaction >= 5) score += 5;
+  else score -= 5; // Low satisfaction = early stage
+  
+  // Pain baseline (no/low pain = ready for optimization; high pain = early stage)
+  if (painAreas.length === 0 || painSeverity <= 2) score += 10;
+  else if (painSeverity >= 6) score -= 15;
+  else if (painSeverity >= 4) score -= 5;
+  
+  // Sleep latency (faster = more ready)
+  if (sleepLatency === "quick" || sleepLatency === "normal") score += 5;
+  else if (sleepLatency === "very_slow") score -= 10;
+  
+  // Night awakenings (fewer = more ready)
+  if (nightAwakenings === "rarely" || nightAwakenings === "never") score += 10;
+  else if (nightAwakenings === "frequently") score -= 10;
+  
+  // Clamp score to 0-100
+  score = Math.min(100, Math.max(0, score));
+  
+  // Determine label
+  const label = getCoachReadinessLabel(score);
+  
+  // Generate rationale
+  let rationale = "";
+  if (label === "Ready") {
+    rationale = "Your sleep foundation is solid. You're well-positioned to see meaningful improvements from personalized coaching and optimization strategies.";
+  } else if (label === "Developing") {
+    rationale = "You have a moderate foundation for sleep improvement. Addressing current challenges will help unlock coaching benefits.";
+  } else {
+    rationale = "Your sleep patterns show significant optimization potential. Starting with foundational improvements will create the best path forward.";
+  }
+  
+  return { score, label, rationale };
 }
