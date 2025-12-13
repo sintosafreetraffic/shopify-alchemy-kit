@@ -4,6 +4,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const faqs = [
   {
@@ -41,6 +42,11 @@ const faqs = [
 ];
 
 export const KneePillowFAQ = () => {
+  const isMobile = useIsMobile();
+  
+  // ISOLATION STEP: Temporarily remove FAQ from DOM on mobile to diagnose scroll glitch
+  if (isMobile) return null;
+  
   return (
     <section className="py-16 md:py-24 bg-primary/5">
       <div className="container mx-auto px-4">

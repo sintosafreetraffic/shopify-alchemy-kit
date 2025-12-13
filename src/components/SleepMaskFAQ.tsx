@@ -4,8 +4,14 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const SleepMaskFAQ = () => {
+  const isMobile = useIsMobile();
+  
+  // ISOLATION STEP: Temporarily remove FAQ from DOM on mobile to diagnose scroll glitch
+  if (isMobile) return null;
+  
   const faqs = [
     {
       question: "Will the deep sleep mask stay in place all night?",
