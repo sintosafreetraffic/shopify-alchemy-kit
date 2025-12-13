@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { CheckCircle, Moon, ArrowLeft, ArrowRight } from "lucide-react";
+import { CheckCircle, Moon, ArrowLeft, ArrowRight, RotateCcw, FileText } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { useCartStore } from "@/stores/cartStore";
@@ -20,10 +20,15 @@ import {
   type QuizAnswers,
   type AnalysisResult,
   type QuizPayload,
+  type SleepAssessment,
   getVisibleQuestions,
   getCurrentSectionInfo,
   getContextualInsight,
   isValidEmail,
+  cacheQuizResults,
+  getCachedQuizResults,
+  clearQuizCache,
+  CURRENT_QUIZ_VERSION,
 } from "@/components/sleep-quiz";
 
 const SleepQuiz = () => {
@@ -57,6 +62,11 @@ const SleepQuiz = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Cache restoration state
+  const [hasCachedData, setHasCachedData] = useState(false);
+  const [isLoadingFromDb, setIsLoadingFromDb] = useState(false);
+  const [showCachedPrompt, setShowCachedPrompt] = useState(false);
+
   const visibleQuestions = getVisibleQuestions(answers);
   const TOTAL_STEPS = visibleQuestions.length + 1;
   const currentQuestion = step < visibleQuestions.length ? visibleQuestions[step] : null;
@@ -65,10 +75,76 @@ const SleepQuiz = () => {
   const progressPercent = Math.round(((step + 1) / TOTAL_STEPS) * 100);
   const sectionInfo = currentQuestion ? getCurrentSectionInfo(currentQuestion.id, answers) : null;
 
+  // On mount: check for cached results or DB assessment
   useEffect(() => {
-    trackQuizStarted();
+    // If explicit retake mode, clear cache and start fresh
+    if (isRetake) {
+      clearQuizCache();
+      return;
+    }
+
+    // Check sessionStorage first (fast path)
+    const cached = getCachedQuizResults();
+    if (cached && cached.results) {
+      setHasCachedData(true);
+      setShowCachedPrompt(true);
+      // Pre-hydrate state for when user clicks "View Results"
+      setAnswers(cached.answers);
+      setResults(cached.results);
+      setEmail(cached.email || "");
+      return;
+    }
+
+    // Check for authenticated user with DB assessment (fallback)
+    const checkDbAssessment = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user?.email) return;
+
+        setIsLoadingFromDb(true);
+        const { data: profile } = await supabase
+          .from('sleep_profiles')
+          .select('sleep_assessment, quiz_data, email')
+          .eq('email', session.user.email.toLowerCase())
+          .maybeSingle();
+
+        if (profile?.sleep_assessment && typeof profile.sleep_assessment === 'object') {
+          const assessment = profile.sleep_assessment as unknown as SleepAssessment;
+          const quizData = profile.quiz_data as unknown as QuizAnswers | null;
+          
+          // Reconstruct results from DB
+          const reconstructedResults: AnalysisResult = {
+            assessment: assessment,
+            recommendations: [],
+            bundleRecommended: !!assessment.productRecommendations?.recommended_bundle,
+            profileCreated: true,
+          };
+
+          setResults(reconstructedResults);
+          setEmail(profile.email);
+          if (quizData) setAnswers(quizData);
+          setHasCachedData(true);
+          setShowCachedPrompt(true);
+
+          // Also cache to sessionStorage for future navigation
+          cacheQuizResults(reconstructedResults, quizData || answers, profile.email);
+        }
+      } catch (e) {
+        console.warn("[sleep-quiz] Failed to load DB assessment", e);
+      } finally {
+        setIsLoadingFromDb(false);
+      }
+    };
+
+    checkDbAssessment();
+  }, [isRetake]);
+
+  useEffect(() => {
+    if (!showCachedPrompt) {
+      trackQuizStarted();
+    }
     fetchProducts(50).then(setProducts).catch(console.error);
-  }, []);
+  }, [showCachedPrompt]);
 
   useEffect(() => {
     if (sectionInfo && sectionInfo.isLastInSection && !completedSections.includes(sectionInfo.sectionIndex)) {
@@ -162,7 +238,11 @@ const SleepQuiz = () => {
       });
 
       if (error) throw error;
-      setResults(data as AnalysisResult);
+      const analysisResult = data as AnalysisResult;
+      setResults(analysisResult);
+
+      // Cache results to sessionStorage for navigation persistence
+      cacheQuizResults(analysisResult, answers, email.trim());
 
       if (isValidEmail(email)) {
         try {
@@ -174,7 +254,7 @@ const SleepQuiz = () => {
         } catch (e) { console.warn("Klaviyo enrichment failed:", e); }
       }
 
-      if (data.profileCreated) {
+      if (analysisResult.profileCreated) {
         toast.success("Sleep Coach profile created!");
       }
     } catch (error) {
@@ -235,6 +315,33 @@ const SleepQuiz = () => {
 
   const contextualInsight = currentQuestion ? getContextualInsight(currentQuestion.id, answers) : null;
 
+  // Handle viewing cached results
+  const handleViewCachedResults = () => {
+    setShowCachedPrompt(false);
+    // Jump to results step
+    setStep(visibleQuestions.length + 1);
+  };
+
+  // Handle retaking the quiz
+  const handleRetakeQuiz = () => {
+    clearQuizCache();
+    setShowCachedPrompt(false);
+    setHasCachedData(false);
+    setResults(null);
+    setAnswers({
+      sleepEquipment: [],
+      painAreas: [],
+      coSleeping: [],
+      sleepGoals: [],
+      triedMethods: [],
+      painSeverity: 5,
+      pillowSatisfaction: 5,
+    });
+    setEmail("");
+    setStep(0);
+    trackQuizStarted();
+  };
+
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 py-8 px-4">
@@ -247,79 +354,123 @@ const SleepQuiz = () => {
             </div>
             <h1 className="text-3xl md:text-4xl font-bold mb-2 tracking-tight">Sleep Assessment Quiz</h1>
             <p className="text-muted-foreground max-w-md mx-auto">
-              Answer these questions to receive personalized product recommendations and unlock your AI Sleep Coach.
+              {showCachedPrompt 
+                ? "You've already completed your Sleep Assessment. View your results or take a fresh assessment."
+                : "Answer these questions to receive personalized product recommendations and unlock your AI Sleep Coach."}
             </p>
           </div>
 
-          {/* Progress */}
-          {!isResultsStep && (
+          {/* Loading from DB state */}
+          {isLoadingFromDb && (
+            <Card className="p-6 md:p-8 shadow-lg border-border/50 backdrop-blur-sm">
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4" />
+                <p className="text-muted-foreground">Loading your assessment...</p>
+              </div>
+            </Card>
+          )}
+
+          {/* Cached Results Prompt */}
+          {showCachedPrompt && !isLoadingFromDb && (
+            <Card className="p-6 md:p-8 shadow-lg border-border/50 backdrop-blur-sm">
+              <div className="text-center space-y-6">
+                <div className="w-16 h-16 mx-auto bg-success/10 rounded-full flex items-center justify-center">
+                  <CheckCircle className="w-8 h-8 text-success" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold mb-2">Assessment Complete</h2>
+                  <p className="text-muted-foreground">
+                    Your personalized sleep assessment is ready. View your results to see product recommendations and unlock your AI Sleep Coach.
+                  </p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button onClick={handleViewCachedResults} className="h-12 px-8 rounded-xl">
+                    <FileText className="w-4 h-4 mr-2" />
+                    View My Results
+                  </Button>
+                  <Button variant="outline" onClick={handleRetakeQuiz} className="h-12 px-8 rounded-xl">
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    Retake Assessment
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Retaking will replace your current assessment with new answers.
+                </p>
+              </div>
+            </Card>
+          )}
+
+          {/* Progress - only show when actively taking quiz */}
+          {!isResultsStep && !showCachedPrompt && !isLoadingFromDb && (
             <QuizProgress sectionInfo={sectionInfo} progressPercent={progressPercent} completedSections={completedSections} isEmailStep={isEmailStep} />
           )}
 
-          {/* Main Card */}
-          <Card className="p-6 md:p-8 shadow-lg border-border/50 backdrop-blur-sm">
-            {currentQuestion && !isAnalyzing && (
-              <QuizQuestion question={currentQuestion} answers={answers} contextualInsight={contextualInsight} onRadioChange={handleRadioChange} onCheckboxChange={handleCheckboxChange} onSliderChange={handleSliderChange} onContinue={handleNext} />
-            )}
+          {/* Main Card - Quiz Questions */}
+          {!showCachedPrompt && !isLoadingFromDb && (
+            <Card className="p-6 md:p-8 shadow-lg border-border/50 backdrop-blur-sm">
+              {currentQuestion && !isAnalyzing && (
+                <QuizQuestion question={currentQuestion} answers={answers} contextualInsight={contextualInsight} onRadioChange={handleRadioChange} onCheckboxChange={handleCheckboxChange} onSliderChange={handleSliderChange} onContinue={handleNext} />
+              )}
 
-            {isEmailStep && !isAnalyzing && (
-              <QuizEmailStep email={email} onEmailChange={setEmail} />
-            )}
+              {isEmailStep && !isAnalyzing && (
+                <QuizEmailStep email={email} onEmailChange={setEmail} />
+              )}
 
-            {isAnalyzing && <QuizLoading />}
+              {isAnalyzing && <QuizLoading />}
 
-            {/* Results - extracted to QuizResults component */}
-            {isResultsStep && results && !isAnalyzing && (
-              <QuizResults
-                results={results}
-                answers={answers}
-                visibleQuestionCount={visibleQuestions.length}
-                isRetake={isRetake}
-                shouldNotifyQuizUpdated={shouldNotifyQuizUpdated}
-                email={email}
-                showAccountForm={showAccountForm}
-                setShowAccountForm={setShowAccountForm}
-                accountExists={accountExists}
-                isCheckingAccount={isCheckingAccount}
-                password={password}
-                setPassword={setPassword}
-                showPassword={showPassword}
-                setShowPassword={setShowPassword}
-                isSubmitting={isSubmitting}
-                onUnlockSleepCoach={handleUnlockSleepCoach}
-                onAccountSubmit={handleAccountSubmit}
-                onForgotPassword={handleForgotPassword}
-                onGoToSleepCoach={() => navigate(isRetake || shouldNotifyQuizUpdated ? '/sleep-coach?quizUpdated=true' : '/sleep-coach')}
-                onBackToHome={() => navigate("/")}
-                onViewProducts={() => navigate("/product/ergonomic-pillow")}
-                onCancelAccountForm={() => { setShowAccountForm(false); setPassword(""); setAccountExists(null); }}
-              />
-            )}
+              {/* Results - extracted to QuizResults component */}
+              {isResultsStep && results && !isAnalyzing && (
+                <QuizResults
+                  results={results}
+                  answers={answers}
+                  visibleQuestionCount={visibleQuestions.length}
+                  isRetake={isRetake}
+                  shouldNotifyQuizUpdated={shouldNotifyQuizUpdated}
+                  email={email}
+                  showAccountForm={showAccountForm}
+                  setShowAccountForm={setShowAccountForm}
+                  accountExists={accountExists}
+                  isCheckingAccount={isCheckingAccount}
+                  password={password}
+                  setPassword={setPassword}
+                  showPassword={showPassword}
+                  setShowPassword={setShowPassword}
+                  isSubmitting={isSubmitting}
+                  onUnlockSleepCoach={handleUnlockSleepCoach}
+                  onAccountSubmit={handleAccountSubmit}
+                  onForgotPassword={handleForgotPassword}
+                  onGoToSleepCoach={() => navigate(isRetake || shouldNotifyQuizUpdated ? '/sleep-coach?quizUpdated=true' : '/sleep-coach')}
+                  onBackToHome={() => navigate("/")}
+                  onViewProducts={() => navigate("/product/ergonomic-pillow")}
+                  onCancelAccountForm={() => { setShowAccountForm(false); setPassword(""); setAccountExists(null); }}
+                />
+              )}
 
-            {/* Navigation Buttons */}
-            {!isResultsStep && !isAnalyzing && (
-              <div className="flex gap-4 mt-8 pt-6 border-t border-border">
-                <Button variant="outline" onClick={handleBack} disabled={step === 0} className="flex-1 h-12 rounded-xl">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back
-                </Button>
-                {currentQuestion?.optional && currentQuestion.type === "radio" && (
-                  <Button onClick={handleNext} variant="ghost" className="flex-1 h-12 rounded-xl">
-                    Skip
-                    <ArrowRight className="w-4 h-4 ml-2" />
+              {/* Navigation Buttons */}
+              {!isResultsStep && !isAnalyzing && (
+                <div className="flex gap-4 mt-8 pt-6 border-t border-border">
+                  <Button variant="outline" onClick={handleBack} disabled={step === 0} className="flex-1 h-12 rounded-xl">
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back
                   </Button>
-                )}
-                {isEmailStep && (
-                  <Button onClick={handleNext} disabled={!canProceed()} className="flex-1 h-12 rounded-xl">
-                    See My Results
-                  </Button>
-                )}
-              </div>
-            )}
-          </Card>
+                  {currentQuestion?.optional && currentQuestion.type === "radio" && (
+                    <Button onClick={handleNext} variant="ghost" className="flex-1 h-12 rounded-xl">
+                      Skip
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  )}
+                  {isEmailStep && (
+                    <Button onClick={handleNext} disabled={!canProceed()} className="flex-1 h-12 rounded-xl">
+                      See My Results
+                    </Button>
+                  )}
+                </div>
+              )}
+            </Card>
+          )}
 
           {/* Trust Indicators */}
-          {!isResultsStep && (
+          {!isResultsStep && !showCachedPrompt && !isLoadingFromDb && (
             <div className="flex items-center justify-center gap-6 mt-8 text-sm text-muted-foreground">
               <div className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-success" /><span>Science-backed</span></div>
               <div className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-success" /><span>Private & secure</span></div>
