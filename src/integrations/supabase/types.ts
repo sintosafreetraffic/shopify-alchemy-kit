@@ -721,9 +721,81 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      commissions_safe: {
+        Row: {
+          affiliate_id: string | null
+          amount: number | null
+          created_at: string | null
+          fraud_flag: boolean | null
+          fraud_reason: string | null
+          id: string | null
+          level: number | null
+          order_amount: number | null
+          order_id: string | null
+          referral_id: string | null
+          status: string | null
+        }
+        Insert: {
+          affiliate_id?: string | null
+          amount?: number | null
+          created_at?: string | null
+          fraud_flag?: boolean | null
+          fraud_reason?: string | null
+          id?: string | null
+          level?: number | null
+          order_amount?: number | null
+          order_id?: string | null
+          referral_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          affiliate_id?: string | null
+          amount?: number | null
+          created_at?: string | null
+          fraud_flag?: boolean | null
+          fraud_reason?: string | null
+          id?: string | null
+          level?: number | null
+          order_amount?: number | null
+          order_id?: string | null
+          referral_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commissions_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commissions_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: false
+            referencedRelation: "referrals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      get_affiliate_commissions_safe: {
+        Args: { p_affiliate_id: string }
+        Returns: {
+          affiliate_id: string
+          amount: number
+          created_at: string
+          fraud_flag: boolean
+          fraud_reason: string
+          id: string
+          level: number
+          order_amount: number
+          order_id: string
+          referral_id: string
+          status: string
+        }[]
+      }
       get_auth_email: { Args: never; Returns: string }
       has_role: {
         Args: {
