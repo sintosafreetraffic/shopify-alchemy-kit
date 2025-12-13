@@ -6,11 +6,20 @@ This event is sent after a user completes the Rise By Night Sleep Quiz. It conta
 
 ---
 
-## Persona Fields (v7)
+## ⚠️ CRITICAL: Human Names Are INTERNAL ONLY
 
-> **IMPORTANT**: Human names (Jason, Mila, Leo, Riley) are **INTERNAL ONLY** for segmentation/ops.  
-> Customer-facing UI and default email templates should use cluster labels (Pain Sleeper, etc.)  
-> The `persona_name` field is provided for advanced Klaviyo use cases only.
+> **DO NOT USE `{{ event.persona_name }}`** (Jason/Mila/Leo/Riley) in customer-facing email templates!
+>
+> Human names exist for internal segmentation, A/B testing, and ops dashboards ONLY.
+> 
+> **For all customer-facing content**, use:
+> - `{{ event.persona_label }}` → "The Pain Sleeper", "The Sleep Optimizer", etc.
+> - `{{ event.persona_cluster }}` → For conditional blocks
+> - `{{ event.persona_description }}` → Full calm, Scandinavian description
+
+---
+
+## Persona Fields (v7)
 
 | Property | Type | Description | Example Values |
 |----------|------|-------------|----------------|
