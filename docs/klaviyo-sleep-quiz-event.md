@@ -1,21 +1,35 @@
 # Klaviyo Sleep Quiz Event Reference
 
-## Event: `RBN_SleepQuiz_Completed` (v6)
+## Event: `RBN_SleepQuiz_Completed` (v7)
 
 This event is sent after a user completes the Rise By Night Sleep Quiz. It contains comprehensive persona, segmentation, and product recommendation data for email flow automation.
 
 ---
 
-## Persona Fields
+## Persona Fields (v7)
 
 | Property | Type | Description | Example Values |
 |----------|------|-------------|----------------|
 | `persona_cluster` | string | Primary persona classification | `pain_sleeper`, `stress_insomnia`, `optimizer`, `recovery_sleeper` |
-| `persona_label` | string | Human-readable persona label | `"Pain Sleeper"`, `"Stress & Environment Sleeper"`, `"Sleep Optimizer"`, `"Recovery Sleeper"` |
+| `persona_name` | string | Human name for the persona | `"Jason"`, `"Mila"`, `"Leo"`, `"Riley"` |
+| `persona_label` | string | Human-readable persona label | `"The Pain Sleeper"`, `"The Stress & Environment Sleeper"`, `"The Sleep Optimizer"`, `"The Recovery Sleeper"` |
+| `persona_legacy_type` | string | Legacy type for backwards compat | `"jason"`, `"mila"`, `"leo"` |
+| `core_need` | string | Primary need for segmentation | `"alignment"`, `"environment"`, `"optimization"`, `"recovery"` |
 | `persona_description` | string | Full persona description | `"A sleeper whose rest is shaped by physical tension..."` |
 | `persona_rationale` | string | Why this persona was assigned | `"Your responses indicate that neck tension and lower back discomfort..."` |
-| `recommended_modules` | array[int] | Coach module IDs for this persona | `[4, 10, 11]`, `[6, 9]`, `[7, 8, 10]`, `[7, 8, 10, 12]` |
+| `recommended_modules` | array[int] | Coach module IDs for this persona | `[4, 10, 11]`, `[6, 9, 12]`, `[7, 8, 10, 12]`, `[7, 8, 10]` |
 | `sleep_identity_label` | string | Sleep identity description | `"Side sleeper seeking alignment support"` |
+
+---
+
+## Persona Mapping (v7)
+
+| Cluster Key | Human Name | Label | Legacy Type | Core Need | Default Modules |
+|-------------|------------|-------|-------------|-----------|-----------------|
+| `pain_sleeper` | Jason | The Pain Sleeper | `jason` | `alignment` | [4, 10, 11] |
+| `stress_insomnia` | Mila | The Stress & Environment Sleeper | `mila` | `environment` | [6, 9, 12] |
+| `optimizer` | Leo | The Sleep Optimizer | `leo` | `optimization` | [7, 8, 10, 12] |
+| `recovery_sleeper` | Riley | The Recovery Sleeper | `leo` | `recovery` | [7, 8, 10] |
 
 ---
 
@@ -55,14 +69,16 @@ This event is sent after a user completes the Rise By Night Sleep Quiz. It conta
 
 ---
 
-## Klaviyo Segmentation Snapshot
+## Klaviyo Segmentation Snapshot (v7)
 
 For building flows, use this flat segmentation snapshot:
 
 ```json
 {
   "persona_cluster": "pain_sleeper",
-  "persona_label": "Pain Sleeper",
+  "persona_name": "Jason",
+  "persona_label": "The Pain Sleeper",
+  "persona_legacy_type": "jason",
   "core_need": "alignment",
   "primary_product": "ergonomic_pillow",
   "secondary_product": "knee_pillow",
@@ -74,18 +90,21 @@ For building flows, use this flat segmentation snapshot:
 - `pain_sleeper` → `"alignment"`
 - `stress_insomnia` → `"environment"`
 - `optimizer` → `"optimization"`
-- `recovery_sleeper` → `"recovery"` (v7: maps to leo legacy type)
+- `recovery_sleeper` → `"recovery"`
 
 ---
 
-## Example Payloads by Persona
+## Example Payloads by Persona (v7)
 
-### Pain Sleeper
+### Jason — The Pain Sleeper
 
 ```json
 {
   "persona_cluster": "pain_sleeper",
-  "persona_label": "Pain Sleeper",
+  "persona_name": "Jason",
+  "persona_label": "The Pain Sleeper",
+  "persona_legacy_type": "jason",
+  "core_need": "alignment",
   "persona_description": "A sleeper whose rest is shaped by physical tension and alignment challenges. Improving cervical and spinal support meaningfully enhances comfort and morning ease.",
   "persona_rationale": "Your responses indicate that neck tension and lower back discomfort are your primary areas for improvement. Addressing cervical and spinal support can meaningfully reduce morning tension.",
   "recommended_modules": [4, 10, 11],
@@ -94,55 +113,64 @@ For building flows, use this flat segmentation snapshot:
   "primary_product": "ergonomic_pillow",
   "secondary_product": "knee_pillow",
   "recommended_bundle": "alignment_set",
-  "persona_reasoning": "As a Pain Sleeper, cervical and hip alignment support provides the strongest impact on your sleep comfort and morning ease."
+  "persona_reasoning": "As a Pain Sleeper, your physical comfort and alignment are the primary focus. This setup directly addresses your tension points and supports healthier spinal positioning throughout the night."
 }
 ```
 
-### Stress & Insomnia Sleeper
+### Mila — The Stress & Environment Sleeper
 
 ```json
 {
   "persona_cluster": "stress_insomnia",
-  "persona_label": "Stress & Environment Sleeper",
+  "persona_name": "Mila",
+  "persona_label": "The Stress & Environment Sleeper",
+  "persona_legacy_type": "mila",
+  "core_need": "environment",
   "persona_description": "A sleeper whose rest is influenced by environmental cues and nervous-system activation. Calming routines and environmental control strengthen sleep continuity.",
   "persona_rationale": "Your sleep patterns suggest that light exposure and temperature regulation are influencing your rest quality. Optimizing your sleep environment can strengthen your natural sleep cycles.",
-  "recommended_modules": [6, 9],
+  "recommended_modules": [6, 9, 12],
   "alignment_priority": false,
   "environment_priority": true,
   "primary_product": "ergonomic_pillow",
   "secondary_product": "silk_mask",
   "recommended_bundle": "deep_sleep_set",
-  "persona_reasoning": "As a Stress & Environment Sleeper, complete darkness and calming sleep rituals are essential for your sleep continuity and nervous system regulation."
+  "persona_reasoning": "As a Stress & Environment Sleeper, controlling environmental factors is key to your sleep quality. This recommendation creates optimal conditions for uninterrupted rest."
 }
 ```
 
-### Sleep Optimizer
+### Leo — The Sleep Optimizer
 
 ```json
 {
   "persona_cluster": "optimizer",
-  "persona_label": "Sleep Optimizer",
+  "persona_name": "Leo",
+  "persona_label": "The Sleep Optimizer",
+  "persona_legacy_type": "leo",
+  "core_need": "optimization",
   "persona_description": "A motivated sleeper focused on enhancing recovery, energy, and long-term performance through consistent, measurable sleep improvements.",
   "persona_rationale": "You're focused on enhancing morning energy and deeper sleep. With a solid sleep foundation, targeted improvements can maximize your body's natural recovery processes.",
-  "recommended_modules": [7, 8, 10],
+  "recommended_modules": [7, 8, 10, 12],
   "alignment_priority": false,
   "environment_priority": false,
   "primary_product": "ergonomic_pillow",
   "secondary_product": "knee_pillow",
   "recommended_bundle": "performance_set",
-  "persona_reasoning": "As a Sleep Optimizer, comprehensive support combined with recovery-focused practices will help you achieve consistent, high-quality sleep for peak performance."
+  "persona_reasoning": "As a Sleep Optimizer, you're looking to maximize recovery and performance. This setup provides the foundation for measurable improvements in your sleep quality."
 }
 ```
 
-### Recovery Sleeper (v7)
+### Riley — The Recovery Sleeper (v7)
 
 ```json
 {
   "persona_cluster": "recovery_sleeper",
-  "persona_label": "Recovery Sleeper",
+  "persona_name": "Riley",
+  "persona_label": "The Recovery Sleeper",
+  "persona_legacy_type": "leo",
+  "core_need": "recovery",
   "persona_description": "A sleeper oriented toward physical restoration and training recovery. Temperature regulation, deep sleep optimization, and morning readiness support athletic and active lifestyles.",
   "persona_rationale": "Your focus on physical recovery and performance tracking indicates a recovery-oriented approach to sleep. You already have a relatively stable sleep foundation. Optimizing deep sleep phases and temperature regulation can enhance your body's natural restoration processes.",
-  "recommended_modules": [7, 8, 10, 12],
+  "recommended_modules": [7, 8, 10],
   "alignment_priority": false,
   "environment_priority": false,
   "primary_product": "ergonomic_pillow",
@@ -154,14 +182,29 @@ For building flows, use this flat segmentation snapshot:
 
 ---
 
+## Module 12: Sleep Hygiene Foundations (v7)
+
+Module 12 is automatically added for:
+- **Mila (stress_insomnia)**: Always included by default
+- **Leo (optimizer)**: Added when sleep_stability_score is 40-75 OR environment_score is 50-80
+- **Riley (recovery_sleeper)**: Added when sleep_stability_score is 40-75 OR environment_score is 50-80
+- **Jason (pain_sleeper)**: Never added by default (alignment-focused)
+
+---
+
 ## Liquid Template Usage
 
 In Klaviyo email templates, access these fields using:
 
 ```liquid
 {% if event.persona_cluster == "pain_sleeper" %}
-  <h2>Your Pain Sleeper Plan</h2>
+  <h2>Hey {{ event.persona_name }} — Your Pain Sleeper Plan</h2>
   <p>{{ event.persona_rationale }}</p>
+{% endif %}
+
+{% if event.persona_cluster == "recovery_sleeper" %}
+  <h2>Hey {{ event.persona_name }} — Your Recovery Plan</h2>
+  <p>Optimize your {{ event.core_need }} with these focus areas:</p>
 {% endif %}
 
 <h3>Recommended Modules</h3>
@@ -177,11 +220,31 @@ In Klaviyo email templates, access these fields using:
 
 ---
 
+## Detection Logic Summary
+
+### Jason (pain_sleeper)
+- **Triggers**: Neck/shoulder/back/hip pain, high pain severity (≥6), low pillow satisfaction, "reduce_pain" goals
+- **Guardrails**: Cannot be overtaken by optimizer/recovery when pain is dominant
+
+### Mila (stress_insomnia)
+- **Triggers**: Bright room, hot/cold temperature, frequent awakenings, slow sleep onset, restless movement without pain
+- **Guardrails**: Cannot be overtaken by optimizer/recovery when environment issues are dominant
+
+### Leo (optimizer)
+- **Triggers**: "wake_refreshed", "better_quality", "more_energy" goals, high pillow satisfaction, quick sleep onset, multiple goals
+- **Guardrails**: Capped below Jason when painSeverity ≥ 6 OR alignment_risk_score ≥ 50; capped below Mila when environment_score < 55
+
+### Riley (recovery_sleeper)
+- **Triggers**: "faster_recovery", "better_recovery", "muscle_repair" goals, Oura/WHOOP/fitness tracker usage, multiple performance goals
+- **Guardrails**: Same as Leo; prefers performance_set unless alignment_risk ≥ 50
+
+---
+
 ## Version History
 
 | Version | Date | Changes |
 |---------|------|---------|
-| v7 | 2025-01 | Added recovery_sleeper persona (4th persona), added Sleep Hygiene module (12), refined optimizer detection, cache expiration (30 days) |
+| v7 | 2025-01 | Added persona_name (Jason/Mila/Leo/Riley), persona_legacy_type, core_need fields. Added recovery_sleeper (Riley). Added Sleep Hygiene module (12). Refined optimizer detection with guardrails. Cache expiration (30 days). |
 | v6 | 2025-01 | Added persona_cluster, persona_label, persona_description, persona_rationale, recommended_modules, persona_reasoning |
 | v5 | 2024-12 | Added structured assessment scores |
 | v4 | 2024-11 | Added product recommendations |

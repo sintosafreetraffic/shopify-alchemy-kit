@@ -498,8 +498,17 @@ export async function generateSleepAttributes(
 /**
  * Build Klaviyo Sleep Sync event payload
  * Includes all 3 layers for full Klaviyo profile sync
+ * v7: Added core_need mapping for recovery_sleeper
  */
 export function buildSleepSyncEvent(attrs: SleepAttributes, source: string = "sleep_sync_v2"): SleepSyncEvent {
+  // Core need mapping (v7: added recovery_sleeper)
+  const coreNeedMap: Record<string, string> = {
+    pain_sleeper: "alignment",
+    stress_insomnia: "environment",
+    optimizer: "optimization",
+    recovery_sleeper: "recovery",
+  };
+  
   return {
     eventName: "RBN_SleepSync_Updated",
     payload: {

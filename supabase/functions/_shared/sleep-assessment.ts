@@ -28,6 +28,14 @@ export type SleepPersona = LegacyPersona;
 // Core need mapping for Klaviyo segmentation (v7: added recovery)
 export type CoreNeed = "alignment" | "environment" | "optimization" | "recovery";
 
+// Core need mapping helper (v7: added recovery_sleeper)
+export const CORE_NEED_MAP: Record<PersonaCluster, CoreNeed> = {
+  pain_sleeper: "alignment",
+  stress_insomnia: "environment",
+  optimizer: "optimization",
+  recovery_sleeper: "recovery",
+};
+
 // Klaviyo segmentation snapshot interface
 export interface KlaviyoSegmentationSnapshot {
   persona_cluster: PersonaCluster;
@@ -80,39 +88,53 @@ export interface PersonaResult {
   rationale: string;
   // Enhanced persona fields
   cluster: PersonaCluster;
-  label: string;
+  name: string;             // Human name (Jason, Mila, Leo, Riley)
+  label: string;            // Descriptive label (The Pain Sleeper, etc.)
   description: string;
   recommended_modules: number[];
   legacyType: LegacyPersona;
 }
 
-// Persona definitions - reusable system-wide (v7: added recovery_sleeper)
+// Human persona names for Klaviyo and user-facing display
+export const PERSONA_HUMAN_NAMES: Record<PersonaCluster, string> = {
+  pain_sleeper: "Jason",
+  stress_insomnia: "Mila",
+  optimizer: "Leo",
+  recovery_sleeper: "Riley",
+};
+
+// Persona definitions - reusable system-wide (v7: added recovery_sleeper, human names)
 export const PERSONA_DEFINITIONS: Record<PersonaCluster, {
-  label: string;
+  name: string;           // Human name (Jason, Mila, Leo, Riley)
+  label: string;          // Descriptive label
   description: string;
   recommended_modules: number[];
   legacyType: LegacyPersona;
 }> = {
   pain_sleeper: {
-    label: "Pain Sleeper",
+    name: "Jason",
+    label: "The Pain Sleeper",
     description: "A sleeper whose rest is shaped by physical tension and alignment challenges. Improving cervical and spinal support meaningfully enhances comfort and morning ease.",
     recommended_modules: [4, 10, 11],
     legacyType: "jason",
   },
   stress_insomnia: {
-    label: "Stress & Environment Sleeper",
+    name: "Mila",
+    label: "The Stress & Environment Sleeper",
     description: "A sleeper whose rest is influenced by environmental cues and nervous-system activation. Calming routines and environmental control strengthen sleep continuity.",
-    recommended_modules: [6, 9],
+    recommended_modules: [6, 9, 12],
     legacyType: "mila",
   },
   optimizer: {
-    label: "Sleep Optimizer",
+    name: "Leo",
+    label: "The Sleep Optimizer",
     description: "A motivated sleeper focused on enhancing recovery, energy, and long-term performance through consistent, measurable sleep improvements.",
-    recommended_modules: [7, 8, 10],
+    recommended_modules: [7, 8, 10, 12],
     legacyType: "leo",
   },
   recovery_sleeper: {
-    label: "Recovery Sleeper",
+    name: "Riley",
+    label: "The Recovery Sleeper",
     description: "A sleeper oriented toward physical restoration and training recovery. Temperature regulation, deep sleep optimization, and morning readiness support athletic and active lifestyles.",
     recommended_modules: [7, 8, 10],
     legacyType: "leo",
@@ -426,6 +448,7 @@ export function detectPersona(quizAnswers: Record<string, any>, scores?: Assessm
     guess: definition.legacyType,
     rationale,
     cluster,
+    name: definition.name,
     label: definition.label,
     description: definition.description,
     recommended_modules,
