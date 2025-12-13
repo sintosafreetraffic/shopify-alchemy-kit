@@ -236,10 +236,10 @@ Deno.serve(async (req) => {
         let topProducts: Record<string, number> = {};
 
         if (affiliate) {
-          // Fetch all commissions (excluding flagged fraud)
+          // Fetch commissions (excluding flagged fraud) - SECURITY: exclude sensitive PII fields
           const { data: commissionsData, error: commError } = await supabaseAdmin
             .from('commissions')
-            .select('*')
+            .select('id, affiliate_id, amount, order_amount, order_id, level, status, fraud_flag, fraud_reason, created_at, referral_id')
             .eq('affiliate_id', affiliate.id)
             .eq('fraud_flag', false)
             .order('created_at', { ascending: false });
