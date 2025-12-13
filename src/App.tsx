@@ -60,10 +60,11 @@ const capturePinterestClickId = () => {
     // Save to localStorage
     localStorage.setItem("pinterest_epik", epik);
     
-    // Save to cookie (90 days expiry)
+    // Save to cookie (90 days expiry, Secure on HTTPS)
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + 90);
-    document.cookie = `_epik=${epik}; path=/; expires=${expiryDate.toUTCString()}; SameSite=Lax`;
+    const secure = window.location.protocol === "https:" ? "; Secure" : "";
+    document.cookie = `_epik=${epik}; path=/; expires=${expiryDate.toUTCString()}; SameSite=Lax${secure}`;
     
     // Mark as captured for this session (only after successful capture)
     sessionStorage.setItem(sessionKey, "true");
