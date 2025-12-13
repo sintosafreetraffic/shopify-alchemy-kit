@@ -14,6 +14,7 @@ import sleepMaskPink from "@/assets/sleep-mask-pink.webp";
 import sleepMaskGold from "@/assets/sleep-mask-gold.webp";
 import sleepMaskSilver from "@/assets/sleep-mask-silver.webp";
 import sleepMaskBlack from "@/assets/sleep-mask-black.webp";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const colors = [
   { name: "Navy", value: "navy", hex: "#1e3a8a", image: sleepMaskNavy },
@@ -40,6 +41,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { addItem, setCartOpen, isCartOpen, items } = useCartStore();
   const { isMobileMenuOpen } = useUIStore();
+  const isMobile = useIsMobile();
   
   // Calculate cart totals
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -170,16 +172,17 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
 
   const selectedOption = bundles[selectedBundle];
 
-  // Keep mounted but hide visually to prevent layout shifts
-  // Uses transform + opacity instead of unmounting
+  // Mobile: opacity-only hide (no transforms to prevent GPU glitches)
+  // Desktop: transform-based hide/show
   const shouldHide = isCartOpen || isMobileMenuOpen;
 
   return (
     <div 
-      className={`fixed bottom-0 left-0 right-0 z-[100] bg-background border-t shadow-lg transition-all duration-200 ${
-        shouldHide ? "translate-y-full opacity-0 pointer-events-none" : "translate-y-0 opacity-100"
+      className={`fixed bottom-0 left-0 right-0 z-[100] bg-background border-t shadow-lg ${
+        isMobile
+          ? `transition-opacity duration-200 ${shouldHide ? "opacity-0 pointer-events-none" : "opacity-100"}`
+          : `transition-all duration-200 ${shouldHide ? "translate-y-full opacity-0 pointer-events-none" : "translate-y-0 opacity-100"}`
       }`}
-      style={{ contain: 'layout', willChange: 'transform, opacity' }}
     >
       <div className="container mx-auto px-4 py-3">
         {!product ? (
