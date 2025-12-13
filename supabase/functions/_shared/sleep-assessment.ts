@@ -9,6 +9,9 @@
  * - Calm, Scandinavian, scientific tone
  * - No medical claims
  * - Full segmentation support for Klaviyo
+ * 
+ * v7: Added recovery_sleeper persona, refined optimizer detection,
+ *     added Sleep Hygiene module (12)
  */
 
 // ============ TYPES ============
@@ -16,14 +19,14 @@
 // Legacy persona types (backwards compatibility)
 export type LegacyPersona = "jason" | "mila" | "leo";
 
-// New persona system with clearer naming
-export type PersonaCluster = "pain_sleeper" | "stress_insomnia" | "optimizer";
+// New persona system with clearer naming (v7: added recovery_sleeper)
+export type PersonaCluster = "pain_sleeper" | "stress_insomnia" | "optimizer" | "recovery_sleeper";
 
 // Keep SleepPersona for backward compatibility, but also export the new type
 export type SleepPersona = LegacyPersona;
 
-// Core need mapping for Klaviyo segmentation
-export type CoreNeed = "alignment" | "environment" | "optimization";
+// Core need mapping for Klaviyo segmentation (v7: added recovery)
+export type CoreNeed = "alignment" | "environment" | "optimization" | "recovery";
 
 // Klaviyo segmentation snapshot interface
 export interface KlaviyoSegmentationSnapshot {
@@ -44,6 +47,7 @@ export function buildKlaviyoSegmentationSnapshot(assessment: SleepAssessment): K
     pain_sleeper: "alignment",
     stress_insomnia: "environment",
     optimizer: "optimization",
+    recovery_sleeper: "recovery",
   };
   
   return {
@@ -82,7 +86,7 @@ export interface PersonaResult {
   legacyType: LegacyPersona;
 }
 
-// Persona definitions - reusable system-wide
+// Persona definitions - reusable system-wide (v7: added recovery_sleeper)
 export const PERSONA_DEFINITIONS: Record<PersonaCluster, {
   label: string;
   description: string;
@@ -107,9 +111,15 @@ export const PERSONA_DEFINITIONS: Record<PersonaCluster, {
     recommended_modules: [7, 8, 10],
     legacyType: "leo",
   },
+  recovery_sleeper: {
+    label: "Recovery Sleeper",
+    description: "A sleeper oriented toward physical restoration and training recovery. Temperature regulation, deep sleep optimization, and morning readiness support athletic and active lifestyles.",
+    recommended_modules: [7, 8, 10],
+    legacyType: "leo",
+  },
 };
 
-// Module definitions for display
+// Module definitions for display (v7: added module 12)
 export const MODULE_DEFINITIONS: Record<number, { name: string; description: string }> = {
   4: { name: "Alignment Fundamentals", description: "Core spinal alignment principles" },
   6: { name: "Environment Optimization", description: "Light, noise, and temperature control" },
@@ -118,6 +128,7 @@ export const MODULE_DEFINITIONS: Record<number, { name: string; description: str
   9: { name: "Evening Routine Reset", description: "Wind-down protocols for better sleep onset" },
   10: { name: "Morning Mobility", description: "Gentle morning movement practices" },
   11: { name: "Hip & Lower Body", description: "Lower body alignment techniques" },
+  12: { name: "Sleep Hygiene Foundations", description: "Daily habits that support consistent, higher-quality sleep" },
 };
 
 export interface EnvironmentFindings {
@@ -166,10 +177,14 @@ export interface SleepAssessment {
  * Pain Sleeper → High alignment risk + neck pain + physical discomfort indicators
  * Stress/Insomnia → Sleep instability + light/temperature issues + environment sensitivity
  * Optimizer → High motivation/engagement + performance goals + good baseline
+ * Recovery Sleeper → Recovery/training focus + performance goals + good baseline (v7)
+ * 
+ * v7: Added recovery_sleeper detection, refined optimizer scoring to prevent
+ *     misclassification when pain/environment issues are dominant.
  * 
  * Returns enhanced persona with cluster, label, description, rationale, and recommended modules.
  */
-export function detectPersona(quizAnswers: Record<string, any>): PersonaResult {
+export function detectPersona(quizAnswers: Record<string, any>, scores?: AssessmentScores): PersonaResult {
   const painAreas = quizAnswers.painAreas || quizAnswers.painPoints || [];
   const sleepGoals = quizAnswers.sleepGoals || [];
   const nightAwakenings = quizAnswers.nightAwakenings || "";
@@ -179,11 +194,13 @@ export function detectPersona(quizAnswers: Record<string, any>): PersonaResult {
   const pillowSatisfaction = quizAnswers.pillowSatisfaction ?? 5;
   const sleepLatency = quizAnswers.sleepLatency || "";
   const painSeverity = quizAnswers.painSeverity ?? 5;
+  const sleepEquipment = quizAnswers.sleepEquipment || [];
   
   // Calculate persona scores with refined weighting
   let painSleeperScore = 0;
   let stressInsomniaScore = 0;
   let optimizerScore = 0;
+  let recoverySleeperScore = 0; // v7: New recovery persona
   
   // ===== PAIN SLEEPER INDICATORS (alignment/pain focused) =====
   // Primary pain signals
@@ -235,6 +252,35 @@ export function detectPersona(quizAnswers: Record<string, any>): PersonaResult {
   if (sleepGoals.includes("stay_asleep")) stressInsomniaScore += 4;
   if (sleepGoals.includes("fall_asleep_faster")) stressInsomniaScore += 3;
   
+  // ===== RECOVERY SLEEPER INDICATORS (v7: recovery/training focused) =====
+  // Explicit recovery goals
+  if (sleepGoals.includes("faster_recovery")) recoverySleeperScore += 6;
+  if (sleepGoals.includes("better_recovery")) recoverySleeperScore += 6;
+  if (sleepGoals.includes("muscle_repair")) recoverySleeperScore += 5;
+  
+  // Performance/energy goals (shared with optimizer but stronger for recovery)
+  if (sleepGoals.includes("wake_refreshed")) recoverySleeperScore += 3;
+  if (sleepGoals.includes("more_energy")) recoverySleeperScore += 4;
+  
+  // Device tracking indicates performance-focused user
+  if (sleepEquipment.includes("oura") || sleepEquipment.includes("whoop")) {
+    recoverySleeperScore += 4;
+    optimizerScore += 2; // Also benefits optimizer
+  }
+  if (sleepEquipment.includes("fitness_tracker") || sleepEquipment.includes("smart_watch")) {
+    recoverySleeperScore += 2;
+    optimizerScore += 1;
+  }
+  
+  // Multiple performance goals = recovery focus
+  const performanceGoals = sleepGoals.filter((g: string) => 
+    ['faster_recovery', 'better_recovery', 'muscle_repair', 'wake_refreshed', 'more_energy'].includes(g)
+  );
+  if (performanceGoals.length >= 2) recoverySleeperScore += 3;
+  
+  // Low pain baseline benefits recovery persona
+  if (painSeverity <= 3 && painAreas.length === 0) recoverySleeperScore += 2;
+  
   // ===== OPTIMIZER INDICATORS (performance/motivation focused) =====
   // Performance-driven goals
   if (sleepGoals.includes("wake_refreshed")) optimizerScore += 4;
@@ -256,12 +302,29 @@ export function detectPersona(quizAnswers: Record<string, any>): PersonaResult {
   // Good sleep stability = room for optimization
   if (nightAwakenings === "rarely" || nightAwakenings === "never") optimizerScore += 2;
   
+  // ===== v7: REFINED PERSONA SELECTION WITH SAFEGUARDS =====
+  // Prevent optimizer/recovery from winning when pain or environment is clearly dominant
+  
+  const hasDominantPain = painSeverity >= 6 || (scores?.alignment_risk_score ?? 0) >= 50;
+  const hasDominantEnvIssues = (scores?.environment_score ?? 100) < 55;
+  
+  // Cap optimizer and recovery scores if pain/environment issues are dominant
+  if (hasDominantPain) {
+    optimizerScore = Math.min(optimizerScore, painSleeperScore - 2);
+    recoverySleeperScore = Math.min(recoverySleeperScore, painSleeperScore - 2);
+  }
+  
+  if (hasDominantEnvIssues && !hasDominantPain) {
+    optimizerScore = Math.min(optimizerScore, stressInsomniaScore - 2);
+    recoverySleeperScore = Math.min(recoverySleeperScore, stressInsomniaScore - 2);
+  }
+  
   // Determine winner with calm, scientific rationale
   let cluster: PersonaCluster;
   let rationale: string;
   
   // Use clear decision logic with tie-breaking
-  const maxScore = Math.max(painSleeperScore, stressInsomniaScore, optimizerScore);
+  const maxScore = Math.max(painSleeperScore, stressInsomniaScore, optimizerScore, recoverySleeperScore);
   
   if (painSleeperScore === maxScore && painSleeperScore > 0) {
     cluster = "pain_sleeper";
@@ -295,6 +358,32 @@ export function detectPersona(quizAnswers: Record<string, any>): PersonaResult {
     
     rationale = `Your sleep patterns suggest that ${envFocus} ${envDetails.length > 1 ? 'are' : 'is'} influencing your rest quality. Optimizing your sleep environment and establishing calming routines can strengthen your natural sleep cycles.`;
     
+  } else if (recoverySleeperScore === maxScore && recoverySleeperScore > 0) {
+    // v7: Recovery sleeper wins
+    cluster = "recovery_sleeper";
+    
+    // Build specific rationale for recovery focus
+    const recoveryDetails: string[] = [];
+    if (sleepGoals.includes("faster_recovery") || sleepGoals.includes("better_recovery")) {
+      recoveryDetails.push("physical recovery");
+    }
+    if (sleepGoals.includes("wake_refreshed")) recoveryDetails.push("morning readiness");
+    if (sleepGoals.includes("more_energy")) recoveryDetails.push("sustained energy");
+    if (sleepEquipment.includes("oura") || sleepEquipment.includes("whoop") || sleepEquipment.includes("fitness_tracker")) {
+      recoveryDetails.push("performance tracking");
+    }
+    
+    const recoveryFocus = recoveryDetails.length > 0 
+      ? recoveryDetails.slice(0, 2).join(" and ") 
+      : "physical restoration and recovery";
+    
+    // v7: Acknowledge good foundation while focusing on recovery
+    const foundationNote = hasDominantPain || hasDominantEnvIssues 
+      ? ""
+      : " You already have a relatively stable sleep foundation. ";
+    
+    rationale = `Your focus on ${recoveryFocus} indicates a recovery-oriented approach to sleep.${foundationNote}Optimizing deep sleep phases and temperature regulation can enhance your body's natural restoration processes.`;
+    
   } else {
     cluster = "optimizer";
     
@@ -308,10 +397,30 @@ export function detectPersona(quizAnswers: Record<string, any>): PersonaResult {
       ? goalDetails.slice(0, 2).join(" and ") 
       : "sleep quality and recovery";
     
-    rationale = `You're focused on enhancing ${goalFocus}. With a solid sleep foundation, targeted improvements to your setup and consistent habits can maximize your body's natural recovery processes.`;
+    // v7: Acknowledge any minor issues while focusing on optimization
+    const foundationNote = hasDominantPain || hasDominantEnvIssues 
+      ? " While some areas may benefit from attention, "
+      : " With a solid sleep foundation, ";
+    
+    rationale = `You're focused on enhancing ${goalFocus}.${foundationNote}targeted improvements to your setup and consistent habits can maximize your body's natural recovery processes.`;
   }
   
+  // Get persona definition and potentially add sleep hygiene module (v7)
   const definition = PERSONA_DEFINITIONS[cluster];
+  let recommended_modules = [...definition.recommended_modules];
+  
+  // v7: Add Sleep Hygiene module (12) for stress_insomnia and optimizer/recovery when 
+  // sleep stability is moderate (not severe, not excellent)
+  if (scores) {
+    const stabilityModerate = scores.sleep_stability_score >= 40 && scores.sleep_stability_score <= 75;
+    const envModerate = scores.environment_score >= 50 && scores.environment_score <= 80;
+    
+    if ((cluster === "stress_insomnia" || cluster === "optimizer" || cluster === "recovery_sleeper") && 
+        (stabilityModerate || envModerate) && 
+        !recommended_modules.includes(12)) {
+      recommended_modules.push(12);
+    }
+  }
   
   return {
     guess: definition.legacyType,
@@ -319,7 +428,7 @@ export function detectPersona(quizAnswers: Record<string, any>): PersonaResult {
     cluster,
     label: definition.label,
     description: definition.description,
-    recommended_modules: definition.recommended_modules,
+    recommended_modules,
     legacyType: definition.legacyType,
   };
 }
@@ -592,11 +701,13 @@ function identifyTopRiskDrivers(quizAnswers: Record<string, any>, scores: Assess
 /**
  * Generate structured product recommendations
  * Uses explicit, deterministic logic matching Shopify handles.
+ * v7: Added recovery_sleeper persona handling with performance_set bundle preference.
  */
 export function generateProductRecommendations(
   quizAnswers: Record<string, any>,
   scores: AssessmentScores,
-  persona: SleepPersona
+  persona: SleepPersona,
+  personaCluster?: PersonaCluster
 ): ProductRecommendations {
   const painAreas = quizAnswers.painAreas || quizAnswers.painPoints || [];
   const roomBrightness = quizAnswers.roomBrightness || "";
@@ -654,10 +765,20 @@ export function generateProductRecommendations(
     recommended_bundle = "deep_sleep_set";
     bundleConfidence = 70;
   }
-  // Performance Set: Leo persona with multiple optimization goals
+  // Performance Set: Leo persona (optimizer or recovery_sleeper) with multiple optimization goals
   else if (persona === "leo" && sleepGoals.length >= 2) {
     recommended_bundle = "performance_set";
     bundleConfidence = 80;
+  }
+  // v7: Recovery sleeper gets performance_set by default unless alignment is critical
+  else if (personaCluster === "recovery_sleeper") {
+    if (scores.alignment_risk_score >= 50 && secondary_product === "knee_pillow") {
+      recommended_bundle = "alignment_set";
+      bundleConfidence = 75;
+    } else {
+      recommended_bundle = "performance_set";
+      bundleConfidence = 75;
+    }
   }
   
   // Calculate overall recommendation confidence
@@ -684,12 +805,14 @@ export function generateProductRecommendations(
     reasoning = "The ergonomic pillow is designed to support your specific sleep position and address the alignment needs identified in your assessment.";
   }
   
-  // Generate persona-specific reasoning
+  // Generate persona-specific reasoning (v7: added recovery_sleeper)
   let persona_reasoning = "";
   if (persona === "jason") {
     persona_reasoning = "As a Pain Sleeper, your physical comfort and alignment are the primary focus. This setup directly addresses your tension points and supports healthier spinal positioning throughout the night.";
   } else if (persona === "mila") {
     persona_reasoning = "As a Stress & Environment Sleeper, controlling environmental factors is key to your sleep quality. This recommendation creates optimal conditions for uninterrupted rest.";
+  } else if (personaCluster === "recovery_sleeper") {
+    persona_reasoning = "As a Recovery Sleeper, optimizing deep sleep and temperature regulation are essential for physical restoration. This setup supports consistent recovery and morning readiness for active lifestyles.";
   } else {
     persona_reasoning = "As a Sleep Optimizer, you're looking to maximize recovery and performance. This setup provides the foundation for measurable improvements in your sleep quality.";
   }
@@ -776,10 +899,12 @@ export function generateCoachPreview(
  */
 export function buildSleepAssessment(quizAnswers: Record<string, any>): SleepAssessment {
   const scores = calculateAssessmentScores(quizAnswers);
-  const persona = detectPersona(quizAnswers);
+  // v7: Pass scores to detectPersona for refined detection and module assignment
+  const persona = detectPersona(quizAnswers, scores);
   const sleepIdentity = generateSleepIdentity(quizAnswers, scores);
   const environmentFindings = generateEnvironmentFindings(quizAnswers, scores);
-  const productRecommendations = generateProductRecommendations(quizAnswers, scores, persona.guess);
+  // v7: Pass persona cluster for recovery_sleeper handling
+  const productRecommendations = generateProductRecommendations(quizAnswers, scores, persona.guess, persona.cluster);
   const coachPreview = generateCoachPreview(quizAnswers, persona.guess, scores);
   
   // Calculate priority flags for Klaviyo segmentation

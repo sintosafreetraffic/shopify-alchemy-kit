@@ -10,11 +10,11 @@ This event is sent after a user completes the Rise By Night Sleep Quiz. It conta
 
 | Property | Type | Description | Example Values |
 |----------|------|-------------|----------------|
-| `persona_cluster` | string | Primary persona classification | `pain_sleeper`, `stress_insomnia`, `optimizer` |
-| `persona_label` | string | Human-readable persona label | `"Pain Sleeper"`, `"Stress & Environment Sleeper"`, `"Sleep Optimizer"` |
+| `persona_cluster` | string | Primary persona classification | `pain_sleeper`, `stress_insomnia`, `optimizer`, `recovery_sleeper` |
+| `persona_label` | string | Human-readable persona label | `"Pain Sleeper"`, `"Stress & Environment Sleeper"`, `"Sleep Optimizer"`, `"Recovery Sleeper"` |
 | `persona_description` | string | Full persona description | `"A sleeper whose rest is shaped by physical tension..."` |
 | `persona_rationale` | string | Why this persona was assigned | `"Your responses indicate that neck tension and lower back discomfort..."` |
-| `recommended_modules` | array[int] | Coach module IDs for this persona | `[4, 10, 11]`, `[6, 9]`, `[7, 8, 10]` |
+| `recommended_modules` | array[int] | Coach module IDs for this persona | `[4, 10, 11]`, `[6, 9]`, `[7, 8, 10]`, `[7, 8, 10, 12]` |
 | `sleep_identity_label` | string | Sleep identity description | `"Side sleeper seeking alignment support"` |
 
 ---
@@ -74,6 +74,7 @@ For building flows, use this flat segmentation snapshot:
 - `pain_sleeper` → `"alignment"`
 - `stress_insomnia` → `"environment"`
 - `optimizer` → `"optimization"`
+- `recovery_sleeper` → `"recovery"` (v7: maps to leo legacy type)
 
 ---
 
@@ -162,6 +163,7 @@ In Klaviyo email templates, access these fields using:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v7 | 2025-01 | Added recovery_sleeper persona (4th persona), added Sleep Hygiene module (12), refined optimizer detection, cache expiration (30 days) |
 | v6 | 2025-01 | Added persona_cluster, persona_label, persona_description, persona_rationale, recommended_modules, persona_reasoning |
 | v5 | 2024-12 | Added structured assessment scores |
 | v4 | 2024-11 | Added product recommendations |

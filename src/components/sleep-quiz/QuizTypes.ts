@@ -41,14 +41,14 @@ export interface SleepScores {
 // Legacy persona types (backwards compatibility)
 export type LegacyPersona = "jason" | "mila" | "leo";
 
-// New persona system with clearer naming
-export type PersonaCluster = "pain_sleeper" | "stress_insomnia" | "optimizer";
+// New persona system with clearer naming (v7: added recovery_sleeper)
+export type PersonaCluster = "pain_sleeper" | "stress_insomnia" | "optimizer" | "recovery_sleeper";
 
 // Keep SleepPersona for backward compatibility
 export type SleepPersona = LegacyPersona;
 
-// Core need for Klaviyo segmentation
-export type CoreNeed = "alignment" | "environment" | "optimization";
+// Core need for Klaviyo segmentation (v7: added recovery)
+export type CoreNeed = "alignment" | "environment" | "optimization" | "recovery";
 
 // Persona definitions for frontend display
 export const PERSONA_DEFINITIONS: Record<PersonaCluster, {
@@ -75,9 +75,15 @@ export const PERSONA_DEFINITIONS: Record<PersonaCluster, {
     recommended_modules: [7, 8, 10],
     legacyType: "leo",
   },
+  recovery_sleeper: {
+    label: "Recovery Sleeper",
+    description: "A sleeper oriented toward physical restoration and training recovery. Temperature regulation, deep sleep optimization, and morning readiness support athletic and active lifestyles.",
+    recommended_modules: [7, 8, 10],
+    legacyType: "leo",
+  },
 };
 
-// Module definitions for display
+// Module definitions for display (v7: added module 12)
 export const MODULE_DEFINITIONS: Record<number, { name: string; description: string }> = {
   4: { name: "Alignment Fundamentals", description: "Core spinal alignment principles" },
   6: { name: "Environment Optimization", description: "Light, noise, and temperature control" },
@@ -86,13 +92,15 @@ export const MODULE_DEFINITIONS: Record<number, { name: string; description: str
   9: { name: "Evening Routine Reset", description: "Wind-down protocols for better sleep onset" },
   10: { name: "Morning Mobility", description: "Gentle morning movement practices" },
   11: { name: "Hip & Lower Body", description: "Lower body alignment techniques" },
+  12: { name: "Sleep Hygiene Foundations", description: "Daily habits that support consistent, higher-quality sleep" },
 };
 
-// Core need mapping helper
+// Core need mapping helper (v7: added recovery_sleeper)
 export const CORE_NEED_MAP: Record<PersonaCluster, CoreNeed> = {
   pain_sleeper: "alignment",
   stress_insomnia: "environment",
   optimizer: "optimization",
+  recovery_sleeper: "recovery",
 };
 
 export interface SleepIdentity {
