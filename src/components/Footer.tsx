@@ -1,6 +1,7 @@
 // Performance: Using OptimizedImage for lazy loading
-import { Mail, MapPin, Moon } from "lucide-react";
+import { Mail, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
+import moonIcon from "@/assets/moon-icon-blue.png";
 
 export const Footer = () => {
   return (
@@ -9,7 +10,7 @@ export const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand Column */}
           <div className="space-y-4">
-            <Moon className="w-12 h-12 text-primary" fill="currentColor" />
+            <img src={moonIcon} alt="Rise By Night" className="w-12 h-12 object-contain" />
             <p className="text-sm text-muted-foreground">
               Transform your sleep with the #1 rated ergonomic pillow. Scientifically proven to reduce neck pain and help you wake up refreshed every morning.
             </p>
