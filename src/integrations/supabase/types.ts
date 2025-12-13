@@ -721,63 +721,7 @@ export type Database = {
       }
     }
     Views: {
-      commissions_safe: {
-        Row: {
-          affiliate_id: string | null
-          amount: number | null
-          created_at: string | null
-          fraud_flag: boolean | null
-          fraud_reason: string | null
-          id: string | null
-          level: number | null
-          order_amount: number | null
-          order_id: string | null
-          referral_id: string | null
-          status: string | null
-        }
-        Insert: {
-          affiliate_id?: string | null
-          amount?: number | null
-          created_at?: string | null
-          fraud_flag?: boolean | null
-          fraud_reason?: string | null
-          id?: string | null
-          level?: number | null
-          order_amount?: number | null
-          order_id?: string | null
-          referral_id?: string | null
-          status?: string | null
-        }
-        Update: {
-          affiliate_id?: string | null
-          amount?: number | null
-          created_at?: string | null
-          fraud_flag?: boolean | null
-          fraud_reason?: string | null
-          id?: string | null
-          level?: number | null
-          order_amount?: number | null
-          order_id?: string | null
-          referral_id?: string | null
-          status?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "commissions_affiliate_id_fkey"
-            columns: ["affiliate_id"]
-            isOneToOne: false
-            referencedRelation: "affiliates"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "commissions_referral_id_fkey"
-            columns: ["referral_id"]
-            isOneToOne: false
-            referencedRelation: "referrals"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
       get_affiliate_commissions_safe: {
