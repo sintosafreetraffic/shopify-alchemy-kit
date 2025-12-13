@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { Header } from "./components/Header";
 import { Footer } from "./components/Footer";
 import { ScrollToTop } from "./components/ScrollToTop";
@@ -45,33 +45,44 @@ const AdminAffiliateResources = React.lazy(() => import("./pages/AdminAffiliateR
 
 const queryClient = new QueryClient();
 
-// Pinterest click ID capture utility
+// Helper to read cookie by name
+const getCookie = (name: string): string | null => {
+  const match = document.cookie.match(new RegExp(`(^| )${name}=([^;]+)`));
+  return match ? match[2] : null;
+};
+
+// Pinterest click ID capture utility - robust version
 const capturePinterestClickId = () => {
   if (typeof window === "undefined") return;
   
-  // Check if already captured this session
-  const sessionKey = "pinterest_epik_captured";
-  if (sessionStorage.getItem(sessionKey)) return;
+  // Skip if localStorage already has epik (idempotent)
+  if (localStorage.getItem("pinterest_epik")) return;
   
+  // Try URL param first
   const urlParams = new URLSearchParams(window.location.search);
-  const epik = urlParams.get("epik");
+  let epik = urlParams.get("epik");
+  
+  // Fallback: read from _epik cookie (Pinterest tag may set this)
+  if (!epik) {
+    epik = getCookie("_epik");
+  }
   
   if (epik) {
     // Save to localStorage
     localStorage.setItem("pinterest_epik", epik);
     
-    // Save to cookie (90 days expiry, Secure on HTTPS)
-    const expiryDate = new Date();
-    expiryDate.setDate(expiryDate.getDate() + 90);
-    const secure = window.location.protocol === "https:" ? "; Secure" : "";
-    document.cookie = `_epik=${epik}; path=/; expires=${expiryDate.toUTCString()}; SameSite=Lax${secure}`;
-    
-    // Mark as captured for this session (only after successful capture)
-    sessionStorage.setItem(sessionKey, "true");
+    // If epik came from URL, also write to cookie (90 days expiry, Secure on HTTPS)
+    if (urlParams.get("epik")) {
+      const expiryDate = new Date();
+      expiryDate.setDate(expiryDate.getDate() + 90);
+      const secure = window.location.protocol === "https:" ? "; Secure" : "";
+      document.cookie = `_epik=${epik}; path=/; expires=${expiryDate.toUTCString()}; SameSite=Lax${secure}`;
+    }
   }
 };
 
 const AppContent = () => {
+  const location = useLocation();
   const { isOpen, showTeaser, closePopup, openFromTeaser } = useEmailPopup({
     delay: 45000,
     showOnScroll: true,
@@ -80,10 +91,10 @@ const AppContent = () => {
     storageKey: "risebynight_email_popup_v1",
   });
 
-  // Capture Pinterest click ID on initial load (once per session)
+  // Capture Pinterest click ID on initial load AND when query string changes
   useEffect(() => {
     capturePinterestClickId();
-  }, []);
+  }, [location.search]);
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
