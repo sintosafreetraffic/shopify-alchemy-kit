@@ -132,6 +132,13 @@ export interface SleepIdentity {
   description: string;
 }
 
+// v9: Extended identity with risk/load scores
+export interface SleepIdentityV2 extends SleepIdentity {
+  sleep_posture_risk_level: "low" | "moderate" | "high";
+  environmental_stress_score: number;  // 0-100
+  recovery_load_score: number;         // 0-100
+}
+
 export interface AssessmentScores {
   alignment_risk_score: number;
   neck_support_score: number;
@@ -139,6 +146,11 @@ export interface AssessmentScores {
   environment_score: number;
   light_sensitivity_score: number;
   temperature_disruption_score: number;
+}
+
+// v9: Extended scores with energy potential
+export interface AssessmentScoresV2 extends AssessmentScores {
+  energy_potential_score: number; // 0-100, higher = more morning energy potential
 }
 
 export interface PersonaResult {
@@ -151,6 +163,16 @@ export interface PersonaResult {
   description: string;
   recommended_modules: number[];
   legacyType: LegacyPersona;
+  // v9: Confidence score
+  confidence?: number;       // 0-100, strength of persona signal
+}
+
+// v9: Module relevance weighting
+export interface ModuleRelevance {
+  module_id: number;
+  relevance_score: number; // 0-100
+  name: string;
+  description: string;
 }
 
 export interface EnvironmentFindings {
@@ -189,6 +211,9 @@ export interface SleepAssessment {
   alignment_priority: boolean;
   environment_priority: boolean;
   top_risk_drivers: string[];
+  // v9: Extended metrics (optional for backwards compat)
+  energy_potential_score?: number;
+  module_relevance?: ModuleRelevance[];
 }
 
 // ============ Legacy Types ============

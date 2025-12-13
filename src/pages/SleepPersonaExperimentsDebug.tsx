@@ -28,6 +28,8 @@ import {
   getAllAssignedVariants,
   getCoachHeroCopy,
   getQuizResultsHeroCopy,
+  getLpHeroCopy,
+  getLpSetupCopy,
   EXPERIMENT_REGISTRY,
   type ExperimentVariant,
 } from "@/experiments/personaExperiments";
@@ -293,6 +295,45 @@ const SleepPersonaExperimentsDebug = () => {
                         <p className="text-sm text-primary/80 italic">{quizCopy.intro}</p>
                       </div>
                     </div>
+
+                    {/* LP Hero Preview */}
+                    {(() => {
+                      const lpHeroCopy = getLpHeroCopy(cluster, def.label, "lp_hero_v1");
+                      const lpHeroVariant = assignVariant(cluster, "lp_hero_v1");
+                      return (
+                        <div className="p-4 rounded-lg bg-muted/30 border">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Eye className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">LP Hero (Variant {lpHeroVariant})</span>
+                            <Badge className={`text-xs ${VARIANT_COLORS[lpHeroVariant]}`}>{lpHeroVariant}</Badge>
+                          </div>
+                          <div className="space-y-1">
+                            <p className="font-semibold text-foreground">{lpHeroCopy.headline}</p>
+                            <p className="text-sm text-muted-foreground">{lpHeroCopy.subheadline}</p>
+                            <p className="text-sm text-primary/80 italic">{lpHeroCopy.tagline}</p>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* LP Setup Preview */}
+                    {(() => {
+                      const lpSetupCopy = getLpSetupCopy(cluster, "lp_setup_v1");
+                      const lpSetupVariant = assignVariant(cluster, "lp_setup_v1");
+                      return (
+                        <div className="p-4 rounded-lg bg-muted/30 border">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Eye className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">LP Setup (Variant {lpSetupVariant})</span>
+                            <Badge className={`text-xs ${VARIANT_COLORS[lpSetupVariant]}`}>{lpSetupVariant}</Badge>
+                          </div>
+                          <div className="space-y-1">
+                            <p className="font-semibold text-foreground">{lpSetupCopy.sectionTitle}</p>
+                            <p className="text-sm text-primary/80 italic">{lpSetupCopy.emphasis}</p>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </CardContent>
                 </Card>
               );
@@ -312,11 +353,21 @@ const SleepPersonaExperimentsDebug = () => {
   "persona_cluster": "pain_sleeper",
   "persona_label": "The Pain Sleeper",
   "core_need": "alignment",
+  "persona_confidence": 75,           // v9: Signal strength (0-100)
+  
+  // ===== v9: EXTENDED METRICS =====
+  "energy_potential_score": 68,       // Morning energy potential
+  "module_relevance": [               // Weighted module ordering
+    { "module_id": 4, "relevance_score": 85 },
+    { "module_id": 10, "relevance_score": 70 }
+  ],
   
   // ===== EXPERIMENT VARIANTS =====
   "persona_experiment_variants": {
-    "coach_hero_v1": "A",      // Assigned variant for coach hero
-    "quiz_results_hero_v1": "B" // Assigned variant for quiz results
+    "coach_hero_v1": "A",
+    "quiz_results_hero_v1": "B",
+    "lp_hero_v1": "A",        // v9: LP hero experiment
+    "lp_setup_v1": "B"        // v9: LP setup experiment
   },
   
   // ===== INTERNAL ONLY (do NOT use in generic emails) =====

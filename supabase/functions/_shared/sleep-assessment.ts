@@ -74,6 +74,17 @@ export interface SleepIdentity {
   description: string;
 }
 
+// v9: Extended identity metrics
+export interface SleepIdentityV2 {
+  position: "side" | "back" | "stomach" | "mixed";
+  label: string;
+  description: string;
+  // v9: New structured risk/load scores
+  sleep_posture_risk_level: "low" | "moderate" | "high";   // Deterministic posture risk
+  environmental_stress_score: number;  // 0-100, higher = more env stress
+  recovery_load_score: number;         // 0-100, higher = more recovery need
+}
+
 export interface AssessmentScores {
   alignment_risk_score: number;      // 0–100, higher = more risk
   neck_support_score: number;        // 0–100, higher = better support
@@ -81,6 +92,12 @@ export interface AssessmentScores {
   environment_score: number;         // 0–100, higher = better environment
   light_sensitivity_score: number;   // 0–100, higher = more affected by light
   temperature_disruption_score: number; // 0–100, higher = more disrupted by temp
+}
+
+// v9: Extended scores with new metrics
+export interface AssessmentScoresV2 extends AssessmentScores {
+  // v9: Early Morning Energy Score
+  energy_potential_score: number;    // 0-100, derived from pain + environment + optimization readiness
 }
 
 export interface PersonaResult {
@@ -93,6 +110,16 @@ export interface PersonaResult {
   description: string;
   recommended_modules: number[];
   legacyType: LegacyPersona;
+  // v9: Confidence score (0-100) based on weighted signal strength
+  confidence: number;
+}
+
+// v9: Module relevance weighting
+export interface ModuleRelevance {
+  module_id: number;
+  relevance_score: number; // 0-100
+  name: string;
+  description: string;
 }
 
 /**
@@ -199,6 +226,9 @@ export interface SleepAssessment {
   alignment_priority: boolean;
   environment_priority: boolean;
   top_risk_drivers: string[]; // Top 3 risk factors
+  // v9: Extended metrics
+  energy_potential_score?: number;     // 0-100, derived morning energy potential
+  module_relevance?: ModuleRelevance[]; // Weighted module ordering
 }
 
 // ============ PERSONA DETECTION ============
@@ -355,8 +385,20 @@ export function detectPersona(quizAnswers: Record<string, any>, scores?: Assessm
   let cluster: PersonaCluster;
   let rationale: string;
   
-  // Use clear decision logic with tie-breaking
+  // v9: Calculate persona confidence based on signal strength
   const maxScore = Math.max(painSleeperScore, stressInsomniaScore, optimizerScore, recoverySleeperScore);
+  const allScores = [painSleeperScore, stressInsomniaScore, optimizerScore, recoverySleeperScore].sort((a, b) => b - a);
+  const secondScore = allScores[1] || 0;
+  
+  // Confidence = how much the winner leads + signal strength
+  // Higher lead over second place = higher confidence
+  // More total signals = higher confidence (capped)
+  const leadMargin = maxScore - secondScore;
+  const signalStrength = Math.min(maxScore / 15, 1); // Normalize to 0-1, cap at 15 points
+  const leadConfidence = Math.min(leadMargin / 8, 1); // Normalize lead margin
+  const confidence = Math.round((signalStrength * 50 + leadConfidence * 50)); // 0-100
+  
+  // Use clear decision logic with tie-breaking
   
   if (painSleeperScore === maxScore && painSleeperScore > 0) {
     cluster = "pain_sleeper";
@@ -463,6 +505,7 @@ export function detectPersona(quizAnswers: Record<string, any>, scores?: Assessm
     description: definition.description,
     recommended_modules,
     legacyType: definition.legacyType,
+    confidence, // v9: Persona confidence score
   };
 }
 
@@ -924,6 +967,91 @@ export function generateCoachPreview(
   return { day_1_3, day_4_7, day_7_14 };
 }
 
+// ============ v9: ENERGY POTENTIAL SCORE ============
+
+/**
+ * Calculate Early Morning Energy Score
+ * 
+ * Derived from pain + environment + optimization readiness
+ * Used for benefit-led copy ("More morning ease")
+ * 
+ * Higher score = more morning energy potential
+ */
+function calculateEnergyPotentialScore(scores: AssessmentScores): number {
+  // Weights: pain/alignment (40%), environment (30%), stability/consistency (30%)
+  const painComponent = (100 - scores.alignment_risk_score) * 0.4;
+  const envComponent = scores.environment_score * 0.3;
+  const stabilityComponent = scores.sleep_stability_score * 0.3;
+  
+  return Math.round(painComponent + envComponent + stabilityComponent);
+}
+
+/**
+ * Calculate Module Relevance Scores
+ * 
+ * Weights each module based on persona and quiz signals
+ * Used for personalized module ordering
+ */
+function calculateModuleRelevance(
+  persona: PersonaResult,
+  scores: AssessmentScores,
+  quizAnswers: Record<string, any>
+): ModuleRelevance[] {
+  const painSeverity = quizAnswers.painSeverity ?? 5;
+  const painAreas = quizAnswers.painAreas || [];
+  const sleepTemperature = quizAnswers.sleepTemperature || "";
+  const roomBrightness = quizAnswers.roomBrightness || "";
+  
+  const relevanceScores: ModuleRelevance[] = [];
+  
+  for (const moduleId of persona.recommended_modules) {
+    const moduleDef = MODULE_DEFINITIONS[moduleId];
+    if (!moduleDef) continue;
+    
+    let relevance = 50; // Base relevance for recommended modules
+    
+    // Boost based on signals
+    switch (moduleId) {
+      case 4: // Alignment Fundamentals
+        if (painAreas.includes("neck") || painAreas.includes("upper_back")) relevance += 25;
+        if (painSeverity >= 5) relevance += 15;
+        break;
+      case 6: // Environment Optimization
+        if (roomBrightness === "bright") relevance += 25;
+        if (sleepTemperature === "hot" || sleepTemperature === "cold") relevance += 15;
+        break;
+      case 7: // Temperature Regulation
+        if (sleepTemperature === "hot" || sleepTemperature === "cold") relevance += 30;
+        break;
+      case 8: // Deep Sleep Enhancement
+        if (scores.sleep_stability_score < 60) relevance += 20;
+        break;
+      case 9: // Evening Routine Reset
+        if (scores.light_sensitivity_score >= 50) relevance += 20;
+        break;
+      case 10: // Morning Mobility
+        if (painAreas.length > 0) relevance += 20;
+        break;
+      case 11: // Hip & Lower Body
+        if (painAreas.includes("hips") || painAreas.includes("lower_back")) relevance += 30;
+        break;
+      case 12: // Sleep Hygiene Foundations
+        if (scores.sleep_stability_score < 70) relevance += 15;
+        break;
+    }
+    
+    relevanceScores.push({
+      module_id: moduleId,
+      relevance_score: Math.min(100, relevance),
+      name: moduleDef.name,
+      description: moduleDef.description,
+    });
+  }
+  
+  // Sort by relevance (descending)
+  return relevanceScores.sort((a, b) => b.relevance_score - a.relevance_score);
+}
+
 // ============ MAIN BUILDER ============
 
 /**
@@ -947,6 +1075,10 @@ export function buildSleepAssessment(quizAnswers: Record<string, any>): SleepAss
   // Identify top risk drivers
   const top_risk_drivers = identifyTopRiskDrivers(quizAnswers, scores);
   
+  // v9: Calculate extended metrics
+  const energy_potential_score = calculateEnergyPotentialScore(scores);
+  const module_relevance = calculateModuleRelevance(persona, scores, quizAnswers);
+  
   return {
     sleepIdentity,
     scores,
@@ -957,5 +1089,7 @@ export function buildSleepAssessment(quizAnswers: Record<string, any>): SleepAss
     alignment_priority,
     environment_priority,
     top_risk_drivers,
+    energy_potential_score,
+    module_relevance,
   };
 }

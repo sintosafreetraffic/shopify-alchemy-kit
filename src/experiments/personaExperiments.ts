@@ -63,6 +63,19 @@ export const EXPERIMENT_REGISTRY: Record<string, ExperimentConfig> = {
     description: "Quiz Results hero copy variants",
     active: true,
   },
+  // v9: Persona Landing Page experiments
+  lp_hero_v1: {
+    key: "lp_hero_v1",
+    variants: ["A", "B"],
+    description: "Persona Landing Page hero copy variants",
+    active: true,
+  },
+  lp_setup_v1: {
+    key: "lp_setup_v1",
+    variants: ["A", "B"],
+    description: "Persona Landing Page setup section variants",
+    active: true,
+  },
 };
 
 // ============ INTERNAL EVENT BUS ============
@@ -387,4 +400,263 @@ export function getQuizResultsHeroCopy(
     subheadline: variantCopy.subheadline,
     intro,
   };
+}
+
+// ============ v9: LANDING PAGE COPY VARIANTS ============
+
+/**
+ * Hero copy variants for Persona Landing Pages
+ * 
+ * NOTE: Only use persona_label for display.
+ * NEVER use internal human names in customer-facing copy.
+ */
+export const LP_HERO_COPY_VARIANTS: Record<ExperimentVariant, {
+  headlineTemplate: string; // Use {label} as placeholder
+  subheadline: string;
+  personaSpecific: Record<PersonaCluster, { tagline: string }>;
+}> = {
+  A: {
+    // Control - label-focused
+    headlineTemplate: "Your {label} Plan",
+    subheadline: "Personalized strategies backed by sleep science",
+    personaSpecific: {
+      pain_sleeper: { tagline: "Alignment strategies for better mornings" },
+      stress_insomnia: { tagline: "Environment optimization for deeper rest" },
+      optimizer: { tagline: "Data-driven improvements for peak performance" },
+      recovery_sleeper: { tagline: "Recovery protocols for physical restoration" },
+    },
+  },
+  B: {
+    // Benefit-led variant
+    headlineTemplate: "Your Path to Better Sleep",
+    subheadline: "Built for your unique sleep profile",
+    personaSpecific: {
+      pain_sleeper: { tagline: "Reduce morning stiffness and tension" },
+      stress_insomnia: { tagline: "Create calm conditions for uninterrupted rest" },
+      optimizer: { tagline: "Unlock measurable improvements in sleep quality" },
+      recovery_sleeper: { tagline: "Accelerate physical restoration and readiness" },
+    },
+  },
+  C: {
+    // Future placeholder
+    headlineTemplate: "Your {label} Plan",
+    subheadline: "Personalized strategies backed by sleep science",
+    personaSpecific: {
+      pain_sleeper: { tagline: "Alignment strategies for better mornings" },
+      stress_insomnia: { tagline: "Environment optimization for deeper rest" },
+      optimizer: { tagline: "Data-driven improvements for peak performance" },
+      recovery_sleeper: { tagline: "Recovery protocols for physical restoration" },
+    },
+  },
+};
+
+/**
+ * Setup section copy variants for Persona Landing Pages
+ */
+export const LP_SETUP_COPY_VARIANTS: Record<ExperimentVariant, {
+  sectionTitle: string;
+  personaSpecific: Record<PersonaCluster, { emphasis: string }>;
+}> = {
+  A: {
+    sectionTitle: "Recommended Setup",
+    personaSpecific: {
+      pain_sleeper: { emphasis: "Complete alignment support" },
+      stress_insomnia: { emphasis: "Optimal environment control" },
+      optimizer: { emphasis: "Performance-focused setup" },
+      recovery_sleeper: { emphasis: "Recovery-optimized configuration" },
+    },
+  },
+  B: {
+    sectionTitle: "Your Personalized Setup",
+    personaSpecific: {
+      pain_sleeper: { emphasis: "Targeted comfort for pain relief" },
+      stress_insomnia: { emphasis: "Calming environment essentials" },
+      optimizer: { emphasis: "Tools for measurable improvement" },
+      recovery_sleeper: { emphasis: "Gear for maximum restoration" },
+    },
+  },
+  C: {
+    sectionTitle: "Recommended Setup",
+    personaSpecific: {
+      pain_sleeper: { emphasis: "Complete alignment support" },
+      stress_insomnia: { emphasis: "Optimal environment control" },
+      optimizer: { emphasis: "Performance-focused setup" },
+      recovery_sleeper: { emphasis: "Recovery-optimized configuration" },
+    },
+  },
+};
+
+/**
+ * Helper to get personalized copy for Landing Page Hero
+ */
+export function getLpHeroCopy(
+  cluster: PersonaCluster | null | undefined,
+  personaLabel: string,
+  experimentKey: string = "lp_hero_v1"
+): { headline: string; subheadline: string; tagline: string } {
+  const variant = assignVariant(cluster, experimentKey);
+  const variantCopy = LP_HERO_COPY_VARIANTS[variant];
+  
+  const headline = variantCopy.headlineTemplate.replace("{label}", personaLabel);
+  const tagline = cluster 
+    ? variantCopy.personaSpecific[cluster]?.tagline || ""
+    : "";
+  
+  return {
+    headline,
+    subheadline: variantCopy.subheadline,
+    tagline,
+  };
+}
+
+/**
+ * Helper to get personalized copy for Landing Page Setup section
+ */
+export function getLpSetupCopy(
+  cluster: PersonaCluster | null | undefined,
+  experimentKey: string = "lp_setup_v1"
+): { sectionTitle: string; emphasis: string } {
+  const variant = assignVariant(cluster, experimentKey);
+  const variantCopy = LP_SETUP_COPY_VARIANTS[variant];
+  
+  const emphasis = cluster 
+    ? variantCopy.personaSpecific[cluster]?.emphasis || ""
+    : "";
+  
+  return {
+    sectionTitle: variantCopy.sectionTitle,
+    emphasis,
+  };
+}
+
+// ============ v9: SERVER-SIDE ANALYTICS LOGGING ============
+
+/**
+ * Log persona experiment exposure to server
+ * 
+ * Sends event to persona-analytics edge function for server-side logging.
+ * No PIIs are logged - only anonymized persona + experiment data.
+ */
+export async function logPersonaExperimentExposure(
+  experimentKey: string,
+  variant: ExperimentVariant,
+  cluster: PersonaCluster,
+  personaConfidence?: number
+): Promise<void> {
+  try {
+    const sessionId = getOrCreateSessionId();
+    const coreNeed = getPersonaCoreNeed(cluster);
+    
+    await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/persona-analytics`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "",
+      },
+      body: JSON.stringify({
+        events: [{
+          event_type: "persona_experiment_exposure",
+          experiment_key: experimentKey,
+          variant,
+          persona_cluster: cluster,
+          core_need: coreNeed || "unknown",
+          persona_confidence: personaConfidence,
+        }],
+        session_id: sessionId,
+      }),
+    });
+  } catch (e) {
+    // Silent fail - analytics should never break UX
+    if (import.meta.env.DEV) {
+      console.warn("[PersonaExperiments] Failed to log experiment exposure:", e);
+    }
+  }
+}
+
+/**
+ * Log persona landing page exposure to server
+ */
+export async function logPersonaLpExposure(
+  cluster: PersonaCluster,
+  isCachedAssessment: boolean,
+  personaConfidence?: number
+): Promise<void> {
+  try {
+    const sessionId = getOrCreateSessionId();
+    const coreNeed = getPersonaCoreNeed(cluster);
+    
+    await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/persona-analytics`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "",
+      },
+      body: JSON.stringify({
+        events: [{
+          event_type: "persona_lp_exposure",
+          persona_cluster: cluster,
+          core_need: coreNeed || "unknown",
+          is_cached_assessment: isCachedAssessment,
+          referrer: typeof document !== "undefined" ? document.referrer?.substring(0, 500) : undefined,
+          persona_confidence: personaConfidence,
+        }],
+        session_id: sessionId,
+      }),
+    });
+  } catch (e) {
+    if (import.meta.env.DEV) {
+      console.warn("[PersonaExperiments] Failed to log LP exposure:", e);
+    }
+  }
+}
+
+/**
+ * Log coach module interaction to server
+ */
+export async function logModuleInteraction(
+  moduleId: number,
+  interactionType: "view" | "start" | "complete" | "skip",
+  cluster: PersonaCluster,
+  relevanceScore?: number
+): Promise<void> {
+  try {
+    const sessionId = getOrCreateSessionId();
+    
+    await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/persona-analytics`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "",
+      },
+      body: JSON.stringify({
+        events: [{
+          event_type: "coach_module_interaction",
+          module_id: moduleId,
+          interaction_type: interactionType,
+          persona_cluster: cluster,
+          relevance_score: relevanceScore,
+        }],
+        session_id: sessionId,
+      }),
+    });
+  } catch (e) {
+    if (import.meta.env.DEV) {
+      console.warn("[PersonaExperiments] Failed to log module interaction:", e);
+    }
+  }
+}
+
+// Session ID helper (anonymous, no PII)
+function getOrCreateSessionId(): string {
+  if (typeof window === "undefined") return "server";
+  
+  const storageKey = "rbn_persona_session_id";
+  let sessionId = sessionStorage.getItem(storageKey);
+  
+  if (!sessionId) {
+    sessionId = `${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
+    sessionStorage.setItem(storageKey, sessionId);
+  }
+  
+  return sessionId;
 }
