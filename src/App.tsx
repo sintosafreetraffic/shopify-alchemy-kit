@@ -64,10 +64,10 @@ const capturePinterestClickId = () => {
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + 90);
     document.cookie = `_epik=${epik}; path=/; expires=${expiryDate.toUTCString()}; SameSite=Lax`;
+    
+    // Mark as captured for this session (only after successful capture)
+    sessionStorage.setItem(sessionKey, "true");
   }
-  
-  // Mark as captured for this session
-  sessionStorage.setItem(sessionKey, "true");
 };
 
 const AppContent = () => {
