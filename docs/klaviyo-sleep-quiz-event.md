@@ -8,11 +8,15 @@ This event is sent after a user completes the Rise By Night Sleep Quiz. It conta
 
 ## Persona Fields (v7)
 
+> **IMPORTANT**: Human names (Jason, Mila, Leo, Riley) are **INTERNAL ONLY** for segmentation/ops.  
+> Customer-facing UI and default email templates should use cluster labels (Pain Sleeper, etc.)  
+> The `persona_name` field is provided for advanced Klaviyo use cases only.
+
 | Property | Type | Description | Example Values |
 |----------|------|-------------|----------------|
 | `persona_cluster` | string | Primary persona classification | `pain_sleeper`, `stress_insomnia`, `optimizer`, `recovery_sleeper` |
-| `persona_name` | string | Human name for the persona | `"Jason"`, `"Mila"`, `"Leo"`, `"Riley"` |
-| `persona_label` | string | Human-readable persona label | `"The Pain Sleeper"`, `"The Stress & Environment Sleeper"`, `"The Sleep Optimizer"`, `"The Recovery Sleeper"` |
+| `persona_name` | string | **INTERNAL ONLY** - Human name for segmentation | `"Jason"`, `"Mila"`, `"Leo"`, `"Riley"` |
+| `persona_label` | string | Customer-facing persona label | `"Pain Sleeper"`, `"Stress & Environment Sleeper"`, `"Sleep Optimizer"`, `"Recovery Sleeper"` |
 | `persona_legacy_type` | string | Legacy type for backwards compat | `"jason"`, `"mila"`, `"leo"` |
 | `core_need` | string | Primary need for segmentation | `"alignment"`, `"environment"`, `"optimization"`, `"recovery"` |
 | `persona_description` | string | Full persona description | `"A sleeper whose rest is shaped by physical tension..."` |
@@ -24,12 +28,14 @@ This event is sent after a user completes the Rise By Night Sleep Quiz. It conta
 
 ## Persona Mapping (v7)
 
-| Cluster Key | Human Name | Label | Legacy Type | Core Need | Default Modules |
-|-------------|------------|-------|-------------|-----------|-----------------|
-| `pain_sleeper` | Jason | The Pain Sleeper | `jason` | `alignment` | [4, 10, 11] |
-| `stress_insomnia` | Mila | The Stress & Environment Sleeper | `mila` | `environment` | [6, 9, 12] |
-| `optimizer` | Leo | The Sleep Optimizer | `leo` | `optimization` | [7, 8, 10, 12] |
-| `recovery_sleeper` | Riley | The Recovery Sleeper | `leo` | `recovery` | [7, 8, 10] |
+> **Note**: Human names are for internal segmentation only. Use `persona_label` in customer-facing content.
+
+| Cluster Key | Human Name (Internal) | Label (Customer-Facing) | Legacy Type | Core Need | Default Modules |
+|-------------|----------------------|-------------------------|-------------|-----------|-----------------|
+| `pain_sleeper` | Jason | Pain Sleeper | `jason` | `alignment` | [4, 10, 11] |
+| `stress_insomnia` | Mila | Stress & Environment Sleeper | `mila` | `environment` | [6, 9, 12] |
+| `optimizer` | Leo | Sleep Optimizer | `leo` | `optimization` | [7, 8, 10, 12] |
+| `recovery_sleeper` | Riley | Recovery Sleeper | `leo` | `recovery` | [7, 8, 10] |
 
 ---
 
@@ -194,16 +200,19 @@ Module 12 is automatically added for:
 
 ## Liquid Template Usage
 
+> **IMPORTANT**: Do NOT use `{{ event.persona_name }}` (Jason/Mila/Leo/Riley) directly in generic email templates.  
+> Use `{{ event.persona_label }}` for customer-facing content. Human names are for internal segmentation only.
+
 In Klaviyo email templates, access these fields using:
 
 ```liquid
 {% if event.persona_cluster == "pain_sleeper" %}
-  <h2>Hey {{ event.persona_name }} — Your Pain Sleeper Plan</h2>
+  <h2>Your Pain Sleeper Plan</h2>
   <p>{{ event.persona_rationale }}</p>
 {% endif %}
 
 {% if event.persona_cluster == "recovery_sleeper" %}
-  <h2>Hey {{ event.persona_name }} — Your Recovery Plan</h2>
+  <h2>Your Recovery Plan</h2>
   <p>Optimize your {{ event.core_need }} with these focus areas:</p>
 {% endif %}
 

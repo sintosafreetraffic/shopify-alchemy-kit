@@ -50,7 +50,12 @@ export type SleepPersona = LegacyPersona;
 // Core need for Klaviyo segmentation (v7: added recovery)
 export type CoreNeed = "alignment" | "environment" | "optimization" | "recovery";
 
-// Human persona names for user-facing display
+/**
+ * Human persona names - INTERNAL ONLY for Klaviyo segmentation
+ * 
+ * These names should NOT be displayed in customer-facing UI.
+ * Use cluster labels (Pain Sleeper, Stress & Environment Sleeper, etc.) for UI.
+ */
 export const PERSONA_HUMAN_NAMES: Record<PersonaCluster, string> = {
   pain_sleeper: "Jason",
   stress_insomnia: "Mila",
@@ -58,10 +63,15 @@ export const PERSONA_HUMAN_NAMES: Record<PersonaCluster, string> = {
   recovery_sleeper: "Riley",
 };
 
-// Persona definitions for frontend display
+/**
+ * Persona definitions for frontend display
+ * 
+ * NOTE: The `name` field is INTERNAL ONLY (Jason, Mila, Leo, Riley).
+ * Customer-facing surfaces should use `label` (Pain Sleeper, etc.)
+ */
 export const PERSONA_DEFINITIONS: Record<PersonaCluster, {
-  name: string;           // Human name (Jason, Mila, Leo, Riley)
-  label: string;          // Descriptive label
+  name: string;           // INTERNAL ONLY - Human name for Klaviyo segmentation
+  label: string;          // Customer-facing label (e.g., "Pain Sleeper")
   description: string;
   recommended_modules: number[];
   legacyType: LegacyPersona;
@@ -132,12 +142,12 @@ export interface AssessmentScores {
 }
 
 export interface PersonaResult {
-  guess: SleepPersona;
+  guess: SleepPersona;         // jason | mila | leo (legacy)
   rationale: string;
   // Enhanced persona fields
   cluster: PersonaCluster;
-  name: string;             // Human name (Jason, Mila, Leo, Riley)
-  label: string;            // Descriptive label (The Pain Sleeper, etc.)
+  name?: string;            // INTERNAL ONLY - Human name for Klaviyo (optional)
+  label: string;            // Customer-facing label (e.g., "Pain Sleeper")
   description: string;
   recommended_modules: number[];
   legacyType: LegacyPersona;
