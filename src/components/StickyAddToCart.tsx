@@ -170,10 +170,16 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
 
   const selectedOption = bundles[selectedBundle];
 
-  if (isCartOpen || isMobileMenuOpen) return null;
+  // Keep mounted but hide visually to prevent layout shifts
+  // Uses transform + opacity instead of unmounting
+  const shouldHide = isCartOpen || isMobileMenuOpen;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[100] bg-background/95 backdrop-blur-md border-t shadow-lg">
+    <div 
+      className={`fixed bottom-0 left-0 right-0 z-[100] bg-background/95 backdrop-blur-md border-t shadow-lg transition-all duration-200 ${
+        shouldHide ? "translate-y-full opacity-0 pointer-events-none" : "translate-y-0 opacity-100"
+      }`}
+    >
       <div className="container mx-auto px-4 py-3">
         {!product ? (
           <div className="text-center text-sm text-muted-foreground">Loading...</div>
