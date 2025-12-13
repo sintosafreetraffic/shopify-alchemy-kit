@@ -10,7 +10,7 @@ import { ScrollToTop } from "./components/ScrollToTop";
 import { UrgencyBanner } from "./components/UrgencyBanner";
 import { EmailPopup } from "./components/EmailPopup";
 import { useEmailPopup } from "./hooks/useEmailPopup";
-import { useHeaderHeight } from "./hooks/useHeaderHeight";
+
 import { FullPageLoader } from "./components/FullPageLoader";
 
 // Eagerly loaded pages (core shopping experience)
@@ -84,7 +84,6 @@ const capturePinterestClickId = () => {
 
 const AppContent = () => {
   const location = useLocation();
-  const headerHeight = useHeaderHeight();
   const { isOpen, showTeaser, closePopup, openFromTeaser } = useEmailPopup({
     delay: 45000,
     showOnScroll: true,
@@ -98,12 +97,14 @@ const AppContent = () => {
     capturePinterestClickId();
   }, [location.search]);
 
+  // Fixed spacer height: 36px banner + ~56px header = 92px (mobile ~77px)
+  // Using CSS classes instead of dynamic JS measurement to prevent CLS
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <UrgencyBanner />
       <Header />
-      {/* Spacer reserves space for fixed header - height measured dynamically */}
-      <div style={{ height: headerHeight }} aria-hidden="true" />
+      {/* Fixed spacer - prevents CLS from dynamic height changes */}
+      <div className="h-[77px] md:h-[92px]" aria-hidden="true" />
       <main className="flex-1">
         <Suspense fallback={<FullPageLoader />}>
           <Routes>
