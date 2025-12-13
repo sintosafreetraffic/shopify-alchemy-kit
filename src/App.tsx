@@ -10,6 +10,7 @@ import { ScrollToTop } from "./components/ScrollToTop";
 import { UrgencyBanner } from "./components/UrgencyBanner";
 import { EmailPopup } from "./components/EmailPopup";
 import { useEmailPopup } from "./hooks/useEmailPopup";
+import { useHeaderHeight } from "./hooks/useHeaderHeight";
 import { FullPageLoader } from "./components/FullPageLoader";
 
 // Eagerly loaded pages (core shopping experience)
@@ -83,6 +84,7 @@ const capturePinterestClickId = () => {
 
 const AppContent = () => {
   const location = useLocation();
+  const headerHeight = useHeaderHeight();
   const { isOpen, showTeaser, closePopup, openFromTeaser } = useEmailPopup({
     delay: 45000,
     showOnScroll: true,
@@ -100,7 +102,9 @@ const AppContent = () => {
     <div className="flex flex-col min-h-screen bg-background">
       <UrgencyBanner />
       <Header />
-      <main className="flex-1 pt-[calc(36px+56px)] md:pt-[calc(36px+64px)]">
+      {/* Spacer reserves space for fixed header - height measured dynamically */}
+      <div style={{ height: headerHeight }} aria-hidden="true" />
+      <main className="flex-1">
         <Suspense fallback={<FullPageLoader />}>
           <Routes>
             {/* Core shopping pages - eagerly loaded */}
