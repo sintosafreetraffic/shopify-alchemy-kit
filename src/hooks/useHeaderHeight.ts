@@ -1,39 +1,59 @@
-import { useState, useLayoutEffect, useCallback } from "react";
+import { useState, useLayoutEffect, useRef } from "react";
 
 /**
  * Measures the combined height of fixed header elements (banner + header).
- * Uses useLayoutEffect to prevent CLS by measuring before paint.
+ * Uses ResizeObserver for efficient, jank-free updates.
+ * RAF-throttled to collapse multiple triggers into one measurement per frame.
  */
 export function useHeaderHeight() {
   const [height, setHeight] = useState(0);
-
-  const measure = useCallback(() => {
-    // Measure urgency banner (fixed at top)
-    const banner = document.querySelector('[data-header-banner]');
-    const header = document.querySelector('[data-header-main]');
-    
-    const bannerHeight = banner?.getBoundingClientRect().height ?? 0;
-    const headerHeight = header?.getBoundingClientRect().height ?? 0;
-    
-    setHeight(bannerHeight + headerHeight);
-  }, []);
+  const rafId = useRef<number | null>(null);
+  const lastHeight = useRef(0);
 
   useLayoutEffect(() => {
-    // Measure immediately
-    measure();
+    const banner = document.querySelector('[data-header-banner]') as HTMLElement | null;
+    const header = document.querySelector('[data-header-main]') as HTMLElement | null;
 
-    // Re-measure on resize (handles mobile text wrapping)
-    window.addEventListener("resize", measure);
-    
-    // Also observe for DOM changes (in case banner hides/shows)
-    const observer = new MutationObserver(measure);
-    observer.observe(document.body, { childList: true, subtree: true, attributes: true });
-
-    return () => {
-      window.removeEventListener("resize", measure);
-      observer.disconnect();
+    // RAF-throttled measurement - collapses multiple triggers into one per frame
+    const scheduleMeasure = () => {
+      if (rafId.current !== null) return; // Already scheduled
+      
+      rafId.current = requestAnimationFrame(() => {
+        rafId.current = null;
+        
+        const bannerHeight = banner?.offsetHeight ?? 0;
+        const headerHeight = header?.offsetHeight ?? 0;
+        const total = bannerHeight + headerHeight;
+        
+        // Only update state if height actually changed
+        if (total !== lastHeight.current) {
+          lastHeight.current = total;
+          setHeight(total);
+        }
+      });
     };
-  }, [measure]);
+
+    // Initial measurement (synchronous for first paint)
+    const bannerHeight = banner?.offsetHeight ?? 0;
+    const headerHeight = header?.offsetHeight ?? 0;
+    const initialTotal = bannerHeight + headerHeight;
+    lastHeight.current = initialTotal;
+    setHeight(initialTotal);
+
+    // ResizeObserver for efficient size change detection
+    const resizeObserver = new ResizeObserver(scheduleMeasure);
+    
+    if (banner) resizeObserver.observe(banner);
+    if (header) resizeObserver.observe(header);
+
+    // Cleanup
+    return () => {
+      resizeObserver.disconnect();
+      if (rafId.current !== null) {
+        cancelAnimationFrame(rafId.current);
+      }
+    };
+  }, []);
 
   return height;
 }
