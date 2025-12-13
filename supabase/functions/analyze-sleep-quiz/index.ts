@@ -24,7 +24,15 @@ import {
   sendKlaviyoEvent,
 } from "../_shared/sleep-sync.ts";
 import { SleepSyncSource } from "../_shared/types.ts";
-import { buildSleepAssessment, type SleepAssessment } from "../_shared/sleep-assessment.ts";
+import { buildSleepAssessment, PERSONA_HUMAN_NAMES, type SleepAssessment, type PersonaCluster, type CoreNeed } from "../_shared/sleep-assessment.ts";
+
+// Core need mapping for Klaviyo
+const CORE_NEED_MAP: Record<PersonaCluster, CoreNeed> = {
+  pain_sleeper: "alignment",
+  stress_insomnia: "environment",
+  optimizer: "optimization",
+  recovery_sleeper: "recovery",
+};
 
 // Input validation schema - supports both legacy and new 22-question format
 const answersSchema = z.object({
@@ -340,11 +348,14 @@ Deno.serve(async (req) => {
           sleep_identity_label: structuredAssessment.sleepIdentity.label,
           sleep_identity_position: structuredAssessment.sleepIdentity.position,
           
-          // ===== NEW: Enhanced Persona Fields for Segmentation =====
+          // ===== v7: Enhanced Persona Fields for Segmentation =====
           persona_cluster: structuredAssessment.persona.cluster,
+          persona_name: structuredAssessment.persona.name || PERSONA_HUMAN_NAMES[structuredAssessment.persona.cluster],
           persona_label: structuredAssessment.persona.label,
           persona_description: structuredAssessment.persona.description,
           persona_rationale: structuredAssessment.persona.rationale,
+          persona_legacy_type: structuredAssessment.persona.legacyType,
+          core_need: CORE_NEED_MAP[structuredAssessment.persona.cluster],
           recommended_modules: structuredAssessment.persona.recommended_modules,
           
           // Legacy persona field (backwards compatibility)
@@ -371,7 +382,7 @@ Deno.serve(async (req) => {
           quiz_completed_at: new Date().toISOString(),
           has_sleep_coach_access: false, // Will be updated after profile creation check
           results_url: resultsUrl,
-          sleep_quiz_version: "v6",
+          sleep_quiz_version: "v7",
           
           // Legacy fields for backwards compatibility
           assessment: analysis.assessment,
