@@ -1,6 +1,5 @@
 // Performance: Heavy sections with carousels/videos are lazy-loaded
 import { Suspense, lazy } from "react";
-import { UrgencyBanner } from "@/components/UrgencyBanner";
 import { Guarantee } from "@/components/Guarantee";
 import { StickyAddToCart } from "@/components/StickyAddToCart";
 import { SleepMaskHero } from "@/components/SleepMaskHero";
@@ -28,7 +27,6 @@ const SectionFallback = () => (
 const SleepMaskProduct = () => {
   return (
     <div className="min-h-screen bg-background">
-      <UrgencyBanner />
       <SleepMaskHero />
       <SleepMaskFeatures />
       <SleepMaskBenefits />
