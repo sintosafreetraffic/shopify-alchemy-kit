@@ -15,14 +15,18 @@ export const UrgencyBanner = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Keep mounted but hide visually to prevent CLS when cart opens
-  // Uses opacity + pointer-events instead of unmounting
+  // Mobile: sticky (in-flow, no compositor layer)
+  // Desktop: fixed (with hide on cart open)
   return (
     <div
       data-header-banner
-      className={`fixed top-0 left-0 right-0 h-9 bg-black text-white text-center text-sm font-medium z-[80] flex items-center justify-center will-change-[opacity] transition-opacity duration-200 ${
-        isCartOpen ? "opacity-0 pointer-events-none" : "opacity-100"
-      }`}
+      className={`
+        h-9 bg-black text-white text-center text-sm font-medium flex items-center justify-center
+        sticky top-0 z-[80]
+        md:fixed md:left-0 md:right-0
+        ${isCartOpen ? "md:opacity-0 md:pointer-events-none" : "md:opacity-100"}
+        md:transition-opacity md:duration-200
+      `}
     >
       <div className="container mx-auto px-4">{messages[currentIndex]}</div>
     </div>
