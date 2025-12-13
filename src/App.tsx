@@ -97,14 +97,14 @@ const AppContent = () => {
     capturePinterestClickId();
   }, [location.search]);
 
-  // Fixed spacer height: 36px banner + ~56px header = 92px (mobile ~77px)
-  // Using CSS classes instead of dynamic JS measurement to prevent CLS
+  // Mobile: no spacer needed (banner + header are sticky, in-flow)
+  // Desktop: spacer needed for fixed header (36px banner + ~56px header = 92px)
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <UrgencyBanner />
       <Header />
-      {/* Fixed spacer - prevents CLS from dynamic height changes */}
-      <div className="h-[77px] md:h-[92px]" aria-hidden="true" />
+      {/* Desktop-only spacer for fixed header - mobile uses sticky (in-flow) */}
+      <div className="hidden md:block h-[92px]" aria-hidden="true" />
       <main className="flex-1">
         <Suspense fallback={<FullPageLoader />}>
           <Routes>
