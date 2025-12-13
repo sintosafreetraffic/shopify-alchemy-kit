@@ -1,8 +1,8 @@
 # Klaviyo Sleep Quiz Event Reference
 
-## Event: `RBN_SleepQuiz_Completed` (v8)
+## Event: `RBN_SleepQuiz_Completed` (v10)
 
-This event is sent after a user completes the Rise By Night Sleep Quiz. It contains comprehensive persona, segmentation, product recommendation, and A/B experiment variant data for email flow automation.
+This event is sent after a user completes the Rise By Night Sleep Quiz. It contains comprehensive persona, segmentation, product recommendation, coach readiness, and A/B experiment variant data for email flow automation.
 
 ---
 
@@ -336,11 +336,145 @@ Use these URLs in email templates to link users to their personalized landing pa
 
 ---
 
+## Coach Readiness (v10)
+
+Coach readiness indicates how prepared a user is to benefit from guided coaching.
+
+### Coach Readiness Fields
+
+| Property | Type | Description | Example Values |
+|----------|------|-------------|----------------|
+| `coach_readiness_score` | number | 0-100, readiness level | `35`, `65`, `85` |
+| `coach_readiness_label` | string | Human-readable label | `"Early Stage"`, `"Developing"`, `"Ready"` |
+| `coach_readiness_rationale` | string | Supportive explanation | `"You're in the early stage of building a stable sleep foundation..."` |
+
+### Readiness Level Mapping
+
+| Score Range | Label | Description |
+|-------------|-------|-------------|
+| 0-39 | Early Stage | Building foundational habits |
+| 40-69 | Developing | Making good progress, refining habits |
+| 70-100 | Ready | Strong foundation, optimization mode |
+
+### Liquid Template Usage
+
+```liquid
+{% if event.coach_readiness_label == "Ready" %}
+  <p>You've built a strong sleep foundation! Let's optimize further.</p>
+{% elsif event.coach_readiness_label == "Developing" %}
+  <p>Your sleep patterns are developing nicely. Keep building on your progress.</p>
+{% else %}
+  <p>Welcome! Let's start building your sleep foundation together.</p>
+{% endif %}
+```
+
+---
+
+## Persona Confidence (v10)
+
+Persona confidence indicates how clearly the user fits a specific persona pattern.
+
+### Confidence Fields
+
+| Property | Type | Description | Example Values |
+|----------|------|-------------|----------------|
+| `persona_confidence` | number | 0-100, signal strength | `45`, `68`, `85` |
+| `persona_confidence_reasoning` | string | Short explanation | `"Clear pain signals from neck and lower back..."` |
+
+### Confidence Level Mapping
+
+| Score Range | Level | Messaging Recommendation |
+|-------------|-------|--------------------------|
+| 0-49 | Low | Use neutral, assessment-focused language |
+| 50-74 | Medium | Standard persona messaging is appropriate |
+| 75-100 | High | Strong persona-specific messaging |
+
+### Best Practices for Low Confidence
+
+When `persona_confidence < 50`, avoid strong persona-positioning language like "You're a Pain Sleeper" and instead use softer framing like:
+
+- "Your current sleep pattern suggests..."
+- "Based on your responses, we see a pattern of..."
+- "Your closest match right now is..."
+
+### Liquid Template Usage
+
+```liquid
+{% if event.persona_confidence >= 50 %}
+  <h2>Your {{ event.persona_label }} Plan</h2>
+  <p>{{ event.persona_description }}</p>
+{% else %}
+  <h2>Your Personalized Sleep Plan</h2>
+  <p>Based on your responses, we've identified patterns that suggest 
+     {{ event.persona_label | downcase }} tendencies.</p>
+{% endif %}
+```
+
+---
+
+## Product Fit Score (v10)
+
+Enhanced product recommendation with fit scoring.
+
+### Product Fit Fields
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `product_fit_score` | number | 0-100, how well products match needs |
+| `product_fit_reasoning` | string | Explanation of fit score |
+| `confidence_weighted_recommendation` | boolean | True if confidence >= 50 |
+
+### Liquid Usage
+
+```liquid
+{% if event.product_fit_score >= 80 %}
+  <p class="highlight">Excellent match for your sleep profile!</p>
+{% elsif event.product_fit_score >= 60 %}
+  <p>Good match based on your assessment.</p>
+{% endif %}
+```
+
+---
+
+## Best Practices (v10)
+
+### General Guidelines
+
+1. **Always use `persona_label`** for customer-facing content, never `persona_name`
+2. **Check `persona_confidence`** before using strong persona positioning
+3. **Use `coach_readiness_label`** to tailor coaching-related messaging
+4. **Include `persona_landing_page_url`** for personalized post-quiz journeys
+
+### Conditional Messaging Pattern
+
+```liquid
+{# Good: Confidence-aware persona messaging #}
+{% if event.persona_confidence >= 50 %}
+  {% if event.persona_cluster == "pain_sleeper" %}
+    <h2>Your Pain Sleeper Alignment Plan</h2>
+  {% elsif event.persona_cluster == "stress_insomnia" %}
+    <h2>Your Environment & Calm Plan</h2>
+  {% endif %}
+{% else %}
+  <h2>Your Personalized Sleep Plan</h2>
+{% endif %}
+```
+
+### Revenue Attribution Integration
+
+The event includes fields for full-funnel attribution:
+- `persona_cluster` and `persona_confidence` for persona-based segmentation
+- `coach_readiness_score` for coaching readiness segmentation
+- `persona_experiment_variants` for A/B test analysis
+- Use these in conjunction with purchase events for complete attribution
+
+---
+
 ## Version History
 
 | Version | Date | Changes |
 |---------|------|---------|
-| v10 | 2025-01 | Added persona_confidence (0-100) with confidence_reasoning, coach_readiness_score with label/rationale, product_fit_score with reasoning, shouldPersonalizePersonaMessaging() helper, revenue attribution hooks, persona_lp_hero_v1 experiment. |
+| v10 | 2025-01 | Added persona_confidence (0-100) with confidence_reasoning, coach_readiness_score with label/rationale, product_fit_score with reasoning, shouldPersonalizePersonaMessaging() helper, revenue attribution hooks, persona_lp_hero_v1 experiment. Full documentation of best practices for confidence-aware messaging. |
 | v9 | 2025-01 | Added persona landing page URLs for email templates. New route `/persona/:cluster` with URL slug mapping. |
 | v8 | 2025-01 | Added persona_experiment_variants for A/B testing infrastructure. Deterministic variant assignment per persona × experiment. |
 | v7 | 2025-01 | Added persona_name (Jason/Mila/Leo/Riley), persona_legacy_type, core_need fields. Added recovery_sleeper (Riley). Added Sleep Hygiene module (12). Refined optimizer detection with guardrails. Cache expiration (30 days). |
