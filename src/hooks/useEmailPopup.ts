@@ -80,7 +80,7 @@ export const useEmailPopup = (options: UseEmailPopupOptions = {}) => {
       }
     };
 
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, [showOnScroll, scrollThreshold, openPopup, isDismissed, hasBeenShown]);
 
