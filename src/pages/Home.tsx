@@ -89,7 +89,7 @@ export default function Home() {
       </section>
 
       {/* Hero Section */}
-      <section className="relative py-20 md:py-32 bg-gradient-to-b from-background via-primary/5 to-background">
+      <section className="relative py-12 md:py-20 bg-gradient-to-b from-background via-primary/5 to-background">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center space-y-8">
 
