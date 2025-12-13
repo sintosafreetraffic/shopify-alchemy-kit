@@ -4,6 +4,7 @@ import { createStorefrontCheckout } from '@/lib/shopify';
 import type { ShopifyProduct } from '@/lib/shopify';
 import { trackAddToCart, trackCheckout } from '@/lib/pinterest';
 import { trackAddedToCart as trackKlaviyoAddToCart } from '@/lib/klaviyo';
+import { trackRevenueAttribution } from '@/lib/personaAnalytics';
 
 export interface CartItem {
   product: ShopifyProduct;
@@ -75,6 +76,15 @@ export const useCartStore = create<CartStore>()(
           imageUrl: item.product.node.images?.edges?.[0]?.node?.url || "",
         });
         
+        // Track revenue attribution with persona context
+        trackRevenueAttribution("add_to_cart", {
+          id: item.product.node.id,
+          title: item.product.node.title,
+          price: parseFloat(item.price.amount),
+          currency: item.price.currencyCode,
+          quantity: item.quantity,
+        });
+        
         if (existingItem) {
           set({
             items: items.map(i =>
@@ -124,6 +134,18 @@ export const useCartStore = create<CartStore>()(
         try {
           // Track Pinterest Checkout event (no value/product data - just signals checkout initiated)
           trackCheckout();
+          
+          // Track revenue attribution for checkout initiation
+          const totalValue = items.reduce((sum, item) => sum + parseFloat(item.price.amount) * item.quantity, 0);
+          if (items.length > 0) {
+            trackRevenueAttribution("begin_checkout", {
+              id: items[0].product.node.id,
+              title: `Checkout (${items.length} items)`,
+              price: totalValue,
+              currency: items[0].price.currencyCode,
+              quantity: items.reduce((sum, item) => sum + item.quantity, 0),
+            });
+          }
 
           // Calculate pillow items only (exclude sleep mask for free gift calculation)
           const pillowItems = items.filter(item => 

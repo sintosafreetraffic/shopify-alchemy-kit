@@ -50,6 +50,12 @@ export type SleepPersona = LegacyPersona;
 // Core need for Klaviyo segmentation (v7: added recovery)
 export type CoreNeed = "alignment" | "environment" | "optimization" | "recovery";
 
+// v10: Persona confidence levels
+export type PersonaConfidenceLevel = "low" | "medium" | "high";
+
+// v10: Coach readiness labels
+export type CoachReadinessLabel = "Early Stage" | "Developing" | "Ready";
+
 /**
  * Human persona names - INTERNAL ONLY for Klaviyo segmentation
  * 
@@ -62,6 +68,33 @@ export const PERSONA_HUMAN_NAMES: Record<PersonaCluster, string> = {
   optimizer: "Leo",
   recovery_sleeper: "Riley",
 };
+
+/**
+ * Get persona confidence level from score
+ */
+export function getPersonaConfidenceLevel(confidence: number): PersonaConfidenceLevel {
+  if (confidence < 50) return "low";
+  if (confidence < 75) return "medium";
+  return "high";
+}
+
+/**
+ * Determine if persona-specific messaging should be shown
+ * Returns false when confidence < 50 (use neutral messaging instead)
+ */
+export function shouldPersonalizePersonaMessaging(confidence: number | null | undefined): boolean {
+  if (confidence === null || confidence === undefined) return false;
+  return confidence >= 50;
+}
+
+/**
+ * Get coach readiness label from score
+ */
+export function getCoachReadinessLabel(score: number): CoachReadinessLabel {
+  if (score < 40) return "Early Stage";
+  if (score < 70) return "Developing";
+  return "Ready";
+}
 
 /**
  * Persona definitions for frontend display
@@ -165,6 +198,8 @@ export interface PersonaResult {
   legacyType: LegacyPersona;
   // v9: Confidence score
   confidence?: number;       // 0-100, strength of persona signal
+  // v10: Confidence reasoning (1-2 sentences)
+  confidence_reasoning?: string;
 }
 
 // v9: Module relevance weighting
@@ -192,6 +227,10 @@ export interface ProductRecommendations {
   recommendation_confidence: number; // 0–100
   fit_explanation: string; // "Why this setup fits your sleep identity"
   persona_reasoning: string; // Why this recommendation matches the persona
+  // v10: Enhanced product fit scoring
+  product_fit_score?: number;      // 0-100, how well products match user needs
+  product_fit_reasoning?: string;   // Explanation of fit score
+  confidence_weighted_recommendation?: boolean; // True if confidence >= 50
 }
 
 export interface CoachPreview {
@@ -214,6 +253,10 @@ export interface SleepAssessment {
   // v9: Extended metrics (optional for backwards compat)
   energy_potential_score?: number;
   module_relevance?: ModuleRelevance[];
+  // v10: Coach readiness (optional for backwards compat)
+  coach_readiness_score?: number;        // 0-100
+  coach_readiness_label?: CoachReadinessLabel;
+  coach_readiness_rationale?: string;
 }
 
 // ============ Legacy Types ============

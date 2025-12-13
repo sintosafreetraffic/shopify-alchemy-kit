@@ -76,6 +76,13 @@ export const EXPERIMENT_REGISTRY: Record<string, ExperimentConfig> = {
     description: "Persona Landing Page setup section variants",
     active: true,
   },
+  // v10: Persona LP hero A/B test
+  persona_lp_hero_v1: {
+    key: "persona_lp_hero_v1",
+    variants: ["A", "B"],
+    description: "Persona Landing Page hero A/B test for conversion optimization",
+    active: true,
+  },
 };
 
 // ============ INTERNAL EVENT BUS ============

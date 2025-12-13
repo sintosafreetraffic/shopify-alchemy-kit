@@ -340,6 +340,7 @@ Use these URLs in email templates to link users to their personalized landing pa
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v10 | 2025-01 | Added persona_confidence (0-100) with confidence_reasoning, coach_readiness_score with label/rationale, product_fit_score with reasoning, shouldPersonalizePersonaMessaging() helper, revenue attribution hooks, persona_lp_hero_v1 experiment. |
 | v9 | 2025-01 | Added persona landing page URLs for email templates. New route `/persona/:cluster` with URL slug mapping. |
 | v8 | 2025-01 | Added persona_experiment_variants for A/B testing infrastructure. Deterministic variant assignment per persona × experiment. |
 | v7 | 2025-01 | Added persona_name (Jason/Mila/Leo/Riley), persona_legacy_type, core_need fields. Added recovery_sleeper (Riley). Added Sleep Hygiene module (12). Refined optimizer detection with guardrails. Cache expiration (30 days). |
