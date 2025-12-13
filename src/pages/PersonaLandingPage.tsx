@@ -31,13 +31,16 @@ import {
   Zap,
   Dumbbell,
   Brain,
+  Compass,
 } from "lucide-react";
 import { 
   type PersonaCluster, 
   type SleepAssessment,
+  type CoachReadinessLabel,
   PERSONA_DEFINITIONS, 
   MODULE_DEFINITIONS,
   CORE_NEED_MAP,
+  getCoachReadinessLabel,
 } from "@/components/sleep-quiz";
 import { getCachedQuizResults } from "@/components/sleep-quiz/QuizCache";
 import {
@@ -327,6 +330,51 @@ export default function PersonaLandingPage() {
             </p>
           </Card>
         </section>
+
+        {/* Section: Where You Are Now (Coach Readiness) - only show with real data */}
+        {isFromCache && assessment.coach_readiness_score !== undefined && (
+          <section className="space-y-5">
+            <div className="flex items-center gap-4">
+              <div className="w-11 h-11 rounded-xl bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center flex-shrink-0">
+                <Compass className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <h2 className="font-semibold text-lg text-foreground">Where You Are Now</h2>
+                <p className="text-sm text-muted-foreground">Your current foundation for coaching</p>
+              </div>
+            </div>
+
+            <Card className={`p-5 ${
+              getCoachReadinessLabel(assessment.coach_readiness_score) === "Ready" 
+                ? "border-emerald-200/50 dark:border-emerald-800/30 bg-emerald-50/30 dark:bg-emerald-950/20"
+                : getCoachReadinessLabel(assessment.coach_readiness_score) === "Developing"
+                  ? "border-blue-200/50 dark:border-blue-800/30 bg-blue-50/30 dark:bg-blue-950/20"
+                  : "border-amber-200/50 dark:border-amber-800/30 bg-amber-50/30 dark:bg-amber-950/20"
+            }`}>
+              <div className="flex items-center gap-3 mb-3">
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  getCoachReadinessLabel(assessment.coach_readiness_score) === "Ready"
+                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400"
+                    : getCoachReadinessLabel(assessment.coach_readiness_score) === "Developing"
+                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400"
+                      : "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400"
+                }`}>
+                  {assessment.coach_readiness_label || getCoachReadinessLabel(assessment.coach_readiness_score)}
+                </span>
+              </div>
+              <p className="text-sm text-foreground/85 leading-relaxed">
+                {assessment.coach_readiness_rationale || 
+                  (getCoachReadinessLabel(assessment.coach_readiness_score) === "Ready"
+                    ? "You have a strong sleep foundation. The coach can help you optimize and maintain your excellent sleep habits."
+                    : getCoachReadinessLabel(assessment.coach_readiness_score) === "Developing"
+                      ? "Your sleep patterns are developing nicely. The coach can help you refine and build on your current progress."
+                      : "You're in the early stage of building a stable sleep foundation. The coach will focus on establishing core habits first."
+                  )
+                }
+              </p>
+            </Card>
+          </section>
+        )}
 
         {/* Section: 14-Night Plan */}
         <section className="space-y-5">

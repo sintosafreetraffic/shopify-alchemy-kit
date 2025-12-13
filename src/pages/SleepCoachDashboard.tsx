@@ -28,6 +28,7 @@ import { ShareProgressModal } from "@/components/sleep-coach/ShareProgressModal"
 import { SleepSetupForm } from "@/components/sleep-coach/SleepSetupForm";
 import { SleepSyncOverview } from "@/components/sleep-coach/SleepSyncOverview";
 import { PersonaCard } from "@/components/sleep-coach/PersonaCard";
+import { CoachReadinessCard } from "@/components/sleep-coach/CoachReadinessCard";
 // Import TimeRange type directly for type safety (not lazy-loaded)
 import type { TimeRange } from "@/components/sleep-coach/SleepProgressChart";
 
@@ -545,13 +546,30 @@ const SleepCoachDashboard = () => {
                     const description = (data.profile.sleep_assessment as any)?.persona?.description;
                     
                     return (
-                      <PersonaCard
-                        cluster={cluster}
-                        label={label}
-                        description={description}
-                        recommendedModules={modules}
-                        rationale={rationale}
-                      />
+                      <>
+                        <PersonaCard
+                          cluster={cluster}
+                          label={label}
+                          description={description}
+                          recommendedModules={modules}
+                          rationale={rationale}
+                        />
+                        
+                        {/* Coach Readiness Card - v10 */}
+                        {(() => {
+                          const assessment = data.profile.sleep_assessment as any;
+                          if (assessment?.coach_readiness_score !== undefined) {
+                            return (
+                              <CoachReadinessCard
+                                score={assessment.coach_readiness_score}
+                                label={assessment.coach_readiness_label}
+                                rationale={assessment.coach_readiness_rationale}
+                              />
+                            );
+                          }
+                          return null;
+                        })()}
+                      </>
                     );
                   })()}
 

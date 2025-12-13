@@ -41,6 +41,8 @@ import {
   MODULE_DEFINITIONS,
   deriveDetectedIssues,
   convertToIssuePresentation,
+  getPersonaConfidenceLevel,
+  shouldPersonalizePersonaMessaging,
 } from "@/components/sleep-quiz";
 import { CLUSTER_TO_URL_SLUG } from "@/data/personaLandingMocks";
 
@@ -264,10 +266,35 @@ const QuizResults = memo(function QuizResults({
             <div className="w-11 h-11 rounded-xl bg-violet-50 dark:bg-violet-950/40 flex items-center justify-center flex-shrink-0">
               <Brain className="w-5 h-5 text-violet-600 dark:text-violet-400" />
             </div>
-            <div>
-              <h2 className="font-semibold text-lg text-foreground">Your Sleep Persona</h2>
+            <div className="flex-1">
+              <div className="flex items-center justify-between">
+                <h2 className="font-semibold text-lg text-foreground">
+                  {shouldPersonalizePersonaMessaging(assessment.persona.confidence) 
+                    ? "Your Sleep Persona" 
+                    : "Current Sleep Pattern"}
+                </h2>
+                {/* Subtle persona confidence indicator */}
+                {assessment.persona.confidence !== undefined && (
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${
+                    getPersonaConfidenceLevel(assessment.persona.confidence) === 'high' 
+                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400'
+                      : getPersonaConfidenceLevel(assessment.persona.confidence) === 'medium'
+                        ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400'
+                        : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                  }`}>
+                    {getPersonaConfidenceLevel(assessment.persona.confidence) === 'high' 
+                      ? 'High match' 
+                      : getPersonaConfidenceLevel(assessment.persona.confidence) === 'medium'
+                        ? 'Good match'
+                        : 'Closest match'}
+                  </span>
+                )}
+              </div>
               <p className="text-sm text-primary font-medium">
-                {assessment.persona.label || PERSONA_DEFINITIONS[assessment.persona.cluster as PersonaCluster]?.label}
+                {shouldPersonalizePersonaMessaging(assessment.persona.confidence)
+                  ? (assessment.persona.label || PERSONA_DEFINITIONS[assessment.persona.cluster as PersonaCluster]?.label)
+                  : `Closest match: ${assessment.persona.label || PERSONA_DEFINITIONS[assessment.persona.cluster as PersonaCluster]?.label}`
+                }
               </p>
             </div>
           </div>
