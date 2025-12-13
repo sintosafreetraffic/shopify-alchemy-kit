@@ -31,11 +31,35 @@ async function sha256(message: string): Promise<string> {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+// Session guard key for enhanced match
+const ENHANCED_MATCH_SESSION_KEY = 'pinterest_enhanced_match_set';
+
+// Check if enhanced match was already set this session
+function wasEnhancedMatchSet(): boolean {
+  if (typeof window === 'undefined') return true;
+  return sessionStorage.getItem(ENHANCED_MATCH_SESSION_KEY) === 'true';
+}
+
+// Mark enhanced match as set for this session
+function markEnhancedMatchSet(): void {
+  if (typeof window !== 'undefined') {
+    sessionStorage.setItem(ENHANCED_MATCH_SESSION_KEY, 'true');
+  }
+}
+
 // Set enhanced match data (call when user email is known)
+// Includes session guard to avoid duplicate calls
 export async function setEnhancedMatch(email?: string) {
   if (typeof window !== 'undefined' && window.pintrk && email) {
+    // Skip if already set this session
+    if (wasEnhancedMatchSet()) {
+      console.log('[Pinterest] Enhanced match already set this session, skipping');
+      return;
+    }
+    
     const hashedEmail = await sha256(email);
     window.pintrk('set', { em: hashedEmail });
+    markEnhancedMatchSet();
     console.log('[Pinterest] Enhanced match set');
   }
 }

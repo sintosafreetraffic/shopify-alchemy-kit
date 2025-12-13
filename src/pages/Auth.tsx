@@ -8,6 +8,7 @@ import { toast } from "@/hooks/use-toast";
 import { Moon, ShoppingBag, Users, AlertCircle } from "lucide-react";
 import logo from "@/assets/moon-logo-yellow-transparent.png";
 import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator";
+import { setEnhancedMatch } from "@/lib/pinterest";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -62,6 +63,9 @@ const Auth = () => {
 
         if (error) throw error;
 
+        // Set Pinterest enhanced match on signup
+        await setEnhancedMatch(email);
+
         toast({
           title: "Success!",
           description: "Please check your email to verify your account",
@@ -76,6 +80,9 @@ const Auth = () => {
         });
 
         if (error) throw error;
+
+        // Set Pinterest enhanced match on login
+        await setEnhancedMatch(email);
 
         toast({
           title: "Welcome back!",

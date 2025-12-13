@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useCartStore } from "@/stores/cartStore";
 import { fetchProducts, ShopifyProduct } from "@/lib/shopify";
 import { trackQuizStarted } from "@/lib/klaviyo";
+import { setEnhancedMatch } from "@/lib/pinterest";
 import { supabase } from "@/integrations/supabase/client";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import {
@@ -253,6 +254,9 @@ const SleepQuiz = () => {
           });
         } catch (e) { console.warn("Klaviyo enrichment failed:", e); }
       }
+
+      // Set Pinterest enhanced match with user email
+      await setEnhancedMatch(email.trim());
 
       if (analysisResult.profileCreated) {
         toast.success("Sleep Coach profile created!");
