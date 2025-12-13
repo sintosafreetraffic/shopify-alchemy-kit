@@ -14,20 +14,18 @@ export const Header = () => {
   const isMobile = useIsMobile();
   const { isMobileMenuOpen, setMobileMenuOpen } = useUIStore();
 
-  // Desktop only: hide/show on scroll
+  // Mobile: always visible (no transform animations to prevent GPU glitches)
+  // Desktop: hide/show on scroll
   const shouldHide = !isMobile && !isVisible;
 
-  // Mobile: sticky (in-flow, no compositor layer, always visible)
-  // Desktop: fixed with hide/show animation
   return (
     <header 
       data-header-main
-      className={`
-        border-b bg-background z-[75]
-        sticky top-[36px]
-        md:fixed md:top-[36px] md:left-0 md:right-0
-        ${!isMobile ? `transition-transform duration-300 ease-out ${shouldHide ? "-translate-y-[calc(100%+36px)]" : "translate-y-0"}` : ''}
-      `}
+      className={`fixed top-[36px] left-0 right-0 z-[75] border-b bg-background ${
+        isMobile 
+          ? '' // Mobile: no transitions, always visible
+          : `transition-transform duration-300 ease-out ${shouldHide ? "-translate-y-[calc(100%+36px)]" : "translate-y-0"}`
+      }`}
     >
       <div className="container mx-auto px-4 py-2 relative flex md:grid md:grid-cols-3 items-center">
         {/* Mobile Menu Button - Absolute Left on Mobile */}
