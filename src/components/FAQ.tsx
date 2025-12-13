@@ -34,7 +34,7 @@ const faqs = [
 
 export const FAQ = () => {
   return (
-    <section className="py-6 md:py-8 bg-primary/5">
+    <section className="py-6 md:py-8 bg-primary/5" style={{ contain: 'layout style' }}>
       <div className="container mx-auto px-4 max-w-4xl">
         <div className="text-center mb-6 md:mb-12">
           <h2 className="text-2xl md:text-4xl font-bold mb-2 md:mb-4">Frequently Asked Questions</h2>
@@ -46,7 +46,7 @@ export const FAQ = () => {
             <AccordionItem 
               key={index} 
               value={`item-${index}`}
-              className="bg-background rounded-lg border px-6"
+              className="bg-background rounded-lg border px-6 will-change-auto"
             >
               <AccordionTrigger className="text-left hover:no-underline py-5">
                 <span className="font-semibold">{faq.question}</span>

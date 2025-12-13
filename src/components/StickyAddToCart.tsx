@@ -176,9 +176,10 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
 
   return (
     <div 
-      className={`fixed bottom-0 left-0 right-0 z-[100] bg-background border-t shadow-lg will-change-[transform,opacity] transition-transform transition-opacity duration-200 ${
+      className={`fixed bottom-0 left-0 right-0 z-[100] bg-background border-t shadow-lg transition-all duration-200 ${
         shouldHide ? "translate-y-full opacity-0 pointer-events-none" : "translate-y-0 opacity-100"
       }`}
+      style={{ contain: 'layout', willChange: 'transform, opacity' }}
     >
       <div className="container mx-auto px-4 py-3">
         {!product ? (
