@@ -15,7 +15,7 @@ export const Header = () => {
   return (
     <header 
       data-header-main
-      className={`fixed top-[36px] left-0 right-0 z-[75] border-b bg-background transition-transform duration-300 ease-in-out ${
+      className={`fixed top-[36px] left-0 right-0 z-[75] border-b bg-background will-change-transform transition-transform duration-300 ease-out ${
         !isVisible ? "-translate-y-[calc(100%+36px)]" : "translate-y-0"
       }`}
     >
