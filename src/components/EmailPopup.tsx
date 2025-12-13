@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { setEnhancedMatch, trackLead } from "@/lib/pinterest";
 import OptimizedImage from "@/components/OptimizedImage";
 import logo from "@/assets/risebynight-logo-official.png";
-import moonIcon from "@/assets/moon-icon-popup.webp";
+import moonIcon from "@/assets/moon-icon-blue.png";
 
 interface EmailPopupProps {
   isOpen: boolean;
