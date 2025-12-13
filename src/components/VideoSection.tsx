@@ -180,6 +180,10 @@ export const VideoSection = () => {
   const [isModalBuffering, setIsModalBuffering] = useState(false);
   const [modalHasStarted, setModalHasStarted] = useState(false);
   const { ref: sectionRef, isInView: sectionInView } = useInView<HTMLElement>({ threshold: 0.1 });
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  
+  // ISOLATION STEP: Temporarily remove VideoSection from DOM on mobile to diagnose scroll glitch
+  if (isMobile) return null;
   
   // Reset modal state when closing
   useEffect(() => {
