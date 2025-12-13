@@ -5,6 +5,26 @@ const SHOPIFY_STORE_PERMANENT_DOMAIN = 'lovable-project-swlbs.myshopify.com';
 const SHOPIFY_STOREFRONT_URL = `https://${SHOPIFY_STORE_PERMANENT_DOMAIN}/api/${SHOPIFY_API_VERSION}/graphql.json`;
 const SHOPIFY_STOREFRONT_TOKEN = 'e40ec4b0f10582a9b6b921efb4e65bf8';
 
+// Retrieve Pinterest click ID from localStorage or cookie
+function getPinterestClickId(): string | null {
+  if (typeof window === 'undefined') return null;
+  
+  // Try localStorage first
+  const fromStorage = localStorage.getItem('pinterest_epik');
+  if (fromStorage) return fromStorage;
+  
+  // Fallback to cookie
+  const cookies = document.cookie.split(';');
+  for (const cookie of cookies) {
+    const [name, value] = cookie.trim().split('=');
+    if (name === '_epik' && value) {
+      return decodeURIComponent(value);
+    }
+  }
+  
+  return null;
+}
+
 export interface ShopifyProduct {
   node: {
     id: string;
@@ -328,6 +348,13 @@ export async function createStorefrontCheckout(
 
     const url = new URL(cart.checkoutUrl);
     url.searchParams.set('channel', 'online_store');
+    
+    // Append Pinterest click ID (epik) if available for attribution
+    const epik = getPinterestClickId();
+    if (epik) {
+      url.searchParams.set('epik', epik);
+    }
+    
     const checkoutUrl = url.toString();
     return checkoutUrl;
   } catch (error) {
