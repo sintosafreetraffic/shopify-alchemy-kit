@@ -4,12 +4,13 @@
  * Displays the user's sleep persona with label, description, rationale, and recommended modules.
  * Uses calm, Scandinavian aesthetic matching the brand tone.
  * 
+ * v7: Added recovery_sleeper persona support with teal color scheme.
  * Updated to read from stored profile persona fields as single source of truth.
  */
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Heart, Moon, Zap, Sparkles, ChevronRight } from "lucide-react";
+import { Heart, Moon, Zap, Sparkles, ChevronRight, Dumbbell } from "lucide-react";
 import { Link } from "react-router-dom";
 import { type PersonaCluster, PERSONA_DEFINITIONS, MODULE_DEFINITIONS } from "@/components/sleep-quiz/QuizTypes";
 
@@ -22,14 +23,15 @@ interface PersonaCardProps {
   showModuleLinks?: boolean;
 }
 
-// Icon mapping for personas
+// Icon mapping for personas (v7: added recovery_sleeper)
 const PERSONA_ICONS: Record<PersonaCluster, typeof Heart> = {
   pain_sleeper: Heart,
   stress_insomnia: Moon,
   optimizer: Zap,
+  recovery_sleeper: Dumbbell,
 };
 
-// Color mapping for personas (calm, neutral palette)
+// Color mapping for personas (calm, neutral palette) - v7: added recovery_sleeper with teal
 const PERSONA_COLORS: Record<PersonaCluster, { 
   bg: string; 
   iconBg: string; 
@@ -53,6 +55,12 @@ const PERSONA_COLORS: Record<PersonaCluster, {
     iconBg: "bg-emerald-100 dark:bg-emerald-900/50",
     text: "text-emerald-600 dark:text-emerald-400",
     border: "border-emerald-200/50 dark:border-emerald-800/30",
+  },
+  recovery_sleeper: {
+    bg: "from-teal-50/50 via-background to-background dark:from-teal-950/20",
+    iconBg: "bg-teal-100 dark:bg-teal-900/50",
+    text: "text-teal-600 dark:text-teal-400",
+    border: "border-teal-200/50 dark:border-teal-800/30",
   },
 };
 
