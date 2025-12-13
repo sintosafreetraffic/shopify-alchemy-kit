@@ -15,12 +15,14 @@ export const UrgencyBanner = () => {
     return () => clearInterval(interval);
   }, []);
 
-  if (isCartOpen) return null;
-
+  // Keep mounted but hide visually to prevent CLS when cart opens
+  // Uses opacity + pointer-events instead of unmounting
   return (
     <div 
       data-header-banner
-      className="fixed top-0 left-0 right-0 bg-black text-white py-2 text-center text-sm font-medium z-[80]"
+      className={`fixed top-0 left-0 right-0 bg-black text-white py-2 text-center text-sm font-medium z-[80] transition-opacity duration-200 ${
+        isCartOpen ? "opacity-0 pointer-events-none" : "opacity-100"
+      }`}
     >
       <div className="container mx-auto px-4 transition-all duration-500">{messages[currentIndex]}</div>
     </div>
