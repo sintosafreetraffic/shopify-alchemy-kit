@@ -912,7 +912,15 @@ export async function callSleepPlanAI(
   userContext: string,
   planType: string = "initial",
   profileSnapshot?: ProfileSnapshot,
-  logsSnapshot?: LogsSnapshot
+  logsSnapshot?: LogsSnapshot,
+  metricsContext?: {
+    spineScoreSummary: string;
+    riskDriversSummary: string;
+    coachReadinessLabel: string;
+    personalizationIntensity: string;
+    refreshReason?: string;
+    personaCluster?: string;
+  }
 ): Promise<{
   weeklyPlan: any;
   encouragement: string;
@@ -920,6 +928,11 @@ export async function callSleepPlanAI(
   pdfs: string[];
   todayActions: any[];
   spineScore: number;
+  // Enhanced v2 fields
+  planHeadline?: string;
+  whyThisPlan?: string;
+  spineScoreHint?: string;
+  riskFocus?: string;
 }> {
   const apiKey = Deno.env.get("OPENAI_API_KEY");
   
@@ -933,24 +946,64 @@ export async function callSleepPlanAI(
     ? buildSleepPlanContext(profileSnapshot, logsSnapshot, planType)
     : userContext;
 
-  const systemPrompt = `You are Rise by Night's AI Sleep Coach. Create a personalized 7-day sleep improvement plan.
+  // Build metrics section for AI prompt
+  const metricsSection = metricsContext ? `
+=== DETERMINISTIC METRICS (DO NOT RECALCULATE) ===
+Spine Health: ${metricsContext.spineScoreSummary}
+Risk Focus: ${metricsContext.riskDriversSummary}
+Coach Readiness: ${metricsContext.coachReadinessLabel}
+Personalization Level: ${metricsContext.personalizationIntensity}
+${metricsContext.personaCluster ? `Persona: ${metricsContext.personaCluster}` : ''}
+${metricsContext.refreshReason && metricsContext.refreshReason !== 'manual' ? `
+Refresh Reason: ${metricsContext.refreshReason}
+${metricsContext.refreshReason === 'trend_worsening' || metricsContext.refreshReason === 'pain_increased' ? 
+'- TONE: Extra supportive. Break steps into smaller wins. Acknowledge struggles gently.' :
+metricsContext.refreshReason === 'expired' || metricsContext.refreshReason === 'stale' ? 
+'- TONE: Fresh start. Encourage continuation of progress.' :
+'- TONE: Standard maintenance.'}` : ''}
 
-Your goal is to help users improve their sleep quality through:
-1. Proper pillow positioning and sleep posture tailored to THEIR sleep position
-2. Evening wind-down routines appropriate for their stress level
-3. Morning stretching to reduce stiffness targeting their specific pain points
-4. Temperature and environment optimization based on their preferences
+CRITICAL: The spineScore field in your response will be REPLACED with the deterministic value.
+Your spineScoreHint should EXPLAIN what the score means in human terms, NOT recalculate it.
+` : '';
+
+  const systemPrompt = `You are Rise by Night's AI Sleep Coach. Create a personalized 7-day sleep improvement plan.
 
 ${BRAND_GUIDELINES}
 
-CRITICAL: You MUST read and follow ALL hard constraints in the user context. 
-Do NOT contradict the profile data. Do NOT assume products they don't own.
+CRITICAL BRAND GUARDRAILS:
+- NEVER use medical language: no "treat", "cure", "diagnose", "chronic condition", "therapy"
+- NEVER make promises: no "guaranteed", "fixed", "permanent", "eliminated"  
+- USE comfort language: "supports", "may help", "can improve", "designed for"
+- TONE: Calm, supportive, science-backed, Scandinavian minimalism
+
+FOCUS AREA KEYS (use these exact strings for focusAreas):
+- "alignment_support" - Pillow positioning, spinal alignment
+- "temperature_consistency" - Cooling/warming strategies
+- "wake_up_routine" - Morning mobility, energizing start
+- "wind_down_routine" - Evening relaxation, sleep onset
+- "pain_management" - Targeted comfort strategies
+- "sleep_hygiene" - Daily habits for better sleep
+- "environment_optimization" - Light, noise, comfort
+- "consistency_building" - Sustainable sleep patterns
+
+EFFORT LEVELS for tasks:
+- "low" = 2-5 minutes, easy to complete
+- "medium" = 5-15 minutes, requires some focus
+
+PERSONALIZATION INTENSITY:
+${metricsContext?.personalizationIntensity === 'deep' ? 
+'You have extensive data. Be highly specific - reference exact sleep position, pain areas, and owned products.' :
+metricsContext?.personalizationIntensity === 'moderate' ?
+'You have good data. Be reasonably specific about their sleep position and main concerns.' :
+metricsContext?.personalizationIntensity === 'light' ?
+'You have limited data. Be generally helpful, keep product references generic.' :
+'You have minimal data. Provide general guidance, encourage completing the sleep assessment.'}
 
 ${planType === 'weekly_update' ? 'This is a weekly update. If improving, celebrate. If declining, offer gentle adjustments.' : ''}
 
 Create specific, actionable tasks. Morning tasks should take 5-10 minutes. Evening tasks should be relaxing pre-sleep activities.`;
 
-  console.log(`[AI Brain] Sleep Plan - Model: gpt-4o, Type: ${planType}, HasSnapshots: ${!!(profileSnapshot && logsSnapshot)}`);
+  console.log(`[AI Brain] Sleep Plan - Model: gpt-4o, Type: ${planType}, HasSnapshots: ${!!(profileSnapshot && logsSnapshot)}, HasMetrics: ${!!metricsContext}`);
 
   try {
     const response = await fetch(OPENAI_API_URL, {
@@ -963,33 +1016,47 @@ Create specific, actionable tasks. Morning tasks should take 5-10 minutes. Eveni
         model: "gpt-4o",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: userContext }
+          { role: "user", content: contextToUse + metricsSection }
         ],
         tools: [
           {
             type: "function",
             function: {
               name: "create_sleep_plan",
-              description: "Create a personalized 7-day sleep improvement plan",
+              description: "Create a personalized 7-day sleep improvement plan with enhanced context",
               parameters: {
                 type: "object",
                 properties: {
+                  planHeadline: { 
+                    type: "string", 
+                    description: "Short, benefit-led title (e.g., '7-Night Alignment & Recovery Plan'). No medical claims." 
+                  },
+                  whyThisPlan: { 
+                    type: "string", 
+                    description: "2-3 sentences connecting their identity (position, pain), environment, and recent trends. Explains why THIS plan for THEM." 
+                  },
                   weeklyPlan: {
                     type: "object",
                     properties: {
-                      day1: { type: "object", properties: { focus: { type: "string" }, morningTask: { type: "string" }, eveningTask: { type: "string" }, tip: { type: "string" } }, required: ["focus", "morningTask", "eveningTask", "tip"] },
-                      day2: { type: "object", properties: { focus: { type: "string" }, morningTask: { type: "string" }, eveningTask: { type: "string" }, tip: { type: "string" } }, required: ["focus", "morningTask", "eveningTask", "tip"] },
-                      day3: { type: "object", properties: { focus: { type: "string" }, morningTask: { type: "string" }, eveningTask: { type: "string" }, tip: { type: "string" } }, required: ["focus", "morningTask", "eveningTask", "tip"] },
-                      day4: { type: "object", properties: { focus: { type: "string" }, morningTask: { type: "string" }, eveningTask: { type: "string" }, tip: { type: "string" } }, required: ["focus", "morningTask", "eveningTask", "tip"] },
-                      day5: { type: "object", properties: { focus: { type: "string" }, morningTask: { type: "string" }, eveningTask: { type: "string" }, tip: { type: "string" } }, required: ["focus", "morningTask", "eveningTask", "tip"] },
-                      day6: { type: "object", properties: { focus: { type: "string" }, morningTask: { type: "string" }, eveningTask: { type: "string" }, tip: { type: "string" } }, required: ["focus", "morningTask", "eveningTask", "tip"] },
-                      day7: { type: "object", properties: { focus: { type: "string" }, morningTask: { type: "string" }, eveningTask: { type: "string" }, tip: { type: "string" } }, required: ["focus", "morningTask", "eveningTask", "tip"] },
+                      day1: { type: "object", properties: { focus: { type: "string" }, morningTask: { type: "string" }, eveningTask: { type: "string" }, tip: { type: "string" }, microHabit: { type: "string" }, estimatedEffort: { type: "string", enum: ["low", "medium"] } }, required: ["focus", "morningTask", "eveningTask", "tip"] },
+                      day2: { type: "object", properties: { focus: { type: "string" }, morningTask: { type: "string" }, eveningTask: { type: "string" }, tip: { type: "string" }, microHabit: { type: "string" }, estimatedEffort: { type: "string", enum: ["low", "medium"] } }, required: ["focus", "morningTask", "eveningTask", "tip"] },
+                      day3: { type: "object", properties: { focus: { type: "string" }, morningTask: { type: "string" }, eveningTask: { type: "string" }, tip: { type: "string" }, microHabit: { type: "string" }, estimatedEffort: { type: "string", enum: ["low", "medium"] } }, required: ["focus", "morningTask", "eveningTask", "tip"] },
+                      day4: { type: "object", properties: { focus: { type: "string" }, morningTask: { type: "string" }, eveningTask: { type: "string" }, tip: { type: "string" }, microHabit: { type: "string" }, estimatedEffort: { type: "string", enum: ["low", "medium"] } }, required: ["focus", "morningTask", "eveningTask", "tip"] },
+                      day5: { type: "object", properties: { focus: { type: "string" }, morningTask: { type: "string" }, eveningTask: { type: "string" }, tip: { type: "string" }, microHabit: { type: "string" }, estimatedEffort: { type: "string", enum: ["low", "medium"] } }, required: ["focus", "morningTask", "eveningTask", "tip"] },
+                      day6: { type: "object", properties: { focus: { type: "string" }, morningTask: { type: "string" }, eveningTask: { type: "string" }, tip: { type: "string" }, microHabit: { type: "string" }, estimatedEffort: { type: "string", enum: ["low", "medium"] } }, required: ["focus", "morningTask", "eveningTask", "tip"] },
+                      day7: { type: "object", properties: { focus: { type: "string" }, morningTask: { type: "string" }, eveningTask: { type: "string" }, tip: { type: "string" }, microHabit: { type: "string" }, estimatedEffort: { type: "string", enum: ["low", "medium"] } }, required: ["focus", "morningTask", "eveningTask", "tip"] },
                     },
                     required: ["day1", "day2", "day3", "day4", "day5", "day6", "day7"]
                   },
-                  encouragement: { type: "string", description: "A warm, personalized encouragement message (2-3 sentences)" },
-                  focusAreas: { type: "array", items: { type: "string" }, description: "3 main focus areas for this week" },
-                  pdfs: { type: "array", items: { type: "string" }, description: "Recommended PDF resources" },
+                  encouragement: { type: "string", description: "2-3 warm, personalized sentences. Calm and supportive, no hype." },
+                  focusAreas: { 
+                    type: "array", 
+                    items: { 
+                      type: "string", 
+                      enum: ["alignment_support", "temperature_consistency", "wake_up_routine", "wind_down_routine", "pain_management", "sleep_hygiene", "environment_optimization", "consistency_building"] 
+                    }, 
+                    description: "3-4 focus area keys from the allowed list" 
+                  },
                   todayActions: {
                     type: "array",
                     items: {
@@ -997,14 +1064,25 @@ Create specific, actionable tasks. Morning tasks should take 5-10 minutes. Eveni
                       properties: {
                         time: { type: "string", enum: ["morning", "evening"] },
                         action: { type: "string" },
-                        duration: { type: "string" }
+                        duration: { type: "string" },
+                        effort: { type: "string", enum: ["low", "medium"] }
                       },
                       required: ["time", "action", "duration"]
-                    }
+                    },
+                    description: "2-3 specific actions for today with time and duration"
                   },
-                  spineScore: { type: "number", description: "Spine health score from 0-100 based on user data" }
+                  spineScoreHint: { 
+                    type: "string", 
+                    description: "1-2 sentences explaining what their spine score MEANS for them (e.g., 'Your score of 65 reflects moderate alignment with room for improvement in morning comfort.'). DO NOT calculate - just explain." 
+                  },
+                  riskFocus: { 
+                    type: "string", 
+                    description: "Optional. If risk drivers present, a gentle 1-sentence focus suggestion. Supportive, not alarming." 
+                  },
+                  pdfs: { type: "array", items: { type: "string" }, description: "Recommended PDF resources" },
+                  spineScore: { type: "number", description: "PLACEHOLDER - will be replaced by deterministic calculation. Just return 65." }
                 },
-                required: ["weeklyPlan", "encouragement", "focusAreas", "todayActions", "spineScore"],
+                required: ["planHeadline", "whyThisPlan", "weeklyPlan", "encouragement", "focusAreas", "todayActions", "spineScoreHint", "spineScore"],
                 additionalProperties: false
               }
             }
@@ -1031,16 +1109,21 @@ Create specific, actionable tasks. Morning tasks should take 5-10 minutes. Eveni
           ? JSON.parse(toolCall.function.arguments) 
           : toolCall.function.arguments;
         
-        console.log('[AI Brain] Sleep plan parsed from tool call');
+        console.log('[AI Brain] Enhanced sleep plan parsed from tool call');
         
         if (args.weeklyPlan && args.weeklyPlan.day1) {
           return {
             weeklyPlan: args.weeklyPlan,
             encouragement: args.encouragement || "",
-            focusAreas: args.focusAreas || [],
+            focusAreas: args.focusAreas || ["alignment_support", "sleep_hygiene", "pain_management"],
             pdfs: args.pdfs || ['Ergonomic Sleep Guide', 'Pain Relief Stretches'],
             todayActions: args.todayActions || [],
-            spineScore: args.spineScore || 65,
+            spineScore: 65, // Placeholder - will be replaced
+            // Enhanced v2 fields
+            planHeadline: args.planHeadline,
+            whyThisPlan: args.whyThisPlan,
+            spineScoreHint: args.spineScoreHint,
+            riskFocus: args.riskFocus,
           };
         }
       } catch (parseError) {
@@ -1060,10 +1143,14 @@ Create specific, actionable tasks. Morning tasks should take 5-10 minutes. Eveni
             return {
               weeklyPlan: parsed.weeklyPlan,
               encouragement: parsed.encouragement || "",
-              focusAreas: parsed.focusAreas || [],
+              focusAreas: parsed.focusAreas || ["alignment_support", "sleep_hygiene", "pain_management"],
               pdfs: parsed.pdfs || ['Ergonomic Sleep Guide', 'Pain Relief Stretches'],
               todayActions: parsed.todayActions || [],
-              spineScore: parsed.spineScore || 65,
+              spineScore: 65,
+              planHeadline: parsed.planHeadline,
+              whyThisPlan: parsed.whyThisPlan,
+              spineScoreHint: parsed.spineScoreHint,
+              riskFocus: parsed.riskFocus,
             };
           }
         }
@@ -1087,21 +1174,24 @@ Create specific, actionable tasks. Morning tasks should take 5-10 minutes. Eveni
 export function getDefaultSleepPlan() {
   return {
     weeklyPlan: {
-      day1: { focus: "Pillow Setup", morningTask: "Check your pillow height - it should keep your neck aligned with your spine", eveningTask: "Position your pillow in the cervical curve of your neck before sleep", tip: "Side sleepers need a higher pillow than back sleepers" },
-      day2: { focus: "Sleep Posture", morningTask: "Notice which position you woke up in", eveningTask: "Try sleeping on your back with pillow under your knees", tip: "Back sleeping reduces facial wrinkles and neck strain" },
-      day3: { focus: "Evening Routine", morningTask: "5 gentle neck stretches upon waking", eveningTask: "Wind down 30 minutes before bed - no screens", tip: "Blue light suppresses melatonin production" },
-      day4: { focus: "Temperature", morningTask: "Rate your sleep temperature 1-10", eveningTask: "Keep bedroom at 65-68°F (18-20°C)", tip: "A cool room promotes deeper sleep stages" },
-      day5: { focus: "Pain Prevention", morningTask: "Shoulder rolls and neck rotations (2 min)", eveningTask: "Light stretching before bed to release tension", tip: "Tension in muscles builds up throughout the day" },
-      day6: { focus: "Deep Sleep", morningTask: "Avoid caffeine after 2 PM today", eveningTask: "Try a 10-minute meditation or breathing exercise", tip: "Caffeine has a 6-hour half-life in your system" },
-      day7: { focus: "Review & Adjust", morningTask: "Log how you feel compared to day 1", eveningTask: "Plan adjustments for next week", tip: "Consistency is key - stick with what works" }
+      day1: { focus: "Pillow Setup", morningTask: "Check your pillow height - it should keep your neck aligned with your spine", eveningTask: "Position your pillow in the cervical curve of your neck before sleep", tip: "Side sleepers need a higher pillow than back sleepers", microHabit: "Notice your head position when you lie down", estimatedEffort: "low" },
+      day2: { focus: "Sleep Posture", morningTask: "Notice which position you woke up in", eveningTask: "Try sleeping on your back with pillow under your knees", tip: "Back sleeping reduces facial wrinkles and neck strain", microHabit: "Take one deep breath before closing your eyes", estimatedEffort: "low" },
+      day3: { focus: "Evening Routine", morningTask: "5 gentle neck stretches upon waking", eveningTask: "Wind down 30 minutes before bed - no screens", tip: "Blue light suppresses melatonin production", microHabit: "Set a bedtime alarm reminder", estimatedEffort: "medium" },
+      day4: { focus: "Temperature", morningTask: "Rate your sleep temperature 1-10", eveningTask: "Keep bedroom at 65-68°F (18-20°C)", tip: "A cool room promotes deeper sleep stages", microHabit: "Check room temperature before bed", estimatedEffort: "low" },
+      day5: { focus: "Pain Prevention", morningTask: "Shoulder rolls and neck rotations (2 min)", eveningTask: "Light stretching before bed to release tension", tip: "Tension in muscles builds up throughout the day", microHabit: "Roll your shoulders 3 times", estimatedEffort: "low" },
+      day6: { focus: "Deep Sleep", morningTask: "Avoid caffeine after 2 PM today", eveningTask: "Try a 10-minute meditation or breathing exercise", tip: "Caffeine has a 6-hour half-life in your system", microHabit: "Notice when you drink your last coffee", estimatedEffort: "medium" },
+      day7: { focus: "Review & Adjust", morningTask: "Log how you feel compared to day 1", eveningTask: "Plan adjustments for next week", tip: "Consistency is key - stick with what works", microHabit: "Write one word describing your sleep", estimatedEffort: "low" }
     },
-    encouragement: "Welcome to your personalized sleep improvement journey with Rise By Night! Small daily changes lead to big improvements in sleep quality. You've got this!",
-    focusAreas: ['Pillow Positioning', 'Sleep Hygiene', 'Pain Prevention'],
+    encouragement: "Welcome to your personalized sleep improvement journey. Small daily changes lead to meaningful improvements in sleep quality. Take it one night at a time.",
+    focusAreas: ["alignment_support", "sleep_hygiene", "pain_management"],
     pdfs: ['Ergonomic Sleep Guide', 'Pain Relief Stretches'],
     todayActions: [
-      { time: 'morning', action: 'Check pillow height and adjust for your sleep position', duration: '5 min' },
-      { time: 'evening', action: 'Position pillow in cervical curve, wind down 30 min before bed', duration: '10 min' }
+      { time: 'morning', action: 'Check pillow height and adjust for your sleep position', duration: '5 min', effort: 'low' },
+      { time: 'evening', action: 'Position pillow in cervical curve, wind down 30 min before bed', duration: '10 min', effort: 'medium' }
     ],
     spineScore: 65,
+    planHeadline: "7-Night Foundation Plan",
+    whyThisPlan: "This plan focuses on establishing the fundamentals of good sleep posture and environment. As you log more nights, your plan will become more personalized.",
+    spineScoreHint: "Your starting score reflects a baseline. As you build consistent habits, expect to see gradual improvement.",
   };
 }

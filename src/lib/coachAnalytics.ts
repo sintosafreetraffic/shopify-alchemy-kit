@@ -57,7 +57,7 @@ interface CoachPlanDayOpenedEvent extends CoachEventBase {
 }
 
 interface CoachTodayActionsMarkedEvent extends CoachEventBase {
-  type: "coach_today_actions_marked_done";
+  type: "coach_today_actions_marked";
   plan_id: string;
   actions_completed: number;
   total_actions: number;
@@ -88,7 +88,34 @@ async function sendCoachEvent(event: CoachEvent): Promise<void> {
     console.log("[CoachAnalytics]", event.type, event);
   }
 
-  // Send to Supabase persona-analytics (reuse existing endpoint)
+  // Transform event to match persona-analytics schema
+  const analyticsPayload = {
+    event_type: event.type,
+    ...(event.type === "coach_plan_viewed" && {
+      plan_id: (event as CoachPlanViewedEvent).plan_id,
+      plan_age_days: (event as CoachPlanViewedEvent).plan_age_days,
+      has_today_actions: (event as CoachPlanViewedEvent).has_today_actions,
+    }),
+    ...(event.type === "coach_plan_day_opened" && {
+      plan_id: (event as CoachPlanDayOpenedEvent).plan_id,
+      day_index: (event as CoachPlanDayOpenedEvent).day_index,
+    }),
+    ...(event.type === "coach_today_actions_marked" && {
+      plan_id: (event as CoachTodayActionsMarkedEvent).plan_id,
+      actions_completed: (event as CoachTodayActionsMarkedEvent).actions_completed,
+      total_actions: (event as CoachTodayActionsMarkedEvent).total_actions,
+    }),
+    ...(event.type === "coach_plan_refreshed" && {
+      refresh_reason: (event as CoachPlanRefreshedEvent).refresh_reason,
+      previous_spine_score: (event as CoachPlanRefreshedEvent).previous_spine_score,
+      new_spine_score: (event as CoachPlanRefreshedEvent).new_spine_score,
+    }),
+    persona_cluster: event.persona_cluster || "unknown",
+    coach_readiness_label: event.coach_readiness_label || "unknown",
+    spine_score_bucket: event.spine_score_bucket || "0-49",
+  };
+
+  // Send to Supabase persona-analytics
   try {
     await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/persona-analytics`, {
       method: "POST",
@@ -96,7 +123,10 @@ async function sendCoachEvent(event: CoachEvent): Promise<void> {
         "Content-Type": "application/json",
         "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "",
       },
-      body: JSON.stringify({ events: [event] }),
+      body: JSON.stringify({ 
+        events: [analyticsPayload],
+        session_id: event.session_id,
+      }),
     });
   } catch (e) {
     // Silent fail - analytics should never break UX
@@ -170,7 +200,7 @@ export function trackCoachTodayActionsMarked(
   context: CoachContext
 ): void {
   sendCoachEvent({
-    type: "coach_today_actions_marked_done",
+    type: "coach_today_actions_marked",
     plan_id: planId,
     actions_completed: actionsCompleted,
     total_actions: totalActions,

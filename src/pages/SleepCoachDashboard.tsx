@@ -29,6 +29,8 @@ import { SleepSetupForm } from "@/components/sleep-coach/SleepSetupForm";
 import { SleepSyncOverview } from "@/components/sleep-coach/SleepSyncOverview";
 import { PersonaCard } from "@/components/sleep-coach/PersonaCard";
 import { CoachReadinessCard } from "@/components/sleep-coach/CoachReadinessCard";
+import { useCoachMetrics } from "@/hooks/useCoachMetrics";
+import { trackCoachPlanRefreshed } from "@/lib/coachAnalytics";
 // Import TimeRange type directly for type safety (not lazy-loaded)
 import type { TimeRange } from "@/components/sleep-coach/SleepProgressChart";
 
@@ -320,6 +322,25 @@ const SleepCoachDashboard = () => {
 
   // Calculate streak from logs
   const streak = calculateStreak(data.logs);
+  
+  // Calculate last log days ago
+  const lastLogDaysAgo = data.logs.length > 0 
+    ? Math.floor((Date.now() - new Date(data.logs[0].created_at).getTime()) / (1000 * 60 * 60 * 24))
+    : null;
+  
+  // Use deterministic coach metrics hook
+  const { spineScore, riskAnalysis, coachReadiness, planRefreshTrigger } = useCoachMetrics({
+    profile: data.profile,
+    trends: data.trends,
+    plan: data.coachPlan,
+    logsCount: data.logs.length,
+    lastLogDaysAgo,
+    streakDays: streak,
+  });
+  
+  // Get persona cluster from profile
+  const personaCluster = (data.profile as any)?.persona_cluster || 
+    (data.profile?.sleep_assessment as any)?.persona?.cluster || null;
 
   if (isCheckingAuth || isCheckingAccess) {
     return (
@@ -868,6 +889,11 @@ const SleepCoachDashboard = () => {
                       plan={data.coachPlan} 
                       onGeneratePlan={handleGeneratePlan}
                       loading={isGeneratingPlan}
+                      refreshStatus={planRefreshTrigger.shouldRegenerate ? { shouldRegenerate: true, reason: planRefreshTrigger.reason } : null}
+                      spineScoreBreakdown={spineScore}
+                      personaCluster={personaCluster}
+                      productsOwned={data.profile?.products_owned || []}
+                      coachReadinessLabel={coachReadiness.label}
                     />
                   )}
                 </>
