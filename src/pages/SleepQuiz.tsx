@@ -426,7 +426,12 @@ const SleepQuiz = () => {
       pillowSatisfaction: 5,
     });
     setEmail("");
-    setStep(0);
+    // Reset step and clear URL params to prevent glitching back
+    setStepInternal(0);
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('step');
+    newParams.set('mode', 'retake');
+    window.history.replaceState({ quizStep: 0 }, '', `?${newParams.toString()}`);
     trackQuizStarted();
   };
 
