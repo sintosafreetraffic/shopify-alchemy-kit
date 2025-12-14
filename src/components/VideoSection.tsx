@@ -1,5 +1,6 @@
 // Performance: Videos use preload="none" and intersection observer for deferred loading
-import { Play, Loader2, Hand } from "lucide-react";
+// Mobile: Video section hidden entirely to prevent scroll glitches
+import { Play, Loader2 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
@@ -165,6 +166,7 @@ export const VideoSection = () => {
   const [isModalBuffering, setIsModalBuffering] = useState(false);
   const [modalHasStarted, setModalHasStarted] = useState(false);
   const { ref: sectionRef, isInView: sectionInView } = useInView<HTMLElement>({ threshold: 0.1 });
+  const isTouch = useIsTouchDevice();
   
   // Reset modal state when closing
   useEffect(() => {
@@ -173,6 +175,11 @@ export const VideoSection = () => {
       setModalHasStarted(false);
     }
   }, [selectedVideo]);
+
+  // Hide entire video section on mobile to prevent scroll glitches
+  if (isTouch) {
+    return null;
+  }
 
   const videos: VideoItem[] = [
     {
