@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Users } from "lucide-react";
+import { Users, ArrowRight } from "lucide-react";
 
 const ugcTiles = [
   { tag: "Desk Worker", caption: "Finally waking up without the neck tension.", hashtag: "#MyRiseByNight", initials: "JL" },
@@ -65,9 +65,13 @@ export function AmbassadorWall() {
               We're building a community of creators, wellness advocates, and everyday sleepers who care about rest—not hype. 
               If you believe better sleep changes everything, we'd love to hear from you.
             </p>
-            <Link to="/about-us">
-              <Button variant="outline" size="lg">
+            <Link to="/collective">
+              <Button 
+                size="lg" 
+                className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 rounded-full text-lg font-medium"
+              >
                 Learn About Partnerships
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
           </div>
