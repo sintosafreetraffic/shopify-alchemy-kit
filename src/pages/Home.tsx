@@ -8,6 +8,14 @@ import { Link } from "react-router-dom";
 import OptimizedImage from "@/components/OptimizedImage";
 import moonIcon from "@/assets/moon-icon-blue.png";
 
+// New homepage sections
+import { 
+  SleeperPersonaDiscovery, 
+  TransformationStories, 
+  SleepCoachTeaser, 
+  AmbassadorWall 
+} from "@/components/home";
+
 // Multi-resolution hero images for responsive loading
 import heroDesktop1920 from "@/assets/hero-christmas-desktop.webp";
 import heroDesktop1280 from "@/assets/hero-christmas-1280.webp";
@@ -115,6 +123,9 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Sleeper Persona Discovery - Help visitors identify their type */}
+      <SleeperPersonaDiscovery />
+
       {/* Mission Section */}
       <section className="py-16 md:py-24 bg-muted/30">
         <div className="container mx-auto px-4">
@@ -171,6 +182,9 @@ export default function Home() {
       <Suspense fallback={<SectionFallback />}>
         <ProductGallery />
       </Suspense>
+
+      {/* AI Sleep Coach Teaser */}
+      <SleepCoachTeaser />
 
       {/* Why Choose Us */}
       <section className="py-16 md:py-24 bg-primary/5">
@@ -278,6 +292,12 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Transformation Stories */}
+      <TransformationStories />
+
+      {/* Ambassador Wall */}
+      <AmbassadorWall />
 
       {/* CTA Section */}
       <section className="py-16 md:py-24 bg-primary text-primary-foreground">
