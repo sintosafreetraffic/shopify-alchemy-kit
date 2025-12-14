@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -121,29 +123,58 @@ const SleepCollective = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  // Validation schema
+  const applicationSchema = z.object({
+    name: z.string().trim().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
+    email: z.string().trim().email("Invalid email address").max(255, "Email must be less than 255 characters"),
+    socialHandle: z.string().max(200, "Social handle must be less than 200 characters").optional(),
+    whyJoin: z.string().trim().min(1, "Please tell us why you want to join").max(2000, "Response must be less than 2000 characters"),
+    preferredTier: z.string().min(1, "Please select a tier"),
+    message: z.string().max(2000, "Message must be less than 2000 characters").optional(),
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.email || !formData.whyJoin || !formData.preferredTier) {
-      toast.error("Please fill in all required fields");
+    // Validate form data
+    const result = applicationSchema.safeParse(formData);
+    if (!result.success) {
+      const firstError = result.error.errors[0];
+      toast.error(firstError.message);
       return;
     }
 
     setIsSubmitting(true);
     
-    // Simulate form submission
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    
-    toast.success("Application submitted! We'll be in touch soon.");
-    setFormData({
-      name: "",
-      email: "",
-      socialHandle: "",
-      whyJoin: "",
-      preferredTier: "",
-      message: "",
-    });
-    setIsSubmitting(false);
+    try {
+      const { error } = await supabase
+        .from("collective_applications")
+        .insert({
+          name: formData.name.trim(),
+          email: formData.email.trim().toLowerCase(),
+          social_handles: formData.socialHandle?.trim() || null,
+          reason: formData.whyJoin.trim(),
+          preferred_tier: formData.preferredTier,
+          message: formData.message?.trim() || null,
+        });
+
+      if (error) throw error;
+
+      toast.success("Application submitted! We'll be in touch soon.");
+      setFormData({
+        name: "",
+        email: "",
+        socialHandle: "",
+        whyJoin: "",
+        preferredTier: "",
+        message: "",
+      });
+    } catch (error) {
+      console.error("Error submitting application:", error);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
