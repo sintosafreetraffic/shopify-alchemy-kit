@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { CheckCircle, Moon, ArrowLeft, ArrowRight, RotateCcw, FileText } from "lucide-react";
+import { CheckCircle, Moon, ArrowLeft, ArrowRight, RotateCcw, FileText, AlertTriangle } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { useCartStore } from "@/stores/cartStore";
@@ -11,6 +11,17 @@ import { trackQuizStarted } from "@/lib/klaviyo";
 import { setEnhancedMatch } from "@/lib/pinterest";
 import { supabase } from "@/integrations/supabase/client";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   QuizProgress,
   QuizQuestion,
@@ -481,10 +492,31 @@ const SleepQuiz = () => {
                     <FileText className="w-4 h-4 mr-2" />
                     View My Results
                   </Button>
-                  <Button variant="outline" onClick={handleRetakeQuiz} className="h-12 px-8 rounded-xl">
-                    <RotateCcw className="w-4 h-4 mr-2" />
-                    Retake Assessment
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" className="h-12 px-8 rounded-xl">
+                        <RotateCcw className="w-4 h-4 mr-2" />
+                        Retake Assessment
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2">
+                          <AlertTriangle className="w-5 h-5 text-amber-500" />
+                          Retake Assessment?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will permanently replace your current assessment results with new answers. Your existing Sleep Coach plan will also be updated based on the new assessment.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleRetakeQuiz}>
+                          Yes, Start Fresh
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Retaking will replace your current assessment with new answers.
