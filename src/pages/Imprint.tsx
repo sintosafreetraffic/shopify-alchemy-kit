@@ -26,8 +26,8 @@ const Imprint = () => {
           </div>
           <div className="mt-4 space-y-1 text-muted-foreground pl-7">
             <p><span className="text-foreground">Legal Form:</span> Vennootschap Onder Firma (V.O.F.)</p>
-            <p><span className="text-foreground">KVK Number:</span> 85884197</p>
-            <p><span className="text-foreground">Vestigingsnummer:</span> 000051900572</p>
+            <p><span className="text-foreground">Chamber of Commerce (KVK):</span> 85884197</p>
+            <p><span className="text-foreground">Establishment Number:</span> 000051900572</p>
           </div>
         </section>
 
@@ -38,8 +38,8 @@ const Imprint = () => {
             <h2 className="text-xl font-semibold text-foreground">VAT Information</h2>
           </div>
           <div className="space-y-1 text-muted-foreground pl-7">
-            <p><span className="text-foreground">Omzetbelastingnummer:</span> 863777867B01</p>
-            <p><span className="text-foreground">BTW-Identificatienummer:</span> NL863777867B01</p>
+            <p><span className="text-foreground">Tax Number:</span> 863777867B01</p>
+            <p><span className="text-foreground">VAT Identification Number:</span> NL863777867B01</p>
           </div>
         </section>
 
