@@ -1,5 +1,5 @@
 // Performance: SleepQuiz split into smaller components for better code splitting
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CheckCircle, Moon, ArrowLeft, ArrowRight, RotateCcw, FileText } from "lucide-react";
@@ -29,11 +29,14 @@ import {
   cacheQuizResults,
   getCachedQuizResults,
   clearQuizCache,
+  saveQuizProgress,
+  getQuizProgress,
+  clearQuizProgress,
   CURRENT_QUIZ_VERSION,
 } from "@/components/sleep-quiz";
 
 const SleepQuiz = () => {
-  const [step, setStep] = useState(0);
+  const [step, setStepInternal] = useState(0);
   const [answers, setAnswers] = useState<QuizAnswers>({
     sleepEquipment: [],
     painAreas: [],
@@ -49,7 +52,7 @@ const SleepQuiz = () => {
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
   const [completedSections, setCompletedSections] = useState<number[]>([]);
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const returnTo = searchParams.get('returnTo');
   const isRetake = searchParams.get('mode') === 'retake';
   const shouldNotifyQuizUpdated = searchParams.get('quizUpdated') === 'true';
@@ -68,6 +71,9 @@ const SleepQuiz = () => {
   const [isLoadingFromDb, setIsLoadingFromDb] = useState(false);
   const [showCachedPrompt, setShowCachedPrompt] = useState(false);
 
+  // Track if we're handling a popstate (browser back/forward)
+  const isPopstateRef = useRef(false);
+
   const visibleQuestions = getVisibleQuestions(answers);
   const TOTAL_STEPS = visibleQuestions.length + 1;
   const currentQuestion = step < visibleQuestions.length ? visibleQuestions[step] : null;
@@ -76,15 +82,71 @@ const SleepQuiz = () => {
   const progressPercent = Math.round(((step + 1) / TOTAL_STEPS) * 100);
   const sectionInfo = currentQuestion ? getCurrentSectionInfo(currentQuestion.id, answers) : null;
 
-  // On mount: check for cached results or DB assessment
+  // Sync step with URL param for browser back/forward navigation
+  const setStep = useCallback((newStep: number | ((prev: number) => number)) => {
+    setStepInternal(prev => {
+      const nextStep = typeof newStep === 'function' ? newStep(prev) : newStep;
+      // Only update URL if not handling a popstate event
+      if (!isPopstateRef.current) {
+        const newParams = new URLSearchParams(searchParams);
+        if (nextStep > 0) {
+          newParams.set('step', String(nextStep));
+        } else {
+          newParams.delete('step');
+        }
+        // Use replaceState for smoother navigation without creating too many history entries
+        window.history.pushState({ quizStep: nextStep }, '', `?${newParams.toString()}`);
+      }
+      return nextStep;
+    });
+  }, [searchParams]);
+
+  // Handle browser back/forward buttons
   useEffect(() => {
-    // If explicit retake mode, clear cache and start fresh
+    const handlePopState = (event: PopStateEvent) => {
+      isPopstateRef.current = true;
+      const stateStep = event.state?.quizStep;
+      if (typeof stateStep === 'number') {
+        setStepInternal(stateStep);
+      } else {
+        // Check URL param as fallback
+        const urlStep = new URLSearchParams(window.location.search).get('step');
+        setStepInternal(urlStep ? parseInt(urlStep, 10) : 0);
+      }
+      // Reset flag after state update
+      setTimeout(() => { isPopstateRef.current = false; }, 0);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Initialize step from URL on mount
+  useEffect(() => {
+    const urlStep = searchParams.get('step');
+    if (urlStep) {
+      const parsedStep = parseInt(urlStep, 10);
+      if (!isNaN(parsedStep) && parsedStep >= 0) {
+        setStepInternal(parsedStep);
+        // Set initial history state
+        window.history.replaceState({ quizStep: parsedStep }, '');
+      }
+    } else {
+      // Set initial history state for step 0
+      window.history.replaceState({ quizStep: 0 }, '');
+    }
+  }, []);
+
+  // On mount: check for cached results, DB assessment, or in-progress quiz
+  useEffect(() => {
+    // If explicit retake mode, clear all caches and start fresh
     if (isRetake) {
       clearQuizCache();
+      clearQuizProgress();
       return;
     }
 
-    // Check sessionStorage first (fast path)
+    // Check for completed quiz results first (fast path)
     const cached = getCachedQuizResults();
     if (cached && cached.results) {
       setHasCachedData(true);
@@ -94,6 +156,19 @@ const SleepQuiz = () => {
       setResults(cached.results);
       setEmail(cached.email || "");
       return;
+    }
+
+    // Check for in-progress quiz (browser back button recovery)
+    const progress = getQuizProgress();
+    if (progress && progress.answers) {
+      setAnswers(progress.answers);
+      setEmail(progress.email || "");
+      // Step is already restored from URL param, but use progress as fallback
+      const urlStep = searchParams.get('step');
+      if (!urlStep && progress.step > 0) {
+        setStepInternal(progress.step);
+        window.history.replaceState({ quizStep: progress.step }, '');
+      }
     }
 
     // Check for authenticated user with DB assessment (fallback)
@@ -139,6 +214,13 @@ const SleepQuiz = () => {
 
     checkDbAssessment();
   }, [isRetake]);
+
+  // Save progress whenever answers, email, or step changes (for browser back button recovery)
+  useEffect(() => {
+    // Don't save if showing cached prompt or results
+    if (showCachedPrompt || isResultsStep || results) return;
+    saveQuizProgress(answers, email, step);
+  }, [answers, email, step, showCachedPrompt, isResultsStep, results]);
 
   useEffect(() => {
     if (!showCachedPrompt) {
@@ -242,8 +324,9 @@ const SleepQuiz = () => {
       const analysisResult = data as AnalysisResult;
       setResults(analysisResult);
 
-      // Cache results to sessionStorage for navigation persistence
+      // Cache results to sessionStorage for navigation persistence and clear progress
       cacheQuizResults(analysisResult, answers, email.trim());
+      clearQuizProgress(); // Quiz completed, no need to keep in-progress state
 
       if (isValidEmail(email)) {
         try {
@@ -329,6 +412,7 @@ const SleepQuiz = () => {
   // Handle retaking the quiz
   const handleRetakeQuiz = () => {
     clearQuizCache();
+    clearQuizProgress();
     setShowCachedPrompt(false);
     setHasCachedData(false);
     setResults(null);

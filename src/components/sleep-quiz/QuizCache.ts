@@ -160,3 +160,64 @@ export function getCacheAgeDays(): number | null {
     return null;
   }
 }
+
+// ============== IN-PROGRESS QUIZ STATE CACHE ==============
+// Separate from completed results - stores answers during quiz taking
+// so browser back button doesn't lose progress
+
+const QUIZ_PROGRESS_KEY = "rbn_sleep_quiz_progress";
+
+interface QuizProgressCache {
+  answers: QuizAnswers;
+  email: string;
+  step: number;
+  timestamp: string;
+}
+
+/**
+ * Save in-progress quiz state for browser navigation recovery
+ */
+export function saveQuizProgress(answers: QuizAnswers, email: string, step: number): void {
+  if (typeof window === "undefined") return;
+  
+  try {
+    const cache: QuizProgressCache = {
+      answers,
+      email,
+      step,
+      timestamp: new Date().toISOString(),
+    };
+    window.sessionStorage.setItem(QUIZ_PROGRESS_KEY, JSON.stringify(cache));
+  } catch (e) {
+    console.warn("[sleep-quiz] Failed to save progress", e);
+  }
+}
+
+/**
+ * Get in-progress quiz state
+ */
+export function getQuizProgress(): QuizProgressCache | null {
+  if (typeof window === "undefined") return null;
+  
+  try {
+    const raw = window.sessionStorage.getItem(QUIZ_PROGRESS_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as QuizProgressCache;
+  } catch (e) {
+    console.warn("[sleep-quiz] Failed to read progress", e);
+    return null;
+  }
+}
+
+/**
+ * Clear in-progress quiz state (call when quiz is completed or retaken)
+ */
+export function clearQuizProgress(): void {
+  if (typeof window === "undefined") return;
+  
+  try {
+    window.sessionStorage.removeItem(QUIZ_PROGRESS_KEY);
+  } catch (e) {
+    console.warn("[sleep-quiz] Failed to clear progress", e);
+  }
+}
