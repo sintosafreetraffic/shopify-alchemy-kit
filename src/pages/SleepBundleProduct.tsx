@@ -3,7 +3,7 @@ import { SleepBundleFeatures } from "@/components/SleepBundleFeatures";
 import { SleepBundleBenefits } from "@/components/SleepBundleBenefits";
 import { SleepBundleFAQ } from "@/components/SleepBundleFAQ";
 import { ReviewsSection } from "@/components/ReviewsSection";
-import { Guarantee } from "@/components/Guarantee";
+import { GuaranteeSection } from "@/components/GuaranteeSection";
 import { StickyAddToCart } from "@/components/StickyAddToCart";
 import { ChiropractorEndorsement } from "@/components/ChiropractorEndorsement";
 
@@ -16,7 +16,7 @@ const SleepBundleProduct = () => {
       <ChiropractorEndorsement />
       <ReviewsSection />
       <SleepBundleFAQ />
-      <Guarantee />
+      <GuaranteeSection />
       <StickyAddToCart productType="sleep-bundle" />
     </div>
   );

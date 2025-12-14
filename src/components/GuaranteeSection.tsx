@@ -1,6 +1,6 @@
 import { Moon, Truck, RotateCcw } from "lucide-react";
 
-export const Guarantee = () => {
+export const GuaranteeSection = () => {
   return (
     <section className="py-6 md:py-16 px-4 bg-primary/5">
       <div className="container mx-auto max-w-6xl">

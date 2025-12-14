@@ -1,10 +1,10 @@
 // Performance: Heavy sections with carousels are lazy-loaded
 import { Suspense, lazy } from "react";
 import { Hero } from "@/components/Hero";
-import { Benefits } from "@/components/Benefits";
-import { Guarantee } from "@/components/Guarantee";
+import { ProductBenefitsSection } from "@/components/ProductBenefitsSection";
+import { GuaranteeSection } from "@/components/GuaranteeSection";
 import { Features } from "@/components/Features";
-import { FAQ } from "@/components/FAQ";
+import { ProductFAQSection } from "@/components/ProductFAQSection";
 import { LookInside } from "@/components/LookInside";
 import { PainReliefSection } from "@/components/PainReliefSection";
 import { ChiropractorEndorsement } from "@/components/ChiropractorEndorsement";
@@ -25,12 +25,12 @@ const SectionFallback = () => (
   </div>
 );
 
-const Index = () => {
+const ErgonomicPillowProduct = () => {
   return (
     <div className="min-h-screen bg-background">
       <Hero />
       <Features />
-      <Benefits />
+      <ProductBenefitsSection />
       <PainReliefSection />
       <ChiropractorEndorsement />
       <LookInside />
@@ -40,11 +40,11 @@ const Index = () => {
       <Suspense fallback={<SectionFallback />}>
         <VideoSection />
       </Suspense>
-      <FAQ />
-      <Guarantee />
+      <ProductFAQSection />
+      <GuaranteeSection />
       <StickyAddToCart productType="ergonomic-pillow" />
     </div>
   );
 };
 
-export default Index;
+export default ErgonomicPillowProduct;

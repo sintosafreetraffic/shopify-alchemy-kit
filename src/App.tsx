@@ -84,7 +84,7 @@ installPinterestDebugWrapper();
 
 // Eagerly loaded pages (core shopping experience)
 import Home from "./pages/Home";
-import Index from "./pages/Index";
+import ErgonomicPillowProduct from "./pages/ErgonomicPillowProduct";
 import KneePillowProduct from "./pages/KneePillowProduct";
 import SleepMaskProduct from "./pages/SleepMaskProduct";
 import SleepBundleProduct from "./pages/SleepBundleProduct";
@@ -182,11 +182,11 @@ const AppContent = () => {
           <Routes>
             {/* Core shopping pages - eagerly loaded */}
             <Route path="/" element={<Home />} />
-            <Route path="/product/ergonomic-pillow" element={<Index />} />
+            <Route path="/product/ergonomic-pillow" element={<ErgonomicPillowProduct />} />
             <Route path="/product/knee-pillow" element={<KneePillowProduct />} />
             <Route path="/product/sleep-mask" element={<SleepMaskProduct />} />
             <Route path="/product/sleep-bundle" element={<SleepBundleProduct />} />
-            <Route path="/product" element={<Index />} />
+            <Route path="/product" element={<ErgonomicPillowProduct />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/benefits" element={<Benefits />} />
             <Route path="/reviews" element={<Reviews />} />

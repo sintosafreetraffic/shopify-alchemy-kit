@@ -33,7 +33,7 @@ const faqs = [
   }
 ];
 
-export const FAQ = () => {
+export const ProductFAQSection = () => {
   return (
     <section className="py-6 md:py-8 bg-primary/5">
       <div className="container mx-auto px-4 max-w-4xl">
