@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { createStorefrontCheckout } from '@/lib/shopify';
 import type { ShopifyProduct } from '@/lib/shopify';
-import { trackAddToCart, trackCheckout } from '@/lib/pinterest';
+import { trackAddToCart, trackInitiateCheckout, clearInitiateCheckoutFingerprint } from '@/lib/pinterest';
 import { trackAddedToCart as trackKlaviyoAddToCart } from '@/lib/klaviyo';
 import { trackRevenueAttribution } from '@/lib/personaAnalytics';
 
@@ -96,6 +96,9 @@ export const useCartStore = create<CartStore>()(
         } else {
           set({ items: [...items, item] });
         }
+        
+        // Clear InitiateCheckout fingerprint so new checkout can be tracked
+        clearInitiateCheckoutFingerprint();
       },
 
       updateQuantity: (variantId, quantity) => {
@@ -109,16 +112,23 @@ export const useCartStore = create<CartStore>()(
             item.variantId === variantId ? { ...item, quantity } : item
           )
         });
+        
+        // Clear InitiateCheckout fingerprint so new checkout can be tracked
+        clearInitiateCheckoutFingerprint();
       },
 
       removeItem: (variantId) => {
         set({
           items: get().items.filter(item => item.variantId !== variantId)
         });
+        
+        // Clear InitiateCheckout fingerprint so new checkout can be tracked
+        clearInitiateCheckoutFingerprint();
       },
 
       clearCart: () => {
         set({ items: [], cartId: null, checkoutUrl: null });
+        clearInitiateCheckoutFingerprint();
       },
 
       setCartId: (cartId) => set({ cartId }),
@@ -132,8 +142,13 @@ export const useCartStore = create<CartStore>()(
 
         setLoading(true);
         try {
-          // Track Pinterest Checkout event (no value/product data - just signals checkout initiated)
-          trackCheckout();
+          // Track Pinterest InitiateCheckout event with deduplication
+          // NOTE: Completed transactions (Checkout) are fired by Shopify's Pinterest App only
+          trackInitiateCheckout(items.map(item => ({
+            variantId: item.variantId,
+            quantity: item.quantity,
+            price: item.price,
+          })));
           
           // Track revenue attribution for checkout initiation
           const totalValue = items.reduce((sum, item) => sum + parseFloat(item.price.amount) * item.quantity, 0);
