@@ -1,11 +1,11 @@
 import { Building2, Mail, Globe, FileText, Shield, Copyright, Users } from "lucide-react";
 
-const Impressum = () => {
+const Imprint = () => {
   return (
     <div className="min-h-screen bg-background py-16">
       <div className="container mx-auto px-4 max-w-3xl">
         <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-8">
-          Impressum — RiseByNight
+          Imprint — RiseByNight
         </h1>
 
         <p className="text-muted-foreground mb-8">
@@ -124,4 +124,4 @@ const Impressum = () => {
   );
 };
 
-export default Impressum;
+export default Imprint;

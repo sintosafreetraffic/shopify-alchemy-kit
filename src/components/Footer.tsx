@@ -48,8 +48,8 @@ export const Footer = () => {
                   </Link>
                 </li>
                 <li>
-                  <Link to="/impressum" className="text-muted-foreground hover:text-foreground transition-colors">
-                    Impressum
+                  <Link to="/imprint" className="text-muted-foreground hover:text-foreground transition-colors">
+                    Imprint
                   </Link>
                 </li>
               </ul>
