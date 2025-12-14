@@ -1,10 +1,5 @@
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { useIsMobile } from "@/hooks/use-mobile";
+// Knee Pillow FAQ - uses shared FAQSection
+import { FAQSection } from "@/components/shared/FAQSection";
 
 const faqs = [
   {
@@ -42,42 +37,11 @@ const faqs = [
 ];
 
 export const KneePillowFAQ = () => {
-  const isMobile = useIsMobile();
-  
-  // ISOLATION STEP: Temporarily remove FAQ from DOM on mobile to diagnose scroll glitch
-  if (isMobile) return null;
-  
   return (
-    <section className="py-16 md:py-24 bg-primary/5">
-      <div className="container mx-auto px-4">
-        <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">
-              Frequently Asked Questions
-            </h2>
-            <p className="text-xl text-muted-foreground">
-              Everything you need to know about our ergonomic knee pillow
-            </p>
-          </div>
-
-          <Accordion type="single" collapsible className="space-y-4">
-            {faqs.map((faq, index) => (
-              <AccordionItem
-                key={index}
-                value={`item-${index}`}
-                className="bg-background rounded-lg border px-6"
-              >
-                <AccordionTrigger className="text-left hover:no-underline py-5">
-                  <span className="font-semibold text-lg pr-4">{faq.question}</span>
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground pb-5">
-                  {faq.answer}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </div>
-      </div>
-    </section>
+    <FAQSection
+      title="Frequently Asked Questions"
+      subtitle="Everything you need to know about our ergonomic knee pillow"
+      items={faqs}
+    />
   );
 };

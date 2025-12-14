@@ -1,5 +1,6 @@
-import { Card } from "@/components/ui/card";
+// Sleep Mask Benefits - uses shared BenefitsSection
 import { Moon, Sparkles, Heart, Zap } from "lucide-react";
+import { BenefitsSection } from "@/components/shared/BenefitsSection";
 
 const benefits = [
   {
@@ -26,32 +27,10 @@ const benefits = [
 
 export const SleepMaskBenefits = () => {
   return (
-    <section className="py-16 md:py-24 bg-background">
-      <div className="container mx-auto px-4">
-        <div className="text-center max-w-3xl mx-auto mb-12">
-          <h2 className="text-3xl md:text-5xl font-bold mb-4">
-            Why Choose Silk?
-          </h2>
-          <p className="text-xl text-muted-foreground">
-            Experience the luxury difference that pure silk makes
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-          {benefits.map((benefit, index) => {
-            const Icon = benefit.icon;
-            return (
-              <Card key={index} className="p-6 text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-                  <Icon className="w-8 h-8 text-primary" />
-                </div>
-                <h3 className="text-xl font-bold mb-3">{benefit.title}</h3>
-                <p className="text-muted-foreground">{benefit.description}</p>
-              </Card>
-            );
-          })}
-        </div>
-      </div>
-    </section>
+    <BenefitsSection
+      title="Why Choose Silk?"
+      subtitle="Experience the luxury difference that pure silk makes"
+      items={benefits}
+    />
   );
 };
