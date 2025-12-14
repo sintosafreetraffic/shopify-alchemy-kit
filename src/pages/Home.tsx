@@ -13,7 +13,8 @@ import {
   SleeperPersonaDiscovery, 
   TransformationStories, 
   SleepCoachTeaser, 
-  AmbassadorWall 
+  AmbassadorWall,
+  UGCTestimonialGrid
 } from "@/components/home";
 
 // Multi-resolution hero images for responsive loading
@@ -292,6 +293,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* UGC Testimonial Grid - Social Proof */}
+      <UGCTestimonialGrid />
 
       {/* Transformation Stories */}
       <TransformationStories />
