@@ -1,18 +1,38 @@
 // Performance: Using OptimizedImage for lazy loading
-import { Mail, MapPin } from "lucide-react";
+import { Mail, MapPin, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import moonIcon from "@/assets/moon-icon-blue.png";
 
 export const Footer = () => {
   return (
-    <footer className="border-t bg-white text-foreground">
+    <footer className="border-t bg-background text-foreground">
+      {/* Quiz CTA Banner */}
+      <div className="bg-muted/30 border-b border-border/50">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 max-w-4xl mx-auto">
+            <div className="text-center md:text-left">
+              <p className="font-semibold text-foreground mb-1">Discover Your Sleeper Type</p>
+              <p className="text-sm text-muted-foreground">
+                Take our 3-minute quiz and get personalized sleep recommendations.
+              </p>
+            </div>
+            <Link to="/sleep-quiz">
+              <Button size="sm" className="rounded-full px-6">
+                Take the Quiz <ArrowRight className="w-4 h-4 ml-1.5" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand Column */}
           <div className="space-y-4">
             <img src={moonIcon} alt="Rise By Night" className="w-12 h-12 object-contain" />
-            <p className="text-sm text-muted-foreground">
-              Transform your sleep with the #1 rated ergonomic pillow. Scientifically proven to reduce neck pain and help you wake up refreshed every morning.
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Science-backed sleep solutions designed to help you wake refreshed and perform at your best.
             </p>
           </div>
 
@@ -23,7 +43,7 @@ export const Footer = () => {
               <h3 className="font-semibold mb-4">Quick Links</h3>
               <ul className="space-y-2 text-sm">
                 <li>
-                  <Link to="/sleep-quiz" className="text-muted-foreground hover:text-foreground transition-colors">
+                  <Link to="/sleep-quiz" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
                     Sleep Quiz
                   </Link>
                 </li>
@@ -48,8 +68,8 @@ export const Footer = () => {
                   </Link>
                 </li>
                 <li>
-                  <Link to="/imprint" className="text-muted-foreground hover:text-foreground transition-colors">
-                    Imprint
+                  <Link to="/collective" className="text-muted-foreground hover:text-foreground transition-colors">
+                    Sleep Collective
                   </Link>
                 </li>
               </ul>
