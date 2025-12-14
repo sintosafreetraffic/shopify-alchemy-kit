@@ -8,7 +8,7 @@ const ugcTestimonials = [
     label: "Desk Worker",
     testimonial: "Finally wake up without that familiar neck tension. My mornings feel lighter now.",
     hashtag: "#SleepAligned",
-    hasPhoto: false,
+    hasPhoto: true,
   },
   {
     id: 2,
@@ -16,7 +16,7 @@ const ugcTestimonials = [
     label: "Side Sleeper",
     testimonial: "Switching positions used to wake me up. Now I sleep through the night.",
     hashtag: "#CalmNights",
-    hasPhoto: false,
+    hasPhoto: true,
   },
   {
     id: 3,
@@ -24,7 +24,7 @@ const ugcTestimonials = [
     label: "Stressed Sleeper",
     testimonial: "The quality of my rest has genuinely improved. I feel more present during the day.",
     hashtag: "#MyRiseByNight",
-    hasPhoto: false,
+    hasPhoto: true,
   },
   {
     id: 4,
@@ -32,7 +32,7 @@ const ugcTestimonials = [
     label: "Athlete",
     testimonial: "Recovery starts with sleep. This pillow supports my training routine.",
     hashtag: "#SleepAligned",
-    hasPhoto: false,
+    hasPhoto: true,
   },
   {
     id: 5,
@@ -40,7 +40,7 @@ const ugcTestimonials = [
     label: "Remote Worker",
     testimonial: "No more waking up stiff. My posture has improved both day and night.",
     hashtag: "#CalmNights",
-    hasPhoto: false,
+    hasPhoto: true,
   },
   {
     id: 6,
@@ -48,7 +48,7 @@ const ugcTestimonials = [
     label: "Parent",
     testimonial: "The little sleep I get now actually feels restorative. That matters.",
     hashtag: "#MyRiseByNight",
-    hasPhoto: false,
+    hasPhoto: true,
   },
   {
     id: 7,
@@ -56,7 +56,7 @@ const ugcTestimonials = [
     label: "Yoga Instructor",
     testimonial: "Alignment matters. This pillow understands that in a way others don't.",
     hashtag: "#SleepAligned",
-    hasPhoto: false,
+    hasPhoto: true,
   },
   {
     id: 8,
@@ -64,7 +64,7 @@ const ugcTestimonials = [
     label: "Night Owl",
     testimonial: "Even my shorter sleep sessions feel more effective. Quality over quantity.",
     hashtag: "#CalmNights",
-    hasPhoto: false,
+    hasPhoto: true,
   },
 ];
 
