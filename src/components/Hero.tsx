@@ -12,6 +12,7 @@ import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import { trackPageVisit } from "@/lib/pinterest";
 import { trackViewedProduct } from "@/lib/klaviyo";
+import { useHeaderHeight } from "@/hooks/useHeaderHeight";
 // Using WebP variants for better compression
 import testimonialAvatar from "@/assets/testimonial-new-updated.webp";
 import eyeMaskGift from "@/assets/eye-mask-gift-new.webp";
@@ -34,6 +35,7 @@ export const Hero = () => {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { addItem, setCartOpen } = useCartStore();
   const hasTrackedView = useRef(false);
+  const headerHeight = useHeaderHeight();
 
   // Use centralized cached product data
   const { data: products, isLoading: productsLoading } = useShopifyProducts(10);
@@ -120,7 +122,7 @@ export const Hero = () => {
   const selectedOption = bundles[selectedBundle];
 
   return (
-    <section className="pt-0 pb-3 md:pb-6 bg-background overflow-visible">
+    <section className="pb-3 md:pb-6 bg-background overflow-visible" style={{ paddingTop: headerHeight + 16 }}>
       <div className="container mx-auto px-4 max-w-7xl overflow-visible">
         {/* Mobile Layout: Carousel at top, then title */}
         <div className="md:hidden space-y-3 md:space-y-4 mb-0 md:mb-6">
