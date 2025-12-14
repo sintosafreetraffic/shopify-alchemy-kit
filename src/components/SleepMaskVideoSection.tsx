@@ -41,7 +41,7 @@ const VideoCard = ({ video, onVideoClick }: VideoCardProps) => {
     // Only use hover on non-touch devices
     if (!isTouch && isInView && videoRef.current) {
       videoRef.current.load();
-      videoRef.current.play();
+      videoRef.current.play().catch(() => {});
     }
   };
 
@@ -56,25 +56,9 @@ const VideoCard = ({ video, onVideoClick }: VideoCardProps) => {
   };
 
   const handleClick = () => {
-    if (isTouch) {
-      // Touch device: first tap starts preview, second tap opens modal
-      if (!hasStarted) {
-        if (isInView && videoRef.current) {
-          videoRef.current.load();
-          videoRef.current.play();
-        }
-        return;
-      }
-      // Already playing - open modal
-      onVideoClick(video.src);
-    } else {
-      // Desktop: single click opens modal
-      onVideoClick(video.src);
-    }
+    // Always open modal on click - no preview behavior
+    onVideoClick(video.src);
   };
-
-  // Show tap hint only on touch devices, when in view, and before video starts
-  const showTapHint = isTouch && isInView && !hasStarted;
 
   return (
     <div 
@@ -87,30 +71,51 @@ const VideoCard = ({ video, onVideoClick }: VideoCardProps) => {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        {isInView ? (
-          <video 
-            ref={videoRef}
-            src={video.src}
-            poster={video.poster}
-            className={cn(
-              "w-full h-full object-cover transition-opacity duration-300",
-              hasStarted ? "opacity-100" : "opacity-0"
-            )}
-            loop
-            muted
-            playsInline
-            preload="none"
+        {/* On touch devices: always show static poster. On desktop: use video preview */}
+        {isTouch ? (
+          <img
+            src={video.poster}
+            alt={video.title}
+            loading="lazy"
+            decoding="async"
             width={360}
             height={640}
-            onLoadStart={() => setIsBuffering(true)}
-            onWaiting={() => setIsBuffering(true)}
-            onCanPlay={() => setIsBuffering(false)}
-            onPlaying={() => {
-              setIsBuffering(false);
-              setHasStarted(true);
-            }}
-            onLoadedData={() => setIsBuffering(false)}
+            className="w-full h-full object-cover"
           />
+        ) : isInView ? (
+          <>
+            <video 
+              ref={videoRef}
+              src={video.src}
+              poster={video.poster}
+              className={cn(
+                "w-full h-full object-cover transition-opacity duration-300",
+                hasStarted ? "opacity-100" : "opacity-0"
+              )}
+              loop
+              muted
+              playsInline
+              preload="none"
+              width={360}
+              height={640}
+              onLoadStart={() => setIsBuffering(true)}
+              onWaiting={() => setIsBuffering(true)}
+              onCanPlay={() => setIsBuffering(false)}
+              onPlaying={() => {
+                setIsBuffering(false);
+                setHasStarted(true);
+              }}
+              onLoadedData={() => setIsBuffering(false)}
+            />
+            {/* Poster shown until video starts playing */}
+            {!hasStarted && (
+              <img
+                src={video.poster}
+                alt={video.title}
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+            )}
+          </>
         ) : (
           <img
             src={video.poster}
@@ -122,35 +127,18 @@ const VideoCard = ({ video, onVideoClick }: VideoCardProps) => {
             className="w-full h-full object-cover"
           />
         )}
-        {/* Poster shown until video starts playing */}
-        {isInView && !hasStarted && (
-          <img
-            src={video.poster}
-            alt={video.title}
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-        )}
         <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-transparent transition-colors">
-          <div className="w-14 h-14 rounded-full bg-white/90 shadow-lg shadow-black/40 flex items-center justify-center group-hover:scale-105 transition-transform">
+          <div className="w-14 h-14 rounded-full bg-white/90 shadow-lg shadow-black/40 flex items-center justify-center group-hover:scale-105 transition-transform" aria-hidden="true">
             <Play className="w-6 h-6 text-black ml-0.5" fill="currentColor" />
           </div>
+          <span className="sr-only">Play {video.title} video</span>
         </div>
-        {/* Buffering spinner */}
-        {isBuffering && (
+        {/* Buffering spinner - only on desktop */}
+        {!isTouch && isBuffering && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40">
             <Loader2 className="h-8 w-8 animate-spin text-white" />
           </div>
         )}
-        {/* Mobile tap hint */}
-        <div 
-          className={cn(
-            "pointer-events-none absolute top-3 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full bg-black/60 text-xs text-white backdrop-blur-sm flex items-center gap-1.5 transition-opacity duration-200",
-            showTapHint ? "opacity-100" : "opacity-0"
-          )}
-        >
-          <Hand className="w-3 h-3" />
-          <span>Tap to preview</span>
-        </div>
         <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
           <p className="text-white font-semibold">{video.title}</p>
           <p className="text-white/80 text-sm">{video.views} views</p>
