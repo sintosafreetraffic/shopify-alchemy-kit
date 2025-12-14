@@ -148,6 +148,7 @@ export const useCartStore = create<CartStore>()(
             variantId: item.variantId,
             quantity: item.quantity,
             price: item.price,
+            currencyCode: item.price.currencyCode,
           })));
           
           // Track revenue attribution for checkout initiation

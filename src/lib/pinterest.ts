@@ -117,8 +117,10 @@ export function trackAddToCart(
   }
 }
 
-// Session storage key for InitiateCheckout fingerprint deduplication
+// Session storage keys for InitiateCheckout fingerprint deduplication
 const INITIATE_CHECKOUT_FP_KEY = 'pinterest_initiatecheckout_fp';
+const INITIATE_CHECKOUT_TS_KEY = 'pinterest_initiatecheckout_ts';
+const INITIATE_CHECKOUT_DEDUPE_WINDOW_MS = 30000; // 30 seconds
 
 // Generate cart fingerprint for deduplication
 export function generateCartFingerprint(items: Array<{ variantId: string; quantity: number; price?: { amount: string } }>): string {
@@ -129,28 +131,54 @@ export function generateCartFingerprint(items: Array<{ variantId: string; quanti
 }
 
 // Track InitiateCheckout event (when user clicks checkout button)
-// IMPORTANT: This is NOT a completed transaction - use InitiateCheckout, not Checkout!
+// IMPORTANT: This is NOT a completed transaction - use initiatecheckout, not checkout!
 // Completed transactions (Checkout) must ONLY be fired by Shopify's Pinterest App after payment.
-// Deduplication: Only fires if cart fingerprint changed since last InitiateCheckout.
-export function trackInitiateCheckout(items: Array<{ variantId: string; quantity: number; price?: { amount: string } }>): boolean {
+// Deduplication: Only fires if cart fingerprint changed OR 30 seconds have passed.
+export function trackInitiateCheckout(items: Array<{ variantId: string; quantity: number; price?: { amount: string }; currencyCode?: string }>): boolean {
   if (typeof window === 'undefined' || !window.pintrk) {
     return false;
   }
   
   const fingerprint = generateCartFingerprint(items);
   const lastFingerprint = sessionStorage.getItem(INITIATE_CHECKOUT_FP_KEY);
+  const lastTimestamp = sessionStorage.getItem(INITIATE_CHECKOUT_TS_KEY);
+  const now = Date.now();
   
-  // Dedupe: skip if same cart state already tracked
-  if (fingerprint === lastFingerprint) {
-    console.log('[Pinterest] InitiateCheckout skipped (duplicate fingerprint)');
-    return false;
+  // Dedupe: skip if same cart state already tracked within 30 seconds
+  if (fingerprint === lastFingerprint && lastTimestamp) {
+    const elapsed = now - parseInt(lastTimestamp, 10);
+    if (elapsed < INITIATE_CHECKOUT_DEDUPE_WINDOW_MS) {
+      console.log('[Pinterest] InitiateCheckout skipped (duplicate within 30s window)');
+      return false;
+    }
   }
   
-  const data = {
+  // Calculate totals for event data
+  const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+  const totalValue = items.reduce((sum, item) => {
+    const price = parseFloat(item.price?.amount || '0');
+    return sum + (price * item.quantity);
+  }, 0);
+  const currency = items[0]?.currencyCode || 'USD';
+  
+  const data: Record<string, any> = {
     event_id: generateEventId(),
+    order_quantity: totalQuantity,
   };
-  window.pintrk('track', 'initiateCheckout', data);
+  
+  // Only include value/currency if we have valid amounts
+  if (totalValue > 0) {
+    data.value = totalValue;
+    data.currency = currency;
+  }
+  
+  // CRITICAL: Event name must be all lowercase 'initiatecheckout'
+  window.pintrk('track', 'initiatecheckout', data);
+  
+  // Store fingerprint and timestamp for deduplication
   sessionStorage.setItem(INITIATE_CHECKOUT_FP_KEY, fingerprint);
+  sessionStorage.setItem(INITIATE_CHECKOUT_TS_KEY, String(now));
+  
   console.log('[Pinterest] InitiateCheckout tracked', data);
   return true;
 }
@@ -159,6 +187,7 @@ export function trackInitiateCheckout(items: Array<{ variantId: string; quantity
 export function clearInitiateCheckoutFingerprint(): void {
   if (typeof window !== 'undefined') {
     sessionStorage.removeItem(INITIATE_CHECKOUT_FP_KEY);
+    sessionStorage.removeItem(INITIATE_CHECKOUT_TS_KEY);
   }
 }
 
