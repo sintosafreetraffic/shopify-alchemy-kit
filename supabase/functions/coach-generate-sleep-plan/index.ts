@@ -39,6 +39,16 @@ import {
   fullSleepSync,
 } from "../_shared/sleep-sync.ts";
 import { SleepSyncSource, SleepAttributes } from "../_shared/types.ts";
+import {
+  analyzeRiskDrivers,
+  calculateSpineScoreV2,
+  calculateCoachReadiness,
+  getPersonalizationIntensity,
+  buildPersonalizationPromptModifier,
+  SpineScoreBreakdown,
+  RiskAnalysis,
+  CoachReadiness,
+} from "../_shared/coach-metrics.ts";
 
 interface SleepProfile {
   email: string;
@@ -188,26 +198,69 @@ Deno.serve(async (req) => {
       },
     });
 
-    // === STEP 3: Call AI Brain with structured snapshots + 3-layer context ===
-    console.log('[AI Brain] Calling with 3-layer context and hard constraints');
+    // === STEP 3: Calculate deterministic coach metrics ===
+    const spineScoreBreakdown: SpineScoreBreakdown = calculateSpineScoreV2(sleepAttributes);
+    const riskAnalysis: RiskAnalysis = analyzeRiskDrivers(sleepAttributes);
+    const coachReadiness: CoachReadiness = calculateCoachReadiness(sleepAttributes);
+    const personalizationIntensity = getPersonalizationIntensity(sleepAttributes);
+
+    console.log('[SleepCoach] Deterministic metrics calculated', {
+      spineScore: spineScoreBreakdown.score,
+      spineTrend: spineScoreBreakdown.trend,
+      riskLevel: riskAnalysis.level,
+      riskDrivers: riskAnalysis.drivers.slice(0, 2),
+      coachReadinessLabel: coachReadiness.label,
+      personalizationIntensity,
+    });
+
+    // Build metrics context for AI prompt (plain language, no raw scores for AI to use)
+    const metricsContext = {
+      spineScoreSummary: `${spineScoreBreakdown.score}/100 (${
+        spineScoreBreakdown.score >= 70 ? 'good foundation' : 
+        spineScoreBreakdown.score >= 50 ? 'room for improvement' : 'needs attention'
+      }). Trend: ${spineScoreBreakdown.trend}.`,
+      riskDriversSummary: riskAnalysis.drivers.length > 0 
+        ? riskAnalysis.rationale 
+        : 'No significant risk factors detected.',
+      coachReadinessLabel: coachReadiness.label,
+      personalizationIntensity,
+      refreshReason: reason,
+      personaCluster: (profile as any)?.persona_cluster || 
+        (sleepAttributes.sleep_position === 'side' && sleepAttributes.pain_points?.length > 0 
+          ? 'pain_sleeper' 
+          : sleepAttributes.stress_level === 'high' 
+            ? 'stress_insomnia' 
+            : 'optimizer'),
+    };
+
+    // === STEP 4: Call AI Brain with structured snapshots + metrics context ===
+    console.log('[AI Brain] Calling with 3-layer context, hard constraints, and deterministic metrics');
     let parsed;
     try {
-      // Pass enhanced snapshots with full 3-layer context
-      parsed = await callSleepPlanAI('', planType, profileSnapshot, enhancedLogsSnapshot);
-      console.log('[AI Brain] Plan generated successfully');
+      // Pass enhanced snapshots with full 3-layer context + metrics
+      parsed = await callSleepPlanAI('', planType, profileSnapshot, enhancedLogsSnapshot, metricsContext);
+      console.log('[AI Brain] Enhanced plan generated successfully');
       
-      // === STEP 4: Validate and sanitize AI output ===
+      // === STEP 5: Validate and sanitize AI output ===
       parsed = validateAndSanitizePlan(parsed, profileSnapshot, enhancedLogsSnapshot);
     } catch (aiError) {
       console.error('[AI Brain] Error, using fallback:', aiError);
       parsed = getDefaultSleepPlan();
     }
 
-    // === STEP 5: Calculate spine score from data ===
-    const spineScore = calculateSpineScore(profileSnapshot, enhancedLogsSnapshot);
-    parsed.spineScore = spineScore;
+    // === STEP 6: Override spine score with deterministic calculation ===
+    parsed.spineScore = spineScoreBreakdown.score;
+    
+    // Build spine score hint if AI didn't provide one
+    if (!parsed.spineScoreHint) {
+      parsed.spineScoreHint = `Your spine health score of ${spineScoreBreakdown.score}/100 reflects ${
+        spineScoreBreakdown.score >= 70 ? 'a solid foundation for quality sleep' :
+        spineScoreBreakdown.score >= 50 ? 'room for improvement in your sleep alignment' :
+        'an opportunity to build better sleep habits'
+      }. ${spineScoreBreakdown.trend === 'improving' ? 'Great progress!' : spineScoreBreakdown.trend === 'declining' ? 'Let\'s focus on stabilization.' : ''}`;
+    }
 
-    // === STEP 6: Save to database with snapshots ===
+    // === STEP 7: Save to database with snapshots and enhanced fields ===
     const validUntil = new Date();
     validUntil.setDate(validUntil.getDate() + 7);
 
@@ -224,9 +277,23 @@ Deno.serve(async (req) => {
         whatsapp_messages: [],
         klaviyo_events: [],
         spine_health_score: parsed.spineScore,
-        raw_ai_response: JSON.stringify(parsed),
+        raw_ai_response: JSON.stringify({
+          ...parsed,
+          // Store enhanced v2 fields in raw response for UI access
+          planHeadline: parsed.planHeadline,
+          whyThisPlan: parsed.whyThisPlan,
+          spineScoreHint: parsed.spineScoreHint,
+          riskFocus: parsed.riskFocus,
+          // Store metrics context for debugging/traceability
+          metricsContext: {
+            spineScoreBreakdown,
+            riskAnalysis: { level: riskAnalysis.level, drivers: riskAnalysis.drivers },
+            coachReadiness: { label: coachReadiness.label, score: coachReadiness.score },
+            personalizationIntensity,
+          },
+        }),
         valid_until: validUntil.toISOString(),
-        // NEW: Store snapshots for traceability (includes 3-layer data)
+        // Store snapshots for traceability (includes 3-layer data)
         profile_snapshot: profileSnapshot,
         logs_snapshot: enhancedLogsSnapshot,
         trend_at_generation: enhancedLogsSnapshot.trend,
@@ -240,7 +307,11 @@ Deno.serve(async (req) => {
       throw error;
     }
 
-    console.log('[coach-generate-sleep-plan] Plan saved:', plan.id);
+    console.log('[coach-generate-sleep-plan] Enhanced plan saved:', plan.id, {
+      spineScore: parsed.spineScore,
+      hasHeadline: !!parsed.planHeadline,
+      hasWhyThisPlan: !!parsed.whyThisPlan,
+    });
 
     // TRIGGER FULL SLEEP SYNC after plan creation (handles Klaviyo events + profile update)
     try {
