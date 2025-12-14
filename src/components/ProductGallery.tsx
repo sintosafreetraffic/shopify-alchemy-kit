@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import { fetchProducts, type ShopifyProduct } from "@/lib/shopify";
 import OptimizedImage from "@/components/OptimizedImage";
 // Using WebP variants where available for better performance
-import pillowMain from "@/assets/ergonomic-pillow-main-hero.webp";
+import ergonomicPillowProduct from "@/assets/ergonomic-pillow-product.webp";
 import kneePillowMain from "@/assets/knee-pillow-main-new.webp";
 import eyeMaskGift from "@/assets/eye-mask-gift-new.webp";
 import completeSleepBundle from "@/assets/complete-sleep-bundle-updated.webp";
@@ -68,7 +68,7 @@ export const ProductGallery = () => {
       originalPrice: "$259.98",
       rating: 4.8,
       reviews: "6,247",
-      image: pillowMain,
+      image: ergonomicPillowProduct,
       features: ["Ergonomic contour design", "Cooling gel technology", "High-density memory foam", "3-5 year lifespan"],
       badge: "Christmas 1+1 Deal",
       link: "/product/ergonomic-pillow",
