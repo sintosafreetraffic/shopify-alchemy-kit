@@ -10,8 +10,8 @@
  * - No medical claims
  * - Full segmentation support for Klaviyo
  * 
- * v7: Added recovery_sleeper persona, refined optimizer detection,
- *     added Sleep Hygiene module (12)
+ * v8: Psychology-first persona detection with explicit PERSONA_RULES,
+ *     separated signal detection, improved confidence logic
  */
 
 // ============ TYPES ============
@@ -274,260 +274,425 @@ export interface SleepAssessment {
   coach_readiness_rationale: string;
 }
 
-// ============ PERSONA DETECTION ============
+// ============ v8: PSYCHOLOGY-FIRST PERSONA DETECTION ============
 
 /**
- * Detect user persona based on quiz answers using weighted scoring
+ * v8: Detected signals from quiz answers
  * 
- * Pain Sleeper → High alignment risk + neck pain + physical discomfort indicators
- * Stress/Insomnia → Sleep instability + light/temperature issues + environment sensitivity
- * Optimizer → High motivation/engagement + performance goals + good baseline
- * Recovery Sleeper → Recovery/training focus + performance goals + good baseline (v7)
+ * Signals are boolean indicators derived from quiz answers.
+ * They represent psychological and behavioral patterns, not just symptoms.
+ */
+interface DetectedSignals {
+  // Pain Sleeper signals (alignment/physical comfort)
+  hasNeckPain: boolean;
+  hasShoulderPain: boolean;
+  hasUpperBackPain: boolean;
+  hasLowerBackPain: boolean;
+  hasHipPain: boolean;
+  hasHighPainSeverity: boolean;      // painSeverity >= 6
+  hasModeratePainSeverity: boolean;  // painSeverity >= 4
+  hasLowPillowSatisfaction: boolean; // pillowSatisfaction <= 4
+  hasPainReductionGoal: boolean;
+  hasPostureGoal: boolean;
+  hasMorningStiffnessPattern: boolean; // moves often + pain areas
+  hasMultiplePillows: boolean;
+  
+  // Stress & Environment Sleeper signals (environment/nervous system)
+  hasBrightRoom: boolean;
+  hasDimRoom: boolean;
+  hasSleepHot: boolean;
+  hasSleepCold: boolean;
+  hasFrequentAwakenings: boolean;    // 4+ times
+  hasModerateAwakenings: boolean;    // 2-3 times
+  hasSlowSleepOnset: boolean;        // 30-60 min
+  hasVerySlowSleepOnset: boolean;    // 60+ min
+  hasRestlessWithoutPain: boolean;   // moves often but no pain
+  hasStayAsleepGoal: boolean;
+  hasFallAsleepFasterGoal: boolean;
+  hasHighScreenUse: boolean;         // always/often
+  hasNoisyEnvironment: boolean;
+  hasRacingMindPattern: boolean;     // slow onset + high screen + stress indicators
+  
+  // Recovery Sleeper signals (physical restoration/training)
+  hasRecoveryGoal: boolean;          // faster_recovery, better_recovery, muscle_repair
+  hasWakeRefreshedGoal: boolean;
+  hasMoreEnergyGoal: boolean;
+  usesWearables: boolean;            // oura, whoop, fitness tracker
+  hasMultiplePerformanceGoals: boolean;
+  hasLowPainBaseline: boolean;       // painSeverity <= 3 && no pain areas
+  hasGoodSleepStability: boolean;    // rarely/never awakenings
+  
+  // Optimizer signals (performance/motivation)
+  hasBetterQualityGoal: boolean;
+  hasMultipleGoals: boolean;         // 3+ goals
+  hasHighPillowSatisfaction: boolean; // pillowSatisfaction >= 7
+  hasQuickSleepOnset: boolean;       // quick or normal
+  hasMinimalIssues: boolean;         // low pain + good environment + stable sleep
+}
+
+/**
+ * v8: Explicit persona scoring rules
  * 
- * v7: Added recovery_sleeper detection, refined optimizer scoring to prevent
- *     misclassification when pain/environment issues are dominant.
+ * Each rule maps a signal to a weight for each persona.
+ * Positive weights indicate the signal supports that persona.
+ * Negative weights indicate the signal contradicts that persona.
+ */
+const PERSONA_RULES: Record<keyof DetectedSignals, {
+  pain_sleeper: number;
+  stress_insomnia: number;
+  optimizer: number;
+  recovery_sleeper: number;
+}> = {
+  // === PAIN SLEEPER PRIMARY SIGNALS ===
+  hasNeckPain:              { pain_sleeper: 6, stress_insomnia: 0, optimizer: -1, recovery_sleeper: 0 },
+  hasShoulderPain:          { pain_sleeper: 5, stress_insomnia: 0, optimizer: -1, recovery_sleeper: 0 },
+  hasUpperBackPain:         { pain_sleeper: 5, stress_insomnia: 0, optimizer: -1, recovery_sleeper: 0 },
+  hasLowerBackPain:         { pain_sleeper: 6, stress_insomnia: 0, optimizer: -1, recovery_sleeper: 0 },
+  hasHipPain:               { pain_sleeper: 5, stress_insomnia: 0, optimizer: -1, recovery_sleeper: 0 },
+  hasHighPainSeverity:      { pain_sleeper: 7, stress_insomnia: 0, optimizer: -3, recovery_sleeper: -2 },
+  hasModeratePainSeverity:  { pain_sleeper: 4, stress_insomnia: 0, optimizer: -1, recovery_sleeper: -1 },
+  hasLowPillowSatisfaction: { pain_sleeper: 5, stress_insomnia: 1, optimizer: -2, recovery_sleeper: -1 },
+  hasPainReductionGoal:     { pain_sleeper: 6, stress_insomnia: 0, optimizer: 0, recovery_sleeper: 1 },
+  hasPostureGoal:           { pain_sleeper: 4, stress_insomnia: 0, optimizer: 2, recovery_sleeper: 1 },
+  hasMorningStiffnessPattern: { pain_sleeper: 5, stress_insomnia: 0, optimizer: -1, recovery_sleeper: 0 },
+  hasMultiplePillows:       { pain_sleeper: 4, stress_insomnia: 1, optimizer: -1, recovery_sleeper: 0 },
+  
+  // === STRESS & ENVIRONMENT SLEEPER PRIMARY SIGNALS ===
+  hasBrightRoom:            { pain_sleeper: 0, stress_insomnia: 6, optimizer: -1, recovery_sleeper: -1 },
+  hasDimRoom:               { pain_sleeper: 0, stress_insomnia: 3, optimizer: 0, recovery_sleeper: 0 },
+  hasSleepHot:              { pain_sleeper: 0, stress_insomnia: 5, optimizer: -1, recovery_sleeper: 1 },
+  hasSleepCold:             { pain_sleeper: 0, stress_insomnia: 3, optimizer: 0, recovery_sleeper: 0 },
+  hasFrequentAwakenings:    { pain_sleeper: 1, stress_insomnia: 6, optimizer: -2, recovery_sleeper: -1 },
+  hasModerateAwakenings:    { pain_sleeper: 1, stress_insomnia: 4, optimizer: -1, recovery_sleeper: 0 },
+  hasSlowSleepOnset:        { pain_sleeper: 0, stress_insomnia: 4, optimizer: -1, recovery_sleeper: 0 },
+  hasVerySlowSleepOnset:    { pain_sleeper: 0, stress_insomnia: 6, optimizer: -2, recovery_sleeper: -1 },
+  hasRestlessWithoutPain:   { pain_sleeper: 0, stress_insomnia: 5, optimizer: 0, recovery_sleeper: 0 },
+  hasStayAsleepGoal:        { pain_sleeper: 1, stress_insomnia: 5, optimizer: 1, recovery_sleeper: 1 },
+  hasFallAsleepFasterGoal:  { pain_sleeper: 0, stress_insomnia: 5, optimizer: 1, recovery_sleeper: 0 },
+  hasHighScreenUse:         { pain_sleeper: 0, stress_insomnia: 3, optimizer: 0, recovery_sleeper: 0 },
+  hasNoisyEnvironment:      { pain_sleeper: 0, stress_insomnia: 4, optimizer: -1, recovery_sleeper: -1 },
+  hasRacingMindPattern:     { pain_sleeper: 0, stress_insomnia: 5, optimizer: -1, recovery_sleeper: -1 },
+  
+  // === RECOVERY SLEEPER PRIMARY SIGNALS ===
+  hasRecoveryGoal:          { pain_sleeper: 1, stress_insomnia: 0, optimizer: 2, recovery_sleeper: 7 },
+  hasWakeRefreshedGoal:     { pain_sleeper: 1, stress_insomnia: 1, optimizer: 4, recovery_sleeper: 4 },
+  hasMoreEnergyGoal:        { pain_sleeper: 1, stress_insomnia: 1, optimizer: 3, recovery_sleeper: 5 },
+  usesWearables:            { pain_sleeper: 0, stress_insomnia: 0, optimizer: 3, recovery_sleeper: 5 },
+  hasMultiplePerformanceGoals: { pain_sleeper: 0, stress_insomnia: 0, optimizer: 2, recovery_sleeper: 4 },
+  hasLowPainBaseline:       { pain_sleeper: -3, stress_insomnia: 1, optimizer: 3, recovery_sleeper: 3 },
+  hasGoodSleepStability:    { pain_sleeper: 0, stress_insomnia: -2, optimizer: 3, recovery_sleeper: 2 },
+  
+  // === OPTIMIZER PRIMARY SIGNALS ===
+  hasBetterQualityGoal:     { pain_sleeper: 1, stress_insomnia: 1, optimizer: 5, recovery_sleeper: 2 },
+  hasMultipleGoals:         { pain_sleeper: 1, stress_insomnia: 1, optimizer: 4, recovery_sleeper: 2 },
+  hasHighPillowSatisfaction: { pain_sleeper: -2, stress_insomnia: 0, optimizer: 4, recovery_sleeper: 2 },
+  hasQuickSleepOnset:       { pain_sleeper: 0, stress_insomnia: -2, optimizer: 3, recovery_sleeper: 2 },
+  hasMinimalIssues:         { pain_sleeper: -4, stress_insomnia: -3, optimizer: 5, recovery_sleeper: 3 },
+};
+
+/**
+ * v8: Detect signals from quiz answers
+ * 
+ * This function translates raw quiz answers into psychological/behavioral signals.
+ * Signals are easier to reason about and adjust than raw answer checks.
+ */
+function detectSignals(quizAnswers: Record<string, any>): DetectedSignals {
+  const painAreas: string[] = quizAnswers.painAreas || quizAnswers.painPoints || [];
+  const sleepGoals: string[] = quizAnswers.sleepGoals || [];
+  const sleepEquipment: string[] = quizAnswers.sleepEquipment || [];
+  const nightAwakenings: string = quizAnswers.nightAwakenings || "";
+  const movesOften: string = quizAnswers.movesOften || "";
+  const roomBrightness: string = quizAnswers.roomBrightness || "";
+  const sleepTemperature: string = quizAnswers.sleepTemperature || "";
+  const pillowSatisfaction: number = quizAnswers.pillowSatisfaction ?? 5;
+  const sleepLatency: string = quizAnswers.sleepLatency || "";
+  const painSeverity: number = quizAnswers.painSeverity ?? 5;
+  const pillowCount: string = quizAnswers.pillowCount || "";
+  const eveningScreenUse: string = quizAnswers.eveningScreenUse || "";
+  const roomNoise: string = quizAnswers.roomNoise || "";
+  
+  // Helper: check if any pain areas exist (excluding "none")
+  const hasPain = painAreas.some(p => p !== "none" && p !== "no_pain");
+  
+  // Detect performance-related goals
+  const performanceGoals = ['faster_recovery', 'better_recovery', 'muscle_repair', 'wake_refreshed', 'more_energy'];
+  const recoveryGoals = ['faster_recovery', 'better_recovery', 'muscle_repair'];
+  
+  return {
+    // Pain Sleeper signals
+    hasNeckPain: painAreas.includes("neck"),
+    hasShoulderPain: painAreas.includes("shoulders"),
+    hasUpperBackPain: painAreas.includes("upper_back"),
+    hasLowerBackPain: painAreas.includes("lower_back"),
+    hasHipPain: painAreas.includes("hips"),
+    hasHighPainSeverity: painSeverity >= 6,
+    hasModeratePainSeverity: painSeverity >= 4 && painSeverity < 6,
+    hasLowPillowSatisfaction: pillowSatisfaction <= 4,
+    hasPainReductionGoal: sleepGoals.includes("reduce_pain"),
+    hasPostureGoal: sleepGoals.includes("better_posture"),
+    hasMorningStiffnessPattern: (movesOften === "always" || movesOften === "often") && hasPain,
+    hasMultiplePillows: pillowCount === "2" || pillowCount === "3" || pillowCount === "3+",
+    
+    // Stress & Environment Sleeper signals
+    hasBrightRoom: roomBrightness === "bright",
+    hasDimRoom: roomBrightness === "dim",
+    hasSleepHot: sleepTemperature === "hot",
+    hasSleepCold: sleepTemperature === "cold",
+    hasFrequentAwakenings: nightAwakenings === "frequently",
+    hasModerateAwakenings: nightAwakenings === "twice",
+    hasSlowSleepOnset: sleepLatency === "slow",
+    hasVerySlowSleepOnset: sleepLatency === "very_slow",
+    hasRestlessWithoutPain: (movesOften === "always" || movesOften === "often") && !hasPain,
+    hasStayAsleepGoal: sleepGoals.includes("stay_asleep"),
+    hasFallAsleepFasterGoal: sleepGoals.includes("fall_asleep_faster"),
+    hasHighScreenUse: eveningScreenUse === "always" || eveningScreenUse === "often",
+    hasNoisyEnvironment: roomNoise === "noisy",
+    hasRacingMindPattern: (sleepLatency === "slow" || sleepLatency === "very_slow") && 
+                          (eveningScreenUse === "always" || eveningScreenUse === "often"),
+    
+    // Recovery Sleeper signals
+    hasRecoveryGoal: recoveryGoals.some(g => sleepGoals.includes(g)),
+    hasWakeRefreshedGoal: sleepGoals.includes("wake_refreshed"),
+    hasMoreEnergyGoal: sleepGoals.includes("more_energy"),
+    usesWearables: sleepEquipment.includes("oura") || sleepEquipment.includes("whoop") || 
+                   sleepEquipment.includes("fitness_tracker") || sleepEquipment.includes("smart_watch"),
+    hasMultiplePerformanceGoals: sleepGoals.filter(g => performanceGoals.includes(g)).length >= 2,
+    hasLowPainBaseline: painSeverity <= 3 && !hasPain,
+    hasGoodSleepStability: nightAwakenings === "rarely" || nightAwakenings === "never",
+    
+    // Optimizer signals
+    hasBetterQualityGoal: sleepGoals.includes("better_quality"),
+    hasMultipleGoals: sleepGoals.length >= 3,
+    hasHighPillowSatisfaction: pillowSatisfaction >= 7,
+    hasQuickSleepOnset: sleepLatency === "quick" || sleepLatency === "normal",
+    hasMinimalIssues: painSeverity <= 2 && !hasPain && 
+                      (roomBrightness === "dark" || roomBrightness === "") &&
+                      (sleepTemperature === "neutral" || sleepTemperature === "") &&
+                      (nightAwakenings === "rarely" || nightAwakenings === "never"),
+  };
+}
+
+/**
+ * v8: Calculate persona scores from detected signals
+ * 
+ * Iterates through all detected signals and applies PERSONA_RULES weights.
+ * Returns raw scores for each persona.
+ */
+function calculatePersonaScores(signals: DetectedSignals): Record<PersonaCluster, number> {
+  const scores: Record<PersonaCluster, number> = {
+    pain_sleeper: 0,
+    stress_insomnia: 0,
+    optimizer: 0,
+    recovery_sleeper: 0,
+  };
+  
+  // Apply each rule
+  for (const [signalKey, isActive] of Object.entries(signals)) {
+    if (isActive) {
+      const rule = PERSONA_RULES[signalKey as keyof DetectedSignals];
+      scores.pain_sleeper += rule.pain_sleeper;
+      scores.stress_insomnia += rule.stress_insomnia;
+      scores.optimizer += rule.optimizer;
+      scores.recovery_sleeper += rule.recovery_sleeper;
+    }
+  }
+  
+  // Ensure no negative scores (just floor at 0)
+  scores.pain_sleeper = Math.max(0, scores.pain_sleeper);
+  scores.stress_insomnia = Math.max(0, scores.stress_insomnia);
+  scores.optimizer = Math.max(0, scores.optimizer);
+  scores.recovery_sleeper = Math.max(0, scores.recovery_sleeper);
+  
+  return scores;
+}
+
+/**
+ * v8: Build psychology-first rationale from signals
+ * 
+ * Creates human-readable explanations based on which signals were detected.
+ * Uses calm, scientific, non-medical language.
+ */
+function buildRationale(cluster: PersonaCluster, signals: DetectedSignals): string {
+  const observations: string[] = [];
+  
+  if (cluster === "pain_sleeper") {
+    // Build specific observations for pain sleeper
+    if (signals.hasNeckPain) observations.push("neck tension");
+    if (signals.hasShoulderPain) observations.push("shoulder stiffness");
+    if (signals.hasLowerBackPain) observations.push("lower back discomfort");
+    if (signals.hasHipPain) observations.push("hip alignment concerns");
+    if (signals.hasHighPainSeverity) observations.push("elevated morning discomfort levels");
+    if (signals.hasLowPillowSatisfaction) observations.push("current pillow not meeting your support needs");
+    if (signals.hasMorningStiffnessPattern) observations.push("restless movement patterns suggesting discomfort");
+    
+    const focus = observations.slice(0, 3).join(", ") || "physical comfort and alignment";
+    return `Your responses indicate that ${focus} ${observations.length > 1 ? 'are' : 'is'} influencing your sleep quality. Addressing cervical and spinal support can meaningfully reduce tension and enhance your overall rest.`;
+  }
+  
+  if (cluster === "stress_insomnia") {
+    // Build specific observations for stress & environment sleeper
+    if (signals.hasBrightRoom) observations.push("light exposure in your sleep environment");
+    if (signals.hasSleepHot) observations.push("elevated sleep temperature");
+    if (signals.hasSleepCold) observations.push("cooler-than-ideal sleep environment");
+    if (signals.hasFrequentAwakenings || signals.hasModerateAwakenings) observations.push("fragmented sleep patterns");
+    if (signals.hasVerySlowSleepOnset || signals.hasSlowSleepOnset) observations.push("difficulty winding down at night");
+    if (signals.hasRacingMindPattern) observations.push("an active mind before bed");
+    if (signals.hasNoisyEnvironment) observations.push("environmental noise disruptions");
+    
+    const focus = observations.slice(0, 3).join(", ") || "environmental factors and wind-down difficulty";
+    return `Your sleep patterns suggest that ${focus} ${observations.length > 1 ? 'are' : 'is'} influencing your rest quality. Optimizing your sleep environment and establishing calming routines can strengthen your natural sleep cycles.`;
+  }
+  
+  if (cluster === "recovery_sleeper") {
+    // Build specific observations for recovery sleeper
+    if (signals.hasRecoveryGoal) observations.push("a focus on physical recovery");
+    if (signals.hasWakeRefreshedGoal) observations.push("morning readiness as a priority");
+    if (signals.hasMoreEnergyGoal) observations.push("sustained daytime energy");
+    if (signals.usesWearables) observations.push("data-driven sleep tracking");
+    if (signals.hasLowPainBaseline) observations.push("a solid physical foundation");
+    if (signals.hasGoodSleepStability) observations.push("generally stable sleep patterns");
+    
+    const focus = observations.slice(0, 3).join(", ") || "physical restoration and recovery";
+    const foundationNote = (signals.hasLowPainBaseline || signals.hasGoodSleepStability) 
+      ? " You already have a relatively stable sleep foundation. "
+      : " ";
+    return `Your focus on ${focus} indicates a recovery-oriented approach to sleep.${foundationNote}Optimizing deep sleep phases and temperature regulation can enhance your body's natural restoration processes.`;
+  }
+  
+  // Optimizer
+  if (signals.hasBetterQualityGoal) observations.push("overall sleep quality improvement");
+  if (signals.hasWakeRefreshedGoal) observations.push("morning energy optimization");
+  if (signals.hasMultipleGoals) observations.push("multiple improvement goals");
+  if (signals.hasHighPillowSatisfaction) observations.push("a functional current setup");
+  if (signals.hasQuickSleepOnset) observations.push("efficient sleep onset");
+  if (signals.hasMinimalIssues) observations.push("a solid baseline to build upon");
+  
+  const focus = observations.slice(0, 3).join(", ") || "sleep quality and recovery";
+  const foundationNote = signals.hasMinimalIssues 
+    ? " With a solid sleep foundation, "
+    : " ";
+  return `You're focused on enhancing ${focus}.${foundationNote}Targeted improvements to your setup and consistent habits can maximize your body's natural recovery processes.`;
+}
+
+/**
+ * v8: Build confidence reasoning from signals and confidence level
+ */
+function buildConfidenceReasoning(
+  cluster: PersonaCluster, 
+  confidence: number, 
+  signals: DetectedSignals,
+  scores: Record<PersonaCluster, number>
+): string {
+  const confidenceLevel = getPersonaConfidenceLevel(confidence);
+  
+  // Count active signals for the winning persona
+  const clusterSignalMapping: Record<PersonaCluster, (keyof DetectedSignals)[]> = {
+    pain_sleeper: ['hasNeckPain', 'hasShoulderPain', 'hasUpperBackPain', 'hasLowerBackPain', 
+                   'hasHipPain', 'hasHighPainSeverity', 'hasLowPillowSatisfaction', 
+                   'hasPainReductionGoal', 'hasMorningStiffnessPattern'],
+    stress_insomnia: ['hasBrightRoom', 'hasSleepHot', 'hasFrequentAwakenings', 
+                      'hasVerySlowSleepOnset', 'hasRacingMindPattern', 'hasStayAsleepGoal',
+                      'hasFallAsleepFasterGoal', 'hasNoisyEnvironment'],
+    optimizer: ['hasBetterQualityGoal', 'hasMultipleGoals', 'hasHighPillowSatisfaction',
+                'hasQuickSleepOnset', 'hasMinimalIssues'],
+    recovery_sleeper: ['hasRecoveryGoal', 'usesWearables', 'hasMultiplePerformanceGoals',
+                       'hasLowPainBaseline', 'hasGoodSleepStability', 'hasMoreEnergyGoal'],
+  };
+  
+  const relevantSignals = clusterSignalMapping[cluster];
+  const activeSignalCount = relevantSignals.filter(s => signals[s]).length;
+  
+  // Get top 3 active signals for this persona (for debugging)
+  const topSignals = relevantSignals.filter(s => signals[s]).slice(0, 3);
+  console.log(`[Persona Detection] ${cluster}: confidence=${confidence}, activeSignals=${activeSignalCount}, topSignals=${topSignals.join(', ')}, scores=${JSON.stringify(scores)}`);
+  
+  if (confidenceLevel === "high") {
+    return `Your responses show clear ${
+      cluster === "pain_sleeper" ? "alignment and physical comfort" : 
+      cluster === "stress_insomnia" ? "environmental sensitivity and wind-down" : 
+      cluster === "recovery_sleeper" ? "recovery and restoration" : 
+      "optimization and performance"
+    } signals with strong consistency across ${activeSignalCount} key indicators.`;
+  }
+  
+  if (confidenceLevel === "medium") {
+    return `Your responses suggest ${
+      cluster === "pain_sleeper" ? "alignment needs" : 
+      cluster === "stress_insomnia" ? "environmental factors" : 
+      cluster === "recovery_sleeper" ? "recovery focus" : 
+      "optimization goals"
+    } as your primary area, though some secondary patterns were also detected.`;
+  }
+  
+  return `Your sleep profile shows mixed signals across multiple areas. Recommendations are balanced rather than heavily personalized to one focus, which can actually be helpful for addressing multiple factors.`;
+}
+
+/**
+ * v8: Detect user persona using psychology-first approach
+ * 
+ * This function uses explicit signal detection and scoring rules
+ * for clearer, more maintainable persona detection.
  * 
  * Returns enhanced persona with cluster, label, description, rationale, and recommended modules.
  */
 export function detectPersona(quizAnswers: Record<string, any>, scores?: AssessmentScores): PersonaResult {
-  const painAreas = quizAnswers.painAreas || quizAnswers.painPoints || [];
-  const sleepGoals = quizAnswers.sleepGoals || [];
-  const nightAwakenings = quizAnswers.nightAwakenings || "";
-  const movesOften = quizAnswers.movesOften || "";
-  const roomBrightness = quizAnswers.roomBrightness || "";
-  const sleepTemperature = quizAnswers.sleepTemperature || "";
-  const pillowSatisfaction = quizAnswers.pillowSatisfaction ?? 5;
-  const sleepLatency = quizAnswers.sleepLatency || "";
-  const painSeverity = quizAnswers.painSeverity ?? 5;
-  const sleepEquipment = quizAnswers.sleepEquipment || [];
+  // Step 1: Detect all signals from quiz answers
+  const signals = detectSignals(quizAnswers);
   
-  // Calculate persona scores with refined weighting
-  let painSleeperScore = 0;
-  let stressInsomniaScore = 0;
-  let optimizerScore = 0;
-  let recoverySleeperScore = 0; // v7: New recovery persona
+  // Step 2: Calculate raw persona scores using explicit rules
+  const personaScores = calculatePersonaScores(signals);
   
-  // ===== PAIN SLEEPER INDICATORS (alignment/pain focused) =====
-  // Primary pain signals
-  if (painAreas.includes("neck")) painSleeperScore += 5;
-  if (painAreas.includes("shoulders")) painSleeperScore += 4;
-  if (painAreas.includes("upper_back")) painSleeperScore += 4;
-  if (painAreas.includes("lower_back")) painSleeperScore += 5;
-  if (painAreas.includes("hips")) painSleeperScore += 4;
-  
-  // Pain severity weighting
-  if (painSeverity >= 7) painSleeperScore += 6;
-  else if (painSeverity >= 5) painSleeperScore += 3;
-  else if (painSeverity >= 3) painSleeperScore += 1;
-  
-  // Pillow dissatisfaction (key pain indicator)
-  if (pillowSatisfaction <= 3) painSleeperScore += 4;
-  else if (pillowSatisfaction <= 5) painSleeperScore += 2;
-  
-  // Pain-focused goals
-  if (sleepGoals.includes("reduce_pain")) painSleeperScore += 5;
-  if (sleepGoals.includes("better_posture")) painSleeperScore += 3;
-  
-  // Morning stiffness indicator (restless movement often = discomfort)
-  if (movesOften === "always" && painAreas.length > 0) painSleeperScore += 3;
-  
-  // ===== STRESS / INSOMNIA INDICATORS (environment/stability focused) =====
-  // Light sensitivity
-  if (roomBrightness === "bright") stressInsomniaScore += 5;
-  else if (roomBrightness === "dim") stressInsomniaScore += 3;
-  
-  // Temperature disruption
-  if (sleepTemperature === "hot") stressInsomniaScore += 5;
-  else if (sleepTemperature === "cold") stressInsomniaScore += 3;
-  
-  // Sleep fragmentation
-  if (nightAwakenings === "frequently") stressInsomniaScore += 5;
-  else if (nightAwakenings === "twice") stressInsomniaScore += 3;
-  else if (nightAwakenings === "once") stressInsomniaScore += 1;
-  
-  // Restless movement (without pain = environment/stress cause)
-  if (movesOften === "always" && painAreas.length === 0) stressInsomniaScore += 4;
-  else if (movesOften === "often") stressInsomniaScore += 2;
-  
-  // Sleep onset difficulty
-  if (sleepLatency === "very_slow") stressInsomniaScore += 4;
-  else if (sleepLatency === "slow") stressInsomniaScore += 2;
-  
-  // Environment-focused goals
-  if (sleepGoals.includes("stay_asleep")) stressInsomniaScore += 4;
-  if (sleepGoals.includes("fall_asleep_faster")) stressInsomniaScore += 3;
-  
-  // ===== RECOVERY SLEEPER INDICATORS (v7: recovery/training focused) =====
-  // Explicit recovery goals
-  if (sleepGoals.includes("faster_recovery")) recoverySleeperScore += 6;
-  if (sleepGoals.includes("better_recovery")) recoverySleeperScore += 6;
-  if (sleepGoals.includes("muscle_repair")) recoverySleeperScore += 5;
-  
-  // Performance/energy goals (shared with optimizer but stronger for recovery)
-  if (sleepGoals.includes("wake_refreshed")) recoverySleeperScore += 3;
-  if (sleepGoals.includes("more_energy")) recoverySleeperScore += 4;
-  
-  // Device tracking indicates performance-focused user
-  if (sleepEquipment.includes("oura") || sleepEquipment.includes("whoop")) {
-    recoverySleeperScore += 4;
-    optimizerScore += 2; // Also benefits optimizer
-  }
-  if (sleepEquipment.includes("fitness_tracker") || sleepEquipment.includes("smart_watch")) {
-    recoverySleeperScore += 2;
-    optimizerScore += 1;
-  }
-  
-  // Multiple performance goals = recovery focus
-  const performanceGoals = sleepGoals.filter((g: string) => 
-    ['faster_recovery', 'better_recovery', 'muscle_repair', 'wake_refreshed', 'more_energy'].includes(g)
-  );
-  if (performanceGoals.length >= 2) recoverySleeperScore += 3;
-  
-  // Low pain baseline benefits recovery persona
-  if (painSeverity <= 3 && painAreas.length === 0) recoverySleeperScore += 2;
-  
-  // ===== OPTIMIZER INDICATORS (performance/motivation focused) =====
-  // Performance-driven goals
-  if (sleepGoals.includes("wake_refreshed")) optimizerScore += 4;
-  if (sleepGoals.includes("better_quality")) optimizerScore += 4;
-  if (sleepGoals.includes("more_energy")) optimizerScore += 3;
-  
-  // Already doing okay, seeking optimization
-  if (pillowSatisfaction >= 7) optimizerScore += 3;
-  if (sleepLatency === "quick" || sleepLatency === "normal") optimizerScore += 2;
-  
-  // Multiple goals = motivated optimizer
-  if (sleepGoals.length >= 3) optimizerScore += 3;
-  if (sleepGoals.length >= 4) optimizerScore += 2;
-  
-  // Low pain baseline = optimizer focus
-  if (painSeverity <= 2 && painAreas.length === 0) optimizerScore += 3;
-  else if (painSeverity <= 3) optimizerScore += 1;
-  
-  // Good sleep stability = room for optimization
-  if (nightAwakenings === "rarely" || nightAwakenings === "never") optimizerScore += 2;
-  
-  // ===== v7: REFINED PERSONA SELECTION WITH SAFEGUARDS =====
-  // Prevent optimizer/recovery from winning when pain or environment is clearly dominant
-  
-  const hasDominantPain = painSeverity >= 6 || (scores?.alignment_risk_score ?? 0) >= 50;
+  // Step 3: Apply safeguards for dominant issues
+  // If pain or environment is clearly dominant, cap optimizer/recovery
+  const hasDominantPain = signals.hasHighPainSeverity || 
+                          (scores?.alignment_risk_score ?? 0) >= 50;
   const hasDominantEnvIssues = (scores?.environment_score ?? 100) < 55;
   
-  // Cap optimizer and recovery scores if pain/environment issues are dominant
   if (hasDominantPain) {
-    optimizerScore = Math.min(optimizerScore, painSleeperScore - 2);
-    recoverySleeperScore = Math.min(recoverySleeperScore, painSleeperScore - 2);
+    personaScores.optimizer = Math.min(personaScores.optimizer, personaScores.pain_sleeper - 2);
+    personaScores.recovery_sleeper = Math.min(personaScores.recovery_sleeper, personaScores.pain_sleeper - 2);
   }
   
   if (hasDominantEnvIssues && !hasDominantPain) {
-    optimizerScore = Math.min(optimizerScore, stressInsomniaScore - 2);
-    recoverySleeperScore = Math.min(recoverySleeperScore, stressInsomniaScore - 2);
+    personaScores.optimizer = Math.min(personaScores.optimizer, personaScores.stress_insomnia - 2);
+    personaScores.recovery_sleeper = Math.min(personaScores.recovery_sleeper, personaScores.stress_insomnia - 2);
   }
   
-  // Determine winner with calm, scientific rationale
-  let cluster: PersonaCluster;
-  let rationale: string;
+  // Ensure non-negative after safeguards
+  personaScores.optimizer = Math.max(0, personaScores.optimizer);
+  personaScores.recovery_sleeper = Math.max(0, personaScores.recovery_sleeper);
   
-  // v9: Calculate persona confidence based on signal strength
-  const maxScore = Math.max(painSleeperScore, stressInsomniaScore, optimizerScore, recoverySleeperScore);
-  const allScores = [painSleeperScore, stressInsomniaScore, optimizerScore, recoverySleeperScore].sort((a, b) => b - a);
-  const secondScore = allScores[1] || 0;
+  // Step 4: Determine winner
+  const allScores = [
+    { cluster: "pain_sleeper" as PersonaCluster, score: personaScores.pain_sleeper },
+    { cluster: "stress_insomnia" as PersonaCluster, score: personaScores.stress_insomnia },
+    { cluster: "optimizer" as PersonaCluster, score: personaScores.optimizer },
+    { cluster: "recovery_sleeper" as PersonaCluster, score: personaScores.recovery_sleeper },
+  ].sort((a, b) => b.score - a.score);
   
-  // Confidence = how much the winner leads + signal strength
-  // Higher lead over second place = higher confidence
-  // More total signals = higher confidence (capped)
-  const leadMargin = maxScore - secondScore;
-  const signalStrength = Math.min(maxScore / 15, 1); // Normalize to 0-1, cap at 15 points
-  const leadConfidence = Math.min(leadMargin / 8, 1); // Normalize lead margin
-  const confidence = Math.round((signalStrength * 50 + leadConfidence * 50)); // 0-100
+  const winner = allScores[0];
+  const runnerUp = allScores[1];
+  const cluster = winner.cluster;
   
-  // Use clear decision logic with tie-breaking
+  // Step 5: Calculate confidence (0-100)
+  // Formula: (signal strength * 50) + (lead margin * 50)
+  // Signal strength: how strong is the winner's score (normalized to 0-1, capped at 20 points)
+  // Lead margin: how much the winner leads over runner-up (normalized, capped at 10 points)
+  const signalStrength = Math.min(winner.score / 20, 1);
+  const leadMargin = Math.min((winner.score - runnerUp.score) / 10, 1);
+  const confidence = Math.round((signalStrength * 50) + (leadMargin * 50));
   
-  if (painSleeperScore === maxScore && painSleeperScore > 0) {
-    cluster = "pain_sleeper";
-    
-    // Build specific rationale based on signals
-    const painDetails: string[] = [];
-    if (painAreas.includes("neck")) painDetails.push("neck tension");
-    if (painAreas.includes("lower_back")) painDetails.push("lower back discomfort");
-    if (painAreas.includes("shoulders")) painDetails.push("shoulder stiffness");
-    if (painAreas.includes("hips")) painDetails.push("hip alignment concerns");
-    
-    const painFocus = painDetails.length > 0 
-      ? painDetails.slice(0, 2).join(" and ") 
-      : "physical comfort";
-    
-    rationale = `Your responses indicate that ${painFocus} ${painDetails.length > 1 ? 'are' : 'is'} your primary area for improvement. Addressing cervical and spinal support can meaningfully reduce morning tension and enhance your overall sleep comfort.`;
-    
-  } else if (stressInsomniaScore === maxScore && stressInsomniaScore > 0) {
-    cluster = "stress_insomnia";
-    
-    // Build specific rationale based on signals
-    const envDetails: string[] = [];
-    if (roomBrightness === "bright" || roomBrightness === "dim") envDetails.push("light exposure");
-    if (sleepTemperature === "hot" || sleepTemperature === "cold") envDetails.push("temperature regulation");
-    if (nightAwakenings === "frequently" || nightAwakenings === "twice") envDetails.push("sleep continuity");
-    if (sleepLatency === "very_slow" || sleepLatency === "slow") envDetails.push("sleep onset");
-    
-    const envFocus = envDetails.length > 0 
-      ? envDetails.slice(0, 2).join(" and ") 
-      : "environmental factors";
-    
-    rationale = `Your sleep patterns suggest that ${envFocus} ${envDetails.length > 1 ? 'are' : 'is'} influencing your rest quality. Optimizing your sleep environment and establishing calming routines can strengthen your natural sleep cycles.`;
-    
-  } else if (recoverySleeperScore === maxScore && recoverySleeperScore > 0) {
-    // v7: Recovery sleeper wins
-    cluster = "recovery_sleeper";
-    
-    // Build specific rationale for recovery focus
-    const recoveryDetails: string[] = [];
-    if (sleepGoals.includes("faster_recovery") || sleepGoals.includes("better_recovery")) {
-      recoveryDetails.push("physical recovery");
-    }
-    if (sleepGoals.includes("wake_refreshed")) recoveryDetails.push("morning readiness");
-    if (sleepGoals.includes("more_energy")) recoveryDetails.push("sustained energy");
-    if (sleepEquipment.includes("oura") || sleepEquipment.includes("whoop") || sleepEquipment.includes("fitness_tracker")) {
-      recoveryDetails.push("performance tracking");
-    }
-    
-    const recoveryFocus = recoveryDetails.length > 0 
-      ? recoveryDetails.slice(0, 2).join(" and ") 
-      : "physical restoration and recovery";
-    
-    // v7: Acknowledge good foundation while focusing on recovery
-    const foundationNote = hasDominantPain || hasDominantEnvIssues 
-      ? ""
-      : " You already have a relatively stable sleep foundation. ";
-    
-    rationale = `Your focus on ${recoveryFocus} indicates a recovery-oriented approach to sleep.${foundationNote}Optimizing deep sleep phases and temperature regulation can enhance your body's natural restoration processes.`;
-    
-  } else {
-    cluster = "optimizer";
-    
-    // Build specific rationale based on goals
-    const goalDetails: string[] = [];
-    if (sleepGoals.includes("wake_refreshed")) goalDetails.push("morning energy");
-    if (sleepGoals.includes("better_quality")) goalDetails.push("deeper sleep");
-    if (sleepGoals.includes("more_energy")) goalDetails.push("daytime performance");
-    
-    const goalFocus = goalDetails.length > 0 
-      ? goalDetails.slice(0, 2).join(" and ") 
-      : "sleep quality and recovery";
-    
-    // v7: Acknowledge any minor issues while focusing on optimization
-    const foundationNote = hasDominantPain || hasDominantEnvIssues 
-      ? " While some areas may benefit from attention, "
-      : " With a solid sleep foundation, ";
-    
-    rationale = `You're focused on enhancing ${goalFocus}.${foundationNote}targeted improvements to your setup and consistent habits can maximize your body's natural recovery processes.`;
-  }
+  // Step 6: Build rationale from signals
+  const rationale = buildRationale(cluster, signals);
   
-  // Get persona definition and potentially add sleep hygiene module (v7)
+  // Step 7: Build confidence reasoning
+  const confidence_reasoning = buildConfidenceReasoning(cluster, confidence, signals, personaScores);
+  
+  // Step 8: Get persona definition and add Sleep Hygiene module if needed
   const definition = PERSONA_DEFINITIONS[cluster];
   let recommended_modules = [...definition.recommended_modules];
   
-  // v7: Add Sleep Hygiene module (12) for stress_insomnia and optimizer/recovery when 
-  // sleep stability is moderate (not severe, not excellent)
+  // Add Sleep Hygiene module (12) for stress_insomnia and optimizer/recovery when appropriate
   if (scores) {
     const stabilityModerate = scores.sleep_stability_score >= 40 && scores.sleep_stability_score <= 75;
     const envModerate = scores.environment_score >= 50 && scores.environment_score <= 80;
@@ -537,17 +702,6 @@ export function detectPersona(quizAnswers: Record<string, any>, scores?: Assessm
         !recommended_modules.includes(12)) {
       recommended_modules.push(12);
     }
-  }
-  
-  // v10: Generate confidence reasoning
-  const confidenceLevel = getPersonaConfidenceLevel(confidence);
-  let confidence_reasoning = "";
-  if (confidenceLevel === "high") {
-    confidence_reasoning = `Your responses show clear ${cluster === "pain_sleeper" ? "alignment and comfort" : cluster === "stress_insomnia" ? "environmental sensitivity" : cluster === "recovery_sleeper" ? "recovery-focused" : "optimization"} signals with strong consistency across multiple indicators.`;
-  } else if (confidenceLevel === "medium") {
-    confidence_reasoning = `Your responses suggest ${cluster === "pain_sleeper" ? "alignment needs" : cluster === "stress_insomnia" ? "environmental factors" : cluster === "recovery_sleeper" ? "recovery focus" : "optimization goals"} as primary, though some secondary patterns were also detected.`;
-  } else {
-    confidence_reasoning = `Your sleep profile shows mixed signals. Recommendations are balanced across multiple areas rather than heavily personalized to one focus.`;
   }
   
   return {
@@ -800,25 +954,40 @@ function identifyTopRiskDrivers(quizAnswers: Record<string, any>, scores: Assess
   const sleepTemperature = quizAnswers.sleepTemperature || "";
   const nightAwakenings = quizAnswers.nightAwakenings || "";
   const movesOften = quizAnswers.movesOften || "";
+  const sleepLatency = quizAnswers.sleepLatency || "";
   const pillowSatisfaction = quizAnswers.pillowSatisfaction ?? 5;
   
-  // Pain-related drivers
-  if (painAreas.includes("neck")) drivers.push({ factor: "neck_pain", weight: painSeverity });
-  if (painAreas.includes("shoulders")) drivers.push({ factor: "shoulder_tension", weight: painSeverity * 0.8 });
-  if (painAreas.includes("lower_back")) drivers.push({ factor: "lower_back_pain", weight: painSeverity * 0.9 });
-  if (painAreas.includes("hips")) drivers.push({ factor: "hip_alignment", weight: painSeverity * 0.85 });
+  // Alignment-related drivers
+  if (painAreas.includes("neck") || painAreas.includes("shoulders")) {
+    drivers.push({ factor: "neck_shoulder_tension", weight: 8 + (painSeverity > 5 ? 4 : 0) });
+  }
+  if (painAreas.includes("lower_back") || painAreas.includes("hips")) {
+    drivers.push({ factor: "lower_body_alignment", weight: 7 + (painSeverity > 5 ? 3 : 0) });
+  }
+  if (pillowSatisfaction <= 4) {
+    drivers.push({ factor: "pillow_support_inadequate", weight: 6 });
+  }
   
-  // Environment drivers
-  if (scores.light_sensitivity_score >= 60) drivers.push({ factor: "light_exposure", weight: scores.light_sensitivity_score / 15 });
-  if (scores.temperature_disruption_score >= 60) drivers.push({ factor: "temperature_discomfort", weight: scores.temperature_disruption_score / 15 });
+  // Environment-related drivers
+  if (roomBrightness === "bright") {
+    drivers.push({ factor: "light_exposure", weight: 7 });
+  }
+  if (sleepTemperature === "hot") {
+    drivers.push({ factor: "temperature_too_warm", weight: 6 });
+  }
   
-  // Stability drivers
-  if (nightAwakenings === "frequently") drivers.push({ factor: "sleep_fragmentation", weight: 7 });
-  if (nightAwakenings === "twice") drivers.push({ factor: "sleep_fragmentation", weight: 5 });
-  if (movesOften === "always") drivers.push({ factor: "restless_movement", weight: 6 });
-  
-  // Support drivers
-  if (pillowSatisfaction <= 4) drivers.push({ factor: "inadequate_pillow_support", weight: (10 - pillowSatisfaction) });
+  // Stability-related drivers
+  if (nightAwakenings === "frequently") {
+    drivers.push({ factor: "sleep_fragmentation", weight: 8 });
+  } else if (nightAwakenings === "twice") {
+    drivers.push({ factor: "sleep_fragmentation", weight: 5 });
+  }
+  if (sleepLatency === "very_slow") {
+    drivers.push({ factor: "difficulty_falling_asleep", weight: 7 });
+  }
+  if (movesOften === "always") {
+    drivers.push({ factor: "restless_movement", weight: 6 });
+  }
   
   // Sort by weight and return top 3
   return drivers
@@ -830,9 +999,7 @@ function identifyTopRiskDrivers(quizAnswers: Record<string, any>, scores: Assess
 // ============ PRODUCT RECOMMENDATIONS ============
 
 /**
- * Generate structured product recommendations
- * Uses explicit, deterministic logic matching Shopify handles.
- * v7: Added recovery_sleeper persona handling with performance_set bundle preference.
+ * Generate product recommendations based on assessment
  */
 export function generateProductRecommendations(
   quizAnswers: Record<string, any>,
@@ -841,67 +1008,51 @@ export function generateProductRecommendations(
   personaCluster?: PersonaCluster
 ): ProductRecommendations {
   const painAreas = quizAnswers.painAreas || quizAnswers.painPoints || [];
+  const sleepPosition = quizAnswers.sleepPosition || "side";
   const roomBrightness = quizAnswers.roomBrightness || "";
-  const sleepPosition = quizAnswers.sleepPosition || "";
-  const painSeverity = quizAnswers.painSeverity ?? 5;
   const sleepGoals = quizAnswers.sleepGoals || [];
+  const painSeverity = quizAnswers.painSeverity ?? 5;
   
-  // Primary is always the ergonomic pillow
+  // Primary product is always the ergonomic pillow
   const primary_product: PrimaryProduct = "ergonomic_pillow";
   
-  // Determine secondary product with explicit logic
+  // Determine secondary product
   let secondary_product: SecondaryProduct | undefined;
-  let secondaryScore = 0;
   
-  // Knee pillow scoring
-  let kneePillowScore = 0;
-  if (painAreas.includes("lower_back")) kneePillowScore += 4;
-  if (painAreas.includes("hips")) kneePillowScore += 4;
-  if (sleepPosition === "side") kneePillowScore += 3;
-  if (painSeverity >= 6 && (painAreas.includes("lower_back") || painAreas.includes("hips"))) kneePillowScore += 2;
-  
-  // Silk mask scoring
-  let silkMaskScore = 0;
-  if (roomBrightness === "bright") silkMaskScore += 5;
-  if (roomBrightness === "dim") silkMaskScore += 3;
-  if (scores.light_sensitivity_score >= 60) silkMaskScore += 2;
-  if (sleepGoals.includes("stay_asleep")) silkMaskScore += 1;
-  
-  // Determine winner
-  if (kneePillowScore >= silkMaskScore && kneePillowScore >= 3) {
+  // Knee pillow for side sleepers with lower body issues
+  if (sleepPosition === "side" && 
+      (painAreas.includes("lower_back") || painAreas.includes("hips") || scores.alignment_risk_score >= 45)) {
     secondary_product = "knee_pillow";
-    secondaryScore = kneePillowScore;
-  } else if (silkMaskScore >= 3) {
+  }
+  // Silk mask for light sensitivity
+  else if (roomBrightness === "bright" || roomBrightness === "dim" || scores.light_sensitivity_score >= 55) {
     secondary_product = "silk_mask";
-    secondaryScore = silkMaskScore;
+  }
+  // Knee pillow for side sleepers with pain
+  else if (sleepPosition === "side" && painSeverity >= 5) {
+    secondary_product = "knee_pillow";
   }
   
-  // Determine bundle with explicit logic
+  // Determine recommended bundle
   let recommended_bundle: RecommendedBundle | undefined;
   let bundleConfidence = 0;
   
-  // Alignment Set: Jason persona OR high alignment risk with knee pillow need
+  // Alignment set for pain sleepers with lower body issues
   if (persona === "jason" && secondary_product === "knee_pillow") {
     recommended_bundle = "alignment_set";
     bundleConfidence = 85;
-  } else if (scores.alignment_risk_score >= 50 && secondary_product === "knee_pillow") {
-    recommended_bundle = "alignment_set";
-    bundleConfidence = 75;
   }
-  // Deep Sleep Set: Mila persona OR high light sensitivity
-  else if (persona === "mila" && (secondary_product === "silk_mask" || scores.light_sensitivity_score >= 60)) {
+  // Deep sleep set for environment-sensitive sleepers
+  else if (persona === "mila" && secondary_product === "silk_mask") {
     recommended_bundle = "deep_sleep_set";
-    bundleConfidence = 85;
-  } else if (scores.light_sensitivity_score >= 70 && scores.environment_score < 65) {
-    recommended_bundle = "deep_sleep_set";
-    bundleConfidence = 70;
+    bundleConfidence = 80;
   }
-  // Performance Set: Leo persona (optimizer or recovery_sleeper) with multiple optimization goals
+  // Performance set for optimizers with multiple goals
   else if (persona === "leo" && sleepGoals.length >= 2) {
     recommended_bundle = "performance_set";
     bundleConfidence = 80;
   }
-  // v7: Recovery sleeper gets performance_set by default unless alignment is critical
+  // Recovery sleeper gets performance_set by default unless alignment is critical
   else if (personaCluster === "recovery_sleeper") {
     if (scores.alignment_risk_score >= 50 && secondary_product === "knee_pillow") {
       recommended_bundle = "alignment_set";
@@ -936,7 +1087,7 @@ export function generateProductRecommendations(
     reasoning = "The ergonomic pillow is designed to support your specific sleep position and address the alignment needs identified in your assessment.";
   }
   
-  // Generate persona-specific reasoning (v7: added recovery_sleeper)
+  // Generate persona-specific reasoning
   let persona_reasoning = "";
   if (persona === "jason") {
     persona_reasoning = "As a Pain Sleeper, your physical comfort and alignment are the primary focus. This setup directly addresses your tension points and supports healthier spinal positioning throughout the night.";
@@ -960,7 +1111,7 @@ export function generateProductRecommendations(
     fit_explanation = `Designed for ${positionLabel}s, this recommendation addresses the key factors identified in your assessment for improved sleep quality.`;
   }
   
-  // v10: Calculate product fit score based on alignment between recommendations and needs
+  // Calculate product fit score based on alignment between recommendations and needs
   let product_fit_score = 50; // baseline
   if (scores.alignment_risk_score >= 40 && secondary_product === "knee_pillow") product_fit_score += 20;
   if (scores.light_sensitivity_score >= 60 && secondary_product === "silk_mask") product_fit_score += 20;
@@ -974,7 +1125,7 @@ export function generateProductRecommendations(
     ? "This setup addresses your main sleep concerns and provides a solid foundation for improvement."
     : "This setup provides general sleep support. Further assessment may refine recommendations.";
   
-  // v10: Soft-limit upsells when confidence < 50 (neutral messaging)
+  // Soft-limit upsells when confidence < 50 (neutral messaging)
   const confidence_weighted_recommendation = true; // Will be adjusted by persona confidence in caller
   
   return {
@@ -1135,11 +1286,11 @@ function calculateModuleRelevance(
  */
 export function buildSleepAssessment(quizAnswers: Record<string, any>): SleepAssessment {
   const scores = calculateAssessmentScores(quizAnswers);
-  // v7: Pass scores to detectPersona for refined detection and module assignment
+  // v8: Pass scores to detectPersona for refined detection and module assignment
   const persona = detectPersona(quizAnswers, scores);
   const sleepIdentity = generateSleepIdentity(quizAnswers, scores);
   const environmentFindings = generateEnvironmentFindings(quizAnswers, scores);
-  // v7: Pass persona cluster for recovery_sleeper handling
+  // Pass persona cluster for recovery_sleeper handling
   const productRecommendations = generateProductRecommendations(quizAnswers, scores, persona.guess, persona.cluster);
   const coachPreview = generateCoachPreview(quizAnswers, persona.guess, scores);
   
@@ -1157,7 +1308,7 @@ export function buildSleepAssessment(quizAnswers: Record<string, any>): SleepAss
   // v10: Calculate coach readiness score
   const coach_readiness = calculateCoachReadiness(quizAnswers, scores);
   
-  // v10: Adjust product recommendations based on persona confidence
+  // Adjust product recommendations based on persona confidence
   const adjustedProductRecommendations = {
     ...productRecommendations,
     confidence_weighted_recommendation: shouldPersonalizePersonaMessaging(persona.confidence),
