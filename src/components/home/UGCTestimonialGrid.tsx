@@ -1,4 +1,5 @@
 import { User } from "lucide-react";
+import { useInView } from "@/hooks/useInView";
 
 // Premium UGC testimonial data
 const ugcTestimonials = [
@@ -86,9 +87,19 @@ interface UGCCardProps {
 }
 
 const UGCCard = ({ testimonial, index }: UGCCardProps) => {
+  const { ref, isInView } = useInView<HTMLDivElement>({ threshold: 0.1 });
   const colorClass = avatarColors[index % avatarColors.length];
   
   return (
+    <div
+      ref={ref}
+      className={`transition-all duration-500 ease-out ${
+        isInView 
+          ? "opacity-100 translate-y-0" 
+          : "opacity-0 translate-y-6"
+      }`}
+      style={{ transitionDelay: `${(index % 4) * 100}ms` }}
+    >
     <div className="group relative bg-background rounded-2xl border border-border/40 p-5 md:p-6 transition-all duration-300 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5">
       {/* Subtle pillow silhouette watermark */}
       <div className="absolute top-3 right-3 w-8 h-8 opacity-[0.04] group-hover:opacity-[0.08] transition-opacity">
@@ -132,6 +143,7 @@ const UGCCard = ({ testimonial, index }: UGCCardProps) => {
       <span className="inline-block text-xs font-medium text-primary/70 tracking-wide">
         {testimonial.hashtag}
       </span>
+      </div>
     </div>
   );
 };
