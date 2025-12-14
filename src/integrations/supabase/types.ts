@@ -286,6 +286,48 @@ export type Database = {
           },
         ]
       }
+      collective_applications: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string | null
+          name: string
+          preferred_tier: string
+          reason: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          social_handles: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message?: string | null
+          name: string
+          preferred_tier: string
+          reason: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          social_handles?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string | null
+          name?: string
+          preferred_tier?: string
+          reason?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          social_handles?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       commissions: {
         Row: {
           affiliate_id: string

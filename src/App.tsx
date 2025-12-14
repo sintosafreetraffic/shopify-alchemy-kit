@@ -114,6 +114,7 @@ const PersonaLandingPage = React.lazy(() => import("./pages/PersonaLandingPage")
 const AdminAffiliateFraud = React.lazy(() => import("./pages/AdminAffiliateFraud"));
 const AdminAffiliatePayouts = React.lazy(() => import("./pages/AdminAffiliatePayouts"));
 const AdminAffiliateResources = React.lazy(() => import("./pages/AdminAffiliateResources"));
+const AdminCollectiveApplications = React.lazy(() => import("./pages/AdminCollectiveApplications"));
 
 const queryClient = new QueryClient();
 
@@ -211,6 +212,7 @@ const AppContent = () => {
             <Route path="/admin/affiliate-fraud" element={<AdminAffiliateFraud />} />
             <Route path="/admin/affiliate-payouts" element={<AdminAffiliatePayouts />} />
             <Route path="/admin/affiliate-resources" element={<AdminAffiliateResources />} />
+            <Route path="/admin/collective-applications" element={<AdminCollectiveApplications />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
