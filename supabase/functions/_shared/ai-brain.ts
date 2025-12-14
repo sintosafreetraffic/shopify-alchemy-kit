@@ -906,7 +906,142 @@ Return a structured JSON response.`;
 }
 
 /**
+ * Build persona-specific guidance block for AI prompt
+ * 
+ * Provides persona-aware language and focus based on cluster type.
+ * Only applies full persona flavor when confidence >= 50%.
+ */
+function buildPersonaGuidanceBlock(
+  personaCluster: string | undefined,
+  personaConfidence: number,
+  personaLabel: string
+): string {
+  const usePersonaFlavor = personaConfidence >= 50;
+  
+  if (!personaCluster || !usePersonaFlavor) {
+    return `
+=== PERSONA GUIDANCE ===
+Persona confidence is low or unknown. Use NEUTRAL, inclusive language:
+- "Many sleepers find that..."
+- "Side/back sleepers often benefit from..."
+- Do NOT assume specific pain causes or stress patterns
+- Keep recommendations broadly applicable
+`;
+  }
+
+  // Persona-specific guidance blocks
+  const guidanceMap: Record<string, string> = {
+    pain_sleeper: `
+=== PERSONA GUIDANCE: PAIN SLEEPER ===
+This user's primary concern is PHYSICAL DISCOMFORT and ALIGNMENT.
+
+HEADLINE FRAMING:
+- Use language like: "7-Night Neck & Shoulder Relief Plan", "Alignment-Focused Week"
+- Emphasize: alignment, comfort, pain relief, morning ease, stiffness reduction
+
+CONTENT FOCUS:
+- Morning tasks: Gentle stretches targeting their pain areas, mobility exercises
+- Evening tasks: Pillow positioning, tension release, proper sleep posture setup
+- Tips: Reference cervical curve, spinal alignment, shoulder/neck support
+- Micro-habits: "Notice your head position", "Check pillow height"
+
+LANGUAGE STYLE:
+- Supportive, acknowledging discomfort: "If you wake with tension..."
+- Action-oriented: "Position your pillow in the cervical curve..."
+- Celebrate comfort wins: "Notice if shoulder pressure feels different..."
+
+AVOID:
+- Overly clinical medical terms
+- Promises of "pain-free" or "cured"
+`,
+
+    stress_insomnia: `
+=== PERSONA GUIDANCE: STRESS & ENVIRONMENT SLEEPER ===
+This user's primary concern is NERVOUS SYSTEM CALM and ENVIRONMENT.
+
+HEADLINE FRAMING:
+- Use language like: "7 Nights to a Calmer Sleep Environment", "Wind-Down & Rest Week"
+- Emphasize: calming, relaxation, nervous system, environment control, peaceful sleep
+
+CONTENT FOCUS:
+- Morning tasks: Gentle, grounding start - breathing, light stretching, no urgency
+- Evening tasks: Wind-down rituals, light dimming, screen reduction, calming routines
+- Tips: Reference light/noise control, bedtime boundaries, nervous system settling
+- Micro-habits: "Dim lights 30 min before bed", "Take 3 slow breaths"
+
+LANGUAGE STYLE:
+- Soft, validating: "If your mind feels busy at night...", "It's okay to need extra time to settle..."
+- Permission-giving: "Allow yourself to...", "Give your nervous system time to..."
+- Environment-focused: "Your sleep space should feel like a sanctuary..."
+
+AVOID:
+- High-pressure language or "must do" framing
+- Guilt-inducing messaging about screen time
+- Overly energetic morning routines
+`,
+
+    optimizer: `
+=== PERSONA GUIDANCE: SLEEP OPTIMIZER ===
+This user is focused on PERFORMANCE, TRACKING, and MEASURABLE IMPROVEMENT.
+
+HEADLINE FRAMING:
+- Use language like: "7-Night Sleep Performance Plan", "Optimization & Progress Week"
+- Emphasize: measurable, track, experiment, routine, consistency, progress
+
+CONTENT FOCUS:
+- Morning tasks: Rate and log sleep, notice energy levels, track patterns
+- Evening tasks: Consistent wind-down routines, timing experiments, habit stacking
+- Tips: Reference sleep metrics, consistency benefits, experimentation
+- Micro-habits: "Log one metric", "Notice how X affects energy"
+
+LANGUAGE STYLE:
+- Data-aware: "Track your progress...", "Notice the pattern..."
+- Experimental: "Try this for 3 nights and see what shifts..."
+- Progress-oriented: "Building on your streak...", "Your consistency shows..."
+
+AVOID:
+- Vague or unmeasurable suggestions
+- Overly emotional language (they prefer practical)
+- Discouraging experimentation
+`,
+
+    recovery_sleeper: `
+=== PERSONA GUIDANCE: RECOVERY SLEEPER ===
+This user is focused on PHYSICAL RESTORATION, TRAINING RECOVERY, and ATHLETIC PERFORMANCE.
+
+HEADLINE FRAMING:
+- Use language like: "7-Night Recovery & Restoration Plan", "Deep Sleep for Training Recovery"
+- Emphasize: recovery, restoration, muscle repair, training adaptation, restorative sleep
+
+CONTENT FOCUS:
+- Morning tasks: Mobility for training recovery, readiness assessment, body scan
+- Evening tasks: Cool-down from activity, temperature regulation, deep sleep prep
+- Tips: Reference muscle recovery during sleep, training load, soreness relief
+- Micro-habits: "Rate morning readiness", "Cool down before bed"
+
+LANGUAGE STYLE:
+- Athletic framing: "Your body repairs during deep sleep phases..."
+- Recovery-focused: "Support your training with quality rest..."
+- Performance-aware: "Proper sleep enhances next-day performance..."
+
+AVOID:
+- Overly clinical medical terms
+- Ignoring their athletic context
+- Suggesting they reduce activity (focus on recovery quality instead)
+`,
+  };
+
+  return guidanceMap[personaCluster] || `
+=== PERSONA GUIDANCE ===
+User has persona "${personaLabel}" but specific guidance is not defined.
+Use their sleep position, pain points, and environment data to personalize.
+`; 
+}
+
+/**
  * Call AI for sleep plan with tool calling (structured output)
+ * 
+ * v3: Enhanced with explicit persona-aware guidance and confidence gating
  */
 export async function callSleepPlanAI(
   userContext: string,
@@ -920,6 +1055,9 @@ export async function callSleepPlanAI(
     personalizationIntensity: string;
     refreshReason?: string;
     personaCluster?: string;
+    personaConfidence?: number;
+    personaLabel?: string;
+    coreNeed?: string;
   }
 ): Promise<{
   weeklyPlan: any;
@@ -946,6 +1084,15 @@ export async function callSleepPlanAI(
     ? buildSleepPlanContext(profileSnapshot, logsSnapshot, planType)
     : userContext;
 
+  // Determine persona flavor intensity based on confidence
+  const personaConfidence = metricsContext?.personaConfidence ?? 0;
+  const usePersonaFlavor = personaConfidence >= 50;
+  const personaCluster = metricsContext?.personaCluster;
+  const personaLabel = metricsContext?.personaLabel || '';
+
+  // Build persona-specific guidance block
+  const personaGuidance = buildPersonaGuidanceBlock(personaCluster, personaConfidence, personaLabel);
+
   // Build metrics section for AI prompt
   const metricsSection = metricsContext ? `
 === DETERMINISTIC METRICS (DO NOT RECALCULATE) ===
@@ -953,14 +1100,24 @@ Spine Health: ${metricsContext.spineScoreSummary}
 Risk Focus: ${metricsContext.riskDriversSummary}
 Coach Readiness: ${metricsContext.coachReadinessLabel}
 Personalization Level: ${metricsContext.personalizationIntensity}
-${metricsContext.personaCluster ? `Persona: ${metricsContext.personaCluster}` : ''}
+
+=== PERSONA CONTEXT ===
+Cluster: ${personaCluster || 'unknown'}
+Label: ${personaLabel || 'Unknown'}
+Confidence: ${personaConfidence}%
+Core Need: ${metricsContext.coreNeed || 'general'}
+${usePersonaFlavor ? '→ APPLY persona-specific language and framing' : '→ Use NEUTRAL, general language (confidence < 50%)'}
+
+${personaGuidance}
+
 ${metricsContext.refreshReason && metricsContext.refreshReason !== 'manual' ? `
-Refresh Reason: ${metricsContext.refreshReason}
+=== REFRESH CONTEXT ===
+Reason: ${metricsContext.refreshReason}
 ${metricsContext.refreshReason === 'trend_worsening' || metricsContext.refreshReason === 'pain_increased' ? 
-'- TONE: Extra supportive. Break steps into smaller wins. Acknowledge struggles gently.' :
+'→ TONE: Extra supportive. Break steps into smaller wins. Acknowledge struggles gently.' :
 metricsContext.refreshReason === 'expired' || metricsContext.refreshReason === 'stale' ? 
-'- TONE: Fresh start. Encourage continuation of progress.' :
-'- TONE: Standard maintenance.'}` : ''}
+'→ TONE: Fresh start. Encourage continuation of progress.' :
+'→ TONE: Standard maintenance.'}` : ''}
 
 CRITICAL: The spineScore field in your response will be REPLACED with the deterministic value.
 Your spineScoreHint should EXPLAIN what the score means in human terms, NOT recalculate it.
@@ -970,13 +1127,13 @@ Your spineScoreHint should EXPLAIN what the score means in human terms, NOT reca
 
 ${BRAND_GUIDELINES}
 
-CRITICAL BRAND GUARDRAILS:
+=== CRITICAL BRAND GUARDRAILS ===
 - NEVER use medical language: no "treat", "cure", "diagnose", "chronic condition", "therapy"
 - NEVER make promises: no "guaranteed", "fixed", "permanent", "eliminated"  
 - USE comfort language: "supports", "may help", "can improve", "designed for"
 - TONE: Calm, supportive, science-backed, Scandinavian minimalism
 
-FOCUS AREA KEYS (use these exact strings for focusAreas):
+=== FOCUS AREA KEYS (use these exact strings for focusAreas) ===
 - "alignment_support" - Pillow positioning, spinal alignment
 - "temperature_consistency" - Cooling/warming strategies
 - "wake_up_routine" - Morning mobility, energizing start
@@ -986,11 +1143,11 @@ FOCUS AREA KEYS (use these exact strings for focusAreas):
 - "environment_optimization" - Light, noise, comfort
 - "consistency_building" - Sustainable sleep patterns
 
-EFFORT LEVELS for tasks:
+=== EFFORT LEVELS ===
 - "low" = 2-5 minutes, easy to complete
 - "medium" = 5-15 minutes, requires some focus
 
-PERSONALIZATION INTENSITY:
+=== PERSONALIZATION INTENSITY ===
 ${metricsContext?.personalizationIntensity === 'deep' ? 
 'You have extensive data. Be highly specific - reference exact sleep position, pain areas, and owned products.' :
 metricsContext?.personalizationIntensity === 'moderate' ?
@@ -999,9 +1156,17 @@ metricsContext?.personalizationIntensity === 'light' ?
 'You have limited data. Be generally helpful, keep product references generic.' :
 'You have minimal data. Provide general guidance, encourage completing the sleep assessment.'}
 
-${planType === 'weekly_update' ? 'This is a weekly update. If improving, celebrate. If declining, offer gentle adjustments.' : ''}
+=== DETERMINISTIC DATA RULES ===
+- Spine score and risk drivers are DETERMINISTIC inputs - do NOT recalculate
+- spineScore in your output is a PLACEHOLDER that will be replaced
+- spineScoreHint should EXPLAIN what the score means, not compute it
+- Reference trends, metrics, and persona as READ-ONLY context
+
+${planType === 'weekly_update' ? '=== WEEKLY UPDATE ===\nIf improving, celebrate progress. If declining, offer gentle stabilization focus.' : ''}
 
 Create specific, actionable tasks. Morning tasks should take 5-10 minutes. Evening tasks should be relaxing pre-sleep activities.`;
+
+  console.log(`[AI Brain] Sleep Plan - Model: gpt-4o, Type: ${planType}, Persona: ${personaCluster}, Confidence: ${personaConfidence}%, HasSnapshots: ${!!(profileSnapshot && logsSnapshot)}`);
 
   console.log(`[AI Brain] Sleep Plan - Model: gpt-4o, Type: ${planType}, HasSnapshots: ${!!(profileSnapshot && logsSnapshot)}, HasMetrics: ${!!metricsContext}`);
 
