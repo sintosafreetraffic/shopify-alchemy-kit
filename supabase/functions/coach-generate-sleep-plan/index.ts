@@ -64,6 +64,9 @@ interface SleepProfile {
   quiz_completed?: boolean;
   quiz_completed_at?: string;
   quiz_data?: any;
+  sleep_assessment?: any;
+  persona_cluster?: string;
+  persona_label?: string;
 }
 
 interface SleepLog {
@@ -213,6 +216,26 @@ Deno.serve(async (req) => {
       personalizationIntensity,
     });
 
+    // === Extract persona data from sleep_assessment or derive fallback ===
+    const sleepAssessment = profile?.sleep_assessment as any;
+    const storedPersonaCluster = sleepAssessment?.persona?.cluster || (profile as any)?.persona_cluster;
+    const storedPersonaConfidence = sleepAssessment?.persona?.confidence;
+    const storedPersonaLabel = sleepAssessment?.persona?.label || (profile as any)?.persona_label;
+    
+    // Derive persona if not stored (fallback heuristic)
+    const derivedPersonaCluster = storedPersonaCluster || 
+      (sleepAttributes.pain_points?.some((p: string) => p !== 'none') ? 'pain_sleeper' 
+        : sleepAttributes.stress_level === 'high' ? 'stress_insomnia' 
+        : 'optimizer');
+    
+    // Map persona to core need
+    const coreNeedMap: Record<string, string> = {
+      pain_sleeper: 'alignment',
+      stress_insomnia: 'environment', 
+      optimizer: 'optimization',
+      recovery_sleeper: 'recovery',
+    };
+
     // Build metrics context for AI prompt (plain language, no raw scores for AI to use)
     const metricsContext = {
       spineScoreSummary: `${spineScoreBreakdown.score}/100 (${
@@ -225,13 +248,22 @@ Deno.serve(async (req) => {
       coachReadinessLabel: coachReadiness.label,
       personalizationIntensity,
       refreshReason: reason,
-      personaCluster: (profile as any)?.persona_cluster || 
-        (sleepAttributes.sleep_position === 'side' && sleepAttributes.pain_points?.length > 0 
-          ? 'pain_sleeper' 
-          : sleepAttributes.stress_level === 'high' 
-            ? 'stress_insomnia' 
-            : 'optimizer'),
+      // Persona context - use stored or derived
+      personaCluster: derivedPersonaCluster,
+      personaConfidence: storedPersonaConfidence ?? 50, // Default to 50 if not stored
+      personaLabel: storedPersonaLabel || (derivedPersonaCluster === 'pain_sleeper' ? 'The Pain Sleeper' 
+        : derivedPersonaCluster === 'stress_insomnia' ? 'The Stress & Environment Sleeper'
+        : derivedPersonaCluster === 'recovery_sleeper' ? 'The Recovery Sleeper'
+        : 'The Sleep Optimizer'),
+      coreNeed: coreNeedMap[derivedPersonaCluster] || 'alignment',
     };
+
+    console.log('[SleepCoach] Persona context for AI', {
+      personaCluster: metricsContext.personaCluster,
+      personaConfidence: metricsContext.personaConfidence,
+      personaLabel: metricsContext.personaLabel,
+      coreNeed: metricsContext.coreNeed,
+    });
 
     // === STEP 4: Call AI Brain with structured snapshots + metrics context ===
     console.log('[AI Brain] Calling with 3-layer context, hard constraints, and deterministic metrics');
