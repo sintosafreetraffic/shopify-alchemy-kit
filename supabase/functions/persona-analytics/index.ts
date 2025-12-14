@@ -23,30 +23,33 @@ import {
 
 // ============ INPUT VALIDATION ============
 
+// Nullable string helper for persona fields that may be null
+const nullableString = z.string().max(50).nullable();
+
 const experimentExposureSchema = z.object({
   event_type: z.literal("persona_experiment_exposure"),
   experiment_key: z.string().max(100),
   variant: z.enum(["A", "B", "C"]),
-  persona_cluster: z.string().max(50),
-  core_need: z.string().max(50),
-  persona_confidence: z.number().min(0).max(100).optional(),
+  persona_cluster: nullableString,
+  core_need: nullableString,
+  persona_confidence: z.number().min(0).max(100).nullable().optional(),
 });
 
 const lpExposureSchema = z.object({
   event_type: z.literal("persona_lp_exposure"),
-  persona_cluster: z.string().max(50),
-  core_need: z.string().max(50),
+  persona_cluster: nullableString,
+  core_need: nullableString,
   is_cached_assessment: z.boolean(),
   referrer: z.string().max(500).optional(),
-  persona_confidence: z.number().min(0).max(100).optional(),
+  persona_confidence: z.number().min(0).max(100).nullable().optional(),
 });
 
 const moduleInteractionSchema = z.object({
   event_type: z.literal("coach_module_interaction"),
   module_id: z.number().min(1).max(20),
   interaction_type: z.enum(["view", "start", "complete", "skip"]),
-  persona_cluster: z.string().max(50),
-  relevance_score: z.number().min(0).max(100).optional(),
+  persona_cluster: nullableString,
+  relevance_score: z.number().min(0).max(100).nullable().optional(),
 });
 
 // Coach plan analytics events
@@ -55,8 +58,8 @@ const coachPlanViewedSchema = z.object({
   plan_id: z.string().max(100),
   plan_age_days: z.number().min(0),
   has_today_actions: z.boolean(),
-  persona_cluster: z.string().max(50),
-  coach_readiness_label: z.string().max(50),
+  persona_cluster: nullableString,
+  coach_readiness_label: nullableString,
   spine_score_bucket: z.enum(["0-49", "50-69", "70+"]),
 });
 
@@ -64,8 +67,8 @@ const coachPlanDayOpenedSchema = z.object({
   event_type: z.literal("coach_plan_day_opened"),
   plan_id: z.string().max(100),
   day_index: z.number().min(0).max(7),
-  persona_cluster: z.string().max(50),
-  coach_readiness_label: z.string().max(50),
+  persona_cluster: nullableString,
+  coach_readiness_label: nullableString,
   spine_score_bucket: z.enum(["0-49", "50-69", "70+"]),
 });
 
@@ -74,8 +77,8 @@ const coachTodayActionsMarkedSchema = z.object({
   plan_id: z.string().max(100),
   actions_completed: z.number().min(0),
   total_actions: z.number().min(0),
-  persona_cluster: z.string().max(50),
-  coach_readiness_label: z.string().max(50),
+  persona_cluster: nullableString,
+  coach_readiness_label: nullableString,
   spine_score_bucket: z.enum(["0-49", "50-69", "70+"]),
 });
 
@@ -84,9 +87,42 @@ const coachPlanRefreshedSchema = z.object({
   refresh_reason: z.string().max(100),
   previous_spine_score: z.number().nullable(),
   new_spine_score: z.number().nullable(),
-  persona_cluster: z.string().max(50),
-  coach_readiness_label: z.string().max(50),
+  persona_cluster: nullableString,
+  coach_readiness_label: nullableString,
   spine_score_bucket: z.enum(["0-49", "50-69", "70+"]),
+});
+
+// Revenue attribution events (add to cart, checkout, purchase)
+const revenueAttributionSchema = z.object({
+  event_type: z.literal("revenue_attribution"),
+  event: z.enum(["add_to_cart", "begin_checkout", "purchase"]),
+  persona_cluster: nullableString,
+  persona_confidence: z.number().nullable().optional(),
+  core_need: nullableString,
+  coach_readiness_score: z.number().nullable().optional(),
+  persona_experiment_variants: z.record(z.string()).optional(),
+  product_recommendation_used: z.boolean(),
+  product_id: z.string().max(100),
+  product_title: z.string().max(200),
+  value: z.number().min(0),
+  currency: z.string().max(10),
+  quantity: z.number().min(1),
+  timestamp: z.string(),
+  session_id: z.string().max(100),
+});
+
+// Experiment view events
+const experimentViewSchema = z.object({
+  event_type: z.literal("experiment_view"),
+  experimentKey: z.string().max(100),
+  variant: z.string().max(50),
+  persona_cluster: nullableString,
+  persona_confidence: z.number().nullable().optional(),
+  core_need: nullableString,
+  coach_readiness_score: z.number().nullable().optional(),
+  source: z.enum(["quiz_results_hero", "coach_hero", "persona_lp", "custom"]),
+  timestamp: z.string(),
+  session_id: z.string().max(100),
 });
 
 const eventSchema = z.discriminatedUnion("event_type", [
@@ -97,6 +133,8 @@ const eventSchema = z.discriminatedUnion("event_type", [
   coachPlanDayOpenedSchema,
   coachTodayActionsMarkedSchema,
   coachPlanRefreshedSchema,
+  revenueAttributionSchema,
+  experimentViewSchema,
 ]);
 
 const requestSchema = z.object({
@@ -121,8 +159,14 @@ Deno.serve(async (req) => {
     const parseResult = requestSchema.safeParse(rawBody);
     
     if (!parseResult.success) {
-      console.error("[persona-analytics] Validation error:", parseResult.error.errors);
-      return createErrorResponse("Invalid input", 400);
+      const errorDetails = parseResult.error.errors.map(e => ({
+        path: e.path.join('.'),
+        message: e.message,
+        received: e.code,
+      }));
+      console.error("[persona-analytics] Validation error:", JSON.stringify(errorDetails, null, 2));
+      console.error("[persona-analytics] Received payload:", JSON.stringify(rawBody, null, 2));
+      return createErrorResponse(`Invalid input: ${errorDetails.map(e => `${e.path}: ${e.message}`).join('; ')}`, 400);
     }
 
     const { events, session_id } = parseResult.data;

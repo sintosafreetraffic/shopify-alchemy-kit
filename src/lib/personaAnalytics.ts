@@ -17,7 +17,7 @@ import { CORE_NEED_MAP } from "@/components/sleep-quiz/QuizTypes";
 // ============ TYPES ============
 
 export interface ExperimentViewPayload {
-  type: "experiment_view";
+  event_type: "experiment_view";  // Changed from 'type' to 'event_type' to match edge function
   experimentKey: string;
   variant: string;
   persona_cluster: PersonaCluster | null;
@@ -30,7 +30,7 @@ export interface ExperimentViewPayload {
 }
 
 export interface RevenueAttributionPayload {
-  type: "revenue_attribution";
+  event_type: "revenue_attribution";  // Changed from 'type' to 'event_type' to match edge function
   event: "add_to_cart" | "begin_checkout" | "purchase";
   persona_cluster: PersonaCluster | null;
   persona_confidence: number | null;
@@ -156,7 +156,7 @@ export async function trackExperimentView(
   const context = getCachedPersonaContext();
   
   const payload: ExperimentViewPayload = {
-    type: "experiment_view",
+    event_type: "experiment_view",  // Use event_type to match edge function schema
     experimentKey,
     variant,
     persona_cluster: context.persona_cluster,
@@ -168,14 +168,14 @@ export async function trackExperimentView(
     session_id: getOrCreateSessionId(),
   };
 
-  // Log locally in dev
-  if (import.meta.env.DEV) {
-    console.log("[PersonaAnalytics] Experiment view:", payload);
+  // Debug logging when enabled
+  if (typeof window !== "undefined" && localStorage.getItem("DEBUG_ANALYTICS") === "1") {
+    console.log("[PersonaAnalytics] Experiment view payload:", JSON.stringify(payload, null, 2));
   }
 
-  // Send to Supabase
+  // Send to Supabase - never block UX
   try {
-    await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/persona-analytics`, {
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/persona-analytics`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -183,11 +183,14 @@ export async function trackExperimentView(
       },
       body: JSON.stringify({ events: [payload] }),
     });
-  } catch (e) {
-    // Silent fail
-    if (import.meta.env.DEV) {
-      console.warn("[PersonaAnalytics] Failed to send experiment view:", e);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.warn(`[PersonaAnalytics] Experiment view failed (${response.status}):`, errorText);
     }
+  } catch (e) {
+    // Silent fail - never break UX
+    console.warn("[PersonaAnalytics] Experiment view network error:", e);
   }
 }
 
@@ -211,7 +214,7 @@ export async function trackRevenueAttribution(
   const context = getCachedPersonaContext();
   
   const payload: RevenueAttributionPayload = {
-    type: "revenue_attribution",
+    event_type: "revenue_attribution",  // Use event_type to match edge function schema
     event,
     persona_cluster: context.persona_cluster,
     persona_confidence: context.persona_confidence,
@@ -228,14 +231,14 @@ export async function trackRevenueAttribution(
     session_id: getOrCreateSessionId(),
   };
 
-  // Log locally in dev
-  if (import.meta.env.DEV) {
-    console.log("[PersonaAnalytics] Revenue attribution:", payload);
+  // Debug logging when enabled
+  if (typeof window !== "undefined" && localStorage.getItem("DEBUG_ANALYTICS") === "1") {
+    console.log("[PersonaAnalytics] Revenue attribution payload:", JSON.stringify(payload, null, 2));
   }
 
-  // Send to Supabase
+  // Send to Supabase - never block UX
   try {
-    await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/persona-analytics`, {
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/persona-analytics`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -243,10 +246,14 @@ export async function trackRevenueAttribution(
       },
       body: JSON.stringify({ events: [payload] }),
     });
-  } catch (e) {
-    if (import.meta.env.DEV) {
-      console.warn("[PersonaAnalytics] Failed to send revenue attribution:", e);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.warn(`[PersonaAnalytics] Revenue attribution failed (${response.status}):`, errorText);
     }
+  } catch (e) {
+    // Silent fail - never break UX
+    console.warn("[PersonaAnalytics] Revenue attribution network error:", e);
   }
 }
 
