@@ -5,12 +5,24 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Calendar, FileText, Clock, Heart, Target, Loader2, AlertTriangle, RefreshCw } from "lucide-react";
 
+interface SpineScoreFactor {
+  name: string;
+  impact: number;
+  description: string;
+}
+
 interface CoachPlanDisplayProps {
   plan: CoachPlan | null;
   onGeneratePlan: (reason?: string) => void;
   loading?: boolean;
   refreshStatus?: { shouldRegenerate: boolean; reason: string } | null;
   isAutoRefreshing?: boolean;
+  // New: Optional spine score breakdown for enhanced display
+  spineScoreBreakdown?: {
+    score: number;
+    factors: SpineScoreFactor[];
+    trend: "improving" | "stable" | "declining";
+  } | null;
 }
 
 const REFRESH_REASON_MESSAGES: Record<string, string> = {
@@ -29,7 +41,8 @@ export const CoachPlanDisplay = ({
   onGeneratePlan, 
   loading, 
   refreshStatus,
-  isAutoRefreshing 
+  isAutoRefreshing,
+  spineScoreBreakdown 
 }: CoachPlanDisplayProps) => {
   // Check if plan exists but has empty sleep_plan data
   const hasPlanData = plan?.sleep_plan && Object.keys(plan.sleep_plan).length > 0;
@@ -94,9 +107,20 @@ export const CoachPlanDisplay = ({
             Your Personalized Sleep Plan
           </span>
           <div className="flex items-center gap-2">
-            {plan.spine_health_score && (
-              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
-                Spine Score: {plan.spine_health_score}/100
+            {(spineScoreBreakdown?.score ?? plan.spine_health_score) && (
+              <Badge 
+                variant="outline" 
+                className={`font-medium ${
+                  (spineScoreBreakdown?.score ?? plan.spine_health_score) >= 75 
+                    ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30" 
+                    : (spineScoreBreakdown?.score ?? plan.spine_health_score) >= 50
+                      ? "bg-amber-500/10 text-amber-600 border-amber-500/30"
+                      : "bg-rose-500/10 text-rose-600 border-rose-500/30"
+                }`}
+              >
+                Spine Score: {spineScoreBreakdown?.score ?? plan.spine_health_score}/100
+                {spineScoreBreakdown?.trend === "improving" && " ↑"}
+                {spineScoreBreakdown?.trend === "declining" && " ↓"}
               </Badge>
             )}
           </div>
