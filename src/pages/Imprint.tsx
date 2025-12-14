@@ -67,21 +67,6 @@ const Imprint = () => {
           </p>
         </section>
 
-        {/* Responsible for Content */}
-        <section className="mb-10">
-          <div className="flex items-center gap-2 mb-4">
-            <FileText className="w-5 h-5 text-primary" />
-            <h2 className="text-xl font-semibold text-foreground">Responsible for Content</h2>
-          </div>
-          <p className="text-sm text-muted-foreground pl-7 mb-2">(According to § 18 Abs. 2 MStV / optional for DE markets)</p>
-          <div className="space-y-1 text-muted-foreground pl-7">
-            <p className="font-medium text-foreground">Easy In Shape V.O.F.</p>
-            <p>Loofdakstraat 10</p>
-            <p>3036 JN Rotterdam</p>
-            <p>The Netherlands</p>
-          </div>
-        </section>
-
         {/* Disclaimer */}
         <section className="mb-10">
           <div className="flex items-center gap-2 mb-4">
