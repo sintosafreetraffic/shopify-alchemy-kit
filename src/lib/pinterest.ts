@@ -117,18 +117,48 @@ export function trackAddToCart(
   }
 }
 
-// Track checkout/initiate checkout event
-// IMPORTANT: Do NOT include value, currency, or order_quantity here!
-// Including monetary values causes Pinterest to treat this as a purchase-like event,
-// leading to deduplication failures with Shopify's CAPI Purchase events.
-// Only Shopify's Pinterest App should send Purchase events with revenue data.
-export function trackCheckout() {
-  if (typeof window !== 'undefined' && window.pintrk) {
-    const data = {
-      event_id: generateEventId(),
-    };
-    window.pintrk('track', 'checkout', data);
-    console.log('[Pinterest] Checkout tracked (no value - InitiateCheckout only)', data);
+// Session storage key for InitiateCheckout fingerprint deduplication
+const INITIATE_CHECKOUT_FP_KEY = 'pinterest_initiatecheckout_fp';
+
+// Generate cart fingerprint for deduplication
+export function generateCartFingerprint(items: Array<{ variantId: string; quantity: number; price?: { amount: string } }>): string {
+  const sorted = [...items]
+    .sort((a, b) => a.variantId.localeCompare(b.variantId))
+    .map(item => `${item.variantId}:${item.quantity}:${item.price?.amount || '0'}`);
+  return sorted.join('|');
+}
+
+// Track InitiateCheckout event (when user clicks checkout button)
+// IMPORTANT: This is NOT a completed transaction - use InitiateCheckout, not Checkout!
+// Completed transactions (Checkout) must ONLY be fired by Shopify's Pinterest App after payment.
+// Deduplication: Only fires if cart fingerprint changed since last InitiateCheckout.
+export function trackInitiateCheckout(items: Array<{ variantId: string; quantity: number; price?: { amount: string } }>): boolean {
+  if (typeof window === 'undefined' || !window.pintrk) {
+    return false;
+  }
+  
+  const fingerprint = generateCartFingerprint(items);
+  const lastFingerprint = sessionStorage.getItem(INITIATE_CHECKOUT_FP_KEY);
+  
+  // Dedupe: skip if same cart state already tracked
+  if (fingerprint === lastFingerprint) {
+    console.log('[Pinterest] InitiateCheckout skipped (duplicate fingerprint)');
+    return false;
+  }
+  
+  const data = {
+    event_id: generateEventId(),
+  };
+  window.pintrk('track', 'initiateCheckout', data);
+  sessionStorage.setItem(INITIATE_CHECKOUT_FP_KEY, fingerprint);
+  console.log('[Pinterest] InitiateCheckout tracked', data);
+  return true;
+}
+
+// Clear InitiateCheckout fingerprint (call when cart changes to allow new tracking)
+export function clearInitiateCheckoutFingerprint(): void {
+  if (typeof window !== 'undefined') {
+    sessionStorage.removeItem(INITIATE_CHECKOUT_FP_KEY);
   }
 }
 
