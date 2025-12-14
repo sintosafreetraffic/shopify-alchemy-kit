@@ -17,5 +17,8 @@ export { SleepSetupForm } from './SleepSetupForm';
 export { SleepSyncOverview } from './SleepSyncOverview';
 export { PersonaCard } from './PersonaCard';
 export { CoachReadinessCard } from './CoachReadinessCard';
+// v2: New coach components
+export { SpineScoreCard } from './SpineScoreCard';
+export { RiskDriversCard } from './RiskDriversCard';
 // SleepReportSummary and chart components are intentionally not exported here to allow lazy loading
 // Import them directly when needed
