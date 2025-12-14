@@ -49,10 +49,54 @@ const moduleInteractionSchema = z.object({
   relevance_score: z.number().min(0).max(100).optional(),
 });
 
+// Coach plan analytics events
+const coachPlanViewedSchema = z.object({
+  event_type: z.literal("coach_plan_viewed"),
+  plan_id: z.string().max(100),
+  plan_age_days: z.number().min(0),
+  has_today_actions: z.boolean(),
+  persona_cluster: z.string().max(50),
+  coach_readiness_label: z.string().max(50),
+  spine_score_bucket: z.enum(["0-49", "50-69", "70+"]),
+});
+
+const coachPlanDayOpenedSchema = z.object({
+  event_type: z.literal("coach_plan_day_opened"),
+  plan_id: z.string().max(100),
+  day_index: z.number().min(0).max(7),
+  persona_cluster: z.string().max(50),
+  coach_readiness_label: z.string().max(50),
+  spine_score_bucket: z.enum(["0-49", "50-69", "70+"]),
+});
+
+const coachTodayActionsMarkedSchema = z.object({
+  event_type: z.literal("coach_today_actions_marked"),
+  plan_id: z.string().max(100),
+  actions_completed: z.number().min(0),
+  total_actions: z.number().min(0),
+  persona_cluster: z.string().max(50),
+  coach_readiness_label: z.string().max(50),
+  spine_score_bucket: z.enum(["0-49", "50-69", "70+"]),
+});
+
+const coachPlanRefreshedSchema = z.object({
+  event_type: z.literal("coach_plan_refreshed"),
+  refresh_reason: z.string().max(100),
+  previous_spine_score: z.number().nullable(),
+  new_spine_score: z.number().nullable(),
+  persona_cluster: z.string().max(50),
+  coach_readiness_label: z.string().max(50),
+  spine_score_bucket: z.enum(["0-49", "50-69", "70+"]),
+});
+
 const eventSchema = z.discriminatedUnion("event_type", [
   experimentExposureSchema,
   lpExposureSchema,
   moduleInteractionSchema,
+  coachPlanViewedSchema,
+  coachPlanDayOpenedSchema,
+  coachTodayActionsMarkedSchema,
+  coachPlanRefreshedSchema,
 ]);
 
 const requestSchema = z.object({
