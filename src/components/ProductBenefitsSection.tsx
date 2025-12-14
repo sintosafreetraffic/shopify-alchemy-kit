@@ -1,6 +1,6 @@
 import { Moon, Zap, Heart, Shield } from "lucide-react";
 
-export const Benefits = () => {
+export const ProductBenefitsSection = () => {
   const benefits = [
     {
       icon: Moon,

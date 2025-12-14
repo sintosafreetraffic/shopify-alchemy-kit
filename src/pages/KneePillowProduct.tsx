@@ -1,6 +1,6 @@
 // Performance: Heavy sections with carousels are lazy-loaded
 import { Suspense, lazy } from "react";
-import { Guarantee } from "@/components/Guarantee";
+import { GuaranteeSection } from "@/components/GuaranteeSection";
 import { StickyAddToCart } from "@/components/StickyAddToCart";
 import { KneePillowHero } from "@/components/KneePillowHero";
 import { KneePillowFeatures } from "@/components/KneePillowFeatures";
@@ -41,7 +41,7 @@ const KneePillowProduct = () => {
         <KneePillowVideoSection />
       </Suspense>
       <KneePillowFAQ />
-      <Guarantee />
+      <GuaranteeSection />
       <StickyAddToCart productType="knee-pillow" />
     </div>
   );
