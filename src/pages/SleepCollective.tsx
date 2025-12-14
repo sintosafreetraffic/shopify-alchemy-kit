@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/accordion";
 import { Moon, Users, Sparkles, Heart, Star, Gift, Mail, MessageSquare, ArrowRight, Check } from "lucide-react";
 import { toast } from "sonner";
+import { UGCTestimonialGrid } from "@/components/home/UGCTestimonialGrid";
 
 // Partnership tier data
 const partnershipTiers = [
@@ -54,22 +55,6 @@ const benefits = [
   { icon: Users, text: "Appear in RiseByNight content and campaigns" },
 ];
 
-// Member quotes
-const memberQuotes = [
-  {
-    quote: "Being part of the Collective feels different—it's calm, intentional, and focused on what actually matters: better rest.",
-    name: "Sarah",
-    role: "Wellness Coach",
-    initials: "S",
-  },
-  {
-    quote: "I appreciate that this isn't about selling. It's about sharing something that genuinely improved my mornings.",
-    name: "Marcus",
-    role: "Everyday Sleeper",
-    initials: "M",
-  },
-];
-
 // FAQ data
 const faqs = [
   {
@@ -96,16 +81,6 @@ const faqs = [
     question: "How long does the application process take?",
     answer: "We review applications weekly and aim to respond within 5–7 business days. We read every application personally, so please share a bit about yourself and why rest matters to you.",
   },
-];
-
-// UGC placeholder tiles
-const ugcTiles = [
-  { label: "Morning Routine", initials: "MR" },
-  { label: "Wind-Down Ritual", initials: "WD" },
-  { label: "Better Mornings", initials: "BM" },
-  { label: "Desk Worker", initials: "DW" },
-  { label: "Side Sleeper", initials: "SS" },
-  { label: "Recovery Focus", initials: "RF" },
 ];
 
 const SleepCollective = () => {
@@ -275,57 +250,8 @@ const SleepCollective = () => {
         </div>
       </section>
 
-      {/* UGC / Collective Showcase */}
-      <section className="py-16 md:py-24 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-semibold text-foreground mb-4">
-              The Collective in Action
-            </h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">
-              Real members sharing real mornings
-            </p>
-          </div>
-          
-          {/* UGC Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-4xl mx-auto mb-12">
-            {ugcTiles.map((tile, index) => (
-              <div
-                key={tile.label}
-                className="aspect-square rounded-xl bg-gradient-to-br from-muted to-muted/50 border border-border/30 flex flex-col items-center justify-center p-4 group hover:border-primary/30 transition-colors"
-              >
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-3 group-hover:bg-primary/20 transition-colors">
-                  <span className="text-lg font-semibold text-primary">{tile.initials}</span>
-                </div>
-                <span className="text-sm text-muted-foreground text-center">{tile.label}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Member Quotes */}
-          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            {memberQuotes.map((member, index) => (
-              <div
-                key={member.name}
-                className="p-6 rounded-xl bg-background border border-border/50"
-              >
-                <p className="text-foreground/80 italic mb-4 leading-relaxed">
-                  "{member.quote}"
-                </p>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-sm font-medium text-primary">{member.initials}</span>
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground text-sm">{member.name}</p>
-                    <p className="text-xs text-muted-foreground">{member.role}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* UGC / Loved By Real Sleepers */}
+      <UGCTestimonialGrid />
 
       {/* Benefits Section */}
       <section className="py-16 md:py-24">
