@@ -122,7 +122,7 @@ export const Hero = () => {
   const selectedOption = bundles[selectedBundle];
 
   return (
-    <section className="pb-3 md:pb-6 bg-background overflow-visible" style={{ paddingTop: headerHeight + 16 }}>
+    <section className="pb-3 md:pb-6 bg-background overflow-visible" style={{ paddingTop: headerHeight }}>
       <div className="container mx-auto px-4 max-w-7xl overflow-visible">
         {/* Mobile Layout: Carousel at top, then title */}
         <div className="md:hidden space-y-3 md:space-y-4 mb-0 md:mb-6">
