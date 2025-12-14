@@ -98,25 +98,30 @@ export default function Home() {
       </section>
 
       {/* Hero Section */}
-      <section className="relative py-12 md:py-20 bg-gradient-to-b from-background via-primary/5 to-background">
+      <section className="relative py-16 md:py-24 bg-gradient-to-b from-background via-primary/5 to-background">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center space-y-8">
 
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold leading-tight tracking-tight">
               Transform Your Sleep,
               <br />
               <span className="text-primary">Transform Your Life</span>
             </h1>
 
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
-              At Rise By Night, we're dedicated to helping people achieve the restorative sleep they deserve. Through
-              innovative design and premium materials, we create sleep solutions that make a real difference.
+            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              Science-backed sleep solutions designed to help you wake refreshed, 
+              move freely, and perform at your best—every single day.
             </p>
 
-            <div className="flex flex-wrap justify-center gap-4 pt-4">
+            <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
+              <Link to="/sleep-quiz">
+                <Button size="lg" className="text-base md:text-lg px-8 py-6 rounded-full">
+                  Take the Sleep Quiz <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
+              </Link>
               <Link to="/product/ergonomic-pillow">
-                <Button size="lg" className="text-lg px-8">
-                  Explore Our Bestseller <ArrowRight className="ml-2 w-5 h-5" />
+                <Button variant="outline" size="lg" className="text-base md:text-lg px-8 py-6 rounded-full border-primary/30">
+                  Explore Products
                 </Button>
               </Link>
             </div>
@@ -303,30 +308,31 @@ export default function Home() {
       {/* Ambassador Wall */}
       <AmbassadorWall />
 
-      {/* CTA Section */}
-      <section className="py-16 md:py-24 bg-primary text-primary-foreground">
+      {/* Quiz CTA Section */}
+      <section className="py-20 md:py-28 bg-gradient-to-br from-primary via-primary to-primary/90 text-primary-foreground">
         <div className="container mx-auto px-4 text-center">
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">Ready for Better Sleep?</h2>
-            <p className="text-xl mb-8 opacity-90">
-              Join our community and discover the difference quality sleep makes in your life.
+            <p className="text-sm uppercase tracking-widest opacity-70 mb-4">
+              Personalized For You
+            </p>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-semibold mb-5 tracking-tight">
+              Not Sure Where to Start?
+            </h2>
+            <p className="text-lg md:text-xl mb-8 opacity-90 leading-relaxed max-w-xl mx-auto">
+              Take our 3-minute Sleep Quiz to discover your sleeper type, 
+              get matched with the right products, and unlock your personalized AI Sleep Coach.
             </p>
 
-            <Link to="/product">
-              <Button size="lg" variant="secondary" className="text-lg px-8">
-                Shop Our Bestseller <ArrowRight className="ml-2 w-5 h-5" />
+            <Link to="/sleep-quiz">
+              <Button size="lg" variant="secondary" className="text-lg px-10 py-6 rounded-full font-medium">
+                Start the Sleep Quiz <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </Link>
 
-            <div className="mt-8 pt-8 border-t border-primary-foreground/30">
-              <p className="text-base md:text-lg font-semibold mb-3 tracking-wide">
-                Free Shipping • 100-Night Trial • 2-Year Warranty
+            <div className="mt-10 pt-8 border-t border-primary-foreground/20">
+              <p className="text-sm md:text-base font-medium opacity-80 tracking-wide">
+                Free Shipping on $50+ • 100-Night Trial • 2-Year Warranty
               </p>
-              <div className="inline-block bg-primary-foreground/10 px-4 py-2 rounded-full">
-                <p className="text-sm md:text-base font-medium">
-                  🎉 Limited Christmas Offer: Buy 1 Get 1 <span className="font-bold">FREE</span> on select products
-                </p>
-              </div>
             </div>
           </div>
         </div>

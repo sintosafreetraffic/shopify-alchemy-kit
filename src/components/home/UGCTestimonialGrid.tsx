@@ -1,4 +1,4 @@
-import { User } from "lucide-react";
+import { User, Quote } from "lucide-react";
 import { useInView } from "@/hooks/useInView";
 
 // Premium UGC testimonial data
@@ -69,16 +69,16 @@ const ugcTestimonials = [
   },
 ];
 
-// Soft color palette for anonymous avatars (Scandinavian pastels)
+// Soft Scandinavian color palette
 const avatarColors = [
-  "from-blue-100 to-blue-50",
+  "from-slate-100 to-slate-50",
   "from-stone-100 to-stone-50",
-  "from-amber-50 to-orange-50",
-  "from-emerald-50 to-teal-50",
-  "from-violet-50 to-purple-50",
-  "from-rose-50 to-pink-50",
-  "from-sky-100 to-cyan-50",
-  "from-slate-100 to-gray-50",
+  "from-zinc-100 to-zinc-50",
+  "from-neutral-100 to-neutral-50",
+  "from-gray-100 to-gray-50",
+  "from-slate-50 to-gray-50",
+  "from-stone-50 to-neutral-50",
+  "from-zinc-50 to-slate-50",
 ];
 
 interface UGCCardProps {
@@ -98,51 +98,50 @@ const UGCCard = ({ testimonial, index }: UGCCardProps) => {
           ? "opacity-100 translate-y-0" 
           : "opacity-0 translate-y-6"
       }`}
-      style={{ transitionDelay: `${(index % 4) * 100}ms` }}
+      style={{ transitionDelay: `${(index % 4) * 80}ms` }}
     >
-    <div className="group relative bg-background rounded-2xl border border-border/40 p-5 md:p-6 transition-all duration-300 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5">
-      {/* Subtle pillow silhouette watermark */}
-      <div className="absolute top-3 right-3 w-8 h-8 opacity-[0.04] group-hover:opacity-[0.08] transition-opacity">
-        <svg viewBox="0 0 24 24" fill="currentColor" className="text-primary w-full h-full">
-          <path d="M20 8c0-2.21-1.79-4-4-4H8C5.79 4 4 5.79 4 8v8c0 2.21 1.79 4 4 4h8c2.21 0 4-1.79 4-4V8zm-2 8c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2h8c1.1 0 2 .9 2 2v8z"/>
-        </svg>
-      </div>
-      
-      {/* Header: Avatar + Info */}
-      <div className="flex items-center gap-3 mb-4">
-        {/* Circular avatar placeholder */}
-        <div className={`w-12 h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-br ${colorClass} flex items-center justify-center ring-2 ring-background shadow-sm`}>
-          {testimonial.hasPhoto ? (
-            <img 
-              src={`/images/ugc/${testimonial.id}.webp`} 
-              alt={testimonial.name}
-              className="w-full h-full rounded-full object-cover"
-            />
-          ) : (
-            <User className="w-5 h-5 md:w-6 md:h-6 text-muted-foreground/60" />
-          )}
+      <div className="group relative h-full bg-background rounded-2xl border border-border/30 p-5 md:p-6 transition-all duration-300 hover:border-primary/20 hover:shadow-md">
+        {/* Subtle quote mark */}
+        <div className="absolute top-4 right-4 opacity-[0.06] group-hover:opacity-[0.1] transition-opacity">
+          <Quote className="w-8 h-8 text-primary" />
         </div>
         
-        {/* Name & Label */}
-        <div>
-          <p className="font-medium text-foreground text-sm md:text-base leading-tight">
-            {testimonial.name}
-          </p>
-          <p className="text-xs md:text-sm text-muted-foreground/80">
-            {testimonial.label}
-          </p>
+        {/* Header: Avatar + Info */}
+        <div className="flex items-center gap-3 mb-4">
+          {/* Circular avatar placeholder */}
+          <div className={`w-11 h-11 md:w-12 md:h-12 rounded-full bg-gradient-to-br ${colorClass} flex items-center justify-center ring-2 ring-background shadow-sm`}>
+            {testimonial.hasPhoto ? (
+              <img 
+                src={`/images/ugc/${testimonial.id}.webp`} 
+                alt={testimonial.name}
+                className="w-full h-full rounded-full object-cover"
+                loading="lazy"
+              />
+            ) : (
+              <User className="w-5 h-5 text-muted-foreground/50" />
+            )}
+          </div>
+          
+          {/* Name & Label */}
+          <div>
+            <p className="font-medium text-foreground text-sm leading-tight">
+              {testimonial.name}
+            </p>
+            <p className="text-xs text-muted-foreground/70">
+              {testimonial.label}
+            </p>
+          </div>
         </div>
-      </div>
-      
-      {/* Testimonial */}
-      <p className="text-foreground/80 text-sm md:text-[15px] leading-relaxed mb-4">
-        "{testimonial.testimonial}"
-      </p>
-      
-      {/* Hashtag */}
-      <span className="inline-block text-xs font-medium text-primary/70 tracking-wide">
-        {testimonial.hashtag}
-      </span>
+        
+        {/* Testimonial */}
+        <p className="text-foreground/75 text-sm leading-relaxed mb-4">
+          "{testimonial.testimonial}"
+        </p>
+        
+        {/* Hashtag */}
+        <span className="inline-block text-[11px] font-medium text-primary/60 tracking-wide">
+          {testimonial.hashtag}
+        </span>
       </div>
     </div>
   );
@@ -150,7 +149,7 @@ const UGCCard = ({ testimonial, index }: UGCCardProps) => {
 
 export const UGCTestimonialGrid = () => {
   return (
-    <section className="py-16 md:py-24 bg-muted/20">
+    <section className="py-20 md:py-28 bg-muted/10">
       <div className="container mx-auto px-4">
         {/* Section Header */}
         <div className="text-center mb-12 md:mb-16">
@@ -165,7 +164,7 @@ export const UGCTestimonialGrid = () => {
           </p>
         </div>
         
-        {/* UGC Grid - 2 cols mobile, 3 cols tablet, 4 cols desktop */}
+        {/* UGC Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5 max-w-7xl mx-auto">
           {ugcTestimonials.map((testimonial, index) => (
             <UGCCard key={testimonial.id} testimonial={testimonial} index={index} />
@@ -173,7 +172,7 @@ export const UGCTestimonialGrid = () => {
         </div>
         
         {/* Subtle bottom note */}
-        <p className="text-center text-xs text-muted-foreground/60 mt-10 md:mt-12">
+        <p className="text-center text-[11px] text-muted-foreground/50 mt-10 md:mt-12">
           Real experiences from our community. Individual results may vary.
         </p>
       </div>
