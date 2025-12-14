@@ -19,7 +19,22 @@
 
 declare global {
   interface Window {
-    pintrk?: (...args: any[]) => void;
+    pintrk?: ((...args: any[]) => void) & { queue?: any[] };
+  }
+}
+
+// Check if Pinterest is fully initialized and ready to use
+function isPinterestReady(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (!window.pintrk) return false;
+  // Pinterest stub creates a queue array - if it exists but queue is undefined, 
+  // the real pintrk is loaded. If queue exists, we need to ensure it's an array.
+  // The error occurs when pintrk exists but its internal queue is undefined.
+  try {
+    // Test call to see if it throws
+    return typeof window.pintrk === 'function';
+  } catch {
+    return false;
   }
 }
 
@@ -50,7 +65,9 @@ function markEnhancedMatchSet(): void {
 // Set enhanced match data (call when user email is known)
 // Includes session guard to avoid duplicate calls
 export async function setEnhancedMatch(email?: string) {
-  if (typeof window !== 'undefined' && window.pintrk && email) {
+  if (!isPinterestReady() || !email) return;
+  
+  try {
     // Skip if already set this session
     if (wasEnhancedMatchSet()) {
       console.log('[Pinterest] Enhanced match already set this session, skipping');
@@ -58,9 +75,11 @@ export async function setEnhancedMatch(email?: string) {
     }
     
     const hashedEmail = await sha256(email);
-    window.pintrk('set', { em: hashedEmail });
+    window.pintrk!('set', { em: hashedEmail });
     markEnhancedMatchSet();
     console.log('[Pinterest] Enhanced match set');
+  } catch (e) {
+    console.warn('[Pinterest] Enhanced match failed:', e);
   }
 }
 
@@ -84,15 +103,19 @@ function generateEventId(): string {
 
 // Track page visit with product ID (for product pages)
 export function trackPageVisit(productId?: string) {
-  if (typeof window !== 'undefined' && window.pintrk) {
+  if (!isPinterestReady()) return;
+  
+  try {
     const data: Record<string, any> = {
       event_id: generateEventId(),
     };
     if (productId) {
       data.product_id = extractProductId(productId);
     }
-    window.pintrk('track', 'pagevisit', data);
+    window.pintrk!('track', 'pagevisit', data);
     console.log('[Pinterest] PageVisit tracked', data);
+  } catch (e) {
+    console.warn('[Pinterest] PageVisit tracking failed:', e);
   }
 }
 
@@ -104,7 +127,9 @@ export function trackAddToCart(
   currency: string = 'USD',
   quantity: number = 1
 ) {
-  if (typeof window !== 'undefined' && window.pintrk) {
+  if (!isPinterestReady()) return;
+  
+  try {
     const data = {
       event_id: generateEventId(),
       product_id: extractProductId(productId),
@@ -112,8 +137,10 @@ export function trackAddToCart(
       order_quantity: quantity,
       currency: currency,
     };
-    window.pintrk('track', 'addtocart', data);
+    window.pintrk!('track', 'addtocart', data);
     console.log('[Pinterest] AddToCart tracked', data);
+  } catch (e) {
+    console.warn('[Pinterest] AddToCart tracking failed:', e);
   }
 }
 
@@ -135,52 +162,55 @@ export function generateCartFingerprint(items: Array<{ variantId: string; quanti
 // Completed transactions (Checkout) must ONLY be fired by Shopify's Pinterest App after payment.
 // Deduplication: Only fires if cart fingerprint changed OR 30 seconds have passed.
 export function trackInitiateCheckout(items: Array<{ variantId: string; quantity: number; price?: { amount: string }; currencyCode?: string }>): boolean {
-  if (typeof window === 'undefined' || !window.pintrk) {
+  if (!isPinterestReady()) return false;
+  
+  try {
+    const fingerprint = generateCartFingerprint(items);
+    const lastFingerprint = sessionStorage.getItem(INITIATE_CHECKOUT_FP_KEY);
+    const lastTimestamp = sessionStorage.getItem(INITIATE_CHECKOUT_TS_KEY);
+    const now = Date.now();
+    
+    // Dedupe: skip if same cart state already tracked within 30 seconds
+    if (fingerprint === lastFingerprint && lastTimestamp) {
+      const elapsed = now - parseInt(lastTimestamp, 10);
+      if (elapsed < INITIATE_CHECKOUT_DEDUPE_WINDOW_MS) {
+        console.log('[Pinterest] InitiateCheckout skipped (duplicate within 30s window)');
+        return false;
+      }
+    }
+    
+    // Calculate totals for event data
+    const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+    const totalValue = items.reduce((sum, item) => {
+      const price = parseFloat(item.price?.amount || '0');
+      return sum + (price * item.quantity);
+    }, 0);
+    const currency = items[0]?.currencyCode || 'USD';
+    
+    const data: Record<string, any> = {
+      event_id: generateEventId(),
+      order_quantity: totalQuantity,
+    };
+    
+    // Only include value/currency if we have valid amounts
+    if (totalValue > 0) {
+      data.value = totalValue;
+      data.currency = currency;
+    }
+    
+    // CRITICAL: Event name must be all lowercase 'initiatecheckout'
+    window.pintrk!('track', 'initiatecheckout', data);
+    
+    // Store fingerprint and timestamp for deduplication
+    sessionStorage.setItem(INITIATE_CHECKOUT_FP_KEY, fingerprint);
+    sessionStorage.setItem(INITIATE_CHECKOUT_TS_KEY, String(now));
+    
+    console.log('[Pinterest] InitiateCheckout tracked', data);
+    return true;
+  } catch (e) {
+    console.warn('[Pinterest] InitiateCheckout tracking failed:', e);
     return false;
   }
-  
-  const fingerprint = generateCartFingerprint(items);
-  const lastFingerprint = sessionStorage.getItem(INITIATE_CHECKOUT_FP_KEY);
-  const lastTimestamp = sessionStorage.getItem(INITIATE_CHECKOUT_TS_KEY);
-  const now = Date.now();
-  
-  // Dedupe: skip if same cart state already tracked within 30 seconds
-  if (fingerprint === lastFingerprint && lastTimestamp) {
-    const elapsed = now - parseInt(lastTimestamp, 10);
-    if (elapsed < INITIATE_CHECKOUT_DEDUPE_WINDOW_MS) {
-      console.log('[Pinterest] InitiateCheckout skipped (duplicate within 30s window)');
-      return false;
-    }
-  }
-  
-  // Calculate totals for event data
-  const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
-  const totalValue = items.reduce((sum, item) => {
-    const price = parseFloat(item.price?.amount || '0');
-    return sum + (price * item.quantity);
-  }, 0);
-  const currency = items[0]?.currencyCode || 'USD';
-  
-  const data: Record<string, any> = {
-    event_id: generateEventId(),
-    order_quantity: totalQuantity,
-  };
-  
-  // Only include value/currency if we have valid amounts
-  if (totalValue > 0) {
-    data.value = totalValue;
-    data.currency = currency;
-  }
-  
-  // CRITICAL: Event name must be all lowercase 'initiatecheckout'
-  window.pintrk('track', 'initiatecheckout', data);
-  
-  // Store fingerprint and timestamp for deduplication
-  sessionStorage.setItem(INITIATE_CHECKOUT_FP_KEY, fingerprint);
-  sessionStorage.setItem(INITIATE_CHECKOUT_TS_KEY, String(now));
-  
-  console.log('[Pinterest] InitiateCheckout tracked', data);
-  return true;
 }
 
 // Clear InitiateCheckout fingerprint (call when cart changes to allow new tracking)
@@ -193,23 +223,31 @@ export function clearInitiateCheckoutFingerprint(): void {
 
 // Track lead event (e.g., newsletter signup)
 export function trackLead(leadType: string = 'Newsletter') {
-  if (typeof window !== 'undefined' && window.pintrk) {
+  if (!isPinterestReady()) return;
+  
+  try {
     const data = {
       event_id: generateEventId(),
       lead_type: leadType,
     };
-    window.pintrk('track', 'lead', data);
+    window.pintrk!('track', 'lead', data);
     console.log('[Pinterest] Lead tracked', data);
+  } catch (e) {
+    console.warn('[Pinterest] Lead tracking failed:', e);
   }
 }
 
 // Track signup event
 export function trackSignup() {
-  if (typeof window !== 'undefined' && window.pintrk) {
+  if (!isPinterestReady()) return;
+  
+  try {
     const data = {
       event_id: generateEventId(),
     };
-    window.pintrk('track', 'signup', data);
+    window.pintrk!('track', 'signup', data);
     console.log('[Pinterest] Signup tracked', data);
+  } catch (e) {
+    console.warn('[Pinterest] Signup tracking failed:', e);
   }
 }
