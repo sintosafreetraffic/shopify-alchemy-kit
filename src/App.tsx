@@ -13,6 +13,75 @@ import { useEmailPopup } from "./hooks/useEmailPopup";
 
 import { FullPageLoader } from "./components/FullPageLoader";
 
+// =============================================================================
+// TEMPORARY PINTEREST DEBUG WRAPPER
+// Purpose: Intercept ALL pintrk calls, log them, and BLOCK any "checkout" events
+// This proves whether Lovable is firing "checkout" anywhere (it should NOT).
+// Remove this wrapper once debugging is complete.
+// =============================================================================
+const installPinterestDebugWrapper = () => {
+  if (typeof window === "undefined") return;
+  
+  // Prevent double-installation
+  if ((window as any).__pintrk_debug_installed) return;
+  
+  let attempts = 0;
+  const maxAttempts = 100; // 5 seconds at 50ms intervals
+  
+  const tryInstall = () => {
+    attempts++;
+    
+    if ((window as any).pintrk && !(window as any).__pintrk_original) {
+      // Save original function
+      (window as any).__pintrk_original = (window as any).pintrk;
+      
+      // Replace with wrapper
+      (window as any).pintrk = function(...args: any[]) {
+        const [command, eventName, payload] = args;
+        
+        // Log every call
+        console.log('[Pinterest Debug]', {
+          command,
+          eventName,
+          payload,
+          url: window.location.href,
+          timestamp: new Date().toISOString()
+        });
+        
+        // Block "checkout" event (case-insensitive)
+        if (
+          command === 'track' && 
+          typeof eventName === 'string' && 
+          eventName.toLowerCase() === 'checkout'
+        ) {
+          console.error('[Pinterest] BLOCKED checkout event from Lovable!');
+          console.error('[Pinterest] This should NEVER happen - checkout events must only come from Shopify.');
+          console.error(new Error('Pinterest checkout blocked - stack trace:').stack);
+          console.error('[Pinterest] Blocked payload:', payload);
+          return; // Do NOT forward to Pinterest
+        }
+        
+        // Forward all other calls to original
+        return (window as any).__pintrk_original.apply(this, args);
+      };
+      
+      (window as any).__pintrk_debug_installed = true;
+      console.log('[Pinterest Debug] Wrapper installed successfully. Monitoring all pintrk calls.');
+      console.log('[Pinterest Debug] Any "checkout" events will be BLOCKED and logged with stack trace.');
+    } else if (attempts < maxAttempts) {
+      // Keep polling
+      setTimeout(tryInstall, 50);
+    } else {
+      console.log('[Pinterest Debug] pintrk not found after 5s - Pinterest Tag may not be loaded.');
+    }
+  };
+  
+  tryInstall();
+};
+
+// Install on module load (earliest possible)
+installPinterestDebugWrapper();
+
 // Eagerly loaded pages (core shopping experience)
 import Home from "./pages/Home";
 import Index from "./pages/Index";
