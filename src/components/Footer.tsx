@@ -47,6 +47,11 @@ export const Footer = () => {
                     Guarantee
                   </Link>
                 </li>
+                <li>
+                  <Link to="/impressum" className="text-muted-foreground hover:text-foreground transition-colors">
+                    Impressum
+                  </Link>
+                </li>
               </ul>
             </div>
 

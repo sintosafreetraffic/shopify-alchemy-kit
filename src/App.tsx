@@ -30,6 +30,7 @@ import ReturnPolicy from "./pages/ReturnPolicy";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import AboutUs from "./pages/AboutUs";
 import TrackOrder from "./pages/TrackOrder";
+import Impressum from "./pages/Impressum";
 import NotFound from "./pages/NotFound";
 
 // Lazily loaded pages (heavy dashboards & features)
@@ -126,6 +127,7 @@ const AppContent = () => {
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/about" element={<AboutUs />} />
             <Route path="/track" element={<TrackOrder />} />
+            <Route path="/impressum" element={<Impressum />} />
             
             {/* Heavy pages - lazily loaded */}
             <Route path="/sleep-quiz" element={<SleepQuiz />} />
