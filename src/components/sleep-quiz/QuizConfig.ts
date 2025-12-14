@@ -208,7 +208,7 @@ export const QUIZ_QUESTIONS = [
   },
   {
     id: "eveningScreenUse",
-    question: "Do you use screens (phone, TV, laptop) before bed?",
+    question: "Do you use screens (phone, TV, laptop) within 1 hour of bed?",
     tooltip: "Screens suppress melatonin and shift your circadian rhythm.",
     type: "radio" as const,
     autoAdvance: true,
