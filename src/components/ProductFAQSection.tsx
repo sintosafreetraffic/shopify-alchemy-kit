@@ -1,10 +1,5 @@
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { useIsMobile } from "@/hooks/use-mobile";
+// Ergonomic Pillow FAQ - uses shared FAQSection
+import { FAQSection } from "@/components/shared/FAQSection";
 
 const faqs = [
   {
@@ -35,30 +30,10 @@ const faqs = [
 
 export const ProductFAQSection = () => {
   return (
-    <section className="py-6 md:py-8 bg-primary/5">
-      <div className="container mx-auto px-4 max-w-4xl">
-        <div className="text-center mb-6 md:mb-12">
-          <h2 className="text-2xl md:text-4xl font-bold mb-2 md:mb-4">Frequently Asked Questions</h2>
-          <p className="text-sm md:text-base text-muted-foreground">Everything you need to know about Rise By Night</p>
-        </div>
-        
-        <Accordion type="single" collapsible className="space-y-4">
-          {faqs.map((faq, index) => (
-            <AccordionItem 
-              key={index} 
-              value={`item-${index}`}
-              className="bg-background rounded-lg border px-6"
-            >
-              <AccordionTrigger className="text-left hover:no-underline py-5">
-                <span className="font-semibold">{faq.question}</span>
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground pb-5">
-                {faq.answer}
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
-      </div>
-    </section>
+    <FAQSection
+      title="Frequently Asked Questions"
+      subtitle="Everything you need to know about Rise By Night"
+      items={faqs}
+    />
   );
 };
