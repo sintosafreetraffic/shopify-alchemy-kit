@@ -2,13 +2,13 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Users } from "lucide-react";
 
-const ugcPlaceholders = [
-  { tag: "Side Sleeper", initials: "KM" },
-  { tag: "Desk Worker", initials: "JL" },
-  { tag: "New Parent", initials: "AR" },
-  { tag: "Night Owl", initials: "TS" },
-  { tag: "Back Sleeper", initials: "EP" },
-  { tag: "Active Lifestyle", initials: "MC" },
+const ugcTiles = [
+  { tag: "Desk Worker", caption: "Finally waking up without the neck tension.", hashtag: "#MyRiseByNight", initials: "JL" },
+  { tag: "Side Sleeper", caption: "The contour actually fits how I sleep.", hashtag: "#SleepAligned", initials: "KM" },
+  { tag: "Hot Sleeper", caption: "Breathable foam = no more 3am wake-ups.", hashtag: "#CoolSleep", initials: "AR" },
+  { tag: "New Parent", caption: "When I do sleep, it actually counts.", hashtag: "#RestWhenYouCan", initials: "TS" },
+  { tag: "Athlete", caption: "Recovery starts the moment I lie down.", hashtag: "#SleepToRecover", initials: "EP" },
+  { tag: "Stressed Sleeper", caption: "My evening routine finally has a purpose.", hashtag: "#CalmNights", initials: "MC" },
 ];
 
 export function AmbassadorWall() {
@@ -26,36 +26,48 @@ export function AmbassadorWall() {
 
           {/* UGC Grid */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-12">
-            {ugcPlaceholders.map((item, idx) => (
+            {ugcTiles.map((tile, idx) => (
               <div
                 key={idx}
-                className="aspect-square bg-muted/30 rounded-xl border border-border/50 flex flex-col items-center justify-center p-4 hover:border-primary/30 transition-colors"
+                className="bg-muted/30 rounded-xl border border-border/50 p-5 hover:border-primary/30 hover:shadow-md transition-all duration-300 animate-fade-in"
+                style={{ animationDelay: `${idx * 75}ms` }}
               >
                 {/* Placeholder Avatar */}
-                <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-                  <span className="text-lg md:text-xl font-semibold text-primary">{item.initials}</span>
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                  <span className="text-sm font-semibold text-primary">{tile.initials}</span>
                 </div>
                 
                 {/* Tag */}
-                <span className="text-sm text-muted-foreground bg-background px-3 py-1 rounded-full border border-border/50">
-                  {item.tag}
+                <span className="inline-block text-xs text-primary bg-primary/10 px-2.5 py-1 rounded-full font-medium mb-3">
+                  {tile.tag}
                 </span>
+                
+                {/* Caption */}
+                <p className="text-sm text-foreground mb-2 leading-relaxed">
+                  "{tile.caption}"
+                </p>
+                
+                {/* Hashtag */}
+                <p className="text-xs text-muted-foreground">
+                  {tile.hashtag}
+                </p>
               </div>
             ))}
           </div>
 
-          {/* CTA */}
-          <div className="text-center bg-muted/30 rounded-2xl border border-border/50 p-8">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4">
-              <Users className="w-6 h-6 text-primary" />
+          {/* Ambassador CTA */}
+          <div className="text-center bg-muted/30 rounded-2xl border border-border/50 p-8 md:p-10">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10 mb-5">
+              <Users className="w-7 h-7 text-primary" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">Join the Sleep Collective</h3>
-            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-              Share your sleep journey and connect with a community focused on rest and recovery.
+            <h3 className="text-2xl font-semibold mb-3">Join the Sleep Collective</h3>
+            <p className="text-muted-foreground mb-6 max-w-lg mx-auto leading-relaxed">
+              We're building a community of creators, wellness advocates, and everyday sleepers who care about rest—not hype. 
+              If you believe better sleep changes everything, we'd love to hear from you.
             </p>
             <Link to="/about-us">
               <Button variant="outline" size="lg">
-                Learn More
+                Learn About Partnerships
               </Button>
             </Link>
           </div>
