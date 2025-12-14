@@ -81,7 +81,7 @@ export function SleeperPersonaDiscovery() {
                       </div>
 
                       <Link to="/sleep-quiz">
-                        <Button variant="ghost" size="sm" className="text-primary hover:text-primary/80 p-0">
+                        <Button variant="link" size="sm" className="text-primary p-0 h-auto">
                           I'm this type →
                         </Button>
                       </Link>
