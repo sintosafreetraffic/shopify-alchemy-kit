@@ -910,94 +910,166 @@ Return a structured JSON response.`;
  * 
  * Provides persona-aware language and focus based on cluster type.
  * Only applies full persona flavor when confidence >= 50%.
+ * 
+ * v3: Enhanced Mia (stress_insomnia) guidance with nervous system focus
  */
 function buildPersonaGuidanceBlock(
   personaCluster: string | undefined,
   personaConfidence: number,
-  personaLabel: string
+  personaLabel: string,
+  coreNeed?: string
 ): string {
   const usePersonaFlavor = personaConfidence >= 50;
   
   if (!personaCluster || !usePersonaFlavor) {
     return `
-=== PERSONA GUIDANCE ===
-Persona confidence is low or unknown. Use NEUTRAL, inclusive language:
+=== PERSONA GUIDANCE (NEUTRAL MODE) ===
+Persona confidence is ${personaConfidence}% (below 50% threshold). Use NEUTRAL, inclusive language:
 - "Many sleepers find that..."
 - "Side/back sleepers often benefit from..."
 - Do NOT assume specific pain causes or stress patterns
 - Keep recommendations broadly applicable
+- Still respect their sleep position and environment data
 `;
   }
 
-  // Persona-specific guidance blocks
+  // Persona-specific guidance blocks - enhanced v3
   const guidanceMap: Record<string, string> = {
     pain_sleeper: `
-=== PERSONA GUIDANCE: PAIN SLEEPER ===
-This user's primary concern is PHYSICAL DISCOMFORT and ALIGNMENT.
+=== PERSONA GUIDANCE: THE PAIN SLEEPER ===
+Label: "${personaLabel}"
+Core Need: ${coreNeed || 'alignment'}
+Confidence: ${personaConfidence}%
 
-HEADLINE FRAMING:
-- Use language like: "7-Night Neck & Shoulder Relief Plan", "Alignment-Focused Week"
-- Emphasize: alignment, comfort, pain relief, morning ease, stiffness reduction
+This user's PRIMARY concern is PHYSICAL DISCOMFORT and ALIGNMENT.
+
+HEADLINE INSTRUCTIONS:
+- Examples: "7-Night Neck & Shoulder Relief Plan", "Alignment-Focused Sleep Week", "Comfort & Support Plan"
+- Lead with COMFORT language: alignment, relief, support, ease, comfort
+- Avoid: "pain-free", "cure", "fix"
+
+whyThisPlan MUST REFERENCE:
+1. Their sleep position and how it affects alignment
+2. Their specific pain areas (neck, shoulders, back, hips)
+3. How proper positioning can support comfort
+4. Their environment factors (mattress firmness, pillow type)
 
 CONTENT FOCUS:
-- Morning tasks: Gentle stretches targeting their pain areas, mobility exercises
-- Evening tasks: Pillow positioning, tension release, proper sleep posture setup
-- Tips: Reference cervical curve, spinal alignment, shoulder/neck support
-- Micro-habits: "Notice your head position", "Check pillow height"
+- Morning tasks: Gentle stretches targeting THEIR pain areas, mobility exercises, tension release
+- Evening tasks: Pillow positioning for their sleep position, tension release, proper posture setup
+- Tips: Reference cervical curve, spinal alignment, shoulder/neck support specific to their position
+- Micro-habits: "Notice your head position", "Check pillow height", "Adjust pillow placement"
+
+focusAreas PREFERENCE (bias toward these):
+1. "alignment_support" - PRIMARY
+2. "pain_management" - if significant pain reported
+3. "wake_up_routine" - morning mobility
+4. "sleep_hygiene" - secondary
 
 LANGUAGE STYLE:
-- Supportive, acknowledging discomfort: "If you wake with tension..."
-- Action-oriented: "Position your pillow in the cervical curve..."
+- Supportive, acknowledging discomfort: "If you wake with tension in your [area]..."
+- Action-oriented: "Position your pillow to support the curve of your neck..."
 - Celebrate comfort wins: "Notice if shoulder pressure feels different..."
+- Warm but practical: They want solutions, not just sympathy
 
 AVOID:
-- Overly clinical medical terms
-- Promises of "pain-free" or "cured"
+- Medical terms: "chronic", "diagnose", "therapy", "treatment"
+- Promises: "pain-free", "cured", "fixed", "eliminated"
+- Ignoring their specific pain areas
 `,
 
     stress_insomnia: `
-=== PERSONA GUIDANCE: STRESS & ENVIRONMENT SLEEPER ===
-This user's primary concern is NERVOUS SYSTEM CALM and ENVIRONMENT.
+=== PERSONA GUIDANCE: THE STRESS & ENVIRONMENT SLEEPER ===
+Label: "${personaLabel}"
+Core Need: ${coreNeed || 'environment'}
+Confidence: ${personaConfidence}%
 
-HEADLINE FRAMING:
-- Use language like: "7 Nights to a Calmer Sleep Environment", "Wind-Down & Rest Week"
-- Emphasize: calming, relaxation, nervous system, environment control, peaceful sleep
+This user's PRIMARY concern is NERVOUS SYSTEM CALM and ENVIRONMENT OPTIMIZATION.
+They may experience racing thoughts, difficulty unwinding, or sensitivity to light/noise/temperature.
+
+HEADLINE INSTRUCTIONS:
+- Examples: "7 Nights to a Calmer Sleep Environment", "Wind-Down & Rest Week", "Evening Reset Plan", "Sanctuary Sleep Week"
+- Lead with CALM language: calming, peaceful, sanctuary, gentle, wind-down, settle, rest
+- Emphasize ENVIRONMENT: space, atmosphere, darkness, quiet, cool
+- Avoid: "insomnia", "anxiety", "stress disorder", "therapy"
+
+whyThisPlan MUST REFERENCE:
+1. Their environment (brightness, noise level, temperature) and how to optimize it
+2. The importance of wind-down routines for nervous system settling
+3. Their stress level and how evening boundaries help
+4. Building a "sanctuary" bedroom atmosphere
 
 CONTENT FOCUS:
-- Morning tasks: Gentle, grounding start - breathing, light stretching, no urgency
-- Evening tasks: Wind-down rituals, light dimming, screen reduction, calming routines
-- Tips: Reference light/noise control, bedtime boundaries, nervous system settling
-- Micro-habits: "Dim lights 30 min before bed", "Take 3 slow breaths"
+- Morning tasks: GENTLE, grounding start - breathing, light stretching, NO urgency or intensity
+- Evening tasks: Wind-down rituals, light dimming (30 min before bed), screen boundaries, breathwork, calming routines
+- Tips: Light/noise control, bedtime boundaries, nervous system settling, micro-rituals
+- Micro-habits: "Dim lights 30 min before bed", "Take 3 slow breaths", "Set a wind-down alarm", "Notice when your mind settles"
+
+focusAreas PREFERENCE (bias toward these):
+1. "wind_down_routine" - PRIMARY for this persona
+2. "environment_optimization" - light, noise, temperature
+3. "temperature_consistency" - if they run hot
+4. "consistency_building" - routines reduce mental load
 
 LANGUAGE STYLE:
 - Soft, validating: "If your mind feels busy at night...", "It's okay to need extra time to settle..."
 - Permission-giving: "Allow yourself to...", "Give your nervous system time to..."
 - Environment-focused: "Your sleep space should feel like a sanctuary..."
+- Gentle pacing: "Take your time with this...", "There's no rush..."
+
+SPECIAL INSTRUCTIONS FOR MILA (stress_insomnia):
+- Evening tasks should be CALMING, not activating (no intense stretches or long routines)
+- Morning tasks should be LOW-KEY (gentle breathing, not aggressive wake-up routines)
+- Emphasize light management heavily (dimming, avoiding screens, blackout options)
+- Reference nervous system "downshifting" or "settling" - not "fixing" or "curing"
+- Breathwork suggestions should be SIMPLE (4-7-8, box breathing, 3 slow breaths)
+- Acknowledge that racing thoughts are common without pathologizing
 
 AVOID:
 - High-pressure language or "must do" framing
-- Guilt-inducing messaging about screen time
+- Guilt-inducing messaging about screen time ("you should stop...")
 - Overly energetic morning routines
+- Medical terms: "insomnia treatment", "anxiety therapy", "chronic stress"
+- Promises: "eliminate stress", "stop racing thoughts"
 `,
 
     optimizer: `
-=== PERSONA GUIDANCE: SLEEP OPTIMIZER ===
-This user is focused on PERFORMANCE, TRACKING, and MEASURABLE IMPROVEMENT.
+=== PERSONA GUIDANCE: THE SLEEP OPTIMIZER ===
+Label: "${personaLabel}"
+Core Need: ${coreNeed || 'optimization'}
+Confidence: ${personaConfidence}%
 
-HEADLINE FRAMING:
-- Use language like: "7-Night Sleep Performance Plan", "Optimization & Progress Week"
-- Emphasize: measurable, track, experiment, routine, consistency, progress
+This user is focused on PERFORMANCE, TRACKING, and MEASURABLE IMPROVEMENT.
+They want data-driven suggestions and to experiment with what works.
+
+HEADLINE INSTRUCTIONS:
+- Examples: "7-Night Sleep Performance Plan", "Optimization & Progress Week", "Sleep Quality Enhancement Plan"
+- Lead with PERFORMANCE language: optimize, track, measure, improve, progress, consistency
+- Avoid: vague or unmeasurable claims
+
+whyThisPlan MUST REFERENCE:
+1. Their tracking history and what the data shows
+2. Specific metrics they can monitor (quality, pain levels, energy)
+3. How consistency leads to measurable improvement
+4. Their sleep streak and engagement level
 
 CONTENT FOCUS:
-- Morning tasks: Rate and log sleep, notice energy levels, track patterns
+- Morning tasks: Rate and log sleep, notice energy levels, track patterns, rate readiness
 - Evening tasks: Consistent wind-down routines, timing experiments, habit stacking
-- Tips: Reference sleep metrics, consistency benefits, experimentation
-- Micro-habits: "Log one metric", "Notice how X affects energy"
+- Tips: Reference sleep metrics, consistency benefits, experimentation, pattern recognition
+- Micro-habits: "Log one metric", "Notice how X affects energy", "Rate your sleep within 5 min of waking"
+
+focusAreas PREFERENCE (bias toward these):
+1. "consistency_building" - PRIMARY for optimizers
+2. "sleep_hygiene" - daily habits
+3. "wake_up_routine" - morning energy
+4. "environment_optimization" - quantifiable improvements
 
 LANGUAGE STYLE:
-- Data-aware: "Track your progress...", "Notice the pattern..."
+- Data-aware: "Track your progress...", "Notice the pattern...", "Your logs show..."
 - Experimental: "Try this for 3 nights and see what shifts..."
 - Progress-oriented: "Building on your streak...", "Your consistency shows..."
+- Practical: They prefer actionable over emotional
 
 AVOID:
 - Vague or unmeasurable suggestions
@@ -1006,34 +1078,55 @@ AVOID:
 `,
 
     recovery_sleeper: `
-=== PERSONA GUIDANCE: RECOVERY SLEEPER ===
-This user is focused on PHYSICAL RESTORATION, TRAINING RECOVERY, and ATHLETIC PERFORMANCE.
+=== PERSONA GUIDANCE: THE RECOVERY SLEEPER ===
+Label: "${personaLabel}"
+Core Need: ${coreNeed || 'recovery'}
+Confidence: ${personaConfidence}%
 
-HEADLINE FRAMING:
-- Use language like: "7-Night Recovery & Restoration Plan", "Deep Sleep for Training Recovery"
-- Emphasize: recovery, restoration, muscle repair, training adaptation, restorative sleep
+This user is focused on PHYSICAL RESTORATION, TRAINING RECOVERY, and ATHLETIC PERFORMANCE.
+Sleep is a tool for their physical performance and muscle recovery.
+
+HEADLINE INSTRUCTIONS:
+- Examples: "7-Night Recovery & Restoration Plan", "Deep Sleep for Training Recovery", "Athletic Rest Week"
+- Lead with RECOVERY language: recovery, restoration, repair, readiness, performance support
+- Avoid: suggesting they reduce activity (focus on recovery quality instead)
+
+whyThisPlan MUST REFERENCE:
+1. How sleep supports muscle recovery and training adaptation
+2. Their physical demands and how rest complements activity
+3. Deep sleep phases and their role in restoration
+4. Morning readiness as a metric of recovery quality
 
 CONTENT FOCUS:
-- Morning tasks: Mobility for training recovery, readiness assessment, body scan
-- Evening tasks: Cool-down from activity, temperature regulation, deep sleep prep
-- Tips: Reference muscle recovery during sleep, training load, soreness relief
-- Micro-habits: "Rate morning readiness", "Cool down before bed"
+- Morning tasks: Mobility for training recovery, readiness assessment, body scan, rate soreness
+- Evening tasks: Cool-down from activity, temperature regulation, deep sleep preparation
+- Tips: Reference muscle recovery during sleep, training load, soreness relief, deep sleep
+- Micro-habits: "Rate morning readiness 1-10", "Cool down before bed", "Notice soreness levels"
+
+focusAreas PREFERENCE (bias toward these):
+1. "alignment_support" - physical support
+2. "temperature_consistency" - cooling for recovery
+3. "wake_up_routine" - readiness assessment
+4. "sleep_hygiene" - consistent recovery
 
 LANGUAGE STYLE:
 - Athletic framing: "Your body repairs during deep sleep phases..."
 - Recovery-focused: "Support your training with quality rest..."
 - Performance-aware: "Proper sleep enhances next-day performance..."
+- Metric-oriented: Like optimizers, they appreciate measurable outcomes
 
 AVOID:
 - Overly clinical medical terms
 - Ignoring their athletic context
-- Suggesting they reduce activity (focus on recovery quality instead)
+- Suggesting they reduce activity
+- Soft or emotional language (they prefer direct and practical)
 `,
   };
 
   return guidanceMap[personaCluster] || `
 === PERSONA GUIDANCE ===
-User has persona "${personaLabel}" but specific guidance is not defined.
+User has persona "${personaLabel}" (cluster: ${personaCluster}) but specific guidance is not defined.
+Core need: ${coreNeed || 'unknown'}
 Use their sleep position, pain points, and environment data to personalize.
 `; 
 }
@@ -1090,8 +1183,9 @@ export async function callSleepPlanAI(
   const personaCluster = metricsContext?.personaCluster;
   const personaLabel = metricsContext?.personaLabel || '';
 
-  // Build persona-specific guidance block
-  const personaGuidance = buildPersonaGuidanceBlock(personaCluster, personaConfidence, personaLabel);
+  // Build persona-specific guidance block (v3: includes coreNeed)
+  const coreNeed = metricsContext?.coreNeed || '';
+  const personaGuidance = buildPersonaGuidanceBlock(personaCluster, personaConfidence, personaLabel, coreNeed);
 
   // Build metrics section for AI prompt
   const metricsSection = metricsContext ? `
