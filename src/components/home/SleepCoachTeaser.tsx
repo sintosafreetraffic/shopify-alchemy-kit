@@ -22,10 +22,10 @@ const pillars = [
 
 export function SleepCoachTeaser() {
   return (
-    <section className="py-16 md:py-24 bg-primary/5">
+    <section className="py-12 md:py-16 bg-primary/5">
       <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="grid lg:grid-cols-2 gap-10 items-center">
             {/* Content */}
             <div>
               <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium mb-6">
@@ -33,17 +33,17 @@ export function SleepCoachTeaser() {
                 Included Free With Your Pillow
               </div>
               
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">
+              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4">
                 Your Personal Sleep Coach, Built In
               </h2>
               
-              <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
+              <p className="text-base text-muted-foreground mb-6 leading-relaxed">
                 Beyond the pillow—get a weekly plan tailored to your sleeper type, environment, and habits. 
                 No app downloads, no subscriptions. Just calm, personalized guidance that updates based on 
                 how you're sleeping. Designed to support your comfort, not overwhelm your routine.
               </p>
 
-              <div className="space-y-5 mb-10">
+              <div className="space-y-4 mb-8">
                 {pillars.map((pillar, index) => {
                   const Icon = pillar.icon;
                   return (

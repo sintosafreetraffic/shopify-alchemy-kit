@@ -149,10 +149,10 @@ const UGCCard = ({ testimonial, index }: UGCCardProps) => {
 
 export const UGCTestimonialGrid = () => {
   return (
-    <section className="py-20 md:py-28 bg-muted/10">
+    <section className="py-12 md:py-16 bg-muted/10">
       <div className="container mx-auto px-4">
         {/* Section Header */}
-        <div className="text-center mb-12 md:mb-16">
+        <div className="text-center mb-8 md:mb-10">
           <p className="text-xs md:text-sm uppercase tracking-widest text-primary/70 font-medium mb-3">
             The Collective
           </p>
@@ -172,7 +172,7 @@ export const UGCTestimonialGrid = () => {
         </div>
         
         {/* Subtle bottom note */}
-        <p className="text-center text-[11px] text-muted-foreground/50 mt-10 md:mt-12">
+        <p className="text-center text-[11px] text-muted-foreground/50 mt-8">
           Real experiences from our community. Individual results may vary.
         </p>
       </div>

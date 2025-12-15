@@ -63,11 +63,11 @@ const personas = [
 
 export function SleeperPersonaDiscovery() {
   return (
-    <section className="py-20 md:py-28 bg-gradient-to-b from-background via-muted/10 to-background">
+    <section className="py-12 md:py-16 bg-gradient-to-b from-background via-muted/10 to-background">
       <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
-          <div className="text-center mb-14 md:mb-16">
+          <div className="text-center mb-10 md:mb-12">
             <p className="text-xs md:text-sm uppercase tracking-widest text-primary/70 font-medium mb-3">
               Personalized Sleep
             </p>
@@ -80,7 +80,7 @@ export function SleeperPersonaDiscovery() {
           </div>
 
           {/* Persona Grid */}
-          <div className="grid md:grid-cols-2 gap-5 lg:gap-6 mb-14">
+          <div className="grid md:grid-cols-2 gap-5 lg:gap-6 mb-10">
             {personas.map((persona, index) => {
               const Icon = persona.icon;
               return (
@@ -138,7 +138,7 @@ export function SleeperPersonaDiscovery() {
           </div>
 
           {/* Quiz CTA */}
-          <div className="text-center bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 rounded-2xl p-8 md:p-10 border border-primary/10">
+          <div className="text-center bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 rounded-2xl p-6 md:p-8 border border-primary/10">
             <p className="text-sm text-muted-foreground mb-2">Not sure which type you are?</p>
             <h3 className="text-xl md:text-2xl font-semibold mb-4">Take the 5-Minute Sleep Assessment</h3>
             <p className="text-muted-foreground mb-6 max-w-lg mx-auto text-sm md:text-base leading-relaxed">
