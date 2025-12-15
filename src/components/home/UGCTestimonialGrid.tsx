@@ -149,7 +149,7 @@ const UGCCard = ({ testimonial, index }: UGCCardProps) => {
 
 export const UGCTestimonialGrid = () => {
   return (
-    <section className="py-12 md:py-16 bg-muted/10">
+    <section className="py-10 md:py-12 bg-muted/10">
       <div className="container mx-auto px-4">
         {/* Section Header */}
         <div className="text-center mb-8 md:mb-10">

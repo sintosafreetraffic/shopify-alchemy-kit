@@ -78,7 +78,7 @@ export default function Home() {
       </section>
 
       {/* Hero Section */}
-      <section className="relative py-12 md:py-16 bg-gradient-to-b from-background via-primary/5 to-background">
+      <section className="relative py-10 md:py-12 bg-gradient-to-b from-background via-primary/5 to-background">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center space-y-6">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold leading-tight tracking-tight">
@@ -113,7 +113,7 @@ export default function Home() {
       </section>
 
       {/* Mission Section */}
-      <section className="py-12 md:py-16 bg-muted/30">
+      <section className="py-10 md:py-12 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-8">
@@ -176,7 +176,7 @@ export default function Home() {
       <SleepCoachTeaser />
 
       {/* Why Choose Us */}
-      <section className="py-12 md:py-16 bg-primary/5">
+      <section className="py-10 md:py-12 bg-primary/5">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-8">
@@ -225,7 +225,7 @@ export default function Home() {
       </section>
 
       {/* Customer Experience Statistics */}
-      <section className="py-12 md:py-16 bg-background">
+      <section className="py-10 md:py-12 bg-background">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-8">
@@ -292,7 +292,7 @@ export default function Home() {
       <AmbassadorWall />
 
       {/* Quiz CTA Section */}
-      <section className="py-14 md:py-20 bg-gradient-to-br from-primary via-primary to-primary/90 text-primary-foreground">
+      <section className="py-10 md:py-14 bg-gradient-to-br from-primary via-primary to-primary/90 text-primary-foreground">
         <div className="container mx-auto px-4 text-center">
           <div className="max-w-3xl mx-auto">
             <p className="text-sm uppercase tracking-widest opacity-70 mb-3">Personalized For You</p>

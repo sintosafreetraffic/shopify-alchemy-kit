@@ -10,7 +10,7 @@ const ambassadorTypes = [
 
 export function AmbassadorWall() {
   return (
-    <section className="py-12 md:py-16 bg-gradient-to-b from-muted/5 via-muted/20 to-muted/5">
+    <section className="py-10 md:py-12 bg-gradient-to-b from-muted/5 via-muted/20 to-muted/5">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
           {/* Section Header */}

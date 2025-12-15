@@ -22,7 +22,7 @@ const pillars = [
 
 export function SleepCoachTeaser() {
   return (
-    <section className="py-12 md:py-16 bg-primary/5">
+    <section className="py-10 md:py-12 bg-primary/5">
       <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-10 items-center">
