@@ -1,11 +1,11 @@
 /**
- * Premium 5-Section Quiz Results Component v9
+ * Premium Quiz Results Component v10
  * 
- * Displays structured SleepAssessment with calm, Scandinavian aesthetic.
- * Sections: Sleep Identity, Persona, Alignment & Support, Environment, Products, Coach Preview
+ * Pre-Reveal / Full-Reveal architecture:
+ * - Pre-Reveal (before email): Persona name, short description, 1-2 insights, 1 product
+ * - Full-Reveal (after email): Complete assessment breakdown, all recommendations, Coach CTA
  * 
- * v9: Added top_risk_drivers display, coach_readiness indicators, energy_potential_score
- * Design: Neutral colors, clean spacing, scientific clarity, modern minimalism
+ * Design: Scandinavian calm, scientific framing, premium feel
  */
 import { memo, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
@@ -33,6 +33,7 @@ import {
   Brain,
   Target,
   Activity,
+  Mail,
 } from "lucide-react";
 import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator";
 import {
@@ -52,6 +53,19 @@ import {
   getCoachReadinessExplanation,
 } from "./QuizHelpers";
 import { CLUSTER_TO_URL_SLUG } from "@/data/personaLandingMocks";
+
+// ============ ANALYTICS PLACEHOLDER ============
+
+/**
+ * Placeholder for tracking partial reveal views.
+ * To be implemented when analytics requirements are finalized.
+ */
+const trackPartialReveal = (personaCluster: string | undefined, insightCount: number) => {
+  // No-op for now - insert analytics call here
+  console.debug('[Analytics] Partial reveal viewed:', { personaCluster, insightCount });
+};
+
+// ============ INTERFACES ============
 
 interface QuizResultsProps {
   results: AnalysisResult;
@@ -78,6 +92,9 @@ interface QuizResultsProps {
   onBackToHome: () => void;
   onViewProducts: () => void;
   onCancelAccountForm: () => void;
+  // Email submission
+  onEmailChange?: (email: string) => void;
+  onEmailSubmit?: () => void;
 }
 
 // ============ SCORE BAR COMPONENT ============
@@ -92,7 +109,6 @@ interface ScoreBarProps {
 const ScoreBar = ({ label, score, inverted = false, description }: ScoreBarProps) => {
   const displayScore = inverted ? 100 - score : score;
   
-  // Calm, neutral color scale
   const getBarColor = (s: number) => {
     if (s >= 75) return "bg-emerald-500/80";
     if (s >= 50) return "bg-amber-500/70";
@@ -127,16 +143,18 @@ const ScoreBar = ({ label, score, inverted = false, description }: ScoreBarProps
 
 // ============ PRODUCT DISPLAY MAPPING ============
 
-const PRODUCT_DISPLAY: Record<string, { name: string; route: string; description: string }> = {
+const PRODUCT_DISPLAY: Record<string, { name: string; route: string; description: string; image?: string }> = {
   ergonomic_pillow: {
     name: "Rise By Night™ Ergonomic Sleep Pillow",
     route: "/product/ergonomic-pillow",
     description: "Contoured memory foam designed for cervical support",
+    image: "/images/pillow-main-new.png",
   },
   knee_pillow: {
     name: "Rise By Night™ Ergonomic Knee Pillow",
     route: "/product/knee-pillow",
     description: "Hip alignment and lower back comfort for side sleepers",
+    image: "/images/knee-pillow-main-new.png",
   },
   silk_mask: {
     name: "Rise By Night™ Silk Sleep Mask",
@@ -163,6 +181,194 @@ const BUNDLE_DISPLAY: Record<string, { name: string; description: string; icon: 
   },
 };
 
+// ============ PRE-REVEAL COMPONENT ============
+
+interface PreRevealProps {
+  assessment: SleepAssessment;
+  visibleQuestionCount: number;
+  email: string;
+  onEmailChange?: (email: string) => void;
+  onContinueToFullResults: () => void;
+  isSubmitting: boolean;
+}
+
+const QuizResultsPreReveal = memo(function QuizResultsPreReveal({
+  assessment,
+  visibleQuestionCount,
+  email,
+  onEmailChange,
+  onContinueToFullResults,
+  isSubmitting,
+}: PreRevealProps) {
+  // Track partial reveal view
+  useMemo(() => {
+    trackPartialReveal(assessment.persona.cluster, 2);
+  }, [assessment.persona.cluster]);
+
+  // Get first 1-2 insights from environment findings or risk drivers
+  const insights: string[] = [];
+  if (assessment.top_risk_drivers && assessment.top_risk_drivers.length > 0) {
+    insights.push(getRiskDriverDisplayText(assessment.top_risk_drivers[0]));
+  }
+  if (assessment.environmentFindings?.keyIssues?.[0]) {
+    insights.push(assessment.environmentFindings.keyIssues[0]);
+  }
+  
+  // Get primary product
+  const primaryProduct = assessment.productRecommendations?.primary_product;
+  const productInfo = primaryProduct ? PRODUCT_DISPLAY[primaryProduct] : PRODUCT_DISPLAY.ergonomic_pillow;
+
+  const personaLabel = assessment.persona.label || 
+    PERSONA_DEFINITIONS[assessment.persona.cluster as PersonaCluster]?.label || 
+    "Your Sleep Profile";
+  
+  const personaDescription = assessment.persona.description || 
+    PERSONA_DEFINITIONS[assessment.persona.cluster as PersonaCluster]?.description;
+
+  return (
+    <div 
+      className="space-y-8 max-w-2xl mx-auto"
+      data-result-stage="pre-reveal"
+    >
+      {/* Header */}
+      <header className="text-center pb-6 border-b border-border/30">
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-emerald-50 dark:bg-emerald-950/40 mb-5">
+          <CheckCircle className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
+        </div>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground mb-2">
+          Your Sleep Profile Preview
+        </h1>
+        <p className="text-muted-foreground text-sm">
+          Based on {visibleQuestionCount} science-backed questions
+        </p>
+      </header>
+
+      {/* Persona Section - Primary Value */}
+      <section className="space-y-4">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-violet-50 dark:bg-violet-950/40 flex items-center justify-center flex-shrink-0">
+            <Brain className="w-6 h-6 text-violet-600 dark:text-violet-400" />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-primary uppercase tracking-wider mb-1">Your Sleep Profile</p>
+            <h2 className="text-xl font-semibold text-foreground">{personaLabel}</h2>
+          </div>
+        </div>
+        
+        <div className="p-5 rounded-2xl bg-violet-50/50 dark:bg-violet-950/20 border border-violet-200/50 dark:border-violet-800/30">
+          <p className="text-foreground/85 leading-relaxed text-[15px]">
+            {personaDescription}
+          </p>
+        </div>
+      </section>
+
+      {/* Key Insights - Limited Preview */}
+      {insights.length > 0 && (
+        <section className="space-y-4">
+          <div className="flex items-center gap-3">
+            <Target className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+            <h3 className="font-semibold text-foreground">Initial Observations</h3>
+          </div>
+          
+          <div className="space-y-3">
+            {insights.slice(0, 2).map((insight, idx) => (
+              <div 
+                key={idx}
+                className="flex items-start gap-3 p-4 rounded-xl bg-slate-50/80 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-700/40"
+              >
+                <div className="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-xs font-medium text-amber-700 dark:text-amber-300">{idx + 1}</span>
+                </div>
+                <p className="text-sm text-foreground/80 leading-relaxed">{insight}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Single Product Recommendation */}
+      <section className="space-y-4">
+        <div className="flex items-center gap-3">
+          <Package className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+          <h3 className="font-semibold text-foreground">Top Recommendation</h3>
+        </div>
+        
+        <Card className="p-5 border-primary/20 bg-primary/[0.02]">
+          <div className="flex items-start gap-4">
+            {productInfo.image && (
+              <div className="w-20 h-20 rounded-xl bg-slate-100 dark:bg-slate-800 overflow-hidden flex-shrink-0">
+                <img 
+                  src={productInfo.image} 
+                  alt={productInfo.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+            <div className="flex-1 space-y-1">
+              <p className="text-xs font-medium text-primary uppercase tracking-wider">Based on your profile</p>
+              <p className="font-semibold text-foreground">{productInfo.name}</p>
+              <p className="text-sm text-muted-foreground">{productInfo.description}</p>
+            </div>
+          </div>
+        </Card>
+      </section>
+
+      {/* Email Capture Section */}
+      <section className="space-y-5">
+        <Card className="p-6 bg-gradient-to-br from-slate-50 via-background to-background dark:from-slate-900/50 border-slate-200/60 dark:border-slate-700/40">
+          <div className="text-center space-y-4">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mx-auto">
+              <Lock className="w-5 h-5 text-primary" />
+            </div>
+            
+            <div>
+              <h3 className="font-semibold text-lg text-foreground mb-2">
+                Unlock Your Complete Sleep Profile
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed max-w-md mx-auto">
+                Enter your email to receive your full risk breakdown, personalized recommendations, 
+                and AI Sleep Coach plan preview.
+              </p>
+            </div>
+
+            <div className="max-w-sm mx-auto space-y-3">
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => onEmailChange?.(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && onContinueToFullResults()}
+                  className="pl-12 h-12 rounded-xl"
+                />
+              </div>
+              
+              <Button
+                onClick={onContinueToFullResults}
+                disabled={isSubmitting || !email.trim()}
+                className="w-full rounded-xl h-12"
+                size="lg"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <ArrowRight className="w-4 h-4 mr-2" />
+                )}
+                Continue to Full Results
+              </Button>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              We'll send your complete sleep profile privately to your inbox.
+            </p>
+          </div>
+        </Card>
+      </section>
+    </div>
+  );
+});
+
 // ============ MAIN COMPONENT ============
 
 const QuizResults = memo(function QuizResults({
@@ -188,6 +394,8 @@ const QuizResults = memo(function QuizResults({
   onBackToHome,
   onViewProducts,
   onCancelAccountForm,
+  onEmailChange,
+  onEmailSubmit,
 }: QuizResultsProps) {
   
   // Extract structured assessment if available
@@ -197,6 +405,9 @@ const QuizResults = memo(function QuizResults({
     }
     return null;
   }, [results.assessment]);
+
+  // Determine reveal state: pre-reveal if no profile created/updated
+  const isPreReveal = !(results.profileCreated || results.profileUpdated);
 
   // Fallback to legacy display if no structured assessment
   const detectedIssues = results.detectedIssues || deriveDetectedIssues(answers);
@@ -228,19 +439,37 @@ const QuizResults = memo(function QuizResults({
     );
   }
 
+  // Show Pre-Reveal state if email not submitted and no profile exists
+  if (isPreReveal) {
+    return (
+      <QuizResultsPreReveal
+        assessment={assessment}
+        visibleQuestionCount={visibleQuestionCount}
+        email={email}
+        onEmailChange={onEmailChange}
+        onContinueToFullResults={onEmailSubmit || onUnlockSleepCoach}
+        isSubmitting={isSubmitting}
+      />
+    );
+  }
+
   // Safe accessors for optional fields
   const confidenceScore = assessment.productRecommendations?.recommendation_confidence ?? 75;
   const fitExplanation = assessment.productRecommendations?.fit_explanation ?? "";
 
+  // ============ FULL RESULTS (after email) ============
   return (
-    <div className="space-y-10 max-w-2xl mx-auto">
+    <div 
+      className="space-y-10 max-w-2xl mx-auto"
+      data-result-stage="full"
+    >
       {/* Header */}
       <header className="text-center pb-8 border-b border-border/30">
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-emerald-50 dark:bg-emerald-950/40 mb-5">
           <CheckCircle className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
         </div>
         <h1 className="text-2xl font-semibold tracking-tight text-foreground mb-2">
-          Your Sleep Assessment
+          Your Complete Sleep Assessment
         </h1>
         <p className="text-muted-foreground text-sm">
           Personalized analysis based on {visibleQuestionCount} responses
@@ -266,7 +495,7 @@ const QuizResults = memo(function QuizResults({
         </div>
       </section>
 
-      {/* Section 1b: Your Sleep Persona */}
+      {/* Section 1b: Your Sleep Persona - Full Science Explanation */}
       {assessment.persona.cluster && (
         <section className="space-y-5">
           <div className="flex items-center gap-4">
@@ -280,7 +509,6 @@ const QuizResults = memo(function QuizResults({
                     ? "Your Sleep Persona" 
                     : "Current Sleep Pattern"}
                 </h2>
-                {/* Subtle persona confidence indicator */}
                 {assessment.persona.confidence !== undefined && (
                   <span className={`text-xs px-2 py-0.5 rounded-full ${
                     getPersonaConfidenceLevel(assessment.persona.confidence) === 'high' 
@@ -311,7 +539,7 @@ const QuizResults = memo(function QuizResults({
               {assessment.persona.description || PERSONA_DEFINITIONS[assessment.persona.cluster as PersonaCluster]?.description}
             </p>
             
-            {/* Why this persona matches */}
+            {/* Full persona rationale - only in full reveal */}
             <div className="pt-4 border-t border-violet-200/40 dark:border-violet-700/30">
               <p className="text-xs font-medium text-muted-foreground mb-1">Why this matches you</p>
               <p className="text-sm text-foreground/80 leading-relaxed">
@@ -320,7 +548,7 @@ const QuizResults = memo(function QuizResults({
             </div>
           </div>
 
-          {/* Recommended Modules */}
+          {/* Recommended Modules - Full reveal only */}
           {assessment.persona.recommended_modules && assessment.persona.recommended_modules.length > 0 && (
             <div className="p-4 rounded-xl bg-slate-100/70 dark:bg-slate-800/40">
               <div className="flex items-center gap-2 mb-3">
@@ -355,7 +583,7 @@ const QuizResults = memo(function QuizResults({
         </section>
       )}
 
-      {/* Section 1c: Top Risk Drivers & Coach Readiness */}
+      {/* Section 1c: Full Risk Drivers & Coach Readiness - Full Reveal Only */}
       {(assessment.top_risk_drivers?.length > 0 || assessment.coach_readiness_label) && (
         <section className="space-y-5">
           <div className="flex items-center gap-4">
@@ -368,7 +596,7 @@ const QuizResults = memo(function QuizResults({
             </div>
           </div>
 
-          {/* Top Risk Drivers */}
+          {/* All Top Risk Drivers */}
           {assessment.top_risk_drivers && assessment.top_risk_drivers.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {assessment.top_risk_drivers.map((driver, idx) => (
@@ -453,7 +681,6 @@ const QuizResults = memo(function QuizResults({
           />
         </div>
 
-        {/* Persona insight - show when alignment risk is moderate or higher */}
         {assessment.scores.alignment_risk_score >= 35 && (
           <div className="flex items-start gap-4 p-4 rounded-xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-800/30">
             <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
@@ -492,7 +719,7 @@ const QuizResults = memo(function QuizResults({
           />
         </div>
 
-        {/* Environment findings */}
+        {/* All environment findings */}
         {assessment.environmentFindings.keyIssues.length > 0 && (
           <div className="space-y-3">
             {assessment.environmentFindings.keyIssues.map((issue, idx) => (
@@ -512,7 +739,7 @@ const QuizResults = memo(function QuizResults({
         </p>
       </section>
 
-      {/* Section 4: Your Recommended Setup */}
+      {/* Section 4: All Recommended Products */}
       <section className="space-y-5">
         <div className="flex items-center gap-4">
           <div className="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center flex-shrink-0">
@@ -592,7 +819,6 @@ const QuizResults = memo(function QuizResults({
             {assessment.productRecommendations.reasoning}
           </p>
           
-          {/* Persona-specific reasoning */}
           {assessment.productRecommendations.persona_reasoning && (
             <div className="p-3 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/40 dark:border-emerald-800/30">
               <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400 mb-1">Why this fits your persona</p>
@@ -608,7 +834,6 @@ const QuizResults = memo(function QuizResults({
             </p>
           )}
           
-          {/* Where this shows up in Sleep Coach */}
           {assessment.persona.recommended_modules && assessment.persona.recommended_modules.length > 0 && (
             <div className="p-3 rounded-xl bg-violet-50/50 dark:bg-violet-950/20 border border-violet-200/40 dark:border-violet-800/30">
               <p className="text-xs font-medium text-violet-700 dark:text-violet-400 mb-2">Where this shows up in your Sleep Coach</p>
@@ -632,7 +857,7 @@ const QuizResults = memo(function QuizResults({
         </div>
       </section>
 
-      {/* Section 5: Sleep Coach Preview */}
+      {/* Section 5: Sleep Coach Preview - Full Reveal Only */}
       <section className="space-y-5">
         <div className="flex items-center gap-4">
           <div className="w-11 h-11 rounded-xl bg-violet-50 dark:bg-violet-950/40 flex items-center justify-center flex-shrink-0">
@@ -776,6 +1001,8 @@ const ViewMyPlanCTA = ({ personaCluster, personaLabel }: { personaCluster: Perso
     </Card>
   );
 };
+
+// ============ ACCOUNT FORM ============
 
 const AccountForm = ({
   isCheckingAccount,
@@ -922,7 +1149,10 @@ const LegacyQuizResults = ({
   onCancelAccountForm: () => void;
 }) => {
   return (
-    <div className="space-y-8 max-w-2xl mx-auto">
+    <div 
+      className="space-y-8 max-w-2xl mx-auto"
+      data-result-stage="legacy"
+    >
       <header className="text-center pb-6 border-b border-border/30">
         <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
         <h1 className="text-2xl font-semibold mb-2">Your Sleep Assessment</h1>

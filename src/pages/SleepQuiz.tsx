@@ -577,6 +577,8 @@ const SleepQuiz = () => {
                   onBackToHome={() => navigate("/")}
                   onViewProducts={() => navigate("/product/ergonomic-pillow")}
                   onCancelAccountForm={() => { setShowAccountForm(false); setPassword(""); setAccountExists(null); }}
+                  onEmailChange={setEmail}
+                  onEmailSubmit={analyzeQuiz}
                 />
               )}
 
