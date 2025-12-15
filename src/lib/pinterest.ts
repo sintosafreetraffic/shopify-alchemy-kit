@@ -6,7 +6,7 @@
 // Lovable Front-End handles:
 //   - PageVisit (product page views)
 //   - AddToCart (items added to cart)
-//   - Checkout / InitiateCheckout (checkout started)
+//   - InitiateCheckout (checkout started)
 //   - Lead (email signups)
 //   - Signup (account creation)
 //
@@ -20,22 +20,54 @@
 declare global {
   interface Window {
     pintrk?: ((...args: any[]) => void) & { queue?: any[] };
+    __pintrk_original?: (...args: any[]) => void;
   }
 }
 
-// Check if Pinterest is fully initialized and ready to use
-function isPinterestReady(): boolean {
-  if (typeof window === 'undefined') return false;
-  if (!window.pintrk) return false;
-  // Pinterest stub creates a queue array - if it exists but queue is undefined, 
-  // the real pintrk is loaded. If queue exists, we need to ensure it's an array.
-  // The error occurs when pintrk exists but its internal queue is undefined.
-  try {
-    // Test call to see if it throws
-    return typeof window.pintrk === 'function';
-  } catch {
+// ============================================================================
+// SAFE PINTEREST CALL WRAPPER
+// This function MUST be used for ALL pintrk calls to prevent TypeError crashes
+// when Pinterest Tag isn't ready or is blocked by ad blockers.
+// ============================================================================
+function safePintrk(
+  command: string, 
+  eventName?: string, 
+  payload?: Record<string, any>
+): boolean {
+  if (typeof window === "undefined") return false;
+  
+  // Get the current pintrk function (could be original or wrapper)
+  const pin = window.pintrk;
+  
+  // Guard: pintrk must exist and be callable
+  if (typeof pin !== "function") {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("[Pinterest] pintrk not ready, skipping event", { command, eventName, payload });
+    }
     return false;
   }
+  
+  try {
+    // Call with appropriate arguments
+    if (eventName !== undefined) {
+      pin(command, eventName, payload);
+    } else {
+      pin(command);
+    }
+    return true;
+  } catch (err) {
+    // Graceful failure - never let Pinterest errors break the app
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("[Pinterest] pintrk call failed", { command, eventName, payload, err });
+    }
+    return false;
+  }
+}
+
+// Check if Pinterest is loaded (basic check for any tracking call)
+function isPinterestReady(): boolean {
+  if (typeof window === "undefined") return false;
+  return typeof window.pintrk === "function";
 }
 
 // SHA-256 hash function for enhanced matching
@@ -67,17 +99,19 @@ function markEnhancedMatchSet(): void {
 export async function setEnhancedMatch(email?: string) {
   if (!isPinterestReady() || !email) return;
   
+  // Skip if already set this session
+  if (wasEnhancedMatchSet()) {
+    console.log('[Pinterest] Enhanced match already set this session, skipping');
+    return;
+  }
+  
   try {
-    // Skip if already set this session
-    if (wasEnhancedMatchSet()) {
-      console.log('[Pinterest] Enhanced match already set this session, skipping');
-      return;
-    }
-    
     const hashedEmail = await sha256(email);
-    window.pintrk!('set', { em: hashedEmail });
-    markEnhancedMatchSet();
-    console.log('[Pinterest] Enhanced match set');
+    const success = safePintrk('set', undefined, { em: hashedEmail });
+    if (success) {
+      markEnhancedMatchSet();
+      console.log('[Pinterest] Enhanced match set');
+    }
   } catch (e) {
     console.warn('[Pinterest] Enhanced match failed:', e);
   }
@@ -103,19 +137,21 @@ function generateEventId(): string {
 
 // Track page visit with product ID (for product pages)
 export function trackPageVisit(productId?: string) {
-  if (!isPinterestReady()) return;
+  if (!isPinterestReady()) {
+    console.log('[Pinterest] PageVisit skipped - pintrk not ready');
+    return;
+  }
   
-  try {
-    const data: Record<string, any> = {
-      event_id: generateEventId(),
-    };
-    if (productId) {
-      data.product_id = extractProductId(productId);
-    }
-    window.pintrk!('track', 'pagevisit', data);
+  const data: Record<string, any> = {
+    event_id: generateEventId(),
+  };
+  if (productId) {
+    data.product_id = extractProductId(productId);
+  }
+  
+  const success = safePintrk('track', 'pagevisit', data);
+  if (success) {
     console.log('[Pinterest] PageVisit tracked', data);
-  } catch (e) {
-    console.warn('[Pinterest] PageVisit tracking failed:', e);
   }
 }
 
@@ -127,20 +163,22 @@ export function trackAddToCart(
   currency: string = 'USD',
   quantity: number = 1
 ) {
-  if (!isPinterestReady()) return;
+  if (!isPinterestReady()) {
+    console.log('[Pinterest] AddToCart skipped - pintrk not ready');
+    return;
+  }
   
-  try {
-    const data = {
-      event_id: generateEventId(),
-      product_id: extractProductId(productId),
-      value: value,
-      order_quantity: quantity,
-      currency: currency,
-    };
-    window.pintrk!('track', 'addtocart', data);
+  const data = {
+    event_id: generateEventId(),
+    product_id: extractProductId(productId),
+    value: value,
+    order_quantity: quantity,
+    currency: currency,
+  };
+  
+  const success = safePintrk('track', 'addtocart', data);
+  if (success) {
     console.log('[Pinterest] AddToCart tracked', data);
-  } catch (e) {
-    console.warn('[Pinterest] AddToCart tracking failed:', e);
   }
 }
 
@@ -162,7 +200,10 @@ export function generateCartFingerprint(items: Array<{ variantId: string; quanti
 // Completed transactions (Checkout) must ONLY be fired by Shopify's Pinterest App after payment.
 // Deduplication: Only fires if cart fingerprint changed OR 30 seconds have passed.
 export function trackInitiateCheckout(items: Array<{ variantId: string; quantity: number; price?: { amount: string }; currencyCode?: string }>): boolean {
-  if (!isPinterestReady()) return false;
+  if (!isPinterestReady()) {
+    console.log('[Pinterest] InitiateCheckout skipped - pintrk not ready');
+    return false;
+  }
   
   try {
     const fingerprint = generateCartFingerprint(items);
@@ -199,14 +240,16 @@ export function trackInitiateCheckout(items: Array<{ variantId: string; quantity
     }
     
     // CRITICAL: Event name must be all lowercase 'initiatecheckout'
-    window.pintrk!('track', 'initiatecheckout', data);
+    const success = safePintrk('track', 'initiatecheckout', data);
     
-    // Store fingerprint and timestamp for deduplication
-    sessionStorage.setItem(INITIATE_CHECKOUT_FP_KEY, fingerprint);
-    sessionStorage.setItem(INITIATE_CHECKOUT_TS_KEY, String(now));
+    if (success) {
+      // Store fingerprint and timestamp for deduplication
+      sessionStorage.setItem(INITIATE_CHECKOUT_FP_KEY, fingerprint);
+      sessionStorage.setItem(INITIATE_CHECKOUT_TS_KEY, String(now));
+      console.log('[Pinterest] InitiateCheckout tracked', data);
+    }
     
-    console.log('[Pinterest] InitiateCheckout tracked', data);
-    return true;
+    return success;
   } catch (e) {
     console.warn('[Pinterest] InitiateCheckout tracking failed:', e);
     return false;
@@ -223,31 +266,35 @@ export function clearInitiateCheckoutFingerprint(): void {
 
 // Track lead event (e.g., newsletter signup)
 export function trackLead(leadType: string = 'Newsletter') {
-  if (!isPinterestReady()) return;
+  if (!isPinterestReady()) {
+    console.log('[Pinterest] Lead skipped - pintrk not ready');
+    return;
+  }
   
-  try {
-    const data = {
-      event_id: generateEventId(),
-      lead_type: leadType,
-    };
-    window.pintrk!('track', 'lead', data);
+  const data = {
+    event_id: generateEventId(),
+    lead_type: leadType,
+  };
+  
+  const success = safePintrk('track', 'lead', data);
+  if (success) {
     console.log('[Pinterest] Lead tracked', data);
-  } catch (e) {
-    console.warn('[Pinterest] Lead tracking failed:', e);
   }
 }
 
 // Track signup event
 export function trackSignup() {
-  if (!isPinterestReady()) return;
+  if (!isPinterestReady()) {
+    console.log('[Pinterest] Signup skipped - pintrk not ready');
+    return;
+  }
   
-  try {
-    const data = {
-      event_id: generateEventId(),
-    };
-    window.pintrk!('track', 'signup', data);
+  const data = {
+    event_id: generateEventId(),
+  };
+  
+  const success = safePintrk('track', 'signup', data);
+  if (success) {
     console.log('[Pinterest] Signup tracked', data);
-  } catch (e) {
-    console.warn('[Pinterest] Signup tracking failed:', e);
   }
 }
