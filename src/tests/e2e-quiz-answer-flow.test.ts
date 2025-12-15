@@ -1,11 +1,23 @@
 /**
  * E2E Quiz Answer Flow Tests
  * 
- * Tests the complete flow from QuizConfig options → serialized payload → backend response.
- * Validates that all frontend option values correctly serialize and the backend returns
- * the expected response shape.
+ * This suite validates the complete flow from QuizConfig options → serialized payload → backend response.
+ * It ensures frontend option values correctly serialize and match backend contracts.
  * 
- * Run with: npx vitest run src/tests/e2e-quiz-answer-flow.test.ts
+ * WHAT THIS SUITE VALIDATES:
+ * - All QuizConfig option values match BACKEND_VALUE_CONTRACTS (from sleep-assessment.ts)
+ * - Payloads serialize correctly with proper types and valid values
+ * - Backend response shape matches SleepAssessment interface
+ * - Edge cases (empty arrays, "none" selections, extreme slider values)
+ * 
+ * RELATIONSHIP TO BACKEND CONTRACTS:
+ * - BACKEND_VALUE_CONTRACTS defines the source of truth for all enum values
+ * - Tests verify QuizConfig.ts options match these contracts exactly
+ * - Any value mismatch will cause persona detection failures
+ * 
+ * Run locally (not in Lovable):
+ *   npx vitest run src/tests/e2e-quiz-answer-flow.test.ts
+ *   npm run test:quiz:unit
  */
 
 import { describe, it, expect } from 'vitest';
@@ -199,6 +211,16 @@ describe('QuizConfig Option Values', () => {
       expect(frontendValues).toContain(val);
     }
   });
+
+  it('sleepClothing options match backend contract', () => {
+    const question = QUIZ_QUESTIONS.find(q => q.id === 'sleepClothing');
+    expect(question).toBeDefined();
+    
+    const frontendValues = question!.options!.map(o => o.value);
+    for (const val of BACKEND_VALUE_CONTRACTS.sleepClothing) {
+      expect(frontendValues).toContain(val);
+    }
+  });
 });
 
 // ============ PAYLOAD SERIALIZATION ============
@@ -267,6 +289,7 @@ describe('Quiz Payload Serialization', () => {
     expect(BACKEND_VALUE_CONTRACTS.eveningScreenUse).toContain(payload.eveningScreenUse);
     expect(BACKEND_VALUE_CONTRACTS.mattressFirmness).toContain(payload.mattressFirmness);
     expect(BACKEND_VALUE_CONTRACTS.snoring).toContain(payload.snoring);
+    expect(BACKEND_VALUE_CONTRACTS.sleepClothing).toContain(payload.sleepClothing);
   });
 
   it('should have valid array values for multi-select fields', () => {
