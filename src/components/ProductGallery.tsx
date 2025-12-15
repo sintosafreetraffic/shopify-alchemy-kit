@@ -109,7 +109,7 @@ export const ProductGallery = () => {
   return (
     <>
       {/* Featured Bundle Section */}
-      <section className="py-12 md:py-16 bg-gradient-to-b from-primary/5 to-background">
+      <section className="py-10 md:py-12 bg-gradient-to-b from-primary/5 to-background">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-3xl mx-auto mb-12">
             <h2 className="text-3xl md:text-5xl font-bold mb-4">Complete Sleep Solution</h2>
@@ -196,7 +196,7 @@ export const ProductGallery = () => {
       </section>
 
       {/* Individual Products Section */}
-      <section className="py-12 md:py-16 bg-background">
+      <section className="py-10 md:py-12 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-3xl mx-auto mb-8">
             <h2 className="text-3xl md:text-5xl font-bold mb-4">Individual Products</h2>
