@@ -13,6 +13,11 @@ interface QuizProgressProps {
   isEmailStep: boolean;
 }
 
+/**
+ * QuizProgress - Displays progress through the assessment.
+ * Shows section name and visual progress bar without step counts.
+ * Calm, scientific framing aligned with 2025 funnel.
+ */
 export const QuizProgress = memo(function QuizProgress({
   sectionInfo,
   progressPercent,
@@ -21,29 +26,21 @@ export const QuizProgress = memo(function QuizProgress({
 }: QuizProgressProps) {
   return (
     <div className="mb-8">
-      {/* Section indicator */}
+      {/* Section indicator - shows current focus area, no step count */}
       {sectionInfo && (
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-primary">
-              Step {sectionInfo.sectionIndex + 1} of 5
-            </span>
-            <span className="text-sm text-muted-foreground">—</span>
-            <span className="text-sm font-medium text-foreground">
-              {sectionInfo.sectionName}
-            </span>
-          </div>
+          <span className="text-sm font-medium text-foreground">
+            {sectionInfo.sectionName}
+          </span>
           <span className="text-sm text-muted-foreground font-medium">{progressPercent}%</span>
         </div>
       )}
       
       {isEmailStep && (
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-primary">Step 5 of 5</span>
-            <span className="text-sm text-muted-foreground">—</span>
-            <span className="text-sm font-medium text-foreground">Personal details & plan delivery</span>
-          </div>
+          <span className="text-sm font-medium text-foreground">
+            Personal details
+          </span>
           <span className="text-sm text-muted-foreground font-medium">{progressPercent}%</span>
         </div>
       )}
@@ -56,7 +53,7 @@ export const QuizProgress = memo(function QuizProgress({
         />
       </div>
       
-      {/* Section completion indicators */}
+      {/* Section completion indicators - visual only, no numbers */}
       <div className="flex justify-between mt-3">
         {SECTIONS.slice(0, 5).map((section, idx) => (
           <div key={section.id} className="flex items-center gap-1">
@@ -70,7 +67,7 @@ export const QuizProgress = memo(function QuizProgress({
               {completedSections.includes(idx) ? (
                 <Check className="w-3 h-3" />
               ) : (
-                idx + 1
+                <span className="w-2 h-2 rounded-full bg-current opacity-40" />
               )}
             </div>
           </div>
