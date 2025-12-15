@@ -112,9 +112,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Sleeper Persona Discovery - Help visitors identify their type */}
-      <SleeperPersonaDiscovery />
-
       {/* Mission Section */}
       <section className="py-16 md:py-24 bg-muted/30">
         <div className="container mx-auto px-4">
@@ -171,6 +168,9 @@ export default function Home() {
       <Suspense fallback={<SectionFallback />}>
         <ProductGallery />
       </Suspense>
+
+      {/* Sleeper Persona Discovery - Help visitors identify their type */}
+      <SleeperPersonaDiscovery />
 
       {/* AI Sleep Coach Teaser */}
       <SleepCoachTeaser />
