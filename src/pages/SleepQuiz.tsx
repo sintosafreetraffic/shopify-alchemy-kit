@@ -347,6 +347,24 @@ const SleepQuiz = () => {
             body: JSON.stringify({ email: email.trim(), properties: quizPayload }),
           });
         } catch (e) { console.warn("Klaviyo enrichment failed:", e); }
+
+        // Send quiz results email (fire and forget - don't block UI)
+        const assessment = analysisResult.assessment as SleepAssessment | undefined;
+        if (assessment && 'sleepIdentity' in assessment) {
+          supabase.functions.invoke("send-quiz-results", {
+            body: {
+              email: email.trim(),
+              sleepIdentity: assessment.sleepIdentity,
+              persona: assessment.persona,
+              scores: assessment.scores,
+              productRecommendations: assessment.productRecommendations,
+              environmentFindings: assessment.environmentFindings,
+              topRiskDrivers: assessment.top_risk_drivers,
+              coachReadinessLabel: assessment.coach_readiness_label,
+              energyPotentialScore: assessment.energy_potential_score,
+            },
+          }).catch(e => console.warn("Quiz results email failed:", e));
+        }
       }
 
       // Set Pinterest enhanced match with user email
