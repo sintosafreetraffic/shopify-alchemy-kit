@@ -1,27 +1,32 @@
 /**
  * Sleep Quiz Backend Integration Tests
  * 
- * This suite is the contract guardrail between QuizConfig.ts and sleep-assessment.ts.
+ * WHAT THIS SUITE VALIDATES:
+ * - analyze-sleep-quiz edge function returns correct persona clusters
+ * - Clear archetypes (Pain, Stress, Recovery, Optimizer) achieve ≥70% confidence
+ * - Mixed signals result in <70% confidence with appropriate reasoning
+ * - Response shape matches SleepAssessmentResponse interface exactly
  * 
- * Tests the analyze-sleep-quiz edge function with real persona detection logic
- * to ensure frontend quiz answer values produce correct persona clusters
- * and response shapes.
+ * RELATIONSHIP TO BACKEND CONTRACTS:
+ * - This is the contract guardrail between QuizConfig.ts and sleep-assessment.ts
+ * - Tests ensure frontend payloads produce expected backend responses
+ * - Any persona misclassification indicates value contract or scoring regression
  * 
  * NETWORK-DEPENDENT: These tests require a deployed analyze-sleep-quiz edge function.
- * They will gracefully skip if the edge function is unavailable.
+ * They will gracefully skip if the edge function is unavailable (edgeFunctionAvailable guard).
  * 
  * Prerequisites:
  * - Edge function must be deployed to Supabase
- * - VITE_SUPABASE_URL environment variable (optional, defaults to production)
+ * - SUPABASE_URL environment variable (optional, defaults to production)
  * 
  * Environment Override:
- * - Set VITE_SUPABASE_URL to test against a different environment
- * - Example: VITE_SUPABASE_URL=https://yourproject.supabase.co npx vitest run ...
+ * - Set SUPABASE_URL to test against a different environment
+ * - Example: SUPABASE_URL=https://yourproject.supabase.co npx vitest run ...
  * 
- * Run with:
- * - Unit tests only: npm run test:quiz:unit
- * - Integration tests: npm run test:quiz:int
- * - All quiz tests: npm run test:quiz:all
+ * Run locally (not in Lovable):
+ *   npx vitest run src/tests/analyze-sleep-quiz.integration.test.ts
+ *   npm run test:quiz:int
+ *   npm run test:quiz:all
  * 
  * @module Backend Integration Tests
  */

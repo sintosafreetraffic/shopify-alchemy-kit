@@ -1,11 +1,20 @@
 /**
  * Persona Detection Test Suite v9
  * 
- * Tests the psychology-first persona detection system to ensure
- * each archetype is correctly identified based on quiz answers.
+ * WHAT THIS SUITE VALIDATES:
+ * - Psychology-first persona detection correctly identifies each archetype
+ * - Clear archetypes (Pain Sleeper, Stress Sleeper, Recovery Sleeper, Optimizer) achieve ≥70% confidence
+ * - Mixed signals result in <70% confidence with appropriate reasoning
+ * - Signal detection logic aligns with backend PERSONA_RULES
  * 
- * Run with: npx vitest run src/tests/persona-detection.test.ts
- * Or: npm test -- --run src/tests/persona-detection.test.ts
+ * RELATIONSHIP TO BACKEND CONTRACTS:
+ * - PERSONA_RULES mirrors the scoring weights from sleep-assessment.ts
+ * - detectSignals() mirrors backend signal extraction logic
+ * - Tests ensure frontend detection matches backend expectations
+ * 
+ * Run locally (not in Lovable):
+ *   npx vitest run src/tests/persona-detection.test.ts
+ *   npm run test:quiz:unit
  */
 
 import { describe, it, expect } from 'vitest';
