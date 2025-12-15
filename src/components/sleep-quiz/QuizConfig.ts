@@ -88,11 +88,11 @@ export const QUIZ_QUESTIONS = [
     type: "radio" as const,
     autoAdvance: true,
     options: [
+      { value: "0", label: "No pillow — I sleep flat" },
       { value: "1", label: "1 pillow" },
       { value: "2", label: "2 pillows" },
       { value: "3", label: "3 pillows" },
       { value: "3+", label: "More than 3" },
-      { value: "0", label: "No pillow" },
     ],
   },
   {
@@ -269,11 +269,11 @@ export const QUIZ_QUESTIONS = [
     type: "radio" as const,
     autoAdvance: true,
     options: [
-      { value: "under5", label: "Under 5 hours" },
-      { value: "5to6", label: "5-6 hours" },
-      { value: "6to7", label: "6-7 hours" },
-      { value: "7to8", label: "7-8 hours" },
-      { value: "over8", label: "Over 8 hours" },
+      { value: "less_than_5", label: "Under 5 hours" },
+      { value: "5_6", label: "5-6 hours" },
+      { value: "6_7", label: "6-7 hours" },
+      { value: "7_8", label: "7-8 hours" },
+      { value: "over_8", label: "Over 8 hours" },
     ],
   },
   {
