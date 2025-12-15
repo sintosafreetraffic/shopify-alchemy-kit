@@ -259,9 +259,9 @@ serve(async (req: Request): Promise<Response> => {
     // Generate HTML email
     const htmlContent = generateEmailHTML(data);
 
-    // Send email
+    // Send email (using onboarding@resend.dev until risebynight.com is verified)
     const emailResponse = await resend.emails.send({
-      from: "Rise By Night <results@risebynight.com>",
+      from: "Rise By Night <onboarding@resend.dev>",
       to: [data.email],
       subject: `Your Sleep Assessment Results - ${data.persona.label}`,
       html: htmlContent,
