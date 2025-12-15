@@ -153,7 +153,7 @@ const SleepCoachDashboard = () => {
       
       if (!data.hasAccess) {
         if (data.accessReason === 'quiz_required') {
-          toast.info("Complete the Sleep Quiz first", {
+          toast.info("Complete the Sleep Assessment first", {
             description: "Before we create your personalized AI sleep plan, we need a short sleep assessment.",
             duration: 6000,
           });
@@ -383,7 +383,7 @@ const SleepCoachDashboard = () => {
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Moon className="h-4 w-4 text-primary" />
-                <span>Sleep quiz completers</span>
+                <span>Sleep assessment completers</span>
               </div>
             </div>
             <Link to="/auth?returnTo=/sleep-coach&context=sleep-coach">
@@ -864,7 +864,7 @@ const SleepCoachDashboard = () => {
                         <div>
                           <h3 className="text-lg font-semibold mb-2">No AI Plan Generated Yet</h3>
                           <p className="text-muted-foreground max-w-md mx-auto">
-                            Generate your personalized 7-day sleep plan based on your sleep quiz assessment
+                            Generate your personalized 7-day sleep plan based on your sleep assessment
                             {data.logs.length > 0 ? ` and ${data.logs.length} logged nights` : ''}.
                           </p>
                         </div>

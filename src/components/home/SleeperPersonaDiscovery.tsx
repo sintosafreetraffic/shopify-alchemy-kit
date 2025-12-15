@@ -126,7 +126,7 @@ export function SleeperPersonaDiscovery() {
                           size="sm"
                           className="text-primary p-0 h-auto group/btn hover:bg-transparent"
                         >
-                          Take the quiz to confirm
+                          Take the assessment to confirm
                           <ArrowRight className="w-4 h-4 ml-1.5 group-hover/btn:translate-x-1 transition-transform" />
                         </Button>
                       </Link>
@@ -142,12 +142,12 @@ export function SleeperPersonaDiscovery() {
             <p className="text-sm text-muted-foreground mb-2">Not sure which type you are?</p>
             <h3 className="text-xl md:text-2xl font-semibold mb-4">Take the 5-Minute Sleep Assessment</h3>
             <p className="text-muted-foreground mb-6 max-w-lg mx-auto text-sm md:text-base leading-relaxed">
-              Our science-backed quiz identifies your sleeper profile and matches you with the right products and a
+              Our science-backed assessment identifies your sleeper profile and matches you with the right products and a
               personalized AI sleep plan.
             </p>
             <Link to="/sleep-quiz">
               <Button size="lg" className="text-base md:text-lg px-8 py-6 rounded-full">
-                Start the Sleep Quiz
+                Start the Sleep Assessment
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </Link>

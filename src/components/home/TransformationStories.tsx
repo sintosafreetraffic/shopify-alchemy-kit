@@ -157,7 +157,7 @@ export function TransformationStories() {
             </p>
             <Link to="/sleep-quiz">
               <Button variant="outline" size="lg" className="rounded-full border-primary/30 hover:bg-primary hover:text-primary-foreground">
-                Take the Sleep Quiz
+                Take the Sleep Assessment
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>

@@ -387,7 +387,7 @@ const SleepPersonaExperimentsDebug = () => {
             <Button variant="outline">Persona Debug</Button>
           </Link>
           <Link to="/sleep-quiz">
-            <Button>Take Sleep Quiz</Button>
+            <Button>Take Sleep Assessment</Button>
           </Link>
         </div>
       </div>

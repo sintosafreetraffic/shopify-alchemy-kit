@@ -14,12 +14,12 @@ export const Footer = () => {
             <div className="text-center md:text-left">
               <p className="font-semibold text-foreground mb-1">Discover Your Sleeper Type</p>
               <p className="text-sm text-muted-foreground">
-                Take our 5-minute quiz and get personalized sleep recommendations.
+                Take our 5-minute assessment and get personalized sleep recommendations.
               </p>
             </div>
             <Link to="/sleep-quiz">
               <Button size="sm" className="rounded-full px-6">
-                Take the Quiz <ArrowRight className="w-4 h-4 ml-1.5" />
+                Take the Assessment <ArrowRight className="w-4 h-4 ml-1.5" />
               </Button>
             </Link>
           </div>
@@ -47,7 +47,7 @@ export const Footer = () => {
                     to="/sleep-quiz"
                     className="text-muted-foreground hover:text-foreground transition-colors font-medium"
                   >
-                    Sleep Quiz
+                    Sleep Assessment
                   </Link>
                 </li>
                 <li>

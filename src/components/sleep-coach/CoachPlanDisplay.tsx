@@ -411,7 +411,7 @@ export const CoachPlanDisplay = ({
               <div className="mt-6 pt-4 border-t border-border/50 text-xs text-muted-foreground">
                 <span>Generated: {new Date(plan.generated_at).toLocaleDateString()}</span>
                 <span className="mx-2">•</span>
-                <span>This plan uses your latest sleep quiz assessment and recent logged sleep</span>
+                <span>This plan uses your latest sleep assessment and recent logged sleep</span>
               </div>
             </CardContent>
           </Card>
