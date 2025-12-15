@@ -235,11 +235,11 @@ const mixedSignalsPayload: QuizPayload = {
   ...basePayload,
   sleepPosition: 'side',
   movesOften: 'sometimes',
-  pillowCount: '2',
+  pillowCount: '1',  // Changed from '2' to reduce pain signals
   mattressFirmness: 'soft',
   painAreas: ['neck'],
   painSeverity: 4,
-  pillowSatisfaction: 4,
+  pillowSatisfaction: 5,  // Changed from 4 to 5 to reduce pain signals
   sleepGoals: ['reduce_pain', 'stay_asleep'],
   nightAwakenings: 'twice',
   sleepTemperature: 'hot',
@@ -247,7 +247,7 @@ const mixedSignalsPayload: QuizPayload = {
   roomNoise: 'some',
   sleepLatency: 'slow',
   sleepHours: '6_7',
-  eveningScreenUse: 'often',
+  eveningScreenUse: 'sometimes',
 };
 
 // ============ HELPER FUNCTIONS ============
