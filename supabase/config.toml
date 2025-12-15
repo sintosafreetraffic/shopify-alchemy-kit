@@ -121,3 +121,7 @@ verify_jwt = false
 # Persona analytics - Public logging endpoint (no PIIs)
 [functions.persona-analytics]
 verify_jwt = false
+
+# Send quiz results email - Public for quiz flow
+[functions.send-quiz-results]
+verify_jwt = false
