@@ -187,7 +187,7 @@ function detectSignals(quizAnswers: Partial<QuizPayload>): DetectedSignals {
     hasWakeRefreshedGoal: sleepGoals.includes('wake_refreshed'),
     hasMoreEnergyGoal: sleepGoals.includes('more_energy'),
     usesWearables: sleepEquipment.includes('oura') || sleepEquipment.includes('whoop') || 
-                   sleepEquipment.includes('fitness_tracker'),
+                   sleepEquipment.includes('fitness_tracker') || sleepEquipment.includes('smart_watch'),
     hasMultiplePerformanceGoals: sleepGoals.filter(g => performanceGoals.includes(g)).length >= 2,
     hasLowPainBaseline: painSeverity <= 3 && !hasPain,
     hasGoodSleepStability: nightAwakenings === 'rarely' || nightAwakenings === 'never',

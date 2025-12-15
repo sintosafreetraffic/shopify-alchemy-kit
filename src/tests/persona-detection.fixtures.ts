@@ -21,7 +21,9 @@
  * sleepGoals:        "reduce_pain" | "better_posture" | "better_quality" | "fall_asleep_faster" | 
  *                    "stay_asleep" | "wake_refreshed" | "more_energy" | "faster_recovery" | 
  *                    "better_recovery" | "muscle_repair"
- * sleepEquipment:    "oura" | "whoop" | "fitness_tracker" | "smart_watch" | ...
+ * sleepEquipment:    "regular_pillow" | "contour_pillow" | "knee_pillow" | "body_pillow" |
+ *                    "sleep_mask" | "white_noise" | "weighted_blanket" | "oura" | "whoop" |
+ *                    "fitness_tracker" | "smart_watch" | "none"
  * pillowSatisfaction: 0-10 (number)
  * mattressFirmness:  "soft" | "medium" | "firm" | "unsure"
  */
@@ -491,7 +493,7 @@ export async function runPersonaDetectionTests(): Promise<void> {
  *                    "better_recovery" | "muscle_repair"
  * sleepEquipment:    "regular_pillow" | "contour_pillow" | "knee_pillow" | "body_pillow" |
  *                    "sleep_mask" | "white_noise" | "weighted_blanket" | "oura" | "whoop" |
- *                    "fitness_tracker" | "none"
+ *                    "fitness_tracker" | "smart_watch" | "none"
  * pillowSatisfaction: 0-10 (number)
  * mattressFirmness:  "soft" | "medium" | "firm" | "unsure"
  */
