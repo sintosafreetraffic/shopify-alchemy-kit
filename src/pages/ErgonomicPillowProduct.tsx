@@ -14,26 +14,24 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 
 // Lazy load sections with carousels to reduce initial bundle
-const ReviewsSection = lazy(() => 
-  import("@/components/ReviewsSection").then(mod => ({ default: mod.ReviewsSection }))
+const ReviewsSection = lazy(() =>
+  import("@/components/ReviewsSection").then((mod) => ({ default: mod.ReviewsSection })),
 );
-const VideoSection = lazy(() => 
-  import("@/components/VideoSection").then(mod => ({ default: mod.VideoSection }))
-);
+const VideoSection = lazy(() => import("@/components/VideoSection").then((mod) => ({ default: mod.VideoSection })));
 
 // Fallback for lazy-loaded sections
 const SectionFallback = () => (
-  <div className="py-8 flex items-center justify-center text-sm text-muted-foreground">
-    Loading...
-  </div>
+  <div className="py-8 flex items-center justify-center text-sm text-muted-foreground">Loading...</div>
 );
 
 // Quiz CTA Component
 const QuizCTA = ({ variant = "default" }: { variant?: "default" | "subtle" }) => (
-  <div className={`py-10 md:py-14 ${variant === "subtle" ? "bg-muted/20" : "bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5"}`}>
+  <div
+    className={`py-10 md:py-14 ${variant === "subtle" ? "bg-muted/20" : "bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5"}`}
+  >
     <div className="container mx-auto px-4 text-center">
       <p className="text-sm text-muted-foreground mb-2">Not sure if this pillow is right for you?</p>
-      <h3 className="text-xl md:text-2xl font-semibold mb-4">Take the 3-Minute Sleep Quiz</h3>
+      <h3 className="text-xl md:text-2xl font-semibold mb-4">Take the 5-Minute Sleep Quiz</h3>
       <p className="text-muted-foreground mb-6 max-w-md mx-auto text-sm">
         Discover your sleeper type and get personalized product recommendations.
       </p>
@@ -55,20 +53,20 @@ const ErgonomicPillowProduct = () => {
       <PainReliefSection />
       <ChiropractorEndorsement />
       <LookInside />
-      
+
       {/* Quiz CTA before reviews */}
       <QuizCTA />
-      
+
       <Suspense fallback={<SectionFallback />}>
         <ReviewsSection />
       </Suspense>
       <Suspense fallback={<SectionFallback />}>
         <VideoSection />
       </Suspense>
-      
+
       {/* Quiz CTA after reviews */}
       <QuizCTA variant="subtle" />
-      
+
       <ProductFAQSection />
       <GuaranteeSection />
       <StickyAddToCart productType="ergonomic-pillow" />

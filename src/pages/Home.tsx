@@ -9,12 +9,12 @@ import OptimizedImage from "@/components/OptimizedImage";
 import moonIcon from "@/assets/moon-icon-blue.png";
 
 // New homepage sections
-import { 
-  SleeperPersonaDiscovery, 
-  TransformationStories, 
-  SleepCoachTeaser, 
+import {
+  SleeperPersonaDiscovery,
+  TransformationStories,
+  SleepCoachTeaser,
   AmbassadorWall,
-  UGCTestimonialGrid
+  UGCTestimonialGrid,
 } from "@/components/home";
 
 // Multi-resolution hero images for responsive loading
@@ -24,8 +24,8 @@ import heroDesktop768 from "@/assets/hero-christmas-768.webp";
 import heroMobile from "@/assets/hero-mobile-600.webp";
 
 // Lazy load below-fold components
-const ProductGallery = lazy(() => 
-  import("@/components/ProductGallery").then(mod => ({ default: mod.ProductGallery }))
+const ProductGallery = lazy(() =>
+  import("@/components/ProductGallery").then((mod) => ({ default: mod.ProductGallery })),
 );
 
 // Fallback for lazy components
@@ -42,33 +42,13 @@ export default function Home() {
       <section className="relative w-full">
         <picture>
           {/* Mobile: portrait orientation, optimized for small screens */}
-          <source
-            media="(max-width: 767px)"
-            srcSet={heroMobile}
-            width={600}
-            height={800}
-          />
+          <source media="(max-width: 767px)" srcSet={heroMobile} width={600} height={800} />
           {/* Tablet: medium desktop image */}
-          <source
-            media="(max-width: 1023px)"
-            srcSet={heroDesktop768}
-            width={768}
-            height={432}
-          />
+          <source media="(max-width: 1023px)" srcSet={heroDesktop768} width={768} height={432} />
           {/* Small desktop: 1280px variant */}
-          <source
-            media="(max-width: 1439px)"
-            srcSet={heroDesktop1280}
-            width={1280}
-            height={720}
-          />
+          <source media="(max-width: 1439px)" srcSet={heroDesktop1280} width={1280} height={720} />
           {/* Large desktop: full resolution */}
-          <source
-            media="(min-width: 1440px)"
-            srcSet={heroDesktop1920}
-            width={1920}
-            height={1080}
-          />
+          <source media="(min-width: 1440px)" srcSet={heroDesktop1920} width={1920} height={1080} />
           {/* Fallback img with LCP optimization */}
           <img
             src={heroDesktop1280}
@@ -81,7 +61,7 @@ export default function Home() {
             className="w-full h-[60vh] md:h-[70vh] object-cover"
           />
         </picture>
-        
+
         {/* Overlay content */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/40 flex items-end justify-center pb-12 md:pb-16 px-4">
           <div className="animate-fade-in text-center">
@@ -101,7 +81,6 @@ export default function Home() {
       <section className="relative py-16 md:py-24 bg-gradient-to-b from-background via-primary/5 to-background">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center space-y-8">
-
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold leading-tight tracking-tight">
               Transform Your Sleep,
               <br />
@@ -109,8 +88,8 @@ export default function Home() {
             </h1>
 
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Science-backed sleep solutions designed to help you wake refreshed, 
-              move freely, and perform at your best—every single day.
+              Science-backed sleep solutions designed to help you wake refreshed, move freely, and perform at your
+              best—every single day.
             </p>
 
             <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
@@ -120,7 +99,11 @@ export default function Home() {
                 </Button>
               </Link>
               <Link to="/product/ergonomic-pillow">
-                <Button variant="outline" size="lg" className="text-base md:text-lg px-8 py-6 rounded-full border-primary/30">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="text-base md:text-lg px-8 py-6 rounded-full border-primary/30"
+                >
                   Explore Products
                 </Button>
               </Link>
@@ -312,15 +295,13 @@ export default function Home() {
       <section className="py-20 md:py-28 bg-gradient-to-br from-primary via-primary to-primary/90 text-primary-foreground">
         <div className="container mx-auto px-4 text-center">
           <div className="max-w-3xl mx-auto">
-            <p className="text-sm uppercase tracking-widest opacity-70 mb-4">
-              Personalized For You
-            </p>
+            <p className="text-sm uppercase tracking-widest opacity-70 mb-4">Personalized For You</p>
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-semibold mb-5 tracking-tight">
               Not Sure Where to Start?
             </h2>
             <p className="text-lg md:text-xl mb-8 opacity-90 leading-relaxed max-w-xl mx-auto">
-              Take our 3-minute Sleep Quiz to discover your sleeper type, 
-              get matched with the right products, and unlock your personalized AI Sleep Coach.
+              Take our 5-minute Sleep Quiz to discover your sleeper type, get matched with the right products, and
+              unlock your personalized AI Sleep Coach.
             </p>
 
             <Link to="/sleep-quiz">
