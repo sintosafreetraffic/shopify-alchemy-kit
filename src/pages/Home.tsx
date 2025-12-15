@@ -14,6 +14,7 @@ import {
   SleepCoachTeaser,
   AmbassadorWall,
   UGCTestimonialGrid,
+  ScienceSection,
 } from "@/components/home";
 
 // Lazy load below-fold components
@@ -34,8 +35,11 @@ export default function Home() {
       {/* Evergreen Quiz-First Hero */}
       <HomeHero />
 
-      {/* Mission Section - Anchor for "Why this works" link */}
-      <section id="science" className="py-10 md:py-12 bg-muted/30 scroll-mt-20">
+      {/* Science Section - Target for "Why this works" link */}
+      <ScienceSection />
+
+      {/* Mission Section */}
+      <section className="py-10 md:py-12 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-8">
