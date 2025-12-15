@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 
 // Hero images
-import heroDesktop from "@/assets/lifestyle-hero-desktop.webp";
+import heroDesktop from "@/assets/hero-christmas-desktop.webp";
 import heroMobile from "@/assets/lifestyle-hero-mobile-new.webp";
 
 // ============================================================================
