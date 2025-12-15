@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { CheckCircle, Moon, ArrowLeft, ArrowRight, RotateCcw, FileText, AlertTriangle } from "lucide-react";
+import { CheckCircle, ArrowLeft, ArrowRight, RotateCcw, FileText, AlertTriangle } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { useCartStore } from "@/stores/cartStore";
@@ -28,6 +28,8 @@ import {
   QuizEmailStep,
   QuizLoading,
   QuizResults,
+  QuizIntro,
+  QuizIntroCompleted,
   QUIZ_QUESTIONS,
   type QuizAnswers,
   type AnalysisResult,
@@ -468,19 +470,8 @@ const SleepQuiz = () => {
     <TooltipProvider>
       <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 py-8 px-4">
         <div className="max-w-2xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-4">
-              <Moon className="w-4 h-4" />
-              Research-Based Assessment
-            </div>
-            <h1 className="text-3xl md:text-4xl font-bold mb-2 tracking-tight">Sleep Assessment Quiz</h1>
-            <p className="text-muted-foreground max-w-md mx-auto">
-              {showCachedPrompt 
-                ? "You've already completed your Sleep Assessment. View your results or take a fresh assessment."
-                : "Answer these questions to receive personalized product recommendations and unlock your AI Sleep Coach."}
-            </p>
-          </div>
+          {/* Header - uses new scientific framing components */}
+          {showCachedPrompt ? <QuizIntroCompleted /> : <QuizIntro />}
 
           {/* Loading from DB state */}
           {isLoadingFromDb && (
@@ -612,12 +603,11 @@ const SleepQuiz = () => {
             </Card>
           )}
 
-          {/* Trust Indicators */}
+          {/* Trust Indicators - no time estimates */}
           {!isResultsStep && !showCachedPrompt && !isLoadingFromDb && (
             <div className="flex items-center justify-center gap-6 mt-8 text-sm text-muted-foreground">
               <div className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-success" /><span>Science-backed</span></div>
               <div className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-success" /><span>Private & secure</span></div>
-              <div className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-success" /><span>2-minute completion</span></div>
             </div>
           )}
         </div>
