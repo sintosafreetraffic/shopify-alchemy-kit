@@ -10,8 +10,8 @@
 import { SleepAssessment, AnalysisResult } from "./QuizTypes";
 import { QuizAnswers } from "./QuizConfig";
 
-export const QUIZ_RESULTS_STORAGE_KEY = "rbn_sleep_quiz_v8_results";
-export const CURRENT_QUIZ_VERSION = "v8";
+export const QUIZ_RESULTS_STORAGE_KEY = "rbn_sleep_quiz_v9_results";
+export const CURRENT_QUIZ_VERSION = "v9";
 export const CACHE_EXPIRATION_DAYS = 30;
 
 export interface CachedQuizResults {

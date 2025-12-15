@@ -1,43 +1,64 @@
+/**
+ * Sleep Quiz Configuration v9
+ * 
+ * Psychology-first question design optimized for persona detection.
+ * All answer values MUST match backend expectations in sleep-assessment.ts.
+ * 
+ * Design principles:
+ * - Calm, Scandinavian tone
+ * - Science-backed but non-medical language
+ * - Clear behavioral/psychological signals for persona detection
+ */
+
 // Section configuration for grouped perception
 export const SECTIONS = [
   { 
     id: "sleep_habits", 
-    name: "How you sleep", 
-    description: "Understanding your sleep patterns",
+    name: "Your sleep style", 
+    description: "Understanding how you naturally sleep",
     questions: ["sleepPosition", "movesOften", "pillowCount", "mattressFirmness", "sleepEquipment"]
   },
   { 
     id: "pain_profile", 
-    name: "Pain profile", 
-    description: "Identifying discomfort patterns",
+    name: "Physical comfort", 
+    description: "Identifying tension and alignment patterns",
     questions: ["painAreas", "painSeverity", "nightAwakenings"]
   },
   { 
     id: "pillow_problems", 
-    name: "Your pillow problems", 
-    description: "What's not working for you",
+    name: "Current setup", 
+    description: "What's working and what isn't",
     questions: ["triedMethods", "pillowSatisfaction", "snoring"]
   },
   { 
     id: "environment", 
-    name: "Sleep environment & habits", 
-    description: "Your bedroom and routines",
+    name: "Sleep environment", 
+    description: "Your bedroom conditions and evening patterns",
     questions: ["sleepTemperature", "roomBrightness", "roomNoise", "sleepLatency", "sleepHours", "eveningScreenUse", "sleepClothing"]
   },
   { 
     id: "personal", 
-    name: "Personal details & plan delivery", 
-    description: "Tailoring your recommendations",
+    name: "Goals & preferences", 
+    description: "Tailoring your personalized recommendations",
     questions: ["ageGroup", "gender", "coSleeping", "sleepGoals", "email"]
   },
 ];
 
-// Question configuration with tooltips
+/**
+ * Quiz Questions v9
+ * 
+ * Each question is designed to reveal psychological patterns for persona detection:
+ * - Pain Sleeper: Physical discomfort, alignment issues, morning stiffness
+ * - Stress & Environment Sleeper: Wind-down difficulty, environmental sensitivity, racing mind
+ * - Recovery Sleeper: Performance focus, training recovery, wearable use
+ * - Optimizer: Multiple goals, data-driven, improvement mindset
+ */
 export const QUIZ_QUESTIONS = [
+  // === SECTION 1: SLEEP HABITS ===
   {
     id: "sleepPosition",
     question: "What's your primary sleep position?",
-    tooltip: "Your pillow height and contour depth depend entirely on your sleep position. This is one of the biggest predictors of neck pain.",
+    tooltip: "Your sleep position determines optimal pillow height and cervical support needs.",
     type: "radio" as const,
     autoAdvance: true,
     options: [
@@ -49,39 +70,40 @@ export const QUIZ_QUESTIONS = [
   },
   {
     id: "movesOften",
-    question: "Do you change positions often during the night?",
-    tooltip: "Frequent turning usually means your pillow or mattress isn't supporting your spine properly.",
+    question: "How often do you change positions during the night?",
+    tooltip: "Frequent repositioning often indicates your body is searching for comfort or proper support.",
     type: "radio" as const,
     autoAdvance: true,
     options: [
-      { value: "rarely", label: "Rarely — I stay in one position" },
+      { value: "never", label: "Rarely — I stay in one position" },
       { value: "sometimes", label: "Sometimes — A few times per night" },
       { value: "often", label: "Often — I toss and turn frequently" },
-      { value: "always", label: "Almost always — I can't seem to get comfortable" },
+      { value: "always", label: "Almost always — I can't seem to settle" },
     ],
   },
   {
     id: "pillowCount",
     question: "How many pillows do you currently sleep with?",
-    tooltip: "Stacking pillows is a major sign your current pillow height is incorrect.",
+    tooltip: "Using multiple pillows often indicates your primary pillow isn't providing adequate support.",
     type: "radio" as const,
     autoAdvance: true,
     options: [
       { value: "1", label: "1 pillow" },
       { value: "2", label: "2 pillows" },
-      { value: "3", label: "3 or more pillows" },
+      { value: "3", label: "3 pillows" },
+      { value: "3+", label: "More than 3" },
       { value: "0", label: "No pillow" },
     ],
   },
   {
     id: "mattressFirmness",
-    question: "How would you describe your mattress firmness?",
-    tooltip: "Mattress firmness affects how deep your shoulder sinks, which changes the ideal pillow height.",
+    question: "How would you describe your mattress?",
+    tooltip: "Mattress firmness affects shoulder compression and the ideal pillow height for spinal alignment.",
     type: "radio" as const,
     autoAdvance: true,
     options: [
-      { value: "soft", label: "Soft — I sink in quite a bit" },
-      { value: "medium", label: "Medium — Balanced support" },
+      { value: "soft", label: "Soft — I sink in noticeably" },
+      { value: "medium", label: "Medium — Balanced support and comfort" },
       { value: "firm", label: "Firm — Minimal sinking" },
       { value: "unsure", label: "I'm not sure" },
     ],
@@ -89,42 +111,47 @@ export const QUIZ_QUESTIONS = [
   {
     id: "sleepEquipment",
     question: "What sleep equipment do you currently use?",
-    tooltip: "This helps us understand what has or hasn't worked for you before, so we recommend the correct upgrades.",
+    tooltip: "Understanding your current setup helps us identify what's working and what needs improvement.",
     type: "checkbox" as const,
     options: [
-      { value: "regular_pillow", label: "Regular pillow" },
+      { value: "regular_pillow", label: "Standard pillow" },
       { value: "contour_pillow", label: "Contour/ergonomic pillow" },
       { value: "knee_pillow", label: "Knee pillow" },
       { value: "body_pillow", label: "Body pillow" },
       { value: "sleep_mask", label: "Sleep mask" },
-      { value: "white_noise", label: "White noise machine" },
+      { value: "white_noise", label: "White noise or sound machine" },
       { value: "weighted_blanket", label: "Weighted blanket" },
-      { value: "none", label: "None of the above" },
+      { value: "oura", label: "Oura Ring" },
+      { value: "whoop", label: "WHOOP band" },
+      { value: "fitness_tracker", label: "Fitness tracker / smartwatch" },
+      { value: "none", label: "None of these" },
     ],
   },
+
+  // === SECTION 2: PAIN PROFILE ===
   {
     id: "painAreas",
-    question: "Where do you experience pain or discomfort?",
-    tooltip: "Different pain patterns reveal different alignment issues. This helps us tailor your recommendations.",
+    question: "Where do you experience tension or discomfort?",
+    tooltip: "Different tension patterns reveal different alignment needs and help us personalize your support.",
     type: "checkbox" as const,
     options: [
       { value: "neck", label: "Neck" },
       { value: "upper_back", label: "Upper back" },
-      { value: "lower_back", label: "Lower back" },
       { value: "shoulders", label: "Shoulders" },
+      { value: "lower_back", label: "Lower back" },
       { value: "hips", label: "Hips" },
-      { value: "headaches", label: "Headaches/migraines" },
-      { value: "none", label: "No pain" },
+      { value: "headaches", label: "Morning headaches" },
+      { value: "none", label: "No significant tension" },
     ],
   },
   {
     id: "painSeverity",
-    question: "How severe is your morning pain on average?",
-    tooltip: "Tracking severity helps us evaluate whether your sleep environment is contributing to tension.",
+    question: "How would you rate your morning discomfort on average?",
+    tooltip: "Understanding severity helps us assess the impact on your sleep quality and recovery.",
     type: "slider" as const,
     min: 0,
     max: 10,
-    labels: { 0: "No pain", 5: "Moderate", 10: "Severe" },
+    labels: { 0: "None", 5: "Moderate", 10: "Significant" },
     showIf: (answers: Record<string, unknown>) => {
       const painAreas = answers.painAreas as string[] || [];
       return painAreas.length > 0 && !painAreas.includes("none");
@@ -133,44 +160,87 @@ export const QUIZ_QUESTIONS = [
   {
     id: "nightAwakenings",
     question: "How often do you wake up during the night?",
-    tooltip: "Night awakenings indicate misalignment, overheating, or environmental disturbances.",
+    tooltip: "Night awakenings can indicate discomfort, temperature issues, or environmental disruptions.",
     type: "radio" as const,
     autoAdvance: true,
     options: [
       { value: "never", label: "Rarely or never" },
-      { value: "once", label: "Once per night" },
+      { value: "rarely", label: "Once per night on occasion" },
+      { value: "once", label: "Once per night regularly" },
       { value: "twice", label: "2-3 times per night" },
-      { value: "frequently", label: "4+ times per night" },
+      { value: "frequently", label: "4 or more times per night" },
+    ],
+  },
+
+  // === SECTION 3: CURRENT SETUP ===
+  {
+    id: "triedMethods",
+    question: "What have you tried to improve your sleep?",
+    tooltip: "This helps us understand your sleep improvement journey and avoid repeating what hasn't worked.",
+    type: "checkbox" as const,
+    options: [
+      { value: "new_mattress", label: "New mattress" },
+      { value: "new_pillow", label: "New pillow(s)" },
+      { value: "sleep_apps", label: "Sleep tracking apps" },
+      { value: "supplements", label: "Sleep supplements" },
+      { value: "meditation", label: "Meditation or breathing exercises" },
+      { value: "routine_changes", label: "Changed my bedtime routine" },
+      { value: "nothing", label: "Haven't tried much yet" },
     ],
   },
   {
-    id: "sleepTemperature",
-    question: "Do you typically sleep hot, cold, or neutral?",
-    tooltip: "Temperature is one of the biggest factors affecting deep sleep quality.",
+    id: "pillowSatisfaction",
+    question: "How satisfied are you with your current pillow?",
+    tooltip: "This establishes a baseline for measuring improvement.",
+    type: "slider" as const,
+    min: 0,
+    max: 10,
+    labels: { 0: "Very unsatisfied", 5: "Neutral", 10: "Very satisfied" },
+  },
+  {
+    id: "snoring",
+    question: "Do you snore or have been told you snore?",
+    tooltip: "Snoring can indicate airway positioning issues that proper pillow support may help address.",
     type: "radio" as const,
     autoAdvance: true,
     options: [
-      { value: "hot", label: "Hot — I often wake up sweating" },
-      { value: "cold", label: "Cold — I usually feel chilly" },
-      { value: "neutral", label: "Neutral — Temperature is comfortable" },
+      { value: "never", label: "Never or rarely" },
+      { value: "sometimes", label: "Sometimes" },
+      { value: "often", label: "Often — Several nights a week" },
+      { value: "always", label: "Most nights" },
+      { value: "unsure", label: "I'm not sure" },
+    ],
+  },
+
+  // === SECTION 4: ENVIRONMENT ===
+  {
+    id: "sleepTemperature",
+    question: "How does temperature affect your sleep?",
+    tooltip: "Temperature regulation is one of the most significant factors in sleep quality and continuity.",
+    type: "radio" as const,
+    autoAdvance: true,
+    options: [
+      { value: "hot", label: "I often sleep too warm" },
+      { value: "cold", label: "I often feel too cold" },
+      { value: "neutral", label: "Temperature is usually comfortable" },
     ],
   },
   {
     id: "roomBrightness",
-    question: "How bright is your sleep environment?",
-    tooltip: "Light exposure reduces melatonin and leads to shallow sleep. This helps us recommend masks if needed.",
+    question: "How dark is your sleep environment?",
+    tooltip: "Light exposure affects melatonin production and can significantly impact sleep depth.",
     type: "radio" as const,
     autoAdvance: true,
     options: [
-      { value: "dark", label: "Very dark — I can't see anything" },
-      { value: "dim", label: "Dimly lit — Some ambient light" },
-      { value: "bright", label: "Quite bright — Street lights or early sunrise" },
+      { value: "dark", label: "Very dark — Complete darkness" },
+      { value: "dim", label: "Somewhat dark — Some ambient light" },
+      { value: "bright", label: "Light comes in — Street lights or early sun" },
     ],
   },
   {
     id: "roomNoise",
-    question: "What are the noise levels in your bedroom?",
-    tooltip: "Noise disruption fragments your deep sleep and increases morning fatigue.",
+    question: "How quiet is your bedroom?",
+    tooltip: "Background noise can cause micro-awakenings that reduce sleep quality without full waking.",
     type: "radio" as const,
     autoAdvance: true,
     options: [
@@ -182,11 +252,11 @@ export const QUIZ_QUESTIONS = [
   {
     id: "sleepLatency",
     question: "How long does it typically take you to fall asleep?",
-    tooltip: "Sleep latency reveals stress levels, environment mismatch, or poor pillow alignment.",
+    tooltip: "Sleep onset time reveals how well your mind and body transition into rest mode.",
     type: "radio" as const,
     autoAdvance: true,
     options: [
-      { value: "quick", label: "Less than 15 minutes" },
+      { value: "quick", label: "Under 15 minutes" },
       { value: "normal", label: "15-30 minutes" },
       { value: "slow", label: "30-60 minutes" },
       { value: "very_slow", label: "Over an hour" },
@@ -194,8 +264,8 @@ export const QUIZ_QUESTIONS = [
   },
   {
     id: "sleepHours",
-    question: "How many hours of sleep do you average per night?",
-    tooltip: "This allows your AI Sleep Coach to adjust recovery recommendations.",
+    question: "How many hours of sleep do you typically get?",
+    tooltip: "Understanding your sleep duration helps calibrate recovery recommendations.",
     type: "radio" as const,
     autoAdvance: true,
     options: [
@@ -208,8 +278,8 @@ export const QUIZ_QUESTIONS = [
   },
   {
     id: "eveningScreenUse",
-    question: "Do you use screens (phone, TV, laptop) within 1 hour of bed?",
-    tooltip: "Screens suppress melatonin and shift your circadian rhythm.",
+    question: "Do you use screens within an hour of bedtime?",
+    tooltip: "Screen use before bed affects your natural sleep-wake cycle and wind-down process.",
     type: "radio" as const,
     autoAdvance: true,
     options: [
@@ -220,9 +290,24 @@ export const QUIZ_QUESTIONS = [
     ],
   },
   {
+    id: "sleepClothing",
+    question: "What do you typically wear to bed?",
+    tooltip: "This helps us understand your temperature regulation patterns.",
+    type: "radio" as const,
+    autoAdvance: true,
+    options: [
+      { value: "minimal", label: "Minimal — Light or nothing" },
+      { value: "light", label: "Light — T-shirt and shorts" },
+      { value: "moderate", label: "Moderate — Pajamas" },
+      { value: "heavy", label: "Warm layers" },
+    ],
+  },
+
+  // === SECTION 5: GOALS & PREFERENCES ===
+  {
     id: "ageGroup",
-    question: "What is your age group?",
-    tooltip: "Certain sleep issues increase with age. This improves personalization but is optional.",
+    question: "What is your age range?",
+    tooltip: "Sleep needs and patterns naturally evolve with age. This is optional.",
     type: "radio" as const,
     optional: true,
     autoAdvance: true,
@@ -239,7 +324,7 @@ export const QUIZ_QUESTIONS = [
   {
     id: "gender",
     question: "What is your gender?",
-    tooltip: "Gender influences shoulder width and optimal pillow height. You may skip this.",
+    tooltip: "Body structure affects pillow height recommendations. You may skip this.",
     type: "radio" as const,
     optional: true,
     autoAdvance: true,
@@ -251,84 +336,38 @@ export const QUIZ_QUESTIONS = [
     ],
   },
   {
-    id: "sleepClothing",
-    question: "What do you typically wear to bed?",
-    tooltip: "This helps us understand temperature regulation and overheating patterns.",
-    type: "radio" as const,
-    autoAdvance: true,
-    options: [
-      { value: "minimal", label: "Minimal — Underwear or nothing" },
-      { value: "light", label: "Light — T-shirt and shorts" },
-      { value: "moderate", label: "Moderate — Pajamas" },
-      { value: "heavy", label: "Heavy — Warm layers" },
-    ],
-  },
-  {
     id: "coSleeping",
-    question: "Do you share your bed with anyone?",
-    tooltip: "Co-sleeping can increase disruptions. This helps improve your AI recommendations.",
+    question: "Who shares your sleep space?",
+    tooltip: "Co-sleeping can affect movement patterns and environmental needs.",
     type: "checkbox" as const,
     options: [
       { value: "alone", label: "I sleep alone" },
-      { value: "partner", label: "Partner/spouse" },
-      { value: "child", label: "Child/children" },
+      { value: "partner", label: "Partner" },
+      { value: "child", label: "Child or children" },
       { value: "pet", label: "Pet(s)" },
     ],
   },
   {
     id: "sleepGoals",
-    question: "What are your top sleep improvement goals?",
-    tooltip: "These goals shape your personalized AI sleep plan and product recommendations.",
+    question: "What matters most to you about your sleep?",
+    tooltip: "Your priorities shape your personalized plan and product recommendations.",
     type: "checkbox" as const,
     maxSelections: 3,
     subtitle: "Select up to 3",
     options: [
-      { value: "reduce_pain", label: "Reduce pain and discomfort" },
-      { value: "better_quality", label: "Improve overall sleep quality" },
-      { value: "fall_asleep_faster", label: "Fall asleep faster" },
-      { value: "stay_asleep", label: "Stay asleep through the night" },
-      { value: "wake_refreshed", label: "Wake up feeling refreshed" },
-      { value: "reduce_snoring", label: "Reduce snoring" },
+      // Pain & Alignment goals
+      { value: "reduce_pain", label: "Reduce tension and discomfort" },
       { value: "better_posture", label: "Improve spinal alignment" },
+      // Sleep quality goals
+      { value: "better_quality", label: "Better overall sleep quality" },
+      { value: "fall_asleep_faster", label: "Fall asleep more easily" },
+      { value: "stay_asleep", label: "Stay asleep through the night" },
+      // Energy & Recovery goals
+      { value: "wake_refreshed", label: "Wake up feeling refreshed" },
+      { value: "more_energy", label: "Have more daytime energy" },
+      { value: "faster_recovery", label: "Faster physical recovery" },
+      { value: "better_recovery", label: "Better muscle recovery" },
     ],
-  },
-  {
-    id: "snoring",
-    question: "How often do you snore?",
-    tooltip: "Snoring often comes from airway angle, which can be improved with the right pillow height.",
-    type: "radio" as const,
-    autoAdvance: true,
-    options: [
-      { value: "never", label: "Never or rarely" },
-      { value: "sometimes", label: "Sometimes" },
-      { value: "often", label: "Often — Several nights a week" },
-      { value: "always", label: "Always — Every night" },
-      { value: "unsure", label: "I'm not sure" },
-    ],
-  },
-  {
-    id: "triedMethods",
-    question: "Have you tried any sleep improvement methods?",
-    tooltip: "This helps us tailor a plan that avoids repeating what hasn't worked.",
-    type: "checkbox" as const,
-    options: [
-      { value: "new_mattress", label: "New mattress" },
-      { value: "new_pillow", label: "New pillow(s)" },
-      { value: "sleep_apps", label: "Sleep tracking apps" },
-      { value: "supplements", label: "Sleep supplements (melatonin, etc.)" },
-      { value: "medication", label: "Sleep medication" },
-      { value: "therapy", label: "Sleep therapy/counseling" },
-      { value: "nothing", label: "None of the above" },
-    ],
-  },
-  {
-    id: "pillowSatisfaction",
-    question: "How satisfied are you with your current pillow?",
-    tooltip: "This gives a measurable baseline for improvement.",
-    type: "slider" as const,
-    min: 0,
-    max: 10,
-    labels: { 0: "Very unsatisfied", 5: "Neutral", 10: "Very satisfied" },
   },
 ];
 

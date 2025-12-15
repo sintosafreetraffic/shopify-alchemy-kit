@@ -1,9 +1,10 @@
 /**
- * Premium 5-Section Quiz Results Component
+ * Premium 5-Section Quiz Results Component v9
  * 
  * Displays structured SleepAssessment with calm, Scandinavian aesthetic.
- * Sections: Sleep Identity, Alignment & Support, Environment, Products, Coach Preview
+ * Sections: Sleep Identity, Persona, Alignment & Support, Environment, Products, Coach Preview
  * 
+ * v9: Added top_risk_drivers display, coach_readiness indicators, energy_potential_score
  * Design: Neutral colors, clean spacing, scientific clarity, modern minimalism
  */
 import { memo, useMemo } from "react";
@@ -30,6 +31,8 @@ import {
   Shield,
   Zap,
   Brain,
+  Target,
+  Activity,
 } from "lucide-react";
 import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator";
 import {
@@ -39,11 +42,15 @@ import {
   type PersonaCluster,
   PERSONA_DEFINITIONS,
   MODULE_DEFINITIONS,
-  deriveDetectedIssues,
-  convertToIssuePresentation,
   getPersonaConfidenceLevel,
   shouldPersonalizePersonaMessaging,
 } from "@/components/sleep-quiz";
+import { 
+  deriveDetectedIssues, 
+  convertToIssuePresentation, 
+  getRiskDriverDisplayText,
+  getCoachReadinessExplanation,
+} from "./QuizHelpers";
 import { CLUSTER_TO_URL_SLUG } from "@/data/personaLandingMocks";
 
 interface QuizResultsProps {
@@ -343,6 +350,76 @@ const QuizResults = memo(function QuizResults({
                   );
                 })}
               </div>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Section 1c: Top Risk Drivers & Coach Readiness */}
+      {(assessment.top_risk_drivers?.length > 0 || assessment.coach_readiness_label) && (
+        <section className="space-y-5">
+          <div className="flex items-center gap-4">
+            <div className="w-11 h-11 rounded-xl bg-amber-50 dark:bg-amber-950/40 flex items-center justify-center flex-shrink-0">
+              <Target className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div>
+              <h2 className="font-semibold text-lg text-foreground">Key Focus Areas</h2>
+              <p className="text-sm text-muted-foreground">What we identified as priorities</p>
+            </div>
+          </div>
+
+          {/* Top Risk Drivers */}
+          {assessment.top_risk_drivers && assessment.top_risk_drivers.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {assessment.top_risk_drivers.map((driver, idx) => (
+                <span
+                  key={idx}
+                  className="px-3 py-1.5 text-sm rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+                >
+                  {getRiskDriverDisplayText(driver)}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Coach Readiness Indicator */}
+          {assessment.coach_readiness_label && (
+            <div className="p-4 rounded-xl bg-slate-50/80 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-700/40">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-foreground/90">Coach Readiness</span>
+                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                  assessment.coach_readiness_label === 'Ready' 
+                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400'
+                    : assessment.coach_readiness_label === 'Developing'
+                      ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400'
+                      : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                }`}>
+                  {assessment.coach_readiness_label}
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {assessment.coach_readiness_rationale || getCoachReadinessExplanation(assessment.coach_readiness_label)}
+              </p>
+            </div>
+          )}
+
+          {/* Energy Potential Score */}
+          {assessment.energy_potential_score !== undefined && (
+            <div className="flex items-center gap-4 p-4 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/40 dark:border-emerald-800/30">
+              <Activity className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-foreground/90">Morning Energy Potential</p>
+                <p className="text-xs text-muted-foreground">
+                  {assessment.energy_potential_score >= 70 
+                    ? "Your profile suggests strong morning energy potential with the right support."
+                    : assessment.energy_potential_score >= 45
+                      ? "There's good room to improve your morning energy levels."
+                      : "Addressing key factors could meaningfully boost your morning energy."}
+                </p>
+              </div>
+              <span className="text-lg font-semibold text-emerald-700 dark:text-emerald-400">
+                {assessment.energy_potential_score}%
+              </span>
             </div>
           )}
         </section>
