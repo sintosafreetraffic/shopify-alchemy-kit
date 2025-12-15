@@ -140,7 +140,7 @@ export function SleeperPersonaDiscovery() {
           {/* Quiz CTA */}
           <div className="text-center bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 rounded-2xl p-6 md:p-8 border border-primary/10">
             <p className="text-sm text-muted-foreground mb-2">Not sure which type you are?</p>
-            <h3 className="text-xl md:text-2xl font-semibold mb-4">Take the 5-Minute Sleep Assessment</h3>
+            <h3 className="text-xl md:text-2xl font-semibold mb-4">Take the Short Science-Backed Assessment</h3>
             <p className="text-muted-foreground mb-6 max-w-lg mx-auto text-sm md:text-base leading-relaxed">
               Our science-backed assessment identifies your sleeper profile and matches you with the right products and a
               personalized AI sleep plan.
