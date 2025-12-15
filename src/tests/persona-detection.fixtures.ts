@@ -202,11 +202,11 @@ export const mixedSignalsFixture: QuizPayload = {
   ...baseAnswers,
   sleepPosition: 'side',
   movesOften: 'sometimes',
-  pillowCount: '2',
+  pillowCount: '1',  // Changed from '2' to remove hasMultiplePillows (+4 pain, +1 stress)
   mattressFirmness: 'soft',
   painAreas: ['neck'],
   painSeverity: 4,
-  pillowSatisfaction: 4,
+  pillowSatisfaction: 5,  // Changed from 4 to 5 to remove hasLowPillowSatisfaction (+5 pain, +1 stress)
   sleepGoals: ['reduce_pain', 'stay_asleep'],
   nightAwakenings: 'twice',
   sleepEquipment: [],
@@ -215,7 +215,7 @@ export const mixedSignalsFixture: QuizPayload = {
   roomNoise: 'some',
   sleepLatency: 'slow',
   sleepHours: '6_7',
-  eveningScreenUse: 'often',
+  eveningScreenUse: 'sometimes',
 };
 
 // ============ EXPECTED OUTCOMES ============
