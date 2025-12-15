@@ -1,8 +1,11 @@
 /**
  * Quiz Reveal Analytics Dashboard
  * Internal admin page for tracking pre-reveal to full-reveal conversion rates
+ * Protected: Only accessible to authenticated users with admin role
  */
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
@@ -21,6 +24,7 @@ import {
   Loader2,
   RefreshCw,
   AlertCircle,
+  ShieldX,
 } from "lucide-react";
 import { 
   LineChart, 
@@ -57,12 +61,63 @@ interface AnalyticsStats {
 }
 
 const QuizRevealTracking = () => {
+  const navigate = useNavigate();
   const [stats, setStats] = useState<AnalyticsStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [days, setDays] = useState("30");
+  
+  // Auth state
+  const [authChecking, setAuthChecking] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Check authentication and admin role
+  useEffect(() => {
+    const checkAuth = async () => {
+      setAuthChecking(true);
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        setAuthChecking(false);
+        return;
+      }
+      
+      setUserId(session.user.id);
+      
+      // Check admin role using the has_role function
+      const { data, error } = await supabase.rpc('has_role', {
+        _user_id: session.user.id,
+        _role: 'admin'
+      });
+      
+      if (error) {
+        console.error('Error checking admin role:', error);
+        setIsAdmin(false);
+      } else {
+        setIsAdmin(data === true);
+      }
+      
+      setAuthChecking(false);
+    };
+    
+    checkAuth();
+    
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        setUserId(null);
+        setIsAdmin(false);
+      }
+    });
+    
+    return () => subscription.unsubscribe();
+  }, []);
 
   const fetchStats = async () => {
+    if (!isAdmin) return;
+    
     setLoading(true);
     setError(null);
     
@@ -96,8 +151,10 @@ const QuizRevealTracking = () => {
   };
 
   useEffect(() => {
-    fetchStats();
-  }, [days]);
+    if (isAdmin) {
+      fetchStats();
+    }
+  }, [days, isAdmin]);
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -121,6 +178,64 @@ const QuizRevealTracking = () => {
     "Full Reveal": data.full,
     "Conversion": data.pre > 0 ? Math.round((data.full / data.pre) * 100) : 0,
   })) : [];
+
+  // Loading auth check
+  if (authChecking) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 flex items-center justify-center">
+        <Card className="p-12">
+          <div className="flex flex-col items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
+            <p className="text-muted-foreground">Verifying access...</p>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  // Not authenticated
+  if (!userId) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 flex items-center justify-center px-4">
+        <Card className="p-8 max-w-md text-center">
+          <div className="flex flex-col items-center">
+            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+              <ShieldX className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h2 className="text-xl font-semibold mb-2">Authentication Required</h2>
+            <p className="text-muted-foreground mb-6">
+              Please sign in to access the analytics dashboard.
+            </p>
+            <Button onClick={() => navigate(`/auth?returnTo=${encodeURIComponent('/risebynight/tracking')}`)}>
+              Sign In
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  // Not admin
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 flex items-center justify-center px-4">
+        <Card className="p-8 max-w-md text-center">
+          <div className="flex flex-col items-center">
+            <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
+              <ShieldX className="w-8 h-8 text-destructive" />
+            </div>
+            <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
+            <p className="text-muted-foreground mb-6">
+              You don't have permission to view this page. Admin access is required.
+            </p>
+            <Button variant="outline" onClick={() => navigate('/')}>
+              Return Home
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 py-8 px-4">
