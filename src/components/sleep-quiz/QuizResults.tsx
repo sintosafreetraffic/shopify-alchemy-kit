@@ -7,7 +7,7 @@
  * 
  * Design: Scandinavian calm, scientific framing, premium feel
  */
-import { memo, useMemo } from "react";
+import { memo, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -54,15 +54,72 @@ import {
 } from "./QuizHelpers";
 import { CLUSTER_TO_URL_SLUG } from "@/data/personaLandingMocks";
 
-// ============ ANALYTICS PLACEHOLDER ============
+// ============ ANALYTICS TRACKING ============
 
 /**
- * Placeholder for tracking partial reveal views.
- * To be implemented when analytics requirements are finalized.
+ * Get or create a session ID for tracking
+ */
+const getSessionId = (): string => {
+  const key = "rbn_quiz_session_id";
+  let sessionId = sessionStorage.getItem(key);
+  if (!sessionId) {
+    sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    sessionStorage.setItem(key, sessionId);
+  }
+  return sessionId;
+};
+
+/**
+ * Track quiz reveal analytics events
+ */
+const trackRevealEvent = async (
+  eventType: "pre_reveal_viewed" | "full_reveal_unlocked",
+  personaCluster?: string,
+  insightCount?: number,
+  email?: string
+) => {
+  try {
+    const sessionId = getSessionId();
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+    await fetch(`${supabaseUrl}/functions/v1/quiz-reveal-analytics`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": supabaseKey,
+      },
+      body: JSON.stringify({
+        action: "track",
+        event_type: eventType,
+        session_id: sessionId,
+        persona_cluster: personaCluster,
+        insight_count: insightCount,
+        email: email,
+        user_agent: navigator.userAgent,
+        referrer: document.referrer,
+      }),
+    });
+    
+    console.debug(`[Analytics] ${eventType} tracked for session: ${sessionId}`);
+  } catch (error) {
+    // Fail silently - don't block user experience
+    console.warn("[Analytics] Failed to track event:", error);
+  }
+};
+
+/**
+ * Track partial reveal view (pre-reveal state)
  */
 const trackPartialReveal = (personaCluster: string | undefined, insightCount: number) => {
-  // No-op for now - insert analytics call here
-  console.debug('[Analytics] Partial reveal viewed:', { personaCluster, insightCount });
+  trackRevealEvent("pre_reveal_viewed", personaCluster, insightCount);
+};
+
+/**
+ * Track full reveal unlock (after email submission)
+ */
+const trackFullRevealUnlock = (personaCluster: string | undefined, email?: string) => {
+  trackRevealEvent("full_reveal_unlocked", personaCluster, undefined, email);
 };
 
 // ============ INTERFACES ============
@@ -408,6 +465,15 @@ const QuizResults = memo(function QuizResults({
 
   // Determine reveal state: pre-reveal if no profile created/updated
   const isPreReveal = !(results.profileCreated || results.profileUpdated);
+
+  // Track full reveal unlock when state changes from pre-reveal to full
+  const hasTrackedFullReveal = useRef(false);
+  useEffect(() => {
+    if (!isPreReveal && !hasTrackedFullReveal.current && assessment) {
+      hasTrackedFullReveal.current = true;
+      trackFullRevealUnlock(assessment.persona?.cluster, email);
+    }
+  }, [isPreReveal, assessment, email]);
 
   // Fallback to legacy display if no structured assessment
   const detectedIssues = results.detectedIssues || deriveDetectedIssues(answers);

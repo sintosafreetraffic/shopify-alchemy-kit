@@ -125,3 +125,7 @@ verify_jwt = false
 # Send quiz results email - Public for quiz flow
 [functions.send-quiz-results]
 verify_jwt = false
+
+# Quiz reveal analytics - Public for tracking
+[functions.quiz-reveal-analytics]
+verify_jwt = false

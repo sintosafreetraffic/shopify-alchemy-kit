@@ -436,6 +436,42 @@ export type Database = {
         }
         Relationships: []
       }
+      quiz_reveal_analytics: {
+        Row: {
+          created_at: string
+          email: string | null
+          event_type: string
+          id: string
+          insight_count: number | null
+          persona_cluster: string | null
+          referrer: string | null
+          session_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          event_type: string
+          id?: string
+          insight_count?: number | null
+          persona_cluster?: string | null
+          referrer?: string | null
+          session_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          event_type?: string
+          id?: string
+          insight_count?: number | null
+          persona_cluster?: string | null
+          referrer?: string | null
+          session_id?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       referrals: {
         Row: {
           affiliate_id: string
