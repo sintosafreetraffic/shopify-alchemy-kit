@@ -1,12 +1,11 @@
-// Performance: Hero images use WebP with multi-resolution srcset and eager loading for LCP
-// Below-fold components are lazy loaded to reduce initial bundle
+// Performance: Below-fold components are lazy loaded to reduce initial bundle
 import { Suspense, lazy } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ArrowRight, Heart, Sparkles, Shield, Users, Award } from "lucide-react";
 import { Link } from "react-router-dom";
-import OptimizedImage from "@/components/OptimizedImage";
 import moonIcon from "@/assets/moon-icon-blue.png";
+import HomeHero from "@/components/HomeHero";
 
 // New homepage sections
 import {
@@ -16,12 +15,6 @@ import {
   AmbassadorWall,
   UGCTestimonialGrid,
 } from "@/components/home";
-
-// Multi-resolution hero images for responsive loading
-import heroDesktop1920 from "@/assets/hero-christmas-desktop.webp";
-import heroDesktop1280 from "@/assets/hero-christmas-1280.webp";
-import heroDesktop768 from "@/assets/hero-christmas-768.webp";
-import heroMobile from "@/assets/hero-mobile-600.webp";
 
 // Lazy load below-fold components
 const ProductGallery = lazy(() =>
@@ -38,82 +31,11 @@ const SectionFallback = () => (
 export default function Home() {
   return (
     <div className="min-h-screen">
-      {/* Lifestyle Hero Image - Responsive with multi-resolution srcset */}
-      <section className="relative w-full">
-        <picture>
-          {/* Mobile: portrait orientation, optimized for small screens */}
-          <source media="(max-width: 767px)" srcSet={heroMobile} width={600} height={800} />
-          {/* Tablet: medium desktop image */}
-          <source media="(max-width: 1023px)" srcSet={heroDesktop768} width={768} height={432} />
-          {/* Small desktop: 1280px variant */}
-          <source media="(max-width: 1439px)" srcSet={heroDesktop1280} width={1280} height={720} />
-          {/* Large desktop: full resolution */}
-          <source media="(min-width: 1440px)" srcSet={heroDesktop1920} width={1920} height={1080} />
-          {/* Fallback img with LCP optimization */}
-          <img
-            src={heroDesktop1280}
-            alt="Peaceful sleep with Rise By Night"
-            width={1280}
-            height={720}
-            loading="eager"
-            fetchPriority="high"
-            decoding="sync"
-            className="w-full h-[60vh] md:h-[70vh] object-cover"
-          />
-        </picture>
+      {/* Evergreen Quiz-First Hero */}
+      <HomeHero />
 
-        {/* Overlay content */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/40 flex items-end justify-center pb-12 md:pb-16 px-4">
-          <div className="animate-fade-in text-center">
-            <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-semibold text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">
-              Buy 1 Get 1 Free
-            </p>
-            <Link to="/product/ergonomic-pillow">
-              <Button size="lg" className="mt-4 md:mt-6 text-base md:text-lg px-6 md:px-8 py-5 md:py-6">
-                Get Yours Now
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Hero Section */}
-      <section className="relative py-10 md:py-12 bg-gradient-to-b from-background via-primary/5 to-background">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center space-y-6">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold leading-tight tracking-tight">
-              Transform Your Sleep,
-              <br />
-              <span className="text-primary">Transform Your Life</span>
-            </h1>
-
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Science-backed sleep solutions designed to help you wake refreshed, move freely, and perform at your
-              best—every single day.
-            </p>
-
-            <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
-              <Link to="/sleep-quiz">
-                <Button size="lg" className="text-base md:text-lg px-8 py-6 rounded-full">
-                  Take the Sleep Assessment <ArrowRight className="ml-2 w-5 h-5" />
-                </Button>
-              </Link>
-              <Link to="/product/ergonomic-pillow">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="text-base md:text-lg px-8 py-6 rounded-full border-primary/30"
-                >
-                  Explore Products
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Mission Section */}
-      <section className="py-10 md:py-12 bg-muted/30">
+      {/* Mission Section - Anchor for "Why this works" link */}
+      <section id="science" className="py-10 md:py-12 bg-muted/30 scroll-mt-20">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-8">
