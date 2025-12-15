@@ -1,0 +1,94 @@
+# Sleep Quiz Test Suite
+#
+# Runs persona detection unit tests and (optionally) backend integration tests.
+# Integration tests require a deployed analyze-sleep-quiz edge function.
+#
+# Triggers:
+# - Push to main/develop
+# - Pull requests
+# - Manual workflow dispatch with integration flag
+
+name: Quiz Tests
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'src/tests/**'
+      - 'src/components/sleep-quiz/**'
+      - 'supabase/functions/_shared/sleep-assessment.ts'
+      - 'supabase/functions/analyze-sleep-quiz/**'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'src/tests/**'
+      - 'src/components/sleep-quiz/**'
+      - 'supabase/functions/_shared/sleep-assessment.ts'
+      - 'supabase/functions/analyze-sleep-quiz/**'
+  workflow_dispatch:
+    inputs:
+      run_integration:
+        description: 'Run integration tests (requires deployed edge function)'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  unit-tests:
+    name: Quiz Unit Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run persona detection tests
+        run: npx vitest run src/tests/persona-detection.test.ts --reporter=verbose
+
+      - name: Run E2E quiz flow tests
+        run: npx vitest run src/tests/e2e-quiz-answer-flow.test.ts --reporter=verbose
+
+  integration-tests:
+    name: Quiz Integration Tests
+    runs-on: ubuntu-latest
+    # Only run if explicitly requested or on main branch
+    if: ${{ github.event.inputs.run_integration == 'true' || github.ref == 'refs/heads/main' }}
+    needs: unit-tests
+    
+    env:
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://ofryballwrjrgivokzln.supabase.co' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run integration tests
+        run: npx vitest run src/tests/analyze-sleep-quiz.integration.test.ts --reporter=verbose
+        continue-on-error: true
+
+      - name: Check integration test results
+        if: failure()
+        run: |
+          echo "::warning::Integration tests failed. This may indicate:"
+          echo "  - Edge function is not deployed"
+          echo "  - Network connectivity issues"
+          echo "  - Backend contract changes"
+          echo "Review the test output above for details."
