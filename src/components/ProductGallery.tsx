@@ -196,9 +196,9 @@ export const ProductGallery = () => {
       </section>
 
       {/* Individual Products Section */}
-      <section className="py-16 md:py-24 bg-background">
+      <section className="py-12 md:py-16 bg-background">
         <div className="container mx-auto px-4">
-          <div className="text-center max-w-3xl mx-auto mb-12">
+          <div className="text-center max-w-3xl mx-auto mb-8">
             <h2 className="text-3xl md:text-5xl font-bold mb-4">Individual Products</h2>
             <p className="text-xl text-muted-foreground">Choose specific solutions tailored to your needs</p>
           </div>

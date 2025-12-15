@@ -10,11 +10,11 @@ const ambassadorTypes = [
 
 export function AmbassadorWall() {
   return (
-    <section className="py-20 md:py-28 bg-gradient-to-b from-muted/5 via-muted/20 to-muted/5">
+    <section className="py-12 md:py-16 bg-gradient-to-b from-muted/5 via-muted/20 to-muted/5">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
           {/* Section Header */}
-          <div className="text-center mb-10">
+          <div className="text-center mb-8">
             <p className="text-xs md:text-sm uppercase tracking-widest text-primary/70 font-medium mb-3">
               Community
             </p>
@@ -28,7 +28,7 @@ export function AmbassadorWall() {
           </div>
 
           {/* Ambassador types */}
-          <div className="flex flex-wrap justify-center gap-3 mb-10">
+          <div className="flex flex-wrap justify-center gap-3 mb-8">
             {ambassadorTypes.map((type) => (
               <div 
                 key={type.label}
@@ -41,7 +41,7 @@ export function AmbassadorWall() {
           </div>
 
           {/* CTA Card */}
-          <div className="text-center bg-background rounded-2xl border border-border/40 p-8 md:p-10 shadow-sm">
+          <div className="text-center bg-background rounded-2xl border border-border/40 p-6 md:p-8 shadow-sm">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-primary/10 mb-5">
               <Users className="w-7 h-7 text-primary" />
             </div>

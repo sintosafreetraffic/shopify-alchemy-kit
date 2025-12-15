@@ -78,9 +78,9 @@ export default function Home() {
       </section>
 
       {/* Hero Section */}
-      <section className="relative py-16 md:py-24 bg-gradient-to-b from-background via-primary/5 to-background">
+      <section className="relative py-12 md:py-16 bg-gradient-to-b from-background via-primary/5 to-background">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center space-y-8">
+          <div className="max-w-4xl mx-auto text-center space-y-6">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold leading-tight tracking-tight">
               Transform Your Sleep,
               <br />
@@ -113,10 +113,10 @@ export default function Home() {
       </section>
 
       {/* Mission Section */}
-      <section className="py-16 md:py-24 bg-muted/30">
+      <section className="py-12 md:py-16 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-12">
+            <div className="text-center mb-8">
               <h2 className="text-3xl md:text-5xl font-bold mb-4">Our Mission</h2>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
                 Poor sleep doesn't just leave you tired—it affects your health, productivity, mood, and overall quality
@@ -126,8 +126,8 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8">
-              <div className="bg-background p-8 rounded-lg border text-center">
+            <div className="grid md:grid-cols-3 gap-6">
+              <div className="bg-background p-6 rounded-lg border text-center">
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
                   <Heart className="w-8 h-8 text-primary" />
                 </div>
@@ -138,7 +138,7 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className="bg-background p-8 rounded-lg border text-center">
+              <div className="bg-background p-6 rounded-lg border text-center">
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
                   <Sparkles className="w-8 h-8 text-primary" />
                 </div>
@@ -149,7 +149,7 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className="bg-background p-8 rounded-lg border text-center">
+              <div className="bg-background p-6 rounded-lg border text-center">
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
                   <Shield className="w-8 h-8 text-primary" />
                 </div>
@@ -176,16 +176,16 @@ export default function Home() {
       <SleepCoachTeaser />
 
       {/* Why Choose Us */}
-      <section className="py-16 md:py-24 bg-primary/5">
+      <section className="py-12 md:py-16 bg-primary/5">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-5xl font-bold mb-4">Why Rise By Night?</h2>
+            <div className="text-center mb-8">
+              <h2 className="text-3xl md:text-4xl font-bold mb-3">Why Rise By Night?</h2>
               <p className="text-xl text-muted-foreground">Join thousands who've transformed their sleep experience</p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="bg-background p-8 rounded-lg border">
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="bg-background p-6 rounded-lg border">
                 <Users className="w-12 h-12 text-primary mb-4" />
                 <h3 className="text-2xl font-bold mb-3">15,000+ Happy Sleepers</h3>
                 <p className="text-muted-foreground text-lg">
@@ -194,7 +194,7 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className="bg-background p-8 rounded-lg border">
+              <div className="bg-background p-6 rounded-lg border">
                 <Award className="w-12 h-12 text-primary mb-4" />
                 <h3 className="text-2xl font-bold mb-3">#1 Rated Products</h3>
                 <p className="text-muted-foreground text-lg">
@@ -203,7 +203,7 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className="bg-background p-8 rounded-lg border">
+              <div className="bg-background p-6 rounded-lg border">
                 <img src={moonIcon} alt="" className="w-12 h-12 object-contain mb-4" />
                 <h3 className="text-2xl font-bold mb-3">100-Night Trial</h3>
                 <p className="text-muted-foreground text-lg">
@@ -212,7 +212,7 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className="bg-background p-8 rounded-lg border">
+              <div className="bg-background p-6 rounded-lg border">
                 <Shield className="w-12 h-12 text-primary mb-4" />
                 <h3 className="text-2xl font-bold mb-3">Guaranteed sleep improvement</h3>
                 <p className="text-muted-foreground text-lg">
@@ -225,15 +225,15 @@ export default function Home() {
       </section>
 
       {/* Customer Experience Statistics */}
-      <section className="py-16 md:py-24 bg-background">
+      <section className="py-12 md:py-16 bg-background">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-5xl font-bold mb-4">What Our Customers Have Experienced</h2>
-              <p className="text-lg text-muted-foreground">Based on our survey of 1,750 people, both men and women.</p>
+            <div className="text-center mb-8">
+              <h2 className="text-3xl md:text-4xl font-bold mb-3">What Our Customers Have Experienced</h2>
+              <p className="text-base text-muted-foreground">Based on our survey of 1,750 people, both men and women.</p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-3">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-xl font-bold">Reduced Snoring & Disruptions</h3>
@@ -292,14 +292,14 @@ export default function Home() {
       <AmbassadorWall />
 
       {/* Quiz CTA Section */}
-      <section className="py-20 md:py-28 bg-gradient-to-br from-primary via-primary to-primary/90 text-primary-foreground">
+      <section className="py-14 md:py-20 bg-gradient-to-br from-primary via-primary to-primary/90 text-primary-foreground">
         <div className="container mx-auto px-4 text-center">
           <div className="max-w-3xl mx-auto">
-            <p className="text-sm uppercase tracking-widest opacity-70 mb-4">Personalized For You</p>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-semibold mb-5 tracking-tight">
+            <p className="text-sm uppercase tracking-widest opacity-70 mb-3">Personalized For You</p>
+            <h2 className="text-2xl md:text-3xl lg:text-4xl font-semibold mb-4 tracking-tight">
               Not Sure Where to Start?
             </h2>
-            <p className="text-lg md:text-xl mb-8 opacity-90 leading-relaxed max-w-xl mx-auto">
+            <p className="text-base md:text-lg mb-6 opacity-90 leading-relaxed max-w-xl mx-auto">
               Take our 5-minute Sleep Assessment to discover your sleeper type, get matched with the right products, and
               unlock your personalized AI Sleep Coach.
             </p>
@@ -310,8 +310,8 @@ export default function Home() {
               </Button>
             </Link>
 
-            <div className="mt-10 pt-8 border-t border-primary-foreground/20">
-              <p className="text-sm md:text-base font-medium opacity-80 tracking-wide">
+            <div className="mt-8 pt-6 border-t border-primary-foreground/20">
+              <p className="text-sm font-medium opacity-80 tracking-wide">
                 Free Shipping on $50+ • 100-Night Trial • 2-Year Warranty
               </p>
             </div>
