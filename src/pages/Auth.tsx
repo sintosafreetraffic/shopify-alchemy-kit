@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { Moon, ShoppingBag, Users, AlertCircle } from "lucide-react";
-import logo from "@/assets/moon-logo-yellow-transparent.png";
+import moonIcon from "@/assets/moon-icon-blue.png";
 import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator";
 import { setEnhancedMatch } from "@/lib/pinterest";
 
@@ -108,7 +108,7 @@ const Auth = () => {
         <CardHeader className="text-center">
           {isSleepCoachContext && (
             <div className="flex justify-center mb-4">
-              <img src={logo} alt="Rise By Night" className="h-16 w-16" />
+              <img src={moonIcon} alt="Rise By Night" className="h-16 w-16" />
             </div>
           )}
           <CardTitle className="text-2xl">
