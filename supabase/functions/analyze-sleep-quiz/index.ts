@@ -416,7 +416,7 @@ Deno.serve(async (req) => {
           quiz_completed_at: new Date().toISOString(),
           has_sleep_coach_access: false, // Will be updated after profile creation check
           results_url: resultsUrl,
-          sleep_quiz_version: "v8",
+          sleep_quiz_version: "v9",
           
           // Legacy fields for backwards compatibility
           assessment: analysis.assessment,
