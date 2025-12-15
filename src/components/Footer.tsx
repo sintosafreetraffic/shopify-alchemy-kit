@@ -14,7 +14,7 @@ export const Footer = () => {
             <div className="text-center md:text-left">
               <p className="font-semibold text-foreground mb-1">Discover Your Sleeper Type</p>
               <p className="text-sm text-muted-foreground">
-                Take our 3-minute quiz and get personalized sleep recommendations.
+                Take our 5-minute quiz and get personalized sleep recommendations.
               </p>
             </div>
             <Link to="/sleep-quiz">
@@ -43,7 +43,10 @@ export const Footer = () => {
               <h3 className="font-semibold mb-4">Quick Links</h3>
               <ul className="space-y-2 text-sm">
                 <li>
-                  <Link to="/sleep-quiz" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+                  <Link
+                    to="/sleep-quiz"
+                    className="text-muted-foreground hover:text-foreground transition-colors font-medium"
+                  >
                     Sleep Quiz
                   </Link>
                 </li>
@@ -109,15 +112,16 @@ export const Footer = () => {
             <ul className="space-y-3 text-sm">
               <li className="flex items-start gap-2">
                 <Mail className="w-4 h-4 text-foreground shrink-0 mt-0.5" />
-                <a href="mailto:support@risebynight.com" className="text-muted-foreground hover:text-foreground transition-colors">
+                <a
+                  href="mailto:support@risebynight.com"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
                   support@risebynight.com
                 </a>
               </li>
               <li className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-foreground shrink-0 mt-0.5" />
-                <span className="text-muted-foreground">
-                  Loofdakstraat 10, 3036JN, ROTTERDAM
-                </span>
+                <span className="text-muted-foreground">Loofdakstraat 10, 3036JN, ROTTERDAM</span>
               </li>
             </ul>
           </div>
