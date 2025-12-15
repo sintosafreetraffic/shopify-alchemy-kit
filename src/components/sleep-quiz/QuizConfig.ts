@@ -123,7 +123,8 @@ export const QUIZ_QUESTIONS = [
       { value: "weighted_blanket", label: "Weighted blanket" },
       { value: "oura", label: "Oura Ring" },
       { value: "whoop", label: "WHOOP band" },
-      { value: "fitness_tracker", label: "Fitness tracker / smartwatch" },
+      { value: "fitness_tracker", label: "Fitness tracker" },
+      { value: "smart_watch", label: "Smart watch" },
       { value: "none", label: "None of these" },
     ],
   },
@@ -367,6 +368,7 @@ export const QUIZ_QUESTIONS = [
       { value: "more_energy", label: "Have more daytime energy" },
       { value: "faster_recovery", label: "Faster physical recovery" },
       { value: "better_recovery", label: "Better muscle recovery" },
+      { value: "muscle_repair", label: "Optimize muscle repair" },
     ],
   },
 ];
