@@ -2,7 +2,7 @@
 import { Suspense, lazy } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { ArrowRight, Heart, Sparkles, Shield, Users, Award } from "lucide-react";
+import { ArrowRight, Users, Award, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 import moonIcon from "@/assets/moon-icon-blue.png";
 import HomeHero from "@/components/HomeHero";
@@ -15,6 +15,7 @@ import {
   AmbassadorWall,
   UGCTestimonialGrid,
   ScienceSection,
+  MissionSection,
 } from "@/components/home";
 
 // Lazy load below-fold components
@@ -38,57 +39,8 @@ export default function Home() {
       {/* Science Section - Target for "Why this works" link */}
       <ScienceSection />
 
-      {/* Mission Section */}
-      <section className="py-10 md:py-12 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl md:text-5xl font-bold mb-4">Our Mission</h2>
-              <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                Poor sleep doesn't just leave you tired—it affects your health, productivity, mood, and overall quality
-                of life. Millions struggle with chronic pain, restless nights, and wake up exhausted every morning. We
-                believe this has to change. That's why we're urgently committed to creating innovative, science-backed
-                sleep solutions that help everyone achieve the restorative sleep they desperately need.
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-6">
-              <div className="bg-background p-6 rounded-lg border text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-                  <Heart className="w-8 h-8 text-primary" />
-                </div>
-                <h3 className="text-xl font-bold mb-3">Sleep Wellness</h3>
-                <p className="text-muted-foreground">
-                  We're passionate about improving sleep health through ergonomic design and premium materials that
-                  support your body naturally.
-                </p>
-              </div>
-
-              <div className="bg-background p-6 rounded-lg border text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-                  <Sparkles className="w-8 h-8 text-primary" />
-                </div>
-                <h3 className="text-xl font-bold mb-3">Innovation</h3>
-                <p className="text-muted-foreground">
-                  Combining cutting-edge sleep science with thoughtful design to create products that truly make a
-                  difference in your rest.
-                </p>
-              </div>
-
-              <div className="bg-background p-6 rounded-lg border text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-                  <Shield className="w-8 h-8 text-primary" />
-                </div>
-                <h3 className="text-xl font-bold mb-3">Quality Promise</h3>
-                <p className="text-muted-foreground">
-                  Every product is crafted with care, tested rigorously, and backed by our commitment to your
-                  satisfaction and long-lasting quality.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Mission Section - Brand story and values */}
+      <MissionSection />
 
       {/* Product Gallery - Lazy Loaded */}
       <Suspense fallback={<SectionFallback />}>

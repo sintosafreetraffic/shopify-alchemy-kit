@@ -1,4 +1,5 @@
 import { Activity, Compass, Target } from "lucide-react";
+import { useInView } from "@/hooks/useInView";
 
 const PILLARS = [
   {
@@ -22,8 +23,11 @@ const PILLARS = [
 ];
 
 export function ScienceSection() {
+  const { ref, isInView } = useInView<HTMLElement>({ threshold: 0.15 });
+
   return (
     <section
+      ref={ref}
       id="science"
       className="py-16 md:py-20 bg-muted/40 scroll-mt-20"
       data-section="science-methodology"
@@ -31,7 +35,13 @@ export function ScienceSection() {
       <div className="container mx-auto px-4">
         <div className="max-w-5xl mx-auto">
           {/* Eyebrow + Headline */}
-          <div className="text-center mb-10 md:mb-12">
+          <div 
+            className={`text-center mb-10 md:mb-12 transition-all duration-500 ease-out motion-reduce:transition-none ${
+              isInView 
+                ? "opacity-100 translate-y-0" 
+                : "opacity-0 translate-y-4 motion-reduce:opacity-100 motion-reduce:translate-y-0"
+            }`}
+          >
             <p className="text-sm uppercase tracking-widest text-muted-foreground mb-3">
               Why this works
             </p>
@@ -48,10 +58,17 @@ export function ScienceSection() {
 
           {/* Three Pillars Grid */}
           <div className="grid md:grid-cols-3 gap-6 mb-10">
-            {PILLARS.map((pillar) => (
+            {PILLARS.map((pillar, index) => (
               <div
                 key={pillar.title}
-                className="bg-background p-6 md:p-8 rounded-xl border border-border"
+                className={`bg-background p-6 md:p-8 rounded-xl border border-border transition-all duration-500 ease-out motion-reduce:transition-none ${
+                  isInView 
+                    ? "opacity-100 translate-y-0" 
+                    : "opacity-0 translate-y-4 motion-reduce:opacity-100 motion-reduce:translate-y-0"
+                }`}
+                style={{ 
+                  transitionDelay: isInView ? `${150 + index * 75}ms` : "0ms" 
+                }}
               >
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 mb-5">
                   <pillar.icon className="w-6 h-6 text-primary" />
@@ -65,7 +82,14 @@ export function ScienceSection() {
           </div>
 
           {/* Bottom Reassurance */}
-          <p className="text-center text-muted-foreground text-base md:text-lg max-w-2xl mx-auto">
+          <p 
+            className={`text-center text-muted-foreground text-base md:text-lg max-w-2xl mx-auto transition-all duration-500 ease-out motion-reduce:transition-none ${
+              isInView 
+                ? "opacity-100 translate-y-0" 
+                : "opacity-0 translate-y-4 motion-reduce:opacity-100 motion-reduce:translate-y-0"
+            }`}
+            style={{ transitionDelay: isInView ? "400ms" : "0ms" }}
+          >
             Most people don't need to overhaul everything — they just need to know which 
             1–2 changes matter most for their body.
           </p>
