@@ -95,7 +95,7 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
               <Link to="/sleep-quiz">
                 <Button size="lg" className="text-base md:text-lg px-8 py-6 rounded-full">
-                  Take the Sleep Quiz <ArrowRight className="ml-2 w-5 h-5" />
+                  Take the Sleep Assessment <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
               <Link to="/product/ergonomic-pillow">
@@ -300,13 +300,13 @@ export default function Home() {
               Not Sure Where to Start?
             </h2>
             <p className="text-lg md:text-xl mb-8 opacity-90 leading-relaxed max-w-xl mx-auto">
-              Take our 5-minute Sleep Quiz to discover your sleeper type, get matched with the right products, and
+              Take our 5-minute Sleep Assessment to discover your sleeper type, get matched with the right products, and
               unlock your personalized AI Sleep Coach.
             </p>
 
             <Link to="/sleep-quiz">
               <Button size="lg" variant="secondary" className="text-lg px-10 py-6 rounded-full font-medium">
-                Start the Sleep Quiz <ArrowRight className="ml-2 w-5 h-5" />
+                Start the Sleep Assessment <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </Link>
 

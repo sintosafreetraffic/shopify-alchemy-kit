@@ -31,13 +31,13 @@ const QuizCTA = ({ variant = "default" }: { variant?: "default" | "subtle" }) =>
   >
     <div className="container mx-auto px-4 text-center">
       <p className="text-sm text-muted-foreground mb-2">Not sure if this pillow is right for you?</p>
-      <h3 className="text-xl md:text-2xl font-semibold mb-4">Take the 5-Minute Sleep Quiz</h3>
+      <h3 className="text-xl md:text-2xl font-semibold mb-4">Take the 5-Minute Sleep Assessment</h3>
       <p className="text-muted-foreground mb-6 max-w-md mx-auto text-sm">
         Discover your sleeper type and get personalized product recommendations.
       </p>
       <Link to="/sleep-quiz">
         <Button size="lg" className="rounded-full px-8">
-          Start the Quiz <ArrowRight className="w-4 h-4 ml-2" />
+          Start the Assessment <ArrowRight className="w-4 h-4 ml-2" />
         </Button>
       </Link>
     </div>
