@@ -8,7 +8,8 @@ const personas = [
     icon: Heart,
     title: "The Alignment Sleeper",
     tagline: "Pressure relief. Spinal support. Morning ease.",
-    description: "Physical tension and alignment challenges shape your rest. You need support that relieves pressure points and helps you wake without stiffness.",
+    description:
+      "Physical tension and alignment challenges shape your rest. You need support that relieves pressure points and helps you wake without stiffness.",
     soundsLikeYou: [
       "You wake with neck, shoulder, or back stiffness",
       "You've tried multiple pillows without lasting relief",
@@ -21,7 +22,8 @@ const personas = [
     icon: Wind,
     title: "The Calm Seeker",
     tagline: "Quiet mind. Restful environment. Deeper sleep.",
-    description: "Your nervous system stays alert at night. Light, noise, and temperature easily disrupt your rest. You need a sanctuary that supports true calm.",
+    description:
+      "Your nervous system stays alert at night. Light, noise, and temperature easily disrupt your rest. You need a sanctuary that supports true calm.",
     soundsLikeYou: [
       "Your mind races when you lie down",
       "Small disturbances keep you alert",
@@ -34,7 +36,8 @@ const personas = [
     icon: Zap,
     title: "The Sleep Optimizer",
     tagline: "Track. Refine. Perform.",
-    description: "You already prioritize rest, but you want measurable improvements. Consistency, recovery metrics, and refinement drive your approach.",
+    description:
+      "You already prioritize rest, but you want measurable improvements. Consistency, recovery metrics, and refinement drive your approach.",
     soundsLikeYou: [
       "You track your sleep or want to start",
       "You're looking for an edge in recovery",
@@ -47,7 +50,8 @@ const personas = [
     icon: Moon,
     title: "The Recovery Sleeper",
     tagline: "Train hard. Rest harder.",
-    description: "Your body works hard during the day. Sleep needs to support physical restoration, muscle recovery, and next-day readiness.",
+    description:
+      "Your body works hard during the day. Sleep needs to support physical restoration, muscle recovery, and next-day readiness.",
     soundsLikeYou: [
       "You train, move, or stay active regularly",
       "You wake sore despite sleeping enough",
@@ -87,7 +91,7 @@ export function SleeperPersonaDiscovery() {
                 >
                   {/* Subtle accent line */}
                   <div className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                  
+
                   <div className="flex items-start gap-4">
                     <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:scale-105 transition-transform">
                       <Icon className="w-6 h-6 text-primary" />
@@ -96,7 +100,7 @@ export function SleeperPersonaDiscovery() {
                       <h3 className="text-lg md:text-xl font-semibold mb-1">{persona.title}</h3>
                       <p className="text-sm text-primary/70 font-medium mb-3">{persona.tagline}</p>
                       <p className="text-sm text-muted-foreground leading-relaxed mb-5">{persona.description}</p>
-                      
+
                       <div className="mb-5">
                         <p className="text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold mb-2.5">
                           This sounds like you if…
@@ -113,13 +117,15 @@ export function SleeperPersonaDiscovery() {
 
                       {/* Focus badge */}
                       <div className="inline-block px-3 py-1.5 bg-muted/50 rounded-full mb-4">
-                        <p className="text-xs font-medium text-muted-foreground">
-                          Focus: {persona.focus}
-                        </p>
+                        <p className="text-xs font-medium text-muted-foreground">Focus: {persona.focus}</p>
                       </div>
 
                       <Link to="/sleep-quiz" className="block">
-                        <Button variant="ghost" size="sm" className="text-primary p-0 h-auto group/btn hover:bg-transparent">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-primary p-0 h-auto group/btn hover:bg-transparent"
+                        >
                           Take the quiz to confirm
                           <ArrowRight className="w-4 h-4 ml-1.5 group-hover/btn:translate-x-1 transition-transform" />
                         </Button>
@@ -134,11 +140,10 @@ export function SleeperPersonaDiscovery() {
           {/* Quiz CTA */}
           <div className="text-center bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 rounded-2xl p-8 md:p-10 border border-primary/10">
             <p className="text-sm text-muted-foreground mb-2">Not sure which type you are?</p>
-            <h3 className="text-xl md:text-2xl font-semibold mb-4">
-              Take the 3-Minute Sleep Assessment
-            </h3>
+            <h3 className="text-xl md:text-2xl font-semibold mb-4">Take the 5-Minute Sleep Assessment</h3>
             <p className="text-muted-foreground mb-6 max-w-lg mx-auto text-sm md:text-base leading-relaxed">
-              Our science-backed quiz identifies your sleeper profile and matches you with the right products and a personalized AI sleep plan.
+              Our science-backed quiz identifies your sleeper profile and matches you with the right products and a
+              personalized AI sleep plan.
             </p>
             <Link to="/sleep-quiz">
               <Button size="lg" className="text-base md:text-lg px-8 py-6 rounded-full">
