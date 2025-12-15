@@ -69,13 +69,13 @@ export function SleeperPersonaDiscovery() {
           {/* Header */}
           <div className="text-center mb-10 md:mb-12">
             <p className="text-xs md:text-sm uppercase tracking-widest text-primary/70 font-medium mb-3">
-              Personalized Sleep
+              Research-Based Profiles
             </p>
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-semibold mb-5 tracking-tight">
-              Discover Your Sleeper Type
+              Four Sleep Profiles, One That Fits You
             </h2>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Understanding how you sleep is the first step toward sleeping better.
+              Our science-backed assessment identifies your sleeper profile based on posture, pain, environment, behavior, and recovery patterns.
             </p>
           </div>
 
@@ -139,11 +139,11 @@ export function SleeperPersonaDiscovery() {
 
           {/* Quiz CTA */}
           <div className="text-center bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 rounded-2xl p-6 md:p-8 border border-primary/10">
-            <p className="text-sm text-muted-foreground mb-2">Not sure which type you are?</p>
-            <h3 className="text-xl md:text-2xl font-semibold mb-4">Take the Short Science-Backed Assessment</h3>
+            <p className="text-sm text-muted-foreground mb-2">Not sure which profile fits you?</p>
+            <h3 className="text-xl md:text-2xl font-semibold mb-4">Short Science. Clear Sleep Insights.</h3>
             <p className="text-muted-foreground mb-6 max-w-lg mx-auto text-sm md:text-base leading-relaxed">
-              Our science-backed assessment identifies your sleeper profile and matches you with the right products and a
-              personalized AI sleep plan.
+              This short, science-backed assessment helps us understand your sleep patterns across five foundations: 
+              posture, pain, environment, behavior, and nighttime recovery.
             </p>
             <Link to="/sleep-quiz">
               <Button size="lg" className="text-base md:text-lg px-8 py-6 rounded-full">

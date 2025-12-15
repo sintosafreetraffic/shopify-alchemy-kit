@@ -5,18 +5,18 @@ import { Sparkles, AlignCenter, Moon, CheckCircle } from "lucide-react";
 const pillars = [
   {
     icon: AlignCenter,
-    title: "Personalized Alignment & Comfort",
-    description: "Guidance shaped around your sleep position, pain areas, and physical needs.",
+    title: "Posture & Alignment Guidance",
+    description: "Recommendations shaped by your sleep position, pain areas, and physical needs.",
   },
   {
     icon: Moon,
-    title: "Environment & Wind-Down Routines",
-    description: "Tips for light, temperature, and evening habits—especially helpful for stress-sensitive sleepers.",
+    title: "Environment & Behavior Insights",
+    description: "Guidance on light, temperature, and evening routines based on your sleep profile.",
   },
   {
     icon: CheckCircle,
-    title: "Gentle Accountability",
-    description: "Small, doable actions each day. No pressure—just progress.",
+    title: "Incremental Progress",
+    description: "Small, evidence-based actions each day. Sustainable habits, not quick fixes.",
   },
 ];
 
@@ -30,17 +30,17 @@ export function SleepCoachTeaser() {
             <div>
               <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium mb-6">
                 <Sparkles className="w-4 h-4" />
-                Included Free With Your Pillow
+                Included With Your Pillow
               </div>
               
-              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4">
-                Your Personal Sleep Coach, Built In
+              <h2 className="text-2xl md:text-3xl lg:text-4xl font-semibold mb-4 tracking-tight">
+                Personalized Sleep Guidance
               </h2>
               
               <p className="text-base text-muted-foreground mb-6 leading-relaxed">
-                Beyond the pillow—get a weekly plan tailored to your sleeper type, environment, and habits. 
-                No app downloads, no subscriptions. Just calm, personalized guidance that updates based on 
-                how you're sleeping. Designed to support your comfort, not overwhelm your routine.
+                Your assessment results unlock a weekly plan tailored to your sleeper profile, environment, 
+                and habits. Calm, personalized guidance that adapts based on your sleep patterns—designed 
+                to support your comfort without overwhelming your routine.
               </p>
 
               <div className="space-y-4 mb-8">
