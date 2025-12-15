@@ -78,7 +78,7 @@ const HomeHero = () => {
 
             {/* Subheadline */}
             <p className="text-lg sm:text-xl text-muted-foreground max-w-xl mx-auto leading-relaxed font-light">
-              A short science-backed assessment that clarifies what your body needs to sleep better.
+              A short, science-backed assessment that helps us understand your sleep patterns across five foundations: posture, pain, environment, behavior, and nighttime recovery.
             </p>
 
             {/* CTA Group */}
@@ -105,7 +105,7 @@ const HomeHero = () => {
 
             {/* Supporting Micro-copy */}
             <p className="text-sm text-muted-foreground/70 font-light">
-              Takes 5 minutes. Based on sleep science research.
+              Your responses shape a personalized sleep profile and tailored product recommendations.
             </p>
           </div>
         </div>
