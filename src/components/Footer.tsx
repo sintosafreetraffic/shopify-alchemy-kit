@@ -14,7 +14,7 @@ export const Footer = () => {
             <div className="text-center md:text-left">
               <p className="font-semibold text-foreground mb-1">Discover Your Sleeper Type</p>
               <p className="text-sm text-muted-foreground">
-                Take our 5-minute assessment and get personalized sleep recommendations.
+                Take our short science-backed assessment and get personalized sleep recommendations.
               </p>
             </div>
             <Link to="/sleep-quiz">

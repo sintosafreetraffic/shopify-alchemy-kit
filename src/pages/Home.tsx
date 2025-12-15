@@ -300,7 +300,7 @@ export default function Home() {
               Not Sure Where to Start?
             </h2>
             <p className="text-base md:text-lg mb-6 opacity-90 leading-relaxed max-w-xl mx-auto">
-              Take our 5-minute Sleep Assessment to discover your sleeper type, get matched with the right products, and
+              Take our short science-backed assessment to discover your sleeper type, get matched with the right products, and
               unlock your personalized AI Sleep Coach.
             </p>
 

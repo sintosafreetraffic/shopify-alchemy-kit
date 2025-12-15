@@ -31,7 +31,7 @@ const QuizCTA = ({ variant = "default" }: { variant?: "default" | "subtle" }) =>
   >
     <div className="container mx-auto px-4 text-center">
       <p className="text-sm text-muted-foreground mb-2">Not sure if this pillow is right for you?</p>
-      <h3 className="text-xl md:text-2xl font-semibold mb-4">Take the 5-Minute Sleep Assessment</h3>
+      <h3 className="text-xl md:text-2xl font-semibold mb-4">Take the Short Science-Backed Assessment</h3>
       <p className="text-muted-foreground mb-6 max-w-md mx-auto text-sm">
         Discover your sleeper type and get personalized product recommendations.
       </p>
