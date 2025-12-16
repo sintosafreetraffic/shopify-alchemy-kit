@@ -2,7 +2,8 @@
  * SleepProfileMinimal - Clean, minimal profile summary
  * 
  * Warm neutral typography with premium Scandinavian aesthetic
- * Brand blue (#3C83F6) at 85% opacity for CTA hover
+ * Labels smaller + tertiary, values larger + primary
+ * Dusty blue outline pills for pain points
  */
 
 interface SleepProfileMinimalProps {
@@ -29,20 +30,20 @@ export function SleepProfileMinimal({
   onUpdateAssessment,
 }: SleepProfileMinimalProps) {
   return (
-    <section className="space-y-5">
+    <section className="space-y-6">
       {/* Section header */}
       <div className="flex items-center justify-between px-1">
         <p 
-          className="text-xs font-medium tracking-wider uppercase"
-          style={{ color: '#A7B4C2', letterSpacing: '0.08em' }}
+          className="text-xs font-semibold tracking-widest uppercase"
+          style={{ color: '#A7B4C2', letterSpacing: '0.12em' }}
         >
           Your Sleep Profile
         </p>
         {onUpdateAssessment && (
           <button
             onClick={onUpdateAssessment}
-            className="text-xs font-medium transition-opacity hover:opacity-75"
-            style={{ color: 'rgba(60, 131, 246, 0.9)' }}
+            className="text-xs font-semibold transition-all hover:opacity-80"
+            style={{ color: 'rgba(60, 131, 246, 0.85)' }}
           >
             Update Assessment
           </button>
@@ -51,22 +52,22 @@ export function SleepProfileMinimal({
 
       {/* Profile grid */}
       <div
-        className="rounded-2xl p-7 md:p-8"
+        className="rounded-3xl p-8 md:p-10"
         style={{
           backgroundColor: '#FAFAF8',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
         }}
       >
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-7 md:gap-9 mb-7">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-10 mb-8">
           <div>
             <p 
-              className="text-xs mb-1.5"
-              style={{ color: '#A7A29C' }}
+              className="text-[11px] font-medium uppercase tracking-wider mb-2"
+              style={{ color: '#A7A29C', letterSpacing: '0.1em' }}
             >
               Position
             </p>
             <p 
-              className="text-base font-medium"
+              className="text-lg font-semibold"
               style={{ color: '#2D2B29' }}
             >
               {formatValue(position)}
@@ -75,13 +76,13 @@ export function SleepProfileMinimal({
           
           <div>
             <p 
-              className="text-xs mb-1.5"
-              style={{ color: '#A7A29C' }}
+              className="text-[11px] font-medium uppercase tracking-wider mb-2"
+              style={{ color: '#A7A29C', letterSpacing: '0.1em' }}
             >
               Temperature
             </p>
             <p 
-              className="text-base font-medium"
+              className="text-lg font-semibold"
               style={{ color: '#2D2B29' }}
             >
               {formatValue(temperature)}
@@ -90,13 +91,13 @@ export function SleepProfileMinimal({
           
           <div>
             <p 
-              className="text-xs mb-1.5"
-              style={{ color: '#A7A29C' }}
+              className="text-[11px] font-medium uppercase tracking-wider mb-2"
+              style={{ color: '#A7A29C', letterSpacing: '0.1em' }}
             >
               Stress Level
             </p>
             <p 
-              className="text-base font-medium"
+              className="text-lg font-semibold"
               style={{ color: '#2D2B29' }}
             >
               {formatValue(stress)}
@@ -105,13 +106,13 @@ export function SleepProfileMinimal({
           
           <div>
             <p 
-              className="text-xs mb-1.5"
-              style={{ color: '#A7A29C' }}
+              className="text-[11px] font-medium uppercase tracking-wider mb-2"
+              style={{ color: '#A7A29C', letterSpacing: '0.1em' }}
             >
               Wake Pattern
             </p>
             <p 
-              className="text-base font-medium"
+              className="text-lg font-semibold"
               style={{ color: '#2D2B29' }}
             >
               {formatValue(wakeCondition)}
@@ -119,26 +120,27 @@ export function SleepProfileMinimal({
           </div>
         </div>
 
-        {/* Pain points as pills */}
+        {/* Pain points as pills with dusty blue outline */}
         {painPoints.length > 0 && (
           <div 
-            className="pt-6"
-            style={{ borderTop: '1px solid rgba(230, 228, 222, 0.6)' }}
+            className="pt-7"
+            style={{ borderTop: '1px solid rgba(230, 230, 228, 0.7)' }}
           >
             <p 
-              className="text-xs mb-3.5"
-              style={{ color: '#A7A29C' }}
+              className="text-[11px] font-medium uppercase tracking-wider mb-4"
+              style={{ color: '#A7A29C', letterSpacing: '0.1em' }}
             >
               Areas of Focus
             </p>
-            <div className="flex flex-wrap gap-2.5">
+            <div className="flex flex-wrap gap-3">
               {painPoints.map((point, i) => (
                 <span
                   key={i}
-                  className="inline-flex px-3.5 py-2 rounded-full text-sm"
+                  className="inline-flex px-4 py-2.5 rounded-full text-sm font-medium"
                   style={{ 
-                    backgroundColor: '#F4F3F1',
+                    backgroundColor: 'transparent',
                     color: '#4A4844',
+                    border: '1.5px solid rgba(167, 180, 194, 0.3)',
                   }}
                 >
                   {formatValue(point)}
