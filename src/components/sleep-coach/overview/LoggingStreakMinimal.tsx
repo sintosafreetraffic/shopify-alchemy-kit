@@ -1,7 +1,8 @@
 /**
  * LoggingStreakMinimal - Simplified streak display
  * 
- * Encouraging but not gamified, soft neutral aesthetics
+ * Encouraging but not gamified, warm neutral aesthetics
+ * Brand blue (#3C83F6) for progress bar foreground
  */
 
 interface LoggingStreakMinimalProps {
@@ -39,34 +40,34 @@ export function LoggingStreakMinimal({ streak, totalLogs = 0 }: LoggingStreakMin
       <div className="px-1">
         <p 
           className="text-xs font-medium tracking-wide uppercase"
-          style={{ color: '#A7B4C2' }}
+          style={{ color: '#8E98A3' }}
         >
           Logging Progress
         </p>
       </div>
 
       <div
-        className="rounded-2xl p-6 md:p-7"
+        className="rounded-2xl p-7 md:p-8"
         style={{
-          backgroundColor: '#FFFFFF',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.03), 0 4px 12px rgba(0,0,0,0.02)',
+          backgroundColor: '#FAFAF8',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
         }}
       >
         <div className="flex items-center gap-5">
           {/* Streak counter */}
           <div 
             className="flex-shrink-0 w-16 h-16 rounded-xl flex flex-col items-center justify-center"
-            style={{ backgroundColor: '#F7F7F6' }}
+            style={{ backgroundColor: '#F4F3F1' }}
           >
             <span 
               className="text-2xl font-medium"
-              style={{ color: '#2D3436' }}
+              style={{ color: '#2D2B29' }}
             >
               {streak}
             </span>
             <span 
               className="text-xs"
-              style={{ color: '#A7B4C2' }}
+              style={{ color: '#A7A29C' }}
             >
               {streak === 1 ? 'day' : 'days'}
             </span>
@@ -77,44 +78,44 @@ export function LoggingStreakMinimal({ streak, totalLogs = 0 }: LoggingStreakMin
             {currentAchievement ? (
               <p 
                 className="text-base font-medium mb-1"
-                style={{ color: '#2D3436' }}
+                style={{ color: '#2D2B29' }}
               >
                 {currentAchievement.label}
               </p>
             ) : streak > 0 ? (
               <p 
                 className="text-base font-medium mb-1"
-                style={{ color: '#2D3436' }}
+                style={{ color: '#2D2B29' }}
               >
                 Getting Started
               </p>
             ) : (
               <p 
                 className="text-base font-medium mb-1"
-                style={{ color: '#2D3436' }}
+                style={{ color: '#2D2B29' }}
               >
                 Start Your Journey
               </p>
             )}
 
-            {/* Progress bar */}
+            {/* Progress bar - brand blue foreground */}
             {nextAchievement && (
               <div className="mt-2">
                 <div 
                   className="h-1.5 rounded-full overflow-hidden mb-1.5"
-                  style={{ backgroundColor: '#F0F0EE' }}
+                  style={{ backgroundColor: '#E6E4DE' }}
                 >
                   <div
                     className="h-full rounded-full transition-all duration-500"
                     style={{ 
                       width: `${Math.min(progressPercent, 100)}%`,
-                      backgroundColor: '#A7B4C2',
+                      backgroundColor: '#3C83F6',
                     }}
                   />
                 </div>
                 <p 
                   className="text-xs"
-                  style={{ color: '#636E72' }}
+                  style={{ color: '#6F6A66' }}
                 >
                   {nextAchievement.days - streak} {nextAchievement.days - streak === 1 ? 'day' : 'days'} to {nextAchievement.label.toLowerCase()}
                 </p>
@@ -136,7 +137,7 @@ export function LoggingStreakMinimal({ streak, totalLogs = 0 }: LoggingStreakMin
         {/* Achievement badges row */}
         <div 
           className="flex gap-2 mt-5 pt-5 overflow-x-auto pb-1"
-          style={{ borderTop: '1px solid #E6E6E4' }}
+          style={{ borderTop: '1px solid #E6E4DE' }}
         >
           {ACHIEVEMENTS.map((achievement) => {
             const isUnlocked = streak >= achievement.days;
@@ -145,21 +146,21 @@ export function LoggingStreakMinimal({ streak, totalLogs = 0 }: LoggingStreakMin
                 key={achievement.days}
                 className="flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg"
                 style={{
-                  backgroundColor: isUnlocked ? '#F0F4F8' : '#FAFAF9',
+                  backgroundColor: isUnlocked ? '#F4F3F1' : '#FAFAF8',
                   opacity: isUnlocked ? 1 : 0.5,
                 }}
               >
                 {/* Monoline checkmark or circle */}
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
                   {isUnlocked ? (
-                    <path d="M3 7L6 10L11 4" stroke="#7CB99D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M3 7L6 10L11 4" stroke="#7CB99D" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" opacity="0.8"/>
                   ) : (
-                    <circle cx="7" cy="7" r="5" stroke="#A7B4C2" strokeWidth="1.5" fill="none"/>
+                    <circle cx="7" cy="7" r="5" stroke="#8E98A3" strokeWidth="1.25" fill="none" opacity="0.8"/>
                   )}
                 </svg>
                 <span 
                   className="text-xs whitespace-nowrap"
-                  style={{ color: isUnlocked ? '#4A5568' : '#A7B4C2' }}
+                  style={{ color: isUnlocked ? '#4A4844' : '#A7A29C' }}
                 >
                   {achievement.label}
                 </span>

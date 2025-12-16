@@ -51,7 +51,7 @@ export function ModuleHighlight({
       <div className="px-1">
         <p 
           className="text-xs font-medium tracking-wide uppercase"
-          style={{ color: '#A7B4C2' }}
+          style={{ color: '#8E98A3' }}
         >
           Your Coach's Priority
         </p>
@@ -59,41 +59,41 @@ export function ModuleHighlight({
 
       {/* Primary featured module */}
       <div
-        className="rounded-2xl p-6 md:p-7"
+        className="rounded-2xl p-7 md:p-8"
         style={{
-          backgroundColor: '#FFFFFF',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.03), 0 4px 12px rgba(0,0,0,0.02)',
+          backgroundColor: '#FAFAF8',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
         }}
       >
         <div className="flex items-start gap-4">
           {/* Module icon */}
           <div
             className="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center"
-            style={{ backgroundColor: '#F0F4F8' }}
+            style={{ backgroundColor: '#F4F3F1' }}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke="#A7B4C2" strokeWidth="1.5" fill="none" strokeLinejoin="round"/>
+              <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke="#8E98A3" strokeWidth="1.25" fill="none" strokeLinejoin="round" opacity="0.8"/>
             </svg>
           </div>
           
           <div className="flex-1">
             <h4 
               className="text-lg font-medium mb-1"
-              style={{ color: '#2D3436' }}
+              style={{ color: '#2D2B29' }}
             >
               {primaryModule.name}
             </h4>
             <p 
               className="text-sm mb-3"
-              style={{ color: '#636E72' }}
+              style={{ color: '#6F6A66' }}
             >
               {primaryModule.description}
             </p>
             <p 
               className="text-sm leading-relaxed"
-              style={{ color: '#4A5568' }}
+              style={{ color: '#4A4844' }}
             >
-              <span style={{ color: '#A7B4C2', fontWeight: 500 }}>Why this matters: </span>
+              <span style={{ color: '#8E98A3', fontWeight: 500 }}>Why this matters: </span>
               {MODULE_WHY[primaryModuleId] || "Selected based on your assessment results."}
             </p>
           </div>
@@ -112,15 +112,14 @@ export function ModuleHighlight({
                 key={moduleId}
                 className="flex items-center gap-3 rounded-xl px-4 py-3"
                 style={{
-                  backgroundColor: '#FAFAF9',
-                  border: '1px solid #E6E6E4',
+                  backgroundColor: '#FAFAF8',
                 }}
               >
                 <div
                   className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-sm font-medium"
                   style={{ 
-                    backgroundColor: '#F0F4F8',
-                    color: '#A7B4C2',
+                    backgroundColor: '#F4F3F1',
+                    color: '#8E98A3',
                   }}
                 >
                   {moduleId}
@@ -128,13 +127,13 @@ export function ModuleHighlight({
                 <div className="flex-1 min-w-0">
                   <p 
                     className="text-sm font-medium truncate"
-                    style={{ color: '#2D3436' }}
+                    style={{ color: '#2D2B29' }}
                   >
                     {module.name}
                   </p>
                   <p 
                     className="text-xs truncate"
-                    style={{ color: '#636E72' }}
+                    style={{ color: '#6F6A66' }}
                   >
                     {module.description}
                   </p>

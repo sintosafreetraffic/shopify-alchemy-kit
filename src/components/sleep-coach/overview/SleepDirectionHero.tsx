@@ -1,7 +1,7 @@
 /**
  * SleepDirectionHero - Calm hero block for sleep direction today
  * 
- * Scandinavian minimalism: warm neutrals, soft shadows, monoline aesthetic
+ * Warm Scandinavian minimalism with brand blue accents
  */
 
 import { type PersonaCluster, PERSONA_DEFINITIONS, MODULE_DEFINITIONS, CORE_NEED_MAP } from "@/components/sleep-quiz/QuizTypes";
@@ -60,14 +60,14 @@ export function SleepDirectionHero({
   return (
     <section 
       className="relative overflow-hidden rounded-2xl"
-      style={{ backgroundColor: '#F7F7F6' }}
+      style={{ backgroundColor: '#FAFAF8' }}
     >
-      {/* Subtle monoline illustration overlay */}
+      {/* Cervical alignment / pillow silhouette illustration */}
       <div 
         className="absolute inset-0 pointer-events-none"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='200' height='200' viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M50 100 Q75 60 100 100 T150 100' fill='none' stroke='%23A7B4C2' stroke-width='0.5' opacity='0.08'/%3E%3Ccircle cx='100' cy='100' r='40' fill='none' stroke='%23A7B4C2' stroke-width='0.5' opacity='0.06'/%3E%3C/svg%3E")`,
-          backgroundSize: '300px 300px',
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='400' height='200' viewBox='0 0 400 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M50 120 C80 100 120 90 160 95 Q200 100 240 90 C280 80 320 85 360 100' fill='none' stroke='%238E98A3' stroke-width='1' opacity='0.06'/%3E%3Cpath d='M60 140 Q100 110 140 115 T220 105 T300 115 T380 130' fill='none' stroke='%238E98A3' stroke-width='0.8' opacity='0.05'/%3E%3Cellipse cx='200' cy='130' rx='80' ry='25' fill='none' stroke='%238E98A3' stroke-width='0.6' opacity='0.04'/%3E%3C/svg%3E")`,
+          backgroundSize: '400px 200px',
           backgroundPosition: 'right center',
           backgroundRepeat: 'no-repeat',
         }}
@@ -77,7 +77,7 @@ export function SleepDirectionHero({
         {/* Eyebrow */}
         <p 
           className="text-xs font-medium tracking-wide uppercase mb-4"
-          style={{ color: '#A7B4C2' }}
+          style={{ color: '#8E98A3' }}
         >
           Your Sleep Direction Today
         </p>
@@ -85,7 +85,7 @@ export function SleepDirectionHero({
         {/* Main insight */}
         <p 
           className="text-lg md:text-xl leading-relaxed mb-3 max-w-xl"
-          style={{ color: '#2D3436', fontWeight: 400 }}
+          style={{ color: '#2D2B29', fontWeight: 400 }}
         >
           {insightText}
         </p>
@@ -93,7 +93,7 @@ export function SleepDirectionHero({
         {/* Weekly focus */}
         <p 
           className="text-base leading-relaxed"
-          style={{ color: '#636E72' }}
+          style={{ color: '#6F6A66' }}
         >
           {focusText}
         </p>
