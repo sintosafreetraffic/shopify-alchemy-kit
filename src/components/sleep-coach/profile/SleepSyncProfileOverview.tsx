@@ -3,7 +3,6 @@ import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from '@/integrations/supabase/client';
-import { Activity, Calendar, BarChart3, Users } from "lucide-react";
 
 interface SleepSyncState {
   log_consistency_score: number;
@@ -56,16 +55,16 @@ export function SleepSyncProfileOverview({ email }: SleepSyncProfileOverviewProp
   };
 
   const getConsistencyLabel = () => {
-    if (!state) return { label: 'Not enough data yet', hasData: false };
+    if (!state) return { label: 'Awaiting initial data', hasData: false };
     const score = state.log_consistency_score;
-    if (score >= 70) return { label: `${score}% over last 30 days`, hasData: true };
-    if (score >= 30) return { label: `${score}% — building momentum`, hasData: true };
-    if (score > 0) return { label: `${score}% — just getting started`, hasData: true };
-    return { label: 'Not enough data yet', hasData: false };
+    if (score >= 70) return { label: `${score}% consistency`, hasData: true };
+    if (score >= 30) return { label: `${score}% — building`, hasData: true };
+    if (score > 0) return { label: `${score}% — starting`, hasData: true };
+    return { label: 'Awaiting initial data', hasData: false };
   };
 
   const getEngagementLabel = () => {
-    if (!state) return 'Awaiting data';
+    if (!state) return 'Emerging';
     const level = state.engagement_level;
     const labels: Record<string, string> = {
       high: 'Deeply engaged',
@@ -84,16 +83,52 @@ export function SleepSyncProfileOverview({ email }: SleepSyncProfileOverviewProp
     };
   };
 
+  const renderIcon = (type: string) => {
+    const style = { stroke: '#A7B4C2', strokeWidth: 1.5, fill: 'none' };
+    
+    switch (type) {
+      case 'chart':
+        return (
+          <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" style={style}>
+            <path d="M3 3v18h18" />
+            <path d="m19 9-5 5-4-4-3 3" />
+          </svg>
+        );
+      case 'calendar':
+        return (
+          <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" style={style}>
+            <rect width="18" height="18" x="3" y="4" rx="2" />
+            <path d="M16 2v4M8 2v4M3 10h18" />
+          </svg>
+        );
+      case 'users':
+        return (
+          <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" style={style}>
+            <circle cx="9" cy="7" r="4" />
+            <path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
+          </svg>
+        );
+      case 'activity':
+        return (
+          <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" style={style}>
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+          </svg>
+        );
+      default:
+        return null;
+    }
+  };
+
   const consistency = getConsistencyLabel();
   const syncStatus = getSyncStatus();
 
   if (loading) {
     return (
       <Card className="border-0 shadow-[0_1px_3px_rgba(0,0,0,0.03)]" style={{ backgroundColor: '#FAFAF8' }}>
-        <CardContent className="py-8">
-          <div className="animate-pulse space-y-3">
+        <CardContent className="py-10">
+          <div className="animate-pulse space-y-4">
             <div className="h-4 rounded w-1/3" style={{ backgroundColor: '#E6E6E4' }} />
-            <div className="h-8 rounded" style={{ backgroundColor: '#E6E6E4' }} />
+            <div className="h-16 rounded" style={{ backgroundColor: '#E6E6E4' }} />
           </div>
         </CardContent>
       </Card>
@@ -102,24 +137,24 @@ export function SleepSyncProfileOverview({ email }: SleepSyncProfileOverviewProp
 
   return (
     <Card className="border-0 shadow-[0_1px_3px_rgba(0,0,0,0.03)]" style={{ backgroundColor: '#FAFAF8' }}>
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-4 pt-7 px-7">
         <CardTitle className="text-sm font-medium" style={{ color: '#2D2B29' }}>
           Sleep Data Overview
         </CardTitle>
         <p className="text-xs" style={{ color: '#A7A29C' }}>
-          How much we know about your sleep patterns
+          A summary of your sleep tracking engagement
         </p>
       </CardHeader>
       
-      <CardContent>
+      <CardContent className="px-7 pb-7">
         <div className="grid grid-cols-2 gap-4">
-          {/* Data Coverage */}
+          {/* Log Consistency */}
           <div 
-            className="p-3 rounded-lg space-y-1"
+            className="p-4 rounded-lg space-y-2"
             style={{ backgroundColor: 'rgba(247, 247, 246, 0.8)' }}
           >
-            <div className="flex items-center gap-1.5">
-              <BarChart3 className="h-3 w-3" style={{ color: '#A7B4C2' }} strokeWidth={1.5} />
+            <div className="flex items-center gap-2">
+              {renderIcon('chart')}
               <span className="text-xs" style={{ color: '#A7A29C' }}>Log consistency</span>
             </div>
             <p className="text-sm font-medium" style={{ color: consistency.hasData ? '#2D2B29' : '#A7A29C' }}>
@@ -127,13 +162,13 @@ export function SleepSyncProfileOverview({ email }: SleepSyncProfileOverviewProp
             </p>
           </div>
 
-          {/* Plan History */}
+          {/* Plans Generated */}
           <div 
-            className="p-3 rounded-lg space-y-1"
+            className="p-4 rounded-lg space-y-2"
             style={{ backgroundColor: 'rgba(247, 247, 246, 0.8)' }}
           >
-            <div className="flex items-center gap-1.5">
-              <Calendar className="h-3 w-3" style={{ color: '#A7B4C2' }} strokeWidth={1.5} />
+            <div className="flex items-center gap-2">
+              {renderIcon('calendar')}
               <span className="text-xs" style={{ color: '#A7A29C' }}>Plans generated</span>
             </div>
             <p className="text-sm font-medium" style={{ color: '#2D2B29' }}>
@@ -146,13 +181,13 @@ export function SleepSyncProfileOverview({ email }: SleepSyncProfileOverviewProp
             )}
           </div>
 
-          {/* Engagement Profile */}
+          {/* Engagement Level */}
           <div 
-            className="p-3 rounded-lg space-y-1"
+            className="p-4 rounded-lg space-y-2"
             style={{ backgroundColor: 'rgba(247, 247, 246, 0.8)' }}
           >
-            <div className="flex items-center gap-1.5">
-              <Users className="h-3 w-3" style={{ color: '#A7B4C2' }} strokeWidth={1.5} />
+            <div className="flex items-center gap-2">
+              {renderIcon('users')}
               <span className="text-xs" style={{ color: '#A7A29C' }}>Engagement</span>
             </div>
             <p className="text-sm font-medium" style={{ color: '#2D2B29' }}>
@@ -162,11 +197,11 @@ export function SleepSyncProfileOverview({ email }: SleepSyncProfileOverviewProp
 
           {/* Sync Status */}
           <div 
-            className="p-3 rounded-lg space-y-1"
+            className="p-4 rounded-lg space-y-2"
             style={{ backgroundColor: 'rgba(247, 247, 246, 0.8)' }}
           >
-            <div className="flex items-center gap-1.5">
-              <Activity className="h-3 w-3" style={{ color: '#A7B4C2' }} strokeWidth={1.5} />
+            <div className="flex items-center gap-2">
+              {renderIcon('activity')}
               <span className="text-xs" style={{ color: '#A7A29C' }}>Sync status</span>
             </div>
             <Badge 
@@ -175,7 +210,7 @@ export function SleepSyncProfileOverview({ email }: SleepSyncProfileOverviewProp
               style={{ 
                 backgroundColor: syncStatus.active 
                   ? 'rgba(60, 131, 246, 0.1)' 
-                  : 'rgba(167, 180, 194, 0.15)',
+                  : 'rgba(167, 180, 194, 0.12)',
                 color: syncStatus.active 
                   ? 'rgba(60, 131, 246, 0.85)' 
                   : '#6F6A66',
@@ -186,10 +221,10 @@ export function SleepSyncProfileOverview({ email }: SleepSyncProfileOverviewProp
           </div>
         </div>
 
-        {/* Footer note */}
+        {/* Footer note for new users */}
         {!state && (
-          <p className="text-xs mt-4 text-center" style={{ color: '#A7A29C' }}>
-            We'll learn more as you continue logging your sleep.
+          <p className="text-xs mt-5 text-center leading-relaxed" style={{ color: '#A7A29C' }}>
+            We'll learn more about your sleep patterns as you continue logging.
           </p>
         )}
       </CardContent>
