@@ -1,8 +1,8 @@
 /**
  * ScoreInsights - Interpretive score display with warm neutrals
  * 
- * Shows "Your Biggest Opportunity" with insight-led framing
- * Brand blue (#3C83F6) for progress bar foreground
+ * Premium scientific framing with subtle diagram illustration
+ * Brand blue (#3C83F6) at 85% opacity for progress accents
  */
 
 import { useMemo } from "react";
@@ -81,40 +81,51 @@ export function ScoreInsights({ scores }: ScoreInsightsProps) {
   const primary = opportunities[0];
   const secondary = opportunities.slice(1, 3);
 
-  // Get color based on score - muted natural colors
+  // Get color based on score - muted natural Scandinavian colors
   const getScoreColor = (score: number) => {
-    if (score >= 70) return '#7CB99D'; // soft green
-    if (score >= 45) return '#E8B86D'; // soft amber
-    return '#D4A5A5';                  // soft rose
+    if (score >= 70) return '#7CB99D'; // soft sage green
+    if (score >= 45) return '#E8B86D'; // soft warm amber
+    return '#D4A5A5';                  // soft dusty rose
   };
 
   return (
-    <section className="space-y-4">
-      {/* Section header with subtle diagram illustration */}
+    <section className="space-y-5">
+      {/* Section header with subtle abstract diagram */}
       <div className="flex items-center justify-between px-1">
         <p 
-          className="text-xs font-medium tracking-wide uppercase"
-          style={{ color: '#8E98A3' }}
+          className="text-xs font-medium tracking-wider uppercase"
+          style={{ color: '#A7B4C2', letterSpacing: '0.08em' }}
         >
           Sleep Insights
         </p>
-        {/* Abstract curve element */}
-        <svg width="48" height="16" viewBox="0 0 48 16" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ opacity: 0.4 }}>
-          <path d="M2 14C8 6 16 4 24 8C32 12 40 10 46 2" stroke="#8E98A3" strokeWidth="1" strokeLinecap="round" fill="none"/>
+        {/* Abstract performance curve - 6% opacity */}
+        <svg width="52" height="18" viewBox="0 0 52 18" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ opacity: 0.5 }}>
+          <path d="M2 15C9 7 18 5 26 9C34 13 43 11 50 3" stroke="#8E98A3" strokeWidth="1.25" strokeLinecap="round" fill="none" opacity="0.7"/>
         </svg>
       </div>
 
       {/* Primary opportunity */}
       <div
-        className="rounded-2xl p-7 md:p-8"
+        className="relative rounded-2xl p-7 md:p-8 overflow-hidden"
         style={{
           backgroundColor: '#FAFAF8',
           boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
         }}
       >
-        <div className="mb-5">
+        {/* Subtle airflow contour illustration - 5% opacity */}
+        <div 
+          className="absolute top-0 right-0 w-48 h-32 pointer-events-none"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='180' height='120' viewBox='0 0 180 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 80 Q50 40 90 60 T170 40' fill='none' stroke='%238E98A3' stroke-width='0.75' opacity='0.06'/%3E%3Cpath d='M20 95 Q60 55 100 75 T180 55' fill='none' stroke='%238E98A3' stroke-width='0.5' opacity='0.05'/%3E%3C/svg%3E")`,
+            backgroundSize: 'contain',
+            backgroundPosition: 'top right',
+            backgroundRepeat: 'no-repeat',
+          }}
+        />
+        
+        <div className="relative mb-6">
           <p 
-            className="text-sm font-medium mb-1"
+            className="text-sm font-medium mb-1.5"
             style={{ color: '#6F6A66' }}
           >
             Your Biggest Opportunity
@@ -127,8 +138,8 @@ export function ScoreInsights({ scores }: ScoreInsightsProps) {
           </h4>
         </div>
 
-        {/* Progress bar - brand blue for foreground */}
-        <div className="mb-4">
+        {/* Progress bar - brand blue at 85% opacity */}
+        <div className="relative mb-5">
           <div 
             className="h-2.5 rounded-full overflow-hidden"
             style={{ backgroundColor: '#E6E4DE' }}
@@ -137,11 +148,11 @@ export function ScoreInsights({ scores }: ScoreInsightsProps) {
               className="h-full rounded-full transition-all duration-700 ease-out"
               style={{ 
                 width: `${primary.score}%`,
-                backgroundColor: '#3C83F6',
+                backgroundColor: 'rgba(60, 131, 246, 0.85)',
               }}
             />
           </div>
-          <div className="flex justify-between mt-1.5">
+          <div className="flex justify-between mt-2">
             <span 
               className="text-xs"
               style={{ color: '#A7A29C' }}
@@ -160,7 +171,7 @@ export function ScoreInsights({ scores }: ScoreInsightsProps) {
         {/* Insight */}
         <p 
           className="text-sm leading-relaxed"
-          style={{ color: '#4A4844' }}
+          style={{ color: '#4A4844', lineHeight: 1.55 }}
         >
           {primary.insight}
         </p>
@@ -168,22 +179,22 @@ export function ScoreInsights({ scores }: ScoreInsightsProps) {
 
       {/* Secondary indicators */}
       {secondary.length > 0 && (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3.5">
           {secondary.map((area) => (
             <div
               key={area.key}
-              className="rounded-xl px-4 py-4"
+              className="rounded-xl px-5 py-4"
               style={{
                 backgroundColor: '#FAFAF8',
               }}
             >
               <p 
-                className="text-sm font-medium mb-2"
+                className="text-sm font-medium mb-2.5"
                 style={{ color: '#2D2B29' }}
               >
                 {area.label}
               </p>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
                 <div 
                   className="flex-1 h-1.5 rounded-full overflow-hidden"
                   style={{ backgroundColor: '#E6E4DE' }}

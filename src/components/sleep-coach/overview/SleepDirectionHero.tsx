@@ -1,7 +1,8 @@
 /**
  * SleepDirectionHero - Calm hero block for sleep direction today
  * 
- * Warm Scandinavian minimalism with brand blue accents
+ * Premium Scandinavian wellness with warm scientific framing
+ * Subtle cervical alignment illustration at 5-7% opacity
  */
 
 import { type PersonaCluster, PERSONA_DEFINITIONS, MODULE_DEFINITIONS, CORE_NEED_MAP } from "@/components/sleep-quiz/QuizTypes";
@@ -62,38 +63,38 @@ export function SleepDirectionHero({
       className="relative overflow-hidden rounded-2xl"
       style={{ backgroundColor: '#FAFAF8' }}
     >
-      {/* Cervical alignment / pillow silhouette illustration */}
+      {/* Cervical alignment / spine curve illustration - 6% opacity */}
       <div 
         className="absolute inset-0 pointer-events-none"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='400' height='200' viewBox='0 0 400 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M50 120 C80 100 120 90 160 95 Q200 100 240 90 C280 80 320 85 360 100' fill='none' stroke='%238E98A3' stroke-width='1' opacity='0.06'/%3E%3Cpath d='M60 140 Q100 110 140 115 T220 105 T300 115 T380 130' fill='none' stroke='%238E98A3' stroke-width='0.8' opacity='0.05'/%3E%3Cellipse cx='200' cy='130' rx='80' ry='25' fill='none' stroke='%238E98A3' stroke-width='0.6' opacity='0.04'/%3E%3C/svg%3E")`,
-          backgroundSize: '400px 200px',
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='420' height='220' viewBox='0 0 420 220' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M50 130 C85 105 130 92 180 98 Q230 104 280 92 C330 80 375 88 400 108' fill='none' stroke='%238E98A3' stroke-width='1.25' opacity='0.06'/%3E%3Cpath d='M60 155 Q110 120 165 128 T260 115 T355 130 T410 150' fill='none' stroke='%238E98A3' stroke-width='1' opacity='0.05'/%3E%3Cellipse cx='220' cy='145' rx='90' ry='28' fill='none' stroke='%238E98A3' stroke-width='0.75' opacity='0.04'/%3E%3Cpath d='M140 170 Q180 155 220 160 T300 155 T360 165' fill='none' stroke='%238E98A3' stroke-width='0.5' opacity='0.03'/%3E%3C/svg%3E")`,
+          backgroundSize: '420px 220px',
           backgroundPosition: 'right center',
           backgroundRepeat: 'no-repeat',
         }}
       />
       
-      <div className="relative px-7 py-8 md:px-10 md:py-10">
-        {/* Eyebrow */}
+      <div className="relative px-7 py-9 md:px-10 md:py-11">
+        {/* Eyebrow label */}
         <p 
-          className="text-xs font-medium tracking-wide uppercase mb-4"
-          style={{ color: '#8E98A3' }}
+          className="text-xs font-medium tracking-wider uppercase mb-5"
+          style={{ color: '#A7B4C2', letterSpacing: '0.08em' }}
         >
           Your Sleep Direction Today
         </p>
         
-        {/* Main insight */}
+        {/* Main insight - warm charcoal */}
         <p 
-          className="text-lg md:text-xl leading-relaxed mb-3 max-w-xl"
-          style={{ color: '#2D2B29', fontWeight: 400 }}
+          className="text-lg md:text-xl leading-relaxed mb-4 max-w-xl"
+          style={{ color: '#2D2B29', fontWeight: 400, lineHeight: 1.6 }}
         >
           {insightText}
         </p>
         
-        {/* Weekly focus */}
+        {/* Weekly focus - warm taupe */}
         <p 
           className="text-base leading-relaxed"
-          style={{ color: '#6F6A66' }}
+          style={{ color: '#6F6A66', lineHeight: 1.55 }}
         >
           {focusText}
         </p>

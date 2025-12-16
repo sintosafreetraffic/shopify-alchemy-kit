@@ -1,7 +1,7 @@
 /**
  * ModuleHighlight - Featured module card with secondary modules
  * 
- * Highlights the coach's priority module with Scandinavian minimalism
+ * Premium Scandinavian minimalism with scientific framing
  */
 
 import { MODULE_DEFINITIONS } from "@/components/sleep-quiz/QuizTypes";
@@ -23,16 +23,6 @@ const MODULE_WHY: Record<number, string> = {
   12: "Builds consistent habits that compound over time",
 };
 
-// Monoline module icons
-const ModuleIcon = ({ moduleId }: { moduleId: number }) => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="3" y="3" width="18" height="18" rx="4" stroke="#A7B4C2" strokeWidth="1.5" fill="none"/>
-    <text x="12" y="16" textAnchor="middle" fontSize="10" fill="#A7B4C2" fontWeight="500">
-      {moduleId}
-    </text>
-  </svg>
-);
-
 export function ModuleHighlight({
   recommendedModules = [],
   personaLabel,
@@ -46,12 +36,12 @@ export function ModuleHighlight({
   if (!primaryModule) return null;
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-5">
       {/* Section header */}
       <div className="px-1">
         <p 
-          className="text-xs font-medium tracking-wide uppercase"
-          style={{ color: '#8E98A3' }}
+          className="text-xs font-medium tracking-wider uppercase"
+          style={{ color: '#A7B4C2', letterSpacing: '0.08em' }}
         >
           Your Coach's Priority
         </p>
@@ -66,34 +56,34 @@ export function ModuleHighlight({
         }}
       >
         <div className="flex items-start gap-4">
-          {/* Module icon */}
+          {/* Module icon - monoline star */}
           <div
             className="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center"
             style={{ backgroundColor: '#F4F3F1' }}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke="#8E98A3" strokeWidth="1.25" fill="none" strokeLinejoin="round" opacity="0.8"/>
+              <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke="#8E98A3" strokeWidth="1.25" fill="none" strokeLinejoin="round" opacity="0.75"/>
             </svg>
           </div>
           
           <div className="flex-1">
             <h4 
-              className="text-lg font-medium mb-1"
+              className="text-lg font-medium mb-1.5"
               style={{ color: '#2D2B29' }}
             >
               {primaryModule.name}
             </h4>
             <p 
-              className="text-sm mb-3"
-              style={{ color: '#6F6A66' }}
+              className="text-sm mb-3.5"
+              style={{ color: '#6F6A66', lineHeight: 1.5 }}
             >
               {primaryModule.description}
             </p>
             <p 
               className="text-sm leading-relaxed"
-              style={{ color: '#4A4844' }}
+              style={{ color: '#4A4844', lineHeight: 1.55 }}
             >
-              <span style={{ color: '#8E98A3', fontWeight: 500 }}>Why this matters: </span>
+              <span style={{ color: '#A7B4C2', fontWeight: 500 }}>Why this matters: </span>
               {MODULE_WHY[primaryModuleId] || "Selected based on your assessment results."}
             </p>
           </div>
@@ -102,7 +92,7 @@ export function ModuleHighlight({
 
       {/* Secondary modules */}
       {secondaryModules.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
           {secondaryModules.map((moduleId) => {
             const module = MODULE_DEFINITIONS[moduleId];
             if (!module) return null;
@@ -110,7 +100,7 @@ export function ModuleHighlight({
             return (
               <div
                 key={moduleId}
-                className="flex items-center gap-3 rounded-xl px-4 py-3"
+                className="flex items-center gap-3.5 rounded-xl px-4 py-3.5"
                 style={{
                   backgroundColor: '#FAFAF8',
                 }}

@@ -1,7 +1,8 @@
 /**
  * SleepProfileMinimal - Clean, minimal profile summary
  * 
- * Warm neutral typography with brand blue accent for CTA
+ * Warm neutral typography with premium Scandinavian aesthetic
+ * Brand blue (#3C83F6) at 85% opacity for CTA hover
  */
 
 interface SleepProfileMinimalProps {
@@ -28,20 +29,20 @@ export function SleepProfileMinimal({
   onUpdateAssessment,
 }: SleepProfileMinimalProps) {
   return (
-    <section className="space-y-4">
+    <section className="space-y-5">
       {/* Section header */}
       <div className="flex items-center justify-between px-1">
         <p 
-          className="text-xs font-medium tracking-wide uppercase"
-          style={{ color: '#8E98A3' }}
+          className="text-xs font-medium tracking-wider uppercase"
+          style={{ color: '#A7B4C2', letterSpacing: '0.08em' }}
         >
           Your Sleep Profile
         </p>
         {onUpdateAssessment && (
           <button
             onClick={onUpdateAssessment}
-            className="text-xs font-medium transition-colors hover:opacity-80"
-            style={{ color: '#3C83F6' }}
+            className="text-xs font-medium transition-opacity hover:opacity-75"
+            style={{ color: 'rgba(60, 131, 246, 0.9)' }}
           >
             Update Assessment
           </button>
@@ -56,10 +57,10 @@ export function SleepProfileMinimal({
           boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
         }}
       >
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-7 md:gap-9 mb-7">
           <div>
             <p 
-              className="text-xs mb-1"
+              className="text-xs mb-1.5"
               style={{ color: '#A7A29C' }}
             >
               Position
@@ -74,7 +75,7 @@ export function SleepProfileMinimal({
           
           <div>
             <p 
-              className="text-xs mb-1"
+              className="text-xs mb-1.5"
               style={{ color: '#A7A29C' }}
             >
               Temperature
@@ -89,7 +90,7 @@ export function SleepProfileMinimal({
           
           <div>
             <p 
-              className="text-xs mb-1"
+              className="text-xs mb-1.5"
               style={{ color: '#A7A29C' }}
             >
               Stress Level
@@ -104,7 +105,7 @@ export function SleepProfileMinimal({
           
           <div>
             <p 
-              className="text-xs mb-1"
+              className="text-xs mb-1.5"
               style={{ color: '#A7A29C' }}
             >
               Wake Pattern
@@ -121,20 +122,20 @@ export function SleepProfileMinimal({
         {/* Pain points as pills */}
         {painPoints.length > 0 && (
           <div 
-            className="pt-5"
-            style={{ borderTop: '1px solid #E6E4DE' }}
+            className="pt-6"
+            style={{ borderTop: '1px solid rgba(230, 228, 222, 0.6)' }}
           >
             <p 
-              className="text-xs mb-3"
+              className="text-xs mb-3.5"
               style={{ color: '#A7A29C' }}
             >
               Areas of Focus
             </p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2.5">
               {painPoints.map((point, i) => (
                 <span
                   key={i}
-                  className="inline-flex px-3 py-1.5 rounded-full text-sm"
+                  className="inline-flex px-3.5 py-2 rounded-full text-sm"
                   style={{ 
                     backgroundColor: '#F4F3F1',
                     color: '#4A4844',
