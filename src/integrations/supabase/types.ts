@@ -759,6 +759,7 @@ export type Database = {
           email: string
           environment_updated_at: string | null
           id: string
+          last_shopify_sync: string | null
           mattress_firmness: string | null
           mattress_thickness: string | null
           pain_points: string[] | null
@@ -794,6 +795,7 @@ export type Database = {
           email: string
           environment_updated_at?: string | null
           id?: string
+          last_shopify_sync?: string | null
           mattress_firmness?: string | null
           mattress_thickness?: string | null
           pain_points?: string[] | null
@@ -831,6 +833,7 @@ export type Database = {
           email?: string
           environment_updated_at?: string | null
           id?: string
+          last_shopify_sync?: string | null
           mattress_firmness?: string | null
           mattress_thickness?: string | null
           pain_points?: string[] | null
@@ -858,6 +861,36 @@ export type Database = {
             | null
           whatsapp_enabled?: boolean | null
           whatsapp_phone?: string | null
+        }
+        Relationships: []
+      }
+      user_product_ownership: {
+        Row: {
+          acquired_at: string
+          created_at: string
+          email: string
+          id: string
+          product_slug: string
+          shopify_order_id: string | null
+          synced_at: string
+        }
+        Insert: {
+          acquired_at?: string
+          created_at?: string
+          email: string
+          id?: string
+          product_slug: string
+          shopify_order_id?: string | null
+          synced_at?: string
+        }
+        Update: {
+          acquired_at?: string
+          created_at?: string
+          email?: string
+          id?: string
+          product_slug?: string
+          shopify_order_id?: string | null
+          synced_at?: string
         }
         Relationships: []
       }
