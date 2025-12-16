@@ -137,15 +137,8 @@ function getScoreColor(score: number): string {
 function generateEmailHTML(data: QuizResultsRequest, baseUrl: string): string {
   const normalizedBaseUrl = (baseUrl || "").replace(/\/+$/, "");
 
-  // Inline SVG logo (avoids broken external image URLs in email clients)
-  const logoSvg = encodeURIComponent(`
-    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
-      <rect x="0" y="0" width="48" height="48" rx="12" fill="#ffffff"/>
-      <circle cx="22" cy="24" r="12" fill="${BRAND_PRIMARY}"/>
-      <circle cx="28" cy="20" r="12" fill="#ffffff"/>
-    </svg>
-  `.trim());
-  const logoDataUri = `data:image/svg+xml,${logoSvg}`;
+  // Use hosted logo image
+  const logoUrl = `${normalizedBaseUrl}/images/risebynight-logo-email.png`;
 
   const primaryProduct =
     PRODUCT_DISPLAY[data.productRecommendations.primary] || {
@@ -193,7 +186,7 @@ function generateEmailHTML(data: QuizResultsRequest, baseUrl: string): string {
           <!-- Header - Clean, minimal -->
           <tr>
             <td style="background: ${BRAND_DARK}; padding: 32px 28px; text-align: center;">
-              <img src="${logoDataUri}" alt="Rise By Night" width="48" height="48" style="display: block; margin: 0 auto 16px; border-radius: 12px; background: white; padding: 3px;" />
+              <img src="${logoUrl}" alt="Rise By Night" width="180" height="auto" style="display: block; margin: 0 auto 16px;" />
               <h1 style="color: #ffffff; font-size: 20px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.3px;">Your Sleep Profile Snapshot</h1>
               <p style="color: #94a3b8; font-size: 13px; margin: 0;">Based on your science-backed assessment</p>
             </td>
