@@ -14,8 +14,14 @@ interface MetricImprovementDrawerProps {
 interface Improvement {
   title: string;
   description: string;
-  impact: string;
+  impactLevel: 'low' | 'medium' | 'high';
 }
+
+const impactLabelMap: Record<'low' | 'medium' | 'high', string> = {
+  low: 'Small boost',
+  medium: 'Meaningful gain',
+  high: 'High-impact habit',
+};
 
 export function MetricImprovementDrawer({
   open,
@@ -26,7 +32,7 @@ export function MetricImprovementDrawer({
   profile
 }: MetricImprovementDrawerProps) {
   const isPerfect = score >= 95;
-  const potentialGain = Math.min(100 - score, Math.floor(Math.random() * 8) + 6);
+  const remainingPoints = Math.max(0, 100 - score);
 
   const getMetricTitle = () => {
     switch (metric) {
@@ -58,8 +64,8 @@ export function MetricImprovementDrawer({
       if (painPoints.includes('neck') || painPoints.includes('upper_back')) {
         improvements.push({
           title: 'Optimize pillow height',
-          description: 'Side sleepers often benefit from a pillow that fills the neck-shoulder gap. Consider adjusting loft to maintain neutral spine alignment.',
-          impact: '+3–5 points'
+          description: 'Side sleepers often benefit from a pillow that fills the neck-shoulder gap to support neutral alignment.',
+          impactLevel: 'high',
         });
       }
       
@@ -67,22 +73,22 @@ export function MetricImprovementDrawer({
         improvements.push({
           title: 'Support hip alignment',
           description: 'A knee pillow can help maintain pelvic neutrality and reduce lower back strain during side sleeping.',
-          impact: '+2–4 points'
+          impactLevel: 'high',
         });
       }
       
       if (painPoints.includes('lower_back')) {
         improvements.push({
           title: 'Evaluate mattress support',
-          description: 'Your lower back signals may indicate your mattress could use additional lumbar support or firmness adjustment.',
-          impact: '+2–4 points'
+          description: 'Your lower back signals may indicate your mattress could benefit from additional lumbar support or firmness adjustment.',
+          impactLevel: 'medium',
         });
       }
       
       improvements.push({
         title: 'Morning mobility routine',
         description: 'Gentle stretching upon waking can help release overnight tension and maintain flexibility over time.',
-        impact: '+1–3 points'
+        impactLevel: 'low',
       });
       
       return improvements.slice(0, 4);
@@ -98,7 +104,7 @@ export function MetricImprovementDrawer({
         improvements.push({
           title: 'Reduce light exposure',
           description: 'Even small amounts of light can interfere with melatonin production. A sleep mask or blackout solutions may support deeper rest.',
-          impact: '+3–5 points'
+          impactLevel: 'high',
         });
       }
       
@@ -106,20 +112,20 @@ export function MetricImprovementDrawer({
         improvements.push({
           title: 'Cool your sleep space',
           description: 'Research suggests slightly cooler environments (around 65–68°F) may support better sleep quality. Consider breathable bedding.',
-          impact: '+2–4 points'
+          impactLevel: 'medium',
         });
       }
       
       improvements.push({
         title: 'Minimize sound disruptions',
         description: 'White noise or consistent ambient sound can mask disruptions and support uninterrupted sleep cycles.',
-        impact: '+1–3 points'
+        impactLevel: 'medium',
       });
       
       improvements.push({
         title: 'Create a wind-down zone',
         description: 'Reserving your bedroom primarily for sleep helps your brain associate the space with rest.',
-        impact: '+1–2 points'
+        impactLevel: 'low',
       });
       
       return improvements.slice(0, 4);
@@ -130,22 +136,22 @@ export function MetricImprovementDrawer({
         {
           title: 'Anchor your wake time',
           description: 'Waking at the same time daily — even weekends — is often more impactful than a fixed bedtime for circadian stability.',
-          impact: '+3–5 points'
+          impactLevel: 'high',
         },
         {
           title: 'Build a pre-sleep ritual',
           description: 'A consistent 20–30 minute wind-down routine signals to your body that sleep is approaching.',
-          impact: '+2–4 points'
+          impactLevel: 'medium',
         },
         {
           title: 'Limit late caffeine',
           description: 'Caffeine can linger in your system for 6+ hours. Consider setting a personal cutoff time.',
-          impact: '+1–3 points'
+          impactLevel: 'medium',
         },
         {
           title: 'Track your patterns',
           description: 'Logging sleep times helps identify drift and reinforces accountability to your rhythm.',
-          impact: '+1–2 points'
+          impactLevel: 'low',
         }
       ];
     }
@@ -205,15 +211,12 @@ export function MetricImprovementDrawer({
                   >
                     Current: {score}/100
                   </span>
-                  {!isPerfect && (
+                  {!isPerfect && remainingPoints > 0 && (
                     <span 
-                      className="text-xs px-2 py-0.5 rounded-full"
-                      style={{ 
-                        backgroundColor: 'rgba(60, 131, 246, 0.1)',
-                        color: 'rgba(60, 131, 246, 0.85)'
-                      }}
+                      className="text-[11px] font-medium"
+                      style={{ color: 'rgba(60, 131, 246, 0.75)' }}
                     >
-                      +{potentialGain}–{potentialGain + 6} potential
+                      Potential: up to {remainingPoints} points over time
                     </span>
                   )}
                 </div>
@@ -255,7 +258,7 @@ export function MetricImprovementDrawer({
                 className="text-xs leading-relaxed"
                 style={{ color: '#6F6A66' }}
               >
-                This area is well-supported. Maintain your current rhythm and continue prioritizing the habits that brought you here.
+                You're already in the optimal range for this area. Maintain your current habits and periodic check-ins.
               </p>
             </div>
           ) : (
@@ -284,13 +287,13 @@ export function MetricImprovementDrawer({
                         </p>
                       </div>
                       <span 
-                        className="text-xs px-2 py-1 rounded-full whitespace-nowrap"
+                        className="text-[11px] font-medium px-2 py-1 rounded-full whitespace-nowrap"
                         style={{ 
                           backgroundColor: 'rgba(167, 180, 194, 0.15)',
                           color: '#6F6A66'
                         }}
                       >
-                        {improvement.impact}
+                        {impactLabelMap[improvement.impactLevel]}
                       </span>
                     </div>
                   </div>

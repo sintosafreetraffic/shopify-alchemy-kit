@@ -179,8 +179,8 @@ export function ProfileMetrics({ profile }: ProfileMetricsProps) {
                 </p>
 
                 {/* Tap hint */}
-                <p className="text-[10px] uppercase tracking-wide" style={{ color: '#A7A29C' }}>
-                  Tap for suggestions
+                <p className="text-[11px]" style={{ color: '#A7A29C' }}>
+                  Tap for improvement suggestions
                 </p>
               </div>
             </CardContent>
