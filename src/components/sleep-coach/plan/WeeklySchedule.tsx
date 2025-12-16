@@ -96,12 +96,12 @@ function getIconForFocus(focus: string): React.ReactNode {
   return FocusIcons.default;
 }
 
-// Status indicator styles
+// Status indicator styles - brand blue scale, no traffic-light colors
 const STATUS_STYLES: Record<string, { bg: string; dot: string; label: string }> = {
   not_started: { 
     bg: 'rgba(167, 180, 194, 0.08)', 
     dot: '#A7A29C', 
-    label: "Not started" 
+    label: "Upcoming" 
   },
   in_progress: { 
     bg: 'rgba(60, 131, 246, 0.08)', 
@@ -109,9 +109,9 @@ const STATUS_STYLES: Record<string, { bg: string; dot: string; label: string }> 
     label: "In progress" 
   },
   completed: { 
-    bg: 'rgba(34, 197, 94, 0.08)', 
-    dot: 'rgba(34, 197, 94, 0.8)', 
-    label: "Done" 
+    bg: 'rgba(60, 131, 246, 0.12)', 
+    dot: 'rgba(60, 131, 246, 0.9)', 
+    label: "Completed" 
   },
 };
 
@@ -164,7 +164,7 @@ export function WeeklySchedule({
                   {DAY_LABELS[dayKey].short}
                 </p>
                 <p className="text-[10px] mt-2" style={{ color: '#A7A29C' }}>
-                  No plan
+                  Rest day
                 </p>
               </div>
             );
@@ -217,7 +217,7 @@ export function WeeklySchedule({
 
               {/* Morning summary */}
               <div className="flex items-start gap-1.5 mb-1.5">
-                <span className="text-[10px] mt-0.5" style={{ color: '#B45309' }}>AM</span>
+                <span className="text-[10px] mt-0.5" style={{ color: '#A7B4C2' }}>AM</span>
                 <p 
                   className="text-[11px] leading-snug line-clamp-2"
                   style={{ color: '#6F6A66' }}
@@ -228,7 +228,7 @@ export function WeeklySchedule({
 
               {/* Evening summary */}
               <div className="flex items-start gap-1.5 mb-3">
-                <span className="text-[10px] mt-0.5" style={{ color: '#4F46E5' }}>PM</span>
+                <span className="text-[10px] mt-0.5" style={{ color: '#A7B4C2' }}>PM</span>
                 <p 
                   className="text-[11px] leading-snug line-clamp-2"
                   style={{ color: '#6F6A66' }}

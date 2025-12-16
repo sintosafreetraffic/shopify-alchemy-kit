@@ -18,17 +18,17 @@ interface PlanHeroProps {
 }
 
 const PHASE_CONFIG: Record<string, { label: string; description: string }> = {
-  foundation: { label: "Foundation", description: "Building core sleep habits" },
-  stabilization: { label: "Stabilization", description: "Reinforcing consistent patterns" },
-  optimization: { label: "Optimization", description: "Fine-tuning for peak rest" },
-  resilience: { label: "Resilience", description: "Maintaining long-term gains" },
+  foundation: { label: "Foundation", description: "Building core sleep habits through gentle, consistent micro-adjustments" },
+  stabilization: { label: "Stabilization", description: "Reinforcing patterns to support lasting sleep improvements" },
+  optimization: { label: "Optimization", description: "Fine-tuning your environment and routines for deeper rest" },
+  resilience: { label: "Resilience", description: "Maintaining long-term gains and adapting to life changes" },
 };
 
-// Score color based on value
+// Score color using brand blue scale (no traffic-light colors)
 function getScoreColor(score: number): string {
-  if (score >= 70) return "rgba(34, 197, 94, 0.85)"; // Green
-  if (score >= 50) return "rgba(234, 179, 8, 0.85)"; // Amber
-  return "rgba(239, 68, 68, 0.75)"; // Red
+  if (score >= 70) return "rgba(60, 131, 246, 0.9)"; // Strong brand blue
+  if (score >= 50) return "rgba(60, 131, 246, 0.7)"; // Medium brand blue
+  return "rgba(167, 180, 194, 0.85)"; // Dusty blue for lower scores
 }
 
 export function PlanHero({
@@ -63,7 +63,7 @@ export function PlanHero({
         {/* Eyebrow */}
         <p 
           className="text-xs font-semibold tracking-widest uppercase mb-4"
-          style={{ color: 'rgba(60, 131, 246, 0.6)', letterSpacing: '0.12em' }}
+          style={{ color: '#A7B4C2', letterSpacing: '0.12em' }}
         >
           Your 7-Night Sleep Plan
         </p>
@@ -73,7 +73,7 @@ export function PlanHero({
           className="text-2xl md:text-3xl leading-snug mb-6 max-w-2xl"
           style={{ color: '#2D2B29', fontWeight: 500, lineHeight: 1.35 }}
         >
-          {planHeadline || "Your personalized sleep plan is ready"}
+          {planHeadline || "Your personalized plan supports better rest"}
         </h1>
 
         {/* Phase + Score row */}

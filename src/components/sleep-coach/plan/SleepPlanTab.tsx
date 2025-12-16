@@ -51,7 +51,7 @@ interface TimelineInfo {
 }
 
 // Adaptive plan context from engine
-interface AdaptivePlanContext {
+export interface AdaptivePlanContext {
   phase?: "foundation" | "stabilization" | "optimization" | "resilience";
   weekNumber?: number;
   detectedPatterns?: string[];
@@ -62,7 +62,7 @@ interface AdaptivePlanContext {
 }
 
 // Full plan data shape
-interface SleepPlanData {
+export interface SleepPlanData {
   // Core adaptive fields
   weekFocus?: string;
   weeklyPriorities?: string[];
@@ -165,7 +165,7 @@ export function SleepPlanTab({
           className="text-sm"
           style={{ color: '#6F6A66' }}
         >
-          Generating your adaptive sleep plan...
+          Generating your adaptive sleep plan
         </p>
       </div>
     );
@@ -265,7 +265,7 @@ export function SleepPlanTab({
           className="text-xs"
           style={{ color: '#A7A29C' }}
         >
-          This plan adapts weekly based on your logs and patterns. 
+          This plan adapts weekly based on your logs and patterns.
           {plan.generatedAt && ` Last updated: ${new Date(plan.generatedAt).toLocaleDateString()}`}
         </p>
         {onRegeneratePlan && (
