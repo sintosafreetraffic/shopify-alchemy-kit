@@ -1,4 +1,5 @@
-// Main Profile Tab container - Scandinavian minimalist sleep identity view
+// Main Profile Tab container - Premium Scandinavian sleep identity view
+// Spacing: 44-56px between sections, 28-32px padding within cards
 import { useState } from 'react';
 import { SleepProfile, SleepAssessment } from "@/hooks/useSleepApi";
 import { ProfileHero } from './ProfileHero';
@@ -12,7 +13,6 @@ import { SleepSyncProfileOverview } from './SleepSyncProfileOverview';
 import { SleepSetupForm } from '../SleepSetupForm';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ClipboardEdit } from 'lucide-react';
 
 interface ProfileTabProps {
   profile: SleepProfile;
@@ -36,7 +36,7 @@ export function ProfileTab({
   const assessment = profile.sleep_assessment as SleepAssessment | undefined;
 
   return (
-    <div className="space-y-11" style={{ backgroundColor: '#F7F7F6' }}>
+    <div className="space-y-12 pb-12" style={{ backgroundColor: '#F7F7F6' }}>
       {/* Section 1: Profile Hero */}
       <ProfileHero 
         profile={profile} 
@@ -60,7 +60,10 @@ export function ProfileTab({
       />
 
       {/* Section 6: Product Recommendations */}
-      <ProductRecommendationCard recommendations={assessment?.recommendations} />
+      <ProductRecommendationCard 
+        profile={profile}
+        recommendations={assessment?.recommendations} 
+      />
 
       {/* Section 7: Assessment Accordion */}
       <AssessmentAccordion quizData={profile.quiz_data} />
@@ -69,14 +72,21 @@ export function ProfileTab({
       <SleepSyncProfileOverview email={email} />
 
       {/* Retake Assessment CTA */}
-      <div className="flex justify-center pt-4 pb-8">
+      <div className="flex justify-center pt-2">
         <Button 
           variant="ghost" 
           onClick={onRetakeQuiz}
-          className="text-sm font-normal"
+          className="text-sm font-normal h-10 px-5"
           style={{ color: '#6F6A66' }}
         >
-          <ClipboardEdit className="h-4 w-4 mr-2" style={{ color: '#A7B4C2' }} />
+          <svg 
+            viewBox="0 0 24 24" 
+            className="h-4 w-4 mr-2" 
+            style={{ stroke: '#A7B4C2', strokeWidth: 1.5, fill: 'none' }}
+          >
+            <path d="M9 11l3 3L22 4" />
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+          </svg>
           Retake Sleep Assessment
         </Button>
       </div>
@@ -85,7 +95,7 @@ export function ProfileTab({
       <Dialog open={showSetupModal} onOpenChange={setShowSetupModal}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Update Sleep Setup</DialogTitle>
+            <DialogTitle style={{ color: '#2D2B29' }}>Update Sleep Setup</DialogTitle>
           </DialogHeader>
           <SleepSetupForm 
             email={email}

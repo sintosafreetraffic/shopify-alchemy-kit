@@ -8,7 +8,6 @@ import {
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { QuizData } from "@/hooks/useSleepApi";
-import { Bed, Moon, Activity, Heart, Target } from "lucide-react";
 
 interface AssessmentAccordionProps {
   quizData?: QuizData;
@@ -22,7 +21,7 @@ const formatLabel = (value: string | number | undefined | null): string => {
 
 interface AccordionGroup {
   id: string;
-  icon: typeof Bed;
+  icon: 'bed' | 'moon' | 'activity' | 'heart' | 'target';
   title: string;
   summary: string;
   fields: Array<{ label: string; value: string | string[] | number | undefined }>;
@@ -32,6 +31,48 @@ export function AssessmentAccordion({ quizData }: AssessmentAccordionProps) {
   if (!quizData || Object.keys(quizData).length === 0) {
     return null;
   }
+
+  const renderIcon = (type: string) => {
+    const style = { stroke: '#A7B4C2', strokeWidth: 1.5, fill: 'none' };
+    
+    switch (type) {
+      case 'bed':
+        return (
+          <svg viewBox="0 0 24 24" className="w-4 h-4" style={style}>
+            <path d="M2 9V4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5" />
+            <path d="M2 11v9h20v-9H2Z" />
+          </svg>
+        );
+      case 'moon':
+        return (
+          <svg viewBox="0 0 24 24" className="w-4 h-4" style={style}>
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+          </svg>
+        );
+      case 'activity':
+        return (
+          <svg viewBox="0 0 24 24" className="w-4 h-4" style={style}>
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+          </svg>
+        );
+      case 'heart':
+        return (
+          <svg viewBox="0 0 24 24" className="w-4 h-4" style={style}>
+            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+          </svg>
+        );
+      case 'target':
+        return (
+          <svg viewBox="0 0 24 24" className="w-4 h-4" style={style}>
+            <circle cx="12" cy="12" r="10" />
+            <circle cx="12" cy="12" r="6" />
+            <circle cx="12" cy="12" r="2" />
+          </svg>
+        );
+      default:
+        return null;
+    }
+  };
 
   const getSleepPreferencesSummary = () => {
     const pos = formatLabel(quizData.sleepPosition);
@@ -43,7 +84,7 @@ export function AssessmentAccordion({ quizData }: AssessmentAccordionProps) {
   const groups: AccordionGroup[] = [
     {
       id: 'preferences',
-      icon: Bed,
+      icon: 'bed',
       title: 'Sleep Preferences',
       summary: getSleepPreferencesSummary(),
       fields: [
@@ -56,7 +97,7 @@ export function AssessmentAccordion({ quizData }: AssessmentAccordionProps) {
     },
     {
       id: 'environment',
-      icon: Moon,
+      icon: 'moon',
       title: 'Environment',
       summary: `Room is ${formatLabel(quizData.roomBrightness).toLowerCase()} brightness with ${formatLabel(quizData.roomNoise).toLowerCase()} noise.`,
       fields: [
@@ -68,7 +109,7 @@ export function AssessmentAccordion({ quizData }: AssessmentAccordionProps) {
     },
     {
       id: 'behavior',
-      icon: Activity,
+      icon: 'activity',
       title: 'Behavior',
       summary: `${formatLabel(quizData.sleepLatency)} time to fall asleep with ${formatLabel(quizData.eveningScreenUse).toLowerCase()} evening screen use.`,
       fields: [
@@ -79,7 +120,7 @@ export function AssessmentAccordion({ quizData }: AssessmentAccordionProps) {
     },
     {
       id: 'pain',
-      icon: Heart,
+      icon: 'heart',
       title: 'Pain & Recovery',
       summary: quizData.painAreas?.length 
         ? `Areas of focus: ${quizData.painAreas.slice(0, 2).map(formatLabel).join(', ').toLowerCase()}.`
@@ -93,7 +134,7 @@ export function AssessmentAccordion({ quizData }: AssessmentAccordionProps) {
     },
     {
       id: 'goals',
-      icon: Target,
+      icon: 'target',
       title: 'Goals & Equipment',
       summary: quizData.sleepGoals?.length 
         ? `Goals include: ${quizData.sleepGoals.slice(0, 2).map(formatLabel).join(', ').toLowerCase()}.`
@@ -120,7 +161,7 @@ export function AssessmentAccordion({ quizData }: AssessmentAccordionProps) {
               variant="outline"
               className="font-normal border-0 text-xs"
               style={{ 
-                backgroundColor: 'rgba(167, 180, 194, 0.12)',
+                backgroundColor: 'rgba(167, 180, 194, 0.1)',
                 color: '#6F6A66',
               }}
             >
@@ -136,7 +177,7 @@ export function AssessmentAccordion({ quizData }: AssessmentAccordionProps) {
 
   return (
     <Card className="border-0 shadow-[0_1px_3px_rgba(0,0,0,0.03)]" style={{ backgroundColor: '#FAFAF8' }}>
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-4 pt-7 px-7">
         <CardTitle className="text-sm font-medium" style={{ color: '#2D2B29' }}>
           Assessment Summary
         </CardTitle>
@@ -145,8 +186,8 @@ export function AssessmentAccordion({ quizData }: AssessmentAccordionProps) {
         </p>
       </CardHeader>
       
-      <CardContent>
-        <Accordion type="multiple" className="space-y-2">
+      <CardContent className="px-7 pb-7">
+        <Accordion type="multiple" className="space-y-3">
           {groups.map(group => {
             const hasData = group.fields.some(f => {
               if (Array.isArray(f.value)) return f.value.length > 0;
@@ -159,18 +200,18 @@ export function AssessmentAccordion({ quizData }: AssessmentAccordionProps) {
               <AccordionItem 
                 key={group.id} 
                 value={group.id}
-                className="border rounded-lg px-4"
-                style={{ borderColor: '#E6E6E4' }}
+                className="rounded-lg px-5 border-0"
+                style={{ backgroundColor: 'rgba(247, 247, 246, 0.6)' }}
               >
                 <AccordionTrigger className="hover:no-underline py-4">
-                  <div className="flex items-center gap-2">
-                    <group.icon className="h-4 w-4" style={{ color: '#A7B4C2' }} strokeWidth={1.5} />
+                  <div className="flex items-center gap-2.5">
+                    {renderIcon(group.icon)}
                     <span className="text-sm font-medium" style={{ color: '#2D2B29' }}>
                       {group.title}
                     </span>
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="pb-4">
+                <AccordionContent className="pb-5">
                   <div className="space-y-4">
                     {/* Summary line */}
                     <p className="text-xs leading-relaxed" style={{ color: '#6F6A66' }}>
@@ -184,7 +225,7 @@ export function AssessmentAccordion({ quizData }: AssessmentAccordionProps) {
                         if (Array.isArray(field.value) && field.value.length === 0) return null;
                         
                         return (
-                          <div key={i} className="space-y-0.5">
+                          <div key={i} className="space-y-1">
                             <span className="text-xs" style={{ color: '#A7A29C' }}>
                               {field.label}
                             </span>

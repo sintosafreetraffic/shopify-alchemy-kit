@@ -18,13 +18,13 @@ const PAIN_LABEL_MAP: Record<string, string> = {
 };
 
 const COMFORT_GOALS: Record<string, string> = {
-  neck: 'Ease neck tension',
-  upper_back: 'Reduce upper back stiffness',
-  lower_back: 'Support lower back alignment',
-  shoulders: 'Relieve shoulder pressure',
-  hips: 'Improve hip alignment',
-  knees: 'Reduce knee discomfort',
-  legs: 'Improve leg circulation',
+  neck: 'Support neck alignment',
+  upper_back: 'Ease upper back tension',
+  lower_back: 'Stabilize lower back',
+  shoulders: 'Reduce shoulder pressure',
+  hips: 'Improve hip positioning',
+  knees: 'Support knee comfort',
+  legs: 'Enhance leg circulation',
 };
 
 export function PainMapMinimal({ profile }: PainMapMinimalProps) {
@@ -36,12 +36,12 @@ export function PainMapMinimal({ profile }: PainMapMinimalProps) {
 
   const activeParts = new Set(painPoints);
 
-  const getPartStyle = (part: string) => {
-    if (activeParts.has(part)) {
+  const getPartStyle = (part: string, isActive: boolean) => {
+    if (isActive || activeParts.has(part)) {
       return {
-        stroke: '#A7B4C2',
+        stroke: '#8E98A3',
         fill: 'rgba(167, 180, 194, 0.15)',
-        strokeWidth: 1.5,
+        strokeWidth: 1.75,
       };
     }
     return {
@@ -58,68 +58,94 @@ export function PainMapMinimal({ profile }: PainMapMinimalProps) {
 
   return (
     <Card className="border-0 shadow-[0_1px_3px_rgba(0,0,0,0.03)]" style={{ backgroundColor: '#FAFAF8' }}>
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-4 pt-7 px-7">
         <CardTitle className="text-sm font-medium" style={{ color: '#2D2B29' }}>
-          Pain & Comfort Map
+          Tension & Comfort Map
         </CardTitle>
         <p className="text-xs" style={{ color: '#A7A29C' }}>
-          Areas where you typically feel morning tension
+          Areas where you typically experience morning tension
         </p>
       </CardHeader>
       
-      <CardContent className="space-y-5">
-        {/* Minimal body diagram */}
-        <div className="flex justify-center">
+      <CardContent className="space-y-6 px-7 pb-7">
+        {/* Enhanced body diagram */}
+        <div className="flex justify-center py-2">
           <svg 
-            viewBox="0 0 100 180" 
-            className="w-28 h-44"
-            style={{ opacity: 0.9 }}
+            viewBox="0 0 120 200" 
+            className="w-32 h-52"
+            style={{ opacity: 0.95 }}
           >
             {/* Head */}
-            <ellipse cx="50" cy="18" rx="14" ry="16" {...getPartStyle('head')} />
+            <ellipse cx="60" cy="22" rx="16" ry="18" {...getPartStyle('head', false)} />
             
             {/* Neck */}
-            <rect x="44" y="32" width="12" height="10" rx="2" {...getPartStyle('neck')} />
+            <path 
+              d="M52 38 L52 48 Q60 52 68 48 L68 38"
+              {...getPartStyle('neck', activeParts.has('neck'))}
+            />
             
             {/* Shoulders */}
-            <path d="M30 45 Q38 42 50 42 Q62 42 70 45" {...getPartStyle('shoulders')} />
+            <path 
+              d="M32 55 Q42 48 60 48 Q78 48 88 55"
+              {...getPartStyle('shoulders', activeParts.has('shoulders'))}
+            />
             
-            {/* Upper back/chest */}
-            <rect x="35" y="45" width="30" height="25" rx="4" {...getPartStyle('upper_back')} />
+            {/* Torso - Upper back */}
+            <path 
+              d="M38 55 L38 82 Q60 88 82 82 L82 55 Q60 52 38 55"
+              {...getPartStyle('upper_back', activeParts.has('upper_back'))}
+            />
             
-            {/* Lower back/torso */}
-            <rect x="38" y="70" width="24" height="30" rx="3" {...getPartStyle('lower_back')} />
+            {/* Torso - Lower back */}
+            <path 
+              d="M42 82 L42 115 Q60 120 78 115 L78 82 Q60 88 42 82"
+              {...getPartStyle('lower_back', activeParts.has('lower_back'))}
+            />
             
             {/* Hips */}
-            <ellipse cx="50" cy="105" rx="18" ry="10" {...getPartStyle('hips')} />
+            <ellipse 
+              cx="60" 
+              cy="125" 
+              rx="22" 
+              ry="14" 
+              {...getPartStyle('hips', activeParts.has('hips'))}
+            />
             
-            {/* Upper legs */}
-            <rect x="35" y="112" width="10" height="28" rx="3" {...getPartStyle('legs')} />
-            <rect x="55" y="112" width="10" height="28" rx="3" {...getPartStyle('legs')} />
+            {/* Left leg upper */}
+            <path 
+              d="M42 132 L38 165 Q42 170 48 165 L52 132"
+              {...getPartStyle('legs', activeParts.has('legs'))}
+            />
+            
+            {/* Right leg upper */}
+            <path 
+              d="M68 132 L72 165 Q78 170 82 165 L78 132"
+              {...getPartStyle('legs', activeParts.has('legs'))}
+            />
             
             {/* Knees */}
-            <ellipse cx="40" cy="145" rx="6" ry="5" {...getPartStyle('knees')} />
-            <ellipse cx="60" cy="145" rx="6" ry="5" {...getPartStyle('knees')} />
+            <ellipse cx="43" cy="168" rx="7" ry="6" {...getPartStyle('knees', activeParts.has('knees'))} />
+            <ellipse cx="77" cy="168" rx="7" ry="6" {...getPartStyle('knees', activeParts.has('knees'))} />
             
             {/* Lower legs */}
-            <rect x="36" y="150" width="8" height="22" rx="2" {...getPartStyle('legs')} />
-            <rect x="56" y="150" width="8" height="22" rx="2" {...getPartStyle('legs')} />
+            <path d="M38 174 L36 195 Q43 198 50 195 L48 174" {...getPartStyle('legs', false)} />
+            <path d="M70 174 L72 195 Q77 198 84 195 L82 174" {...getPartStyle('legs', false)} />
           </svg>
         </div>
 
         {/* Primary areas */}
-        <div className="space-y-2">
+        <div className="space-y-3">
           <p className="text-xs font-medium uppercase tracking-wider" style={{ color: '#A7A29C' }}>
-            Primary areas
+            Primary tension areas
           </p>
           <div className="flex flex-wrap gap-2">
             {painPoints.map(point => (
               <Badge 
                 key={point}
                 variant="outline"
-                className="font-normal border-0"
+                className="font-normal border-0 text-xs"
                 style={{ 
-                  backgroundColor: 'rgba(167, 180, 194, 0.15)',
+                  backgroundColor: 'rgba(167, 180, 194, 0.12)',
                   color: '#6F6A66',
                 }}
               >
@@ -129,9 +155,12 @@ export function PainMapMinimal({ profile }: PainMapMinimalProps) {
           </div>
         </div>
 
+        {/* Divider */}
+        <div className="h-px" style={{ backgroundColor: '#E6E6E4' }} />
+
         {/* Comfort goals */}
         {comfortGoals.length > 0 && (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <p className="text-xs font-medium uppercase tracking-wider" style={{ color: '#A7A29C' }}>
               Comfort goals
             </p>
@@ -140,7 +169,7 @@ export function PainMapMinimal({ profile }: PainMapMinimalProps) {
                 <Badge 
                   key={i}
                   variant="outline"
-                  className="font-normal border-0"
+                  className="font-normal border-0 text-xs"
                   style={{ 
                     backgroundColor: 'rgba(60, 131, 246, 0.08)',
                     color: 'rgba(60, 131, 246, 0.85)',
