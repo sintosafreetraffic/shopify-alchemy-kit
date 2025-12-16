@@ -30,6 +30,7 @@ import { PersonaCard } from "@/components/sleep-coach/PersonaCard";
 import { CoachReadinessCard } from "@/components/sleep-coach/CoachReadinessCard";
 import { OverviewTabMinimal } from "@/components/sleep-coach/overview";
 import { useCoachMetrics } from "@/hooks/useCoachMetrics";
+import { usePlanCompletion } from "@/hooks/usePlanCompletion";
 import { trackCoachPlanRefreshed } from "@/lib/coachAnalytics";
 // Import TimeRange type directly for type safety (not lazy-loaded)
 import type { TimeRange } from "@/components/sleep-coach/SleepProgressChart";
@@ -342,6 +343,17 @@ const SleepCoachDashboard = () => {
   const personaCluster = (data.profile as any)?.persona_cluster || 
     (data.profile?.sleep_assessment as any)?.persona?.cluster || null;
 
+  // Plan completion tracking
+  const planId = data.coachPlan?.id || null;
+  const {
+    completedActions,
+    dayCompletion,
+    adherenceRate,
+    streakDays: completionStreak,
+    toggleAction,
+    saveReflection,
+  } = usePlanCompletion({ planId, enabled: !!planId });
+
   if (isCheckingAuth || isCheckingAccess) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 flex items-center justify-center">
@@ -576,21 +588,17 @@ const SleepCoachDashboard = () => {
                         validUntil: data.coachPlan.valid_until || undefined,
                       } : null}
                       loading={isGeneratingPlan}
-                      streakDays={streak}
+                      streakDays={completionStreak || streak}
                       adaptiveContext={{
                         phase: rawResponse?.phase || "foundation",
                         weekNumber: rawResponse?.week_number || 1,
                         detectedPatterns: rawResponse?.detected_patterns || [],
-                        adherenceRate: rawResponse?.adherence_rate,
+                        adherenceRate: adherenceRate || rawResponse?.adherence_rate,
                       }}
-                      onActionComplete={(dayName, actionId, completed) => {
-                        // TODO: Persist to backend when endpoint available
-                        console.log('Action completed:', { dayName, actionId, completed });
-                      }}
-                      onDayReflection={(dayName, note) => {
-                        // TODO: Persist reflection to backend when endpoint available
-                        console.log('Reflection submitted:', { dayName, note });
-                      }}
+                      completedActions={completedActions}
+                      dayCompletion={dayCompletion}
+                      onActionComplete={toggleAction}
+                      onDayReflection={saveReflection}
                       onRegeneratePlan={(reason) => handleGeneratePlan(reason)}
                     />
                   );

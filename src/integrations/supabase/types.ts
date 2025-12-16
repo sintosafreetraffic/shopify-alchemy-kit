@@ -602,6 +602,153 @@ export type Database = {
           },
         ]
       }
+      sleep_plan_adherence: {
+        Row: {
+          adherence_rate: number
+          created_at: string
+          current_plan_id: string | null
+          email: string
+          last_completion_date: string | null
+          last_updated: string
+          streak_days: number
+          total_actions_available: number
+          total_actions_completed: number
+          week_number: number
+        }
+        Insert: {
+          adherence_rate?: number
+          created_at?: string
+          current_plan_id?: string | null
+          email: string
+          last_completion_date?: string | null
+          last_updated?: string
+          streak_days?: number
+          total_actions_available?: number
+          total_actions_completed?: number
+          week_number?: number
+        }
+        Update: {
+          adherence_rate?: number
+          created_at?: string
+          current_plan_id?: string | null
+          email?: string
+          last_completion_date?: string | null
+          last_updated?: string
+          streak_days?: number
+          total_actions_available?: number
+          total_actions_completed?: number
+          week_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sleep_plan_adherence_current_plan_id_fkey"
+            columns: ["current_plan_id"]
+            isOneToOne: false
+            referencedRelation: "coach_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sleep_plan_adherence_email_fkey"
+            columns: ["email"]
+            isOneToOne: true
+            referencedRelation: "sleep_profiles"
+            referencedColumns: ["email"]
+          },
+        ]
+      }
+      sleep_plan_completions: {
+        Row: {
+          action_id: string
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          day_name: string
+          email: string
+          id: string
+          plan_id: string
+          updated_at: string
+        }
+        Insert: {
+          action_id: string
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          day_name: string
+          email: string
+          id?: string
+          plan_id: string
+          updated_at?: string
+        }
+        Update: {
+          action_id?: string
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          day_name?: string
+          email?: string
+          id?: string
+          plan_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sleep_plan_completions_email_fkey"
+            columns: ["email"]
+            isOneToOne: false
+            referencedRelation: "sleep_profiles"
+            referencedColumns: ["email"]
+          },
+          {
+            foreignKeyName: "sleep_plan_completions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "coach_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sleep_plan_reflections: {
+        Row: {
+          created_at: string
+          day_name: string
+          email: string
+          id: string
+          plan_id: string
+          reflection_text: string
+        }
+        Insert: {
+          created_at?: string
+          day_name: string
+          email: string
+          id?: string
+          plan_id: string
+          reflection_text: string
+        }
+        Update: {
+          created_at?: string
+          day_name?: string
+          email?: string
+          id?: string
+          plan_id?: string
+          reflection_text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sleep_plan_reflections_email_fkey"
+            columns: ["email"]
+            isOneToOne: false
+            referencedRelation: "sleep_profiles"
+            referencedColumns: ["email"]
+          },
+          {
+            foreignKeyName: "sleep_plan_reflections_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "coach_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sleep_profiles: {
         Row: {
           bed_height: string | null
