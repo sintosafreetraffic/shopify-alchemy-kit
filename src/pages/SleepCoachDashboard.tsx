@@ -573,10 +573,11 @@ const SleepCoachDashboard = () => {
                   return (
                     <SleepPlanTab
                       plan={data.coachPlan ? {
+                        id: data.coachPlan.id,
                         planHeadline: rawResponse?.planHeadline,
                         weekFocus: rawResponse?.week_focus,
                         adaptiveSummary: rawResponse?.adaptive_summary,
-                        phase: rawResponse?.phase || "foundation",
+                        phase: rawResponse?.phase,
                         detectedPatterns: rawResponse?.detected_patterns || [],
                         days: rawResponse?.days,
                         todayActions: data.coachPlan.recommended_actions_today as any,
@@ -595,10 +596,6 @@ const SleepCoachDashboard = () => {
                         detectedPatterns: rawResponse?.detected_patterns || [],
                         adherenceRate: adherenceRate || rawResponse?.adherence_rate,
                       }}
-                      completedActions={completedActions}
-                      dayCompletion={dayCompletion}
-                      onActionComplete={toggleAction}
-                      onDayReflection={saveReflection}
                       onRegeneratePlan={(reason) => handleGeneratePlan(reason)}
                     />
                   );
