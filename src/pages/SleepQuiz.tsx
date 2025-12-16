@@ -351,20 +351,65 @@ const SleepQuiz = () => {
         } catch (e) { console.warn("Klaviyo enrichment failed:", e); }
 
         // Send quiz results email (fire and forget - don't block UI)
+        // CRITICAL: Send FULL assessment payload for future Klaviyo segmentation, analytics, and template flexibility
         const assessment = analysisResult.assessment as SleepAssessment | undefined;
         if (assessment && 'sleepIdentity' in assessment) {
-          supabase.functions.invoke("send-quiz-results", {
-            body: {
-              email: email.trim(),
-              sleepIdentity: assessment.sleepIdentity,
-              persona: assessment.persona,
-              scores: assessment.scores,
-              productRecommendations: assessment.productRecommendations,
-              environmentFindings: assessment.environmentFindings,
-              topRiskDrivers: assessment.top_risk_drivers,
-              coachReadinessLabel: assessment.coach_readiness_label,
-              energyPotentialScore: assessment.energy_potential_score,
+          const fullEmailPayload = {
+            email: email.trim(),
+            // Identity Layer
+            sleepIdentity: assessment.sleepIdentity,
+            // Persona Layer (full object)
+            persona: {
+              cluster: assessment.persona.cluster,
+              label: assessment.persona.label,
+              description: assessment.persona.description,
+              confidence_score: assessment.persona.confidence ?? 70,
+              confidence_rationale: assessment.persona.confidence_reasoning || assessment.persona.rationale,
+              recommended_modules: assessment.persona.recommended_modules,
+              core_need: assessment.persona.cluster === 'pain_sleeper' ? 'alignment' 
+                : assessment.persona.cluster === 'stress_insomnia' ? 'environment'
+                : assessment.persona.cluster === 'recovery_sleeper' ? 'recovery' : 'optimization',
             },
+            // Risk Drivers
+            top_risk_drivers: assessment.top_risk_drivers,
+            // All Scores
+            scores: {
+              spine_alignment_score: 100 - (assessment.scores.alignment_risk_score || 0),
+              pillow_fit_score: assessment.scores.neck_support_score,
+              nighttime_recovery_score: assessment.scores.sleep_stability_score,
+              environment_score: assessment.scores.environment_score,
+              light_sensitivity_score: assessment.scores.light_sensitivity_score,
+              temperature_disruption_score: assessment.scores.temperature_disruption_score,
+              alignment_risk_score: assessment.scores.alignment_risk_score,
+              neck_support_score: assessment.scores.neck_support_score,
+              sleep_stability_score: assessment.scores.sleep_stability_score,
+            },
+            // Energy Potential
+            energy_potential_score: assessment.energy_potential_score,
+            // Environment Findings
+            environmentFindings: assessment.environmentFindings,
+            // Product Recommendations (full object)
+            productRecommendations: {
+              primary: assessment.productRecommendations.primary_product,
+              secondary: assessment.productRecommendations.secondary_product,
+              bundle: assessment.productRecommendations.recommended_bundle,
+              reasoning: assessment.productRecommendations.reasoning,
+              persona_reasoning: assessment.productRecommendations.persona_reasoning,
+              fit_explanation: assessment.productRecommendations.fit_explanation,
+            },
+            // Coach Readiness
+            coachReadinessLabel: assessment.coach_readiness_label,
+            coachReadinessRationale: assessment.coach_readiness_rationale,
+            // Coach Preview
+            coachPreview: assessment.coachPreview,
+            // Metadata
+            quiz_version: CURRENT_QUIZ_VERSION,
+            locale: navigator.language || 'en-US',
+            traffic_source: document.referrer || 'direct',
+          };
+          
+          supabase.functions.invoke("send-quiz-results", {
+            body: fullEmailPayload,
           }).catch(e => console.warn("Quiz results email failed:", e));
         }
       }
