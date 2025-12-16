@@ -536,50 +536,16 @@ const SleepCoachDashboard = () => {
               {!data.profile ? (
                 <NoProfileCTA />
               ) : (
-                <>
-                  {email && (
-                    <SleepLogForm 
-                      email={email} 
-                      onSubmit={handleAddLog}
-                      loading={apiLoading}
-                    />
-                  )}
-                  
-                  {/* Sleep Progress Chart with Share - Lazy loaded */}
-                  <Suspense fallback={
-                    <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
-                      <CardContent className="py-12 flex flex-col items-center justify-center">
-                        <BarChart3 className="h-8 w-8 text-muted-foreground/50 mb-2" />
-                        <span className="text-sm text-muted-foreground">Loading chart...</span>
-                      </CardContent>
-                    </Card>
-                  }>
-                    <SleepProgressChart 
-                      logs={data.logs}
-                      initialRange={initialProgressRange}
-                      onShareClick={(range) => {
-                        setShareRange(range);
-                        setIsShareModalOpen(true);
-                      }}
-                    />
-                  </Suspense>
-                  
-                  {/* Weekly Sleep History */}
-                  <SleepHistorySection 
-                    logs={data.logs}
-                    trends={data.trends}
-                    onUpdateLog={handleUpdateLog}
-                    onDeleteLog={handleDeleteLog}
-                  />
-                  
-                  {/* Share Modal */}
-                  <ShareProgressModal
-                    isOpen={isShareModalOpen}
-                    onClose={() => setIsShareModalOpen(false)}
-                    logs={data.logs}
-                    initialRange={shareRange === "custom" ? "30d" : shareRange}
-                  />
-                </>
+                <SleepLogsTab
+                  email={email || ""}
+                  logs={data.logs}
+                  trends={data.trends}
+                  hasPersona={!!personaCluster}
+                  onAddLog={handleAddLog}
+                  onUpdateLog={handleUpdateLog}
+                  onDeleteLog={handleDeleteLog}
+                  apiLoading={apiLoading}
+                />
               )}
             </TabsContent>
 
