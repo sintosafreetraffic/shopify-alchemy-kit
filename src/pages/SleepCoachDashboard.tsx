@@ -20,6 +20,7 @@ import { ProfileWizard } from "@/components/sleep-coach/ProfileWizard";
 import { ProfileViewer } from "@/components/sleep-coach/ProfileViewer";
 import { ProfileForm } from "@/components/sleep-coach/ProfileForm";
 import { CoachPlanDisplay } from "@/components/sleep-coach/CoachPlanDisplay";
+import { SleepPlanTab } from "@/components/sleep-coach/plan";
 import { StreakDisplay } from "@/components/sleep-coach/StreakDisplay";
 import { SleepLogsTab } from "@/components/sleep-coach/SleepLogsTab";
 import { ShareProgressModal } from "@/components/sleep-coach/ShareProgressModal";
@@ -549,52 +550,37 @@ const SleepCoachDashboard = () => {
               )}
             </TabsContent>
 
-            {/* AI COACH TAB */}
+            {/* AI COACH TAB - Premium Adaptive Plan */}
             <TabsContent value="coach" className="space-y-6">
               {!data.profile ? (
                 <NoProfileCTA />
               ) : (
-                <>
-                  {!data.coachPlan && (
-                    <Card>
-                      <CardContent className="py-8 text-center space-y-4">
-                        <Sparkles className="h-12 w-12 text-primary mx-auto opacity-50" />
-                        <div>
-                          <h3 className="text-lg font-semibold mb-2">No AI Plan Generated Yet</h3>
-                          <p className="text-muted-foreground max-w-md mx-auto">
-                            Generate your personalized 7-day sleep plan based on your sleep assessment
-                            {data.logs.length > 0 ? ` and ${data.logs.length} logged nights` : ''}.
-                          </p>
-                        </div>
-                        <Button onClick={() => handleGeneratePlan()} disabled={isGeneratingPlan}>
-                          {isGeneratingPlan ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Generating...
-                            </>
-                          ) : (
-                            <>
-                              <Sparkles className="mr-2 h-4 w-4" />
-                              Generate Weekly Plan
-                            </>
-                          )}
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  )}
-                  {data.coachPlan && (
-                    <CoachPlanDisplay 
-                      plan={data.coachPlan} 
-                      onGeneratePlan={handleGeneratePlan}
+                (() => {
+                  const planAny = data.coachPlan as any;
+                  const rawResponse = planAny?.raw_ai_response ? JSON.parse(planAny.raw_ai_response) : null;
+                  return (
+                    <SleepPlanTab
+                      plan={data.coachPlan ? {
+                        planHeadline: rawResponse?.planHeadline,
+                        weekFocus: rawResponse?.week_focus,
+                        adaptiveSummary: rawResponse?.adaptive_summary,
+                        phase: rawResponse?.phase || "foundation",
+                        detectedPatterns: rawResponse?.detected_patterns || [],
+                        days: rawResponse?.days,
+                        todayActions: data.coachPlan.recommended_actions_today as any,
+                        spineScore: spineScore?.score ?? data.coachPlan.spine_health_score ?? undefined,
+                        spineScoreHint: rawResponse?.spineScoreHint,
+                        focusAreas: data.coachPlan.main_focus_this_week || [],
+                        encouragement: data.coachPlan.encouragement_message || undefined,
+                        generatedAt: data.coachPlan.generated_at,
+                        validUntil: data.coachPlan.valid_until || undefined,
+                      } : null}
                       loading={isGeneratingPlan}
-                      refreshStatus={planRefreshTrigger.shouldRegenerate ? { shouldRegenerate: true, reason: planRefreshTrigger.reason } : null}
-                      spineScoreBreakdown={spineScore}
-                      personaCluster={personaCluster}
-                      productsOwned={data.profile?.products_owned || []}
-                      coachReadinessLabel={coachReadiness.label}
+                      streakDays={streak}
+                      onRegeneratePlan={(reason) => handleGeneratePlan(reason)}
                     />
-                  )}
-                </>
+                  );
+                })()
               )}
             </TabsContent>
 
