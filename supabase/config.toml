@@ -129,3 +129,7 @@ verify_jwt = false
 # Quiz reveal analytics - Public for tracking
 [functions.quiz-reveal-analytics]
 verify_jwt = false
+
+# Sleep Plan Completion - Requires JWT
+[functions.sleep-plan-completion]
+verify_jwt = true
