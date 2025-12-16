@@ -1,13 +1,15 @@
 /**
- * Coach Generate Sleep Plan Edge Function
+ * Coach Generate Sleep Plan Edge Function (v2 - Adaptive Engine)
  * 
- * Generates personalized 7-day sleep plans using AI Brain (OpenAI).
- * Plans are always in sync with profile + logs, never contradict hard data.
+ * Generates personalized, adaptive 7-day sleep plans using AI Brain (OpenAI).
+ * Plans evolve based on user data, detected patterns, and progression phases.
  * 
  * Features:
- * - Stores profile_snapshot, logs_snapshot at generation time
- * - Validates AI output against user data
- * - Tracks generated_reason for regeneration logic
+ * - Adaptive difficulty based on adherence
+ * - Pattern detection from notes (alcohol, stress, temperature, etc.)
+ * - Research-grounded progression timelines
+ * - Phase-based coaching (Foundation → Stabilization → Optimization → Resilience)
+ * - Never repetitive, always personalized
  * 
  * Access is gated via hasSleepCoachAccess.
  * All queries use the authenticated user's email.
@@ -44,11 +46,15 @@ import {
   calculateSpineScoreV2,
   calculateCoachReadiness,
   getPersonalizationIntensity,
-  buildPersonalizationPromptModifier,
   SpineScoreBreakdown,
   RiskAnalysis,
   CoachReadiness,
 } from "../_shared/coach-metrics.ts";
+import {
+  buildAdaptivePlanContext,
+  buildAdaptivePromptSection,
+  AdaptivePlanContext,
+} from "../_shared/adaptive-plan-engine.ts";
 
 interface SleepProfile {
   email: string;
@@ -116,15 +122,16 @@ Deno.serve(async (req) => {
       return createAccessDeniedResponse();
     }
 
-    const { planType = 'initial', reason = 'manual' } = await req.json();
+    const { planType = 'initial', reason = 'manual', previousPlanCompleted = true, adherenceRate = 50 } = await req.json();
 
     console.log(`[coach-generate-sleep-plan] Generating ${planType} plan for: ${email}, reason: ${reason}`);
 
-    // === STEP 1: Fetch fresh profile, logs, and 3-layer attributes ===
-    const [profileResult, logsResult, attrsResult] = await Promise.all([
+    // === STEP 1: Fetch fresh profile, logs, 3-layer attributes, and plan history ===
+    const [profileResult, logsResult, attrsResult, plansCountResult] = await Promise.all([
       supabase.from('sleep_profiles').select('*').eq('email', email).single(),
-      supabase.from('sleep_logs').select('*').eq('email', email).order('date', { ascending: false }).limit(14),
+      supabase.from('sleep_logs').select('*').eq('email', email).order('date', { ascending: false }).limit(30), // Extended for pattern detection
       supabase.from('sleep_attributes_state').select('data').eq('email', email).maybeSingle(),
+      supabase.from('coach_plans').select('id', { count: 'exact' }).eq('email', email),
     ]);
 
     const profile: SleepProfile | null = profileResult.data;
@@ -216,6 +223,24 @@ Deno.serve(async (req) => {
       personalizationIntensity,
     });
 
+    // === STEP 3.5: Build Adaptive Plan Context ===
+    const plansGenerated = plansCountResult.count || 0;
+    const adaptiveContext: AdaptivePlanContext = buildAdaptivePlanContext(
+      logs,
+      sleepAttributes,
+      plansGenerated,
+      previousPlanCompleted,
+      adherenceRate
+    );
+
+    console.log('[SleepCoach] Adaptive context built', {
+      phase: adaptiveContext.progression.phase,
+      weekNumber: adaptiveContext.progression.weekNumber,
+      difficulty: adaptiveContext.adaptation.difficulty,
+      detectedPatterns: adaptiveContext.notePatterns.map(p => p.pattern),
+      relevantTimelines: adaptiveContext.relevantTimelines.map(t => t.category),
+    });
+
     // === Extract persona data from sleep_assessment or derive fallback ===
     const sleepAssessment = profile?.sleep_assessment as any;
     const storedPersonaCluster = sleepAssessment?.persona?.cluster || (profile as any)?.persona_cluster;
@@ -235,6 +260,9 @@ Deno.serve(async (req) => {
       optimizer: 'optimization',
       recovery_sleeper: 'recovery',
     };
+
+    // Build the adaptive prompt section
+    const adaptivePromptSection = buildAdaptivePromptSection(adaptiveContext);
 
     // Build metrics context for AI prompt (plain language, no raw scores for AI to use)
     const metricsContext = {
@@ -256,6 +284,11 @@ Deno.serve(async (req) => {
         : derivedPersonaCluster === 'recovery_sleeper' ? 'The Recovery Sleeper'
         : 'The Sleep Optimizer'),
       coreNeed: coreNeedMap[derivedPersonaCluster] || 'alignment',
+      // Add adaptive context
+      adaptivePromptSection,
+      adaptivePhase: adaptiveContext.progression.phase,
+      adaptiveDifficulty: adaptiveContext.adaptation.difficulty,
+      detectedPatterns: adaptiveContext.notePatterns,
     };
 
     console.log('[SleepCoach] Persona context for AI', {
@@ -265,11 +298,11 @@ Deno.serve(async (req) => {
       coreNeed: metricsContext.coreNeed,
     });
 
-    // === STEP 4: Call AI Brain with structured snapshots + metrics context ===
-    console.log('[AI Brain] Calling with 3-layer context, hard constraints, and deterministic metrics');
+    // === STEP 4: Call AI Brain with structured snapshots + metrics context + adaptive engine ===
+    console.log('[AI Brain] Calling with 3-layer context, adaptive engine, and deterministic metrics');
     let parsed;
     try {
-      // Pass enhanced snapshots with full 3-layer context + metrics
+      // Pass enhanced snapshots with full 3-layer context + metrics + adaptive context
       parsed = await callSleepPlanAI('', planType, profileSnapshot, enhancedLogsSnapshot, metricsContext);
       console.log('[AI Brain] Enhanced plan generated successfully');
       
