@@ -199,6 +199,10 @@ export function generateCartFingerprint(items: Array<{ variantId: string; quanti
 // IMPORTANT: This is NOT a completed transaction - use initiatecheckout, not checkout!
 // Completed transactions (Checkout) must ONLY be fired by Shopify's Pinterest App after payment.
 // Deduplication: Only fires if cart fingerprint changed OR 30 seconds have passed.
+//
+// NOTE: We intentionally do NOT send `value`/`currency` for initiatecheckout
+// to avoid any risk of Pinterest misattributing this as revenue.
+// Completed purchases are tracked server-side via Shopify / Conversions API only.
 export function trackInitiateCheckout(items: Array<{ variantId: string; quantity: number; price?: { amount: string }; currencyCode?: string }>): boolean {
   if (!isPinterestReady()) {
     console.log('[Pinterest] InitiateCheckout skipped - pintrk not ready');
@@ -220,7 +224,7 @@ export function trackInitiateCheckout(items: Array<{ variantId: string; quantity
       }
     }
     
-    // Calculate totals for event data
+    // Calculate totals for logging/debugging (NOT sent to Pinterest)
     const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
     const totalValue = items.reduce((sum, item) => {
       const price = parseFloat(item.price?.amount || '0');
@@ -228,15 +232,21 @@ export function trackInitiateCheckout(items: Array<{ variantId: string; quantity
     }, 0);
     const currency = items[0]?.currencyCode || 'USD';
     
+    // Build payload - intentionally excludes value/currency to prevent revenue misattribution
     const data: Record<string, any> = {
       event_id: generateEventId(),
       order_quantity: totalQuantity,
     };
     
-    // Only include value/currency if we have valid amounts
-    if (totalValue > 0) {
-      data.value = totalValue;
-      data.currency = currency;
+    // Debug logging for non-production environments
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[Pinterest] InitiateCheckout event prepared', {
+        fingerprint,
+        totalQuantity,
+        totalValue,
+        currency,
+        data,
+      });
     }
     
     // CRITICAL: Event name must be all lowercase 'initiatecheckout'
