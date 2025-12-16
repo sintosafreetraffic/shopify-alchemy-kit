@@ -77,18 +77,28 @@ const BRAND_PRIMARY = "#3e81e0";
 const BRAND_DARK = "#0f172a";
 const BRAND_LIGHT_BG = "#f8fafc";
 
+// Canonical labels (presentation-only) for the four sleep profiles
+const CLUSTER_LABEL: Record<string, string> = {
+  pain_sleeper: "Pain Sleeper",
+  stress_insomnia: "Stress & Environment Sleeper",
+  optimizer: "Sleep Optimizer",
+  recovery_sleeper: "Recovery Sleeper",
+};
+
 // Product display info
-const PRODUCT_DISPLAY: Record<string, { name: string; route: string }> = {
-  ergonomic_pillow: { 
-    name: "Rise By Night™ Ergonomic Sleep Pillow", 
+const PRODUCT_DISPLAY: Record<string, { name: string; route: string; imagePath?: string }> = {
+  ergonomic_pillow: {
+    name: "Rise By Night™ Ergonomic Sleep Pillow",
     route: "/product/ergonomic-pillow",
+    imagePath: "/images/pillow-main-new.png",
   },
-  knee_pillow: { 
-    name: "Rise By Night™ Ergonomic Knee Pillow", 
+  knee_pillow: {
+    name: "Rise By Night™ Ergonomic Knee Pillow",
     route: "/product/knee-pillow",
+    imagePath: "/images/knee-pillow-main-new.png",
   },
-  silk_mask: { 
-    name: "Rise By Night™ Silk Sleep Mask", 
+  silk_mask: {
+    name: "Rise By Night™ Silk Sleep Mask",
     route: "/product/sleep-mask",
   },
 };
@@ -124,25 +134,47 @@ function getScoreColor(score: number): string {
 }
 
 // Generate MINIMAL curated email HTML
-function generateEmailHTML(data: QuizResultsRequest): string {
-  const baseUrl = "https://www.risebynight.com";
-  const logoUrl = "https://www.risebynight.com/favicon-192.png";
-  
-  const primaryProduct = PRODUCT_DISPLAY[data.productRecommendations.primary] || 
-    { name: data.productRecommendations.primary, route: "/" };
-  
+function generateEmailHTML(data: QuizResultsRequest, baseUrl: string): string {
+  const normalizedBaseUrl = (baseUrl || "").replace(/\/+$/, "");
+
+  // Inline SVG logo (avoids broken external image URLs in email clients)
+  const logoSvg = encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+      <rect x="0" y="0" width="48" height="48" rx="12" fill="#ffffff"/>
+      <circle cx="22" cy="24" r="12" fill="${BRAND_PRIMARY}"/>
+      <circle cx="28" cy="20" r="12" fill="#ffffff"/>
+    </svg>
+  `.trim());
+  const logoDataUri = `data:image/svg+xml,${logoSvg}`;
+
+  const primaryProduct =
+    PRODUCT_DISPLAY[data.productRecommendations.primary] || {
+      name: data.productRecommendations.primary,
+      route: "/",
+    };
+
+  const productImageUrl = primaryProduct.imagePath
+    ? `${normalizedBaseUrl}${primaryProduct.imagePath}`
+    : null;
+
+  const personaLabel = CLUSTER_LABEL[data.persona.cluster] ?? data.persona.label;
+
   const confidenceScore = data.persona.confidence_score ?? 70;
   const confidenceLabel = getConfidenceLabel(confidenceScore);
-  
+
   // Get first 1-2 risk drivers for insights
   const topInsights = (data.top_risk_drivers || []).slice(0, 2);
-  
+
   // Calculate display scores
-  const spineScore = data.scores.spine_alignment_score ?? (100 - (data.scores.alignment_risk_score || 30));
+  const spineScore =
+    data.scores.spine_alignment_score ??
+    (100 - (data.scores.alignment_risk_score || 30));
   const energyScore = data.energy_potential_score ?? 65;
-  
+
   // Get first focus from coach preview
-  const firstFocus = data.coachPreview?.day_1_3 || "Establishing proper pillow positioning and alignment fundamentals";
+  const firstFocus =
+    data.coachPreview?.day_1_3 ||
+    "Establishing proper pillow positioning and alignment fundamentals";
 
   return `
 <!DOCTYPE html>
@@ -161,7 +193,7 @@ function generateEmailHTML(data: QuizResultsRequest): string {
           <!-- Header - Clean, minimal -->
           <tr>
             <td style="background: ${BRAND_DARK}; padding: 32px 28px; text-align: center;">
-              <img src="${logoUrl}" alt="Rise By Night" width="48" height="48" style="display: block; margin: 0 auto 16px; border-radius: 12px; background: white; padding: 3px;" />
+              <img src="${logoDataUri}" alt="Rise By Night" width="48" height="48" style="display: block; margin: 0 auto 16px; border-radius: 12px; background: white; padding: 3px;" />
               <h1 style="color: #ffffff; font-size: 20px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.3px;">Your Sleep Profile Snapshot</h1>
               <p style="color: #94a3b8; font-size: 13px; margin: 0;">Based on your science-backed assessment</p>
             </td>
@@ -180,8 +212,8 @@ function generateEmailHTML(data: QuizResultsRequest): string {
                       <tr>
                         <td style="padding: 24px;">
                           <span style="display: inline-block; background: ${BRAND_PRIMARY}; color: white; font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">${confidenceLabel}</span>
-                          <h2 style="font-size: 18px; color: ${BRAND_DARK}; font-weight: 600; margin: 8px 0 10px;">${data.persona.label}</h2>
-                          <p style="font-size: 14px; color: #475569; line-height: 1.55; margin: 0;">${data.persona.description}</p>
+                           <h2 style="font-size: 18px; color: ${BRAND_DARK}; font-weight: 600; margin: 8px 0 10px;">${personaLabel}</h2>
+                           <p style="font-size: 14px; color: #475569; line-height: 1.55; margin: 0;">${data.persona.description}</p>
                         </td>
                       </tr>
                     </table>
@@ -371,7 +403,7 @@ serve(async (req: Request): Promise<Response> => {
     console.log(`[send-quiz-results] Sending curated snapshot email to: ${data.email}`);
 
     // Generate minimal HTML email
-    const htmlContent = generateEmailHTML(data);
+    const htmlContent = generateEmailHTML(data, "https://www.risebynight.com");
 
     // Send email using verified domain
     const emailResponse = await resend.emails.send({
