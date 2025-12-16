@@ -137,9 +137,6 @@ function getScoreColor(score: number): string {
 function generateEmailHTML(data: QuizResultsRequest, baseUrl: string): string {
   const normalizedBaseUrl = (baseUrl || "").replace(/\/+$/, "");
 
-  // Use hosted logo image
-  const logoUrl = `${normalizedBaseUrl}/images/risebynight-logo-email.png`;
-
   const primaryProduct =
     PRODUCT_DISPLAY[data.productRecommendations.primary] || {
       name: data.productRecommendations.primary,
@@ -186,7 +183,7 @@ function generateEmailHTML(data: QuizResultsRequest, baseUrl: string): string {
           <!-- Header - Clean, minimal -->
           <tr>
             <td style="background: ${BRAND_DARK}; padding: 32px 28px; text-align: center;">
-              <img src="${logoUrl}" alt="Rise By Night" width="180" height="auto" style="display: block; margin: 0 auto 16px;" />
+              <div style="color: #ffffff; font-size: 18px; font-weight: 650; letter-spacing: -0.2px; margin: 0 auto 16px;">Rise By Night</div>
               <h1 style="color: #ffffff; font-size: 20px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.3px;">Your Sleep Profile Snapshot</h1>
               <p style="color: #94a3b8; font-size: 13px; margin: 0;">Based on your science-backed assessment</p>
             </td>
