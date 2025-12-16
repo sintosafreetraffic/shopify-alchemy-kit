@@ -8,11 +8,13 @@ import { ProfileMetrics } from './ProfileMetrics';
 import { PainMapMinimal } from './PainMapMinimal';
 import { SleepSetupCard } from './SleepSetupCard';
 import { ProductRecommendationCard } from './ProductRecommendationCard';
+import { OwnedProductsSection } from './OwnedProductsSection';
 import { AssessmentAccordion } from './AssessmentAccordion';
 import { SleepSyncProfileOverview } from './SleepSyncProfileOverview';
 import { SleepSetupForm } from '../SleepSetupForm';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useProductOwnership } from '@/hooks/useProductOwnership';
 
 interface ProfileTabProps {
   profile: SleepProfile;
@@ -34,6 +36,15 @@ export function ProfileTab({
   const [showSetupModal, setShowSetupModal] = useState(false);
   
   const assessment = profile.sleep_assessment as SleepAssessment | undefined;
+  
+  // Fetch product ownership data
+  const { 
+    ownedProducts, 
+    isLoading: isLoadingProducts, 
+    isSyncing, 
+    lastSyncAt, 
+    syncProducts,
+  } = useProductOwnership(email);
 
   return (
     <div className="space-y-12 pb-12" style={{ backgroundColor: '#F7F7F6' }}>
@@ -59,16 +70,26 @@ export function ProfileTab({
         onEditSetup={() => setShowSetupModal(true)}
       />
 
-      {/* Section 6: Product Recommendations */}
-      <ProductRecommendationCard 
-        profile={profile}
-        recommendations={assessment?.recommendations} 
+      {/* Section 6: Owned Products */}
+      <OwnedProductsSection
+        products={ownedProducts}
+        isLoading={isLoadingProducts}
+        isSyncing={isSyncing}
+        lastSyncAt={lastSyncAt}
+        onSync={syncProducts}
       />
 
-      {/* Section 7: Assessment Accordion */}
+      {/* Section 7: Product Recommendations */}
+      <ProductRecommendationCard 
+        profile={profile}
+        recommendations={assessment?.recommendations}
+        ownedProducts={ownedProducts}
+      />
+
+      {/* Section 8: Assessment Accordion */}
       <AssessmentAccordion quizData={profile.quiz_data} />
 
-      {/* Section 8: SleepSync Profile Overview */}
+      {/* Section 9: SleepSync Profile Overview */}
       <SleepSyncProfileOverview email={email} />
 
       {/* Retake Assessment CTA */}

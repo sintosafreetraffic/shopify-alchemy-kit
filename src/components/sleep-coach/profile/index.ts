@@ -1,4 +1,5 @@
 export { ProfileTab } from './ProfileTab';
+export { OwnedProductsSection } from './OwnedProductsSection';
 export { ProfileHero } from './ProfileHero';
 export { SleepIdentityCard } from './SleepIdentityCard';
 export { ProfileMetrics } from './ProfileMetrics';
