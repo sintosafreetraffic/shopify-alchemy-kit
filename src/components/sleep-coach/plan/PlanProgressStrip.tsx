@@ -50,28 +50,27 @@ export function PlanProgressStrip({
   
   // Get phase index
   const phaseIndex = PHASE_ORDER.indexOf(phase);
-  const phaseProgress = ((phaseIndex + 1) / PHASE_ORDER.length) * 100;
 
-  // Adherence color
+  // Adherence color - brand blue scale only, no traffic-light colors
   const getAdherenceColor = (rate?: number) => {
     if (rate === undefined) return '#A7B4C2';
-    if (rate >= 80) return 'rgba(34, 197, 94, 0.85)';
-    if (rate >= 60) return 'rgba(234, 179, 8, 0.85)';
-    return 'rgba(239, 68, 68, 0.75)';
+    if (rate >= 80) return 'rgba(60, 131, 246, 0.9)'; // Strong brand blue
+    if (rate >= 60) return 'rgba(60, 131, 246, 0.7)'; // Medium brand blue
+    return 'rgba(167, 180, 194, 0.85)'; // Dusty blue for lower rates
   };
 
-  // Encouragement text
+  // Encouragement text - calm, supportive tone
   const getEncouragementText = () => {
     if (adherenceRate !== undefined && adherenceRate < 50) {
-      return "This week we'll keep actions small enough to stay consistent.";
+      return "This week includes smaller actions to help build consistent habits over time.";
     }
     if (streakDays >= 7) {
-      return "Your consistency is building strong sleep foundations.";
+      return "Consistency supports lasting improvements in sleep quality.";
     }
     if (weekNumber <= 2) {
-      return "Early weeks are about building awareness and small wins.";
+      return "Early weeks focus on building awareness through gentle observation.";
     }
-    return "Steady progress leads to lasting improvements.";
+    return "Steady, gradual progress supports lasting sleep improvements.";
   };
 
   return (
@@ -172,7 +171,7 @@ export function PlanProgressStrip({
         </div>
       </div>
 
-      {/* Phase progress dots */}
+      {/* Phase progress dots - brand blue scale only */}
       <div className="flex items-center gap-2 mt-4 pt-4 border-t" style={{ borderColor: 'rgba(167, 180, 194, 0.15)' }}>
         {PHASE_ORDER.map((p, i) => {
           const isActive = i === phaseIndex;
@@ -184,7 +183,7 @@ export function PlanProgressStrip({
                 className="w-2.5 h-2.5 rounded-full transition-all"
                 style={{ 
                   backgroundColor: isComplete 
-                    ? 'rgba(34, 197, 94, 0.7)' 
+                    ? 'rgba(60, 131, 246, 0.7)' 
                     : isActive 
                       ? 'rgba(60, 131, 246, 0.85)' 
                       : 'rgba(167, 180, 194, 0.3)',
@@ -204,7 +203,7 @@ export function PlanProgressStrip({
                   className="flex-1 h-px"
                   style={{ 
                     backgroundColor: isComplete 
-                      ? 'rgba(34, 197, 94, 0.4)' 
+                      ? 'rgba(60, 131, 246, 0.4)' 
                       : 'rgba(167, 180, 194, 0.2)',
                   }}
                 />

@@ -26,42 +26,42 @@ interface PlanInsightsProps {
   adaptiveSummary?: string;
 }
 
-// Pattern display config
+// Pattern display config - brand neutral/blue colors only, no traffic-light colors
 const PATTERN_LABELS: Record<string, { label: string; color: string }> = {
-  alcohol: { label: "Alcohol timing", color: "rgba(239, 68, 68, 0.8)" },
-  late_meal: { label: "Late meals", color: "rgba(234, 179, 8, 0.8)" },
-  stress_anxiety: { label: "Stress activation", color: "rgba(168, 85, 247, 0.8)" },
-  temperature_discomfort: { label: "Temperature", color: "rgba(59, 130, 246, 0.8)" },
-  screen_time: { label: "Screen time", color: "rgba(99, 102, 241, 0.8)" },
-  caffeine_late: { label: "Caffeine timing", color: "rgba(139, 69, 19, 0.8)" },
-  travel: { label: "Travel disruption", color: "rgba(34, 197, 94, 0.8)" },
-  irregular_schedule: { label: "Timing inconsistency", color: "rgba(245, 158, 11, 0.8)" },
-  social_jetlag: { label: "Social jet lag", color: "rgba(236, 72, 153, 0.8)" },
-  exercise_late: { label: "Late exercise", color: "rgba(14, 165, 233, 0.8)" },
-  medication: { label: "Medication effects", color: "rgba(107, 114, 128, 0.8)" },
-  partner_disruption: { label: "Partner disruption", color: "rgba(217, 119, 6, 0.8)" },
+  alcohol: { label: "Alcohol timing", color: "rgba(60, 131, 246, 0.7)" },
+  late_meal: { label: "Late meals", color: "rgba(167, 180, 194, 0.8)" },
+  stress_anxiety: { label: "Stress activation", color: "rgba(60, 131, 246, 0.6)" },
+  temperature_discomfort: { label: "Temperature", color: "rgba(167, 180, 194, 0.7)" },
+  screen_time: { label: "Screen time", color: "rgba(60, 131, 246, 0.65)" },
+  caffeine_late: { label: "Caffeine timing", color: "rgba(167, 180, 194, 0.75)" },
+  travel: { label: "Travel disruption", color: "rgba(60, 131, 246, 0.55)" },
+  irregular_schedule: { label: "Timing inconsistency", color: "rgba(167, 180, 194, 0.85)" },
+  social_jetlag: { label: "Social jet lag", color: "rgba(60, 131, 246, 0.6)" },
+  exercise_late: { label: "Late exercise", color: "rgba(167, 180, 194, 0.7)" },
+  medication: { label: "Medication effects", color: "rgba(142, 152, 163, 0.8)" },
+  partner_disruption: { label: "Partner disruption", color: "rgba(167, 180, 194, 0.75)" },
 };
 
-// Default education text for patterns
+// Default education text for patterns - calm, scientific tone
 const PATTERN_EDUCATION_DEFAULT: Record<string, string> = {
-  alcohol: "Alcohol can fragment sleep architecture and reduce restorative deep sleep phases. This week, your plan gently supports better timing and hydration.",
-  late_meal: "Eating close to bedtime can affect sleep onset and quality. Your plan includes light evening nutrition guidance.",
-  stress_anxiety: "Elevated stress activates the nervous system, making it harder to transition into rest. This week focuses on calming wind-down rituals.",
-  temperature_discomfort: "Temperature regulation is key to quality sleep. Your plan includes targeted cooling or warming strategies.",
-  screen_time: "Blue light exposure delays melatonin production. Your plan incorporates screen-free wind-down periods.",
-  caffeine_late: "Caffeine has a half-life of 5-6 hours. Your plan suggests timing adjustments for better sleep onset.",
-  travel: "Circadian disruption from travel takes time to stabilize. Your plan includes anchoring strategies.",
-  irregular_schedule: "Inconsistent sleep timing affects your internal clock. This week focuses on building consistent anchors.",
-  social_jetlag: "Weekend schedule shifts can create mini jet lag. Your plan supports gradual consistency.",
-  exercise_late: "Late intense exercise can elevate cortisol. Your plan suggests optimal timing for movement.",
-  medication: "Some medications affect sleep architecture. Your plan works around these factors.",
-  partner_disruption: "Shared sleep spaces can create disruptions. Your plan includes strategies for both partners.",
+  alcohol: "Research suggests alcohol may fragment sleep architecture and reduce restorative deep sleep phases. This week, your plan gently supports better timing and hydration habits.",
+  late_meal: "Eating close to bedtime can affect sleep onset and quality. Your plan includes light evening nutrition guidance to support more restful nights.",
+  stress_anxiety: "Elevated stress activates the nervous system, making it harder to transition into rest. This week focuses on calming wind-down rituals that may help ease the transition.",
+  temperature_discomfort: "Temperature regulation is key to quality sleep. Your plan includes targeted cooling or warming strategies to support comfort.",
+  screen_time: "Blue light exposure can delay melatonin production. Your plan incorporates screen-free wind-down periods that may support natural sleep onset.",
+  caffeine_late: "Caffeine has a half-life of 5-6 hours. Your plan suggests timing adjustments that may support better sleep onset.",
+  travel: "Circadian disruption from travel takes time to stabilize. Your plan includes anchoring strategies to support your adjustment.",
+  irregular_schedule: "Inconsistent sleep timing can affect your internal clock. This week focuses on building consistent anchors that may support better rhythm.",
+  social_jetlag: "Weekend schedule shifts can create mini jet lag effects. Your plan supports gradual consistency that may help maintain your rhythm.",
+  exercise_late: "Late intense exercise can elevate cortisol levels. Your plan suggests optimal timing for movement to support restful nights.",
+  medication: "Some medications can affect sleep architecture. Your plan works around these factors to support better rest.",
+  partner_disruption: "Shared sleep spaces can create disruptions. Your plan includes strategies that may help both partners rest more comfortably.",
 };
 
 // Timeline categories
 const TIMELINE_LABELS: Record<string, { label: string; icon: React.ReactNode }> = {
   alignment_posture: { 
-    label: "Alignment & Posture",
+    label: "Alignment and Posture",
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
         <path d="M12 3v18M3 12h18" stroke="#8E98A3" strokeWidth="1.25" strokeLinecap="round" opacity="0.8"/>
@@ -102,7 +102,7 @@ const TIMELINE_LABELS: Record<string, { label: string; icon: React.ReactNode }> 
     ),
   },
   pain_management: { 
-    label: "Pain Management",
+    label: "Comfort Support",
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
         <circle cx="12" cy="12" r="9" stroke="#8E98A3" strokeWidth="1.25" opacity="0.8"/>
@@ -165,7 +165,7 @@ export function PlanInsights({
               className="text-sm font-medium mb-4"
               style={{ color: '#2D2B29' }}
             >
-              Detected from your logs
+              Patterns from your logs
             </h4>
 
             {/* Pattern chips */}
@@ -240,7 +240,7 @@ export function PlanInsights({
                   </div>
                   
                   <div className="flex gap-4 text-xs mb-2" style={{ color: '#6F6A66' }}>
-                    <span>Onset: {timeline.typicalOnset}</span>
+                    <span>Typical onset: {timeline.typicalOnset}</span>
                     <span>Full effect: {timeline.fullEffect}</span>
                   </div>
                   

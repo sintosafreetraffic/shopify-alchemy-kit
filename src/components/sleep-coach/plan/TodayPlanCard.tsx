@@ -5,7 +5,7 @@
  * Premium Scandinavian aesthetic, calm interaction design
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 interface TodayAction {
   time: "morning" | "evening";
@@ -47,22 +47,22 @@ const MoonIcon = () => (
   </svg>
 );
 
-// Effort label helper
+// Effort labels - brand blue scale, no traffic-light colors
 const EFFORT_LABELS: Record<string, { label: string; style: React.CSSProperties }> = {
   low: { 
-    label: "Quick", 
+    label: "Brief", 
     style: { 
-      backgroundColor: 'rgba(34, 197, 94, 0.08)', 
-      color: 'rgba(34, 197, 94, 0.9)',
-      border: '1px solid rgba(34, 197, 94, 0.15)',
+      backgroundColor: 'rgba(167, 180, 194, 0.1)', 
+      color: '#6F6A66',
+      border: '1px solid rgba(167, 180, 194, 0.2)',
     } 
   },
   medium: { 
     label: "Moderate", 
     style: { 
-      backgroundColor: 'rgba(234, 179, 8, 0.08)', 
-      color: 'rgba(180, 140, 8, 0.95)',
-      border: '1px solid rgba(234, 179, 8, 0.15)',
+      backgroundColor: 'rgba(60, 131, 246, 0.08)', 
+      color: 'rgba(60, 131, 246, 0.85)',
+      border: '1px solid rgba(60, 131, 246, 0.15)',
     } 
   },
 };
@@ -77,6 +77,11 @@ export function TodayPlanCard({
 }: TodayPlanCardProps) {
   const [reflection, setReflection] = useState("");
   const [localCompleted, setLocalCompleted] = useState<Set<string>>(new Set(completedActions));
+
+  // Sync with server state when completedActions prop changes
+  useEffect(() => {
+    setLocalCompleted(new Set(completedActions));
+  }, [completedActions]);
 
   const handleToggle = useCallback((actionId: string) => {
     const isCompleted = localCompleted.has(actionId);
@@ -142,7 +147,7 @@ export function TodayPlanCard({
             color: 'rgba(60, 131, 246, 0.85)',
           }}
         >
-          {localCompleted.size}/{actions.length} done
+          {localCompleted.size}/{actions.length} completed
         </div>
       </div>
 
@@ -158,24 +163,24 @@ export function TodayPlanCard({
               key={actionId}
               className="flex items-start gap-4 p-4 rounded-2xl transition-colors"
               style={{ 
-                backgroundColor: isCompleted ? 'rgba(34, 197, 94, 0.04)' : '#FFFFFF',
+                backgroundColor: isCompleted ? 'rgba(60, 131, 246, 0.04)' : '#FFFFFF',
                 border: isCompleted 
-                  ? '1px solid rgba(34, 197, 94, 0.15)' 
+                  ? '1px solid rgba(60, 131, 246, 0.15)' 
                   : '1px solid rgba(167, 180, 194, 0.15)',
               }}
             >
-              {/* Checkbox */}
+              {/* Checkbox - brand blue */}
               <button
                 onClick={() => handleToggle(actionId)}
                 className="flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all mt-0.5"
                 style={{ 
-                  borderColor: isCompleted ? 'rgba(34, 197, 94, 0.6)' : 'rgba(167, 180, 194, 0.4)',
-                  backgroundColor: isCompleted ? 'rgba(34, 197, 94, 0.1)' : 'transparent',
+                  borderColor: isCompleted ? 'rgba(60, 131, 246, 0.6)' : 'rgba(167, 180, 194, 0.4)',
+                  backgroundColor: isCompleted ? 'rgba(60, 131, 246, 0.1)' : 'transparent',
                 }}
               >
                 {isCompleted && (
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                    <path d="M2.5 6L5 8.5L9.5 4" stroke="rgba(34, 197, 94, 0.9)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M2.5 6L5 8.5L9.5 4" stroke="rgba(60, 131, 246, 0.9)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 )}
               </button>
@@ -187,8 +192,8 @@ export function TodayPlanCard({
                   <span 
                     className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
                     style={{ 
-                      backgroundColor: action.time === "morning" ? 'rgba(251, 191, 36, 0.1)' : 'rgba(99, 102, 241, 0.08)',
-                      color: action.time === "morning" ? '#B45309' : '#4F46E5',
+                      backgroundColor: 'rgba(167, 180, 194, 0.1)',
+                      color: '#6F6A66',
                     }}
                   >
                     {action.time === "morning" ? <SunIcon /> : <MoonIcon />}
@@ -274,14 +279,14 @@ export function TodayPlanCard({
           className="text-[11px] font-semibold uppercase tracking-widest mb-2 block"
           style={{ color: '#A7B4C2', letterSpacing: '0.12em' }}
         >
-          Quick reflection (optional)
+          Brief reflection (optional)
         </label>
         <div className="flex gap-3">
           <input
             type="text"
             value={reflection}
             onChange={(e) => setReflection(e.target.value)}
-            placeholder="How did tonight's plan feel?"
+            placeholder="How did this evening's routine feel"
             className="flex-1 px-4 py-2.5 rounded-xl text-sm outline-none transition-all"
             style={{ 
               backgroundColor: '#FFFFFF',

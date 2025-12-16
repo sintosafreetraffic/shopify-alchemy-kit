@@ -577,6 +577,20 @@ const SleepCoachDashboard = () => {
                       } : null}
                       loading={isGeneratingPlan}
                       streakDays={streak}
+                      adaptiveContext={{
+                        phase: rawResponse?.phase || "foundation",
+                        weekNumber: rawResponse?.week_number || 1,
+                        detectedPatterns: rawResponse?.detected_patterns || [],
+                        adherenceRate: rawResponse?.adherence_rate,
+                      }}
+                      onActionComplete={(dayName, actionId, completed) => {
+                        // TODO: Persist to backend when endpoint available
+                        console.log('Action completed:', { dayName, actionId, completed });
+                      }}
+                      onDayReflection={(dayName, note) => {
+                        // TODO: Persist reflection to backend when endpoint available
+                        console.log('Reflection submitted:', { dayName, note });
+                      }}
                       onRegeneratePlan={(reason) => handleGeneratePlan(reason)}
                     />
                   );
