@@ -2,6 +2,8 @@
  * ModuleHighlight - Featured module card with secondary modules
  * 
  * Premium Scandinavian minimalism with scientific framing
+ * Star + soft amber accent for primary module
+ * Brand blue (#3C83F6) for section label
  */
 
 import { MODULE_DEFINITIONS } from "@/components/sleep-quiz/QuizTypes";
@@ -36,63 +38,69 @@ export function ModuleHighlight({
   if (!primaryModule) return null;
 
   return (
-    <section className="space-y-5">
-      {/* Section header */}
+    <section className="space-y-6">
+      {/* Section header - brand blue accent */}
       <div className="px-1">
         <p 
-          className="text-xs font-medium tracking-wider uppercase"
-          style={{ color: '#A7B4C2', letterSpacing: '0.08em' }}
+          className="text-xs font-semibold tracking-widest uppercase"
+          style={{ color: 'rgba(60, 131, 246, 0.7)', letterSpacing: '0.12em' }}
         >
           Your Coach's Priority
         </p>
       </div>
 
-      {/* Primary featured module */}
+      {/* Primary featured module with amber accent */}
       <div
-        className="rounded-2xl p-7 md:p-8"
+        className="relative rounded-3xl p-8 md:p-10 overflow-hidden"
         style={{
           backgroundColor: '#FAFAF8',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
         }}
       >
-        <div className="flex items-start gap-4">
-          {/* Module icon - monoline star */}
+        {/* Soft amber accent line at top */}
+        <div 
+          className="absolute top-0 left-8 right-8 h-[3px] rounded-full"
+          style={{ backgroundColor: 'rgba(232, 184, 109, 0.5)' }}
+        />
+        
+        <div className="flex items-start gap-5">
+          {/* Module icon - star with amber tint */}
           <div
-            className="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center"
-            style={{ backgroundColor: '#F4F3F1' }}
+            className="flex-shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center"
+            style={{ backgroundColor: 'rgba(232, 184, 109, 0.12)' }}
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke="#8E98A3" strokeWidth="1.25" fill="none" strokeLinejoin="round" opacity="0.75"/>
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M14 2L17.5 9.5L26 10.5L20 16L21.5 24.5L14 20.5L6.5 24.5L8 16L2 10.5L10.5 9.5L14 2Z" stroke="#E8B86D" strokeWidth="1.25" fill="none" strokeLinejoin="round" opacity="0.85"/>
             </svg>
           </div>
           
           <div className="flex-1">
             <h4 
-              className="text-lg font-medium mb-1.5"
+              className="text-xl font-semibold mb-2 tracking-tight"
               style={{ color: '#2D2B29' }}
             >
               {primaryModule.name}
             </h4>
             <p 
-              className="text-sm mb-3.5"
-              style={{ color: '#6F6A66', lineHeight: 1.5 }}
+              className="text-sm mb-5"
+              style={{ color: '#6F6A66', lineHeight: 1.55 }}
             >
               {primaryModule.description}
             </p>
             <p 
               className="text-sm leading-relaxed"
-              style={{ color: '#4A4844', lineHeight: 1.55 }}
+              style={{ color: '#4A4844', lineHeight: 1.6 }}
             >
-              <span style={{ color: '#A7B4C2', fontWeight: 500 }}>Why this matters: </span>
+              <span style={{ color: 'rgba(60, 131, 246, 0.7)', fontWeight: 600 }}>Why this matters: </span>
               {MODULE_WHY[primaryModuleId] || "Selected based on your assessment results."}
             </p>
           </div>
         </div>
       </div>
 
-      {/* Secondary modules */}
+      {/* Secondary modules - reduced visual density */}
       {secondaryModules.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {secondaryModules.map((moduleId) => {
             const module = MODULE_DEFINITIONS[moduleId];
             if (!module) return null;
@@ -100,13 +108,13 @@ export function ModuleHighlight({
             return (
               <div
                 key={moduleId}
-                className="flex items-center gap-3.5 rounded-xl px-4 py-3.5"
+                className="flex items-center gap-4 rounded-2xl px-5 py-4"
                 style={{
                   backgroundColor: '#FAFAF8',
                 }}
               >
                 <div
-                  className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-sm font-medium"
+                  className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-sm font-semibold"
                   style={{ 
                     backgroundColor: '#F4F3F1',
                     color: '#8E98A3',
@@ -120,12 +128,6 @@ export function ModuleHighlight({
                     style={{ color: '#2D2B29' }}
                   >
                     {module.name}
-                  </p>
-                  <p 
-                    className="text-xs truncate"
-                    style={{ color: '#6F6A66' }}
-                  >
-                    {module.description}
                   </p>
                 </div>
               </div>
