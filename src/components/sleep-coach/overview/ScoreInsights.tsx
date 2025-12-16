@@ -1,7 +1,8 @@
 /**
- * ScoreInsights - Interpretive score display (not raw numbers)
+ * ScoreInsights - Interpretive score display with warm neutrals
  * 
  * Shows "Your Biggest Opportunity" with insight-led framing
+ * Brand blue (#3C83F6) for progress bar foreground
  */
 
 import { useMemo } from "react";
@@ -80,7 +81,7 @@ export function ScoreInsights({ scores }: ScoreInsightsProps) {
   const primary = opportunities[0];
   const secondary = opportunities.slice(1, 3);
 
-  // Get color based on score
+  // Get color based on score - muted natural colors
   const getScoreColor = (score: number) => {
     if (score >= 70) return '#7CB99D'; // soft green
     if (score >= 45) return '#E8B86D'; // soft amber
@@ -89,63 +90,67 @@ export function ScoreInsights({ scores }: ScoreInsightsProps) {
 
   return (
     <section className="space-y-4">
-      {/* Section header */}
-      <div className="px-1">
+      {/* Section header with subtle diagram illustration */}
+      <div className="flex items-center justify-between px-1">
         <p 
           className="text-xs font-medium tracking-wide uppercase"
-          style={{ color: '#A7B4C2' }}
+          style={{ color: '#8E98A3' }}
         >
           Sleep Insights
         </p>
+        {/* Abstract curve element */}
+        <svg width="48" height="16" viewBox="0 0 48 16" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ opacity: 0.4 }}>
+          <path d="M2 14C8 6 16 4 24 8C32 12 40 10 46 2" stroke="#8E98A3" strokeWidth="1" strokeLinecap="round" fill="none"/>
+        </svg>
       </div>
 
       {/* Primary opportunity */}
       <div
-        className="rounded-2xl p-6 md:p-7"
+        className="rounded-2xl p-7 md:p-8"
         style={{
-          backgroundColor: '#FFFFFF',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.03), 0 4px 12px rgba(0,0,0,0.02)',
+          backgroundColor: '#FAFAF8',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
         }}
       >
         <div className="mb-5">
           <p 
             className="text-sm font-medium mb-1"
-            style={{ color: '#636E72' }}
+            style={{ color: '#6F6A66' }}
           >
             Your Biggest Opportunity
           </p>
           <h4 
             className="text-xl font-medium"
-            style={{ color: '#2D3436' }}
+            style={{ color: '#2D2B29' }}
           >
             {primary.label}
           </h4>
         </div>
 
-        {/* Progress bar */}
+        {/* Progress bar - brand blue for foreground */}
         <div className="mb-4">
           <div 
             className="h-2.5 rounded-full overflow-hidden"
-            style={{ backgroundColor: '#F0F0EE' }}
+            style={{ backgroundColor: '#E6E4DE' }}
           >
             <div
               className="h-full rounded-full transition-all duration-700 ease-out"
               style={{ 
                 width: `${primary.score}%`,
-                backgroundColor: getScoreColor(primary.score),
+                backgroundColor: '#3C83F6',
               }}
             />
           </div>
           <div className="flex justify-between mt-1.5">
             <span 
               className="text-xs"
-              style={{ color: '#A7B4C2' }}
+              style={{ color: '#A7A29C' }}
             >
               {primary.description}
             </span>
             <span 
               className="text-xs font-medium"
-              style={{ color: '#636E72' }}
+              style={{ color: '#6F6A66' }}
             >
               {primary.score}%
             </span>
@@ -155,7 +160,7 @@ export function ScoreInsights({ scores }: ScoreInsightsProps) {
         {/* Insight */}
         <p 
           className="text-sm leading-relaxed"
-          style={{ color: '#4A5568' }}
+          style={{ color: '#4A4844' }}
         >
           {primary.insight}
         </p>
@@ -169,20 +174,19 @@ export function ScoreInsights({ scores }: ScoreInsightsProps) {
               key={area.key}
               className="rounded-xl px-4 py-4"
               style={{
-                backgroundColor: '#FAFAF9',
-                border: '1px solid #E6E6E4',
+                backgroundColor: '#FAFAF8',
               }}
             >
               <p 
                 className="text-sm font-medium mb-2"
-                style={{ color: '#2D3436' }}
+                style={{ color: '#2D2B29' }}
               >
                 {area.label}
               </p>
               <div className="flex items-center gap-2">
                 <div 
                   className="flex-1 h-1.5 rounded-full overflow-hidden"
-                  style={{ backgroundColor: '#F0F0EE' }}
+                  style={{ backgroundColor: '#E6E4DE' }}
                 >
                   <div
                     className="h-full rounded-full"
@@ -194,7 +198,7 @@ export function ScoreInsights({ scores }: ScoreInsightsProps) {
                 </div>
                 <span 
                   className="text-xs font-medium"
-                  style={{ color: '#636E72' }}
+                  style={{ color: '#6F6A66' }}
                 >
                   {area.score}%
                 </span>

@@ -89,28 +89,28 @@ export function PersonaBlockMinimal({
     <section 
       className="rounded-2xl p-7 md:p-8"
       style={{ 
-        backgroundColor: '#FFFFFF',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.03), 0 4px 12px rgba(0,0,0,0.02)',
+        backgroundColor: '#FAFAF8',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
       }}
     >
       {/* Header with icon */}
       <div className="flex items-start gap-4 mb-5">
         <div 
           className="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center"
-          style={{ backgroundColor: '#F7F7F6' }}
+          style={{ backgroundColor: '#F4F3F1' }}
         >
           {Icon}
         </div>
         <div className="flex-1 min-w-0">
           <p 
             className="text-xs font-medium tracking-wide uppercase mb-1"
-            style={{ color: '#A7B4C2' }}
+            style={{ color: '#8E98A3' }}
           >
             Your Sleep Persona
           </p>
           <h3 
             className="text-xl font-medium"
-            style={{ color: '#2D3436' }}
+            style={{ color: '#2D2B29' }}
           >
             {displayLabel}
           </h3>
@@ -120,7 +120,7 @@ export function PersonaBlockMinimal({
       {/* Description */}
       <p 
         className="text-base leading-relaxed mb-6"
-        style={{ color: '#636E72' }}
+        style={{ color: '#6F6A66' }}
       >
         {displayDescription}
       </p>
@@ -129,17 +129,17 @@ export function PersonaBlockMinimal({
       {rationale && (
         <div 
           className="rounded-xl p-5 mb-6"
-          style={{ backgroundColor: '#F7F7F6' }}
+          style={{ backgroundColor: '#F4F3F1' }}
         >
           <p 
             className="text-xs font-medium uppercase tracking-wide mb-2"
-            style={{ color: '#A7B4C2' }}
+            style={{ color: '#8E98A3' }}
           >
             Why this matches you
           </p>
           <p 
             className="text-sm leading-relaxed"
-            style={{ color: '#2D3436' }}
+            style={{ color: '#2D2B29' }}
           >
             {rationale}
           </p>
@@ -150,14 +150,11 @@ export function PersonaBlockMinimal({
       {keyInsights.length > 0 && (
         <div 
           className="rounded-xl p-5"
-          style={{ 
-            backgroundColor: '#FAFAF9',
-            border: '1px solid #E6E6E4',
-          }}
+          style={{ backgroundColor: '#F4F3F1' }}
         >
           <p 
             className="text-xs font-medium uppercase tracking-wide mb-3"
-            style={{ color: '#A7B4C2' }}
+            style={{ color: '#8E98A3' }}
           >
             What's most affecting your sleep
           </p>
@@ -167,13 +164,13 @@ export function PersonaBlockMinimal({
                 key={i}
                 className="inline-flex items-center px-3 py-1.5 rounded-full text-sm"
                 style={{ 
-                  backgroundColor: '#F0F4F8',
-                  color: '#4A5568',
+                  backgroundColor: '#FAFAF8',
+                  color: '#4A4844',
                 }}
               >
                 <span 
                   className="w-1.5 h-1.5 rounded-full mr-2"
-                  style={{ backgroundColor: '#A7B4C2' }}
+                  style={{ backgroundColor: '#3C83F6' }}
                 />
                 {insight}
               </span>

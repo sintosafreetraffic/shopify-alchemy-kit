@@ -82,7 +82,7 @@ export function OverviewTabMinimal({
 
   return (
     <div 
-      className="space-y-7 pb-8"
+      className="space-y-12 pb-10"
       style={{ maxWidth: '720px', margin: '0 auto' }}
     >
       {/* SECTION 1: Sleep Direction Hero */}

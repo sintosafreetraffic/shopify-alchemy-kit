@@ -1,7 +1,7 @@
 /**
  * SleepProfileMinimal - Clean, minimal profile summary
  * 
- * Typography-focused with pill tags for pain points
+ * Warm neutral typography with brand blue accent for CTA
  */
 
 interface SleepProfileMinimalProps {
@@ -33,7 +33,7 @@ export function SleepProfileMinimal({
       <div className="flex items-center justify-between px-1">
         <p 
           className="text-xs font-medium tracking-wide uppercase"
-          style={{ color: '#A7B4C2' }}
+          style={{ color: '#8E98A3' }}
         >
           Your Sleep Profile
         </p>
@@ -41,7 +41,7 @@ export function SleepProfileMinimal({
           <button
             onClick={onUpdateAssessment}
             className="text-xs font-medium transition-colors hover:opacity-80"
-            style={{ color: '#A7B4C2' }}
+            style={{ color: '#3C83F6' }}
           >
             Update Assessment
           </button>
@@ -50,23 +50,23 @@ export function SleepProfileMinimal({
 
       {/* Profile grid */}
       <div
-        className="rounded-2xl p-6 md:p-7"
+        className="rounded-2xl p-7 md:p-8"
         style={{
-          backgroundColor: '#FFFFFF',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.03), 0 4px 12px rgba(0,0,0,0.02)',
+          backgroundColor: '#FAFAF8',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
         }}
       >
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 mb-6">
           <div>
             <p 
               className="text-xs mb-1"
-              style={{ color: '#A7B4C2' }}
+              style={{ color: '#A7A29C' }}
             >
               Position
             </p>
             <p 
               className="text-base font-medium"
-              style={{ color: '#2D3436' }}
+              style={{ color: '#2D2B29' }}
             >
               {formatValue(position)}
             </p>
@@ -75,13 +75,13 @@ export function SleepProfileMinimal({
           <div>
             <p 
               className="text-xs mb-1"
-              style={{ color: '#A7B4C2' }}
+              style={{ color: '#A7A29C' }}
             >
               Temperature
             </p>
             <p 
               className="text-base font-medium"
-              style={{ color: '#2D3436' }}
+              style={{ color: '#2D2B29' }}
             >
               {formatValue(temperature)}
             </p>
@@ -90,13 +90,13 @@ export function SleepProfileMinimal({
           <div>
             <p 
               className="text-xs mb-1"
-              style={{ color: '#A7B4C2' }}
+              style={{ color: '#A7A29C' }}
             >
               Stress Level
             </p>
             <p 
               className="text-base font-medium"
-              style={{ color: '#2D3436' }}
+              style={{ color: '#2D2B29' }}
             >
               {formatValue(stress)}
             </p>
@@ -105,13 +105,13 @@ export function SleepProfileMinimal({
           <div>
             <p 
               className="text-xs mb-1"
-              style={{ color: '#A7B4C2' }}
+              style={{ color: '#A7A29C' }}
             >
               Wake Pattern
             </p>
             <p 
               className="text-base font-medium"
-              style={{ color: '#2D3436' }}
+              style={{ color: '#2D2B29' }}
             >
               {formatValue(wakeCondition)}
             </p>
@@ -122,11 +122,11 @@ export function SleepProfileMinimal({
         {painPoints.length > 0 && (
           <div 
             className="pt-5"
-            style={{ borderTop: '1px solid #E6E6E4' }}
+            style={{ borderTop: '1px solid #E6E4DE' }}
           >
             <p 
               className="text-xs mb-3"
-              style={{ color: '#A7B4C2' }}
+              style={{ color: '#A7A29C' }}
             >
               Areas of Focus
             </p>
@@ -136,8 +136,8 @@ export function SleepProfileMinimal({
                   key={i}
                   className="inline-flex px-3 py-1.5 rounded-full text-sm"
                   style={{ 
-                    backgroundColor: '#F7F7F6',
-                    color: '#4A5568',
+                    backgroundColor: '#F4F3F1',
+                    color: '#4A4844',
                   }}
                 >
                   {formatValue(point)}
