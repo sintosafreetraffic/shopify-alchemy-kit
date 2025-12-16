@@ -16,6 +16,8 @@ interface CompletionState {
   adherenceRate: number;
   streakDays: number;
   weekNumber: number;
+  totalActionsAvailable: number;
+  totalActionsCompleted: number;
 }
 
 interface UsePlanCompletionOptions {
@@ -31,6 +33,8 @@ export function usePlanCompletion({ planId, enabled = true }: UsePlanCompletionO
     adherenceRate: 0,
     streakDays: 0,
     weekNumber: 1,
+    totalActionsAvailable: 14,
+    totalActionsCompleted: 0,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -105,6 +109,8 @@ export function usePlanCompletion({ planId, enabled = true }: UsePlanCompletionO
         adherenceRate: newAdherenceRate,
         streakDays: newStreakDays,
         weekNumber: data.adherence?.week_number || 1,
+        totalActionsAvailable: data.adherence?.total_actions_available || 14,
+        totalActionsCompleted: data.adherence?.total_actions_completed || 0,
       });
     } catch (err) {
       console.error("Error fetching completion state:", err);

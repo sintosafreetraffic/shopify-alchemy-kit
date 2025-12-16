@@ -5,14 +5,16 @@
  * Consumes adaptive plan data and presents it beautifully
  */
 
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useState } from "react";
 import { PlanHero } from "./PlanHero";
 import { TodayPlanCard } from "./TodayPlanCard";
 import { WeeklySchedule } from "./WeeklySchedule";
 import { PlanInsights } from "./PlanInsights";
 import { PlanProgressStrip } from "./PlanProgressStrip";
+import { DayDetailModal } from "./DayDetailModal";
 import { Loader2 } from "lucide-react";
 import { usePlanCompletion } from "@/hooks/usePlanCompletion";
+import { useWeeklyProgression } from "@/hooks/useWeeklyProgression";
 
 // Types from coach-plan.ts
 import type { TodayAction, RefreshReason } from "@/types/coach-plan";
@@ -103,6 +105,9 @@ interface SleepPlanTabProps {
   onDayClick?: (dayName: string) => void;
 }
 
+// Day order for navigation
+const DAY_ORDER = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+
 // Get current day name
 function getCurrentDayName(): string {
   const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
@@ -122,6 +127,9 @@ export function SleepPlanTab({
   onRegeneratePlan,
   onDayClick,
 }: SleepPlanTabProps) {
+  // Modal state
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  
   // Derive planId robustly
   const planId = useMemo(() => {
     if (!plan) return null;
@@ -134,6 +142,7 @@ export function SleepPlanTab({
   const {
     completedActions,
     dayCompletion,
+    reflections,
     adherenceRate,
     streakDays: hookStreakDays,
     weekNumber,
@@ -143,8 +152,20 @@ export function SleepPlanTab({
     saveReflection,
   } = usePlanCompletion({ planId, enabled: !!planId });
   
+  // Use weekly progression hook
+  const {
+    isRegenerating,
+    daysRemaining,
+  } = useWeeklyProgression({
+    adherenceRate,
+    weekNumber,
+    planValidUntil: plan?.validUntil,
+    onRegeneratePlan: (reason) => onRegeneratePlan?.(reason as RefreshReason),
+    enabled: !!planId && !!onRegeneratePlan,
+  });
+  
   // Combined loading state
-  const isLoading = loading || completionLoading;
+  const isLoading = loading || completionLoading || isRegenerating;
   
   // Use hook values when available, fallback to props/context
   const effectiveStreakDays = hookStreakDays > 0 ? hookStreakDays : propStreakDays;
@@ -170,10 +191,48 @@ export function SleepPlanTab({
     adherenceRate: effectiveAdherenceRate,
   }), [adaptiveContext, plan, effectiveWeekNumber, effectiveAdherenceRate]);
 
-  // Handle day click
+  // Handle day click - open modal
   const handleDayClick = useCallback((dayName: string) => {
+    setSelectedDay(dayName.toLowerCase());
     onDayClick?.(dayName);
   }, [onDayClick]);
+
+  // Handle modal close
+  const handleModalClose = useCallback(() => {
+    setSelectedDay(null);
+  }, []);
+
+  // Handle modal navigation
+  const handleModalNavigate = useCallback((direction: "prev" | "next") => {
+    if (!selectedDay) return;
+    
+    const currentIndex = DAY_ORDER.indexOf(selectedDay.toLowerCase());
+    if (currentIndex === -1) return;
+    
+    const newIndex = direction === "prev" ? currentIndex - 1 : currentIndex + 1;
+    if (newIndex >= 0 && newIndex < DAY_ORDER.length) {
+      setSelectedDay(DAY_ORDER[newIndex]);
+    }
+  }, [selectedDay]);
+
+  // Get selected day plan
+  const selectedDayPlan = useMemo(() => {
+    if (!selectedDay || !plan?.days) return null;
+    return plan.days[selectedDay as keyof WeekDays] || null;
+  }, [selectedDay, plan?.days]);
+
+  // Navigation availability
+  const canNavigatePrev = useMemo(() => {
+    if (!selectedDay) return false;
+    const currentIndex = DAY_ORDER.indexOf(selectedDay.toLowerCase());
+    return currentIndex > 0;
+  }, [selectedDay]);
+
+  const canNavigateNext = useMemo(() => {
+    if (!selectedDay) return false;
+    const currentIndex = DAY_ORDER.indexOf(selectedDay.toLowerCase());
+    return currentIndex < DAY_ORDER.length - 1;
+  }, [selectedDay]);
 
   // Loading state
   if (isLoading) {
@@ -190,7 +249,7 @@ export function SleepPlanTab({
           className="text-sm"
           style={{ color: '#6F6A66' }}
         >
-          Generating your adaptive sleep plan
+          {isRegenerating ? "Preparing your next week" : "Generating your adaptive sleep plan"}
         </p>
       </div>
     );
@@ -253,6 +312,16 @@ export function SleepPlanTab({
         phase={mergedContext.phase}
         totalWeeks={plan.totalWeeks ?? 12}
       />
+      
+      {/* Days remaining indicator */}
+      {daysRemaining > 0 && daysRemaining <= 7 && (
+        <p 
+          className="text-xs text-center"
+          style={{ color: '#A7A29C' }}
+        >
+          {daysRemaining} {daysRemaining === 1 ? 'night' : 'nights'} remaining in this week
+        </p>
+      )}
       
       {/* Completion error - subtle inline message */}
       {completionError && (
@@ -318,6 +387,22 @@ export function SleepPlanTab({
           </button>
         )}
       </div>
+
+      {/* Day Detail Modal */}
+      <DayDetailModal
+        isOpen={!!selectedDay}
+        onClose={handleModalClose}
+        dayName={selectedDay || ""}
+        dayPlan={selectedDayPlan}
+        completedActions={completedActions}
+        reflection={selectedDay ? reflections[selectedDay.toLowerCase()] : undefined}
+        onToggleAction={toggleAction}
+        onSaveReflection={saveReflection}
+        onNavigate={handleModalNavigate}
+        canNavigatePrev={canNavigatePrev}
+        canNavigateNext={canNavigateNext}
+        dayStatus={selectedDay ? dayCompletion[selectedDay.toLowerCase()] : undefined}
+      />
     </div>
   );
 }

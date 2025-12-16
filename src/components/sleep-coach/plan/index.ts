@@ -8,3 +8,4 @@ export { WeeklySchedule } from "./WeeklySchedule";
 export { PlanInsights } from "./PlanInsights";
 export { PlanProgressStrip } from "./PlanProgressStrip";
 export { SleepPlanTab } from "./SleepPlanTab";
+export { DayDetailModal } from "./DayDetailModal";

@@ -115,7 +115,9 @@ export type RefreshReason =
   | "quiz_updated"
   | "product_changed"
   | "stale"
-  | "no_plan";
+  | "no_plan"
+  | "week_completed"
+  | "high_adherence";
 
 export const REFRESH_REASON_TONES: Record<RefreshReason, { tone: string; focus: string }> = {
   manual: { tone: "maintenance", focus: "Continue optimizing your current routine" },
@@ -127,6 +129,8 @@ export const REFRESH_REASON_TONES: Record<RefreshReason, { tone: string; focus: 
   product_changed: { tone: "integration", focus: "Getting the most from your new products" },
   stale: { tone: "maintenance", focus: "Refreshing based on your recent logs" },
   no_plan: { tone: "onboarding", focus: "Building your personalized foundation" },
+  week_completed: { tone: "progression", focus: "Building on last week's progress" },
+  high_adherence: { tone: "advancement", focus: "Ready for more advanced techniques" },
 };
 
 // ============ PRODUCT TIPS BY PERSONA ============
