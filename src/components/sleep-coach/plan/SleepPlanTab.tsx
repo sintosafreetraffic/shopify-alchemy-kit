@@ -12,6 +12,7 @@ import { WeeklySchedule } from "./WeeklySchedule";
 import { PlanInsights } from "./PlanInsights";
 import { PlanProgressStrip } from "./PlanProgressStrip";
 import { Loader2 } from "lucide-react";
+import { usePlanCompletion } from "@/hooks/usePlanCompletion";
 
 // Types from coach-plan.ts
 import type { TodayAction, RefreshReason } from "@/types/coach-plan";
@@ -63,6 +64,10 @@ export interface AdaptivePlanContext {
 
 // Full plan data shape
 export interface SleepPlanData {
+  // Plan ID for persistence
+  id?: string;
+  plan_id?: string;
+  
   // Core adaptive fields
   weekFocus?: string;
   weeklyPriorities?: string[];
@@ -80,6 +85,7 @@ export interface SleepPlanData {
   spineScore?: number;
   spineScoreHint?: string;
   riskFocus?: string;
+  totalWeeks?: number;
   
   // Metadata
   generatedAt?: string;
@@ -93,14 +99,8 @@ interface SleepPlanTabProps {
   adaptiveContext?: AdaptivePlanContext;
   
   // Callbacks for user interactions
-  onActionComplete?: (dayName: string, actionId: string, completed: boolean) => void;
-  onDayReflection?: (dayName: string, note: string) => void;
   onRegeneratePlan?: (reason: RefreshReason) => void;
   onDayClick?: (dayName: string) => void;
-  
-  // Completion state (wire from parent)
-  dayCompletion?: Record<string, "not_started" | "in_progress" | "completed">;
-  completedActions?: string[];
 }
 
 // Get current day name
@@ -117,15 +117,40 @@ function formatDayName(day: string): string {
 export function SleepPlanTab({
   plan,
   loading = false,
-  streakDays = 0,
+  streakDays: propStreakDays = 0,
   adaptiveContext,
-  onActionComplete,
-  onDayReflection,
   onRegeneratePlan,
   onDayClick,
-  dayCompletion = {},
-  completedActions = [],
 }: SleepPlanTabProps) {
+  // Derive planId robustly
+  const planId = useMemo(() => {
+    if (!plan) return null;
+    // Try multiple possible ID fields
+    const planAny = plan as Record<string, unknown>;
+    return (plan.id || plan.plan_id || planAny.id || planAny.plan_id || null) as string | null;
+  }, [plan]);
+  
+  // Use completion hook
+  const {
+    completedActions,
+    dayCompletion,
+    adherenceRate,
+    streakDays: hookStreakDays,
+    weekNumber,
+    loading: completionLoading,
+    error: completionError,
+    toggleAction,
+    saveReflection,
+  } = usePlanCompletion({ planId, enabled: !!planId });
+  
+  // Combined loading state
+  const isLoading = loading || completionLoading;
+  
+  // Use hook values when available, fallback to props/context
+  const effectiveStreakDays = hookStreakDays > 0 ? hookStreakDays : propStreakDays;
+  const effectiveAdherenceRate = adherenceRate > 0 ? adherenceRate : adaptiveContext?.adherenceRate;
+  const effectiveWeekNumber = weekNumber > 0 ? weekNumber : adaptiveContext?.weekNumber || 1;
+  
   // Current day
   const currentDay = useMemo(() => getCurrentDayName(), []);
   
@@ -138,12 +163,12 @@ export function SleepPlanTab({
   // Merge context
   const mergedContext = useMemo(() => ({
     phase: adaptiveContext?.phase || plan?.phase || "foundation",
-    weekNumber: adaptiveContext?.weekNumber || 1,
+    weekNumber: effectiveWeekNumber,
     detectedPatterns: adaptiveContext?.detectedPatterns || plan?.detectedPatterns || [],
     patternEducation: adaptiveContext?.patternEducation || [],
     relevantTimelines: adaptiveContext?.relevantTimelines || [],
-    adherenceRate: adaptiveContext?.adherenceRate,
-  }), [adaptiveContext, plan]);
+    adherenceRate: effectiveAdherenceRate,
+  }), [adaptiveContext, plan, effectiveWeekNumber, effectiveAdherenceRate]);
 
   // Handle day click
   const handleDayClick = useCallback((dayName: string) => {
@@ -151,7 +176,7 @@ export function SleepPlanTab({
   }, [onDayClick]);
 
   // Loading state
-  if (loading) {
+  if (isLoading) {
     return (
       <div 
         className="flex flex-col items-center justify-center py-20 rounded-3xl"
@@ -224,18 +249,33 @@ export function SleepPlanTab({
       <PlanProgressStrip
         weekNumber={mergedContext.weekNumber}
         adherenceRate={mergedContext.adherenceRate}
-        streakDays={streakDays}
+        streakDays={effectiveStreakDays}
         phase={mergedContext.phase}
+        totalWeeks={plan.totalWeeks ?? 12}
       />
+      
+      {/* Completion error - subtle inline message */}
+      {completionError && (
+        <p 
+          className="text-xs text-center"
+          style={{ color: '#A7A29C' }}
+        >
+          We couldn't load your latest completion data. Your plan is still available.
+        </p>
+      )}
 
       {/* Section 3: Today's Focus */}
       <TodayPlanCard
         todayActions={plan.todayActions}
         todayPlan={todayPlan}
         dayName={formatDayName(currentDay)}
-        onActionComplete={onActionComplete}
-        onReflectionSubmit={onDayReflection}
         completedActions={completedActions}
+        onActionComplete={(dayName, actionId, completed) => {
+          toggleAction(dayName, actionId, completed);
+        }}
+        onReflectionSubmit={(dayName, note) => {
+          saveReflection(dayName, note);
+        }}
       />
 
       {/* Section 4: Weekly Schedule */}

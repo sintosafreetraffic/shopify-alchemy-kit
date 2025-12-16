@@ -5,12 +5,15 @@
  * Premium Scandinavian aesthetic, calm interaction design
  */
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
+
+type PlanActionId = 'morning' | 'evening' | string;
 
 interface TodayAction {
+  id?: PlanActionId;
   time: "morning" | "evening";
   action: string;
-  duration: string;
+  duration?: string;
   effort?: "low" | "medium";
 }
 
@@ -76,24 +79,69 @@ export function TodayPlanCard({
   completedActions = [],
 }: TodayPlanCardProps) {
   const [reflection, setReflection] = useState("");
-  const [localCompleted, setLocalCompleted] = useState<Set<string>>(new Set(completedActions));
+  
+  // Build actions with stable IDs from todayPlan if todayActions is empty
+  const actions = useMemo(() => {
+    if (todayActions.length > 0) {
+      // Ensure todayActions have IDs
+      return todayActions.map((a, i) => ({
+        ...a,
+        id: a.id ?? a.time ?? `action-${i}`,
+      }));
+    }
+    
+    if (todayPlan) {
+      const built: TodayAction[] = [];
+      if (todayPlan.morning_mobility) {
+        built.push({
+          id: 'morning',
+          time: 'morning',
+          action: todayPlan.morning_mobility,
+          duration: '5-8 min',
+          effort: 'low',
+        });
+      }
+      if (todayPlan.evening_wind_down) {
+        built.push({
+          id: 'evening',
+          time: 'evening',
+          action: todayPlan.evening_wind_down,
+          duration: '8-12 min',
+          effort: 'medium',
+        });
+      }
+      return built;
+    }
+    
+    return [];
+  }, [todayActions, todayPlan]);
+  
+  // Build a set of completed full IDs for quick lookup
+  // completedActions from hook comes as ["monday-morning", "monday-evening", ...]
+  const completedSet = useMemo(() => new Set(completedActions), [completedActions]);
+  
+  // Local state for optimistic UI (synced from prop)
+  const [localCompleted, setLocalCompleted] = useState<Set<string>>(completedSet);
 
   // Sync with server state when completedActions prop changes
   useEffect(() => {
-    setLocalCompleted(new Set(completedActions));
-  }, [completedActions]);
+    setLocalCompleted(completedSet);
+  }, [completedSet]);
 
   const handleToggle = useCallback((actionId: string) => {
-    const isCompleted = localCompleted.has(actionId);
+    // Full ID includes day name
+    const fullId = `${dayName.toLowerCase()}-${actionId}`;
+    const isCompleted = localCompleted.has(fullId);
     const newCompleted = new Set(localCompleted);
     
     if (isCompleted) {
-      newCompleted.delete(actionId);
+      newCompleted.delete(fullId);
     } else {
-      newCompleted.add(actionId);
+      newCompleted.add(fullId);
     }
     
     setLocalCompleted(newCompleted);
+    // Pass actionId (not fullId) to parent - parent builds full ID
     onActionComplete?.(dayName, actionId, !isCompleted);
   }, [localCompleted, dayName, onActionComplete]);
 
@@ -104,11 +152,11 @@ export function TodayPlanCard({
     }
   }, [reflection, dayName, onReflectionSubmit]);
 
-  // Build actions from todayPlan if todayActions empty
-  const actions = todayActions.length > 0 ? todayActions : todayPlan ? [
-    { time: "morning" as const, action: todayPlan.morning_mobility, duration: "5-8 min", effort: "low" as const },
-    { time: "evening" as const, action: todayPlan.evening_wind_down, duration: "8-12 min", effort: "medium" as const },
-  ].filter(a => a.action) : [];
+  // Count completed actions for this day
+  const completedCount = useMemo(() => {
+    const dayPrefix = `${dayName.toLowerCase()}-`;
+    return Array.from(localCompleted).filter(id => id.startsWith(dayPrefix)).length;
+  }, [localCompleted, dayName]);
 
   if (actions.length === 0 && !todayPlan) return null;
 
@@ -147,15 +195,16 @@ export function TodayPlanCard({
             color: 'rgba(60, 131, 246, 0.85)',
           }}
         >
-          {localCompleted.size}/{actions.length} completed
+          {completedCount}/{actions.length} completed
         </div>
       </div>
 
       {/* Actions list */}
       <div className="space-y-4 mb-6">
-        {actions.map((action, i) => {
-          const actionId = `action-${i}`;
-          const isCompleted = localCompleted.has(actionId);
+        {actions.map((action) => {
+          const actionId = action.id ?? action.time;
+          const fullId = `${dayName.toLowerCase()}-${actionId}`;
+          const isCompleted = localCompleted.has(fullId);
           const effortConfig = EFFORT_LABELS[action.effort || "low"];
           
           return (
@@ -199,12 +248,14 @@ export function TodayPlanCard({
                     {action.time === "morning" ? <SunIcon /> : <MoonIcon />}
                     {action.time === "morning" ? "Morning" : "Evening"}
                   </span>
-                  <span 
-                    className="text-xs"
-                    style={{ color: '#A7A29C' }}
-                  >
-                    {action.duration}
-                  </span>
+                  {action.duration && (
+                    <span 
+                      className="text-xs"
+                      style={{ color: '#A7A29C' }}
+                    >
+                      {action.duration}
+                    </span>
+                  )}
                   <span 
                     className="text-xs px-2 py-0.5 rounded-full"
                     style={effortConfig.style}
