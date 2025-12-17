@@ -35,6 +35,9 @@ import { useRecommendedProducts, useProductPrices } from "@/hooks/useShopifyProd
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import { ImageModal } from "./ImageModal";
+import { CheckoutLoadingOverlay } from "./CheckoutLoadingOverlay";
+import { useCheckoutStatus } from "@/hooks/useCheckoutStatus";
+import { createCheckoutWithResilience, openCheckoutUrl, isMobileDevice } from "@/lib/checkoutUtils";
 
 export const CartDrawer = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -51,6 +54,13 @@ export const CartDrawer = () => {
     setCartOpen,
     isCartOpen
   } = useCartStore();
+  
+  const { 
+    isCheckingOut, 
+    checkoutStartTime, 
+    startCheckout, 
+    endCheckout 
+  } = useCheckoutStatus();
 
   // Use cached product data for recommendations and prices
   const cartProductIds = useMemo(() => items.map(item => item.product.node.id), [items]);
@@ -183,32 +193,69 @@ export const CartDrawer = () => {
   };
 
   const handleCheckout = async () => {
+    // Prevent multiple simultaneous checkout attempts
+    if (!startCheckout()) {
+      return;
+    }
+    
+    // Prevent checkout with empty cart
+    if (items.length === 0) {
+      endCheckout();
+      return;
+    }
+    
     try {
-      const checkoutUrl = await createCheckout();
-      if (checkoutUrl) {
-        // Use location.href on mobile to avoid popup blockers
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        if (isMobile) {
-          window.location.href = checkoutUrl;
-        } else {
-          window.open(checkoutUrl, '_blank');
-        }
-        setIsOpen(false);
-      } else {
+      // Prepare checkout data (discount codes, free masks, etc.)
+      const checkoutData = await createCheckout();
+      
+      if (!checkoutData) {
+        endCheckout("Failed to prepare checkout");
         toast.error("Checkout Failed", {
-          description: "Unable to create checkout. Please try again.",
+          description: "Unable to prepare checkout. Please try again.",
+        });
+        return;
+      }
+      
+      // Create checkout with timeout and retry logic
+      const result = await createCheckoutWithResilience(
+        checkoutData.items,
+        checkoutData.freeMasks,
+        checkoutData.discountCodes
+      );
+      
+      if (result.success && result.checkoutUrl) {
+        // Open checkout URL with popup fallback
+        const isMobile = isMobileDevice();
+        openCheckoutUrl(result.checkoutUrl, isMobile);
+        
+        // Only close drawer for desktop (mobile will redirect)
+        if (!isMobile) {
+          setIsOpen(false);
+        }
+        endCheckout();
+      } else {
+        endCheckout(result.error);
+        toast.error("We couldn't start checkout", {
+          description: "Please try again — your cart is safe.",
         });
       }
     } catch (error) {
       console.error('Checkout failed:', error);
-      toast.error("Checkout Failed", {
-        description: "An error occurred while creating your checkout. Please try again.",
+      endCheckout(error instanceof Error ? error.message : "Unknown error");
+      toast.error("We couldn't start checkout", {
+        description: "Please try again — your cart is safe.",
       });
     }
   };
 
   return (
     <>
+      {/* Checkout Loading Overlay */}
+      <CheckoutLoadingOverlay 
+        isVisible={isCheckingOut} 
+        startTime={checkoutStartTime} 
+      />
+      
       {/* Recommendations Panel - Attached to cart */}
       {isOpen && createPortal(
         <div 
