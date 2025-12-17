@@ -25,6 +25,12 @@ export interface CartItem {
   }>;
 }
 
+export interface CheckoutData {
+  items: CartItem[];
+  freeMasks: number;
+  discountCodes: string[];
+}
+
 interface CartStore {
   items: CartItem[];
   cartId: string | null;
@@ -40,7 +46,7 @@ interface CartStore {
   setCheckoutUrl: (url: string) => void;
   setLoading: (loading: boolean) => void;
   setCartOpen: (isOpen: boolean) => void;
-  createCheckout: () => Promise<string | null>;
+  createCheckout: () => Promise<CheckoutData | null>;
 }
 
 export const useCartStore = create<CartStore>()(
@@ -196,19 +202,9 @@ export const useCartStore = create<CartStore>()(
             discountCodes.push('FREEMASKSFORYOU');
           }
           
-          // Create checkout with items, free masks, and discount codes
-          const checkoutUrl = await createStorefrontCheckout(
-            items.map(item => ({
-              variantId: item.variantId,
-              quantity: item.quantity,
-            })),
-            freeMasks,
-            discountCodes
-          );
-          setCheckoutUrl(checkoutUrl);
-          return checkoutUrl;
+          return { items, freeMasks, discountCodes };
         } catch (error) {
-          console.error('Failed to create checkout:', error);
+          console.error('Failed to prepare checkout:', error);
           throw error;
         } finally {
           setLoading(false);
