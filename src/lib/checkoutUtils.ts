@@ -1,5 +1,13 @@
 import { createStorefrontCheckout } from "./shopify";
 import type { CartItem } from "@/stores/cartStore";
+import { 
+  trackCheckoutInitiated, 
+  trackCheckoutSuccess, 
+  trackCheckoutTimeout, 
+  trackCheckoutRetry, 
+  trackCheckoutError,
+  trackCheckoutPopupBlocked 
+} from "./checkoutAnalytics";
 
 const CHECKOUT_TIMEOUT_MS = 20000; // 20 seconds
 const MAX_RETRIES = 1;
@@ -8,6 +16,8 @@ interface CheckoutResult {
   success: boolean;
   checkoutUrl?: string;
   error?: string;
+  durationMs?: number;
+  retryCount?: number;
 }
 
 /**
@@ -18,7 +28,13 @@ export async function createCheckoutWithResilience(
   freeMasks: number,
   discountCodes: string[]
 ): Promise<CheckoutResult> {
+  const startTime = Date.now();
   let lastError: Error | null = null;
+  let retryCount = 0;
+  
+  // Track checkout initiated
+  const cartTotal = items.reduce((sum, item) => sum + parseFloat(item.price.amount) * item.quantity, 0);
+  trackCheckoutInitiated(items.length, cartTotal);
   
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
@@ -29,7 +45,9 @@ export async function createCheckoutWithResilience(
       );
       
       if (checkoutUrl) {
-        return { success: true, checkoutUrl };
+        const durationMs = Date.now() - startTime;
+        trackCheckoutSuccess(durationMs, retryCount);
+        return { success: true, checkoutUrl, durationMs, retryCount };
       }
       
       // Null response - retry if we have attempts left
@@ -37,18 +55,32 @@ export async function createCheckoutWithResilience(
     } catch (error) {
       lastError = error instanceof Error ? error : new Error("Unknown error");
       console.error(`Checkout attempt ${attempt + 1} failed:`, error);
+      
+      // Track timeout specifically
+      if (lastError.message.includes("timed out")) {
+        const durationMs = Date.now() - startTime;
+        trackCheckoutTimeout(durationMs, retryCount);
+      }
     }
     
-    // Don't retry on last attempt
+    // Track retry if we're going to retry
     if (attempt < MAX_RETRIES) {
+      retryCount++;
+      trackCheckoutRetry(retryCount);
       // Small delay before retry
       await new Promise(resolve => setTimeout(resolve, 500));
     }
   }
   
+  // Track final error
+  const durationMs = Date.now() - startTime;
+  trackCheckoutError(lastError?.message || "Unknown error", retryCount);
+  
   return {
     success: false,
     error: lastError?.message || "Checkout failed after retries",
+    durationMs,
+    retryCount,
   };
 }
 
@@ -108,6 +140,7 @@ export function openCheckoutUrl(checkoutUrl: string, isMobile: boolean): void {
   // If popup was blocked, fallback to same-tab redirect
   if (!popup || popup.closed || typeof popup.closed === 'undefined') {
     console.log('Popup blocked, falling back to same-tab redirect');
+    trackCheckoutPopupBlocked();
     window.location.href = checkoutUrl;
   }
 }
