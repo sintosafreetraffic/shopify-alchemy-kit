@@ -120,6 +120,21 @@ const AdminCollectiveApplications = () => {
 
       if (error) throw error;
 
+      // Auto-provision affiliate account on approval
+      if (newStatus === "approved") {
+        const { error: provisionError } = await supabase.functions.invoke("affiliate-provision", {
+          body: { application_id: id }
+        });
+        if (provisionError) {
+          console.error("Provision error:", provisionError);
+          toast.error("Approved but failed to create affiliate account");
+        } else {
+          toast.success("Application approved and affiliate account created");
+        }
+      } else {
+        toast.success(`Application ${newStatus}`);
+      }
+
       setApplications((prev) =>
         prev.map((app) =>
           app.id === id
@@ -127,7 +142,6 @@ const AdminCollectiveApplications = () => {
             : app
         )
       );
-      toast.success(`Application ${newStatus}`);
     } catch (error) {
       console.error("Error updating status:", error);
       toast.error("Failed to update status");

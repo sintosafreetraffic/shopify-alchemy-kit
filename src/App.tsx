@@ -112,7 +112,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import AboutUs from "./pages/AboutUs";
 import TrackOrder from "./pages/TrackOrder";
 import Imprint from "./pages/Imprint";
-import SleepCollective from "./pages/SleepCollective";
+import PartnerProgram from "./pages/PartnerProgram";
 import NotFound from "./pages/NotFound";
 
 // Lazily loaded pages (heavy dashboards & features)
@@ -213,7 +213,8 @@ const AppContent = () => {
             <Route path="/about" element={<AboutUs />} />
             <Route path="/track" element={<TrackOrder />} />
             <Route path="/imprint" element={<Imprint />} />
-            <Route path="/collective" element={<SleepCollective />} />
+            <Route path="/collective" element={<PartnerProgram />} />
+            <Route path="/partner" element={<PartnerProgram />} />
             
             {/* Heavy pages - lazily loaded */}
             <Route path="/sleep-quiz" element={<SleepQuiz />} />

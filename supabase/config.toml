@@ -137,3 +137,11 @@ verify_jwt = true
 # Checkout Analytics - Public for tracking
 [functions.checkout-analytics]
 verify_jwt = false
+
+# Affiliate Provision - Admin only (validates internally via service role)
+[functions.affiliate-provision]
+verify_jwt = false
+
+# UGC Submit - Requires JWT authentication
+[functions.ugc-submit]
+verify_jwt = true

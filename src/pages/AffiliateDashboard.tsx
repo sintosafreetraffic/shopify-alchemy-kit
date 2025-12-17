@@ -7,10 +7,12 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Copy, Users, DollarSign, Loader2, Award, Share2, TrendingUp, Check, Sparkles, UserPlus, ShieldCheck, AlertTriangle, Package, Trophy, BarChart3, History, Wallet, Target, BookOpen, FileText, ExternalLink, Image } from "lucide-react";
+import { Copy, Users, DollarSign, Loader2, Award, Share2, TrendingUp, Check, Sparkles, UserPlus, ShieldCheck, AlertTriangle, Package, Trophy, BarChart3, History, Wallet, Target, BookOpen, FileText, ExternalLink, Image, Star, Crown, Gem, Shield, Upload, Link as LinkIcon } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { format, parseISO } from "date-fns";
+import { TierProgressCard } from "@/components/affiliate/TierProgressCard";
+import { UGCSubmissionForm } from "@/components/affiliate/UGCSubmissionForm";
 
 // Lazy load the chart component to reduce initial bundle size
 const AffiliateAnalyticsChart = lazy(() => import("@/components/affiliate/AffiliateAnalyticsChart"));
@@ -129,13 +131,13 @@ interface ResourceItem {
   sort_order: number;
 }
 
-// ============ Tier Configuration ============
-const tierConfig: Record<string, { color: string; bgColor: string; borderColor: string; icon: string }> = {
-  'bronze': { color: 'text-amber-700', bgColor: 'bg-amber-100', borderColor: 'border-amber-300', icon: '🥉' },
-  'silver': { color: 'text-slate-600', bgColor: 'bg-slate-100', borderColor: 'border-slate-300', icon: '🥈' },
-  'gold': { color: 'text-yellow-700', bgColor: 'bg-yellow-100', borderColor: 'border-yellow-400', icon: '🥇' },
-  'platinum': { color: 'text-slate-700', bgColor: 'bg-gradient-to-r from-slate-100 to-slate-200', borderColor: 'border-slate-400', icon: '💎' },
-  'diamond': { color: 'text-cyan-700', bgColor: 'bg-gradient-to-r from-cyan-100 to-blue-100', borderColor: 'border-cyan-400', icon: '👑' },
+// ============ Tier Configuration - Monoline Icons ============
+const tierConfig: Record<string, { color: string; bgColor: string; borderColor: string; Icon: React.ElementType }> = {
+  'bronze': { color: 'text-amber-700', bgColor: 'bg-amber-50/50', borderColor: 'border-amber-200/60', Icon: Shield },
+  'silver': { color: 'text-slate-600', bgColor: 'bg-slate-50/50', borderColor: 'border-slate-200/60', Icon: Award },
+  'gold': { color: 'text-yellow-700', bgColor: 'bg-yellow-50/50', borderColor: 'border-yellow-200/60', Icon: Star },
+  'platinum': { color: 'text-slate-700', bgColor: 'bg-slate-100/50', borderColor: 'border-slate-300/60', Icon: Gem },
+  'diamond': { color: 'text-sky-700', bgColor: 'bg-sky-50/50', borderColor: 'border-sky-200/60', Icon: Crown },
 };
 
 const allTiers = [
@@ -143,7 +145,7 @@ const allTiers = [
   { name: 'silver', displayName: 'Silver', rate: 15, requirement: '10+ sales' },
   { name: 'gold', displayName: 'Gold', rate: 20, requirement: '25+ sales' },
   { name: 'platinum', displayName: 'Platinum', rate: 25, requirement: '50+ sales' },
-  { name: 'diamond', displayName: 'Diamond', rate: 25, requirement: 'Invite only' },
+  { name: 'diamond', displayName: 'Diamond', rate: 35, requirement: 'Invite only' },
 ];
 
 // ============ Default Values ============
@@ -507,8 +509,9 @@ const AffiliateDashboard = () => {
             </p>
             {(inviteCode || sessionStorage.getItem('affiliate_invite_code')) && (
               <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-lg inline-block">
-                <p className="text-sm text-primary font-medium">
-                  🎉 You've been invited! Join to connect with your referrer.
+                <p className="text-sm text-primary font-medium flex items-center gap-2">
+                  <Sparkles className="h-4 w-4" />
+                  You've been invited. Join to connect with your referrer.
                 </p>
               </div>
             )}
@@ -553,18 +556,21 @@ const AffiliateDashboard = () => {
                   Performance Tiers
                 </h3>
                 <div className="grid gap-2">
-                  {allTiers.map((tier, index) => (
-                    <div key={tier.name} className={`flex items-center justify-between p-3 rounded-lg ${tierConfig[tier.name]?.bgColor || 'bg-secondary/30'} border ${tierConfig[tier.name]?.borderColor || 'border-border'}`}>
-                      <div className="flex items-center gap-2">
-                        <span>{tierConfig[tier.name]?.icon}</span>
-                        <span className="font-medium">{tier.displayName}</span>
+                  {allTiers.map((tier, index) => {
+                    const TierIcon = tierConfig[tier.name]?.Icon || Shield;
+                    return (
+                      <div key={tier.name} className={`flex items-center justify-between p-3 rounded-lg ${tierConfig[tier.name]?.bgColor || 'bg-secondary/30'} border ${tierConfig[tier.name]?.borderColor || 'border-border'}`}>
+                        <div className="flex items-center gap-2">
+                          <TierIcon className={`h-4 w-4 ${tierConfig[tier.name]?.color || 'text-muted-foreground'}`} />
+                          <span className="font-medium">{tier.displayName}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="font-bold">{tier.rate}%</span>
+                          <span className="text-xs text-muted-foreground ml-2">({tier.requirement})</span>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <span className="font-bold">{tier.rate}%</span>
-                        <span className="text-xs text-muted-foreground ml-2">({tier.requirement})</span>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
@@ -608,7 +614,7 @@ const AffiliateDashboard = () => {
             <p className="text-muted-foreground">Welcome back, partner!</p>
           </div>
           <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${currentTierConfig.bgColor} ${currentTierConfig.borderColor} border`}>
-            <span className="text-xl">{currentTierConfig.icon}</span>
+            <currentTierConfig.Icon className={`h-5 w-5 ${currentTierConfig.color}`} />
             <span className={`font-semibold ${currentTierConfig.color}`}>
               {formatTierName(tierInfo.tier)} Partner
             </span>
@@ -1021,16 +1027,27 @@ const AffiliateDashboard = () => {
                   {leaderboard.map((entry) => (
                     <TableRow key={entry.rank} className={entry.is_current_user ? 'bg-primary/5' : ''}>
                       <TableCell className="font-medium">
-                        {entry.rank <= 3 ? ['🥇', '🥈', '🥉'][entry.rank - 1] : `#${entry.rank}`}
+                        {entry.rank <= 3 ? (
+                          <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${
+                            entry.rank === 1 ? 'bg-yellow-100 text-yellow-700' :
+                            entry.rank === 2 ? 'bg-slate-100 text-slate-600' :
+                            'bg-amber-100 text-amber-700'
+                          }`}>{entry.rank}</span>
+                        ) : `#${entry.rank}`}
                       </TableCell>
                       <TableCell className={entry.is_current_user ? 'font-semibold' : ''}>
                         {entry.display_label}
                         {entry.is_current_user && <span className="ml-2 text-xs text-primary">(You)</span>}
                       </TableCell>
                       <TableCell>
-                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${tierConfig[entry.tier]?.bgColor || 'bg-secondary'}`}>
-                          {tierConfig[entry.tier]?.icon} {formatTierName(entry.tier)}
-                        </span>
+                        {(() => {
+                          const EntryTierIcon = tierConfig[entry.tier]?.Icon || Shield;
+                          return (
+                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${tierConfig[entry.tier]?.bgColor || 'bg-secondary'}`}>
+                              <EntryTierIcon className="h-3 w-3" /> {formatTierName(entry.tier)}
+                            </span>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell className="text-right font-medium">
                         ${entry.monthly_revenue_generated.toFixed(2)}

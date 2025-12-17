@@ -161,6 +161,7 @@ export type Database = {
           tier_expires_at: string | null
           total_commissions: number | null
           total_referrals: number | null
+          track: string | null
           updated_at: string | null
           user_id: string
         }
@@ -180,6 +181,7 @@ export type Database = {
           tier_expires_at?: string | null
           total_commissions?: number | null
           total_referrals?: number | null
+          track?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -199,6 +201,7 @@ export type Database = {
           tier_expires_at?: string | null
           total_commissions?: number | null
           total_referrals?: number | null
+          track?: string | null
           updated_at?: string | null
           user_id?: string
         }
@@ -330,6 +333,7 @@ export type Database = {
       }
       collective_applications: {
         Row: {
+          affiliate_id: string | null
           created_at: string
           email: string
           id: string
@@ -343,6 +347,7 @@ export type Database = {
           status: string
         }
         Insert: {
+          affiliate_id?: string | null
           created_at?: string
           email: string
           id?: string
@@ -356,6 +361,7 @@ export type Database = {
           status?: string
         }
         Update: {
+          affiliate_id?: string | null
           created_at?: string
           email?: string
           id?: string
@@ -368,7 +374,15 @@ export type Database = {
           social_handles?: string | null
           status?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "collective_applications_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       commissions: {
         Row: {
@@ -477,6 +491,56 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      partner_ugc_submissions: {
+        Row: {
+          admin_notes: string | null
+          affiliate_id: string
+          content_type: string
+          content_url: string
+          created_at: string
+          description: string | null
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          affiliate_id: string
+          content_type: string
+          content_url: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          affiliate_id?: string
+          content_type?: string
+          content_url?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_ugc_submissions_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       quiz_reveal_analytics: {
         Row: {
