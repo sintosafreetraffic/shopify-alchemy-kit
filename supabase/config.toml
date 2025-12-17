@@ -133,3 +133,7 @@ verify_jwt = false
 # Sleep Plan Completion - Requires JWT
 [functions.sleep-plan-completion]
 verify_jwt = true
+
+# Checkout Analytics - Public for tracking
+[functions.checkout-analytics]
+verify_jwt = false

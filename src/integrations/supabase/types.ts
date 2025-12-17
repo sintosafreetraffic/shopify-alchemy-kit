@@ -212,6 +212,48 @@ export type Database = {
           },
         ]
       }
+      checkout_analytics: {
+        Row: {
+          cart_item_count: number | null
+          cart_total: number | null
+          created_at: string
+          device_type: string | null
+          duration_ms: number | null
+          error_message: string | null
+          event_type: string
+          id: string
+          retry_count: number | null
+          session_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          cart_item_count?: number | null
+          cart_total?: number | null
+          created_at?: string
+          device_type?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          event_type: string
+          id?: string
+          retry_count?: number | null
+          session_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          cart_item_count?: number | null
+          cart_total?: number | null
+          created_at?: string
+          device_type?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          event_type?: string
+          id?: string
+          retry_count?: number | null
+          session_id?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       coach_plans: {
         Row: {
           created_at: string
