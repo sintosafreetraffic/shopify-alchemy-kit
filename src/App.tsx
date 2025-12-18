@@ -10,6 +10,7 @@ import { ScrollToTop } from "./components/ScrollToTop";
 import { UrgencyBanner } from "./components/UrgencyBanner";
 import { EmailPopup } from "./components/EmailPopup";
 import { useEmailPopup } from "./hooks/useEmailPopup";
+import { trackPageView } from "./lib/analyticsRegistry";
 
 import { FullPageLoader } from "./components/FullPageLoader";
 
@@ -130,6 +131,7 @@ const AdminCollectiveApplications = React.lazy(() => import("./pages/AdminCollec
 const AdminUGCSubmissions = React.lazy(() => import("./pages/AdminUGCSubmissions"));
 const SleepQuizDiagnostics = React.lazy(() => import("./pages/internal/SleepQuizDiagnostics"));
 const QuizRevealTracking = React.lazy(() => import("./pages/internal/QuizRevealTracking"));
+const AnalyticsDiagnostics = React.lazy(() => import("./pages/internal/AnalyticsDiagnostics"));
 
 const queryClient = new QueryClient();
 
@@ -184,6 +186,15 @@ const AppContent = () => {
     capturePinterestClickId();
   }, [location.search]);
 
+  // Track SPA route changes for analytics providers
+  useEffect(() => {
+    // Small delay to ensure scripts have had time to load
+    const timer = setTimeout(() => {
+      trackPageView(location.pathname);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [location.pathname]);
+
   // Fixed spacer height: 36px banner + ~56px header = 92px (mobile ~77px)
   // Using CSS classes instead of dynamic JS measurement to prevent CLS
   return (
@@ -232,6 +243,7 @@ const AppContent = () => {
             <Route path="/admin/ugc-submissions" element={<AdminUGCSubmissions />} />
             <Route path="/internal/sleep-quiz-diagnostics" element={<SleepQuizDiagnostics />} />
             <Route path="/risebynight/tracking" element={<QuizRevealTracking />} />
+            <Route path="/debug/analytics" element={<AnalyticsDiagnostics />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
