@@ -193,7 +193,7 @@ const Guarantee = () => {
               Why We Stand Behind Our Products
             </h2>
             <p className="text-xl text-muted-foreground mb-8">
-              We're confident in the quality and effectiveness of our products because we've seen the results. With over 15,000 satisfied customers and a 96% satisfaction rate, we know RiseByNight™ delivers on its promises. Our generous guarantees ensure you can shop with complete confidence.
+              We're confident in the quality and effectiveness of our products because we've seen the results. With thousands of satisfied customers and a 96% satisfaction rate, we know RiseByNight™ delivers on its promises. Our generous guarantees ensure you can shop with complete confidence.
             </p>
             <a 
               href="/"
