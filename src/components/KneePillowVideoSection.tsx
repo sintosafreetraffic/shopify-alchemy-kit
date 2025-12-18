@@ -5,6 +5,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { useInView } from "@/hooks/useInView";
 import { useIsTouchDevice } from "@/hooks/useIsTouchDevice";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
 interface VideoItem {
@@ -163,6 +164,12 @@ export const KneePillowVideoSection = () => {
   const [isModalBuffering, setIsModalBuffering] = useState(false);
   const [modalHasStarted, setModalHasStarted] = useState(false);
   const { ref: sectionRef, isInView: sectionInView } = useInView<HTMLElement>({ threshold: 0.1 });
+  const isMobile = useIsMobile();
+
+  // Hide entire section on mobile to avoid video glitching
+  if (isMobile) {
+    return null;
+  }
   
   // Reset modal state when closing
   useEffect(() => {
