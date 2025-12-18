@@ -2,6 +2,7 @@
  * useWeeklyProgression - Hook for weekly plan progression detection
  * 
  * Monitors adherence and triggers automatic weekly regeneration
+ * Plans can only be regenerated on Sundays (before new week starts)
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -13,6 +14,11 @@ interface UseWeeklyProgressionOptions {
   planValidUntil?: string;
   onRegeneratePlan: (reason: "week_completed" | "high_adherence" | "expired") => void;
   enabled?: boolean;
+}
+
+// Check if today is Sunday (day 0 in JS)
+export function isSunday(): boolean {
+  return new Date().getDay() === 0;
 }
 
 export function useWeeklyProgression({
@@ -42,6 +48,12 @@ export function useWeeklyProgression({
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return Math.max(0, diffDays);
   }, [planValidUntil]);
+
+  // Check if regeneration is allowed (expired plans always allowed, otherwise only on Sunday)
+  const canRegenerate = useCallback(() => {
+    if (isPlanExpired()) return true;
+    return isSunday();
+  }, [isPlanExpired]);
 
   // Trigger regeneration with toast
   const triggerRegeneration = useCallback(async (reason: "week_completed" | "high_adherence" | "expired") => {
@@ -91,26 +103,27 @@ export function useWeeklyProgression({
     return () => clearInterval(interval);
   }, [enabled, isRegenerating, isPlanExpired, triggerRegeneration]);
 
-  // Monitor for high adherence (80%+ before week ends)
+  // Monitor for high adherence (80%+ before week ends) - only show on Sundays
   useEffect(() => {
     if (!enabled || isRegenerating) return;
 
     const daysRemaining = getDaysRemaining();
     
-    // If adherence >= 80% and we still have 2+ days remaining, offer early refresh
+    // If adherence >= 80% and it's Sunday, offer early refresh for next week
     if (
       adherenceRate >= 80 &&
-      daysRemaining >= 2 &&
+      daysRemaining >= 1 &&
+      isSunday() &&
       !hasTriggeredHighAdherenceRef.current
     ) {
       hasTriggeredHighAdherenceRef.current = true;
       
       // Show suggestion toast instead of auto-triggering
       toast.info("Great progress this week", {
-        description: "You've completed most of your plan. Ready for the next week?",
+        description: "Ready for next week's plan?",
         duration: 8000,
         action: {
-          label: "Refresh now",
+          label: "Generate next week",
           onClick: () => triggerRegeneration("high_adherence"),
         },
         style: {
@@ -135,6 +148,8 @@ export function useWeeklyProgression({
     showNewWeekToast,
     daysRemaining: getDaysRemaining(),
     isPlanExpired: isPlanExpired(),
+    canRegenerate: canRegenerate(),
+    isSunday: isSunday(),
     triggerManualRegeneration: () => triggerRegeneration("week_completed"),
   };
 }

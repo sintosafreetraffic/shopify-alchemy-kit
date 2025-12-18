@@ -378,13 +378,22 @@ export function SleepPlanTab({
           {plan.generatedAt && ` Last updated: ${new Date(plan.generatedAt).toLocaleDateString()}`}
         </p>
         {onRegeneratePlan && (
-          <button
-            onClick={() => onRegeneratePlan("manual")}
-            className="mt-3 text-xs font-medium transition-colors"
-            style={{ color: 'rgba(60, 131, 246, 0.75)' }}
-          >
-            Refresh plan manually
-          </button>
+          new Date().getDay() === 0 ? (
+            <button
+              onClick={() => onRegeneratePlan("manual")}
+              className="mt-3 text-xs font-medium transition-colors"
+              style={{ color: 'rgba(60, 131, 246, 0.75)' }}
+            >
+              Generate next week's plan
+            </button>
+          ) : (
+            <p 
+              className="mt-3 text-xs"
+              style={{ color: '#A7A29C' }}
+            >
+              New plans available on Sundays
+            </p>
+          )
         )}
       </div>
 
