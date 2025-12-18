@@ -254,7 +254,7 @@ export const VideoSection = () => {
 
           <div className="text-center mt-8">
             <p className="text-muted-foreground">
-              Join over 50,000+ happy customers who transformed their sleep
+              Join the many happy customers who transformed their sleep
             </p>
           </div>
         </div>

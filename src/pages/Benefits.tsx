@@ -59,7 +59,7 @@ const Benefits = () => {
               The Rise By Night™ Difference
             </h1>
             <p className="text-xl text-muted-foreground mb-8">
-              Scientifically proven benefits that transform your sleep and improve your quality of life. Backed by over 15,000+ satisfied customers and clinical testing.
+              Scientifically proven benefits that transform your sleep and improve your quality of life. Backed by thousands of satisfied customers and clinical testing.
             </p>
             <div className="flex items-center justify-center gap-2">
               <div className="flex">
@@ -68,7 +68,7 @@ const Benefits = () => {
                 ))}
               </div>
               <span className="text-lg font-semibold">4.8/5</span>
-              <span className="text-muted-foreground">(15,000+ reviews)</span>
+              <span className="text-muted-foreground">(verified reviews)</span>
             </div>
           </div>
         </div>

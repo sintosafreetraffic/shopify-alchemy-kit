@@ -117,7 +117,7 @@ const Reviews = () => {
                 </div>
                 <span className="text-2xl font-bold">4.8</span>
               </div>
-              <span className="text-lg text-muted-foreground">Based on 15,000+ verified reviews</span>
+              <span className="text-lg text-muted-foreground">Based on verified customer reviews</span>
             </div>
           </div>
         </div>
@@ -137,7 +137,7 @@ const Reviews = () => {
             </div>
             <div className="flex items-center gap-2">
               <Star className="w-5 h-5 text-primary" />
-              <span className="text-sm font-medium">15,000+ 5-Star Reviews</span>
+              <span className="text-sm font-medium">Verified 5-Star Reviews</span>
             </div>
           </div>
         </div>
@@ -193,7 +193,7 @@ const Reviews = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-3xl md:text-5xl font-bold mb-6">
-              Join 15,000+ Happy Customers
+              Join Our Happy Customers
             </h2>
             <p className="text-xl text-muted-foreground mb-8">
               Experience the RiseByNight™ difference with our 100-night risk-free trial

@@ -20,7 +20,7 @@ const features: Array<{
 }> = [
   {
     image: testimonial,
-    title: "Join 6,247+ Happy Sleepers",
+    title: "Join Our Happy Sleepers",
     description: "Don't just take our word for it. Thousands of customers have transformed their sleep quality with Rise By Night. Experience the difference that proper neck alignment and ergonomic support can make.",
     benefits: [
       "Wake up pain-free and refreshed",

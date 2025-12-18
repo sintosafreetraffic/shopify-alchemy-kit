@@ -65,7 +65,7 @@ export default function Home() {
             <div className="grid md:grid-cols-2 gap-6">
               <div className="bg-background p-6 rounded-lg border">
                 <Users className="w-12 h-12 text-primary mb-4" />
-                <h3 className="text-2xl font-bold mb-3">15,000+ Happy Sleepers</h3>
+                <h3 className="text-2xl font-bold mb-3">Thousands of Happy Sleepers</h3>
                 <p className="text-muted-foreground text-lg">
                   Our community of satisfied customers wakes up refreshed every morning, free from neck pain and
                   discomfort.
