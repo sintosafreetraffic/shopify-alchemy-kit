@@ -183,7 +183,7 @@ export const KneePillowVideoSection = () => {
     {
       id: 2,
       src: "/videos/knee-video-2.mp4",
-      poster: "/videos/thumbnails/knee-video-2.webp",
+      poster: "/videos/thumbnails/knee-video-2.png",
       title: "Hip support explained",
       views: "1.5M"
     },
