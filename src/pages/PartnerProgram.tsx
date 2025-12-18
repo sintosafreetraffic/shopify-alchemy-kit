@@ -59,23 +59,23 @@ const benefits = [
 const faqs = [
   {
     question: "How do partnerships work?",
-    answer: "Once accepted, you'll receive a unique referral link and access to our Collective portal. Share your experience authentically—there are no scripts or quotas. You earn commission on qualifying purchases made through your link, and we provide regular updates on your impact.",
+    answer: "Once accepted, you'll receive a unique referral link and access to the Partner Dashboard where you can track referrals, submit content, and monitor your tier progress. Share your experience authentically—there are no scripts or quotas. You earn commission on qualifying purchases made through your link.",
   },
   {
-    question: "Who can join the Sleep Collective?",
+    question: "Who can join?",
     answer: "Anyone who values quality rest and wants to share their experience. We welcome everyday sleepers, content creators, wellness advocates, and professionals in health-adjacent fields. We look for authenticity over follower count.",
   },
   {
     question: "How does compensation work?",
-    answer: "We offer a tiered commission structure that grows with your engagement. Everyday Sleepers start at our base tier, while Creators and Professionals may qualify for higher rates based on reach and alignment with our values.",
+    answer: "We offer a tiered commission structure (Bronze through Diamond) that grows with your sales performance. Partners and Ambassadors start at the Bronze tier with 10% commission, with opportunities to progress based on your 30-day sales.",
   },
   {
     question: "What are the content guidelines?",
     answer: "Keep it honest and personal. Share your genuine experience with our products—what changed for you, how your mornings feel now. We ask that you avoid medical claims or promises, and focus on comfort and well-being language instead.",
   },
   {
-    question: "Is this an influencer program?",
-    answer: "Not exactly. The Sleep Collective is a community first. While creators are welcome, we're equally excited to work with everyday people who simply want to share what helped them sleep better. No minimum follower count required.",
+    question: "What's the difference between Partner and Affiliate?",
+    answer: "Partners apply through this page and focus on content and relationships. Affiliates can sign up instantly via the Affiliate Dashboard for a sales-focused approach. Both tracks use the same tier system and commission rates.",
   },
   {
     question: "How long does the application process take?",

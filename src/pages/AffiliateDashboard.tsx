@@ -7,12 +7,13 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Copy, Users, DollarSign, Loader2, Award, Share2, TrendingUp, Check, Sparkles, UserPlus, ShieldCheck, AlertTriangle, Package, Trophy, BarChart3, History, Wallet, Target, BookOpen, FileText, ExternalLink, Image, Star, Crown, Gem, Shield, Upload, Link as LinkIcon } from "lucide-react";
+import { Copy, Users, DollarSign, Loader2, Award, Share2, TrendingUp, Check, Sparkles, UserPlus, ShieldCheck, AlertTriangle, Package, Trophy, BarChart3, History, Wallet, Target, BookOpen, FileText, ExternalLink, Image, Star, Crown, Gem, Shield, Upload, Link as LinkIcon, Briefcase, Heart, Zap } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { format, parseISO } from "date-fns";
 import { TierProgressCard } from "@/components/affiliate/TierProgressCard";
 import { UGCSubmissionForm } from "@/components/affiliate/UGCSubmissionForm";
+import { UGCSubmissionsList } from "@/components/affiliate/UGCSubmissionsList";
 
 // Lazy load the chart component to reduce initial bundle size
 const AffiliateAnalyticsChart = lazy(() => import("@/components/affiliate/AffiliateAnalyticsChart"));
@@ -33,6 +34,7 @@ interface AffiliateData {
   monthly_sales_count: number;
   monthly_revenue_generated: number;
   parent_affiliate_id: string | null;
+  track: string | null;
 }
 
 interface Commission {
@@ -205,6 +207,8 @@ const AffiliateDashboard = () => {
   const [revenueGoalTarget, setRevenueGoalTarget] = useState("");
   const [savingGoal, setSavingGoal] = useState(false);
   const [activeGoalTab, setActiveGoalTab] = useState<"commission" | "revenue">("commission");
+  const [activeMainTab, setActiveMainTab] = useState("overview");
+  const [ugcRefreshTrigger, setUgcRefreshTrigger] = useState(0);
 
   // ============ Data Fetching ============
   
@@ -480,6 +484,19 @@ const AffiliateDashboard = () => {
     return tier.charAt(0).toUpperCase() + tier.slice(1);
   };
 
+  const getTrackLabel = (track: string | null) => {
+    switch (track) {
+      case 'partner':
+        return { label: 'Partner', description: 'Content & relationship-focused', Icon: Heart };
+      case 'ambassador':
+        return { label: 'Ambassador', description: 'Invite only', Icon: Zap };
+      default:
+        return { label: 'Affiliate', description: 'Sales-focused', Icon: Briefcase };
+    }
+  };
+
+  const trackInfo = getTrackLabel(affiliateData?.track || null);
+
   // ============ Loading State ============
 
   if (loading) {
@@ -604,36 +621,59 @@ const AffiliateDashboard = () => {
 
   const currentTierConfig = tierConfig[tierInfo.tier] || tierConfig['bronze'];
 
-  return (
+   return (
     <div className="min-h-screen bg-secondary/30">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold">Affiliate Dashboard</h1>
-            <p className="text-muted-foreground">Welcome back, partner!</p>
+            <h1 className="text-2xl md:text-3xl font-bold">Partner Dashboard</h1>
+            <p className="text-muted-foreground">Welcome back, partner</p>
           </div>
-          <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${currentTierConfig.bgColor} ${currentTierConfig.borderColor} border`}>
-            <currentTierConfig.Icon className={`h-5 w-5 ${currentTierConfig.color}`} />
-            <span className={`font-semibold ${currentTierConfig.color}`}>
-              {formatTierName(tierInfo.tier)} Partner
-            </span>
-            <span className="text-sm text-muted-foreground">({tierInfo.commissionRate}%)</span>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            {/* Track Label */}
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border border-border/50">
+              <trackInfo.Icon className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium text-foreground/80">{trackInfo.label}</span>
+              <span className="text-xs text-muted-foreground hidden sm:inline">– {trackInfo.description}</span>
+            </div>
+            {/* Tier Badge */}
+            <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${currentTierConfig.bgColor} ${currentTierConfig.borderColor} border`}>
+              <currentTierConfig.Icon className={`h-5 w-5 ${currentTierConfig.color}`} />
+              <span className={`font-semibold ${currentTierConfig.color}`}>
+                {formatTierName(tierInfo.tier)}
+              </span>
+              <span className="text-sm text-muted-foreground">({tierInfo.commissionRate}%)</span>
+            </div>
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 rounded-full">
-                  <DollarSign className="h-5 w-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Earnings</p>
-                  <p className="text-2xl font-bold">${(affiliateData.total_commissions || 0).toFixed(2)}</p>
-                </div>
+        {/* Main Tabs */}
+        <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="w-full">
+          <TabsList className="mb-6">
+            <TabsTrigger value="overview" className="gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="content" className="gap-2">
+              <FileText className="h-4 w-4" />
+              Content
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="mt-0">
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-100 rounded-full">
+                      <DollarSign className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Earnings</p>
+                      <p className="text-2xl font-bold">${(affiliateData.total_commissions || 0).toFixed(2)}</p>
+                    </div>
               </div>
             </CardContent>
           </Card>
@@ -1116,6 +1156,46 @@ const AffiliateDashboard = () => {
             )}
           </CardContent>
         </Card>
+          </TabsContent>
+
+          {/* Content Tab */}
+          <TabsContent value="content" className="mt-0">
+            <div className="grid lg:grid-cols-2 gap-6">
+              <div>
+                <Card className="border border-border/50">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center gap-2 text-lg font-medium">
+                      <FileText className="h-5 w-5 text-muted-foreground" />
+                      Share Your Sleep Story
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      Submit content featuring Rise By Night in your real evenings. Approved content may unlock future rewards.
+                    </p>
+                  </CardHeader>
+                  <CardContent>
+                    <UGCSubmissionForm onSuccess={() => setUgcRefreshTrigger(prev => prev + 1)} />
+                  </CardContent>
+                </Card>
+              </div>
+              <div>
+                <Card className="border border-border/50">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center gap-2 text-lg font-medium">
+                      <Image className="h-5 w-5 text-muted-foreground" />
+                      Your Submissions
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <UGCSubmissionsList 
+                      affiliateId={affiliateData.id} 
+                      refreshTrigger={ugcRefreshTrigger}
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
