@@ -50,6 +50,21 @@ export function useRecommendedProducts(excludeProductIds: string[], limit = 3) {
 }
 
 /**
+ * Get the free gift mask product for color selection
+ */
+export function useFreeGiftMaskProduct() {
+  const { data: products, ...rest } = useShopifyProducts();
+  
+  const freeGiftMask = products?.find(
+    (p: ShopifyProduct) => 
+      p.node.title.toLowerCase().includes('free gift') && 
+      p.node.title.toLowerCase().includes('mask')
+  );
+
+  return { data: freeGiftMask, ...rest };
+}
+
+/**
  * Extract variant prices from products for price lookups
  */
 export function useProductPrices() {

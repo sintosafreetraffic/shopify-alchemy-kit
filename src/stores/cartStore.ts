@@ -25,9 +25,14 @@ export interface CartItem {
   }>;
 }
 
+export interface FreeMaskSelection {
+  variantId: string;
+  color: string;
+}
+
 export interface CheckoutData {
   items: CartItem[];
-  freeMasks: number;
+  freeMaskVariants: FreeMaskSelection[];
   discountCodes: string[];
 }
 
@@ -37,6 +42,7 @@ interface CartStore {
   checkoutUrl: string | null;
   isLoading: boolean;
   isCartOpen: boolean;
+  freeMaskSelections: FreeMaskSelection[];
   
   addItem: (item: CartItem) => void;
   updateQuantity: (variantId: string, quantity: number) => void;
@@ -46,6 +52,8 @@ interface CartStore {
   setCheckoutUrl: (url: string) => void;
   setLoading: (loading: boolean) => void;
   setCartOpen: (isOpen: boolean) => void;
+  setFreeMaskSelections: (selections: FreeMaskSelection[]) => void;
+  updateFreeMaskColor: (index: number, variantId: string, color: string) => void;
   createCheckout: () => Promise<CheckoutData | null>;
 }
 
@@ -57,6 +65,7 @@ export const useCartStore = create<CartStore>()(
       checkoutUrl: null,
       isLoading: false,
       isCartOpen: false,
+      freeMaskSelections: [],
 
       addItem: (item) => {
         const { items } = get();
@@ -133,7 +142,7 @@ export const useCartStore = create<CartStore>()(
       },
 
       clearCart: () => {
-        set({ items: [], cartId: null, checkoutUrl: null });
+        set({ items: [], cartId: null, checkoutUrl: null, freeMaskSelections: [] });
         clearInitiateCheckoutFingerprint();
       },
 
@@ -141,6 +150,15 @@ export const useCartStore = create<CartStore>()(
       setCheckoutUrl: (checkoutUrl) => set({ checkoutUrl }),
       setLoading: (isLoading) => set({ isLoading }),
       setCartOpen: (isCartOpen) => set({ isCartOpen }),
+      
+      setFreeMaskSelections: (freeMaskSelections) => set({ freeMaskSelections }),
+      
+      updateFreeMaskColor: (index, variantId, color) => {
+        const { freeMaskSelections } = get();
+        const newSelections = [...freeMaskSelections];
+        newSelections[index] = { variantId, color };
+        set({ freeMaskSelections: newSelections });
+      },
 
       createCheckout: async () => {
         const { items, setLoading, setCheckoutUrl } = get();
@@ -176,7 +194,13 @@ export const useCartStore = create<CartStore>()(
           const totalPillows = pillowItems.reduce((sum, item) => sum + item.quantity, 0);
           
           // Calculate free masks: Only for 2+ pillows - pairs of 2 = 2 masks each
-          const freeMasks = totalPillows >= 2 ? Math.floor(totalPillows / 2) * 2 : 0;
+          const freeMaskCount = totalPillows >= 2 ? Math.floor(totalPillows / 2) * 2 : 0;
+          
+          // Get the selected mask variants from state
+          const { freeMaskSelections } = get();
+          
+          // Use selected variants, or empty array if none selected
+          const freeMaskVariants = freeMaskSelections.slice(0, freeMaskCount);
           
           // Determine which discount codes to apply
           const discountCodes: string[] = [];
@@ -198,11 +222,11 @@ export const useCartStore = create<CartStore>()(
           }
           
           // Add free mask discount if applicable
-          if (freeMasks > 0) {
+          if (freeMaskCount > 0) {
             discountCodes.push('FREEMASKSFORYOU');
           }
           
-          return { items, freeMasks, discountCodes };
+          return { items, freeMaskVariants, discountCodes };
         } catch (error) {
           console.error('Failed to prepare checkout:', error);
           throw error;
