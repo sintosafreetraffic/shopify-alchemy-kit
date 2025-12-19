@@ -10,7 +10,12 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { ShoppingCart, Minus, Plus, Trash2, Lock, Loader2, Moon, RotateCcw, Shield, Gift, Truck } from "lucide-react";
+import { ShoppingCart, Minus, Plus, Trash2, Lock, Loader2, Moon, RotateCcw, Shield, Gift, Truck, ChevronDown, Check } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useCartStore } from "@/stores/cartStore";
 import eyeMaskGift from "@/assets/eye-mask-gift-new.webp";
 import kneePillowCart from "@/assets/knee-pillow-main-new.webp";
@@ -595,68 +600,78 @@ export const CartDrawer = () => {
                   );
                   })}
                   
-                  {/* Free Gifts Section with Color Selectors */}
+                  {/* Included Items Section - Minimal, calm design */}
                   {freeGifts > 0 && (
-                    <div className="bg-primary/5 border border-primary rounded-lg p-3 space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Gift className="w-4 h-4 text-primary flex-shrink-0" />
-                        <div className="flex-1">
-                          <p className="text-sm font-bold text-primary">
-                            FREE: {freeGifts}x Sleep Mask
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Choose your colors • Value: ${(freeGifts * 29.99).toFixed(2)}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      {/* Individual mask color selectors */}
-                      <div className="space-y-2">
+                    <div className="border-t pt-3 mt-1">
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Included with your pillow
+                      </p>
+                      <div className="space-y-1.5">
                         {Array.from({ length: freeGifts }).map((_, index) => {
                           const selection = freeMaskSelections[index];
                           const selectedColor = selection?.color || maskVariants[0]?.color || 'Navy';
                           const selectedImage = sleepMaskColorImages[selectedColor] || sleepMaskNavy;
                           
                           return (
-                            <div key={index} className="flex items-center gap-2 bg-background/50 rounded-md p-2">
+                            <div key={index} className="flex items-center gap-2 py-1">
                               <img 
                                 src={selectedImage} 
-                                alt={`Free Sleep Mask ${index + 1}`} 
-                                className="w-10 h-10 object-contain flex-shrink-0 rounded"
+                                alt="Sleep Mask" 
+                                className="w-8 h-8 object-contain flex-shrink-0 rounded"
                                 loading="lazy"
                                 decoding="async"
                               />
                               <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium text-foreground">
-                                  Mask {index + 1}
+                                <p className="text-sm text-foreground">
+                                  Silk Sleep Mask
                                 </p>
-                                <div className="flex flex-wrap gap-1 mt-1">
-                                  {maskVariants.map((variant) => (
-                                    <button
-                                      key={variant.id}
-                                      onClick={() => updateFreeMaskColor(index, variant.id, variant.color)}
-                                      className={`w-5 h-5 rounded-full border-2 transition-all ${
-                                        selection?.variantId === variant.id 
-                                          ? 'border-primary ring-2 ring-primary/30 scale-110' 
-                                          : 'border-border hover:border-primary/50'
-                                      }`}
-                                      style={{ 
-                                        backgroundColor: variant.color === 'Navy' ? '#1e3a8a' :
-                                                        variant.color === 'Turquoise' ? '#06b6d4' :
-                                                        variant.color === 'Pink' ? '#ec4899' :
-                                                        variant.color === 'Gold' ? '#fbbf24' :
-                                                        variant.color === 'Silver' ? '#94a3b8' :
-                                                        variant.color === 'Black' ? '#000000' : '#1e3a8a'
-                                      }}
-                                      title={variant.color}
-                                      aria-label={`Select ${variant.color} for mask ${index + 1}`}
-                                    />
-                                  ))}
-                                </div>
                               </div>
-                              <span className="text-xs text-muted-foreground">
-                                {selectedColor}
-                              </span>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <button 
+                                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                                    aria-label={`Change color for mask ${index + 1}`}
+                                  >
+                                    <span className="capitalize">{selectedColor}</span>
+                                    <ChevronDown className="w-3 h-3" />
+                                  </button>
+                                </PopoverTrigger>
+                                <PopoverContent 
+                                  className="w-40 p-2" 
+                                  align="end"
+                                  sideOffset={4}
+                                >
+                                  <div className="space-y-0.5">
+                                    {maskVariants.map((variant) => (
+                                      <button
+                                        key={variant.id}
+                                        onClick={() => updateFreeMaskColor(index, variant.id, variant.color)}
+                                        className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors ${
+                                          selection?.variantId === variant.id 
+                                            ? 'bg-secondary text-foreground' 
+                                            : 'hover:bg-secondary/50 text-muted-foreground'
+                                        }`}
+                                      >
+                                        <div 
+                                          className="w-4 h-4 rounded-full border border-border flex-shrink-0"
+                                          style={{ 
+                                            backgroundColor: variant.color === 'Navy' ? '#1e3a8a' :
+                                                            variant.color === 'Turquoise' ? '#06b6d4' :
+                                                            variant.color === 'Pink' ? '#ec4899' :
+                                                            variant.color === 'Gold' ? '#fbbf24' :
+                                                            variant.color === 'Silver' ? '#94a3b8' :
+                                                            variant.color === 'Black' ? '#000000' : '#1e3a8a'
+                                          }}
+                                        />
+                                        <span className="flex-1 text-left capitalize">{variant.color}</span>
+                                        {selection?.variantId === variant.id && (
+                                          <Check className="w-3 h-3 text-foreground" />
+                                        )}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
                             </div>
                           );
                         })}
