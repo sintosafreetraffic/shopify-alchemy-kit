@@ -159,14 +159,14 @@ export const Header = () => {
         </div>
 
         {/* Logo - Centered on Mobile, Left on Desktop */}
-        <Link to="/" className="flex items-center justify-center md:justify-start hover:opacity-80 transition-opacity mx-auto md:mx-0 h-10 md:h-12">
+        <Link to="/" className="flex items-center justify-center md:justify-start hover:opacity-80 transition-opacity mx-auto md:mx-0 h-12 md:h-14">
           <img 
             src={logo} 
             alt="Rise By Night - Ergonomic Sleep Pillow" 
-            width={200}
-            height={40}
-            style={{ width: 'auto', height: '40px', maxHeight: '40px' }}
-            className="md:h-12 md:max-h-12 object-contain"
+            width={240}
+            height={48}
+            style={{ width: 'auto', height: '48px', maxHeight: '48px' }}
+            className="md:h-14 md:max-h-14 object-contain"
             loading="eager"
             fetchPriority="high"
             decoding="sync"
