@@ -4,7 +4,7 @@ import { ArrowRight } from "lucide-react";
 
 // Hero images
 import heroDesktop from "@/assets/hero-christmas-desktop.webp";
-import heroMobile from "@/assets/lifestyle-hero-mobile-new.webp";
+import heroMobile from "@/assets/hero-mobile-christmas.webp";
 
 // ============================================================================
 // HERO HEADLINE VARIANTS (Future A/B Testing)
