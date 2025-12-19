@@ -626,10 +626,11 @@ export const CartDrawer = () => {
                                   Silk Sleep Mask
                                 </p>
                               </div>
-                              <Popover>
+                              <Popover modal={true}>
                                 <PopoverTrigger asChild>
                                   <button 
-                                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                                    type="button"
+                                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded hover:bg-secondary/50"
                                     aria-label={`Change color for mask ${index + 1}`}
                                   >
                                     <span className="capitalize">{selectedColor}</span>
@@ -637,14 +638,16 @@ export const CartDrawer = () => {
                                   </button>
                                 </PopoverTrigger>
                                 <PopoverContent 
-                                  className="w-40 p-2" 
+                                  className="w-40 p-2 z-[200] bg-background border border-border shadow-lg" 
                                   align="end"
                                   sideOffset={4}
+                                  onOpenAutoFocus={(e) => e.preventDefault()}
                                 >
                                   <div className="space-y-0.5">
                                     {maskVariants.map((variant) => (
                                       <button
                                         key={variant.id}
+                                        type="button"
                                         onClick={() => updateFreeMaskColor(index, variant.id, variant.color)}
                                         className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors ${
                                           selection?.variantId === variant.id 
