@@ -1,5 +1,5 @@
 import { createStorefrontCheckout } from "./shopify";
-import type { CartItem } from "@/stores/cartStore";
+import type { CartItem, FreeMaskSelection } from "@/stores/cartStore";
 import { 
   trackCheckoutInitiated, 
   trackCheckoutSuccess, 
@@ -25,7 +25,7 @@ interface CheckoutResult {
  */
 export async function createCheckoutWithResilience(
   items: CartItem[],
-  freeMasks: number,
+  freeMaskVariants: FreeMaskSelection[],
   discountCodes: string[]
 ): Promise<CheckoutResult> {
   const startTime = Date.now();
@@ -40,7 +40,7 @@ export async function createCheckoutWithResilience(
     try {
       const checkoutUrl = await createCheckoutWithTimeout(
         items,
-        freeMasks,
+        freeMaskVariants,
         discountCodes
       );
       
@@ -89,7 +89,7 @@ export async function createCheckoutWithResilience(
  */
 async function createCheckoutWithTimeout(
   items: CartItem[],
-  freeMasks: number,
+  freeMaskVariants: FreeMaskSelection[],
   discountCodes: string[]
 ): Promise<string | null> {
   const controller = new AbortController();
@@ -102,7 +102,7 @@ async function createCheckoutWithTimeout(
         variantId: item.variantId,
         quantity: item.quantity,
       })),
-      freeMasks,
+      freeMaskVariants,
       discountCodes
     );
     

@@ -277,12 +277,17 @@ const CART_DISCOUNT_CODES_UPDATE = `
   }
 `;
 
+export interface FreeMaskSelection {
+  variantId: string;
+  color: string;
+}
+
 export async function createStorefrontCheckout(
   items: Array<{
     variantId: string;
     quantity: number;
   }>,
-  freeMasks: number = 0,
+  freeMaskVariants: FreeMaskSelection[] = [],
   discountCodes: string[] = []
 ): Promise<string> {
   try {
@@ -291,26 +296,21 @@ export async function createStorefrontCheckout(
       merchandiseId: item.variantId,
     }));
 
-    // Add free sleep masks if applicable
-    if (freeMasks > 0) {
-      // Fetch the free gift sleep mask product specifically
-      try {
-        const products = await fetchProducts(10);
-        const freeGiftMask = products.find(p => 
-          p.node.title.toLowerCase().includes('free gift') && 
-          p.node.title.toLowerCase().includes('mask')
-        );
-        
-        if (freeGiftMask && freeGiftMask.node.variants.edges[0]?.node) {
-          lines.push({
-            quantity: freeMasks,
-            merchandiseId: freeGiftMask.node.variants.edges[0].node.id,
-          });
-        }
-      } catch (error) {
-        console.error('Failed to add free gift to checkout:', error);
-        // Continue with checkout even if free gift addition fails
-      }
+    // Add free sleep masks with selected variants
+    if (freeMaskVariants.length > 0) {
+      // Group variants by variantId to consolidate quantities
+      const variantQuantities = freeMaskVariants.reduce((acc, selection) => {
+        acc[selection.variantId] = (acc[selection.variantId] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      
+      // Add each unique variant with its quantity
+      Object.entries(variantQuantities).forEach(([variantId, quantity]) => {
+        lines.push({
+          quantity,
+          merchandiseId: variantId,
+        });
+      });
     }
 
     const cartInput: any = {

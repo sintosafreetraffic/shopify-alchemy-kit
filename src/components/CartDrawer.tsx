@@ -31,7 +31,7 @@ const sleepMaskColorImages: Record<string, string> = {
   "Silver": sleepMaskSilver,
   "Black": sleepMaskBlack,
 };
-import { useRecommendedProducts, useProductPrices } from "@/hooks/useShopifyProducts";
+import { useRecommendedProducts, useProductPrices, useFreeGiftMaskProduct } from "@/hooks/useShopifyProducts";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import { ImageModal } from "./ImageModal";
@@ -52,7 +52,10 @@ export const CartDrawer = () => {
     createCheckout,
     addItem,
     setCartOpen,
-    isCartOpen
+    isCartOpen,
+    freeMaskSelections,
+    setFreeMaskSelections,
+    updateFreeMaskColor
   } = useCartStore();
   
   const { 
@@ -66,6 +69,7 @@ export const CartDrawer = () => {
   const cartProductIds = useMemo(() => items.map(item => item.product.node.id), [items]);
   const { data: recommendedProducts = [] } = useRecommendedProducts(cartProductIds, 3);
   const { data: currentPrices = {} } = useProductPrices();
+  const { data: freeGiftMaskProduct } = useFreeGiftMaskProduct();
 
   // Sync local state with store state
   useEffect(() => {
@@ -163,6 +167,42 @@ export const CartDrawer = () => {
   const shippingCost = totalPrice >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
   const finalTotal = totalPrice + shippingCost;
 
+  // Get available mask variants for color selection
+  const maskVariants = useMemo(() => {
+    if (!freeGiftMaskProduct) return [];
+    return freeGiftMaskProduct.node.variants.edges.map(edge => ({
+      id: edge.node.id,
+      color: edge.node.selectedOptions.find(opt => opt.name === 'Color')?.value || edge.node.title,
+    }));
+  }, [freeGiftMaskProduct]);
+
+  // Initialize or adjust mask selections when freeGifts count changes
+  useEffect(() => {
+    if (freeGifts === 0) {
+      if (freeMaskSelections.length > 0) {
+        setFreeMaskSelections([]);
+      }
+      return;
+    }
+    
+    // Get default variant (first one, usually Navy)
+    const defaultVariant = maskVariants[0];
+    if (!defaultVariant) return;
+    
+    // If we need more selections than we have, add defaults
+    if (freeMaskSelections.length < freeGifts) {
+      const newSelections = [...freeMaskSelections];
+      while (newSelections.length < freeGifts) {
+        newSelections.push({ variantId: defaultVariant.id, color: defaultVariant.color });
+      }
+      setFreeMaskSelections(newSelections);
+    } 
+    // If we have more selections than needed, trim
+    else if (freeMaskSelections.length > freeGifts) {
+      setFreeMaskSelections(freeMaskSelections.slice(0, freeGifts));
+    }
+  }, [freeGifts, maskVariants, freeMaskSelections.length, setFreeMaskSelections]);
+
   // Products are now fetched via useRecommendedProducts and useProductPrices hooks
   // which use centralized caching - no need for manual fetch on cart open
 
@@ -219,7 +259,7 @@ export const CartDrawer = () => {
       // Create checkout with timeout and retry logic
       const result = await createCheckoutWithResilience(
         checkoutData.items,
-        checkoutData.freeMasks,
+        checkoutData.freeMaskVariants,
         checkoutData.discountCodes
       );
       
@@ -555,24 +595,71 @@ export const CartDrawer = () => {
                   );
                   })}
                   
-                  {/* Free Gifts Section */}
+                  {/* Free Gifts Section with Color Selectors */}
                   {freeGifts > 0 && (
-                    <div className="bg-primary/5 border border-primary rounded p-1.5 flex items-center gap-2">
-                      <Gift className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-                      <img 
-                        src={sleepMaskNavy} 
-                        alt="Free Sleep Mask" 
-                        className="w-8 h-8 object-contain flex-shrink-0"
-                        loading="lazy"
-                        decoding="async"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[11px] font-bold text-primary">
-                          FREE: {freeGifts}x Sleep Mask
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">
-                          Value: ${(freeGifts * 29.99).toFixed(2)}
-                        </p>
+                    <div className="bg-primary/5 border border-primary rounded-lg p-3 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Gift className="w-4 h-4 text-primary flex-shrink-0" />
+                        <div className="flex-1">
+                          <p className="text-sm font-bold text-primary">
+                            FREE: {freeGifts}x Sleep Mask
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Choose your colors • Value: ${(freeGifts * 29.99).toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Individual mask color selectors */}
+                      <div className="space-y-2">
+                        {Array.from({ length: freeGifts }).map((_, index) => {
+                          const selection = freeMaskSelections[index];
+                          const selectedColor = selection?.color || maskVariants[0]?.color || 'Navy';
+                          const selectedImage = sleepMaskColorImages[selectedColor] || sleepMaskNavy;
+                          
+                          return (
+                            <div key={index} className="flex items-center gap-2 bg-background/50 rounded-md p-2">
+                              <img 
+                                src={selectedImage} 
+                                alt={`Free Sleep Mask ${index + 1}`} 
+                                className="w-10 h-10 object-contain flex-shrink-0 rounded"
+                                loading="lazy"
+                                decoding="async"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-foreground">
+                                  Mask {index + 1}
+                                </p>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {maskVariants.map((variant) => (
+                                    <button
+                                      key={variant.id}
+                                      onClick={() => updateFreeMaskColor(index, variant.id, variant.color)}
+                                      className={`w-5 h-5 rounded-full border-2 transition-all ${
+                                        selection?.variantId === variant.id 
+                                          ? 'border-primary ring-2 ring-primary/30 scale-110' 
+                                          : 'border-border hover:border-primary/50'
+                                      }`}
+                                      style={{ 
+                                        backgroundColor: variant.color === 'Navy' ? '#1e3a8a' :
+                                                        variant.color === 'Turquoise' ? '#06b6d4' :
+                                                        variant.color === 'Pink' ? '#ec4899' :
+                                                        variant.color === 'Gold' ? '#fbbf24' :
+                                                        variant.color === 'Silver' ? '#94a3b8' :
+                                                        variant.color === 'Black' ? '#000000' : '#1e3a8a'
+                                      }}
+                                      title={variant.color}
+                                      aria-label={`Select ${variant.color} for mask ${index + 1}`}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                              <span className="text-xs text-muted-foreground">
+                                {selectedColor}
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
