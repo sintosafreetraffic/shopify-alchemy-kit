@@ -184,7 +184,7 @@ export const Header = () => {
         <nav className="hidden md:flex flex-nowrap items-center justify-center mt-5 space-x-8 lg:space-x-10 whitespace-nowrap">
           <NavLink to="/" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors">Home</NavLink>
           <NavLink to="/about" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors">About Us</NavLink>
-          <NavLink to="/sleep-guides" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors">Sleep Guides</NavLink>
+          <NavLink to="/track" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors">Track Your Order</NavLink>
         </nav>
         
         {/* Cart - Absolute Right on Mobile, Right on Desktop */}
