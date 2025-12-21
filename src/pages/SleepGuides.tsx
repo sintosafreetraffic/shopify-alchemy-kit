@@ -1,5 +1,6 @@
 import { Download, Clock, BookOpen, Moon, Sunrise, Thermometer, Volume2, Activity, Heart, Sparkles, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 const guides = [
   {
@@ -138,6 +139,35 @@ const guides = [
 ];
 
 const SleepGuides = () => {
+  const { toast } = useToast();
+
+  const downloadPdf = async (pdfUrl: string) => {
+    try {
+      const res = await fetch(pdfUrl, { credentials: "same-origin" });
+      if (!res.ok) throw new Error(`Download failed: ${res.status}`);
+
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const filename = pdfUrl.split("/").pop() || "sleep-guide.pdf";
+
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      URL.revokeObjectURL(objectUrl);
+    } catch (err) {
+      console.error("[SleepGuides] PDF download failed", err);
+      toast({
+        title: "Download failed",
+        description: "Please try again in a moment.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -187,11 +217,13 @@ const SleepGuides = () => {
                   <p className="mb-4 text-muted-foreground">{guide.description}</p>
                   
                   <div className="flex flex-wrap items-center gap-4">
-                    <Button asChild size="lg" className="gap-2">
-                      <a href={guide.pdfUrl} download>
-                        <Download className="h-4 w-4" />
-                        Download PDF
-                      </a>
+                    <Button
+                      size="lg"
+                      className="gap-2"
+                      onClick={() => downloadPdf(guide.pdfUrl)}
+                    >
+                      <Download className="h-4 w-4" />
+                      Download PDF
                     </Button>
                     
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -263,15 +295,14 @@ const SleepGuides = () => {
                   </div>
 
                   <Button
-                    asChild
                     variant="ghost"
                     size="sm"
                     className="gap-1.5 text-primary hover:bg-primary/10 hover:text-primary"
+                    onClick={() => downloadPdf(guide.pdfUrl)}
+                    aria-label={`Download ${guide.title} PDF`}
                   >
-                    <a href={guide.pdfUrl} download>
-                      <Download className="h-3.5 w-3.5" />
-                      PDF
-                    </a>
+                    <Download className="h-3.5 w-3.5" />
+                    PDF
                   </Button>
                 </div>
               </div>
