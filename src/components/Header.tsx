@@ -181,7 +181,7 @@ export const Header = () => {
         </Link>
         
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center justify-center mt-5 space-x-6 lg:space-x-8 whitespace-nowrap">
+        <nav className="hidden md:flex flex-nowrap items-center justify-center mt-5 space-x-8 lg:space-x-10 whitespace-nowrap">
           <NavLink to="/" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors">Home</NavLink>
           <NavLink to="/about" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors">About Us</NavLink>
           <NavLink to="/sleep-guides" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors">Sleep Guides</NavLink>
