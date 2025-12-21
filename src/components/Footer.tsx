@@ -85,6 +85,11 @@ export const Footer = () => {
                     Sleep Collective
                   </Link>
                 </li>
+                <li>
+                  <Link to="/track" className="text-muted-foreground hover:text-foreground transition-colors">
+                    Track Order
+                  </Link>
+                </li>
               </ul>
             </div>
 
