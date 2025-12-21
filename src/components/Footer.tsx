@@ -76,6 +76,11 @@ export const Footer = () => {
                   </Link>
                 </li>
                 <li>
+                  <Link to="/sleep-guides" className="text-muted-foreground hover:text-foreground transition-colors">
+                    Sleep Guides
+                  </Link>
+                </li>
+                <li>
                   <Link to="/collective" className="text-muted-foreground hover:text-foreground transition-colors">
                     Sleep Collective
                   </Link>

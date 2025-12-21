@@ -115,6 +115,7 @@ import TrackOrder from "./pages/TrackOrder";
 import Imprint from "./pages/Imprint";
 import PartnerProgram from "./pages/PartnerProgram";
 import NotFound from "./pages/NotFound";
+import SleepGuides from "./pages/SleepGuides";
 
 // Lazily loaded pages (heavy dashboards & features)
 const SleepQuiz = React.lazy(() => import("./pages/SleepQuiz"));
@@ -227,6 +228,7 @@ const AppContent = () => {
             <Route path="/imprint" element={<Imprint />} />
             <Route path="/collective" element={<PartnerProgram />} />
             <Route path="/partner" element={<PartnerProgram />} />
+            <Route path="/sleep-guides" element={<SleepGuides />} />
             
             {/* Heavy pages - lazily loaded */}
             <Route path="/sleep-quiz" element={<SleepQuiz />} />
