@@ -145,3 +145,7 @@ verify_jwt = false
 # UGC Submit - Requires JWT authentication
 [functions.ugc-submit]
 verify_jwt = true
+
+# Pinterest Tracking - Public endpoint for purchase tracking
+[functions.pinterest-track]
+verify_jwt = false
