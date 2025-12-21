@@ -181,11 +181,11 @@ export const Header = () => {
         </Link>
         
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center justify-center gap-6 lg:gap-10 mt-5 whitespace-nowrap">
-          <NavLink to="/" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors whitespace-nowrap">Home</NavLink>
-          <NavLink to="/about" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors whitespace-nowrap">About Us</NavLink>
-          <NavLink to="/sleep-guides" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors whitespace-nowrap">Sleep Guides</NavLink>
-          <NavLink to="/track" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors whitespace-nowrap">Track Order</NavLink>
+        <nav className="hidden md:flex items-center justify-center mt-5">
+          <NavLink to="/" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors whitespace-nowrap px-3 lg:px-4">Home</NavLink>
+          <NavLink to="/about" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors whitespace-nowrap px-3 lg:px-4">About Us</NavLink>
+          <NavLink to="/sleep-guides" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors whitespace-nowrap px-3 lg:px-4">Sleep Guides</NavLink>
+          <NavLink to="/track" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors whitespace-nowrap px-3 lg:px-4">Track Order</NavLink>
         </nav>
         
         {/* Cart - Absolute Right on Mobile, Right on Desktop */}
