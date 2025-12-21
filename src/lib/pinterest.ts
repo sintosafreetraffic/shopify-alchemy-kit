@@ -308,3 +308,196 @@ export function trackSignup() {
     console.log('[Pinterest] Signup tracked', data);
   }
 }
+
+// ============================================================================
+// SERVER-SIDE PURCHASE TRACKING
+// Tracks purchases via edge function to Pinterest Conversions API
+// ============================================================================
+
+interface PurchaseOrderData {
+  order_id: string;
+  value: number;
+  currency?: string;
+  products?: Array<{
+    id: string;
+    name?: string;
+    quantity?: number;
+    price?: number;
+  }>;
+  email?: string;
+  phone?: string;
+  pinterest_click_id?: string;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  utm_content?: string;
+  utm_term?: string;
+  referrer?: string;
+  landing_page?: string;
+}
+
+// Storage keys for Pinterest attribution
+const PINTEREST_EPIK_STORAGE_KEY = 'pinterest_epik';
+const PINTEREST_LANDING_PAGE_KEY = 'pinterest_landing_page';
+
+/**
+ * Get Pinterest click ID from storage
+ */
+function getStoredPinterestClickId(): string | null {
+  if (typeof window === 'undefined') return null;
+  
+  // Try localStorage first
+  const fromStorage = localStorage.getItem(PINTEREST_EPIK_STORAGE_KEY);
+  if (fromStorage) return fromStorage;
+  
+  // Fallback to cookie
+  const cookies = document.cookie.split(';');
+  for (const cookie of cookies) {
+    const [name, value] = cookie.trim().split('=');
+    if (name === '_epik' && value) {
+      return decodeURIComponent(value);
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Track a purchase event to Pinterest via edge function (server-side)
+ * Automatically captures Pinterest click ID and UTM params from URL/storage
+ * 
+ * @param orderData - Order information to track
+ * @returns Promise with tracking result
+ */
+export async function trackPurchase(orderData: PurchaseOrderData): Promise<{
+  success: boolean;
+  message?: string;
+  error?: string;
+  tracking_result?: any;
+}> {
+  try {
+    // Dynamically import supabase to avoid circular dependencies
+    const { supabase } = await import('@/integrations/supabase/client');
+    
+    // Get URL parameters for attribution (if in browser)
+    const urlParams = typeof window !== 'undefined' 
+      ? new URLSearchParams(window.location.search)
+      : null;
+
+    // Build complete payload with automatic attribution capture
+    const payload: PurchaseOrderData = {
+      order_id: orderData.order_id,
+      value: parseFloat(orderData.value.toString()),
+      currency: orderData.currency || 'EUR',
+      products: orderData.products || [],
+      email: orderData.email,
+      phone: orderData.phone,
+      // Get Pinterest click ID: provided > URL param > stored
+      pinterest_click_id: orderData.pinterest_click_id || 
+        urlParams?.get('_ep') || 
+        getStoredPinterestClickId() || 
+        undefined,
+      // Get UTM parameters from URL if not provided
+      utm_source: orderData.utm_source || urlParams?.get('utm_source') || undefined,
+      utm_medium: orderData.utm_medium || urlParams?.get('utm_medium') || undefined,
+      utm_campaign: orderData.utm_campaign || urlParams?.get('utm_campaign') || undefined,
+      utm_content: orderData.utm_content || urlParams?.get('utm_content') || undefined,
+      utm_term: orderData.utm_term || urlParams?.get('utm_term') || undefined,
+      // Get referrer and landing page
+      referrer: orderData.referrer || 
+        (typeof document !== 'undefined' ? document.referrer : undefined),
+      landing_page: orderData.landing_page || 
+        localStorage.getItem(PINTEREST_LANDING_PAGE_KEY) ||
+        (typeof window !== 'undefined' ? window.location.href : undefined),
+    };
+
+    console.log('[Pinterest] Sending server-side purchase event:', {
+      order_id: payload.order_id,
+      value: payload.value,
+      currency: payload.currency,
+      has_click_id: !!payload.pinterest_click_id,
+    });
+
+    // Call edge function
+    const { data, error } = await supabase.functions.invoke('pinterest-track', {
+      body: payload,
+    });
+
+    if (error) {
+      console.error('[Pinterest] Server-side tracking error:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to track purchase',
+      };
+    }
+
+    if (data?.success) {
+      console.log('[Pinterest] ✅ Server-side purchase tracked:', data.message);
+      return {
+        success: true,
+        message: data.message,
+        tracking_result: data.tracking_result,
+      };
+    } else {
+      console.error('[Pinterest] ❌ Server-side tracking failed:', data);
+      return {
+        success: false,
+        error: data?.error || 'Tracking failed',
+        tracking_result: data,
+      };
+    }
+  } catch (error) {
+    console.error('[Pinterest] Server-side tracking exception:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+/**
+ * Track purchase from Shopify order object (convenience wrapper)
+ * 
+ * @param order - Shopify order object
+ * @returns Promise with tracking result
+ */
+export async function trackPurchaseFromOrder(order: {
+  id: string | number;
+  total_price?: string | number;
+  total?: string | number;
+  currency?: string;
+  line_items?: Array<{
+    product_id?: string | number;
+    id?: string | number;
+    title?: string;
+    name?: string;
+    quantity?: number;
+    price?: string | number;
+  }>;
+  customer?: {
+    email?: string;
+    phone?: string;
+  };
+  email?: string;
+  phone?: string;
+}): Promise<{
+  success: boolean;
+  message?: string;
+  error?: string;
+}> {
+  const total = order.total_price || order.total || 0;
+  
+  return trackPurchase({
+    order_id: String(order.id),
+    value: parseFloat(String(total)),
+    currency: order.currency || 'EUR',
+    products: (order.line_items || []).map(item => ({
+      id: String(item.product_id || item.id || 'unknown'),
+      name: item.title || item.name || 'Product',
+      quantity: item.quantity || 1,
+      price: parseFloat(String(item.price || 0)),
+    })),
+    email: order.customer?.email || order.email,
+    phone: order.customer?.phone || order.phone,
+  });
+}
