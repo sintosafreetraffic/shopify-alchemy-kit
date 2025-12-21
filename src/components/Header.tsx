@@ -61,6 +61,13 @@ export const Header = () => {
                   About Us
                 </NavLink>
                 <NavLink 
+                  to="/sleep-guides" 
+                  className="text-lg text-foreground hover:text-primary transition-colors py-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Sleep Guides
+                </NavLink>
+                <NavLink 
                   to="/track" 
                   className="text-lg text-foreground hover:text-primary transition-colors py-2"
                   onClick={() => setMobileMenuOpen(false)}
@@ -177,7 +184,8 @@ export const Header = () => {
         <nav className="hidden md:flex items-center justify-center gap-4 lg:gap-8 mt-5 whitespace-nowrap">
           <NavLink to="/" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors whitespace-nowrap">Home</NavLink>
           <NavLink to="/about" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors whitespace-nowrap">About Us</NavLink>
-          <NavLink to="/track" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors whitespace-nowrap">Track Your Order</NavLink>
+          <NavLink to="/sleep-guides" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors whitespace-nowrap">Sleep Guides</NavLink>
+          <NavLink to="/track" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors whitespace-nowrap">Track Order</NavLink>
         </nav>
         
         {/* Cart - Absolute Right on Mobile, Right on Desktop */}
