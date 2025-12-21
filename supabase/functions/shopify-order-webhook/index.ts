@@ -268,6 +268,60 @@ Deno.serve(async (req: Request): Promise<Response> => {
       }),
     });
 
+    // PINTEREST TRACKING - Send purchase event to Pinterest Conversions API
+    const trackingServerUrl = getEnvVar("TRACKING_SERVER_URL");
+    if (trackingServerUrl) {
+      console.log("[Pinterest] Sending purchase event to tracking server");
+      try {
+        // Extract Pinterest click ID from order note attributes or cart attributes
+        const noteAttributes = order.note_attributes || [];
+        const pinterestClickId = noteAttributes.find(
+          (attr: { name: string; value: string }) => attr.name === '_ep' || attr.name === 'pinterest_click_id'
+        )?.value;
+
+        // Build products array
+        const products = (order.line_items || []).map((item: any) => ({
+          id: String(item.product_id),
+          name: item.title,
+          quantity: item.quantity,
+          price: parseFloat(item.price),
+        }));
+
+        // Build tracking payload
+        const pinterestPayload = {
+          order_id: String(order.id),
+          event_type: 'purchase',
+          value: parseFloat(order.total_price),
+          currency: order.currency || 'EUR',
+          products,
+          email: order.email,
+          phone: order.customer?.phone || order.billing_address?.phone,
+          pinterest_click_id: pinterestClickId,
+          // Extract UTM params from landing_site if available
+          landing_page: order.landing_site,
+          referrer: order.referring_site,
+        };
+
+        const pinterestResponse = await fetch(`${trackingServerUrl}/track/client`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(pinterestPayload),
+        });
+
+        const pinterestResult = await pinterestResponse.json();
+        if (pinterestResponse.ok && pinterestResult.success) {
+          console.log("[Pinterest] ✅ Purchase tracked successfully:", order.id);
+        } else {
+          console.error("[Pinterest] Tracking failed:", pinterestResult);
+        }
+      } catch (pinterestError) {
+        console.error("[Pinterest] Error (non-blocking):", pinterestError);
+        // Non-blocking - don't fail the webhook
+      }
+    } else {
+      console.log("[Pinterest] TRACKING_SERVER_URL not configured, skipping");
+    }
+
     // TRIGGER FULL SLEEP SYNC - Use fullSleepSync for complete 3-layer sync
     console.log("[Sleep Sync] Triggering fullSleepSync for order:", email);
     try {
