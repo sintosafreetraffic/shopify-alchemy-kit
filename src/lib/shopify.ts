@@ -5,12 +5,42 @@ const SHOPIFY_STORE_PERMANENT_DOMAIN = 'lovable-project-swlbs.myshopify.com';
 const SHOPIFY_STOREFRONT_URL = `https://${SHOPIFY_STORE_PERMANENT_DOMAIN}/api/${SHOPIFY_API_VERSION}/graphql.json`;
 const SHOPIFY_STOREFRONT_TOKEN = 'e40ec4b0f10582a9b6b921efb4e65bf8';
 
-// Retrieve Pinterest click ID from localStorage or cookie
+// Pinterest Click ID storage keys
+const PINTEREST_EPIK_KEY = 'pinterest_epik';
+const PINTEREST_LANDING_PAGE_KEY = 'pinterest_landing_page';
+
+/**
+ * Capture Pinterest click ID from URL on page load
+ * Call this early in app initialization (e.g., App.tsx or main.tsx)
+ */
+export function capturePinterestClickId(): void {
+  if (typeof window === 'undefined') return;
+  
+  const urlParams = new URLSearchParams(window.location.search);
+  const epik = urlParams.get('_ep') || urlParams.get('epik');
+  
+  if (epik) {
+    // Store in localStorage for persistence
+    localStorage.setItem(PINTEREST_EPIK_KEY, epik);
+    localStorage.setItem(PINTEREST_LANDING_PAGE_KEY, window.location.href);
+    
+    // Also set as cookie for cross-domain tracking
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + 30); // 30 day expiry
+    document.cookie = `_epik=${encodeURIComponent(epik)}; expires=${expiryDate.toUTCString()}; path=/; SameSite=Lax`;
+    
+    console.log('[Pinterest] Click ID captured:', epik);
+  }
+}
+
+/**
+ * Retrieve Pinterest click ID from localStorage or cookie
+ */
 function getPinterestClickId(): string | null {
   if (typeof window === 'undefined') return null;
   
-  // Try localStorage first
-  const fromStorage = localStorage.getItem('pinterest_epik');
+  // Try localStorage first (most reliable)
+  const fromStorage = localStorage.getItem(PINTEREST_EPIK_KEY);
   if (fromStorage) return fromStorage;
   
   // Fallback to cookie
@@ -23,6 +53,39 @@ function getPinterestClickId(): string | null {
   }
   
   return null;
+}
+
+/**
+ * Get stored landing page URL
+ */
+function getPinterestLandingPage(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(PINTEREST_LANDING_PAGE_KEY);
+}
+
+/**
+ * Get all Pinterest attribution data for cart attributes
+ */
+export function getPinterestAttributionData(): { key: string; value: string }[] {
+  const attributes: { key: string; value: string }[] = [];
+  
+  const clickId = getPinterestClickId();
+  if (clickId) {
+    attributes.push({ key: '_ep', value: clickId });
+    attributes.push({ key: 'pinterest_click_id', value: clickId });
+  }
+  
+  const landingPage = getPinterestLandingPage();
+  if (landingPage) {
+    attributes.push({ key: 'pinterest_landing_page', value: landingPage });
+  }
+  
+  // Add referrer if available
+  if (typeof document !== 'undefined' && document.referrer) {
+    attributes.push({ key: 'referrer', value: document.referrer });
+  }
+  
+  return attributes;
 }
 
 export interface ShopifyProduct {
@@ -217,6 +280,10 @@ const CART_CREATE_MUTATION = `
           code
           applicable
         }
+        attributes {
+          key
+          value
+        }
         cost {
           totalAmount {
             amount
@@ -313,9 +380,17 @@ export async function createStorefrontCheckout(
       });
     }
 
+    // Build cart input with Pinterest attribution attributes
+    const pinterestAttributes = getPinterestAttributionData();
     const cartInput: any = {
       lines,
     };
+    
+    // Add attributes if we have Pinterest data
+    if (pinterestAttributes.length > 0) {
+      cartInput.attributes = pinterestAttributes;
+      console.log('[Shopify] Adding Pinterest attribution to cart:', pinterestAttributes.map(a => a.key));
+    }
 
     const cartData = await storefrontApiRequest(CART_CREATE_MUTATION, {
       input: cartInput,
