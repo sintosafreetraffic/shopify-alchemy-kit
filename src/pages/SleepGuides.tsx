@@ -1,4 +1,4 @@
-import { Download, Clock, BookOpen, Moon, Sunrise, Thermometer, Volume2, Activity, Heart, Sparkles } from "lucide-react";
+import { Download, Clock, BookOpen, Moon, Sunrise, Thermometer, Volume2, Activity, Heart, Sparkles, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const guides = [
@@ -112,6 +112,28 @@ const guides = [
     pages: 15,
     pdfUrl: "/ebooks/noise-light-stress-reduction.pdf",
     color: "from-teal-500/20 to-teal-500/5",
+  },
+  {
+    id: "back-pain-rotation",
+    title: "Back Pain & Hip Rotation Fix",
+    subtitle: "Sleep in Alignment, Wake Without Tension",
+    description: "Learn how pelvis rotation causes back pain and how proper knee support keeps your spine aligned all night.",
+    icon: Activity,
+    duration: "7 min read",
+    pages: 14,
+    pdfUrl: "/ebooks/back-pain-rotation-fix.pdf",
+    color: "from-orange-500/20 to-orange-500/5",
+  },
+  {
+    id: "neck-alignment",
+    title: "Neck Pain Alignment Guide",
+    subtitle: "Wake Up Without Pain",
+    description: "Master proper neck alignment during sleep. Understand the neck-shoulder gap and how to position yourself correctly.",
+    icon: Zap,
+    duration: "8 min read",
+    pages: 15,
+    pdfUrl: "/ebooks/neck-alignment-guide.pdf",
+    color: "from-sky-500/20 to-sky-500/5",
   },
 ];
 
