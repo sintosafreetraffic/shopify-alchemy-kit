@@ -163,6 +163,12 @@ const QuizRevealTracking = () => {
   } | null>(null);
   const [clarityData, setClarityData] = useState<ClarityApiResponse | null>(null);
   const [clarityLoading, setClarityLoading] = useState(false);
+  const [pageVisits, setPageVisits] = useState<Array<{
+    date: string;
+    our_sessions: number;
+    our_pageviews: number;
+  }>>([]);
+  const [pageVisitsTotal, setPageVisitsTotal] = useState({ sessions: 0, pageviews: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [days, setDays] = useState("30");
@@ -242,7 +248,7 @@ const QuizRevealTracking = () => {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - daysNum);
 
-      const [quizResponse, checkoutResponse, pinterestResult] = await Promise.all([
+      const [quizResponse, checkoutResponse, pinterestResult, pageVisitsResult] = await Promise.all([
         fetch(`${supabaseUrl}/functions/v1/quiz-reveal-analytics`, {
           method: "POST",
           headers: {
@@ -271,6 +277,12 @@ const QuizRevealTracking = () => {
           .gte('created_at', startDate.toISOString())
           .order('created_at', { ascending: false })
           .limit(100),
+        supabase
+          .from('page_visits')
+          .select('session_id, path, created_at')
+          .gte('created_at', startDate.toISOString())
+          .order('created_at', { ascending: false })
+          .limit(5000),
       ]);
 
       if (!quizResponse.ok) {
@@ -311,6 +323,39 @@ const QuizRevealTracking = () => {
           successRate,
           bySource,
         });
+      }
+
+      // Process page visits for comparison chart
+      if (pageVisitsResult.data) {
+        const visits = pageVisitsResult.data as Array<{ session_id: string; path: string; created_at: string }>;
+        
+        // Calculate totals
+        const uniqueSessions = new Set(visits.map(v => v.session_id)).size;
+        setPageVisitsTotal({
+          sessions: uniqueSessions,
+          pageviews: visits.length,
+        });
+
+        // Group by date for chart
+        const dailyData: Record<string, { sessions: Set<string>; pageviews: number }> = {};
+        visits.forEach(visit => {
+          const date = visit.created_at.split('T')[0];
+          if (!dailyData[date]) {
+            dailyData[date] = { sessions: new Set(), pageviews: 0 };
+          }
+          dailyData[date].sessions.add(visit.session_id);
+          dailyData[date].pageviews++;
+        });
+
+        const chartData = Object.entries(dailyData)
+          .map(([date, data]) => ({
+            date,
+            our_sessions: data.sessions.size,
+            our_pageviews: data.pageviews,
+          }))
+          .sort((a, b) => a.date.localeCompare(b.date));
+
+        setPageVisits(chartData);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch analytics");
@@ -1358,6 +1403,49 @@ const QuizRevealTracking = () => {
               </Card>
             </div>
 
+            {/* Session Comparison Chart */}
+            <Card className="p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <TrendingUp className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold">Sessions Over Time</h3>
+                <Badge variant="outline" className="text-xs">Our Tracking (page_visits)</Badge>
+              </div>
+              {pageVisits.length > 0 ? (
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={pageVisits}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fontSize: 11 }} 
+                      tickFormatter={(value) => {
+                        const date = new Date(value);
+                        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                      }}
+                    />
+                    <YAxis tick={{ fontSize: 11 }} />
+                    <Tooltip 
+                      contentStyle={{ fontSize: '12px' }}
+                      formatter={(value: number, name: string) => [
+                        value.toLocaleString(),
+                        name === 'our_sessions' ? 'Sessions' : 'Pageviews'
+                      ]}
+                      labelFormatter={(label) => new Date(label).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                    />
+                    <Legend />
+                    <Bar dataKey="our_sessions" name="Sessions" fill="hsl(221, 83%, 53%)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="our_pageviews" name="Pageviews" fill="hsl(142, 76%, 36%)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+                  <div className="text-center">
+                    <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <p>No page visit data yet. Navigate the site to start tracking.</p>
+                  </div>
+                </div>
+              )}
+            </Card>
+
             {/* Session Parity Check */}
             <Card className="p-5">
               <div className="flex items-center gap-2 mb-4">
@@ -1365,13 +1453,20 @@ const QuizRevealTracking = () => {
                 <h3 className="font-semibold">Session Parity Check</h3>
                 <Badge variant="outline" className="text-xs">Our Tracking vs Clarity</Badge>
               </div>
-              <div className="grid md:grid-cols-4 gap-4">
-                <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-center">
-                  <p className="text-xs text-muted-foreground mb-1">Our Unique Sessions</p>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {checkoutStats?.summary.unique_sessions || 0}
+              <div className="grid md:grid-cols-5 gap-4">
+                <div className="p-4 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Our Sessions</p>
+                  <p className="text-2xl font-bold text-indigo-600">
+                    {pageVisitsTotal.sessions.toLocaleString()}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">checkout_analytics</p>
+                  <p className="text-xs text-muted-foreground mt-1">page_visits</p>
+                </div>
+                <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Our Pageviews</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {pageVisitsTotal.pageviews.toLocaleString()}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">page_visits</p>
                 </div>
                 <div className="p-4 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-center">
                   <p className="text-xs text-muted-foreground mb-1">Clarity Sessions</p>
@@ -1381,28 +1476,28 @@ const QuizRevealTracking = () => {
                   <p className="text-xs text-muted-foreground mt-1">API / Estimated</p>
                 </div>
                 <div className="p-4 rounded-lg bg-violet-50 dark:bg-violet-900/20 text-center">
-                  <p className="text-xs text-muted-foreground mb-1">Checkout → Session Ratio</p>
+                  <p className="text-xs text-muted-foreground mb-1">Parity Ratio</p>
                   <p className="text-2xl font-bold text-violet-600">
-                    {checkoutStats && clarityData?.metrics && clarityData.metrics.totalSessions > 0
-                      ? `${((checkoutStats.summary.total_initiated / clarityData.metrics.totalSessions) * 100).toFixed(1)}%`
+                    {clarityData?.metrics && clarityData.metrics.totalSessions > 0
+                      ? `${((pageVisitsTotal.sessions / clarityData.metrics.totalSessions) * 100).toFixed(0)}%`
                       : '—'}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">initiated / sessions</p>
+                  <p className="text-xs text-muted-foreground mt-1">ours / clarity</p>
                 </div>
                 <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-center">
-                  <p className="text-xs text-muted-foreground mb-1">Success → Purchase Ratio</p>
+                  <p className="text-xs text-muted-foreground mb-1">Checkout Rate</p>
                   <p className="text-2xl font-bold text-amber-600">
-                    {checkoutStats && pinterestStats
-                      ? `${((pinterestStats.total / Math.max(checkoutStats.summary.total_success, 1)) * 100).toFixed(0)}%`
+                    {pageVisitsTotal.sessions > 0 && checkoutStats
+                      ? `${((checkoutStats.summary.total_initiated / pageVisitsTotal.sessions) * 100).toFixed(1)}%`
                       : '—'}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">pinterest / success</p>
+                  <p className="text-xs text-muted-foreground mt-1">checkouts / sessions</p>
                 </div>
               </div>
               <div className="mt-4 p-3 rounded-lg bg-muted/30 text-sm text-muted-foreground">
-                <strong>Interpretation:</strong> Checkout→Session Ratio shows what % of sessions initiate checkout. 
-                Success→Purchase should be ~100% if all successful checkouts result in tracked purchases.
-                Ratios significantly over 100% may indicate duplicate events.
+                <strong>Interpretation:</strong> Parity Ratio should be close to 100% if our tracking matches Clarity. 
+                Values &lt;100% suggest we're missing some sessions; &gt;100% suggests duplicate tracking.
+                Checkout Rate shows what % of sessions initiate checkout.
               </div>
             </Card>
 
