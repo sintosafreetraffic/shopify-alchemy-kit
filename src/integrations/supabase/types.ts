@@ -650,6 +650,63 @@ export type Database = {
           },
         ]
       }
+      pinterest_context: {
+        Row: {
+          client_ip_address: string | null
+          client_user_agent: string | null
+          consent_status: string
+          context_id: string
+          created_at: string
+          epik: string | null
+          expires_at: string
+          id: string
+          landing_page: string | null
+          referrer: string | null
+          updated_at: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+        }
+        Insert: {
+          client_ip_address?: string | null
+          client_user_agent?: string | null
+          consent_status: string
+          context_id: string
+          created_at?: string
+          epik?: string | null
+          expires_at: string
+          id?: string
+          landing_page?: string | null
+          referrer?: string | null
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+        }
+        Update: {
+          client_ip_address?: string | null
+          client_user_agent?: string | null
+          consent_status?: string
+          context_id?: string
+          created_at?: string
+          epik?: string | null
+          expires_at?: string
+          id?: string
+          landing_page?: string | null
+          referrer?: string | null
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+        }
+        Relationships: []
+      }
       pinterest_purchase_events: {
         Row: {
           created_at: string

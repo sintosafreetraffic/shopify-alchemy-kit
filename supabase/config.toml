@@ -161,3 +161,7 @@ verify_jwt = false
 # Clarity Analytics - Admin only, requires apikey
 [functions.clarity-analytics]
 verify_jwt = false
+
+# Track Context - Public endpoint for context capture (no auth needed)
+[functions.track-context]
+verify_jwt = false

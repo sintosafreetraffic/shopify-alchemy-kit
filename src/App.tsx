@@ -133,6 +133,7 @@ const AdminUGCSubmissions = React.lazy(() => import("./pages/AdminUGCSubmissions
 const SleepQuizDiagnostics = React.lazy(() => import("./pages/internal/SleepQuizDiagnostics"));
 const QuizRevealTracking = React.lazy(() => import("./pages/internal/QuizRevealTracking"));
 const AnalyticsDiagnostics = React.lazy(() => import("./pages/internal/AnalyticsDiagnostics"));
+const ContextDiagnostics = React.lazy(() => import("./pages/internal/ContextDiagnostics"));
 
 const queryClient = new QueryClient();
 
@@ -246,6 +247,7 @@ const AppContent = () => {
             <Route path="/internal/sleep-quiz-diagnostics" element={<SleepQuizDiagnostics />} />
             <Route path="/risebynight/tracking" element={<QuizRevealTracking />} />
             <Route path="/debug/analytics" element={<AnalyticsDiagnostics />} />
+            <Route path="/internal/context-diagnostics" element={<ContextDiagnostics />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
