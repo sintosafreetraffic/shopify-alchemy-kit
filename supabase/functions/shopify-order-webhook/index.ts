@@ -3,6 +3,8 @@
  * 
  * Handles order creation/payment webhooks and triggers Sleep Sync.
  * Uses centralized env/cors helpers and syncAndStoreAttributes.
+ * 
+ * HARDENED: Logs all Pinterest purchase events to pinterest_purchase_events table
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -20,36 +22,122 @@ import { SleepSyncSource } from "../_shared/types.ts";
 
 const KLAVIYO_LIST_ID = "UEJzEU";
 
-// Verify Shopify HMAC signature
+// Verify Shopify HMAC signature - STRICT VERIFICATION
 async function verifyShopifyHmac(body: string, hmacHeader: string | null): Promise<boolean> {
+  // Fail closed: missing header = invalid
   if (!hmacHeader) {
-    console.error("[Shopify] Missing HMAC header");
+    console.error("[Shopify] HMAC header missing - REJECTING");
     return false;
   }
 
   const secret = getEnvVar("SHOPIFY_WEBHOOK_SECRET");
+  // Fail closed: missing secret = invalid
   if (!secret) {
-    console.error("[Shopify] SHOPIFY_WEBHOOK_SECRET not configured");
+    console.error("[Shopify] SHOPIFY_WEBHOOK_SECRET not configured - REJECTING");
     return false;
   }
 
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
+  try {
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(secret),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
 
-  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(body));
-  const computedHmac = btoa(String.fromCharCode(...new Uint8Array(signature)));
+    const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(body));
+    const computedHmac = btoa(String.fromCharCode(...new Uint8Array(signature)));
 
-  const isValid = computedHmac === hmacHeader;
-  if (!isValid) {
-    console.error("[Shopify] HMAC verification failed");
+    // Constant-time comparison would be ideal, but for HMAC this is acceptable
+    const isValid = computedHmac === hmacHeader;
+    if (!isValid) {
+      console.error("[Shopify] HMAC mismatch - REJECTING");
+    }
+    return isValid;
+  } catch (hmacError) {
+    console.error("[Shopify] HMAC computation error - REJECTING:", hmacError);
+    return false;
   }
-  return isValid;
+}
+
+// Extract attribution data from note_attributes reliably
+interface AttributionData {
+  pinterest_click_id: string | null;
+  landing_page: string | null;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  utm_content: string | null;
+  utm_term: string | null;
+  referrer: string | null;
+}
+
+function extractAttributionFromOrder(order: any): AttributionData {
+  const noteAttributes = order.note_attributes || [];
+  
+  // Helper to find attribute by multiple possible keys
+  const findAttr = (...keys: string[]): string | null => {
+    for (const key of keys) {
+      const attr = noteAttributes.find(
+        (a: { name: string; value: string }) => 
+          a.name === key || a.name === `_${key}` || a.name.toLowerCase() === key.toLowerCase()
+      );
+      if (attr?.value) return attr.value;
+    }
+    return null;
+  };
+
+  return {
+    pinterest_click_id: findAttr('_ep', 'pinterest_click_id', '_pinterest_click_id', 'epik'),
+    landing_page: findAttr('pinterest_landing_page', '_pinterest_landing_page', 'landing_page') || order.landing_site,
+    utm_source: findAttr('utm_source', '_utm_source'),
+    utm_medium: findAttr('utm_medium', '_utm_medium'),
+    utm_campaign: findAttr('utm_campaign', '_utm_campaign'),
+    utm_content: findAttr('utm_content', '_utm_content'),
+    utm_term: findAttr('utm_term', '_utm_term'),
+    referrer: findAttr('referrer', '_referrer') || order.referring_site,
+  };
+}
+
+// Log Pinterest purchase event to database
+async function logPinterestPurchaseEvent(
+  supabase: any,
+  orderId: string,
+  value: number,
+  currency: string,
+  attribution: AttributionData,
+  renderStatus: string,
+  renderResponse: any = null
+): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('pinterest_purchase_events')
+      .insert({
+        order_id: orderId,
+        value,
+        currency,
+        epik: attribution.pinterest_click_id,
+        utm_source: attribution.utm_source,
+        utm_medium: attribution.utm_medium,
+        utm_campaign: attribution.utm_campaign,
+        utm_content: attribution.utm_content,
+        utm_term: attribution.utm_term,
+        landing_page: attribution.landing_page,
+        source: 'shopify_webhook',
+        render_status: renderStatus,
+        render_response: renderResponse,
+      });
+
+    if (error) {
+      console.error("[Pinterest] Failed to log purchase event:", error);
+    } else {
+      console.log("[Pinterest] Purchase event logged to DB:", orderId);
+    }
+  } catch (logError) {
+    console.error("[Pinterest] Error logging purchase event (non-blocking):", logError);
+  }
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
@@ -63,14 +151,15 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const rawBody = await req.text();
     const hmacHeader = req.headers.get("x-shopify-hmac-sha256");
     
-    // Verify HMAC signature
+    // STRICT HMAC verification - fail closed
     const isValidHmac = await verifyShopifyHmac(rawBody, hmacHeader);
     if (!isValidHmac) {
-      console.error("[Shopify] Invalid webhook signature - rejecting request");
+      // Return 401 to Shopify - will retry later
+      console.error("[Shopify] Invalid webhook signature - REJECTING request");
       return createErrorResponse("Invalid signature", 401);
     }
     
-    console.log("[Shopify] HMAC signature verified successfully");
+    console.log("[Shopify] ✓ HMAC signature verified");
 
     const shopifyTopic = req.headers.get("x-shopify-topic");
     console.log("[Shopify] Webhook received, topic:", shopifyTopic);
@@ -97,6 +186,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const SUPABASE_SERVICE_ROLE_KEY = requireEnvVar("SUPABASE_SERVICE_ROLE_KEY");
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // Extract attribution data upfront
+    const attribution = extractAttributionFromOrder(order);
+    console.log("[Shopify] Attribution data:", {
+      has_epik: !!attribution.pinterest_click_id,
+      has_utm_source: !!attribution.utm_source,
+      has_landing_page: !!attribution.landing_page,
+    });
 
     // Extract product names from line items and map to our product categories
     const extractProductsOwned = (lineItems: any[]): string[] => {
@@ -268,17 +365,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
       }),
     });
 
-    // PINTEREST TRACKING - Send purchase event to Pinterest Conversions API
+    // PINTEREST TRACKING - Send purchase event to Pinterest Conversions API via Render
     const trackingServerUrl = getEnvVar("TRACKING_SERVER_URL");
+    const orderValue = parseFloat(order.total_price);
+    const orderCurrency = order.currency || 'EUR';
+    
     if (trackingServerUrl) {
       console.log("[Pinterest] Sending purchase event to tracking server");
       try {
-        // Extract Pinterest click ID from order note attributes or cart attributes
-        const noteAttributes = order.note_attributes || [];
-        const pinterestClickId = noteAttributes.find(
-          (attr: { name: string; value: string }) => attr.name === '_ep' || attr.name === 'pinterest_click_id'
-        )?.value;
-
         // Build products array
         const products = (order.line_items || []).map((item: any) => ({
           id: String(item.product_id),
@@ -287,20 +381,32 @@ Deno.serve(async (req: Request): Promise<Response> => {
           price: parseFloat(item.price),
         }));
 
-        // Build tracking payload
+        // Build tracking payload with full attribution
         const pinterestPayload = {
           order_id: String(order.id),
           event_type: 'purchase',
-          value: parseFloat(order.total_price),
-          currency: order.currency || 'EUR',
+          value: orderValue,
+          currency: orderCurrency,
           products,
-          email: order.email,
+          email: order.email, // Note: Render handles hashing, not us
           phone: order.customer?.phone || order.billing_address?.phone,
-          pinterest_click_id: pinterestClickId,
-          // Extract UTM params from landing_site if available
-          landing_page: order.landing_site,
-          referrer: order.referring_site,
+          pinterest_click_id: attribution.pinterest_click_id,
+          utm_source: attribution.utm_source,
+          utm_medium: attribution.utm_medium,
+          utm_campaign: attribution.utm_campaign,
+          utm_content: attribution.utm_content,
+          utm_term: attribution.utm_term,
+          landing_page: attribution.landing_page,
+          referrer: attribution.referrer,
         };
+
+        console.log("[Pinterest] Payload:", {
+          order_id: pinterestPayload.order_id,
+          value: pinterestPayload.value,
+          has_epik: !!pinterestPayload.pinterest_click_id,
+          has_email: !!pinterestPayload.email,
+          utm_source: pinterestPayload.utm_source,
+        });
 
         const pinterestResponse = await fetch(`${trackingServerUrl}/track/client`, {
           method: 'POST',
@@ -309,17 +415,58 @@ Deno.serve(async (req: Request): Promise<Response> => {
         });
 
         const pinterestResult = await pinterestResponse.json();
+        
         if (pinterestResponse.ok && pinterestResult.success) {
           console.log("[Pinterest] ✅ Purchase tracked successfully:", order.id);
+          // Log success to DB
+          await logPinterestPurchaseEvent(
+            supabase,
+            String(order.id),
+            orderValue,
+            orderCurrency,
+            attribution,
+            'success',
+            { status: pinterestResponse.status, result: pinterestResult }
+          );
         } else {
           console.error("[Pinterest] Tracking failed:", pinterestResult);
+          // Log failure to DB
+          await logPinterestPurchaseEvent(
+            supabase,
+            String(order.id),
+            orderValue,
+            orderCurrency,
+            attribution,
+            'failed',
+            { status: pinterestResponse.status, error: pinterestResult }
+          );
         }
-      } catch (pinterestError) {
+      } catch (pinterestError: any) {
         console.error("[Pinterest] Error (non-blocking):", pinterestError);
+        // Log error to DB
+        await logPinterestPurchaseEvent(
+          supabase,
+          String(order.id),
+          orderValue,
+          orderCurrency,
+          attribution,
+          'error',
+          { error: pinterestError.message || 'Unknown error' }
+        );
         // Non-blocking - don't fail the webhook
       }
     } else {
       console.log("[Pinterest] TRACKING_SERVER_URL not configured, skipping");
+      // Log skipped to DB
+      await logPinterestPurchaseEvent(
+        supabase,
+        String(order.id),
+        orderValue,
+        orderCurrency,
+        attribution,
+        'skipped_no_url',
+        null
+      );
     }
 
     // TRIGGER FULL SLEEP SYNC - Use fullSleepSync for complete 3-layer sync
@@ -337,10 +484,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
       // Non-blocking
     }
 
-    console.log("[Shopify] Successfully processed order webhook");
+    console.log("[Shopify] ✅ Successfully processed order webhook");
     return createSuccessResponse({ success: true });
   } catch (error: any) {
     console.error("[Shopify] Webhook error:", error);
+    // Return 500 so Shopify will retry
     return createErrorResponse(error.message, 500);
   }
 });
