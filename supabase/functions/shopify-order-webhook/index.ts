@@ -72,6 +72,10 @@ interface AttributionData {
   utm_content: string | null;
   utm_term: string | null;
   referrer: string | null;
+  rbn_context_id: string | null;
+  // Match signals from context table (populated via joinPinterestContext)
+  client_ip_address: string | null;
+  client_user_agent: string | null;
 }
 
 function extractAttributionFromOrder(order: any): AttributionData {
@@ -98,7 +102,83 @@ function extractAttributionFromOrder(order: any): AttributionData {
     utm_content: findAttr('utm_content', '_utm_content'),
     utm_term: findAttr('utm_term', '_utm_term'),
     referrer: findAttr('referrer', '_referrer') || order.referring_site,
+    rbn_context_id: findAttr('rbn_context_id'),
+    // These will be populated by joinPinterestContext
+    client_ip_address: null,
+    client_user_agent: null,
   };
+}
+
+// Join attribution with pinterest_context table to get IP/UA for match signals
+async function joinPinterestContext(
+  supabase: any,
+  attribution: AttributionData
+): Promise<AttributionData> {
+  const contextId = attribution.rbn_context_id;
+  
+  if (!contextId) {
+    console.log('[Pinterest] No rbn_context_id in order, skipping context join');
+    return attribution;
+  }
+  
+  try {
+    const { data: context, error } = await supabase
+      .from('pinterest_context')
+      .select('*')
+      .eq('context_id', contextId)
+      .maybeSingle();
+    
+    if (error) {
+      console.error('[Pinterest] Context lookup error:', error.message);
+      return attribution;
+    }
+    
+    if (!context) {
+      console.log('[Pinterest] No context found for:', contextId);
+      return attribution;
+    }
+    
+    console.log('[Pinterest] Context found:', {
+      context_id: contextId,
+      consent_status: context.consent_status,
+      has_epik: !!context.epik,
+      has_ip: !!context.client_ip_address,
+      has_ua: !!context.client_user_agent,
+    });
+    
+    // Merge rules:
+    // 1) order.note_attributes has highest precedence for attribution
+    // 2) pinterest_context fills in missing values
+    // 3) IP/UA only included if consent_status === 'granted'
+    
+    const merged: AttributionData = {
+      ...attribution,
+      // Attribution fallbacks (order takes precedence)
+      pinterest_click_id: attribution.pinterest_click_id || context.epik,
+      landing_page: attribution.landing_page || context.landing_page,
+      utm_source: attribution.utm_source || context.utm_source,
+      utm_medium: attribution.utm_medium || context.utm_medium,
+      utm_campaign: attribution.utm_campaign || context.utm_campaign,
+      utm_content: attribution.utm_content || context.utm_content,
+      utm_term: attribution.utm_term || context.utm_term,
+      referrer: attribution.referrer || context.referrer,
+      // Match signals (consent-gated)
+      client_ip_address: context.consent_status === 'granted' ? context.client_ip_address : null,
+      client_user_agent: context.consent_status === 'granted' ? context.client_user_agent : null,
+    };
+    
+    console.log('[Pinterest] Attribution merged:', {
+      has_epik: !!merged.pinterest_click_id,
+      has_ip: !!merged.client_ip_address,
+      has_ua: !!merged.client_user_agent,
+      epik_source: attribution.pinterest_click_id ? 'order' : (context.epik ? 'context' : 'none'),
+    });
+    
+    return merged;
+  } catch (err: any) {
+    console.error('[Pinterest] Context join error (non-blocking):', err.message);
+    return attribution;
+  }
 }
 
 // Log Pinterest purchase event to database
@@ -197,11 +277,18 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // Extract attribution data upfront
-    const attribution = extractAttributionFromOrder(order);
+    let attribution = extractAttributionFromOrder(order);
+    
+    // Join with pinterest_context to get IP/UA for match signals
+    attribution = await joinPinterestContext(supabase, attribution);
+    
     console.log("[Shopify] Attribution data:", {
       has_epik: !!attribution.pinterest_click_id,
       has_utm_source: !!attribution.utm_source,
       has_landing_page: !!attribution.landing_page,
+      has_context_id: !!attribution.rbn_context_id,
+      has_ip: !!attribution.client_ip_address,
+      has_ua: !!attribution.client_user_agent,
     });
 
     // Extract product names from line items and map to our product categories
@@ -398,8 +485,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
         price: parseFloat(item.price),
       }));
 
-      // Build tracking payload with full attribution
-      const pinterestPayload = {
+      // Build tracking payload with full attribution + match signals
+      const pinterestPayload: Record<string, any> = {
         order_id: String(order.id),
         event_type: 'purchase',
         value: orderValue,
@@ -416,12 +503,22 @@ Deno.serve(async (req: Request): Promise<Response> => {
         landing_page: attribution.landing_page,
         referrer: attribution.referrer,
       };
+      
+      // Add match signals if available (from pinterest_context via joinPinterestContext)
+      if (attribution.client_ip_address) {
+        pinterestPayload.client_ip_address = attribution.client_ip_address;
+      }
+      if (attribution.client_user_agent) {
+        pinterestPayload.client_user_agent = attribution.client_user_agent;
+      }
 
       console.log("[Pinterest] Payload:", {
         order_id: pinterestPayload.order_id,
         value: pinterestPayload.value,
         has_epik: !!pinterestPayload.pinterest_click_id,
         has_email: !!pinterestPayload.email,
+        has_ip: !!pinterestPayload.client_ip_address,
+        has_ua: !!pinterestPayload.client_user_agent,
         utm_source: pinterestPayload.utm_source,
         method: useDirectCapi ? 'DIRECT_CAPI' : 'RENDER',
       });

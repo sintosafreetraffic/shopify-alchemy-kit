@@ -10,6 +10,7 @@
 
 import { isTrackingAllowed } from './consent';
 import { captureAttribution, hasAttributionParams } from './attribution';
+import { captureContext } from './contextTracking';
 import { supabase } from '@/integrations/supabase/client';
 
 // ============================================================================
@@ -258,6 +259,8 @@ export function trackPageView(route: string): void {
     // Always capture attribution on route changes with params (regardless of consent)
     if (hasAttributionParams()) {
       captureAttribution();
+      // Also capture context when attribution params present
+      captureContext();
     }
     
     const timestamp = new Date().toISOString();
@@ -445,6 +448,9 @@ export function initializeProviders(): void {
   try {
     // Always capture attribution regardless of consent (first-party storage)
     captureAttribution();
+    
+    // Always capture context for Pinterest CAPI enrichment
+    captureContext();
     
     if (!isTrackingAllowed()) {
       console.log('[Analytics] Provider init blocked by consent');

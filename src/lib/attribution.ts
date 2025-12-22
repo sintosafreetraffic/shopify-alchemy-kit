@@ -195,11 +195,25 @@ export function getEpik(): string | null {
 /**
  * Build cart attributes array for Shopify checkout
  * Returns array of {key, value} objects for cart attributes
+ * 
+ * CRITICAL: Always includes rbn_context_id for Pinterest CAPI enrichment
+ * Failure to get context_id should NEVER block checkout
  */
 export function getAttributionForCheckout(): Array<{ key: string; value: string }> {
   try {
     const attribution = getAttribution();
     const attributes: Array<{ key: string; value: string }> = [];
+    
+    // Add context_id for Pinterest CAPI enrichment (first, most important)
+    try {
+      // Dynamic import to avoid circular dependency
+      const contextId = localStorage.getItem('rbn_context_id');
+      if (contextId) {
+        attributes.push({ key: 'rbn_context_id', value: contextId });
+      }
+    } catch {
+      // Never block checkout if context_id fails
+    }
     
     if (attribution.epik) {
       // Primary key for webhook extraction
