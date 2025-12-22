@@ -46,6 +46,7 @@ import {
   Zap,
   MousePointer,
   Package,
+  Fingerprint,
 } from "lucide-react";
 import { 
   LineChart, 
@@ -69,6 +70,7 @@ import {
   ProviderStatus,
   EventLogEntry,
 } from "@/lib/analyticsRegistry";
+import ContextTab from "@/components/internal/ContextTab";
 
 interface AnalyticsStats {
   summary: {
@@ -644,7 +646,7 @@ const QuizRevealTracking = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full max-w-2xl grid-cols-4">
+          <TabsList className="grid w-full max-w-3xl grid-cols-5">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
               Overview
@@ -656,6 +658,10 @@ const QuizRevealTracking = () => {
             <TabsTrigger value="checkout" className="flex items-center gap-2">
               <ShoppingCart className="w-4 h-4" />
               Checkout
+            </TabsTrigger>
+            <TabsTrigger value="context" className="flex items-center gap-2">
+              <Fingerprint className="w-4 h-4" />
+              Context
             </TabsTrigger>
             <TabsTrigger value="tracking" className="flex items-center gap-2">
               <Activity className="w-4 h-4" />
@@ -1590,6 +1596,11 @@ const QuizRevealTracking = () => {
                 </div>
               </Card>
             )}
+          </TabsContent>
+
+          {/* Context Tab - Pinterest CAPI Context Tracking */}
+          <TabsContent value="context" className="space-y-6 mt-6">
+            <ContextTab days={days} />
           </TabsContent>
 
           {/* Tracking Health Tab */}
