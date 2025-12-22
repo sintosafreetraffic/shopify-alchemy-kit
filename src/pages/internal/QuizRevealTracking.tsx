@@ -133,6 +133,22 @@ interface PinterestPurchaseEvent {
   created_at: string;
 }
 
+interface ClarityMetrics {
+  totalSessions: number;
+  totalPageviews: number;
+  uniqueUsers: number;
+  avgSessionDuration: number;
+  bounceRate: number;
+  topPages: Array<{ url: string; views: number }>;
+}
+
+interface ClarityApiResponse {
+  metrics: ClarityMetrics | null;
+  mockData: boolean;
+  error?: string;
+  note?: string;
+}
+
 const QuizRevealTracking = () => {
   const navigate = useNavigate();
   const [stats, setStats] = useState<AnalyticsStats | null>(null);
@@ -145,6 +161,8 @@ const QuizRevealTracking = () => {
     successRate: number;
     bySource: Record<string, number>;
   } | null>(null);
+  const [clarityData, setClarityData] = useState<ClarityApiResponse | null>(null);
+  const [clarityLoading, setClarityLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [days, setDays] = useState("30");
@@ -301,9 +319,54 @@ const QuizRevealTracking = () => {
     }
   };
 
+  const fetchClarityData = async () => {
+    setClarityLoading(true);
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      
+      const daysNum = parseInt(days);
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - daysNum);
+      const endDate = new Date();
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/clarity-analytics`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": supabaseKey,
+        },
+        body: JSON.stringify({
+          startDate: startDate.toISOString().split('T')[0],
+          endDate: endDate.toISOString().split('T')[0],
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setClarityData(data);
+      } else {
+        setClarityData({
+          metrics: null,
+          mockData: true,
+          error: `API returned ${response.status}`,
+        });
+      }
+    } catch (err) {
+      setClarityData({
+        metrics: null,
+        mockData: true,
+        error: err instanceof Error ? err.message : 'Failed to fetch Clarity data',
+      });
+    } finally {
+      setClarityLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (isAdmin) {
       fetchStats();
+      fetchClarityData();
       refreshProviderStatuses();
       
       // Refresh provider statuses periodically
@@ -1210,54 +1273,138 @@ const QuizRevealTracking = () => {
                 </div>
               </Card>
 
-              {/* Clarity Info */}
+              {/* Clarity API Data */}
               <Card className="p-5">
-                <div className="flex items-center gap-2 mb-4">
-                  <Eye className="w-5 h-5 text-blue-600" />
-                  <h3 className="font-semibold">Microsoft Clarity</h3>
-                  <Badge variant="outline" className="ml-2 text-xs">Session Recording</Badge>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Eye className="w-5 h-5 text-blue-600" />
+                    <h3 className="font-semibold">Microsoft Clarity API</h3>
+                    {clarityData?.mockData && (
+                      <Badge variant="outline" className="text-xs text-amber-600">Estimated</Badge>
+                    )}
+                  </div>
+                  <Button variant="outline" size="sm" onClick={fetchClarityData} disabled={clarityLoading}>
+                    {clarityLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                  </Button>
                 </div>
-                <div className="space-y-3">
-                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                    <p className="text-sm text-blue-800 dark:text-blue-200">
-                      <strong>Clarity Project:</strong> ue7ibjdmdj
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Clarity automatically tracks page views, sessions, clicks, and scroll depth. Access the full dashboard at:
+                {clarityLoading ? (
+                  <div className="py-8 text-center text-muted-foreground">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+                    Loading Clarity data...
+                  </div>
+                ) : clarityData?.metrics ? (
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center py-2 border-b border-border/50">
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4 text-blue-600" />
+                        <span>Total Sessions</span>
+                      </div>
+                      <Badge variant="secondary">{clarityData.metrics.totalSessions.toLocaleString()}</Badge>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b border-border/50">
+                      <div className="flex items-center gap-2">
+                        <Eye className="w-4 h-4 text-blue-600" />
+                        <span>Total Page Views</span>
+                      </div>
+                      <Badge variant="secondary">{clarityData.metrics.totalPageviews.toLocaleString()}</Badge>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b border-border/50">
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4 text-emerald-600" />
+                        <span>Unique Users</span>
+                      </div>
+                      <Badge variant="secondary">{clarityData.metrics.uniqueUsers.toLocaleString()}</Badge>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b border-border/50">
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-violet-600" />
+                        <span>Avg Session (sec)</span>
+                      </div>
+                      <Badge variant="secondary">{Math.round(clarityData.metrics.avgSessionDuration)}</Badge>
+                    </div>
+                    <div className="flex justify-between items-center py-2">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4 text-amber-600" />
+                        <span>Bounce Rate</span>
+                      </div>
+                      <Badge variant="secondary">{clarityData.metrics.bounceRate.toFixed(1)}%</Badge>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="py-4">
+                    {clarityData?.error && (
+                      <div className="p-3 mb-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 text-sm">
+                        <div className="flex items-center gap-2 mb-1">
+                          <AlertCircle className="w-4 h-4" />
+                          <strong>API Note:</strong>
+                        </div>
+                        <p className="text-xs">{clarityData.note || clarityData.error}</p>
+                      </div>
+                    )}
+                    <p className="text-sm text-muted-foreground text-center">
+                      Clarity API requires OAuth2 setup. View metrics in the dashboard instead.
                     </p>
                     <a 
                       href="https://clarity.microsoft.com/projects/view/ue7ibjdmdj"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline mt-2"
+                      className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline mt-2 w-full justify-center"
                     >
-                      <ExternalLink className="w-3 h-3" />
+                      <ExternalLink className="w-4 h-4" />
                       Open Clarity Dashboard
                     </a>
                   </div>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between items-center py-2 border-b border-border/50">
-                      <span>Script Status</span>
-                      <Badge variant={providerStatuses.find(p => p.name === 'Clarity')?.scriptLoaded ? 'default' : 'secondary'} className="bg-emerald-100 text-emerald-800">
-                        {providerStatuses.find(p => p.name === 'Clarity')?.scriptLoaded ? 'Loaded' : 'Pending'}
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b border-border/50">
-                      <span>Session Recording</span>
-                      <span className="text-emerald-600 text-xs">Auto-tracked</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b border-border/50">
-                      <span>Heatmaps</span>
-                      <span className="text-emerald-600 text-xs">Auto-tracked</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2">
-                      <span>Click Maps</span>
-                      <span className="text-emerald-600 text-xs">Auto-tracked</span>
-                    </div>
-                  </div>
-                </div>
+                )}
               </Card>
             </div>
+
+            {/* Session Parity Check */}
+            <Card className="p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <BarChart3 className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold">Session Parity Check</h3>
+                <Badge variant="outline" className="text-xs">Our Tracking vs Clarity</Badge>
+              </div>
+              <div className="grid md:grid-cols-4 gap-4">
+                <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Our Unique Sessions</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {checkoutStats?.summary.unique_sessions || 0}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">checkout_analytics</p>
+                </div>
+                <div className="p-4 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Clarity Sessions</p>
+                  <p className="text-2xl font-bold text-emerald-600">
+                    {clarityData?.metrics?.totalSessions?.toLocaleString() || '—'}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">API / Estimated</p>
+                </div>
+                <div className="p-4 rounded-lg bg-violet-50 dark:bg-violet-900/20 text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Checkout → Session Ratio</p>
+                  <p className="text-2xl font-bold text-violet-600">
+                    {checkoutStats && clarityData?.metrics && clarityData.metrics.totalSessions > 0
+                      ? `${((checkoutStats.summary.total_initiated / clarityData.metrics.totalSessions) * 100).toFixed(1)}%`
+                      : '—'}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">initiated / sessions</p>
+                </div>
+                <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Success → Purchase Ratio</p>
+                  <p className="text-2xl font-bold text-amber-600">
+                    {checkoutStats && pinterestStats
+                      ? `${((pinterestStats.total / Math.max(checkoutStats.summary.total_success, 1)) * 100).toFixed(0)}%`
+                      : '—'}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">pinterest / success</p>
+                </div>
+              </div>
+              <div className="mt-4 p-3 rounded-lg bg-muted/30 text-sm text-muted-foreground">
+                <strong>Interpretation:</strong> Checkout→Session Ratio shows what % of sessions initiate checkout. 
+                Success→Purchase should be ~100% if all successful checkouts result in tracked purchases.
+                Ratios significantly over 100% may indicate duplicate events.
+              </div>
+            </Card>
 
             {/* Funnel Event Truth Table */}
             <Card className="p-5">
