@@ -149,3 +149,7 @@ verify_jwt = true
 # Pinterest Tracking - Public endpoint for purchase tracking
 [functions.pinterest-track]
 verify_jwt = false
+
+# Clarity Analytics - Admin only, requires apikey
+[functions.clarity-analytics]
+verify_jwt = false
