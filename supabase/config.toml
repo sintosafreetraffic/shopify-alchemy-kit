@@ -138,9 +138,9 @@ verify_jwt = true
 [functions.checkout-analytics]
 verify_jwt = false
 
-# Affiliate Provision - Admin only (validates internally via service role)
+# Affiliate Provision - Admin only, requires JWT and validates admin role internally
 [functions.affiliate-provision]
-verify_jwt = false
+verify_jwt = true
 
 # UGC Submit - Requires JWT authentication
 [functions.ugc-submit]

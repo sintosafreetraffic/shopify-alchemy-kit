@@ -14,7 +14,45 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = requireEnvVar("SUPABASE_URL");
     const serviceRoleKey = requireEnvVar("SUPABASE_SERVICE_ROLE_KEY");
+    const anonKey = requireEnvVar("SUPABASE_ANON_KEY");
     
+    // First verify the user is authenticated and is an admin
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      console.error("Missing Authorization header");
+      return createErrorResponse("Authentication required", 401);
+    }
+
+    // Create a user-context client to verify auth and check role
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const { data: { user }, error: authError } = await userClient.auth.getUser();
+    if (authError || !user) {
+      console.error("Auth verification failed:", authError);
+      return createErrorResponse("Invalid authentication", 401);
+    }
+
+    // Check if user has admin role using the has_role function
+    const { data: isAdmin, error: roleError } = await userClient.rpc("has_role", {
+      _user_id: user.id,
+      _role: "admin"
+    });
+
+    if (roleError) {
+      console.error("Role check error:", roleError);
+      return createErrorResponse("Failed to verify permissions", 500);
+    }
+
+    if (!isAdmin) {
+      console.error(`User ${user.id} attempted admin action without admin role`);
+      return createErrorResponse("Admin access required", 403);
+    }
+
+    console.log(`Admin ${user.id} (${user.email}) initiating affiliate provision`);
+    
+    // Use service role client for actual operations
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     const { application_id }: ProvisionRequest = await req.json();
@@ -55,18 +93,18 @@ Deno.serve(async (req) => {
       return createErrorResponse("Failed to lookup user", 500);
     }
 
-    const user = userData.users.find(u => u.email?.toLowerCase() === application.email.toLowerCase());
+    const applicantUser = userData.users.find(u => u.email?.toLowerCase() === application.email.toLowerCase());
 
-    if (!user) {
+    if (!applicantUser) {
       console.log(`No user found for email: ${application.email}`);
       return createErrorResponse("User must sign up before affiliate account can be created", 400);
     }
 
-    // Check if user already has an affiliate account
+    // Check if applicant already has an affiliate account
     const { data: existingAffiliate } = await supabase
       .from("affiliates")
       .select("id, track")
-      .eq("user_id", user.id)
+      .eq("user_id", applicantUser.id)
       .single();
 
     let affiliateId: string;
@@ -94,7 +132,7 @@ Deno.serve(async (req) => {
       const { data: newAffiliate, error: createError } = await supabase
         .from("affiliates")
         .insert({
-          user_id: user.id,
+          user_id: applicantUser.id,
           referral_code: referralCode,
           track,
           tier: "bronze",
