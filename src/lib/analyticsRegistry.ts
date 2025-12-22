@@ -10,6 +10,7 @@
 
 import { isTrackingAllowed } from './consent';
 import { captureAttribution, hasAttributionParams } from './attribution';
+import { supabase } from '@/integrations/supabase/client';
 
 // ============================================================================
 // TYPES - Exported for AnalyticsDiagnostics.tsx
@@ -40,7 +41,7 @@ export interface EventLogEntry {
 // ============================================================================
 
 export const FUNNEL_EVENT_TABLE = [
-  { event: 'pagevisit', providers: ['Pinterest'], data: ['event_id'], location: 'analyticsRegistry.ts', deduplication: 'None' },
+  { event: 'pagevisit', providers: ['Pinterest', 'Supabase'], data: ['event_id', 'path'], location: 'analyticsRegistry.ts', deduplication: 'None' },
   { event: 'addtocart', providers: ['Pinterest', 'Klaviyo'], data: ['product_id', 'value', 'quantity'], location: 'pinterest.ts / klaviyo.ts', deduplication: 'None' },
   { event: 'initiatecheckout', providers: ['Pinterest'], data: ['event_id', 'order_quantity'], location: 'pinterest.ts', deduplication: '30s fingerprint (sessionStorage)' },
   { event: 'purchase', providers: ['Pinterest (CAPI)'], data: ['order_id', 'value', 'products', 'epik'], location: 'shopify-order-webhook → pinterest-track → Render', deduplication: 'order_id (Render handles)' },
@@ -289,9 +290,71 @@ export function trackPageView(route: string): void {
       providerLastEvent['Clarity'] = timestamp;
       logAnalyticsEvent('page_view', 'Clarity', { route }, true);
     }
+    
+    // Supabase - Log page visit for comparison with Clarity
+    logPageVisitToSupabase(route, timestamp);
   } catch (e) {
     // Never throw
     console.warn('[Analytics] trackPageView error:', e);
+  }
+}
+
+// ============================================================================
+// SUPABASE PAGE VISIT LOGGING
+// ============================================================================
+
+function getSessionId(): string {
+  try {
+    let sessionId = sessionStorage.getItem('analytics_session_id');
+    if (!sessionId) {
+      sessionId = `sess_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+      sessionStorage.setItem('analytics_session_id', sessionId);
+    }
+    return sessionId;
+  } catch {
+    return `sess_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+  }
+}
+
+function getDeviceType(): string {
+  const ua = navigator.userAgent.toLowerCase();
+  if (/iphone|ipad|ipod/.test(ua)) return 'ios';
+  if (/android/.test(ua)) return 'android';
+  if (/mobile/.test(ua)) return 'mobile_other';
+  return 'desktop';
+}
+
+async function logPageVisitToSupabase(route: string, timestamp: string): Promise<void> {
+  try {
+    const sessionId = getSessionId();
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    const visitData = {
+      session_id: sessionId,
+      path: route,
+      referrer: document.referrer || null,
+      user_agent: navigator.userAgent,
+      device_type: getDeviceType(),
+      utm_source: urlParams.get('utm_source') || null,
+      utm_medium: urlParams.get('utm_medium') || null,
+      utm_campaign: urlParams.get('utm_campaign') || null,
+    };
+    
+    // Fire and forget - don't block UI
+    supabase
+      .from('page_visits')
+      .insert(visitData)
+      .then(({ error }) => {
+        if (error) {
+          console.debug('[Analytics] page_visits insert error:', error.message);
+          logAnalyticsEvent('page_view', 'Supabase', visitData, false, error.message);
+        } else {
+          logAnalyticsEvent('page_view', 'Supabase', visitData, true);
+        }
+      });
+  } catch (e) {
+    // Never throw - analytics should never break the app
+    console.debug('[Analytics] logPageVisitToSupabase error:', e);
   }
 }
 
