@@ -164,11 +164,20 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const shopifyTopic = req.headers.get("x-shopify-topic");
     console.log("[Shopify] Webhook received, topic:", shopifyTopic);
 
-    // Only process order creation/payment events
-    if (shopifyTopic !== "orders/create" && shopifyTopic !== "orders/paid") {
+    // Routing logic based on topic
+    // orders/paid: Full processing (profile + Klaviyo + Pinterest tracking)
+    // orders/create: Profile update only (no Pinterest - avoid double-tracking)
+    // Other topics: Ignore
+    const isOrdersPaid = shopifyTopic === "orders/paid";
+    const isOrdersCreate = shopifyTopic === "orders/create";
+    
+    if (!isOrdersPaid && !isOrdersCreate) {
       console.log("[Shopify] Ignoring non-order topic:", shopifyTopic);
       return createSuccessResponse({ success: true, message: "Ignored" });
     }
+    
+    // For orders/create, we only update profile - skip tracking to avoid duplication
+    const shouldTrackPurchase = isOrdersPaid;
 
     // Parse body after HMAC verification
     const order = JSON.parse(rawBody);
@@ -365,13 +374,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
       }),
     });
 
-    // PINTEREST TRACKING - Send purchase event to Pinterest Conversions API via Render
+    // PINTEREST TRACKING - Only on orders/paid to avoid double-tracking
+    // orders/create is skipped for Pinterest (Render is the single source of truth)
     const trackingServerUrl = getEnvVar("TRACKING_SERVER_URL");
     const orderValue = parseFloat(order.total_price);
     const orderCurrency = order.currency || 'EUR';
     
-    if (trackingServerUrl) {
-      console.log("[Pinterest] Sending purchase event to tracking server");
+    if (shouldTrackPurchase && trackingServerUrl) {
+      console.log("[Pinterest] Sending purchase event to tracking server (orders/paid)");
       try {
         // Build products array
         const products = (order.line_items || []).map((item: any) => ({
@@ -455,9 +465,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
         );
         // Non-blocking - don't fail the webhook
       }
-    } else {
+    } else if (shouldTrackPurchase && !trackingServerUrl) {
       console.log("[Pinterest] TRACKING_SERVER_URL not configured, skipping");
-      // Log skipped to DB
       await logPinterestPurchaseEvent(
         supabase,
         String(order.id),
@@ -467,6 +476,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
         'skipped_no_url',
         null
       );
+    } else if (!shouldTrackPurchase) {
+      console.log("[Pinterest] Skipping tracking for orders/create (only orders/paid triggers Pinterest)");
     }
 
     // TRIGGER FULL SLEEP SYNC - Use fullSleepSync for complete 3-layer sync
