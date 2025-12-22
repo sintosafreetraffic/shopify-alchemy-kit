@@ -63,7 +63,7 @@ export function getPinterestAttributionData(): { key: string; value: string }[] 
 }
 
 // Shopify Storefront API configuration
-const SHOPIFY_API_VERSION = '2025-07';
+const SHOPIFY_API_VERSION = '2025-01';
 const SHOPIFY_STORE_PERMANENT_DOMAIN = 'risebynight.myshopify.com';
 const SHOPIFY_STOREFRONT_URL = `https://${SHOPIFY_STORE_PERMANENT_DOMAIN}/api/${SHOPIFY_API_VERSION}/graphql.json`;
 const SHOPIFY_STOREFRONT_TOKEN = 'a5e3f02ae01f7e32b4be58dc48ad2e20';
