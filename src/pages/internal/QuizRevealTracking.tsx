@@ -1,15 +1,16 @@
 /**
  * Analytics Dashboard
- * Internal admin page for tracking quiz reveal + checkout + Pinterest purchase analytics
+ * Internal admin page for tracking quiz reveal + checkout + Pinterest purchase + client tracking analytics
  * Protected: Only accessible to authenticated users with admin role
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Select, 
   SelectContent, 
@@ -39,6 +40,10 @@ import {
   DollarSign,
   Link2,
   Globe,
+  Activity,
+  Zap,
+  MousePointer,
+  Package,
 } from "lucide-react";
 import { 
   LineChart, 
@@ -55,6 +60,13 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import {
+  getAllProviderStatuses,
+  getEventLog,
+  FUNNEL_EVENT_TABLE,
+  ProviderStatus,
+  EventLogEntry,
+} from "@/lib/analyticsRegistry";
 
 interface AnalyticsStats {
   summary: {
@@ -138,10 +150,21 @@ const QuizRevealTracking = () => {
   const [days, setDays] = useState("30");
   const [activeTab, setActiveTab] = useState("quiz");
   
+  // Client-side tracking state
+  const [providerStatuses, setProviderStatuses] = useState<ProviderStatus[]>([]);
+  const [eventLog, setEventLog] = useState<EventLogEntry[]>([]);
+  const [addToCartEvents, setAddToCartEvents] = useState<any[]>([]);
+  
   // Auth state
   const [authChecking, setAuthChecking] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+
+  // Refresh client-side provider statuses
+  const refreshProviderStatuses = useCallback(() => {
+    setProviderStatuses(getAllProviderStatuses());
+    setEventLog(getEventLog());
+  }, []);
 
   // Check authentication and admin role
   useEffect(() => {
@@ -281,8 +304,13 @@ const QuizRevealTracking = () => {
   useEffect(() => {
     if (isAdmin) {
       fetchStats();
+      refreshProviderStatuses();
+      
+      // Refresh provider statuses periodically
+      const interval = setInterval(refreshProviderStatuses, 3000);
+      return () => clearInterval(interval);
     }
-  }, [days, isAdmin]);
+  }, [days, isAdmin, refreshProviderStatuses]);
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -428,7 +456,7 @@ const QuizRevealTracking = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full max-w-lg grid-cols-3">
             <TabsTrigger value="quiz" className="flex items-center gap-2">
               <Eye className="w-4 h-4" />
               Quiz Reveal
@@ -436,6 +464,10 @@ const QuizRevealTracking = () => {
             <TabsTrigger value="checkout" className="flex items-center gap-2">
               <ShoppingCart className="w-4 h-4" />
               Checkout
+            </TabsTrigger>
+            <TabsTrigger value="tracking" className="flex items-center gap-2">
+              <Activity className="w-4 h-4" />
+              Tracking
             </TabsTrigger>
           </TabsList>
 
@@ -1061,6 +1093,307 @@ const QuizRevealTracking = () => {
                 </div>
               </Card>
             )}
+          </TabsContent>
+
+          {/* Tracking Health Tab */}
+          <TabsContent value="tracking" className="space-y-6 mt-6">
+            {/* Provider Status Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {providerStatuses.map((status) => (
+                <Card key={status.name} className="p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                        status.name === 'Pinterest' 
+                          ? 'bg-red-100 dark:bg-red-900/50' 
+                          : status.name === 'Clarity'
+                          ? 'bg-blue-100 dark:bg-blue-900/50'
+                          : 'bg-violet-100 dark:bg-violet-900/50'
+                      }`}>
+                        {status.name === 'Pinterest' && <Send className="w-5 h-5 text-red-600" />}
+                        {status.name === 'Clarity' && <Eye className="w-5 h-5 text-blue-600" />}
+                        {status.name === 'Klaviyo' && <Mail className="w-5 h-5 text-violet-600" />}
+                      </div>
+                      <span className="font-semibold">{status.name}</span>
+                    </div>
+                    {status.initialized ? (
+                      <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">Active</Badge>
+                    ) : (
+                      <Badge variant="secondary" className="bg-amber-100 text-amber-800 border-amber-200">Pending</Badge>
+                    )}
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Script Loaded</span>
+                      <span className={status.scriptLoaded ? "text-emerald-600" : "text-amber-500"}>
+                        {status.scriptLoaded ? "Yes" : "No"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Last Event</span>
+                      <span className="text-xs">
+                        {status.lastEventAt ? new Date(status.lastEventAt).toLocaleTimeString() : "—"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Last Route</span>
+                      <span className="text-xs truncate max-w-[120px]">
+                        {status.lastRoute || "—"}
+                      </span>
+                    </div>
+                    {status.blockers.length > 0 && (
+                      <div className="pt-2 border-t border-border mt-2">
+                        {status.blockers.map((blocker, i) => (
+                          <div key={i} className="flex items-start gap-1 text-xs text-amber-600">
+                            <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                            <span>{blocker}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              ))}
+            </div>
+
+            {/* Tracking Comparison */}
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Our Tracked Events */}
+              <Card className="p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <Zap className="w-5 h-5 text-primary" />
+                  <h3 className="font-semibold">Our Tracked Events (Checkout Analytics)</h3>
+                </div>
+                <div className="space-y-3">
+                  {checkoutStats && (
+                    <>
+                      <div className="flex justify-between items-center py-2 border-b border-border/50">
+                        <div className="flex items-center gap-2">
+                          <ShoppingCart className="w-4 h-4 text-blue-600" />
+                          <span>Checkouts Initiated</span>
+                        </div>
+                        <Badge variant="secondary">{checkoutStats.summary.total_initiated}</Badge>
+                      </div>
+                      <div className="flex justify-between items-center py-2 border-b border-border/50">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-emerald-600" />
+                          <span>Checkout Success</span>
+                        </div>
+                        <Badge variant="secondary">{checkoutStats.summary.total_success}</Badge>
+                      </div>
+                      <div className="flex justify-between items-center py-2 border-b border-border/50">
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-amber-600" />
+                          <span>Checkout Timeout</span>
+                        </div>
+                        <Badge variant="secondary">{checkoutStats.summary.total_timeout}</Badge>
+                      </div>
+                      <div className="flex justify-between items-center py-2 border-b border-border/50">
+                        <div className="flex items-center gap-2">
+                          <RotateCcw className="w-4 h-4 text-violet-600" />
+                          <span>Checkout Retry</span>
+                        </div>
+                        <Badge variant="secondary">{checkoutStats.summary.total_retry}</Badge>
+                      </div>
+                      <div className="flex justify-between items-center py-2">
+                        <div className="flex items-center gap-2">
+                          <XCircle className="w-4 h-4 text-red-600" />
+                          <span>Checkout Error</span>
+                        </div>
+                        <Badge variant="secondary">{checkoutStats.summary.total_error}</Badge>
+                      </div>
+                    </>
+                  )}
+                  {!checkoutStats && (
+                    <div className="py-4 text-center text-muted-foreground">No data</div>
+                  )}
+                </div>
+              </Card>
+
+              {/* Clarity Info */}
+              <Card className="p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <Eye className="w-5 h-5 text-blue-600" />
+                  <h3 className="font-semibold">Microsoft Clarity</h3>
+                  <Badge variant="outline" className="ml-2 text-xs">Session Recording</Badge>
+                </div>
+                <div className="space-y-3">
+                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                    <p className="text-sm text-blue-800 dark:text-blue-200">
+                      <strong>Clarity Project:</strong> ue7ibjdmdj
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Clarity automatically tracks page views, sessions, clicks, and scroll depth. Access the full dashboard at:
+                    </p>
+                    <a 
+                      href="https://clarity.microsoft.com/projects/view/ue7ibjdmdj"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline mt-2"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      Open Clarity Dashboard
+                    </a>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between items-center py-2 border-b border-border/50">
+                      <span>Script Status</span>
+                      <Badge variant={providerStatuses.find(p => p.name === 'Clarity')?.scriptLoaded ? 'default' : 'secondary'} className="bg-emerald-100 text-emerald-800">
+                        {providerStatuses.find(p => p.name === 'Clarity')?.scriptLoaded ? 'Loaded' : 'Pending'}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b border-border/50">
+                      <span>Session Recording</span>
+                      <span className="text-emerald-600 text-xs">Auto-tracked</span>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b border-border/50">
+                      <span>Heatmaps</span>
+                      <span className="text-emerald-600 text-xs">Auto-tracked</span>
+                    </div>
+                    <div className="flex justify-between items-center py-2">
+                      <span>Click Maps</span>
+                      <span className="text-emerald-600 text-xs">Auto-tracked</span>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </div>
+
+            {/* Funnel Event Truth Table */}
+            <Card className="p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <BarChart3 className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold">Funnel Event Truth Table</h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left py-2 px-3 font-medium text-muted-foreground">Event</th>
+                      <th className="text-left py-2 px-3 font-medium text-muted-foreground">Providers</th>
+                      <th className="text-left py-2 px-3 font-medium text-muted-foreground">Data Sent</th>
+                      <th className="text-left py-2 px-3 font-medium text-muted-foreground">Location</th>
+                      <th className="text-left py-2 px-3 font-medium text-muted-foreground">Deduplication</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {FUNNEL_EVENT_TABLE.map((row, i) => (
+                      <tr key={i} className="border-b border-border/50 hover:bg-muted/30">
+                        <td className="py-2 px-3">
+                          <Badge variant="outline" className="font-mono text-xs">
+                            {row.event}
+                          </Badge>
+                        </td>
+                        <td className="py-2 px-3 text-muted-foreground text-xs">
+                          {row.providers.join(', ')}
+                        </td>
+                        <td className="py-2 px-3 text-muted-foreground text-xs">
+                          {row.data.join(', ')}
+                        </td>
+                        <td className="py-2 px-3 text-xs max-w-[200px] truncate" title={row.location}>
+                          {row.location}
+                        </td>
+                        <td className="py-2 px-3 text-xs text-muted-foreground">
+                          {row.deduplication}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+
+            {/* Live Event Log */}
+            <Card className="p-5">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <MousePointer className="w-5 h-5 text-primary" />
+                  <h3 className="font-semibold">Live Event Log</h3>
+                  <Badge variant="outline" className="text-xs">Last 50</Badge>
+                </div>
+                <Button variant="outline" size="sm" onClick={refreshProviderStatuses}>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Refresh
+                </Button>
+              </div>
+              <ScrollArea className="h-[300px]">
+                {eventLog.length === 0 ? (
+                  <div className="py-8 text-center text-muted-foreground">
+                    No events logged yet. Navigate the site to see events appear here.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {eventLog.map((entry) => (
+                      <div
+                        key={entry.id}
+                        className={`p-3 rounded-lg border ${
+                          entry.success ? 'bg-white dark:bg-background border-border' : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-2">
+                            {entry.success ? (
+                              <CheckCircle className="w-3 h-3 text-emerald-600" />
+                            ) : (
+                              <XCircle className="w-3 h-3 text-red-500" />
+                            )}
+                            <Badge variant="outline" className="font-mono text-xs">
+                              {entry.eventName}
+                            </Badge>
+                            <Badge variant="secondary" className="text-xs">
+                              {entry.provider}
+                            </Badge>
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(entry.timestamp).toLocaleTimeString()}
+                          </span>
+                        </div>
+                        {entry.error && (
+                          <p className="text-xs text-red-600 mt-1">{entry.error}</p>
+                        )}
+                        <pre className="text-xs text-muted-foreground mt-1 overflow-x-auto max-w-full">
+                          {JSON.stringify(entry.payload, null, 2)}
+                        </pre>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            </Card>
+
+            {/* Reconciliation Note */}
+            <Card className="p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <Link2 className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold">Tracking Reconciliation</h3>
+              </div>
+              <div className="grid md:grid-cols-2 gap-6 text-sm text-muted-foreground">
+                <div className="space-y-3">
+                  <div>
+                    <strong className="text-foreground">Source of Truth:</strong>
+                    <p>Shopify orders are the canonical conversion source. Client-side events (Clarity sessions, Pinterest pagevisits) are engagement metrics, not conversions.</p>
+                  </div>
+                  <div>
+                    <strong className="text-foreground">Attribution Flow:</strong>
+                    <p>Pinterest epik click ID is captured on landing, stored in localStorage/cookie, written to Shopify cart attributes before checkout, and extracted by the shopify-order-webhook for server-side Pinterest Conversions API.</p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <strong className="text-foreground">Deduplication:</strong>
+                    <p>Purchase events use order_id as the canonical key. Client-side checkout events are intentionally blocked to prevent double-counting.</p>
+                  </div>
+                  <div>
+                    <strong className="text-foreground">Verify Tracking:</strong>
+                    <ol className="list-decimal list-inside mt-1 space-y-1">
+                      <li>Check provider status cards above (all should be "Active")</li>
+                      <li>Navigate the site and watch Live Event Log</li>
+                      <li>Compare Pinterest purchases to Clarity sessions in respective dashboards</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
