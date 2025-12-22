@@ -375,107 +375,153 @@ Deno.serve(async (req: Request): Promise<Response> => {
     });
 
     // PINTEREST TRACKING - Only on orders/paid to avoid double-tracking
-    // orders/create is skipped for Pinterest (Render is the single source of truth)
-    const trackingServerUrl = getEnvVar("TRACKING_SERVER_URL");
+    // Check if direct CAPI is enabled via app_settings toggle
     const orderValue = parseFloat(order.total_price);
     const orderCurrency = order.currency || 'EUR';
     
-    if (shouldTrackPurchase && trackingServerUrl) {
-      console.log("[Pinterest] Sending purchase event to tracking server (orders/paid)");
-      try {
-        // Build products array
-        const products = (order.line_items || []).map((item: any) => ({
-          id: String(item.product_id),
-          name: item.title,
-          quantity: item.quantity,
-          price: parseFloat(item.price),
-        }));
+    if (shouldTrackPurchase) {
+      // Check if direct CAPI is enabled
+      const { data: capiSetting } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'pinterest_direct_capi')
+        .single();
+      
+      const useDirectCapi = capiSetting?.value?.enabled === true;
+      console.log("[Pinterest] Direct CAPI enabled:", useDirectCapi);
 
-        // Build tracking payload with full attribution
-        const pinterestPayload = {
-          order_id: String(order.id),
-          event_type: 'purchase',
-          value: orderValue,
-          currency: orderCurrency,
-          products,
-          email: order.email, // Note: Render handles hashing, not us
-          phone: order.customer?.phone || order.billing_address?.phone,
-          pinterest_click_id: attribution.pinterest_click_id,
-          utm_source: attribution.utm_source,
-          utm_medium: attribution.utm_medium,
-          utm_campaign: attribution.utm_campaign,
-          utm_content: attribution.utm_content,
-          utm_term: attribution.utm_term,
-          landing_page: attribution.landing_page,
-          referrer: attribution.referrer,
-        };
+      // Build products array (used by both methods)
+      const products = (order.line_items || []).map((item: any) => ({
+        id: String(item.product_id),
+        name: item.title,
+        quantity: item.quantity,
+        price: parseFloat(item.price),
+      }));
 
-        console.log("[Pinterest] Payload:", {
-          order_id: pinterestPayload.order_id,
-          value: pinterestPayload.value,
-          has_epik: !!pinterestPayload.pinterest_click_id,
-          has_email: !!pinterestPayload.email,
-          utm_source: pinterestPayload.utm_source,
-        });
+      // Build tracking payload with full attribution
+      const pinterestPayload = {
+        order_id: String(order.id),
+        event_type: 'purchase',
+        value: orderValue,
+        currency: orderCurrency,
+        products,
+        email: order.email,
+        phone: order.customer?.phone || order.billing_address?.phone,
+        pinterest_click_id: attribution.pinterest_click_id,
+        utm_source: attribution.utm_source,
+        utm_medium: attribution.utm_medium,
+        utm_campaign: attribution.utm_campaign,
+        utm_content: attribution.utm_content,
+        utm_term: attribution.utm_term,
+        landing_page: attribution.landing_page,
+        referrer: attribution.referrer,
+      };
 
-        const pinterestResponse = await fetch(`${trackingServerUrl}/track/client`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(pinterestPayload),
-        });
+      console.log("[Pinterest] Payload:", {
+        order_id: pinterestPayload.order_id,
+        value: pinterestPayload.value,
+        has_epik: !!pinterestPayload.pinterest_click_id,
+        has_email: !!pinterestPayload.email,
+        utm_source: pinterestPayload.utm_source,
+        method: useDirectCapi ? 'DIRECT_CAPI' : 'RENDER',
+      });
 
-        const pinterestResult = await pinterestResponse.json();
-        
-        if (pinterestResponse.ok && pinterestResult.success) {
-          console.log("[Pinterest] ✅ Purchase tracked successfully:", order.id);
-          // Log success to DB
+      if (useDirectCapi) {
+        // Use direct Pinterest CAPI edge function
+        console.log("[Pinterest] Using DIRECT CAPI (Supabase edge function)");
+        try {
+          const directCapiResponse = await fetch(`${SUPABASE_URL}/functions/v1/pinterest-capi-direct`, {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            },
+            body: JSON.stringify(pinterestPayload),
+          });
+
+          const directCapiResult = await directCapiResponse.json();
+          
+          if (directCapiResponse.ok && directCapiResult.success) {
+            console.log("[Pinterest] ✅ DIRECT CAPI: Purchase tracked successfully:", order.id);
+          } else {
+            console.error("[Pinterest] DIRECT CAPI: Tracking failed:", directCapiResult);
+          }
+        } catch (directError: any) {
+          console.error("[Pinterest] DIRECT CAPI Error (non-blocking):", directError);
+          // Log error to DB
           await logPinterestPurchaseEvent(
             supabase,
             String(order.id),
             orderValue,
             orderCurrency,
             attribution,
-            'success',
-            { status: pinterestResponse.status, result: pinterestResult }
-          );
-        } else {
-          console.error("[Pinterest] Tracking failed:", pinterestResult);
-          // Log failure to DB
-          await logPinterestPurchaseEvent(
-            supabase,
-            String(order.id),
-            orderValue,
-            orderCurrency,
-            attribution,
-            'failed',
-            { status: pinterestResponse.status, error: pinterestResult }
+            'direct_error',
+            { error: directError.message || 'Unknown error' }
           );
         }
-      } catch (pinterestError: any) {
-        console.error("[Pinterest] Error (non-blocking):", pinterestError);
-        // Log error to DB
-        await logPinterestPurchaseEvent(
-          supabase,
-          String(order.id),
-          orderValue,
-          orderCurrency,
-          attribution,
-          'error',
-          { error: pinterestError.message || 'Unknown error' }
-        );
-        // Non-blocking - don't fail the webhook
+      } else {
+        // Use Render tracking server (legacy)
+        const trackingServerUrl = getEnvVar("TRACKING_SERVER_URL");
+        
+        if (trackingServerUrl) {
+          console.log("[Pinterest] Using RENDER tracking server (legacy)");
+          try {
+            const pinterestResponse = await fetch(`${trackingServerUrl}/track/client`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(pinterestPayload),
+            });
+
+            const pinterestResult = await pinterestResponse.json();
+            
+            if (pinterestResponse.ok && pinterestResult.success) {
+              console.log("[Pinterest] ✅ RENDER: Purchase tracked successfully:", order.id);
+              await logPinterestPurchaseEvent(
+                supabase,
+                String(order.id),
+                orderValue,
+                orderCurrency,
+                attribution,
+                'success',
+                { status: pinterestResponse.status, result: pinterestResult }
+              );
+            } else {
+              console.error("[Pinterest] RENDER: Tracking failed:", pinterestResult);
+              await logPinterestPurchaseEvent(
+                supabase,
+                String(order.id),
+                orderValue,
+                orderCurrency,
+                attribution,
+                'failed',
+                { status: pinterestResponse.status, error: pinterestResult }
+              );
+            }
+          } catch (pinterestError: any) {
+            console.error("[Pinterest] RENDER Error (non-blocking):", pinterestError);
+            await logPinterestPurchaseEvent(
+              supabase,
+              String(order.id),
+              orderValue,
+              orderCurrency,
+              attribution,
+              'error',
+              { error: pinterestError.message || 'Unknown error' }
+            );
+          }
+        } else {
+          console.log("[Pinterest] TRACKING_SERVER_URL not configured and direct CAPI disabled, skipping");
+          await logPinterestPurchaseEvent(
+            supabase,
+            String(order.id),
+            orderValue,
+            orderCurrency,
+            attribution,
+            'skipped_no_url',
+            null
+          );
+        }
       }
-    } else if (shouldTrackPurchase && !trackingServerUrl) {
-      console.log("[Pinterest] TRACKING_SERVER_URL not configured, skipping");
-      await logPinterestPurchaseEvent(
-        supabase,
-        String(order.id),
-        orderValue,
-        orderCurrency,
-        attribution,
-        'skipped_no_url',
-        null
-      );
     } else if (!shouldTrackPurchase) {
       console.log("[Pinterest] Skipping tracking for orders/create (only orders/paid triggers Pinterest)");
     }

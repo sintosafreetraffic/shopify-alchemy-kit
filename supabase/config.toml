@@ -150,6 +150,14 @@ verify_jwt = true
 [functions.pinterest-track]
 verify_jwt = false
 
+# Pinterest CAPI Direct - Direct Pinterest API integration (replaces Render)
+[functions.pinterest-capi-direct]
+verify_jwt = false
+
+# Toggle Pinterest CAPI - Password protected toggle endpoint
+[functions.toggle-pinterest-capi]
+verify_jwt = false
+
 # Clarity Analytics - Admin only, requires apikey
 [functions.clarity-analytics]
 verify_jwt = false

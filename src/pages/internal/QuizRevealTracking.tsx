@@ -18,6 +18,8 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { 
   BarChart3, 
   TrendingUp, 
@@ -178,6 +180,12 @@ const QuizRevealTracking = () => {
   const [providerStatuses, setProviderStatuses] = useState<ProviderStatus[]>([]);
   const [eventLog, setEventLog] = useState<EventLogEntry[]>([]);
   const [addToCartEvents, setAddToCartEvents] = useState<any[]>([]);
+  
+  // Pinterest CAPI toggle state
+  const [pinterestCapiEnabled, setPinterestCapiEnabled] = useState<boolean | null>(null);
+  const [pinterestCapiLoading, setPinterestCapiLoading] = useState(false);
+  const [pinterestCapiPassword, setPinterestCapiPassword] = useState("");
+  const [pinterestCapiError, setPinterestCapiError] = useState<string | null>(null);
   
   // Auth state
   const [authChecking, setAuthChecking] = useState(true);
@@ -416,11 +424,74 @@ const QuizRevealTracking = () => {
     }
   };
 
+  // Fetch Pinterest CAPI toggle status
+  const fetchPinterestCapiStatus = async () => {
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      
+      const response = await fetch(`${supabaseUrl}/functions/v1/toggle-pinterest-capi`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": supabaseKey,
+        },
+        body: JSON.stringify({ action: "get_status" }),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setPinterestCapiEnabled(data.enabled);
+      }
+    } catch (err) {
+      console.error("Failed to fetch Pinterest CAPI status:", err);
+    }
+  };
+
+  // Toggle Pinterest CAPI
+  const togglePinterestCapi = async () => {
+    if (!pinterestCapiPassword) {
+      setPinterestCapiError("Password required");
+      return;
+    }
+    
+    setPinterestCapiLoading(true);
+    setPinterestCapiError(null);
+    
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      
+      const response = await fetch(`${supabaseUrl}/functions/v1/toggle-pinterest-capi`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": supabaseKey,
+        },
+        body: JSON.stringify({ action: "toggle", password: pinterestCapiPassword }),
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        setPinterestCapiEnabled(data.enabled);
+        setPinterestCapiPassword("");
+      } else {
+        setPinterestCapiError(data.error || "Failed to toggle");
+      }
+    } catch (err: any) {
+      setPinterestCapiError(err.message || "Failed to toggle");
+    } finally {
+      setPinterestCapiLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (isAdmin) {
       fetchStats();
       fetchClarityData();
       refreshProviderStatuses();
+      fetchPinterestCapiStatus();
       
       // Refresh provider statuses periodically
       const interval = setInterval(refreshProviderStatuses, 3000);
@@ -1581,6 +1652,78 @@ const QuizRevealTracking = () => {
                 </Card>
               ))}
             </div>
+
+            {/* Pinterest CAPI Toggle */}
+            <Card className="p-5 border-2 border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-900/50 flex items-center justify-center">
+                    <Send className="w-5 h-5 text-red-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Pinterest CAPI Tracking</h3>
+                    <p className="text-sm text-muted-foreground">Toggle between Render server and direct Supabase edge function</p>
+                  </div>
+                </div>
+                {pinterestCapiEnabled === null ? (
+                  <Badge variant="outline">Loading...</Badge>
+                ) : pinterestCapiEnabled ? (
+                  <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">
+                    DIRECT (Supabase)
+                  </Badge>
+                ) : (
+                  <Badge className="bg-amber-100 text-amber-800 border-amber-200">
+                    RENDER (External)
+                  </Badge>
+                )}
+              </div>
+              
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className={`flex-1 p-3 rounded-lg border ${!pinterestCapiEnabled ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-200' : 'bg-muted/50 border-muted'}`}>
+                    <div className="flex items-center gap-2">
+                      <ExternalLink className="w-4 h-4" />
+                      <span className="font-medium">Render Server</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">External tracking via tracking.risebynight.com</p>
+                  </div>
+                  <div className="text-muted-foreground">→</div>
+                  <div className={`flex-1 p-3 rounded-lg border ${pinterestCapiEnabled ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200' : 'bg-muted/50 border-muted'}`}>
+                    <div className="flex items-center gap-2">
+                      <Zap className="w-4 h-4" />
+                      <span className="font-medium">Direct CAPI</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">Supabase edge function → Pinterest API</p>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-border">
+                  <p className="text-sm text-muted-foreground mb-3">Enter password to toggle:</p>
+                  <div className="flex gap-3">
+                    <Input
+                      type="password"
+                      placeholder="Password"
+                      value={pinterestCapiPassword}
+                      onChange={(e) => setPinterestCapiPassword(e.target.value)}
+                      className="max-w-[200px]"
+                    />
+                    <Button 
+                      onClick={togglePinterestCapi}
+                      disabled={pinterestCapiLoading || !pinterestCapiPassword}
+                      variant={pinterestCapiEnabled ? "outline" : "default"}
+                    >
+                      {pinterestCapiLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      ) : null}
+                      {pinterestCapiEnabled ? "Switch to Render" : "Enable Direct CAPI"}
+                    </Button>
+                  </div>
+                  {pinterestCapiError && (
+                    <p className="text-sm text-destructive mt-2">{pinterestCapiError}</p>
+                  )}
+                </div>
+              </div>
+            </Card>
 
             {/* Tracking Comparison */}
             <div className="grid md:grid-cols-2 gap-6">
