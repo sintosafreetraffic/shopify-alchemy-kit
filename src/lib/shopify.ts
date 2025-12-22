@@ -1,93 +1,96 @@
-import { toast } from "sonner";
+/**
+ * Shopify integration utilities
+ * 
+ * HARDENED:
+ * - Attribution pass-through via getAttributionForCheckout()
+ * - Never throws on attribution failures
+ * - Checkout always succeeds even if tracking fails
+ */
 
-const SHOPIFY_API_VERSION = '2025-01';
-const SHOPIFY_STORE_PERMANENT_DOMAIN = 'lovable-project-swlbs.myshopify.com';
-const SHOPIFY_STOREFRONT_URL = `https://${SHOPIFY_STORE_PERMANENT_DOMAIN}/api/${SHOPIFY_API_VERSION}/graphql.json`;
-const SHOPIFY_STOREFRONT_TOKEN = 'e40ec4b0f10582a9b6b921efb4e65bf8';
+import { toast } from 'sonner';
+import { getAttributionForCheckout, getEpik, captureAttribution } from './attribution';
 
-// Pinterest Click ID storage keys
+// Storage keys (kept for backward compatibility)
 const PINTEREST_EPIK_KEY = 'pinterest_epik';
 const PINTEREST_LANDING_PAGE_KEY = 'pinterest_landing_page';
 
 /**
- * Capture Pinterest click ID from URL on page load
- * Call this early in app initialization (e.g., App.tsx or main.tsx)
+ * Capture Pinterest click ID from URL - DEPRECATED, use captureAttribution() instead
+ * Kept for backward compatibility with App.tsx
  */
 export function capturePinterestClickId(): void {
-  if (typeof window === 'undefined') return;
-  
-  const urlParams = new URLSearchParams(window.location.search);
-  const epik = urlParams.get('_ep') || urlParams.get('epik');
-  
-  if (epik) {
-    // Store in localStorage for persistence
-    localStorage.setItem(PINTEREST_EPIK_KEY, epik);
-    localStorage.setItem(PINTEREST_LANDING_PAGE_KEY, window.location.href);
-    
-    // Also set as cookie for cross-domain tracking
-    const expiryDate = new Date();
-    expiryDate.setDate(expiryDate.getDate() + 30); // 30 day expiry
-    document.cookie = `_epik=${encodeURIComponent(epik)}; expires=${expiryDate.toUTCString()}; path=/; SameSite=Lax`;
-    
-    console.log('[Pinterest] Click ID captured:', epik);
+  try {
+    captureAttribution();
+  } catch {
+    // Silent fail - never block app initialization
   }
 }
 
 /**
- * Retrieve Pinterest click ID from localStorage or cookie
+ * Get Pinterest click ID from storage (legacy helper)
  */
 function getPinterestClickId(): string | null {
-  if (typeof window === 'undefined') return null;
-  
-  // Try localStorage first (most reliable)
-  const fromStorage = localStorage.getItem(PINTEREST_EPIK_KEY);
-  if (fromStorage) return fromStorage;
-  
-  // Fallback to cookie
-  const cookies = document.cookie.split(';');
-  for (const cookie of cookies) {
-    const [name, value] = cookie.trim().split('=');
-    if (name === '_epik' && value) {
-      return decodeURIComponent(value);
-    }
+  try {
+    return getEpik();
+  } catch {
+    return null;
   }
-  
-  return null;
 }
 
 /**
- * Get stored landing page URL
+ * Get Pinterest landing page from storage (legacy helper)
  */
 function getPinterestLandingPage(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem(PINTEREST_LANDING_PAGE_KEY);
+  try {
+    if (typeof localStorage === 'undefined') return null;
+    return localStorage.getItem(PINTEREST_LANDING_PAGE_KEY);
+  } catch {
+    return null;
+  }
 }
 
 /**
- * Get all Pinterest attribution data for cart attributes
+ * Get Pinterest attribution data for Shopify cart
+ * Uses new getAttributionForCheckout() which includes UTMs
  */
 export function getPinterestAttributionData(): { key: string; value: string }[] {
-  const attributes: { key: string; value: string }[] = [];
-  
-  const clickId = getPinterestClickId();
-  if (clickId) {
-    attributes.push({ key: '_ep', value: clickId });
-    attributes.push({ key: 'pinterest_click_id', value: clickId });
+  try {
+    // Use the hardened attribution helper
+    const attributes = getAttributionForCheckout();
+    
+    // Also add legacy key format for backward compatibility
+    const epik = getEpik();
+    if (epik) {
+      // Add _ep key if not already present
+      if (!attributes.some(a => a.key === '_ep')) {
+        attributes.push({ key: '_ep', value: epik });
+      }
+      // Add pinterest_click_id for older integrations
+      if (!attributes.some(a => a.key === 'pinterest_click_id')) {
+        attributes.push({ key: 'pinterest_click_id', value: epik });
+      }
+    }
+    
+    // Add landing page with legacy key if not present
+    const landingPage = getPinterestLandingPage();
+    if (landingPage && !attributes.some(a => a.key === 'pinterest_landing_page')) {
+      attributes.push({ key: 'pinterest_landing_page', value: landingPage });
+    }
+    
+    return attributes;
+  } catch {
+    // Return empty array on any error - never block checkout
+    return [];
   }
-  
-  const landingPage = getPinterestLandingPage();
-  if (landingPage) {
-    attributes.push({ key: 'pinterest_landing_page', value: landingPage });
-  }
-  
-  // Add referrer if available
-  if (typeof document !== 'undefined' && document.referrer) {
-    attributes.push({ key: 'referrer', value: document.referrer });
-  }
-  
-  return attributes;
 }
 
+// Shopify Storefront API configuration
+const SHOPIFY_API_VERSION = '2025-07';
+const SHOPIFY_STORE_PERMANENT_DOMAIN = 'risebynight.myshopify.com';
+const SHOPIFY_STOREFRONT_URL = `https://${SHOPIFY_STORE_PERMANENT_DOMAIN}/api/${SHOPIFY_API_VERSION}/graphql.json`;
+const SHOPIFY_STOREFRONT_TOKEN = 'a5e3f02ae01f7e32b4be58dc48ad2e20';
+
+// Product and page types
 export interface ShopifyProduct {
   node: {
     id: string;
@@ -95,6 +98,12 @@ export interface ShopifyProduct {
     description: string;
     handle: string;
     priceRange: {
+      minVariantPrice: {
+        amount: string;
+        currencyCode: string;
+      };
+    };
+    compareAtPriceRange?: {
       minVariantPrice: {
         amount: string;
         currencyCode: string;
@@ -117,7 +126,7 @@ export interface ShopifyProduct {
             amount: string;
             currencyCode: string;
           };
-          compareAtPrice: {
+          compareAtPrice?: {
             amount: string;
             currencyCode: string;
           } | null;
@@ -136,6 +145,15 @@ export interface ShopifyProduct {
   };
 }
 
+interface ShopifyPage {
+  id: string;
+  title: string;
+  handle: string;
+  body: string;
+  bodySummary: string;
+}
+
+// GraphQL queries
 const STOREFRONT_QUERY = `
   query GetProducts($first: Int!, $query: String) {
     products(first: $first, query: $query) {
@@ -151,7 +169,13 @@ const STOREFRONT_QUERY = `
               currencyCode
             }
           }
-          images(first: 5) {
+          compareAtPriceRange {
+            minVariantPrice {
+              amount
+              currencyCode
+            }
+          }
+          images(first: 10) {
             edges {
               node {
                 url
@@ -159,7 +183,7 @@ const STOREFRONT_QUERY = `
               }
             }
           }
-          variants(first: 10) {
+          variants(first: 20) {
             edges {
               node {
                 id
@@ -190,84 +214,17 @@ const STOREFRONT_QUERY = `
   }
 `;
 
-export async function storefrontApiRequest(query: string, variables: any = {}) {
-  const response = await fetch(SHOPIFY_STOREFRONT_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Shopify-Storefront-Access-Token': SHOPIFY_STOREFRONT_TOKEN
-    },
-    body: JSON.stringify({
-      query,
-      variables,
-    }),
-  });
-
-  if (response.status === 402) {
-    toast.error("Shopify: Payment required", {
-      description: "Shopify API access requires an active Shopify billing plan. Your store needs to be upgraded to a paid plan. Visit https://admin.shopify.com to upgrade.",
-    });
-    return;
-  }
-
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-
-  const data = await response.json();
-  
-  if (data.errors) {
-    throw new Error(`Error calling Shopify: ${data.errors.map((e: any) => e.message).join(', ')}`);
-  }
-
-  return data;
-}
-
-export async function fetchProducts(limit = 50, query?: string) {
-  const data = await storefrontApiRequest(STOREFRONT_QUERY, {
-    first: limit,
-    query: query || null,
-  });
-
-  return data?.data?.products?.edges || [];
-}
-
-// Page fetching interface
-export interface ShopifyPage {
-  id: string;
-  title: string;
-  body: string;
-  bodySummary: string;
-  handle: string;
-}
-
 const PAGE_QUERY = `
-  query getPage($handle: String!) {
+  query GetPage($handle: String!) {
     page(handle: $handle) {
       id
       title
+      handle
       body
       bodySummary
-      handle
     }
   }
 `;
-
-export async function fetchPageByHandle(handle: string): Promise<ShopifyPage | null> {
-  try {
-    const data = await storefrontApiRequest(PAGE_QUERY, { handle });
-    
-    if (!data?.data?.page) {
-      console.warn(`Page with handle "${handle}" not found in Shopify`);
-      return null;
-    }
-    
-    return data.data.page;
-  } catch (error) {
-    console.error(`Error fetching page "${handle}":`, error);
-    return null;
-  }
-}
 
 const CART_CREATE_MUTATION = `
   mutation cartCreate($input: CartInput!) {
@@ -276,20 +233,8 @@ const CART_CREATE_MUTATION = `
         id
         checkoutUrl
         totalQuantity
-        discountCodes {
-          code
-          applicable
-        }
-        attributes {
-          key
-          value
-        }
         cost {
           totalAmount {
-            amount
-            currencyCode
-          }
-          subtotalAmount {
             amount
             currencyCode
           }
@@ -326,7 +271,7 @@ const CART_CREATE_MUTATION = `
 `;
 
 const CART_DISCOUNT_CODES_UPDATE = `
-  mutation cartDiscountCodesUpdate($cartId: ID!, $discountCodes: [String!]) {
+  mutation cartDiscountCodesUpdate($cartId: ID!, $discountCodes: [String!]!) {
     cartDiscountCodesUpdate(cartId: $cartId, discountCodes: $discountCodes) {
       cart {
         id
@@ -344,11 +289,72 @@ const CART_DISCOUNT_CODES_UPDATE = `
   }
 `;
 
+// Storefront API request helper
+async function storefrontApiRequest(query: string, variables: any = {}) {
+  const response = await fetch(SHOPIFY_STOREFRONT_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Shopify-Storefront-Access-Token': SHOPIFY_STOREFRONT_TOKEN,
+    },
+    body: JSON.stringify({ query, variables }),
+  });
+
+  if (response.status === 402) {
+    toast.error("Shopify: Payment required", {
+      description: "Shopify API access requires an active billing plan.",
+    });
+    throw new Error('Shopify payment required');
+  }
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const data = await response.json();
+
+  if (data.errors) {
+    throw new Error(`Error calling Shopify: ${data.errors.map((e: any) => e.message).join(', ')}`);
+  }
+
+  return data;
+}
+
+// Fetch products
+export async function fetchProducts(limit = 50, query?: string): Promise<ShopifyProduct[]> {
+  try {
+    const data = await storefrontApiRequest(STOREFRONT_QUERY, { first: limit, query });
+    return data.data.products.edges;
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    return [];
+  }
+}
+
+// Fetch page by handle
+export async function fetchPageByHandle(handle: string): Promise<ShopifyPage | null> {
+  try {
+    const data = await storefrontApiRequest(PAGE_QUERY, { handle });
+    return data.data.page;
+  } catch (error) {
+    console.error('Error fetching page:', error);
+    return null;
+  }
+}
+
+// Free mask selection type
 export interface FreeMaskSelection {
   variantId: string;
   color: string;
 }
 
+/**
+ * Create Shopify checkout via Storefront API
+ * 
+ * HARDENED:
+ * - Attribution always attached (never throws on failure)
+ * - checkout_url always returned even if attribution fails
+ */
 export async function createStorefrontCheckout(
   items: Array<{
     variantId: string;
@@ -357,83 +363,83 @@ export async function createStorefrontCheckout(
   freeMaskVariants: FreeMaskSelection[] = [],
   discountCodes: string[] = []
 ): Promise<string> {
-  try {
-    const lines = items.map(item => ({
-      quantity: item.quantity,
-      merchandiseId: item.variantId,
-    }));
+  // Build line items
+  const lines = items.map(item => ({
+    quantity: item.quantity,
+    merchandiseId: item.variantId,
+  }));
 
-    // Add free sleep masks with selected variants
-    if (freeMaskVariants.length > 0) {
-      // Group variants by variantId to consolidate quantities
-      const variantQuantities = freeMaskVariants.reduce((acc, selection) => {
-        acc[selection.variantId] = (acc[selection.variantId] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
-      
-      // Add each unique variant with its quantity
-      Object.entries(variantQuantities).forEach(([variantId, quantity]) => {
-        lines.push({
-          quantity,
-          merchandiseId: variantId,
-        });
-      });
-    }
+  // Add free sleep masks
+  if (freeMaskVariants.length > 0) {
+    const variantQuantities = freeMaskVariants.reduce((acc, selection) => {
+      acc[selection.variantId] = (acc[selection.variantId] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
 
-    // Build cart input with Pinterest attribution attributes
-    const pinterestAttributes = getPinterestAttributionData();
-    const cartInput: any = {
-      lines,
-    };
-    
-    // Add attributes if we have Pinterest data
-    if (pinterestAttributes.length > 0) {
-      cartInput.attributes = pinterestAttributes;
-      console.log('[Shopify] Adding Pinterest attribution to cart:', pinterestAttributes.map(a => a.key));
-    }
-
-    const cartData = await storefrontApiRequest(CART_CREATE_MUTATION, {
-      input: cartInput,
+    Object.entries(variantQuantities).forEach(([variantId, quantity]) => {
+      lines.push({ quantity, merchandiseId: variantId });
     });
+  }
 
-    if (cartData.data.cartCreate.userErrors.length > 0) {
-      throw new Error(`Cart creation failed: ${cartData.data.cartCreate.userErrors.map((e: any) => e.message).join(', ')}`);
+  // Build cart input with attribution - NEVER throw on attribution failure
+  const cartInput: any = { lines };
+  
+  try {
+    const attributionAttributes = getPinterestAttributionData();
+    if (attributionAttributes.length > 0) {
+      cartInput.attributes = attributionAttributes;
+      console.log('[Shopify] Attribution attached:', attributionAttributes.map(a => a.key));
     }
+  } catch (attrError) {
+    // Log but continue - attribution failure must not block checkout
+    console.warn('[Shopify] Attribution capture failed (non-blocking):', attrError);
+  }
 
-    let cart = cartData.data.cartCreate.cart;
+  // Create cart
+  const cartData = await storefrontApiRequest(CART_CREATE_MUTATION, { input: cartInput });
 
-    // Apply discount codes after cart creation if any are provided
-    if (discountCodes.length > 0) {
+  if (cartData.data.cartCreate.userErrors.length > 0) {
+    throw new Error(`Cart creation failed: ${cartData.data.cartCreate.userErrors.map((e: any) => e.message).join(', ')}`);
+  }
+
+  let cart = cartData.data.cartCreate.cart;
+
+  // Apply discount codes
+  if (discountCodes.length > 0) {
+    try {
       const discountData = await storefrontApiRequest(CART_DISCOUNT_CODES_UPDATE, {
         cartId: cart.id,
-        discountCodes: discountCodes,
+        discountCodes,
       });
 
       if (discountData.data.cartDiscountCodesUpdate.userErrors.length > 0) {
-        console.error('Discount code application failed:', discountData.data.cartDiscountCodesUpdate.userErrors);
-        // Continue with checkout even if discount fails
+        console.error('Discount code failed:', discountData.data.cartDiscountCodesUpdate.userErrors);
       } else {
         cart = discountData.data.cartDiscountCodesUpdate.cart;
       }
+    } catch (discountError) {
+      console.error('Discount application error:', discountError);
+      // Continue with checkout even if discount fails
     }
-    
-    if (!cart.checkoutUrl) {
-      throw new Error('No checkout URL returned from Shopify');
-    }
+  }
 
-    const url = new URL(cart.checkoutUrl);
-    url.searchParams.set('channel', 'online_store');
-    
-    // Append Pinterest click ID (epik) if available for attribution
-    const epik = getPinterestClickId();
+  if (!cart.checkoutUrl) {
+    throw new Error('No checkout URL returned from Shopify');
+  }
+
+  // Build final checkout URL
+  const url = new URL(cart.checkoutUrl);
+  url.searchParams.set('channel', 'online_store');
+
+  // Append epik for attribution (non-blocking)
+  try {
+    const epik = getEpik();
     if (epik) {
       url.searchParams.set('epik', epik);
     }
-    
-    const checkoutUrl = url.toString();
-    return checkoutUrl;
-  } catch (error) {
-    console.error('Error creating storefront checkout:', error);
-    throw error;
+  } catch {
+    // Silent fail
   }
+
+  return url.toString();
 }
