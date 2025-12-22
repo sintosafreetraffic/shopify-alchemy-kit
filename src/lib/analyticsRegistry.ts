@@ -324,9 +324,25 @@ function getDeviceType(): string {
   return 'desktop';
 }
 
+// Track if we've already logged the initial page visit (to avoid duplicates with early tracking)
+let initialPageVisitLogged = false;
+
 async function logPageVisitToSupabase(route: string, timestamp: string): Promise<void> {
   try {
-    const sessionId = getSessionId();
+    // Skip if early tracking in index.html already fired for this page (initial load only)
+    const earlyTrackingDone = (window as any).__earlyTrackingDone;
+    if (earlyTrackingDone && !initialPageVisitLogged) {
+      initialPageVisitLogged = true;
+      // Check if this is the same path that was tracked early
+      if (route === window.location.pathname) {
+        console.debug('[Analytics] Skipping initial page visit - already tracked by early script');
+        logAnalyticsEvent('page_view', 'Supabase', { route, skipped: 'early_tracking' }, true);
+        return;
+      }
+    }
+    
+    // Use session ID from early tracking if available
+    const sessionId = (window as any).__sessionId || getSessionId();
     const urlParams = new URLSearchParams(window.location.search);
     
     const visitData = {

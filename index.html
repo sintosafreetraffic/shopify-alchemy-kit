@@ -46,6 +46,70 @@
       content="The #1 rated orthopedic pillow. Scientifically proven to reduce neck pain and improve sleep quality."
     />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <!-- Early page visit tracking - fires immediately before React -->
+    <script type="text/javascript">
+      (function() {
+        // Generate or retrieve session ID
+        function getSessionId() {
+          var sid = sessionStorage.getItem('analytics_session_id');
+          if (!sid) {
+            sid = 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            sessionStorage.setItem('analytics_session_id', sid);
+          }
+          return sid;
+        }
+        
+        // Detect device type
+        function getDevice() {
+          var ua = navigator.userAgent.toLowerCase();
+          if (/iphone|ipod/.test(ua)) return 'ios';
+          if (/android/.test(ua) && /mobile/.test(ua)) return 'android';
+          if (/ipad|android/.test(ua)) return 'tablet';
+          return 'desktop';
+        }
+        
+        // Track page visit to Supabase immediately
+        function trackEarlyVisit() {
+          var sessionId = getSessionId();
+          var params = new URLSearchParams(window.location.search);
+          
+          var data = {
+            session_id: sessionId,
+            path: window.location.pathname,
+            referrer: document.referrer || null,
+            user_agent: navigator.userAgent,
+            device_type: getDevice(),
+            utm_source: params.get('utm_source'),
+            utm_medium: params.get('utm_medium'),
+            utm_campaign: params.get('utm_campaign')
+          };
+          
+          // Fire and forget - use sendBeacon for reliability
+          var url = 'https://ofryballwrjrgivokzln.supabase.co/rest/v1/page_visits';
+          var headers = {
+            'Content-Type': 'application/json',
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mcnliYWxsd3Jqcmdpdm9remxuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1ODE1NDAsImV4cCI6MjA4MDE1NzU0MH0.MklZLF9wx-VVOlu-ArQ_h2rEHfSvEbGnUmCynbU7F54',
+            'Prefer': 'return=minimal'
+          };
+          
+          // Use fetch with keepalive for reliability even on quick bounces
+          fetch(url, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(data),
+            keepalive: true
+          }).catch(function() {});
+        }
+        
+        // Track immediately
+        trackEarlyVisit();
+        
+        // Also expose session ID for React to use (prevents duplicate tracking)
+        window.__earlyTrackingDone = true;
+        window.__sessionId = getSessionId();
+      })();
+    </script>
+    
     <!-- Third-party scripts deferred until first user interaction for better TTI -->
     <script type="text/javascript">
       (function() {
