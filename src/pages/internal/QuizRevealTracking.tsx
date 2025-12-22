@@ -1,6 +1,6 @@
 /**
  * Analytics Dashboard
- * Internal admin page for tracking quiz reveal + checkout analytics
+ * Internal admin page for tracking quiz reveal + checkout + Pinterest purchase analytics
  * Protected: Only accessible to authenticated users with admin role
  */
 import { useState, useEffect } from "react";
@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { 
   Select, 
   SelectContent, 
@@ -33,6 +34,11 @@ import {
   RotateCcw,
   Smartphone,
   Monitor,
+  ExternalLink,
+  Send,
+  DollarSign,
+  Link2,
+  Globe,
 } from "lucide-react";
 import { 
   LineChart, 
@@ -45,6 +51,9 @@ import {
   BarChart,
   Bar,
   Legend,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
 
 interface AnalyticsStats {
@@ -98,10 +107,32 @@ interface CheckoutStats {
   }>;
 }
 
+interface PinterestPurchaseEvent {
+  id: string;
+  order_id: string;
+  value: number;
+  currency: string;
+  epik: string | null;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  landing_page: string | null;
+  render_status: string;
+  created_at: string;
+}
+
 const QuizRevealTracking = () => {
   const navigate = useNavigate();
   const [stats, setStats] = useState<AnalyticsStats | null>(null);
   const [checkoutStats, setCheckoutStats] = useState<CheckoutStats | null>(null);
+  const [pinterestPurchases, setPinterestPurchases] = useState<PinterestPurchaseEvent[]>([]);
+  const [pinterestStats, setPinterestStats] = useState<{
+    total: number;
+    totalValue: number;
+    withAttribution: number;
+    successRate: number;
+    bySource: Record<string, number>;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [days, setDays] = useState("30");
@@ -165,8 +196,12 @@ const QuizRevealTracking = () => {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-      // Fetch both quiz and checkout stats in parallel
-      const [quizResponse, checkoutResponse] = await Promise.all([
+      // Fetch quiz, checkout stats, and Pinterest purchases in parallel
+      const daysNum = parseInt(days);
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - daysNum);
+
+      const [quizResponse, checkoutResponse, pinterestResult] = await Promise.all([
         fetch(`${supabaseUrl}/functions/v1/quiz-reveal-analytics`, {
           method: "POST",
           headers: {
@@ -175,7 +210,7 @@ const QuizRevealTracking = () => {
           },
           body: JSON.stringify({
             action: "get_stats",
-            days: parseInt(days),
+            days: daysNum,
           }),
         }),
         fetch(`${supabaseUrl}/functions/v1/checkout-analytics`, {
@@ -186,9 +221,15 @@ const QuizRevealTracking = () => {
           },
           body: JSON.stringify({
             action: "get_stats",
-            days: parseInt(days),
+            days: daysNum,
           }),
         }),
+        supabase
+          .from('pinterest_purchase_events')
+          .select('*')
+          .gte('created_at', startDate.toISOString())
+          .order('created_at', { ascending: false })
+          .limit(100),
       ]);
 
       if (!quizResponse.ok) {
@@ -201,6 +242,34 @@ const QuizRevealTracking = () => {
       if (checkoutResponse.ok) {
         const checkoutData = await checkoutResponse.json();
         setCheckoutStats(checkoutData);
+      }
+
+      // Process Pinterest purchase events
+      if (pinterestResult.data) {
+        const purchases = pinterestResult.data as PinterestPurchaseEvent[];
+        setPinterestPurchases(purchases);
+
+        // Calculate stats
+        const total = purchases.length;
+        const totalValue = purchases.reduce((sum, p) => sum + (p.value || 0), 0);
+        const withAttribution = purchases.filter(p => p.epik).length;
+        const successCount = purchases.filter(p => p.render_status === 'success').length;
+        const successRate = total > 0 ? Math.round((successCount / total) * 100) : 0;
+        
+        // Group by source
+        const bySource: Record<string, number> = {};
+        purchases.forEach(p => {
+          const source = p.utm_source || 'direct';
+          bySource[source] = (bySource[source] || 0) + 1;
+        });
+
+        setPinterestStats({
+          total,
+          totalValue,
+          withAttribution,
+          successRate,
+          bySource,
+        });
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch analytics");
@@ -809,6 +878,179 @@ const QuizRevealTracking = () => {
                     )}
                   </div>
                 </Card>
+
+                {/* Pinterest Conversions API Section */}
+                <div className="pt-8 border-t border-border">
+                  <div className="flex items-center gap-2 mb-6">
+                    <Send className="w-5 h-5 text-red-600" />
+                    <h3 className="text-lg font-semibold">Pinterest Conversions API</h3>
+                    <Badge variant="outline" className="ml-2">Server-Side</Badge>
+                  </div>
+
+                  {/* Pinterest Stats Cards */}
+                  {pinterestStats && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                      <Card className="p-5">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-900/50 flex items-center justify-center">
+                            <Send className="w-5 h-5 text-red-600 dark:text-red-400" />
+                          </div>
+                          <div>
+                            <p className="text-2xl font-bold">{pinterestStats.total}</p>
+                            <p className="text-xs text-muted-foreground">Purchases Tracked</p>
+                          </div>
+                        </div>
+                      </Card>
+
+                      <Card className="p-5">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
+                            <DollarSign className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                          </div>
+                          <div>
+                            <p className="text-2xl font-bold">€{pinterestStats.totalValue.toFixed(0)}</p>
+                            <p className="text-xs text-muted-foreground">Total Value</p>
+                          </div>
+                        </div>
+                      </Card>
+
+                      <Card className="p-5">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+                            <Link2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                          </div>
+                          <div>
+                            <p className="text-2xl font-bold">{pinterestStats.withAttribution}</p>
+                            <p className="text-xs text-muted-foreground">With Pinterest Click</p>
+                          </div>
+                        </div>
+                      </Card>
+
+                      <Card className="p-5">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
+                            <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                          </div>
+                          <div>
+                            <p className="text-2xl font-bold">{pinterestStats.successRate}%</p>
+                            <p className="text-xs text-muted-foreground">API Success Rate</p>
+                          </div>
+                        </div>
+                      </Card>
+                    </div>
+                  )}
+
+                  {/* Attribution Breakdown */}
+                  {pinterestStats && Object.keys(pinterestStats.bySource).length > 0 && (
+                    <div className="grid md:grid-cols-2 gap-6 mb-6">
+                      <Card className="p-5">
+                        <div className="flex items-center gap-2 mb-4">
+                          <Globe className="w-5 h-5 text-primary" />
+                          <h4 className="font-semibold">Traffic Sources</h4>
+                        </div>
+                        <div className="space-y-2">
+                          {Object.entries(pinterestStats.bySource)
+                            .sort((a, b) => b[1] - a[1])
+                            .map(([source, count]) => (
+                              <div key={source} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
+                                <span className="text-sm">{source}</span>
+                                <Badge variant="secondary">{count}</Badge>
+                              </div>
+                            ))}
+                        </div>
+                      </Card>
+
+                      <Card className="p-5">
+                        <div className="flex items-center gap-2 mb-4">
+                          <ExternalLink className="w-5 h-5 text-primary" />
+                          <h4 className="font-semibold">Attribution Flow</h4>
+                        </div>
+                        <div className="space-y-3 text-sm text-muted-foreground">
+                          <p><strong className="text-foreground">1. Click Capture:</strong> Pinterest epik stored on landing</p>
+                          <p><strong className="text-foreground">2. Checkout Pass:</strong> Attribution added to cart attributes</p>
+                          <p><strong className="text-foreground">3. Webhook Trigger:</strong> orders/paid fires to Edge Function</p>
+                          <p><strong className="text-foreground">4. API Call:</strong> Server → Render → Pinterest CAPI</p>
+                          <div className="pt-2 mt-2 border-t border-border">
+                            <Badge 
+                              variant={pinterestStats.successRate >= 90 ? "default" : pinterestStats.successRate >= 70 ? "secondary" : "destructive"}
+                              className={pinterestStats.successRate >= 90 ? "bg-emerald-100 text-emerald-800" : ""}
+                            >
+                              {pinterestStats.successRate >= 90 ? "Healthy" : pinterestStats.successRate >= 70 ? "Degraded" : "Issues Detected"}
+                            </Badge>
+                          </div>
+                        </div>
+                      </Card>
+                    </div>
+                  )}
+
+                  {/* Recent Pinterest Events */}
+                  <Card className="p-5">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Send className="w-5 h-5 text-red-600" />
+                      <h4 className="font-semibold">Recent Pinterest Purchase Events</h4>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-border">
+                            <th className="text-left py-2 px-3 font-medium text-muted-foreground">Time</th>
+                            <th className="text-left py-2 px-3 font-medium text-muted-foreground">Order</th>
+                            <th className="text-left py-2 px-3 font-medium text-muted-foreground">Value</th>
+                            <th className="text-left py-2 px-3 font-medium text-muted-foreground">Attribution</th>
+                            <th className="text-left py-2 px-3 font-medium text-muted-foreground">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {pinterestPurchases.slice(0, 15).map((event) => (
+                            <tr key={event.id} className="border-b border-border/50 hover:bg-muted/30">
+                              <td className="py-2 px-3 text-muted-foreground">
+                                {formatDateTime(event.created_at)}
+                              </td>
+                              <td className="py-2 px-3 font-mono text-xs">
+                                {event.order_id.substring(0, 12)}...
+                              </td>
+                              <td className="py-2 px-3">
+                                {event.currency} {event.value?.toFixed(2) || "—"}
+                              </td>
+                              <td className="py-2 px-3">
+                                <div className="flex items-center gap-1">
+                                  {event.epik ? (
+                                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
+                                      epik ✓
+                                    </Badge>
+                                  ) : (
+                                    <span className="text-muted-foreground text-xs">—</span>
+                                  )}
+                                  {event.utm_source && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      {event.utm_source}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="py-2 px-3">
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                                  event.render_status === "success" 
+                                    ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300"
+                                    : event.render_status === "skipped"
+                                    ? "bg-gray-100 text-gray-800 dark:bg-gray-900/50 dark:text-gray-300"
+                                    : "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300"
+                                }`}>
+                                  {event.render_status}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {pinterestPurchases.length === 0 && (
+                        <div className="py-8 text-center text-muted-foreground">
+                          No Pinterest purchase events recorded yet
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                </div>
               </>
             )}
             {!checkoutStats && !loading && (
