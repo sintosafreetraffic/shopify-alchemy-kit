@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      add_to_cart_analytics: {
+        Row: {
+          created_at: string
+          currency: string
+          device_type: string | null
+          id: string
+          page_path: string | null
+          price: number
+          product_id: string
+          product_title: string
+          quantity: number
+          referrer: string | null
+          session_id: string
+          variant_id: string
+          variant_title: string | null
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          device_type?: string | null
+          id?: string
+          page_path?: string | null
+          price: number
+          product_id: string
+          product_title: string
+          quantity?: number
+          referrer?: string | null
+          session_id: string
+          variant_id: string
+          variant_title?: string | null
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          device_type?: string | null
+          id?: string
+          page_path?: string | null
+          price?: number
+          product_id?: string
+          product_title?: string
+          quantity?: number
+          referrer?: string | null
+          session_id?: string
+          variant_id?: string
+          variant_title?: string | null
+        }
+        Relationships: []
+      }
       affiliate_goals: {
         Row: {
           affiliate_id: string
