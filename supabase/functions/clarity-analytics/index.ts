@@ -5,8 +5,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const CLARITY_PROJECT_ID = 'ue7ibjdmdj';
-
 interface ClarityMetrics {
   totalSessions: number;
   totalPageviews: number;
@@ -15,6 +13,7 @@ interface ClarityMetrics {
   bounceRate: number;
   topPages: Array<{ url: string; views: number }>;
   error?: string;
+  rawResponse?: any;
 }
 
 serve(async (req) => {
@@ -41,39 +40,32 @@ serve(async (req) => {
       );
     }
 
-    // Parse request body for date range
-    let startDate: string;
-    let endDate: string;
+    // Parse request body for numOfDays (1, 2, or 3)
+    let numOfDays = 3; // Default to 3 days (72 hours)
     
     try {
       const body = await req.json();
-      startDate = body.startDate || getDefaultStartDate();
-      endDate = body.endDate || getDefaultEndDate();
+      if (body.numOfDays && [1, 2, 3].includes(body.numOfDays)) {
+        numOfDays = body.numOfDays;
+      }
     } catch {
-      startDate = getDefaultStartDate();
-      endDate = getDefaultEndDate();
+      // Use default
     }
 
-    console.log(`Fetching Clarity data from ${startDate} to ${endDate}`);
+    console.log(`Fetching Clarity data for last ${numOfDays} days`);
 
-    // Clarity Data Export API endpoint
-    // Note: Clarity uses OAuth2 for authentication
-    // The API token should be a valid access token
-    const clarityApiUrl = `https://www.clarity.ms/export-data/api/v1/project/${CLARITY_PROJECT_ID}/sessions`;
+    // Clarity Data Export API - correct endpoint per documentation
+    // https://www.clarity.ms/export-data/api/v1/project-live-insights
+    const clarityApiUrl = `https://www.clarity.ms/export-data/api/v1/project-live-insights?numOfDays=${numOfDays}&dimension1=URL`;
     
-    // Attempt to fetch from Clarity API
+    console.log(`Calling Clarity API: ${clarityApiUrl}`);
+
     const response = await fetch(clarityApiUrl, {
-      method: 'POST',
+      method: 'GET',
       headers: {
         'Authorization': `Bearer ${clarityToken}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        startDate: startDate,
-        endDate: endDate,
-        filters: [],
-        limit: 1000
-      })
     });
 
     console.log(`Clarity API response status: ${response.status}`);
@@ -82,15 +74,13 @@ serve(async (req) => {
       const errorText = await response.text();
       console.error(`Clarity API error: ${response.status} - ${errorText}`);
       
-      // Return mock data structure with error flag
-      // The Clarity API requires OAuth setup which may not be configured
       return new Response(
         JSON.stringify({
           error: `Clarity API returned ${response.status}`,
           errorDetails: errorText,
-          metrics: getMockMetrics(),
+          metrics: null,
           mockData: true,
-          note: 'Using estimated data. To get real Clarity data, ensure OAuth2 is configured correctly.'
+          note: 'Failed to fetch Clarity data. Check API token validity.'
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -100,16 +90,17 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log(`Received ${data.sessions?.length || 0} sessions from Clarity`);
+    console.log(`Clarity API raw response:`, JSON.stringify(data).substring(0, 500));
 
-    // Process Clarity session data
-    const metrics = processSessionData(data);
+    // Process Clarity response based on the documented format
+    const metrics = processClarityResponse(data);
 
     return new Response(
       JSON.stringify({
         metrics,
         mockData: false,
-        dateRange: { startDate, endDate }
+        numOfDays,
+        rawResponse: data // Include raw response for debugging
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -124,9 +115,9 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         error: errorMessage,
-        metrics: getMockMetrics(),
+        metrics: null,
         mockData: true,
-        note: 'Error fetching Clarity data. Using estimated metrics based on checkout analytics.'
+        note: 'Error fetching Clarity data.'
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -136,41 +127,59 @@ serve(async (req) => {
   }
 });
 
-function getDefaultStartDate(): string {
-  const date = new Date();
-  date.setDate(date.getDate() - 7);
-  return date.toISOString().split('T')[0];
-}
-
-function getDefaultEndDate(): string {
-  return new Date().toISOString().split('T')[0];
-}
-
-function processSessionData(data: any): ClarityMetrics {
-  const sessions = data.sessions || [];
+function processClarityResponse(data: any[]): ClarityMetrics {
+  // The API returns an array of metric objects
+  // Each has metricName and information array
   
-  const totalSessions = sessions.length;
-  const uniqueUsers = new Set(sessions.map((s: any) => s.userId)).size;
-  const totalPageviews = sessions.reduce((sum: number, s: any) => sum + (s.pageCount || 1), 0);
-  const avgSessionDuration = sessions.length > 0
-    ? sessions.reduce((sum: number, s: any) => sum + (s.duration || 0), 0) / sessions.length / 1000
-    : 0;
-  
-  // Calculate bounce rate (sessions with only 1 page view)
-  const bouncedSessions = sessions.filter((s: any) => (s.pageCount || 1) === 1).length;
-  const bounceRate = totalSessions > 0 ? (bouncedSessions / totalSessions) * 100 : 0;
+  let totalSessions = 0;
+  let uniqueUsers = 0;
+  let totalPageviews = 0;
+  let avgSessionDuration = 0;
+  let bounceRate = 0;
+  const topPages: Array<{ url: string; views: number }> = [];
 
-  // Aggregate top pages
-  const pageCounts: Record<string, number> = {};
-  sessions.forEach((s: any) => {
-    const url = s.landingPage || '/';
-    pageCounts[url] = (pageCounts[url] || 0) + 1;
-  });
-  
-  const topPages = Object.entries(pageCounts)
-    .map(([url, views]) => ({ url, views }))
-    .sort((a, b) => b.views - a.views)
-    .slice(0, 10);
+  if (!Array.isArray(data)) {
+    console.log('Unexpected response format - not an array');
+    return { totalSessions, totalPageviews, uniqueUsers, avgSessionDuration, bounceRate, topPages };
+  }
+
+  for (const metric of data) {
+    const metricName = metric.metricName;
+    const info = metric.information || [];
+
+    if (metricName === 'Traffic') {
+      // Traffic metric contains session counts
+      for (const item of info) {
+        totalSessions += parseInt(item.totalSessionCount || '0', 10);
+        uniqueUsers += parseInt(item.distantUserCount || '0', 10);
+        // Calculate pageviews from PagesPerSessionPercentage * sessions
+        const pagesPerSession = parseFloat(item.PagesPerSessionPercentage || '1');
+        const sessionCount = parseInt(item.totalSessionCount || '0', 10);
+        totalPageviews += Math.round(sessionCount * pagesPerSession);
+      }
+    }
+
+    if (metricName === 'Scroll Depth' || metricName === 'Engagement Time') {
+      // Could extract engagement metrics here
+    }
+
+    if (metricName === 'Popular Pages') {
+      // Extract top pages
+      for (const item of info) {
+        if (item.URL) {
+          topPages.push({
+            url: item.URL,
+            views: parseInt(item.totalSessionCount || item.count || '0', 10)
+          });
+        }
+      }
+    }
+  }
+
+  // Sort top pages by views
+  topPages.sort((a, b) => b.views - a.views);
+
+  console.log(`Processed metrics: sessions=${totalSessions}, users=${uniqueUsers}, pageviews=${totalPageviews}`);
 
   return {
     totalSessions,
@@ -178,19 +187,6 @@ function processSessionData(data: any): ClarityMetrics {
     uniqueUsers,
     avgSessionDuration,
     bounceRate,
-    topPages
-  };
-}
-
-function getMockMetrics(): ClarityMetrics {
-  // Return estimated metrics based on typical ratios
-  // These will be compared with actual checkout_analytics data
-  return {
-    totalSessions: 0,
-    totalPageviews: 0,
-    uniqueUsers: 0,
-    avgSessionDuration: 0,
-    bounceRate: 0,
-    topPages: []
+    topPages: topPages.slice(0, 10)
   };
 }
