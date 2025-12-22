@@ -51,35 +51,13 @@ function getPinterestLandingPage(): string | null {
 
 /**
  * Get Pinterest attribution data for Shopify cart
- * Uses new getAttributionForCheckout() which includes UTMs
+ * Wrapper that calls the standardized getAttributionForCheckout()
+ * All legacy keys are now included in the base function
  */
 export function getPinterestAttributionData(): { key: string; value: string }[] {
   try {
-    // Use the hardened attribution helper
-    const attributes = getAttributionForCheckout();
-    
-    // Also add legacy key format for backward compatibility
-    const epik = getEpik();
-    if (epik) {
-      // Add _ep key if not already present
-      if (!attributes.some(a => a.key === '_ep')) {
-        attributes.push({ key: '_ep', value: epik });
-      }
-      // Add pinterest_click_id for older integrations
-      if (!attributes.some(a => a.key === 'pinterest_click_id')) {
-        attributes.push({ key: 'pinterest_click_id', value: epik });
-      }
-    }
-    
-    // Add landing page with legacy key if not present
-    const landingPage = getPinterestLandingPage();
-    if (landingPage && !attributes.some(a => a.key === 'pinterest_landing_page')) {
-      attributes.push({ key: 'pinterest_landing_page', value: landingPage });
-    }
-    
-    return attributes;
+    return getAttributionForCheckout();
   } catch {
-    // Return empty array on any error - never block checkout
     return [];
   }
 }

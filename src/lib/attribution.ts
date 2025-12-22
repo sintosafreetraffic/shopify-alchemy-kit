@@ -202,11 +202,16 @@ export function getAttributionForCheckout(): Array<{ key: string; value: string 
     const attributes: Array<{ key: string; value: string }> = [];
     
     if (attribution.epik) {
+      // Primary key for webhook extraction
       attributes.push({ key: '_pinterest_click_id', value: attribution.epik });
+      // Legacy keys for backward compatibility
+      attributes.push({ key: '_ep', value: attribution.epik });
+      attributes.push({ key: 'pinterest_click_id', value: attribution.epik });
     }
     
     if (attribution.landing_page) {
       attributes.push({ key: '_pinterest_landing_page', value: attribution.landing_page });
+      attributes.push({ key: 'pinterest_landing_page', value: attribution.landing_page });
     }
     
     if (attribution.utm_source) {
