@@ -171,8 +171,8 @@ const QuizRevealTracking = () => {
   const [pageVisitsTotal, setPageVisitsTotal] = useState({ sessions: 0, pageviews: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [days, setDays] = useState("30");
-  const [activeTab, setActiveTab] = useState("quiz");
+  const [days, setDays] = useState("7");
+  const [activeTab, setActiveTab] = useState("overview");
   
   // Client-side tracking state
   const [providerStatuses, setProviderStatuses] = useState<ProviderStatus[]>([]);
@@ -370,10 +370,9 @@ const QuizRevealTracking = () => {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
       
+      // Map our days to Clarity's numOfDays (1, 2, or 3 max)
       const daysNum = parseInt(days);
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - daysNum);
-      const endDate = new Date();
+      const numOfDays = Math.min(daysNum, 3) as 1 | 2 | 3;
 
       const response = await fetch(`${supabaseUrl}/functions/v1/clarity-analytics`, {
         method: "POST",
@@ -381,15 +380,13 @@ const QuizRevealTracking = () => {
           "Content-Type": "application/json",
           "apikey": supabaseKey,
         },
-        body: JSON.stringify({
-          startDate: startDate.toISOString().split('T')[0],
-          endDate: endDate.toISOString().split('T')[0],
-        }),
+        body: JSON.stringify({ numOfDays }),
       });
 
       if (response.ok) {
         const data = await response.json();
         setClarityData(data);
+        console.log('Clarity API response:', data);
       } else {
         setClarityData({
           metrics: null,
@@ -523,14 +520,15 @@ const QuizRevealTracking = () => {
           </div>
           <div className="flex items-center gap-3">
             <Select value={days} onValueChange={setDays}>
-              <SelectTrigger className="w-32">
+              <SelectTrigger className="w-36">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="1">Last 24 hours</SelectItem>
+                <SelectItem value="3">Last 3 days</SelectItem>
                 <SelectItem value="7">Last 7 days</SelectItem>
                 <SelectItem value="14">Last 14 days</SelectItem>
                 <SelectItem value="30">Last 30 days</SelectItem>
-                <SelectItem value="90">Last 90 days</SelectItem>
               </SelectContent>
             </Select>
             <Button variant="outline" size="icon" onClick={fetchStats} disabled={loading}>
@@ -564,10 +562,14 @@ const QuizRevealTracking = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full max-w-lg grid-cols-3">
+          <TabsList className="grid w-full max-w-2xl grid-cols-4">
+            <TabsTrigger value="overview" className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4" />
+              Overview
+            </TabsTrigger>
             <TabsTrigger value="quiz" className="flex items-center gap-2">
               <Eye className="w-4 h-4" />
-              Quiz Reveal
+              Quiz
             </TabsTrigger>
             <TabsTrigger value="checkout" className="flex items-center gap-2">
               <ShoppingCart className="w-4 h-4" />
@@ -579,7 +581,283 @@ const QuizRevealTracking = () => {
             </TabsTrigger>
           </TabsList>
 
-          {/* Quiz Analytics Tab */}
+          {/* Overview Tab - Key Funnel Metrics */}
+          <TabsContent value="overview" className="space-y-6 mt-6">
+            {/* Period Indicator */}
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Clock className="w-4 h-4" />
+              <span>Showing data for: <strong className="text-foreground">Last {days} {parseInt(days) === 1 ? 'day' : 'days'}</strong></span>
+              {parseInt(days) > 3 && (
+                <Badge variant="outline" className="text-xs text-amber-600">Clarity API limited to 3 days max</Badge>
+              )}
+            </div>
+
+            {/* Key Funnel Metrics */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Page Visits */}
+              <Card className="p-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
+                    <Eye className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{pageVisitsTotal.sessions.toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">Page Visits</p>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Unique Pageviews */}
+              <Card className="p-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+                    <Globe className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{pageVisitsTotal.pageviews.toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">Page Views</p>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Initiate Checkouts */}
+              <Card className="p-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
+                    <ShoppingCart className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{checkoutStats?.summary.total_initiated || 0}</p>
+                    <p className="text-xs text-muted-foreground">Initiate Checkouts</p>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Checkout Success */}
+              <Card className="p-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
+                    <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{checkoutStats?.summary.total_success || 0}</p>
+                    <p className="text-xs text-muted-foreground">Checkout Success</p>
+                  </div>
+                </div>
+              </Card>
+            </div>
+
+            {/* Conversion Rates Row */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Add to Cart (placeholder - from page_visits with cart path) */}
+              <Card className="p-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center">
+                    <Package className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{pinterestStats?.total || 0}</p>
+                    <p className="text-xs text-muted-foreground">Purchases Tracked</p>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Checkout Rate */}
+              <Card className="p-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-cyan-100 dark:bg-cyan-900/50 flex items-center justify-center">
+                    <TrendingUp className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">
+                      {pageVisitsTotal.sessions > 0 && checkoutStats
+                        ? `${((checkoutStats.summary.total_initiated / pageVisitsTotal.sessions) * 100).toFixed(1)}%`
+                        : '—'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Checkout Rate</p>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Success Rate */}
+              <Card className="p-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
+                    <Zap className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{checkoutStats?.summary.success_rate || 0}%</p>
+                    <p className="text-xs text-muted-foreground">Checkout Success Rate</p>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Total Revenue */}
+              <Card className="p-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
+                    <DollarSign className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">€{pinterestStats?.totalValue.toFixed(0) || 0}</p>
+                    <p className="text-xs text-muted-foreground">Revenue Tracked</p>
+                  </div>
+                </div>
+              </Card>
+            </div>
+
+            {/* Funnel Visualization */}
+            <Card className="p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <TrendingUp className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold">Conversion Funnel</h3>
+              </div>
+              <div className="grid grid-cols-5 gap-2 items-end">
+                {/* Page Visits */}
+                <div className="text-center">
+                  <div 
+                    className="bg-indigo-500 rounded-t-lg mx-auto w-full" 
+                    style={{ height: '100px' }}
+                  />
+                  <p className="text-sm font-medium mt-2">{pageVisitsTotal.sessions.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground">Sessions</p>
+                </div>
+                {/* Quiz Views */}
+                <div className="text-center">
+                  <div 
+                    className="bg-blue-500 rounded-t-lg mx-auto w-full" 
+                    style={{ 
+                      height: pageVisitsTotal.sessions > 0 && stats
+                        ? `${Math.max(20, (stats.summary.unique_pre_reveal_sessions / pageVisitsTotal.sessions) * 100)}px`
+                        : '60px'
+                    }}
+                  />
+                  <p className="text-sm font-medium mt-2">{stats?.summary.unique_pre_reveal_sessions || 0}</p>
+                  <p className="text-xs text-muted-foreground">Quiz Views</p>
+                </div>
+                {/* Initiate Checkout */}
+                <div className="text-center">
+                  <div 
+                    className="bg-amber-500 rounded-t-lg mx-auto w-full" 
+                    style={{ 
+                      height: pageVisitsTotal.sessions > 0 && checkoutStats
+                        ? `${Math.max(20, (checkoutStats.summary.total_initiated / pageVisitsTotal.sessions) * 100)}px`
+                        : '40px'
+                    }}
+                  />
+                  <p className="text-sm font-medium mt-2">{checkoutStats?.summary.total_initiated || 0}</p>
+                  <p className="text-xs text-muted-foreground">Checkouts</p>
+                </div>
+                {/* Checkout Success */}
+                <div className="text-center">
+                  <div 
+                    className="bg-emerald-500 rounded-t-lg mx-auto w-full" 
+                    style={{ 
+                      height: pageVisitsTotal.sessions > 0 && checkoutStats
+                        ? `${Math.max(20, (checkoutStats.summary.total_success / pageVisitsTotal.sessions) * 100)}px`
+                        : '30px'
+                    }}
+                  />
+                  <p className="text-sm font-medium mt-2">{checkoutStats?.summary.total_success || 0}</p>
+                  <p className="text-xs text-muted-foreground">Success</p>
+                </div>
+                {/* Purchases */}
+                <div className="text-center">
+                  <div 
+                    className="bg-green-600 rounded-t-lg mx-auto w-full" 
+                    style={{ 
+                      height: pageVisitsTotal.sessions > 0 && pinterestStats
+                        ? `${Math.max(20, (pinterestStats.total / pageVisitsTotal.sessions) * 100)}px`
+                        : '25px'
+                    }}
+                  />
+                  <p className="text-sm font-medium mt-2">{pinterestStats?.total || 0}</p>
+                  <p className="text-xs text-muted-foreground">Purchases</p>
+                </div>
+              </div>
+            </Card>
+
+            {/* Daily Sessions Chart */}
+            <Card className="p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <BarChart3 className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold">Sessions & Checkouts Over Time</h3>
+              </div>
+              {pageVisits.length > 0 || (checkoutStats?.daily_breakdown.length ?? 0) > 0 ? (
+                <ResponsiveContainer width="100%" height={280}>
+                  <BarChart data={pageVisits.map(pv => {
+                    const checkoutDay = checkoutStats?.daily_breakdown.find(cd => cd.date === pv.date);
+                    return {
+                      ...pv,
+                      checkouts: checkoutDay?.initiated || 0,
+                      success: checkoutDay?.success || 0,
+                    };
+                  })}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fontSize: 11 }} 
+                      tickFormatter={(value) => {
+                        const date = new Date(value);
+                        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                      }}
+                    />
+                    <YAxis tick={{ fontSize: 11 }} />
+                    <Tooltip 
+                      contentStyle={{ fontSize: '12px' }}
+                      labelFormatter={(label) => new Date(label).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                    />
+                    <Legend />
+                    <Bar dataKey="our_sessions" name="Sessions" fill="hsl(221, 83%, 53%)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="checkouts" name="Checkouts" fill="hsl(45, 93%, 47%)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="success" name="Success" fill="hsl(142, 76%, 36%)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[280px] flex items-center justify-center text-muted-foreground">
+                  <div className="text-center">
+                    <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <p>No data for the selected period.</p>
+                  </div>
+                </div>
+              )}
+            </Card>
+
+            {/* Clarity Comparison (if available) */}
+            {clarityData?.metrics && (
+              <Card className="p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Eye className="w-5 h-5 text-blue-600" />
+                    <h3 className="font-semibold">Clarity Comparison</h3>
+                    <Badge variant="outline" className="text-xs">Last {Math.min(parseInt(days), 3)} days</Badge>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={fetchClarityData} disabled={clarityLoading}>
+                    {clarityLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                  </Button>
+                </div>
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-center">
+                    <p className="text-xs text-muted-foreground mb-1">Clarity Sessions</p>
+                    <p className="text-2xl font-bold text-blue-600">{clarityData.metrics.totalSessions.toLocaleString()}</p>
+                  </div>
+                  <div className="p-4 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-center">
+                    <p className="text-xs text-muted-foreground mb-1">Our Sessions</p>
+                    <p className="text-2xl font-bold text-indigo-600">{pageVisitsTotal.sessions.toLocaleString()}</p>
+                  </div>
+                  <div className="p-4 rounded-lg bg-violet-50 dark:bg-violet-900/20 text-center">
+                    <p className="text-xs text-muted-foreground mb-1">Parity</p>
+                    <p className="text-2xl font-bold text-violet-600">
+                      {clarityData.metrics.totalSessions > 0
+                        ? `${((pageVisitsTotal.sessions / clarityData.metrics.totalSessions) * 100).toFixed(0)}%`
+                        : '—'}
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            )}
+          </TabsContent>
+
           <TabsContent value="quiz" className="space-y-6 mt-6">
             {stats && (
               <>
