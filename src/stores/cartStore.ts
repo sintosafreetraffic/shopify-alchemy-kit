@@ -5,6 +5,7 @@ import type { ShopifyProduct } from '@/lib/shopify';
 import { trackAddToCart, trackInitiateCheckout, clearInitiateCheckoutFingerprint } from '@/lib/pinterest';
 import { trackAddedToCart as trackKlaviyoAddToCart } from '@/lib/klaviyo';
 import { trackRevenueAttribution } from '@/lib/personaAnalytics';
+import { trackAddToCartEvent } from '@/lib/addToCartAnalytics';
 
 export interface CartItem {
   product: ShopifyProduct;
@@ -95,6 +96,17 @@ export const useCartStore = create<CartStore>()(
         trackRevenueAttribution("add_to_cart", {
           id: item.product.node.id,
           title: item.product.node.title,
+          price: parseFloat(item.price.amount),
+          currency: item.price.currencyCode,
+          quantity: item.quantity,
+        });
+
+        // Track add-to-cart in Supabase analytics
+        trackAddToCartEvent({
+          productId: item.product.node.id,
+          productTitle: item.product.node.title,
+          variantId: item.variantId,
+          variantTitle: item.variantTitle,
           price: parseFloat(item.price.amount),
           currency: item.price.currencyCode,
           quantity: item.quantity,

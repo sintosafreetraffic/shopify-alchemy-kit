@@ -248,7 +248,7 @@ const QuizRevealTracking = () => {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - daysNum);
 
-      const [quizResponse, checkoutResponse, pinterestResult, pageVisitsResult] = await Promise.all([
+      const [quizResponse, checkoutResponse, pinterestResult, pageVisitsResult, addToCartResult] = await Promise.all([
         fetch(`${supabaseUrl}/functions/v1/quiz-reveal-analytics`, {
           method: "POST",
           headers: {
@@ -283,6 +283,12 @@ const QuizRevealTracking = () => {
           .gte('created_at', startDate.toISOString())
           .order('created_at', { ascending: false })
           .limit(5000),
+        supabase
+          .from('add_to_cart_analytics')
+          .select('*')
+          .gte('created_at', startDate.toISOString())
+          .order('created_at', { ascending: false })
+          .limit(1000),
       ]);
 
       if (!quizResponse.ok) {
@@ -356,6 +362,11 @@ const QuizRevealTracking = () => {
           .sort((a, b) => a.date.localeCompare(b.date));
 
         setPageVisits(chartData);
+      }
+
+      // Process add-to-cart events
+      if (addToCartResult.data) {
+        setAddToCartEvents(addToCartResult.data);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch analytics");
@@ -649,7 +660,20 @@ const QuizRevealTracking = () => {
 
             {/* Conversion Rates Row */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {/* Add to Cart (placeholder - from page_visits with cart path) */}
+              {/* Add to Cart - now from real data */}
+              <Card className="p-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center">
+                    <ShoppingCart className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{addToCartEvents.length}</p>
+                    <p className="text-xs text-muted-foreground">Add to Carts</p>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Purchases */}
               <Card className="p-5">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center">
@@ -657,7 +681,7 @@ const QuizRevealTracking = () => {
                   </div>
                   <div>
                     <p className="text-2xl font-bold">{pinterestStats?.total || 0}</p>
-                    <p className="text-xs text-muted-foreground">Purchases Tracked</p>
+                    <p className="text-xs text-muted-foreground">Purchases</p>
                   </div>
                 </div>
               </Card>
@@ -712,7 +736,7 @@ const QuizRevealTracking = () => {
                 <TrendingUp className="w-5 h-5 text-primary" />
                 <h3 className="font-semibold">Conversion Funnel</h3>
               </div>
-              <div className="grid grid-cols-5 gap-2 items-end">
+              <div className="grid grid-cols-6 gap-2 items-end">
                 {/* Page Visits */}
                 <div className="text-center">
                   <div 
@@ -734,6 +758,19 @@ const QuizRevealTracking = () => {
                   />
                   <p className="text-sm font-medium mt-2">{stats?.summary.unique_pre_reveal_sessions || 0}</p>
                   <p className="text-xs text-muted-foreground">Quiz Views</p>
+                </div>
+                {/* Add to Cart */}
+                <div className="text-center">
+                  <div 
+                    className="bg-orange-500 rounded-t-lg mx-auto w-full" 
+                    style={{ 
+                      height: pageVisitsTotal.sessions > 0
+                        ? `${Math.max(20, (addToCartEvents.length / pageVisitsTotal.sessions) * 100)}px`
+                        : '45px'
+                    }}
+                  />
+                  <p className="text-sm font-medium mt-2">{addToCartEvents.length}</p>
+                  <p className="text-xs text-muted-foreground">Add to Cart</p>
                 </div>
                 {/* Initiate Checkout */}
                 <div className="text-center">
@@ -787,8 +824,10 @@ const QuizRevealTracking = () => {
                 <ResponsiveContainer width="100%" height={280}>
                   <BarChart data={pageVisits.map(pv => {
                     const checkoutDay = checkoutStats?.daily_breakdown.find(cd => cd.date === pv.date);
+                    const addToCartsForDay = addToCartEvents.filter(e => e.created_at.split('T')[0] === pv.date).length;
                     return {
                       ...pv,
+                      add_to_cart: addToCartsForDay,
                       checkouts: checkoutDay?.initiated || 0,
                       success: checkoutDay?.success || 0,
                     };
@@ -809,6 +848,7 @@ const QuizRevealTracking = () => {
                     />
                     <Legend />
                     <Bar dataKey="our_sessions" name="Sessions" fill="hsl(221, 83%, 53%)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="add_to_cart" name="Add to Cart" fill="hsl(25, 95%, 53%)" radius={[4, 4, 0, 0]} />
                     <Bar dataKey="checkouts" name="Checkouts" fill="hsl(45, 93%, 47%)" radius={[4, 4, 0, 0]} />
                     <Bar dataKey="success" name="Success" fill="hsl(142, 76%, 36%)" radius={[4, 4, 0, 0]} />
                   </BarChart>
