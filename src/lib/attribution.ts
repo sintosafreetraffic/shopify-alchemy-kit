@@ -8,6 +8,8 @@
  * - First-touch model: never overwrite existing values
  */
 
+import { getContextId } from '@/lib/contextTracking';
+
 // Storage keys
 const EPIK_COOKIE_NAME = '_epik';
 const EPIK_STORAGE_KEY = 'pinterest_epik';
@@ -206,8 +208,7 @@ export function getAttributionForCheckout(): Array<{ key: string; value: string 
     
     // Add context_id for Pinterest CAPI enrichment (first, most important)
     try {
-      // Dynamic import to avoid circular dependency
-      const contextId = localStorage.getItem('rbn_context_id');
+      const contextId = getContextId();
       if (contextId) {
         attributes.push({ key: 'rbn_context_id', value: contextId });
       }

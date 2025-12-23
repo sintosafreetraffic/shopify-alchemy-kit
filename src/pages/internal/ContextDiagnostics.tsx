@@ -256,12 +256,11 @@ const ContextDiagnostics = () => {
         </CardContent>
       </Card>
 
-      {/* TODO: Cleanup documentation */}
+      {/* Cleanup Note - purge job is now implemented */}
       <div className="mt-6 p-4 bg-muted rounded-md">
-        <h3 className="font-semibold mb-2">Cleanup TODO</h3>
+        <h3 className="font-semibold mb-2">Data Retention</h3>
         <p className="text-sm text-muted-foreground">
-          A daily purge job should be implemented to delete rows from pinterest_context where expires_at &lt; now().
-          This can be done via a scheduled edge function or SQL cron job.
+          Expired context rows are automatically purged daily via the <code className="bg-background px-1 rounded">purge-pinterest-context</code> edge function.
         </p>
       </div>
     </div>
