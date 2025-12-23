@@ -28,12 +28,11 @@ serve(async (req) => {
     const authHeader = req.headers.get('Authorization');
     const cronSecret = Deno.env.get('CRON_SECRET');
     
-    // Allow if called from pg_cron (no auth) or with valid cron secret
-    if (authHeader && cronSecret) {
+    // Allow if called from pg_cron (no auth header) or with valid CRON_SECRET only
+    if (authHeader) {
       const token = authHeader.replace('Bearer ', '');
-      // If a token is provided but doesn't match cron secret, check if it's the anon key (from pg_cron)
-      const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
-      if (token !== cronSecret && token !== anonKey) {
+      // Only accept CRON_SECRET - reject all other tokens including anon key
+      if (!cronSecret || token !== cronSecret) {
         console.warn('[purge-pinterest-context] Invalid authorization token');
         return new Response(
           JSON.stringify({ error: 'Unauthorized' }),
