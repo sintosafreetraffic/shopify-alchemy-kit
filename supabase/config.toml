@@ -169,3 +169,7 @@ verify_jwt = false
 # Purge Pinterest Context - CRON job for cleanup (validates CRON_SECRET internally)
 [functions.purge-pinterest-context]
 verify_jwt = false
+
+# Reconcile Shopify Orders - Manual reconciliation (validates CRON_SECRET internally)
+[functions.reconcile-shopify-orders]
+verify_jwt = false

@@ -561,6 +561,39 @@ export type Database = {
         }
         Relationships: []
       }
+      missing_purchase_events: {
+        Row: {
+          detected_at: string
+          id: string
+          notes: string | null
+          order_created_at: string
+          order_id: string
+          status: string
+          window_end: string
+          window_start: string
+        }
+        Insert: {
+          detected_at?: string
+          id?: string
+          notes?: string | null
+          order_created_at: string
+          order_id: string
+          status?: string
+          window_end: string
+          window_start: string
+        }
+        Update: {
+          detected_at?: string
+          id?: string
+          notes?: string | null
+          order_created_at?: string
+          order_id?: string
+          status?: string
+          window_end?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       page_visits: {
         Row: {
           created_at: string

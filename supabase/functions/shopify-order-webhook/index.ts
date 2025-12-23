@@ -181,18 +181,21 @@ async function joinPinterestContext(
   }
 }
 
-// Log Pinterest purchase event to database
-async function logPinterestPurchaseEvent(
+/**
+ * Insert pending tracking row for idempotency.
+ * Returns true if this is a NEW order (we should proceed with tracking).
+ * Returns false if duplicate (we should exit early).
+ */
+async function insertPendingTrackingRow(
   supabase: any,
   orderId: string,
   value: number,
   currency: string,
-  attribution: AttributionData,
-  renderStatus: string,
-  renderResponse: any = null
-): Promise<void> {
+  attribution: AttributionData
+): Promise<boolean> {
   try {
-    const { error } = await supabase
+    // Use INSERT ... ON CONFLICT DO NOTHING for idempotency
+    const { data, error } = await supabase
       .from('pinterest_purchase_events')
       .insert({
         order_id: orderId,
@@ -206,8 +209,94 @@ async function logPinterestPurchaseEvent(
         utm_term: attribution.utm_term,
         landing_page: attribution.landing_page,
         source: 'shopify_webhook',
+        render_status: 'pending',
+        render_response: null,
+      })
+      .select('id')
+      .maybeSingle();
+
+    if (error) {
+      // Check if it's a unique constraint violation (duplicate)
+      if (error.code === '23505' || error.message?.includes('duplicate') || error.message?.includes('unique')) {
+        console.log("[Pinterest] Duplicate order detected, skipping:", orderId);
+        return false;
+      }
+      console.error("[Pinterest] Failed to insert pending row:", error);
+      // On other errors, still try to proceed (fail open for tracking)
+      return true;
+    }
+
+    // If no data returned but no error, it was a duplicate (ON CONFLICT DO NOTHING)
+    if (!data) {
+      console.log("[Pinterest] Order already exists (no insert), skipping:", orderId);
+      return false;
+    }
+
+    console.log("[Pinterest] Pending row inserted for:", orderId);
+    return true;
+  } catch (insertError) {
+    console.error("[Pinterest] Error inserting pending row (proceeding anyway):", insertError);
+    return true; // Fail open - try to track anyway
+  }
+}
+
+/**
+ * Update tracking row status after Pinterest attempt
+ */
+async function updateTrackingStatus(
+  supabase: any,
+  orderId: string,
+  renderStatus: string,
+  renderResponse: any = null
+): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('pinterest_purchase_events')
+      .update({
         render_status: renderStatus,
         render_response: renderResponse,
+      })
+      .eq('order_id', orderId);
+
+    if (error) {
+      console.error("[Pinterest] Failed to update tracking status:", error);
+    } else {
+      console.log("[Pinterest] Tracking status updated:", orderId, "->", renderStatus);
+    }
+  } catch (updateError) {
+    console.error("[Pinterest] Error updating tracking status (non-blocking):", updateError);
+  }
+}
+
+// Legacy function for backward compatibility (non-idempotent path)
+async function logPinterestPurchaseEvent(
+  supabase: any,
+  orderId: string,
+  value: number,
+  currency: string,
+  attribution: AttributionData,
+  renderStatus: string,
+  renderResponse: any = null
+): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('pinterest_purchase_events')
+      .upsert({
+        order_id: orderId,
+        value,
+        currency,
+        epik: attribution.pinterest_click_id,
+        utm_source: attribution.utm_source,
+        utm_medium: attribution.utm_medium,
+        utm_campaign: attribution.utm_campaign,
+        utm_content: attribution.utm_content,
+        utm_term: attribution.utm_term,
+        landing_page: attribution.landing_page,
+        source: 'shopify_webhook',
+        render_status: renderStatus,
+        render_response: renderResponse,
+      }, {
+        onConflict: 'order_id',
       });
 
     if (error) {
@@ -462,12 +551,28 @@ Deno.serve(async (req: Request): Promise<Response> => {
     });
 
     // PINTEREST TRACKING - Only on orders/paid to avoid double-tracking
-    // Check if direct CAPI is enabled via app_settings toggle
+    // IDEMPOTENCY: Insert pending row FIRST, exit early if duplicate
     const orderValue = parseFloat(order.total_price);
     const orderCurrency = order.currency || 'EUR';
+    const orderId = String(order.id);
     
     if (shouldTrackPurchase) {
-      // Check if direct CAPI is enabled
+      // STEP 1: Insert pending row for idempotency check
+      const isNewOrder = await insertPendingTrackingRow(
+        supabase,
+        orderId,
+        orderValue,
+        orderCurrency,
+        attribution
+      );
+      
+      if (!isNewOrder) {
+        // Duplicate order - return 200 immediately so Shopify stops retrying
+        console.log("[Pinterest] Duplicate webhook detected, returning 200:", orderId);
+        return createSuccessResponse({ success: true, message: "Duplicate order, skipped" });
+      }
+
+      // STEP 2: Check if direct CAPI is enabled
       const { data: capiSetting } = await supabase
         .from('app_settings')
         .select('value')
@@ -487,7 +592,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
       // Build tracking payload with full attribution + match signals
       const pinterestPayload: Record<string, any> = {
-        order_id: String(order.id),
+        order_id: orderId,
         event_type: 'purchase',
         value: orderValue,
         currency: orderCurrency,
@@ -523,6 +628,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
         method: useDirectCapi ? 'DIRECT_CAPI' : 'RENDER',
       });
 
+      // STEP 3: Attempt Pinterest tracking
+      let trackingSuccess = false;
+      let finalStatus = 'error_direct_fallback_render';
+      let finalResponse: any = null;
+
       if (useDirectCapi) {
         // Use direct Pinterest CAPI edge function
         console.log("[Pinterest] Using DIRECT CAPI (Supabase edge function)");
@@ -539,25 +649,51 @@ Deno.serve(async (req: Request): Promise<Response> => {
           const directCapiResult = await directCapiResponse.json();
           
           if (directCapiResponse.ok && directCapiResult.success) {
-            console.log("[Pinterest] ✅ DIRECT CAPI: Purchase tracked successfully:", order.id);
+            console.log("[Pinterest] ✅ DIRECT CAPI: Purchase tracked successfully:", orderId);
+            trackingSuccess = true;
+            finalStatus = 'success_direct';
+            finalResponse = { status: directCapiResponse.status, result: directCapiResult };
           } else {
             console.error("[Pinterest] DIRECT CAPI: Tracking failed:", directCapiResult);
+            finalResponse = { status: directCapiResponse.status, error: directCapiResult };
+            // Will fall through to Render fallback if configured
           }
         } catch (directError: any) {
-          console.error("[Pinterest] DIRECT CAPI Error (non-blocking):", directError);
-          // Log error to DB
-          await logPinterestPurchaseEvent(
-            supabase,
-            String(order.id),
-            orderValue,
-            orderCurrency,
-            attribution,
-            'direct_error',
-            { error: directError.message || 'Unknown error' }
-          );
+          console.error("[Pinterest] DIRECT CAPI Error:", directError.message);
+          finalResponse = { error: directError.message || 'Unknown direct CAPI error' };
+        }
+
+        // Fallback to Render if direct CAPI failed
+        if (!trackingSuccess) {
+          const trackingServerUrl = getEnvVar("TRACKING_SERVER_URL");
+          if (trackingServerUrl) {
+            console.log("[Pinterest] Falling back to RENDER tracking server");
+            try {
+              const renderResponse = await fetch(`${trackingServerUrl}/track/client`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(pinterestPayload),
+              });
+
+              const renderResult = await renderResponse.json();
+              
+              if (renderResponse.ok && renderResult.success) {
+                console.log("[Pinterest] ✅ RENDER fallback: Purchase tracked successfully:", orderId);
+                trackingSuccess = true;
+                finalStatus = 'fallback_render';
+                finalResponse = { status: renderResponse.status, result: renderResult };
+              } else {
+                console.error("[Pinterest] RENDER fallback: Tracking failed:", renderResult);
+                finalResponse = { direct_error: finalResponse, render_error: renderResult };
+              }
+            } catch (renderError: any) {
+              console.error("[Pinterest] RENDER fallback Error:", renderError.message);
+              finalResponse = { direct_error: finalResponse, render_error: renderError.message };
+            }
+          }
         }
       } else {
-        // Use Render tracking server (legacy)
+        // Use Render tracking server (legacy - no direct CAPI)
         const trackingServerUrl = getEnvVar("TRACKING_SERVER_URL");
         
         if (trackingServerUrl) {
@@ -572,53 +708,27 @@ Deno.serve(async (req: Request): Promise<Response> => {
             const pinterestResult = await pinterestResponse.json();
             
             if (pinterestResponse.ok && pinterestResult.success) {
-              console.log("[Pinterest] ✅ RENDER: Purchase tracked successfully:", order.id);
-              await logPinterestPurchaseEvent(
-                supabase,
-                String(order.id),
-                orderValue,
-                orderCurrency,
-                attribution,
-                'success',
-                { status: pinterestResponse.status, result: pinterestResult }
-              );
+              console.log("[Pinterest] ✅ RENDER: Purchase tracked successfully:", orderId);
+              trackingSuccess = true;
+              finalStatus = 'fallback_render'; // Using Render without trying direct first
+              finalResponse = { status: pinterestResponse.status, result: pinterestResult };
             } else {
               console.error("[Pinterest] RENDER: Tracking failed:", pinterestResult);
-              await logPinterestPurchaseEvent(
-                supabase,
-                String(order.id),
-                orderValue,
-                orderCurrency,
-                attribution,
-                'failed',
-                { status: pinterestResponse.status, error: pinterestResult }
-              );
+              finalResponse = { status: pinterestResponse.status, error: pinterestResult };
             }
           } catch (pinterestError: any) {
-            console.error("[Pinterest] RENDER Error (non-blocking):", pinterestError);
-            await logPinterestPurchaseEvent(
-              supabase,
-              String(order.id),
-              orderValue,
-              orderCurrency,
-              attribution,
-              'error',
-              { error: pinterestError.message || 'Unknown error' }
-            );
+            console.error("[Pinterest] RENDER Error:", pinterestError.message);
+            finalResponse = { error: pinterestError.message || 'Unknown render error' };
           }
         } else {
-          console.log("[Pinterest] TRACKING_SERVER_URL not configured and direct CAPI disabled, skipping");
-          await logPinterestPurchaseEvent(
-            supabase,
-            String(order.id),
-            orderValue,
-            orderCurrency,
-            attribution,
-            'skipped_no_url',
-            null
-          );
+          console.log("[Pinterest] TRACKING_SERVER_URL not configured and direct CAPI disabled");
+          finalStatus = 'skipped_no_url';
+          finalResponse = { reason: 'No tracking method configured' };
         }
       }
+
+      // STEP 4: Update tracking status with final result
+      await updateTrackingStatus(supabase, orderId, finalStatus, finalResponse);
     } else if (!shouldTrackPurchase) {
       console.log("[Pinterest] Skipping tracking for orders/create (only orders/paid triggers Pinterest)");
     }
