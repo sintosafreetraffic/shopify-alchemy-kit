@@ -242,6 +242,87 @@ export async function captureContext(): Promise<void> {
 }
 
 /**
+ * Capture context specifically for consent changes.
+ * BYPASSES the session rate-limit flag to ensure IP/UA is immediately captured/cleared.
+ * 
+ * @param options.bypassRateLimit - Always true for consent changes
+ */
+export async function captureContextOnConsentChange(options?: { bypassRateLimit?: boolean }): Promise<void> {
+  try {
+    if (typeof window === 'undefined') return;
+    
+    // Get or create context ID
+    const contextId = getOrCreateContextId();
+    if (!contextId) {
+      console.warn('[ContextTracking] Failed to get/create context_id for consent change');
+      return;
+    }
+    
+    // Get current consent status
+    const consentStatus = getConsentStatus();
+    
+    // Get attribution data
+    const attribution = getAttribution();
+    const epik = getEpik();
+    
+    // Build payload
+    const payload = {
+      context_id: contextId,
+      consent_status: consentStatus,
+      epik: epik || undefined,
+      landing_page: attribution.landing_page || undefined,
+      utm_source: attribution.utm_source || undefined,
+      utm_medium: attribution.utm_medium || undefined,
+      utm_campaign: attribution.utm_campaign || undefined,
+      utm_content: attribution.utm_content || undefined,
+      utm_term: attribution.utm_term || undefined,
+      referrer: typeof document !== 'undefined' ? document.referrer || undefined : undefined,
+    };
+    
+    console.log('[ContextTracking] Consent change capture:', {
+      context_id: contextId,
+      consent_status: consentStatus,
+      reason: 'consent_change',
+      bypass_rate_limit: options?.bypassRateLimit ?? true,
+    });
+    
+    // Get Supabase URL from env
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    if (!supabaseUrl) {
+      console.warn('[ContextTracking] VITE_SUPABASE_URL not configured');
+      return;
+    }
+    
+    // Fire and forget - don't await to avoid blocking UI
+    fetch(`${supabaseUrl}/functions/v1/track-context`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    })
+      .then((response) => {
+        if (response.ok) {
+          console.log('[ContextTracking] ✅ Consent change context captured');
+        } else {
+          console.warn('[ContextTracking] Consent change capture response not ok:', response.status);
+        }
+      })
+      .catch((error) => {
+        // Silent fail
+        console.warn('[ContextTracking] Consent change capture failed (non-blocking):', error);
+      });
+    
+    // NOTE: We do NOT mark context as sent here - consent changes should always go through
+    // This bypasses the rate limit intentionally
+    
+  } catch (e) {
+    // Never throw - tracking failures must be silent
+    console.warn('[ContextTracking] captureContextOnConsentChange error:', e);
+  }
+}
+
+/**
  * Initialize context tracking on app load
  * Should be called once on app init
  */

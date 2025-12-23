@@ -8,9 +8,9 @@
  * - Preserves full diagnostic API for AnalyticsDiagnostics.tsx
  */
 
-import { isTrackingAllowed } from './consent';
+import { isTrackingAllowed, onConsentChange, getConsentStatus } from './consent';
 import { captureAttribution, hasAttributionParams } from './attribution';
-import { captureContext } from './contextTracking';
+import { captureContext, captureContextOnConsentChange } from './contextTracking';
 import { supabase } from '@/integrations/supabase/client';
 
 // ============================================================================
@@ -444,6 +444,9 @@ export function sendTestEvent(
 // INITIALIZATION
 // ============================================================================
 
+// Store cleanup function for consent listener
+let consentCleanup: (() => void) | null = null;
+
 export function initializeProviders(): void {
   try {
     // Always capture attribution regardless of consent (first-party storage)
@@ -451,6 +454,17 @@ export function initializeProviders(): void {
     
     // Always capture context for Pinterest CAPI enrichment
     captureContext();
+    
+    // Register consent change listener (if not already registered)
+    if (!consentCleanup) {
+      consentCleanup = onConsentChange((newStatus) => {
+        console.log('[Analytics] Consent changed to:', newStatus);
+        // Re-capture context on ANY consent change (granted or denied)
+        // This ensures IP/UA is captured when granted, or cleared when denied
+        captureContextOnConsentChange({ bypassRateLimit: true });
+      });
+      console.log('[Analytics] Consent change listener registered');
+    }
     
     if (!isTrackingAllowed()) {
       console.log('[Analytics] Provider init blocked by consent');
