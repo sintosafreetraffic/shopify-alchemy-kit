@@ -214,11 +214,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
             stats.inserted++;
           }
         }
+      }
 
-        // Update sinceId for pagination
-        if (parseInt(orderId) > parseInt(sinceId)) {
-          sinceId = orderId;
-        }
+      // Update sinceId for pagination - use last order's ID (Shopify returns orders sorted by ID)
+      // Treat order IDs as strings - do NOT use parseInt comparison
+      if (orders.length > 0) {
+        sinceId = String(orders[orders.length - 1].id);
       }
 
       // Check if we got less than limit (no more pages)
