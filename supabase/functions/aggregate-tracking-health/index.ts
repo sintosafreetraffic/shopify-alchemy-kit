@@ -27,15 +27,24 @@ interface DayStats {
   consent_rate: number;
 }
 
+interface AlertInfo {
+  type: string;
+  severity: "warn" | "critical";
+  message: string;
+}
+
 interface DayResult {
   day: string;
   stats: DayStats;
   alerts_created: number;
+  alerts: AlertInfo[];
 }
 
 interface ResponseBody {
   success: boolean;
   dry_run: boolean;
+  days_requested: number;
+  days_processed: number;
   days: DayResult[];
   total_alerts_created: number;
   error: string | null;
@@ -60,35 +69,33 @@ serve(async (req) => {
 
   const startTime = Date.now();
   const url = new URL(req.url);
-  const daysParam = parseInt(url.searchParams.get("days") || "1", 10);
+  
+  // Parse and validate days param (v2.4: clamp to 14, treat invalid as 1)
+  let daysParam = parseInt(url.searchParams.get("days") || "1", 10);
+  if (isNaN(daysParam) || daysParam <= 0) {
+    daysParam = 1;
+  } else if (daysParam > 14) {
+    daysParam = 14;
+  }
+  const daysRequested = daysParam;
+  
   const dryRun = url.searchParams.get("dry_run") === "1";
 
-  // Parse body to check for pg_cron trigger marker
-  let body: Record<string, unknown> = {};
-  try {
-    const rawBody = await req.text();
-    if (rawBody) {
-      body = JSON.parse(rawBody);
-    }
-  } catch {
-    // Body parsing failed, continue with empty body
-  }
-
-  // Auth: Accept either x-cron-secret header OR triggered_by: "pg_cron" in body
+  // v2.4 SECURITY MODEL: x-cron-secret header ONLY
+  // Body-based auth markers (triggered_by: "pg_cron") are FORBIDDEN
   const cronSecret = req.headers.get("x-cron-secret");
   const expectedSecret = Deno.env.get("CRON_SECRET");
-  const isValidSecret = cronSecret && cronSecret === expectedSecret;
-  const isPgCronTrigger = body.triggered_by === "pg_cron";
 
-  if (!isValidSecret && !isPgCronTrigger) {
-    console.error("[aggregate-tracking-health] Invalid or missing auth (no x-cron-secret and no pg_cron trigger)");
+  if (!cronSecret || cronSecret !== expectedSecret) {
+    console.error("[aggregate-tracking-health] Invalid or missing x-cron-secret header");
+    // v2.4: Auth failure → HTTP 401
     return new Response(
-      JSON.stringify({ success: false, error: "Unauthorized", days: [], total_alerts_created: 0, dry_run: dryRun }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ success: false, error: "Unauthorized" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
-  console.log(`[aggregate-tracking-health] Auth passed via ${isValidSecret ? "x-cron-secret" : "pg_cron trigger"}`);
+  console.log(`[aggregate-tracking-health] Auth passed via x-cron-secret`);
 
   // Create service-role client for DB writes
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -98,6 +105,8 @@ serve(async (req) => {
   const response: ResponseBody = {
     success: true,
     dry_run: dryRun,
+    days_requested: daysRequested,
+    days_processed: 0,
     days: [],
     total_alerts_created: 0,
     error: null,
@@ -123,6 +132,7 @@ serve(async (req) => {
       const dayStr = day.toISOString().split("T")[0];
       const windowStart = day.toISOString();
       const windowEnd = new Date(day.getTime() + 24 * 60 * 60 * 1000).toISOString();
+      const dayAlerts: AlertInfo[] = [];
 
       console.log(`[aggregate-tracking-health] Processing day=${dayStr}, window=${windowStart} to ${windowEnd}`);
 
@@ -199,13 +209,15 @@ serve(async (req) => {
         .lt("created_at", windowEnd);
       const context_rows = contextRows || 0;
 
-      const { count: epikCount } = await supabase
+      // with_epik: not null AND not empty string
+      const { data: epikData } = await supabase
         .from("pinterest_context")
-        .select("*", { count: "exact", head: true })
+        .select("id")
         .gte("created_at", windowStart)
         .lt("created_at", windowEnd)
-        .not("epik", "is", null);
-      const with_epik = epikCount || 0;
+        .not("epik", "is", null)
+        .neq("epik", "");
+      const with_epik = epikData?.length || 0;
 
       const { count: ipCount } = await supabase
         .from("pinterest_context")
@@ -304,23 +316,25 @@ serve(async (req) => {
       // Helper to create alert (with dedupe)
       async function createAlert(
         type: string,
-        severity: "info" | "warn" | "critical",
+        severity: "warn" | "critical",
         message: string,
         context: Record<string, unknown>
       ) {
+        const alertInfo: AlertInfo = { type, severity, message };
+        dayAlerts.push(alertInfo);
+        
         if (dryRun) {
           console.log(`[aggregate-tracking-health] DRY RUN: Would create ${severity} alert: ${type} - ${message}`);
           alertsCreated++;
           return;
         }
 
-        // Check for existing open alert with same day+type
+        // Check for existing alert with same day+type (dedupe)
         const { data: existing } = await supabase
           .from("tracking_alerts")
           .select("id")
           .eq("day", dayStr)
           .eq("type", type)
-          .eq("status", "open")
           .limit(1);
 
         if (existing && existing.length > 0) {
@@ -346,13 +360,13 @@ serve(async (req) => {
         }
       }
 
-      // Only run drift detection if yesterday exists
+      // v2.4 DRIFT RULES: Only run success_rate_drop and error_spike if yesterday exists
       if (yesterdayRow) {
         const yesterdaySuccessRate = Number(yesterdayRow.success_rate) || 0;
         const successDrop = yesterdaySuccessRate - success_rate;
 
-        // success_rate_drop
-        if (success_rate < 0.85 && successDrop >= 0.10) {
+        // success_rate_drop (v2.4: critical ONLY if >= 0.10, warn ONLY if >= 0.05 AND < 0.10)
+        if (successDrop >= 0.10) {
           await createAlert(
             "success_rate_drop",
             "critical",
@@ -368,61 +382,70 @@ serve(async (req) => {
           );
         }
 
-        // error_spike (precedence: critical only if > 0.10)
+        // error_spike (v2.4: critical ONLY if > 0.10, warn ONLY if > 0.05 AND <= 0.10)
         if (error_rate > 0.10) {
           await createAlert(
             "error_spike",
             "critical",
-            `Error rate is ${formatPct(error_rate)} (threshold exceeded)`,
+            `Error rate is ${formatPct(error_rate)}`,
             { today_rate: error_rate }
           );
         } else if (error_rate > 0.05) {
           await createAlert(
             "error_spike",
             "warn",
-            `Error rate is ${formatPct(error_rate)} (threshold exceeded)`,
+            `Error rate is ${formatPct(error_rate)}`,
             { today_rate: error_rate }
           );
         }
+      } else {
+        console.log(`[aggregate-tracking-health] No yesterday row for ${yesterdayStr}, skipping drift-based alerts (success_rate_drop, error_spike)`);
+      }
 
-        // epik_collapse
+      // ========== ABSOLUTE ALERTS (don't require yesterday) ==========
+      
+      // epik_collapse (v2.4: critical ONLY if < 0.10, warn ONLY if < 0.20 AND >= 0.10)
+      if (context_rows > 0) {
         if (epik_rate < 0.10) {
           await createAlert(
             "epik_collapse",
             "critical",
-            `EPIK rate is ${formatPct(epik_rate)} (below threshold)`,
+            `EPIK rate is ${formatPct(epik_rate)}`,
             { today_rate: epik_rate }
           );
         } else if (epik_rate < 0.20) {
           await createAlert(
             "epik_collapse",
             "warn",
-            `EPIK rate is ${formatPct(epik_rate)} (below threshold)`,
+            `EPIK rate is ${formatPct(epik_rate)}`,
             { today_rate: epik_rate }
           );
         }
-      } else {
-        console.log(`[aggregate-tracking-health] No yesterday row for ${yesterdayStr}, skipping drift detection`);
       }
 
-      // context_capture_failure (doesn't require yesterday)
-      if (context_rows === 0 && orders_seen > 0) {
-        await createAlert(
-          "context_capture_failure",
-          "critical",
-          `Context capture failure: 0 context rows while ${orders_seen} orders seen`,
-          { context_rows: 0, orders_seen }
-        );
-      } else if (context_rows > 0 && (ip_rate < 0.20 || ua_rate < 0.20)) {
-        await createAlert(
-          "context_capture_failure",
-          "warn",
-          `Context capture degraded: IP rate ${formatPct(ip_rate)} UA rate ${formatPct(ua_rate)}`,
-          { ip_rate, ua_rate }
-        );
+      // context_capture_failure (v2.4: critical if ip < 0.10 OR ua < 0.10, warn if ip < 0.20 OR ua < 0.20)
+      if (context_rows > 0) {
+        const isCritical = ip_rate < 0.10 || ua_rate < 0.10;
+        const isWarn = (ip_rate < 0.20 || ua_rate < 0.20) && !isCritical;
+        
+        if (isCritical) {
+          await createAlert(
+            "context_capture_failure",
+            "critical",
+            `Context capture low: ip_rate ${formatPct(ip_rate)} ua_rate ${formatPct(ua_rate)}`,
+            { ip_rate, ua_rate }
+          );
+        } else if (isWarn) {
+          await createAlert(
+            "context_capture_failure",
+            "warn",
+            `Context capture low: ip_rate ${formatPct(ip_rate)} ua_rate ${formatPct(ua_rate)}`,
+            { ip_rate, ua_rate }
+          );
+        }
       }
 
-      // reconciliation_mismatch
+      // reconciliation_mismatch (v2.4: critical ONLY if >= 10, warn ONLY if >= 1 AND < 10)
       if (reconciliation_mismatches >= 10) {
         await createAlert(
           "reconciliation_mismatch",
@@ -430,7 +453,7 @@ serve(async (req) => {
           `Reconciliation mismatches detected: ${reconciliation_mismatches}`,
           { mismatches: reconciliation_mismatches }
         );
-      } else if (reconciliation_mismatches > 0) {
+      } else if (reconciliation_mismatches >= 1) {
         await createAlert(
           "reconciliation_mismatch",
           "warn",
@@ -443,8 +466,10 @@ serve(async (req) => {
         day: dayStr,
         stats,
         alerts_created: alertsCreated,
+        alerts: dayAlerts,
       });
       response.total_alerts_created += alertsCreated;
+      response.days_processed++;
     }
 
     // ========== RECORD JOB EXECUTION ==========
@@ -461,7 +486,8 @@ serve(async (req) => {
           success: true,
           duration_ms,
           stats: {
-            days_processed: daysToProcess.length,
+            days_requested: daysRequested,
+            days_processed: response.days_processed,
             total_alerts_created: response.total_alerts_created,
             dry_run: false,
           },
@@ -472,7 +498,7 @@ serve(async (req) => {
       }
     }
 
-    console.log(`[aggregate-tracking-health] Completed. Days: ${response.days.length}, Alerts: ${response.total_alerts_created}`);
+    console.log(`[aggregate-tracking-health] Completed. Days: ${response.days_processed}, Alerts: ${response.total_alerts_created}`);
 
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
@@ -482,20 +508,30 @@ serve(async (req) => {
 
     // Record failed job
     if (!dryRun) {
-      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-      const supabase = createClient(supabaseUrl, serviceRoleKey);
+      try {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-      await supabase.from("tracking_jobs").insert({
-        job_name: "aggregate-tracking-health",
-        success: false,
-        duration_ms: Date.now() - startTime,
-        error: errorMessage,
-      });
+        await supabase.from("tracking_jobs").insert({
+          job_name: "aggregate-tracking-health",
+          success: false,
+          duration_ms: Date.now() - startTime,
+          error: errorMessage,
+          stats: {
+            days_requested: daysRequested,
+            days_processed: response.days_processed,
+            dry_run: false,
+          },
+        });
+      } catch (jobInsertErr) {
+        console.error(`[aggregate-tracking-health] Failed to record failed job:`, jobInsertErr);
+      }
     }
   }
 
-  // Always return HTTP 200
+  // v2.4: Internal errors after auth → HTTP 200 with success=false
+  // Success → HTTP 200 with success=true
   return new Response(JSON.stringify(response), {
     status: 200,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
