@@ -177,3 +177,7 @@ verify_jwt = false
 # Aggregate Tracking Health - CRON job for daily metrics (validates CRON_SECRET internally)
 [functions.aggregate-tracking-health]
 verify_jwt = false
+
+# Phase 3: Recovery - CRON job for self-healing (validates CRON_SECRET internally)
+[functions.recover-missing-purchases]
+verify_jwt = false
