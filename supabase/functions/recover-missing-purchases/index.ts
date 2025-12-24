@@ -218,12 +218,16 @@ Deno.serve(async (req: Request): Promise<Response> => {
       console.log("[Recovery] DRY RUN - no writes or outbound calls");
       
       // Log job even in dry run
-      await supabase.from('tracking_jobs').insert({
+      const { error: jobError } = await supabase.from('tracking_jobs').insert({
         job_name: 'recover-missing-purchases',
         success: true,
         duration_ms: Date.now() - startTime,
         stats: { ...stats, dry_run: true },
       });
+      
+      if (jobError) {
+        console.error("[Recovery] Failed to log job:", jobError);
+      }
 
       return new Response(
         JSON.stringify({
@@ -539,7 +543,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     // Log job completion
     const totalDuration = Date.now() - startTime;
-    await supabase.from('tracking_jobs').insert({
+    const { error: jobLogError } = await supabase.from('tracking_jobs').insert({
       job_name: 'recover-missing-purchases',
       success: true,
       duration_ms: totalDuration,
@@ -553,6 +557,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
         rate_limited: stats.rate_limited,
       },
     });
+
+    if (jobLogError) {
+      console.error("[Recovery] Failed to log job:", jobLogError);
+    }
 
     console.log("[Recovery] Complete:", stats);
 
