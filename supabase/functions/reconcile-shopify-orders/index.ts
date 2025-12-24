@@ -59,7 +59,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
     // Initialize Supabase client with service role
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    const shopifyAccessToken = Deno.env.get('SHOPIFY_ACCESS_TOKEN');
+    // Use Admin API token for order reconciliation (separate from Storefront token)
+    const shopifyAdminToken = Deno.env.get('SHOPIFY_ADMIN_API_TOKEN');
 
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error('[Reconcile] Missing Supabase env vars');
@@ -69,10 +70,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    if (!shopifyAccessToken) {
-      console.error('[Reconcile] Missing SHOPIFY_ACCESS_TOKEN');
+    if (!shopifyAdminToken) {
+      console.error('[Reconcile] Missing SHOPIFY_ADMIN_API_TOKEN');
       return new Response(
-        JSON.stringify({ error: 'Shopify not configured' }),
+        JSON.stringify({ error: 'Shopify Admin API not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -116,7 +117,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
       const ordersResponse = await fetch(ordersUrl.toString(), {
         headers: {
-          'X-Shopify-Access-Token': shopifyAccessToken,
+          'X-Shopify-Access-Token': shopifyAdminToken,
           'Content-Type': 'application/json',
         },
       });
