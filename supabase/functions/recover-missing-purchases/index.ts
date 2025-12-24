@@ -8,6 +8,12 @@
  * - dry_run=1: No writes, no outbound calls
  * - limit: Max orders per run (default 50, clamped to 50)
  * - max_age_days: How far back to look (default 7, clamped to 30)
+ * 
+ * CHAOS INJECTION (Phase 3.5):
+ * Supports controlled failure injection via query params or headers:
+ * - chaos=always_fail (C4): All recovery attempts fail
+ * - chaos=rate_limit (C5): Simulate Pinterest 429 rate limit
+ * - chaos=timestamp_skew (C7): Log timestamp skew test (no behavioral change)
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -16,6 +22,46 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cron-secret',
 };
+
+// ============================================================================
+// CHAOS INJECTION HELPERS (Phase 3.5)
+// ============================================================================
+
+type ChaosMode = 
+  | 'always_fail' 
+  | 'rate_limit' 
+  | 'timestamp_skew'
+  | null;
+
+/**
+ * Extract chaos mode from request (query param or header)
+ * Returns null if no valid chaos mode specified
+ */
+function extractChaosMode(req: Request): ChaosMode {
+  const url = new URL(req.url);
+  const chaosParam = url.searchParams.get('chaos');
+  const chaosHeader = req.headers.get('x-chaos-mode');
+  
+  const chaosValue = chaosParam || chaosHeader;
+  
+  if (!chaosValue) {
+    return null;
+  }
+  
+  const validModes: ChaosMode[] = ['always_fail', 'rate_limit', 'timestamp_skew'];
+  
+  if (validModes.includes(chaosValue as ChaosMode)) {
+    console.warn(`[CHAOS] Mode activated: ${chaosValue}`);
+    return chaosValue as ChaosMode;
+  }
+  
+  console.warn(`[CHAOS] Unknown chaos mode ignored: ${chaosValue}`);
+  return null;
+}
+
+// ============================================================================
+// END CHAOS INJECTION HELPERS
+// ============================================================================
 
 // SHA-256 hash for payload fingerprint
 async function sha256(data: string): Promise<string> {
@@ -118,13 +164,28 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   console.log("[Recovery] Auth passed via x-cron-secret");
 
+  // ========================================================================
+  // CHAOS: Extract chaos mode from request
+  // ========================================================================
+  const chaosMode = extractChaosMode(req);
+
   try {
     const url = new URL(req.url);
     const dryRun = url.searchParams.get('dry_run') === '1';
     const limit = Math.min(parseInt(url.searchParams.get('limit') || '50', 10) || 50, 50);
     const maxAgeDays = Math.min(parseInt(url.searchParams.get('max_age_days') || '7', 10) || 7, 30);
 
-    console.log("[Recovery] Params:", { dryRun, limit, maxAgeDays });
+    console.log("[Recovery] Params:", { dryRun, limit, maxAgeDays, chaosMode });
+
+    // ========================================================================
+    // CHAOS C7: Timestamp Skew - Log acknowledgment (no behavioral change)
+    // This chaos mode tests that timestamp skew doesn't cause false alerts
+    // ========================================================================
+    if (chaosMode === 'timestamp_skew') {
+      console.warn("[CHAOS] C7: Timestamp skew mode - proceeding normally to validate stability");
+      // No behavioral change - this validates the system remains stable
+      // with skewed timestamps (tested via reconcile-shopify-orders too)
+    }
 
     // Clamp logging
     if (url.searchParams.get('limit') && parseInt(url.searchParams.get('limit')!, 10) > 50) {
@@ -156,6 +217,45 @@ Deno.serve(async (req: Request): Promise<Response> => {
       method_none: 0,
       durations: [],
     };
+
+    // ========================================================================
+    // CHAOS C5: Rate Limit - Simulate immediate rate limit at start
+    // ========================================================================
+    if (chaosMode === 'rate_limit') {
+      console.error("[CHAOS] C5: Simulating Pinterest 429 rate limit");
+      stats.rate_limited = true;
+      
+      // Log job as partial failure
+      const totalDuration = Date.now() - startTime;
+      await supabase.from('tracking_jobs').insert({
+        job_name: 'recover-missing-purchases',
+        success: false,
+        duration_ms: totalDuration,
+        stats: {
+          ...stats,
+          chaos: 'rate_limit',
+          reason: 'Simulated Pinterest 429 rate limit',
+        },
+        error: 'chaos_rate_limit',
+      });
+
+      return new Response(
+        JSON.stringify({
+          success: false,
+          dry_run: false,
+          candidates_found: 0,
+          attempted: 0,
+          succeeded: 0,
+          failed: 0,
+          skipped: 0,
+          dead_lettered: 0,
+          rate_limited: true,
+          chaos: 'rate_limit',
+          error: 'CHAOS: Simulated Pinterest 429 rate limit',
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Step 1: Get candidates from missing_purchase_events
     const cutoffDate = new Date(Date.now() - maxAgeDays * 24 * 60 * 60 * 1000).toISOString();
@@ -354,6 +454,40 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
       try {
         let result: { success: boolean; status: number; response: any; error?: string };
+
+        // ====================================================================
+        // CHAOS C4: Always Fail - Force all recovery attempts to fail
+        // ====================================================================
+        if (chaosMode === 'always_fail') {
+          console.error("[CHAOS] C4: Forcing failure for", candidate.order_id);
+          result = {
+            success: false,
+            status: 500,
+            response: { chaos: true, reason: 'Simulated failure via chaos=always_fail' },
+            error: 'chaos_always_fail',
+          };
+          
+          // Record the failed attempt
+          const duration = Date.now() - attemptStart;
+          stats.durations.push(duration);
+          
+          await supabase.from('recovery_purchase_attempts').insert({
+            order_id: candidate.order_id,
+            attempt_no: attemptNo,
+            method,
+            payload_fingerprint: fingerprint,
+            outcome: 'failed',
+            http_status: 500,
+            error_code: 'chaos_always_fail',
+            error_message: 'CHAOS: Forced failure via always_fail mode',
+            response_json: { chaos: true },
+            duration_ms: duration,
+          });
+
+          stats.failed++;
+          console.log("[CHAOS] C4: Recorded failure for", candidate.order_id, "attempt", attemptNo);
+          continue; // Move to next candidate
+        }
 
         if (method === 'direct_capi') {
           // Call pinterest-capi-direct
