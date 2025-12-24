@@ -836,6 +836,84 @@ export type Database = {
         }
         Relationships: []
       }
+      recovery_dead_letters: {
+        Row: {
+          created_at: string
+          final_status: string
+          id: string
+          last_attempt_no: number
+          last_error_code: string | null
+          last_error_message: string | null
+          order_id: string
+          reason: string
+        }
+        Insert: {
+          created_at?: string
+          final_status?: string
+          id?: string
+          last_attempt_no: number
+          last_error_code?: string | null
+          last_error_message?: string | null
+          order_id: string
+          reason: string
+        }
+        Update: {
+          created_at?: string
+          final_status?: string
+          id?: string
+          last_attempt_no?: number
+          last_error_code?: string | null
+          last_error_message?: string | null
+          order_id?: string
+          reason?: string
+        }
+        Relationships: []
+      }
+      recovery_purchase_attempts: {
+        Row: {
+          attempt_no: number
+          created_at: string
+          duration_ms: number | null
+          error_code: string | null
+          error_message: string | null
+          http_status: number | null
+          id: string
+          method: string
+          order_id: string
+          outcome: string
+          payload_fingerprint: string
+          response_json: Json | null
+        }
+        Insert: {
+          attempt_no: number
+          created_at?: string
+          duration_ms?: number | null
+          error_code?: string | null
+          error_message?: string | null
+          http_status?: number | null
+          id?: string
+          method: string
+          order_id: string
+          outcome: string
+          payload_fingerprint: string
+          response_json?: Json | null
+        }
+        Update: {
+          attempt_no?: number
+          created_at?: string
+          duration_ms?: number | null
+          error_code?: string | null
+          error_message?: string | null
+          http_status?: number | null
+          id?: string
+          method?: string
+          order_id?: string
+          outcome?: string
+          payload_fingerprint?: string
+          response_json?: Json | null
+        }
+        Relationships: []
+      }
       referrals: {
         Row: {
           affiliate_id: string
