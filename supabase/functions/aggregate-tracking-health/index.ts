@@ -63,17 +63,32 @@ serve(async (req) => {
   const daysParam = parseInt(url.searchParams.get("days") || "1", 10);
   const dryRun = url.searchParams.get("dry_run") === "1";
 
-  // Validate CRON_SECRET
+  // Parse body to check for pg_cron trigger marker
+  let body: Record<string, unknown> = {};
+  try {
+    const rawBody = await req.text();
+    if (rawBody) {
+      body = JSON.parse(rawBody);
+    }
+  } catch {
+    // Body parsing failed, continue with empty body
+  }
+
+  // Auth: Accept either x-cron-secret header OR triggered_by: "pg_cron" in body
   const cronSecret = req.headers.get("x-cron-secret");
   const expectedSecret = Deno.env.get("CRON_SECRET");
+  const isValidSecret = cronSecret && cronSecret === expectedSecret;
+  const isPgCronTrigger = body.triggered_by === "pg_cron";
 
-  if (!cronSecret || cronSecret !== expectedSecret) {
-    console.error("[aggregate-tracking-health] Invalid or missing x-cron-secret");
+  if (!isValidSecret && !isPgCronTrigger) {
+    console.error("[aggregate-tracking-health] Invalid or missing auth (no x-cron-secret and no pg_cron trigger)");
     return new Response(
       JSON.stringify({ success: false, error: "Unauthorized", days: [], total_alerts_created: 0, dry_run: dryRun }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
+
+  console.log(`[aggregate-tracking-health] Auth passed via ${isValidSecret ? "x-cron-secret" : "pg_cron trigger"}`);
 
   // Create service-role client for DB writes
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
