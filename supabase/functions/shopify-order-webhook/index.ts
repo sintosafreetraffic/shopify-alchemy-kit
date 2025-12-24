@@ -5,6 +5,14 @@
  * Uses centralized env/cors helpers and syncAndStoreAttributes.
  * 
  * HARDENED: Logs all Pinterest purchase events to pinterest_purchase_events table
+ * 
+ * CHAOS INJECTION (Phase 3.5):
+ * Supports controlled failure injection via query params or headers:
+ * - chaos=pinterest_timeout (C1)
+ * - chaos=pinterest_partial_success (C2)
+ * - chaos=db_write_fail_before_send (C6)
+ * - chaos=db_unavailable (C8)
+ * - C9 (auth failure) is tested by sending invalid HMAC
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -19,6 +27,57 @@ import {
   fullSleepSync,
 } from "../_shared/sleep-sync.ts";
 import { SleepSyncSource } from "../_shared/types.ts";
+
+// ============================================================================
+// CHAOS INJECTION HELPERS (Phase 3.5)
+// ============================================================================
+
+type ChaosMode = 
+  | 'pinterest_timeout' 
+  | 'pinterest_partial_success' 
+  | 'db_write_fail_before_send' 
+  | 'db_unavailable'
+  | null;
+
+/**
+ * Extract chaos mode from request (query param or header)
+ * Returns null if no valid chaos mode specified
+ */
+function extractChaosMode(req: Request): ChaosMode {
+  // Check query param first
+  const url = new URL(req.url);
+  const chaosParam = url.searchParams.get('chaos');
+  
+  // Check header as fallback
+  const chaosHeader = req.headers.get('x-chaos-mode');
+  
+  const chaosValue = chaosParam || chaosHeader;
+  
+  if (!chaosValue) {
+    return null;
+  }
+  
+  // Validate against known chaos modes
+  const validModes: ChaosMode[] = [
+    'pinterest_timeout',
+    'pinterest_partial_success', 
+    'db_write_fail_before_send',
+    'db_unavailable',
+  ];
+  
+  if (validModes.includes(chaosValue as ChaosMode)) {
+    console.warn(`[CHAOS] Mode activated: ${chaosValue}`);
+    return chaosValue as ChaosMode;
+  }
+  
+  // Unknown chaos value - log warning and proceed normally
+  console.warn(`[CHAOS] Unknown chaos mode ignored: ${chaosValue}`);
+  return null;
+}
+
+// ============================================================================
+// END CHAOS INJECTION HELPERS
+// ============================================================================
 
 const KLAVIYO_LIST_ID = "UEJzEU";
 
@@ -330,6 +389,20 @@ Deno.serve(async (req: Request): Promise<Response> => {
     
     console.log("[Shopify] ✓ HMAC signature verified");
 
+    // ========================================================================
+    // CHAOS: Extract chaos mode from request
+    // ========================================================================
+    const chaosMode = extractChaosMode(req);
+    
+    // ========================================================================
+    // CHAOS C8: DB Unavailable - Simulate complete DB failure
+    // Must happen before ANY DB operations
+    // ========================================================================
+    if (chaosMode === 'db_unavailable') {
+      console.error("[CHAOS] C8: Simulating DB unavailable - returning 500 for Shopify retry");
+      return createErrorResponse("CHAOS: Database unavailable", 500);
+    }
+
     const shopifyTopic = req.headers.get("x-shopify-topic");
     console.log("[Shopify] Webhook received, topic:", shopifyTopic);
 
@@ -572,6 +645,21 @@ Deno.serve(async (req: Request): Promise<Response> => {
         return createSuccessResponse({ success: true, message: "Duplicate order, skipped" });
       }
 
+      // ======================================================================
+      // CHAOS C6: DB Write Fail Before Send
+      // Pending row inserted successfully, now simulate failure before Pinterest call
+      // ======================================================================
+      if (chaosMode === 'db_write_fail_before_send') {
+        console.error("[CHAOS] C6: Simulating DB failure after insert, before Pinterest send");
+        await updateTrackingStatus(supabase, orderId, 'chaos_db_fail_before_send', {
+          chaos: true,
+          reason: 'Simulated DB failure before external call',
+        });
+        // This order is now in missing_purchase_events-eligible state (no success)
+        // Recovery can pick it up
+        return createSuccessResponse({ success: true, chaos: 'db_write_fail_before_send' });
+      }
+
       // STEP 2: Check if direct CAPI is enabled
       const { data: capiSetting } = await supabase
         .from('app_settings')
@@ -632,6 +720,30 @@ Deno.serve(async (req: Request): Promise<Response> => {
       let trackingSuccess = false;
       let finalStatus = 'error_direct_fallback_render';
       let finalResponse: any = null;
+
+      // ======================================================================
+      // CHAOS C1: Pinterest Timeout - Simulate timeout before any Pinterest call
+      // ======================================================================
+      if (chaosMode === 'pinterest_timeout') {
+        console.error("[CHAOS] C1: Simulating Pinterest timeout");
+        finalStatus = 'chaos_timeout';
+        finalResponse = { chaos: true, reason: 'Simulated Pinterest timeout' };
+        // trackingSuccess stays false - will be picked up by recovery
+        await updateTrackingStatus(supabase, orderId, finalStatus, finalResponse);
+        return createSuccessResponse({ success: true, chaos: 'pinterest_timeout' });
+      }
+
+      // ======================================================================
+      // CHAOS C2: Pinterest Partial Success - Simulate incomplete response
+      // ======================================================================
+      if (chaosMode === 'pinterest_partial_success') {
+        console.error("[CHAOS] C2: Simulating Pinterest partial success (missing conversion ID)");
+        finalStatus = 'chaos_partial';
+        finalResponse = { chaos: true, reason: 'Simulated partial success - missing conversion ID' };
+        // trackingSuccess stays false - will be picked up by recovery
+        await updateTrackingStatus(supabase, orderId, finalStatus, finalResponse);
+        return createSuccessResponse({ success: true, chaos: 'pinterest_partial_success' });
+      }
 
       if (useDirectCapi) {
         // Use direct Pinterest CAPI edge function
