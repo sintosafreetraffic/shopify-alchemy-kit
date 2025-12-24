@@ -173,3 +173,7 @@ verify_jwt = false
 # Reconcile Shopify Orders - Manual reconciliation (validates CRON_SECRET internally)
 [functions.reconcile-shopify-orders]
 verify_jwt = false
+
+# Aggregate Tracking Health - CRON job for daily metrics (validates CRON_SECRET internally)
+[functions.aggregate-tracking-health]
+verify_jwt = false

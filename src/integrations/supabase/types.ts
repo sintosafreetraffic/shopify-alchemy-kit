@@ -1228,6 +1228,156 @@ export type Database = {
         }
         Relationships: []
       }
+      tracking_alerts: {
+        Row: {
+          acknowledged_at: string | null
+          context: Json | null
+          created_at: string
+          day: string
+          id: string
+          message: string
+          severity: string
+          status: string
+          type: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          context?: Json | null
+          created_at?: string
+          day: string
+          id?: string
+          message: string
+          severity: string
+          status?: string
+          type: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          context?: Json | null
+          created_at?: string
+          day?: string
+          id?: string
+          message?: string
+          severity?: string
+          status?: string
+          type?: string
+        }
+        Relationships: []
+      }
+      tracking_health_daily: {
+        Row: {
+          consent_granted: number
+          consent_rate: number
+          context_rows: number
+          created_at: string
+          day: string
+          epik_rate: number
+          error_count: number
+          error_rate: number
+          ip_rate: number
+          orders_seen: number
+          pending_count: number
+          reconciliation_mismatches: number
+          success_count: number
+          success_rate: number
+          total_value_eur: number
+          ua_rate: number
+          unknown_status: number
+          updated_at: string
+          window_end: string
+          window_start: string
+          with_epik: number
+          with_ip: number
+          with_ua: number
+        }
+        Insert: {
+          consent_granted?: number
+          consent_rate?: number
+          context_rows?: number
+          created_at?: string
+          day: string
+          epik_rate?: number
+          error_count?: number
+          error_rate?: number
+          ip_rate?: number
+          orders_seen?: number
+          pending_count?: number
+          reconciliation_mismatches?: number
+          success_count?: number
+          success_rate?: number
+          total_value_eur?: number
+          ua_rate?: number
+          unknown_status?: number
+          updated_at?: string
+          window_end: string
+          window_start: string
+          with_epik?: number
+          with_ip?: number
+          with_ua?: number
+        }
+        Update: {
+          consent_granted?: number
+          consent_rate?: number
+          context_rows?: number
+          created_at?: string
+          day?: string
+          epik_rate?: number
+          error_count?: number
+          error_rate?: number
+          ip_rate?: number
+          orders_seen?: number
+          pending_count?: number
+          reconciliation_mismatches?: number
+          success_count?: number
+          success_rate?: number
+          total_value_eur?: number
+          ua_rate?: number
+          unknown_status?: number
+          updated_at?: string
+          window_end?: string
+          window_start?: string
+          with_epik?: number
+          with_ip?: number
+          with_ua?: number
+        }
+        Relationships: []
+      }
+      tracking_jobs: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          error: string | null
+          id: string
+          job_name: string
+          stats: Json | null
+          success: boolean
+          window_end: string | null
+          window_start: string | null
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          id?: string
+          job_name: string
+          stats?: Json | null
+          success?: boolean
+          window_end?: string | null
+          window_start?: string | null
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          id?: string
+          job_name?: string
+          stats?: Json | null
+          success?: boolean
+          window_end?: string | null
+          window_start?: string | null
+        }
+        Relationships: []
+      }
       user_product_ownership: {
         Row: {
           acquired_at: string
