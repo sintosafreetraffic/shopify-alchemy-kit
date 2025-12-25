@@ -742,6 +742,9 @@ export type Database = {
       }
       pinterest_purchase_events: {
         Row: {
+          attribution_confidence: string | null
+          attribution_reason: string | null
+          attribution_source: string | null
           created_at: string
           currency: string
           epik: string | null
@@ -752,6 +755,9 @@ export type Database = {
           order_id: string
           render_response: Json | null
           render_status: string
+          send_mode: string | null
+          send_status: string
+          send_status_reason: string | null
           source: string
           store_id: string | null
           utm_campaign: string | null
@@ -762,6 +768,9 @@ export type Database = {
           value: number
         }
         Insert: {
+          attribution_confidence?: string | null
+          attribution_reason?: string | null
+          attribution_source?: string | null
           created_at?: string
           currency?: string
           epik?: string | null
@@ -772,6 +781,9 @@ export type Database = {
           order_id: string
           render_response?: Json | null
           render_status: string
+          send_mode?: string | null
+          send_status?: string
+          send_status_reason?: string | null
           source?: string
           store_id?: string | null
           utm_campaign?: string | null
@@ -782,6 +794,9 @@ export type Database = {
           value: number
         }
         Update: {
+          attribution_confidence?: string | null
+          attribution_reason?: string | null
+          attribution_source?: string | null
           created_at?: string
           currency?: string
           epik?: string | null
@@ -792,6 +807,9 @@ export type Database = {
           order_id?: string
           render_response?: Json | null
           render_status?: string
+          send_mode?: string | null
+          send_status?: string
+          send_status_reason?: string | null
           source?: string
           store_id?: string | null
           utm_campaign?: string | null
