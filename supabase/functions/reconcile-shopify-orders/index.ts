@@ -52,9 +52,20 @@ Deno.serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    // Check for dry_run mode
+    // Check for dry_run mode and chaos mode
     const url = new URL(req.url);
     const dryRun = url.searchParams.get('dry_run') === '1';
+    const chaosMode = url.searchParams.get('chaos') || req.headers.get('x-chaos-mode') || null;
+
+    // Log chaos mode if present
+    if (chaosMode) {
+      console.log(`[Reconcile] Chaos mode active: ${chaosMode}`);
+      
+      // Handle unknown/invalid chaos types - warn but proceed normally
+      if (chaosMode !== 'timestamp_skew') {
+        console.warn(`[Reconcile] Unknown chaos mode '${chaosMode}', proceeding normally`);
+      }
+    }
 
     // Initialize Supabase client with service role
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -81,8 +92,20 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Calculate time window: last 48 hours
-    const windowEnd = new Date();
-    const windowStart = new Date(windowEnd.getTime() - 48 * 60 * 60 * 1000);
+    // C7 chaos: timestamp_skew - applies ±6h skew to window for stability testing
+    let windowEnd = new Date();
+    let windowStart = new Date(windowEnd.getTime() - 48 * 60 * 60 * 1000);
+
+    if (chaosMode === 'timestamp_skew') {
+      // Apply 6 hours forward skew to both window boundaries
+      const skewMs = 6 * 60 * 60 * 1000;
+      windowEnd = new Date(windowEnd.getTime() + skewMs);
+      windowStart = new Date(windowStart.getTime() + skewMs);
+      console.log('[Reconcile] C7 chaos: Applied +6h timestamp skew', {
+        original_window_end: new Date().toISOString(),
+        skewed_window_end: windowEnd.toISOString(),
+      });
+    }
 
     const stats: ReconciliationStats = {
       scanned: 0,
