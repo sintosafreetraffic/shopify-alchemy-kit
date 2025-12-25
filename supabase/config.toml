@@ -193,3 +193,7 @@ verify_jwt = true
 # Chaos Webhook Replay - Admin only, requires JWT and validates admin role internally
 [functions.chaos-webhook-replay]
 verify_jwt = true
+
+# Send Tracking Alert - Internal email notifications (validates CRON_SECRET internally)
+[functions.send-tracking-alert]
+verify_jwt = false

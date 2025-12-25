@@ -313,7 +313,41 @@ serve(async (req) => {
         .eq("day", yesterdayStr)
         .single();
 
-      // Helper to create alert (with dedupe)
+      // Helper to send email notification for alert
+      async function sendAlertEmail(
+        type: string,
+        severity: "warn" | "critical",
+        message: string,
+        context: Record<string, unknown>
+      ) {
+        try {
+          const cronSecret = Deno.env.get("CRON_SECRET");
+          const response = await fetch(`${supabaseUrl}/functions/v1/send-tracking-alert`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-cron-secret": cronSecret || "",
+            },
+            body: JSON.stringify({
+              severity,
+              type,
+              message,
+              day: dayStr,
+              context,
+            }),
+          });
+          
+          if (response.ok) {
+            console.log(`[aggregate-tracking-health] Email notification sent for ${type}`);
+          } else {
+            console.warn(`[aggregate-tracking-health] Email notification failed: ${response.status}`);
+          }
+        } catch (emailError) {
+          console.error(`[aggregate-tracking-health] Email notification error:`, emailError);
+        }
+      }
+
+      // Helper to create alert (with dedupe and email notification)
       async function createAlert(
         type: string,
         severity: "warn" | "critical",
@@ -357,6 +391,9 @@ serve(async (req) => {
         } else {
           console.log(`[aggregate-tracking-health] Created ${severity} alert: ${type}`);
           alertsCreated++;
+          
+          // Send email notification for new alerts
+          await sendAlertEmail(type, severity, message, context);
         }
       }
 
