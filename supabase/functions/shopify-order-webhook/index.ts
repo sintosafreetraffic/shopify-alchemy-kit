@@ -250,7 +250,8 @@ async function insertPendingTrackingRow(
   orderId: string,
   value: number,
   currency: string,
-  attribution: AttributionData
+  attribution: AttributionData,
+  isTest: boolean = false
 ): Promise<boolean> {
   try {
     // Use INSERT ... ON CONFLICT DO NOTHING for idempotency
@@ -270,6 +271,7 @@ async function insertPendingTrackingRow(
         source: 'shopify_webhook',
         render_status: 'pending',
         render_response: null,
+        is_test: isTest,
       })
       .select('id')
       .maybeSingle();
@@ -393,6 +395,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
     // CHAOS: Extract chaos mode from request
     // ========================================================================
     const chaosMode = extractChaosMode(req);
+    
+    // Detect if this is a chaos test (mark orders as test data)
+    const isChaosTest = req.headers.get('x-chaos-source') === 'true' || chaosMode !== null;
+    if (isChaosTest) {
+      console.log("[CHAOS] Request marked as chaos test - orders will be marked as is_test=true");
+    }
     
     // ========================================================================
     // CHAOS C8: DB Unavailable - Simulate complete DB failure
@@ -636,7 +644,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
         orderId,
         orderValue,
         orderCurrency,
-        attribution
+        attribution,
+        isChaosTest // Mark as test if this is a chaos test request
       );
       
       if (!isNewOrder) {
