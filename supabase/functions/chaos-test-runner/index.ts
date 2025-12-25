@@ -109,7 +109,7 @@ Deno.serve(async (req) => {
       case "c7":
         // C7: Timestamp Skew - reconcile-shopify-orders?chaosMode=timestamp_skew
         targetUrl = `${supabaseUrl}/functions/v1/reconcile-shopify-orders?dry_run=${dryRun ? "1" : "0"}&chaosMode=timestamp_skew`;
-        headers = { "CRON_SECRET": cronSecret };
+        headers = { "x-cron-secret": cronSecret };  // Fixed: was "CRON_SECRET", should be "x-cron-secret"
         break;
 
       default:
