@@ -30,77 +30,86 @@ const installPinterestDebugWrapper = () => {
   if ((window as any).__pintrk_debug_installed) return;
   (window as any).__pintrk_debug_installed = true;
   
-  // Create a proxy wrapper that dynamically resolves pintrk on each call
-  // This avoids capturing a reference to the stub before the real script loads
-  const createWrapper = () => {
-    // Check if we already have an original saved
-    if ((window as any).__pintrk_original) return;
+  // FIXED: Use a non-invasive approach that doesn't break Pinterest's upgrade mechanism
+  // Instead of replacing window.pintrk, we use a Proxy-like pattern that intercepts
+  // but allows Pinterest's core.js to function normally
+  
+  const logPinterestCall = (args: any[]) => {
+    const [command, eventName, payload] = args;
+    console.log('[Pinterest Debug]', {
+      command,
+      eventName,
+      payload,
+      url: window.location.href,
+      timestamp: new Date().toISOString(),
+    });
     
-    const currentPintrk = (window as any).pintrk;
-    if (typeof currentPintrk !== "function") return;
-    
-    // Save the current function as original
-    (window as any).__pintrk_original = currentPintrk;
-    
-    // Create wrapper that logs and blocks checkout
-    const wrapper = function (...args: any[]) {
-      const [command, eventName, payload] = args;
-
-      // Log every call for debugging
-      console.log('[Pinterest Debug]', {
-        command,
-        eventName,
-        payload,
-        url: window.location.href,
-        timestamp: new Date().toISOString(),
-      });
-
-      // Block "checkout" event (case-insensitive) - must only come from server
-      if (
-        command === 'track' &&
-        typeof eventName === 'string' &&
-        eventName.toLowerCase() === 'checkout'
-      ) {
-        console.error('[Pinterest] BLOCKED checkout event from Lovable!');
-        console.error(
-          '[Pinterest] This should NEVER happen - checkout events must only come from Shopify.'
-        );
-        console.error(new Error('Pinterest checkout blocked - stack trace:').stack);
-        return; // Do NOT forward to Pinterest
-      }
-
-      // Forward all other calls to original
-      const original = (window as any).__pintrk_original;
-      if (typeof original === 'function') {
-        try {
-          return original.apply(this, args);
-        } catch (err) {
-          console.warn('[Pinterest Debug] Original pintrk threw error:', err);
-        }
-      }
-    };
-
-    // CRITICAL: Preserve the Pinterest stub queue when wrapping.
-    // The async loader stub references `window.pintrk.queue`, so if we replace
-    // `window.pintrk` we must carry over `.queue` to avoid `queue.push` crashes.
-    const originalQueue = (currentPintrk as any).queue;
-    (wrapper as any).queue = Array.isArray(originalQueue) ? originalQueue : [];
-    (wrapper as any).version = (currentPintrk as any).version;
-
-    (window as any).pintrk = wrapper;
-
-    console.log('[Pinterest Debug] Wrapper installed. Monitoring all pintrk calls.');
-    console.log('[Pinterest Debug] Any "checkout" events will be BLOCKED.');
+    // Warn on checkout (should never happen from frontend)
+    if (
+      command === 'track' &&
+      typeof eventName === 'string' &&
+      eventName.toLowerCase() === 'checkout'
+    ) {
+      console.error('[Pinterest] WARNING: checkout event detected from frontend!');
+      console.error('[Pinterest] This should only come from Shopify server-side.');
+      console.error(new Error('Pinterest checkout detected - stack trace:').stack);
+      // Note: We no longer BLOCK - just warn. Blocking was breaking tracking.
+    }
   };
   
-  // Try immediately
-  createWrapper();
+  // Intercept via property descriptor to allow Pinterest upgrades
+  let realPintrk: any = (window as any).pintrk;
   
-  // Also try after a short delay in case Pinterest loads async
-  setTimeout(createWrapper, 100);
-  setTimeout(createWrapper, 500);
-  setTimeout(createWrapper, 1000);
-  setTimeout(createWrapper, 2000);
+  Object.defineProperty(window, 'pintrk', {
+    get() {
+      return realPintrk;
+    },
+    set(newValue) {
+      // Pinterest core.js is upgrading the function - allow it
+      console.log('[Pinterest Debug] pintrk upgraded by Pinterest core.js');
+      realPintrk = newValue;
+    },
+    configurable: true,
+    enumerable: true,
+  });
+  
+  // Wrap calls to log them (without blocking Pinterest's functionality)
+  const originalCall = Function.prototype.call;
+  const originalApply = Function.prototype.apply;
+  
+  // Create a logging wrapper that forwards all calls
+  const createLoggingPintrk = () => {
+    if (typeof realPintrk !== 'function') return;
+    
+    const wrappedPintrk = function(this: any, ...args: any[]) {
+      logPinterestCall(args);
+      return realPintrk.apply(this, args);
+    };
+    
+    // Copy all properties from the real pintrk
+    Object.keys(realPintrk).forEach(key => {
+      (wrappedPintrk as any)[key] = (realPintrk as any)[key];
+    });
+    
+    // Preserve queue reference
+    if (realPintrk.queue) {
+      (wrappedPintrk as any).queue = realPintrk.queue;
+    }
+    if (realPintrk.version) {
+      (wrappedPintrk as any).version = realPintrk.version;
+    }
+    
+    realPintrk = wrappedPintrk;
+  };
+  
+  // Apply logging wrapper now and after Pinterest upgrades
+  createLoggingPintrk();
+  setTimeout(createLoggingPintrk, 500);
+  setTimeout(createLoggingPintrk, 1000);
+  setTimeout(createLoggingPintrk, 2000);
+  
+  console.log('[Pinterest Debug] Debug monitoring installed (non-blocking mode).');
+  console.log('[Pinterest Debug] Checkout events will be WARNED but not blocked.');
 };
 
 // Install on module load (dev only)
