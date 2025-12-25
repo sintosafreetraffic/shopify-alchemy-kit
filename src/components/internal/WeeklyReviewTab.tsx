@@ -43,6 +43,8 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
+import { TrackingThresholdSettings } from "./TrackingThresholdSettings";
+import { AlertHistorySection } from "./AlertHistorySection";
 
 // Types
 interface WeeklyMetrics {
@@ -978,50 +980,16 @@ export default function WeeklyReviewTab() {
         )}
       </Card>
 
+      {/* Threshold Settings */}
+      <TrackingThresholdSettings />
+
       {/* Section C & D: Alerts and Recovery side by side */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Section C: Alert History */}
-        <Card className="p-4">
-          <h3 className="text-lg font-semibold mb-4">Alert History</h3>
-          {errors.alerts ? (
-            <p className="text-sm text-muted-foreground">Data unavailable</p>
-          ) : (
-            <>
-              {/* C1: Summary */}
-              {alertSummary.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-xs text-muted-foreground mb-2">By Type & Severity</p>
-                  <div className="flex flex-wrap gap-2">
-                    {alertSummary.map((a, i) => (
-                      <Badge key={i} variant="outline" className={getSeverityColor(a.severity)}>
-                        {a.type} ({a.severity}): {a.count}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {/* C2: Recent */}
-              <p className="text-xs text-muted-foreground mb-2">Recent (Top 10)</p>
-              {recentAlerts.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No alerts in window</p>
-              ) : (
-                <div className="space-y-2 max-h-48 overflow-y-auto">
-                  {recentAlerts.map((alert) => (
-                    <div key={alert.id} className="text-xs border-b border-border pb-2">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className={getSeverityColor(alert.severity)}>
-                          {alert.severity}
-                        </Badge>
-                        <span className="text-muted-foreground">{formatDate(alert.created_at)}</span>
-                      </div>
-                      <p className="mt-1">{alert.type}: {alert.message}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-        </Card>
+        {/* Section C: Alert History with Status Filtering */}
+        <AlertHistorySection 
+          windowStart={window.windowStart} 
+          windowEnd={window.windowEnd} 
+        />
 
         {/* Section D: Recovery Effectiveness */}
         <Card className="p-4">

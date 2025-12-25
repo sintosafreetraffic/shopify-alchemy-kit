@@ -6,12 +6,39 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cron-secret",
 };
 
-// Thresholds for alerts
-const THRESHOLDS = {
+// Default thresholds (used if not configured in app_settings)
+const DEFAULT_THRESHOLDS = {
   SUCCESS_RATE_MIN: 90, // Alert if below 90%
   DEAD_LETTERS_MAX: 5,  // Alert if more than 5 dead letters in a day
   ERROR_RATE_MAX: 15,   // Alert if error rate exceeds 15%
 };
+
+// Fetch thresholds from app_settings, fallback to defaults
+// deno-lint-ignore no-explicit-any
+async function getThresholds(supabase: any) {
+  try {
+    const { data, error } = await supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "tracking_thresholds")
+      .single();
+
+    if (error || !data) {
+      console.log("[check-tracking-thresholds] Using default thresholds");
+      return DEFAULT_THRESHOLDS;
+    }
+
+    const configuredThresholds = data.value as Record<string, number>;
+    return {
+      SUCCESS_RATE_MIN: configuredThresholds.success_rate_min ?? DEFAULT_THRESHOLDS.SUCCESS_RATE_MIN,
+      DEAD_LETTERS_MAX: configuredThresholds.dead_letters_max ?? DEFAULT_THRESHOLDS.DEAD_LETTERS_MAX,
+      ERROR_RATE_MAX: configuredThresholds.error_rate_max ?? DEFAULT_THRESHOLDS.ERROR_RATE_MAX,
+    };
+  } catch (err) {
+    console.error("[check-tracking-thresholds] Error fetching thresholds:", err);
+    return DEFAULT_THRESHOLDS;
+  }
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -34,6 +61,10 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Load configurable thresholds from app_settings
+    const THRESHOLDS = await getThresholds(supabase);
+    console.log(`[check-tracking-thresholds] Using thresholds:`, THRESHOLDS);
 
     // Get today's date in UTC
     const today = new Date();
