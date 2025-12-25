@@ -49,6 +49,7 @@ interface WeeklyMetrics {
   reconciliationMismatches: number;
   recovered: number;
   deadLetters: number;
+  valueSampled: boolean;
 }
 
 interface TrendData {
@@ -85,6 +86,8 @@ interface RecoveryMetrics {
 interface DedupeMetrics {
   duplicateOrderIds: number;
   duplicateEventIds: number | null;
+  orderIdSampled: boolean;
+  eventIdSampled: boolean;
 }
 
 interface JobMetrics {
@@ -144,10 +147,10 @@ export default function WeeklyReviewTab() {
     let deadLetters = 0;
 
     try {
-      // A1: Purchases tracked
-      const { data: purchaseData, error: purchaseError } = await supabase
+      // A1: Purchases tracked (using head: true for count-only query)
+      const { count: purchaseCount, error: purchaseError } = await supabase
         .from("pinterest_purchase_events")
-        .select("id", { count: "exact" })
+        .select("id", { count: "exact", head: true })
         .eq("is_test", false)
         .gte("created_at", window.windowStart)
         .lt("created_at", window.windowEnd);
@@ -156,16 +159,18 @@ export default function WeeklyReviewTab() {
         console.warn("[WeeklyReview] A1 error:", purchaseError.message);
         newErrors.purchases = true;
       } else {
-        purchasesTracked = purchaseData?.length || 0;
+        purchasesTracked = purchaseCount || 0;
       }
 
-      // A2: Total value by currency
+      // A2: Total value by currency (bounded to 500 rows for performance)
       const { data: valueData, error: valueError } = await supabase
         .from("pinterest_purchase_events")
         .select("value, currency")
         .eq("is_test", false)
         .gte("created_at", window.windowStart)
-        .lt("created_at", window.windowEnd);
+        .lt("created_at", window.windowEnd)
+        .order("created_at", { ascending: false })
+        .limit(500);
 
       if (valueError) {
         console.warn("[WeeklyReview] A2 error:", valueError.message);
@@ -176,6 +181,7 @@ export default function WeeklyReviewTab() {
           totalValueByCurrency[currency] = (totalValueByCurrency[currency] || 0) + Number(row.value || 0);
         });
       }
+      const valueSampled = (valueData?.length || 0) >= 500;
 
       // A3: Avg success rate from tracking_health_daily
       const { data: healthData, error: healthError } = await supabase
@@ -222,10 +228,10 @@ export default function WeeklyReviewTab() {
         }).length;
       }
 
-      // A6: Dead letters
-      const { data: deadLetterData, error: deadLetterError } = await supabase
+      // A6: Dead letters (using head: true for count-only query)
+      const { count: deadLetterCount, error: deadLetterError } = await supabase
         .from("recovery_dead_letters")
-        .select("id", { count: "exact" })
+        .select("id", { count: "exact", head: true })
         .gte("created_at", window.windowStart)
         .lt("created_at", window.windowEnd);
 
@@ -233,7 +239,7 @@ export default function WeeklyReviewTab() {
         console.warn("[WeeklyReview] A6 error:", deadLetterError.message);
         newErrors.deadLetters = true;
       } else {
-        deadLetters = deadLetterData?.length || 0;
+        deadLetters = deadLetterCount || 0;
       }
 
       setMetrics({
@@ -243,6 +249,7 @@ export default function WeeklyReviewTab() {
         reconciliationMismatches,
         recovered,
         deadLetters,
+        valueSampled,
       });
     } catch (err) {
       console.warn("[WeeklyReview] Scorecard fetch error");
@@ -432,15 +439,18 @@ export default function WeeklyReviewTab() {
   // Section E: Dedupe Health
   const fetchDedupe = useCallback(async () => {
     try {
-      // E1: Duplicate order_ids
+      // E1: Duplicate order_ids (bounded to 500 rows for performance)
       const { data: orderData, error: orderError } = await supabase
         .from("pinterest_purchase_events")
         .select("order_id")
         .eq("is_test", false)
         .gte("created_at", window.windowStart)
-        .lt("created_at", window.windowEnd);
+        .lt("created_at", window.windowEnd)
+        .order("created_at", { ascending: false })
+        .limit(500);
 
       let duplicateOrderIds = 0;
+      const orderIdSampled = (orderData?.length || 0) >= 500;
       if (!orderError && orderData) {
         const orderCounts: Record<string, number> = {};
         orderData.forEach((r) => {
@@ -449,15 +459,18 @@ export default function WeeklyReviewTab() {
         duplicateOrderIds = Object.values(orderCounts).filter((c) => c > 1).length;
       }
 
-      // E2: Duplicate event_ids
+      // E2: Duplicate event_ids (bounded to 500 rows for performance)
       let duplicateEventIds: number | null = null;
       const { data: eventData, error: eventError } = await supabase
         .from("pinterest_purchase_events")
         .select("event_id")
         .eq("is_test", false)
         .gte("created_at", window.windowStart)
-        .lt("created_at", window.windowEnd);
+        .lt("created_at", window.windowEnd)
+        .order("created_at", { ascending: false })
+        .limit(500);
 
+      const eventIdSampled = (eventData?.length || 0) >= 500;
       if (!eventError && eventData) {
         const eventCounts: Record<string, number> = {};
         eventData.forEach((r) => {
@@ -468,7 +481,7 @@ export default function WeeklyReviewTab() {
         duplicateEventIds = Object.values(eventCounts).filter((c) => c > 1).length;
       }
 
-      setDedupeMetrics({ duplicateOrderIds, duplicateEventIds });
+      setDedupeMetrics({ duplicateOrderIds, duplicateEventIds, orderIdSampled, eventIdSampled });
     } catch {
       console.warn("[WeeklyReview] Dedupe fetch error");
       setErrors((prev) => ({ ...prev, dedupe: true }));
@@ -645,12 +658,17 @@ export default function WeeklyReviewTab() {
 
         {/* A2: Total Value by Currency */}
         <Card className="p-4">
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
             <DollarSign className="w-4 h-4 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">Value</span>
             {currencyCount > 1 && (
               <Badge variant="outline" className="text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
                 Mixed
+              </Badge>
+            )}
+            {metrics?.valueSampled && (
+              <Badge variant="outline" className="text-xs">
+                Sampled
               </Badge>
             )}
           </div>
@@ -877,12 +895,17 @@ export default function WeeklyReviewTab() {
       {/* Section E: Dedupe Health */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="p-4">
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
             <Copy className="w-4 h-4 text-muted-foreground" />
             <span className="text-sm font-medium">Duplicate Order IDs</span>
             {dedupeMetrics && dedupeMetrics.duplicateOrderIds > 0 && (
               <Badge variant="destructive" className="text-xs">
                 {dedupeMetrics.duplicateOrderIds} duplicates
+              </Badge>
+            )}
+            {dedupeMetrics?.orderIdSampled && (
+              <Badge variant="outline" className="text-xs">
+                Sampled
               </Badge>
             )}
           </div>
@@ -896,12 +919,17 @@ export default function WeeklyReviewTab() {
         </Card>
 
         <Card className="p-4">
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
             <Copy className="w-4 h-4 text-muted-foreground" />
             <span className="text-sm font-medium">Duplicate Event IDs</span>
             {dedupeMetrics && dedupeMetrics.duplicateEventIds != null && dedupeMetrics.duplicateEventIds > 0 && (
               <Badge variant="destructive" className="text-xs">
                 {dedupeMetrics.duplicateEventIds} duplicates
+              </Badge>
+            )}
+            {dedupeMetrics?.eventIdSampled && (
+              <Badge variant="outline" className="text-xs">
+                Sampled
               </Badge>
             )}
           </div>
