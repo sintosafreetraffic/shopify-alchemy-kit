@@ -74,6 +74,7 @@ import {
 import ContextTab from "@/components/internal/ContextTab";
 import PhasesTab from "@/components/internal/PhasesTab";
 import ProductionMonitoringTab from "@/components/internal/ProductionMonitoringTab";
+import WeeklyReviewTab from "@/components/internal/WeeklyReviewTab";
 
 interface AnalyticsStats {
   summary: {
@@ -650,7 +651,7 @@ const QuizRevealTracking = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full max-w-5xl grid-cols-7">
+          <TabsList className="grid w-full max-w-6xl grid-cols-8">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
               <span className="hidden sm:inline">Overview</span>
@@ -679,6 +680,10 @@ const QuizRevealTracking = () => {
               <Zap className="w-4 h-4" />
               <span className="hidden sm:inline">Chaos</span>
             </TabsTrigger>
+            <TabsTrigger value="weekly" className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              <span className="hidden sm:inline">Weekly</span>
+            </TabsTrigger>
           </TabsList>
 
           {/* Phase 4 Production Monitoring Tab */}
@@ -686,6 +691,10 @@ const QuizRevealTracking = () => {
             <ProductionMonitoringTab />
           </TabsContent>
 
+          {/* Phase 4.1 Weekly Review Tab */}
+          <TabsContent value="weekly" className="mt-6">
+            <WeeklyReviewTab />
+          </TabsContent>
           {/* Overview Tab - Key Funnel Metrics */}
           <TabsContent value="overview" className="space-y-6 mt-6">
             {/* Period Indicator */}
