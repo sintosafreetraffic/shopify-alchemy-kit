@@ -1,9 +1,10 @@
 /**
  * Phase 4 Production Monitoring Tab
  * Real-time health metrics, alert history, and quick actions for incident response
+ * Now with live WebSocket subscription for real-time purchase events
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +36,7 @@ import {
   DollarSign,
   Package,
   AlertCircle,
+  Radio,
 } from "lucide-react";
 import { 
   LineChart, 
@@ -91,6 +93,16 @@ interface Alert {
   created_at: string;
   day: string;
   acknowledged_at: string | null;
+}
+
+interface LiveEvent {
+  id: string;
+  order_id: string;
+  render_status: string;
+  value: number;
+  currency: string;
+  is_test: boolean;
+  created_at: string;
 }
 
 const StatusIndicator = ({ status }: { status: 'healthy' | 'warning' | 'error' | 'unknown' }) => {
@@ -203,6 +215,8 @@ export const ProductionMonitoringTab = () => {
   const [metrics, setMetrics] = useState<HealthMetrics | null>(null);
   const [trends, setTrends] = useState<HealthTrend[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [liveEvents, setLiveEvents] = useState<LiveEvent[]>([]);
+  const [isLiveConnected, setIsLiveConnected] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
@@ -361,6 +375,46 @@ export const ProductionMonitoringTab = () => {
     fetchHealthData();
   }, [fetchHealthData]);
 
+  // Real-time subscription for live purchase events
+  useEffect(() => {
+    console.log('[ProductionMonitoringTab] Setting up real-time subscription');
+    
+    const channel = supabase
+      .channel('live-purchase-events')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'pinterest_purchase_events',
+        },
+        (payload) => {
+          console.log('[ProductionMonitoringTab] New purchase event:', payload);
+          const newEvent = payload.new as LiveEvent;
+          
+          // Add to live events (keep max 10)
+          setLiveEvents(prev => {
+            const updated = [newEvent, ...prev].slice(0, 10);
+            return updated;
+          });
+          
+          // Refresh metrics when new events come in (if not test)
+          if (!newEvent.is_test) {
+            fetchHealthData();
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('[ProductionMonitoringTab] Subscription status:', status);
+        setIsLiveConnected(status === 'SUBSCRIBED');
+      });
+
+    return () => {
+      console.log('[ProductionMonitoringTab] Cleaning up subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [fetchHealthData]);
+
   // Auto-refresh every 30 seconds
   useEffect(() => {
     if (!autoRefresh) return;
@@ -410,6 +464,12 @@ export const ProductionMonitoringTab = () => {
             <h2 className="text-xl font-semibold">Phase 4: Production Monitoring</h2>
             <div className="flex items-center gap-3 mt-1">
               <StatusIndicator status={overallStatus} />
+              {isLiveConnected && (
+                <div className="flex items-center gap-1.5 text-xs text-emerald-600">
+                  <Radio className="w-3 h-3 animate-pulse" />
+                  <span>Live</span>
+                </div>
+              )}
               <span className="text-xs text-muted-foreground">
                 Last updated: {lastRefresh.toLocaleTimeString()}
               </span>
@@ -646,6 +706,87 @@ export const ProductionMonitoringTab = () => {
                   onAcknowledge={acknowledgeAlert}
                 />
               ))}
+            </div>
+          </ScrollArea>
+        )}
+      </Card>
+
+      {/* Live Events Feed */}
+      <Card className="p-5 border-blue-500/30 bg-blue-500/5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Radio className={`w-5 h-5 ${isLiveConnected ? 'text-emerald-500 animate-pulse' : 'text-muted-foreground'}`} />
+            <h3 className="font-semibold">Live Events Feed</h3>
+            <Badge variant={isLiveConnected ? 'default' : 'secondary'} className="ml-2">
+              {isLiveConnected ? 'Connected' : 'Connecting...'}
+            </Badge>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setLiveEvents([])}
+            disabled={liveEvents.length === 0}
+          >
+            Clear
+          </Button>
+        </div>
+        
+        {liveEvents.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+            <Radio className="w-10 h-10 mb-3 opacity-30" />
+            <p className="text-sm">Waiting for new purchase events...</p>
+            <p className="text-xs mt-1">Events will appear here in real-time</p>
+          </div>
+        ) : (
+          <ScrollArea className="h-48">
+            <div className="space-y-2">
+              {liveEvents.map((event) => {
+                const isSuccess = event.render_status?.includes('success');
+                const isError = event.render_status?.includes('error') || event.render_status?.includes('fail');
+                
+                return (
+                  <div 
+                    key={event.id} 
+                    className={`p-3 rounded-lg flex items-center justify-between ${
+                      event.is_test 
+                        ? 'bg-amber-100/50 dark:bg-amber-900/20 border border-amber-300/50' 
+                        : isSuccess 
+                          ? 'bg-emerald-100 dark:bg-emerald-900/30' 
+                          : isError 
+                            ? 'bg-red-100 dark:bg-red-900/30'
+                            : 'bg-muted/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      {isSuccess ? (
+                        <CheckCircle className="w-4 h-4 text-emerald-600" />
+                      ) : isError ? (
+                        <XCircle className="w-4 h-4 text-red-600" />
+                      ) : (
+                        <Clock className="w-4 h-4 text-muted-foreground" />
+                      )}
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">Order #{event.order_id?.slice(-8)}</span>
+                          {event.is_test && (
+                            <Badge variant="outline" className="text-xs bg-amber-100 text-amber-700 border-amber-300">
+                              TEST
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {event.render_status} • {new Date(event.created_at).toLocaleTimeString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-semibold">
+                        €{(event.value || 0).toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </ScrollArea>
         )}
