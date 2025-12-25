@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { requireCronSecret } from "../_shared/cronAuth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,10 +9,24 @@ const corsHeaders = {
 
 // Default thresholds (used if not configured in app_settings)
 const DEFAULT_THRESHOLDS = {
-  SUCCESS_RATE_MIN: 90, // Alert if below 90%
-  DEAD_LETTERS_MAX: 5,  // Alert if more than 5 dead letters in a day
-  ERROR_RATE_MAX: 15,   // Alert if error rate exceeds 15%
+  SUCCESS_RATE_MIN: 90,
+  DEAD_LETTERS_MAX: 5,
+  ERROR_RATE_MAX: 15,
 };
+
+// Severity ranking for escalation (never downgrade)
+const SEVERITY_RANK: Record<string, number> = {
+  info: 1,
+  warn: 2,
+  critical: 3,
+};
+
+function maxSeverity(a: string, b: string): "info" | "warn" | "critical" {
+  const rankA = SEVERITY_RANK[a] || 1;
+  const rankB = SEVERITY_RANK[b] || 1;
+  if (rankA >= rankB) return a as "info" | "warn" | "critical";
+  return b as "info" | "warn" | "critical";
+}
 
 // Fetch thresholds from app_settings, fallback to defaults
 // deno-lint-ignore no-explicit-any
@@ -40,39 +55,104 @@ async function getThresholds(supabase: any) {
   }
 }
 
+// Upsert alert: insert if not exists, update if exists (idempotent)
+// deno-lint-ignore no-explicit-any
+async function upsertAlert(
+  supabase: any,
+  alert: {
+    type: string;
+    severity: "info" | "warn" | "critical";
+    message: string;
+    day: string;
+    context: Record<string, unknown>;
+  }
+): Promise<"insert" | "update" | "error"> {
+  try {
+    // Check if alert already exists for this (day, type)
+    const { data: existing, error: selectError } = await supabase
+      .from("tracking_alerts")
+      .select("id, severity, status")
+      .eq("day", alert.day)
+      .eq("type", alert.type)
+      .limit(1)
+      .maybeSingle();
+
+    if (selectError) {
+      console.error(`[check-tracking-thresholds] Error checking existing alert:`, selectError);
+      return "error";
+    }
+
+    if (existing) {
+      // UPDATE existing - escalate severity but preserve status/acknowledged_at
+      const newSeverity = maxSeverity(existing.severity, alert.severity);
+      
+      const { error: updateError } = await supabase
+        .from("tracking_alerts")
+        .update({
+          message: alert.message,
+          context: alert.context,
+          severity: newSeverity,
+        })
+        .eq("id", existing.id);
+
+      if (updateError) {
+        console.error(`[check-tracking-thresholds] Error updating alert:`, updateError);
+        return "error";
+      }
+
+      console.log(`[check-tracking-thresholds] upsert day=${alert.day} type=${alert.type} action=update severity=${newSeverity}`);
+      return "update";
+    } else {
+      // INSERT new alert
+      const { error: insertError } = await supabase
+        .from("tracking_alerts")
+        .insert({
+          type: alert.type,
+          severity: alert.severity,
+          message: alert.message,
+          day: alert.day,
+          context: alert.context,
+        });
+
+      if (insertError) {
+        console.error(`[check-tracking-thresholds] Error inserting alert:`, insertError);
+        return "error";
+      }
+
+      console.log(`[check-tracking-thresholds] upsert day=${alert.day} type=${alert.type} action=insert severity=${alert.severity}`);
+      return "insert";
+    }
+  } catch (err) {
+    console.error(`[check-tracking-thresholds] Upsert error:`, err);
+    return "error";
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
-  try {
-    // Verify cron secret for security
-    const cronSecret = req.headers.get("x-cron-secret");
-    const expectedSecret = Deno.env.get("CRON_SECRET");
-    
-    if (!cronSecret || cronSecret !== expectedSecret) {
-      console.error("[check-tracking-thresholds] Invalid or missing x-cron-secret");
-      return new Response(
-        JSON.stringify({ success: false, error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+  // Centralized cron auth
+  const authError = requireCronSecret(req);
+  if (authError) return authError;
 
+  try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Load configurable thresholds from app_settings
+    // Load configurable thresholds
     const THRESHOLDS = await getThresholds(supabase);
-    console.log(`[check-tracking-thresholds] Using thresholds:`, THRESHOLDS);
 
-    // Get today's date in UTC
+    // Get yesterday's date in UTC
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
     const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
     const yesterdayStr = yesterday.toISOString().split('T')[0];
 
-    console.log(`[check-tracking-thresholds] Checking thresholds for ${yesterdayStr}`);
+    // Structured logging: start of run
+    console.log(`[check-tracking-thresholds] day=${yesterdayStr} thresholds_loaded=true thresholds=${JSON.stringify(THRESHOLDS)}`);
 
     const alerts: Array<{
       severity: "info" | "warn" | "critical";
@@ -86,9 +166,9 @@ serve(async (req) => {
       .from("tracking_health_daily")
       .select("*")
       .eq("day", yesterdayStr)
-      .single();
+      .maybeSingle();
 
-    if (healthError && healthError.code !== "PGRST116") {
+    if (healthError) {
       console.error("[check-tracking-thresholds] Error fetching health data:", healthError);
     }
 
@@ -109,6 +189,7 @@ serve(async (req) => {
             orders_seen: healthData.orders_seen,
             error_count: healthData.error_count,
             threshold: THRESHOLDS.SUCCESS_RATE_MIN,
+            day: yesterdayStr,
           },
         });
       }
@@ -124,12 +205,13 @@ serve(async (req) => {
             error_count: healthData.error_count,
             orders_seen: healthData.orders_seen,
             threshold: THRESHOLDS.ERROR_RATE_MAX,
+            day: yesterdayStr,
           },
         });
       }
     }
 
-    // Check dead letters count for yesterday
+    // Check dead letters count for yesterday (runs even if healthData missing)
     const startOfYesterday = `${yesterdayStr}T00:00:00Z`;
     const endOfYesterday = `${todayStr}T00:00:00Z`;
 
@@ -144,60 +226,65 @@ serve(async (req) => {
     }
 
     const deadLetters = deadLettersCount || 0;
+    console.log(`[check-tracking-thresholds] day=${yesterdayStr} deadLetters=${deadLetters}`);
+
     if (deadLetters > THRESHOLDS.DEAD_LETTERS_MAX) {
+      // Severity: critical if >= 2x threshold
+      const severity = deadLetters >= THRESHOLDS.DEAD_LETTERS_MAX * 2 ? "critical" : "warn";
       alerts.push({
-        severity: deadLetters > 10 ? "critical" : "warn",
+        severity,
         type: "dead_letters_spike",
         message: `Dead letters spiked to ${deadLetters} (threshold: ${THRESHOLDS.DEAD_LETTERS_MAX}). These orders failed all recovery attempts.`,
         context: {
           dead_letters_count: deadLetters,
           threshold: THRESHOLDS.DEAD_LETTERS_MAX,
+          day: yesterdayStr,
         },
       });
     }
 
-    console.log(`[check-tracking-thresholds] Found ${alerts.length} threshold breaches`);
+    // Structured logging: after evaluation
+    console.log(`[check-tracking-thresholds] day=${yesterdayStr} alerts_generated=${alerts.length}`);
 
-    // Send alerts if any thresholds were breached
-    const sentAlerts: string[] = [];
+    // Upsert alerts (idempotent) and optionally send notifications
+    const upsertResults: string[] = [];
+    const expectedSecret = Deno.env.get("CRON_SECRET");
+
     for (const alert of alerts) {
-      try {
-        // Call send-tracking-alert edge function
-        const alertResponse = await fetch(
-          `${supabaseUrl}/functions/v1/send-tracking-alert`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-cron-secret": expectedSecret,
-            },
-            body: JSON.stringify({
-              severity: alert.severity,
-              type: alert.type,
-              message: alert.message,
-              day: yesterdayStr,
-              context: alert.context,
-            }),
+      // Upsert to tracking_alerts table (idempotent)
+      const action = await upsertAlert(supabase, {
+        ...alert,
+        day: yesterdayStr,
+      });
+      upsertResults.push(`${alert.type}:${action}`);
+
+      // Only send notification on INSERT (not on update to avoid spam)
+      if (action === "insert") {
+        try {
+          const alertResponse = await fetch(
+            `${supabaseUrl}/functions/v1/send-tracking-alert`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-cron-secret": expectedSecret || "",
+              },
+              body: JSON.stringify({
+                severity: alert.severity,
+                type: alert.type,
+                message: alert.message,
+                day: yesterdayStr,
+                context: alert.context,
+              }),
+            }
+          );
+
+          if (!alertResponse.ok) {
+            console.error(`[check-tracking-thresholds] Failed to send ${alert.type} notification:`, await alertResponse.text());
           }
-        );
-
-        if (alertResponse.ok) {
-          sentAlerts.push(alert.type);
-          console.log(`[check-tracking-thresholds] Sent ${alert.type} alert`);
-
-          // Also insert into tracking_alerts table for history
-          await supabase.from("tracking_alerts").insert({
-            type: alert.type,
-            severity: alert.severity,
-            message: alert.message,
-            day: yesterdayStr,
-            context: alert.context,
-          });
-        } else {
-          console.error(`[check-tracking-thresholds] Failed to send ${alert.type} alert:`, await alertResponse.text());
+        } catch (err) {
+          console.error(`[check-tracking-thresholds] Error sending ${alert.type} notification:`, err);
         }
-      } catch (err) {
-        console.error(`[check-tracking-thresholds] Error sending ${alert.type} alert:`, err);
       }
     }
 
@@ -206,8 +293,8 @@ serve(async (req) => {
         success: true,
         date_checked: yesterdayStr,
         thresholds: THRESHOLDS,
-        breaches_found: alerts.length,
-        alerts_sent: sentAlerts,
+        alerts_generated: alerts.length,
+        upsert_results: upsertResults,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

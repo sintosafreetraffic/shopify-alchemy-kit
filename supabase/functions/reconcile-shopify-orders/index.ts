@@ -15,6 +15,7 @@
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireCronSecret } from "../_shared/cronAuth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -39,19 +40,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  try {
-    // Validate CRON_SECRET
-    const cronSecret = Deno.env.get('CRON_SECRET');
-    const providedSecret = req.headers.get('x-cron-secret');
-    
-    if (!cronSecret || providedSecret !== cronSecret) {
-      console.error('[Reconcile] Invalid or missing CRON_SECRET');
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+  // Centralized cron auth
+  const authError = requireCronSecret(req);
+  if (authError) return authError;
 
+  try {
     // Check for dry_run mode and chaos mode
     const url = new URL(req.url);
     const dryRun = url.searchParams.get('dry_run') === '1';
