@@ -135,7 +135,16 @@ interface ChaosTestResult {
 
 interface ChaosTestState {
   running: string | null;
+  runningAll: boolean;
   results: Record<string, ChaosTestResult>;
+}
+
+interface AllTestsSummary {
+  passed: number;
+  failed: number;
+  total: number;
+  totalDuration: number;
+  completed: boolean;
 }
 
 const PHASE0_STORAGE_KEY = 'phases_checklist_state';
@@ -231,9 +240,11 @@ export const PhasesTab = () => {
   // Chaos testing state
   const [chaosState, setChaosState] = useState<ChaosTestState>({
     running: null,
+    runningAll: false,
     results: {},
   });
   const [dryRunMode, setDryRunMode] = useState(true);
+  const [allTestsSummary, setAllTestsSummary] = useState<AllTestsSummary | null>(null);
 
   const updateChecklist = (key: keyof Phase0ChecklistState, value: boolean) => {
     const newState = { ...checklist, [key]: value };
@@ -266,6 +277,7 @@ export const PhasesTab = () => {
       const result = await response.json();
       
       setChaosState(prev => ({
+        ...prev,
         running: null,
         results: {
           ...prev.results,
@@ -281,6 +293,7 @@ export const PhasesTab = () => {
       }));
     } catch (err) {
       setChaosState(prev => ({
+        ...prev,
         running: null,
         results: {
           ...prev.results,
@@ -323,6 +336,7 @@ export const PhasesTab = () => {
       const result = await response.json();
       
       setChaosState(prev => ({
+        ...prev,
         running: null,
         results: {
           ...prev.results,
@@ -338,6 +352,7 @@ export const PhasesTab = () => {
       }));
     } catch (err) {
       setChaosState(prev => ({
+        ...prev,
         running: null,
         results: {
           ...prev.results,
@@ -352,6 +367,108 @@ export const PhasesTab = () => {
         },
       }));
     }
+  };
+
+  // Run all chaos tests sequentially
+  const runAllChaosTests = async () => {
+    setChaosState({ running: null, runningAll: true, results: {} });
+    setAllTestsSummary(null);
+    
+    const allTests: Array<{ id: string; type: 'cron' | 'webhook' }> = [
+      { id: 'c1', type: 'webhook' },
+      { id: 'c2', type: 'webhook' },
+      { id: 'c3', type: 'webhook' },
+      { id: 'c4', type: 'cron' },
+      { id: 'c5', type: 'cron' },
+      { id: 'c6', type: 'webhook' },
+      { id: 'c7', type: 'cron' },
+      { id: 'c8', type: 'webhook' },
+      { id: 'c9', type: 'webhook' },
+    ];
+    
+    const startTime = Date.now();
+    let passed = 0;
+    let failed = 0;
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
+      
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      
+      for (const test of allTests) {
+        setChaosState(prev => ({ ...prev, running: test.id }));
+        
+        try {
+          const endpoint = test.type === 'cron' ? 'chaos-test-runner' : 'chaos-webhook-replay';
+          const response = await fetch(
+            `${supabaseUrl}/functions/v1/${endpoint}?test=${test.id}&dry_run=${dryRunMode ? '1' : '0'}`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`,
+                'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+              },
+            }
+          );
+          
+          const result = await response.json();
+          const testResult: ChaosTestResult = response.ok ? result : {
+            test: test.id.toUpperCase(),
+            success: false,
+            dry_run: dryRunMode,
+            error: result.error || `HTTP ${response.status}`,
+            response: result,
+            duration_ms: 0,
+          };
+          
+          if (testResult.success) {
+            passed++;
+          } else {
+            failed++;
+          }
+          
+          setChaosState(prev => ({
+            ...prev,
+            results: {
+              ...prev.results,
+              [test.id]: testResult,
+            },
+          }));
+        } catch (err) {
+          failed++;
+          setChaosState(prev => ({
+            ...prev,
+            results: {
+              ...prev.results,
+              [test.id]: {
+                test: test.id.toUpperCase(),
+                success: false,
+                dry_run: dryRunMode,
+                error: err instanceof Error ? err.message : 'Unknown error',
+                response: null,
+                duration_ms: 0,
+              },
+            },
+          }));
+        }
+      }
+    } catch (err) {
+      console.error('Run all tests error:', err);
+    }
+    
+    const totalDuration = Date.now() - startTime;
+    setChaosState(prev => ({ ...prev, running: null, runningAll: false }));
+    setAllTestsSummary({
+      passed,
+      failed,
+      total: allTests.length,
+      totalDuration,
+      completed: true,
+    });
   };
 
   const fetchData = useCallback(async () => {
@@ -825,6 +942,71 @@ export const PhasesTab = () => {
           )}
         </div>
 
+        {/* Run All Tests Button */}
+        <div className="mb-4">
+          <Button
+            variant="default"
+            size="lg"
+            className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+            disabled={chaosState.running !== null || chaosState.runningAll}
+            onClick={runAllChaosTests}
+          >
+            {chaosState.runningAll ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Running All Tests... ({Object.keys(chaosState.results).length}/9)
+              </>
+            ) : (
+              <>
+                <Zap className="w-4 h-4 mr-2" />
+                Run All 9 Tests
+              </>
+            )}
+          </Button>
+        </div>
+
+        {/* Summary Report */}
+        {allTestsSummary?.completed && (
+          <div className={`mb-4 p-4 rounded-lg border-2 ${
+            allTestsSummary.failed === 0 
+              ? 'border-emerald-300 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950' 
+              : 'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950'
+          }`}>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-semibold flex items-center gap-2">
+                {allTestsSummary.failed === 0 ? (
+                  <CheckCircle className="w-5 h-5 text-emerald-600" />
+                ) : (
+                  <XCircle className="w-5 h-5 text-red-600" />
+                )}
+                Test Suite {allTestsSummary.failed === 0 ? 'Passed' : 'Failed'}
+              </h4>
+              <span className="text-sm text-muted-foreground">
+                {(allTestsSummary.totalDuration / 1000).toFixed(1)}s total
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="bg-background/50 rounded-lg p-3">
+                <p className="text-2xl font-bold text-emerald-600">{allTestsSummary.passed}</p>
+                <p className="text-xs text-muted-foreground">Passed</p>
+              </div>
+              <div className="bg-background/50 rounded-lg p-3">
+                <p className="text-2xl font-bold text-red-600">{allTestsSummary.failed}</p>
+                <p className="text-xs text-muted-foreground">Failed</p>
+              </div>
+              <div className="bg-background/50 rounded-lg p-3">
+                <p className="text-2xl font-bold">{allTestsSummary.total}</p>
+                <p className="text-xs text-muted-foreground">Total</p>
+              </div>
+            </div>
+            {allTestsSummary.failed === 0 && (
+              <p className="text-sm text-emerald-700 dark:text-emerald-400 mt-3 text-center">
+                🎉 All chaos tests passed! System is production-ready.
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Test Buttons */}
         <div className="grid md:grid-cols-3 gap-3 mb-4">
           {[
@@ -841,7 +1023,7 @@ export const PhasesTab = () => {
                   variant="outline"
                   size="sm"
                   className="w-full mb-2"
-                  disabled={chaosState.running !== null}
+                  disabled={chaosState.running !== null || chaosState.runningAll}
                   onClick={() => runChaosTest(id)}
                 >
                   {isRunning ? (
@@ -894,7 +1076,7 @@ export const PhasesTab = () => {
                   variant="outline"
                   size="sm"
                   className="w-full mb-2"
-                  disabled={chaosState.running !== null}
+                  disabled={chaosState.running !== null || chaosState.runningAll}
                   onClick={() => runWebhookChaosTest(id)}
                 >
                   {isRunning ? (
