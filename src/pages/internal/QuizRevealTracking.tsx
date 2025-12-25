@@ -71,6 +71,7 @@ import {
   EventLogEntry,
 } from "@/lib/analyticsRegistry";
 import ContextTab from "@/components/internal/ContextTab";
+import PhasesTab from "@/components/internal/PhasesTab";
 
 interface AnalyticsStats {
   summary: {
@@ -646,7 +647,7 @@ const QuizRevealTracking = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full max-w-3xl grid-cols-5">
+          <TabsList className="grid w-full max-w-4xl grid-cols-6">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
               Overview
@@ -666,6 +667,10 @@ const QuizRevealTracking = () => {
             <TabsTrigger value="tracking" className="flex items-center gap-2">
               <Activity className="w-4 h-4" />
               Tracking
+            </TabsTrigger>
+            <TabsTrigger value="phases" className="flex items-center gap-2">
+              <Zap className="w-4 h-4" />
+              Phases
             </TabsTrigger>
           </TabsList>
 
@@ -2108,6 +2113,11 @@ const QuizRevealTracking = () => {
                 </div>
               </div>
             </Card>
+          </TabsContent>
+
+          {/* Phases Tab - Phase 0-3.5 Visibility (ADDITIVE) */}
+          <TabsContent value="phases">
+            <PhasesTab />
           </TabsContent>
         </Tabs>
       </div>
