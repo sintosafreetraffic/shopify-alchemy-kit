@@ -214,6 +214,8 @@ function safePintrk(
   }
 }
 
+export { safePintrk };
+
 // Initialize polling on module load (catches script load event)
 if (typeof window !== 'undefined') {
   // Start polling immediately to catch when Pinterest becomes ready
