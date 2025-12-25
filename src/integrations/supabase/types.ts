@@ -747,6 +747,7 @@ export type Database = {
           epik: string | null
           event_id: string | null
           id: string
+          is_test: boolean
           landing_page: string | null
           order_id: string
           render_response: Json | null
@@ -766,6 +767,7 @@ export type Database = {
           epik?: string | null
           event_id?: string | null
           id?: string
+          is_test?: boolean
           landing_page?: string | null
           order_id: string
           render_response?: Json | null
@@ -785,6 +787,7 @@ export type Database = {
           epik?: string | null
           event_id?: string | null
           id?: string
+          is_test?: boolean
           landing_page?: string | null
           order_id?: string
           render_response?: Json | null

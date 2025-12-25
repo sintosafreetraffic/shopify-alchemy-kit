@@ -93,24 +93,30 @@ Deno.serve(async (req) => {
     let targetUrl: string;
     let headers: Record<string, string>;
 
+    // Base headers for all chaos tests - ALWAYS include x-chaos-source
+    const baseHeaders: Record<string, string> = {
+      "x-cron-secret": cronSecret,
+      "x-chaos-source": "true", // Marks all resulting orders as test data
+    };
+
     switch (testType) {
       case "c4":
         // C4: Retry Exhaustion - recover-missing-purchases?chaos=always_fail
         targetUrl = `${supabaseUrl}/functions/v1/recover-missing-purchases?dry_run=${dryRun ? "1" : "0"}&chaos=always_fail`;
-        headers = { "x-cron-secret": cronSecret };
+        headers = { ...baseHeaders };
         break;
 
       case "c5":
         // C5: Rate Limit - recover-missing-purchases?chaos=rate_limit
         targetUrl = `${supabaseUrl}/functions/v1/recover-missing-purchases?dry_run=${dryRun ? "1" : "0"}&chaos=rate_limit`;
-        headers = { "x-cron-secret": cronSecret };
+        headers = { ...baseHeaders };
         break;
 
       case "c7":
         // C7: Timestamp Skew - reconcile-shopify-orders (some deployments expect CRON_SECRET header name)
         targetUrl = `${supabaseUrl}/functions/v1/reconcile-shopify-orders?dry_run=${dryRun ? "1" : "0"}&chaos=timestamp_skew`;
         headers = {
-          "x-cron-secret": cronSecret,
+          ...baseHeaders,
           "CRON_SECRET": cronSecret,
           "x-chaos-mode": "timestamp_skew",
         };
