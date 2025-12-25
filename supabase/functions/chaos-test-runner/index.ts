@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`[ChaosRunner] Admin ${user.email} running test ${testType}, dry_run=${dryRun}`);
+    console.log(`[ChaosRunner] Admin running test ${testType}, dry_run=${dryRun}`);
 
     let targetUrl: string;
     let headers: Record<string, string>;
@@ -107,9 +107,13 @@ Deno.serve(async (req) => {
         break;
 
       case "c7":
-        // C7: Timestamp Skew - reconcile-shopify-orders?chaosMode=timestamp_skew
-        targetUrl = `${supabaseUrl}/functions/v1/reconcile-shopify-orders?dry_run=${dryRun ? "1" : "0"}&chaosMode=timestamp_skew`;
-        headers = { "x-cron-secret": cronSecret };  // Fixed: was "CRON_SECRET", should be "x-cron-secret"
+        // C7: Timestamp Skew - reconcile-shopify-orders (some deployments expect CRON_SECRET header name)
+        targetUrl = `${supabaseUrl}/functions/v1/reconcile-shopify-orders?dry_run=${dryRun ? "1" : "0"}&chaos=timestamp_skew`;
+        headers = {
+          "x-cron-secret": cronSecret,
+          "CRON_SECRET": cronSecret,
+          "x-chaos-mode": "timestamp_skew",
+        };
         break;
 
       default:
