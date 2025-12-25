@@ -803,7 +803,7 @@ export const ProductionMonitoringTab = () => {
           <Button 
             variant="outline" 
             className="h-auto py-3 flex flex-col items-center gap-2"
-            onClick={() => window.open('https://ads.pinterest.com/analytics', '_blank')}
+            onClick={() => window.open('https://ads.pinterest.com', '_blank')}
           >
             <ExternalLink className="w-5 h-5" />
             <span className="text-xs">Pinterest Ads</span>

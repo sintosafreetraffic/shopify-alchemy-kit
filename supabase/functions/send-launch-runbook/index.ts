@@ -140,7 +140,7 @@ serve(async (req) => {
         </div>
         <div class="status-item">
           <strong>📌 Pinterest Ads</strong><br>
-          <a href="https://ads.pinterest.com/analytics">ads.pinterest.com</a>
+          <a href="https://ads.pinterest.com">ads.pinterest.com</a>
         </div>
       </div>
     </div>
