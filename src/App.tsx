@@ -43,33 +43,35 @@ const installPinterestDebugWrapper = () => {
     (window as any).__pintrk_original = currentPintrk;
     
     // Create wrapper that logs and blocks checkout
-    (window as any).pintrk = function(...args: any[]) {
+    const wrapper = function (...args: any[]) {
       const [command, eventName, payload] = args;
-      
+
       // Log every call for debugging
       console.log('[Pinterest Debug]', {
         command,
         eventName,
         payload,
         url: window.location.href,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
-      
+
       // Block "checkout" event (case-insensitive) - must only come from server
       if (
-        command === 'track' && 
-        typeof eventName === 'string' && 
+        command === 'track' &&
+        typeof eventName === 'string' &&
         eventName.toLowerCase() === 'checkout'
       ) {
         console.error('[Pinterest] BLOCKED checkout event from Lovable!');
-        console.error('[Pinterest] This should NEVER happen - checkout events must only come from Shopify.');
+        console.error(
+          '[Pinterest] This should NEVER happen - checkout events must only come from Shopify.'
+        );
         console.error(new Error('Pinterest checkout blocked - stack trace:').stack);
         return; // Do NOT forward to Pinterest
       }
-      
+
       // Forward all other calls to original
       const original = (window as any).__pintrk_original;
-      if (typeof original === "function") {
+      if (typeof original === 'function') {
         try {
           return original.apply(this, args);
         } catch (err) {
@@ -77,7 +79,16 @@ const installPinterestDebugWrapper = () => {
         }
       }
     };
-    
+
+    // CRITICAL: Preserve the Pinterest stub queue when wrapping.
+    // The async loader stub references `window.pintrk.queue`, so if we replace
+    // `window.pintrk` we must carry over `.queue` to avoid `queue.push` crashes.
+    const originalQueue = (currentPintrk as any).queue;
+    (wrapper as any).queue = Array.isArray(originalQueue) ? originalQueue : [];
+    (wrapper as any).version = (currentPintrk as any).version;
+
+    (window as any).pintrk = wrapper;
+
     console.log('[Pinterest Debug] Wrapper installed. Monitoring all pintrk calls.');
     console.log('[Pinterest Debug] Any "checkout" events will be BLOCKED.');
   };
@@ -92,9 +103,12 @@ const installPinterestDebugWrapper = () => {
   setTimeout(createWrapper, 2000);
 };
 
-// Install on module load
-installPinterestDebugWrapper();
-
+// Install on module load (dev only)
+// NOTE: This wrapper must never affect production tracking reliability.
+// Enable via: localStorage.setItem('DEBUG_TRACKING', '1')
+if (typeof window !== "undefined" && localStorage.getItem("DEBUG_TRACKING") === "1") {
+  installPinterestDebugWrapper();
+}
 // Eagerly loaded pages (core shopping experience)
 import Home from "./pages/Home";
 import ErgonomicPillowProduct from "./pages/ErgonomicPillowProduct";

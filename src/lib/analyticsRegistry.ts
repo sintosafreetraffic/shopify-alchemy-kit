@@ -12,6 +12,7 @@ import { isTrackingAllowed, onConsentChange, getConsentStatus } from './consent'
 import { captureAttribution, hasAttributionParams } from './attribution';
 import { captureContext, captureContextOnConsentChange } from './contextTracking';
 import { supabase } from '@/integrations/supabase/client';
+import { safePintrk as pinterestSafePintrk } from './pinterest';
 
 // ============================================================================
 // TYPES - Exported for AnalyticsDiagnostics.tsx
@@ -273,14 +274,16 @@ export function trackPageView(route: string): void {
     }
     
     // Pinterest - track SPA navigation (consent-gated)
-    if (isPinterestReady() && isTrackingAllowed()) {
+    if (isTrackingAllowed()) {
       try {
-        const pintrk = (window as any).pintrk || (window as any).__pintrk_original;
-        if (typeof pintrk === 'function') {
-          pintrk('track', 'pagevisit', { event_id: `pv-${Date.now()}` });
+        const sent = pinterestSafePintrk('track', 'pagevisit', { event_id: `pv-${Date.now()}` });
+        if (sent) {
           providerLastRoute['Pinterest'] = route;
           providerLastEvent['Pinterest'] = timestamp;
           logAnalyticsEvent('pagevisit', 'Pinterest', { route }, true);
+        } else {
+          // queued or suppressed (never throw)
+          logAnalyticsEvent('pagevisit', 'Pinterest', { route }, false, 'Queued or not ready');
         }
       } catch (e) {
         logAnalyticsEvent('pagevisit', 'Pinterest', { route }, false, String(e));
