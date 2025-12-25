@@ -201,3 +201,7 @@ verify_jwt = false
 # Send Launch Runbook - One-time email for launch documentation
 [functions.send-launch-runbook]
 verify_jwt = false
+
+# Check Tracking Thresholds - CRON job for automated alerts (validates CRON_SECRET internally)
+[functions.check-tracking-thresholds]
+verify_jwt = false
