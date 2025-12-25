@@ -30,6 +30,7 @@ import {
   RefreshCw,
   AlertCircle,
   ShieldX,
+  Shield,
   ShoppingCart,
   Clock,
   CheckCircle,
@@ -72,6 +73,7 @@ import {
 } from "@/lib/analyticsRegistry";
 import ContextTab from "@/components/internal/ContextTab";
 import PhasesTab from "@/components/internal/PhasesTab";
+import ProductionMonitoringTab from "@/components/internal/ProductionMonitoringTab";
 
 interface AnalyticsStats {
   summary: {
@@ -648,32 +650,41 @@ const QuizRevealTracking = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full max-w-4xl grid-cols-6">
+          <TabsList className="grid w-full max-w-5xl grid-cols-7">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
-              Overview
+              <span className="hidden sm:inline">Overview</span>
+            </TabsTrigger>
+            <TabsTrigger value="phase4" className="flex items-center gap-2">
+              <Shield className="w-4 h-4" />
+              <span className="hidden sm:inline">Phase 4</span>
             </TabsTrigger>
             <TabsTrigger value="quiz" className="flex items-center gap-2">
               <Eye className="w-4 h-4" />
-              Quiz
+              <span className="hidden sm:inline">Quiz</span>
             </TabsTrigger>
             <TabsTrigger value="checkout" className="flex items-center gap-2">
               <ShoppingCart className="w-4 h-4" />
-              Checkout
+              <span className="hidden sm:inline">Checkout</span>
             </TabsTrigger>
             <TabsTrigger value="context" className="flex items-center gap-2">
               <Fingerprint className="w-4 h-4" />
-              Context
+              <span className="hidden sm:inline">Context</span>
             </TabsTrigger>
             <TabsTrigger value="tracking" className="flex items-center gap-2">
               <Activity className="w-4 h-4" />
-              Tracking
+              <span className="hidden sm:inline">Tracking</span>
             </TabsTrigger>
             <TabsTrigger value="phases" className="flex items-center gap-2">
               <Zap className="w-4 h-4" />
-              Phases
+              <span className="hidden sm:inline">Chaos</span>
             </TabsTrigger>
           </TabsList>
+
+          {/* Phase 4 Production Monitoring Tab */}
+          <TabsContent value="phase4" className="mt-6">
+            <ProductionMonitoringTab />
+          </TabsContent>
 
           {/* Overview Tab - Key Funnel Metrics */}
           <TabsContent value="overview" className="space-y-6 mt-6">
