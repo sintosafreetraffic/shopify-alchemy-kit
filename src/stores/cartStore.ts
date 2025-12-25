@@ -178,8 +178,14 @@ export const useCartStore = create<CartStore>()(
 
         setLoading(true);
         try {
-          // NOTE: InitiateCheckout is now handled by Shopify's Pinterest App integration
-          // Removed frontend tracking to prevent duplicate events in Pinterest
+          // Track Pinterest InitiateCheckout event (re-enabled after Shopify Pinterest App deactivation)
+          const checkoutItems = items.map(item => ({
+            variantId: item.variantId,
+            quantity: item.quantity,
+            price: item.price,
+            currencyCode: item.price.currencyCode,
+          }));
+          trackInitiateCheckout(checkoutItems);
           
           // Track revenue attribution for checkout initiation
           const totalValue = items.reduce((sum, item) => sum + parseFloat(item.price.amount) * item.quantity, 0);

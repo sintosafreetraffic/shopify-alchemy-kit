@@ -434,8 +434,8 @@ export function trackInitiateCheckout(items: Array<{ variantId: string; quantity
       order_quantity: totalQuantity,
     };
     
-    // Debug logging for non-production environments
-    if (process.env.NODE_ENV !== 'production') {
+    // Debug logging (browser-safe, gated by DEBUG_TRACKING)
+    if (isDevBuild() || (typeof window !== 'undefined' && localStorage.getItem('DEBUG_TRACKING') === '1')) {
       console.log('[Pinterest] InitiateCheckout event prepared', {
         fingerprint,
         totalQuantity,
