@@ -181,3 +181,7 @@ verify_jwt = false
 # Phase 3: Recovery - CRON job for self-healing (validates CRON_SECRET internally)
 [functions.recover-missing-purchases]
 verify_jwt = false
+
+# Tracking Phases Summary - Admin only, requires JWT and validates admin role internally
+[functions.tracking-phases-summary]
+verify_jwt = true
