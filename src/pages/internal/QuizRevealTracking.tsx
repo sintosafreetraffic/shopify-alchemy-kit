@@ -1797,10 +1797,11 @@ const QuizRevealTracking = () => {
 
               {/* Clarity API Data */}
               <Card className="p-5">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <Eye className="w-5 h-5 text-blue-600" />
                     <h3 className="font-semibold">Microsoft Clarity API</h3>
+                    <Badge variant="outline" className="text-xs">Last {Math.min(parseInt(days), 3)} days</Badge>
                     {clarityData?.mockData && (
                       <Badge variant="outline" className="text-xs text-amber-600">Estimated</Badge>
                     )}
@@ -1809,6 +1810,7 @@ const QuizRevealTracking = () => {
                     {clarityLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
                   </Button>
                 </div>
+                <p className="text-xs text-muted-foreground mb-4">Clarity API limited to max 3 days (not affected by selector above)</p>
                 {clarityLoading ? (
                   <div className="py-8 text-center text-muted-foreground">
                     <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
