@@ -17,11 +17,143 @@
 // This separation prevents attribution conflicts and allows Pinterest
 // to deduplicate correctly between client-side and server-side events.
 
+// ============================================================================
+// QUEUE SYSTEM FOR PINTEREST RACE CONDITION FIX
+// Events are queued when Pinterest isn't ready, then flushed when it loads
+// ============================================================================
+
+interface QueuedPinterestEvent {
+  ts: number;
+  command: string;
+  eventName?: string;
+  payload?: Record<string, any>;
+  retryCount: number;
+}
+
 declare global {
   interface Window {
     pintrk?: ((...args: any[]) => void) & { queue?: any[] };
     __pintrk_original?: (...args: any[]) => void;
+    __lov_pinterestQueue?: QueuedPinterestEvent[];
+    __lov_pinterestPollingActive?: boolean;
   }
+}
+
+// Queue constants
+const QUEUE_MAX_LENGTH = 50;
+const POLL_INTERVAL_MS = 200;
+const POLL_MAX_DURATION_MS = 5000;
+const MAX_RETRY_COUNT = 3;
+
+// Debug logging helper
+function debugLog(...args: any[]): void {
+  if (typeof window !== 'undefined' && localStorage.getItem('DEBUG_TRACKING') === '1') {
+    console.log('[Pinterest Queue]', ...args);
+  }
+}
+
+// Initialize queue if needed
+function ensureQueue(): QueuedPinterestEvent[] {
+  if (typeof window === 'undefined') return [];
+  if (!window.__lov_pinterestQueue) {
+    window.__lov_pinterestQueue = [];
+  }
+  return window.__lov_pinterestQueue;
+}
+
+// ============================================================================
+// STRICT READINESS DETECTION
+// Pinterest is ONLY ready if pintrk exists AND is a function
+// ============================================================================
+function isPinterestReady(): boolean {
+  if (typeof window === 'undefined') return false;
+  return typeof window.pintrk === 'function';
+}
+
+// ============================================================================
+// FLUSH LOGIC - Resilient per-event processing
+// ============================================================================
+let isFlushing = false;
+
+function flushPinterestQueue(): void {
+  if (typeof window === 'undefined') return;
+  if (!isPinterestReady()) return;
+  if (isFlushing) return; // Prevent concurrent flushes
+  
+  const queue = ensureQueue();
+  if (queue.length === 0) return;
+  
+  isFlushing = true;
+  debugLog('Flush starting, events in queue:', queue.length);
+  
+  let flushedCount = 0;
+  let remainingCount = 0;
+  
+  // Process queue from front, removing successful events
+  const pin = window.pintrk!;
+  const toRetain: QueuedPinterestEvent[] = [];
+  
+  for (const event of queue) {
+    try {
+      if (event.eventName !== undefined) {
+        pin(event.command, event.eventName, event.payload);
+      } else {
+        pin(event.command);
+      }
+      flushedCount++;
+      debugLog('Flushed event:', event.eventName || event.command);
+    } catch (err) {
+      // Event failed - check retry count
+      event.retryCount++;
+      if (event.retryCount < MAX_RETRY_COUNT) {
+        toRetain.push(event);
+        debugLog('Event failed, will retry:', event.eventName || event.command, 'attempt:', event.retryCount);
+      } else {
+        debugLog('Event dropped after max retries:', event.eventName || event.command);
+      }
+    }
+  }
+  
+  // Replace queue with events that need retry
+  window.__lov_pinterestQueue = toRetain;
+  remainingCount = toRetain.length;
+  
+  debugLog('Flush complete. Flushed:', flushedCount, 'Remaining:', remainingCount);
+  isFlushing = false;
+}
+
+// ============================================================================
+// POLLING MECHANISM - setTimeout chain (not setInterval)
+// ============================================================================
+function startPolling(): void {
+  if (typeof window === 'undefined') return;
+  if (window.__lov_pinterestPollingActive) return; // Already polling
+  
+  window.__lov_pinterestPollingActive = true;
+  const startTime = Date.now();
+  
+  function poll(): void {
+    const elapsed = Date.now() - startTime;
+    
+    if (isPinterestReady()) {
+      debugLog('Pinterest ready detected via polling');
+      flushPinterestQueue();
+      window.__lov_pinterestPollingActive = false;
+      return; // Stop polling
+    }
+    
+    if (elapsed >= POLL_MAX_DURATION_MS) {
+      debugLog('Polling timeout reached (5s), stopping');
+      window.__lov_pinterestPollingActive = false;
+      return; // Stop polling
+    }
+    
+    // Schedule next poll
+    setTimeout(poll, POLL_INTERVAL_MS);
+  }
+  
+  // Start the chain
+  setTimeout(poll, POLL_INTERVAL_MS);
 }
 
 // ============================================================================
@@ -34,40 +166,71 @@ function safePintrk(
   eventName?: string, 
   payload?: Record<string, any>
 ): boolean {
-  if (typeof window === "undefined") return false;
-  
-  // Get the current pintrk function (could be original or wrapper)
-  const pin = window.pintrk;
-  
-  // Guard: pintrk must exist and be callable
-  if (typeof pin !== "function") {
-    if (process.env.NODE_ENV !== "production") {
-      console.warn("[Pinterest] pintrk not ready, skipping event", { command, eventName, payload });
-    }
-    return false;
-  }
+  // Server-side: always return false, nothing to do
+  if (typeof window === 'undefined') return false;
   
   try {
-    // Call with appropriate arguments
-    if (eventName !== undefined) {
-      pin(command, eventName, payload);
-    } else {
-      pin(command);
+    // If Pinterest is ready, send immediately
+    if (isPinterestReady()) {
+      const pin = window.pintrk!;
+      if (eventName !== undefined) {
+        pin(command, eventName, payload);
+      } else {
+        pin(command);
+      }
+      return true;
     }
-    return true;
+    
+    // Pinterest not ready - queue the event
+    const queue = ensureQueue();
+    
+    const queuedEvent: QueuedPinterestEvent = {
+      ts: Date.now(),
+      command,
+      eventName,
+      payload,
+      retryCount: 0,
+    };
+    
+    // Cap queue length - drop oldest if exceeded
+    if (queue.length >= QUEUE_MAX_LENGTH) {
+      const dropped = queue.shift();
+      debugLog('Queue full, dropped oldest event:', dropped?.eventName || dropped?.command);
+    }
+    
+    queue.push(queuedEvent);
+    debugLog('Event queued:', eventName || command, 'Queue size:', queue.length);
+    
+    // Start polling if not already active
+    startPolling();
+    
+    return false; // Event queued, not sent yet
   } catch (err) {
-    // Graceful failure - never let Pinterest errors break the app
-    if (process.env.NODE_ENV !== "production") {
-      console.warn("[Pinterest] pintrk call failed", { command, eventName, payload, err });
+    // Absolute safety net - never throw
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('[Pinterest] safePintrk error (suppressed):', err);
     }
     return false;
   }
 }
 
-// Check if Pinterest is loaded (basic check for any tracking call)
-function isPinterestReady(): boolean {
-  if (typeof window === "undefined") return false;
-  return typeof window.pintrk === "function";
+// Initialize polling on module load (catches script load event)
+if (typeof window !== 'undefined') {
+  // Start polling immediately to catch when Pinterest becomes ready
+  startPolling();
+  
+  // Also try to flush when Pinterest script fires load event (if we can detect it)
+  // This is a backup - polling is the primary mechanism
+  const checkAndFlush = () => {
+    if (isPinterestReady()) {
+      flushPinterestQueue();
+    }
+  };
+  
+  // Check after a short delay (gives Pinterest time to initialize)
+  setTimeout(checkAndFlush, 100);
+  setTimeout(checkAndFlush, 500);
+  setTimeout(checkAndFlush, 1000);
 }
 
 // SHA-256 hash function for enhanced matching
@@ -136,12 +299,8 @@ function generateEventId(): string {
 }
 
 // Track page visit with product ID (for product pages)
+// Now queues event if Pinterest isn't ready (instead of dropping)
 export function trackPageVisit(productId?: string) {
-  if (!isPinterestReady()) {
-    console.log('[Pinterest] PageVisit skipped - pintrk not ready');
-    return;
-  }
-  
   const data: Record<string, any> = {
     event_id: generateEventId(),
   };
@@ -152,10 +311,13 @@ export function trackPageVisit(productId?: string) {
   const success = safePintrk('track', 'pagevisit', data);
   if (success) {
     console.log('[Pinterest] PageVisit tracked', data);
+  } else {
+    debugLog('PageVisit queued or failed', data);
   }
 }
 
 // Track add to cart event
+// Now queues event if Pinterest isn't ready (instead of dropping)
 export function trackAddToCart(
   productId: string,
   variantId: string,
@@ -163,11 +325,6 @@ export function trackAddToCart(
   currency: string = 'USD',
   quantity: number = 1
 ) {
-  if (!isPinterestReady()) {
-    console.log('[Pinterest] AddToCart skipped - pintrk not ready');
-    return;
-  }
-  
   const data = {
     event_id: generateEventId(),
     product_id: extractProductId(productId),
@@ -179,6 +336,8 @@ export function trackAddToCart(
   const success = safePintrk('track', 'addtocart', data);
   if (success) {
     console.log('[Pinterest] AddToCart tracked', data);
+  } else {
+    debugLog('AddToCart queued or failed', data);
   }
 }
 
@@ -203,11 +362,8 @@ export function generateCartFingerprint(items: Array<{ variantId: string; quanti
 // NOTE: We intentionally do NOT send `value`/`currency` for initiatecheckout
 // to avoid any risk of Pinterest misattributing this as revenue.
 // Completed purchases are tracked server-side via Shopify / Conversions API only.
+// Now queues event if Pinterest isn't ready (instead of dropping)
 export function trackInitiateCheckout(items: Array<{ variantId: string; quantity: number; price?: { amount: string }; currencyCode?: string }>): boolean {
-  if (!isPinterestReady()) {
-    console.log('[Pinterest] InitiateCheckout skipped - pintrk not ready');
-    return false;
-  }
   
   try {
     const fingerprint = generateCartFingerprint(items);
@@ -275,12 +431,8 @@ export function clearInitiateCheckoutFingerprint(): void {
 }
 
 // Track lead event (e.g., newsletter signup)
+// Now queues event if Pinterest isn't ready (instead of dropping)
 export function trackLead(leadType: string = 'Newsletter') {
-  if (!isPinterestReady()) {
-    console.log('[Pinterest] Lead skipped - pintrk not ready');
-    return;
-  }
-  
   const data = {
     event_id: generateEventId(),
     lead_type: leadType,
@@ -289,16 +441,14 @@ export function trackLead(leadType: string = 'Newsletter') {
   const success = safePintrk('track', 'lead', data);
   if (success) {
     console.log('[Pinterest] Lead tracked', data);
+  } else {
+    debugLog('Lead queued or failed', data);
   }
 }
 
 // Track signup event
+// Now queues event if Pinterest isn't ready (instead of dropping)
 export function trackSignup() {
-  if (!isPinterestReady()) {
-    console.log('[Pinterest] Signup skipped - pintrk not ready');
-    return;
-  }
-  
   const data = {
     event_id: generateEventId(),
   };
@@ -306,6 +456,8 @@ export function trackSignup() {
   const success = safePintrk('track', 'signup', data);
   if (success) {
     console.log('[Pinterest] Signup tracked', data);
+  } else {
+    debugLog('Signup queued or failed', data);
   }
 }
 
