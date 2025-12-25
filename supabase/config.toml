@@ -189,3 +189,7 @@ verify_jwt = true
 # Chaos Test Runner - Admin only, requires JWT and validates admin role internally
 [functions.chaos-test-runner]
 verify_jwt = true
+
+# Chaos Webhook Replay - Admin only, requires JWT and validates admin role internally
+[functions.chaos-webhook-replay]
+verify_jwt = true
