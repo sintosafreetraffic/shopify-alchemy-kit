@@ -151,7 +151,7 @@ serve(async (req) => {
       order_id: String(orderData.order_id),
       event_type: orderData.event_type || 'purchase',
       value: parseFloat(orderData.value.toString()),
-      currency: orderData.currency || 'EUR',
+      currency: orderData.currency || 'USD',
       products: orderData.products || [],
       email: orderData.email,
       phone: orderData.phone,

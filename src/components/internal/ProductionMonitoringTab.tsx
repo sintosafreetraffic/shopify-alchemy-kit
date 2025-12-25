@@ -516,7 +516,7 @@ export const ProductionMonitoringTab = () => {
         <MetricCard
           title="Purchases Tracked"
           value={metrics?.pinterestCapi.totalEvents || 0}
-          subtitle={`€${(metrics?.pinterestCapi.totalValue || 0).toFixed(2)} total`}
+          subtitle={`$${(metrics?.pinterestCapi.totalValue || 0).toFixed(2)} total`}
           icon={Package}
         />
         <MetricCard
@@ -549,7 +549,7 @@ export const ProductionMonitoringTab = () => {
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Total Value</span>
-              <span className="font-medium">€{(metrics?.pinterestCapi.totalValue || 0).toFixed(2)}</span>
+              <span className="font-medium">${(metrics?.pinterestCapi.totalValue || 0).toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Success Rate</span>
@@ -781,7 +781,7 @@ export const ProductionMonitoringTab = () => {
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-semibold">
-                        €{(event.value || 0).toFixed(2)}
+                        ${(event.value || 0).toFixed(2)}
                       </p>
                     </div>
                   </div>

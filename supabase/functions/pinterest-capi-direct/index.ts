@@ -103,7 +103,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     // Build custom data
     const customData: Record<string, any> = {
-      currency: eventData.currency || 'EUR',
+      currency: eventData.currency || 'USD',
       value: String(eventData.value),
       order_id: eventData.order_id,
     };
