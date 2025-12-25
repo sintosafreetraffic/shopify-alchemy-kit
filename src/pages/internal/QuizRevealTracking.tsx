@@ -286,6 +286,7 @@ const QuizRevealTracking = () => {
           .from('pinterest_purchase_events')
           .select('*')
           .gte('created_at', startDate.toISOString())
+          .in('source', ['shopify_webhook', 'direct_capi']) // Exclude chaos_test source
           .order('created_at', { ascending: false })
           .limit(100),
         supabase
