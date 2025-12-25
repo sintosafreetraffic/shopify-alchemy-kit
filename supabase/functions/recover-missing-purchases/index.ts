@@ -171,11 +171,26 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   try {
     const url = new URL(req.url);
-    const dryRun = url.searchParams.get('dry_run') === '1';
+    
+    // Parse body for dry_run (optional)
+    let bodyDryRun = false;
+    try {
+      const body = await req.clone().json();
+      bodyDryRun = body?.dry_run === true;
+    } catch {
+      // No body or invalid JSON - ignore
+    }
+    
+    // Compute dryRun from BOTH sources (query param OR body)
+    const dryRunFromQuery = ['1', 'true', 'yes'].includes(
+      (url.searchParams.get('dry_run') || '').toLowerCase()
+    );
+    const dryRun = dryRunFromQuery || bodyDryRun;
+    
     const limit = Math.min(parseInt(url.searchParams.get('limit') || '50', 10) || 50, 50);
     const maxAgeDays = Math.min(parseInt(url.searchParams.get('max_age_days') || '7', 10) || 7, 30);
 
-    console.log("[Recovery] Params:", { dryRun, limit, maxAgeDays, chaosMode });
+    console.log("[Recovery] Params:", { dryRun, dryRunFromQuery, bodyDryRun, limit, maxAgeDays, chaosMode });
 
     // ========================================================================
     // CHAOS C7: Timestamp Skew - Log acknowledgment (no behavioral change)
@@ -225,24 +240,27 @@ Deno.serve(async (req: Request): Promise<Response> => {
       console.error("[CHAOS] C5: Simulating Pinterest 429 rate limit");
       stats.rate_limited = true;
       
-      // Log job as partial failure
-      const totalDuration = Date.now() - startTime;
-      await supabase.from('tracking_jobs').insert({
-        job_name: 'recover-missing-purchases',
-        success: false,
-        duration_ms: totalDuration,
-        stats: {
-          ...stats,
-          chaos: 'rate_limit',
-          reason: 'Simulated Pinterest 429 rate limit',
-        },
-        error: 'chaos_rate_limit',
-      });
+      // In dry_run mode, do NOT write tracking_jobs for chaos
+      if (!dryRun) {
+        // Log job as partial failure
+        const totalDuration = Date.now() - startTime;
+        await supabase.from('tracking_jobs').insert({
+          job_name: 'recover-missing-purchases',
+          success: false,
+          duration_ms: totalDuration,
+          stats: {
+            ...stats,
+            chaos: 'rate_limit',
+            reason: 'Simulated Pinterest 429 rate limit',
+          },
+          error: 'chaos_rate_limit',
+        });
+      }
 
       return new Response(
         JSON.stringify({
           success: false,
-          dry_run: false,
+          dry_run: dryRun,
           candidates_found: 0,
           attempted: 0,
           succeeded: 0,
@@ -457,6 +475,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
         // ====================================================================
         // CHAOS C4: Always Fail - Force all recovery attempts to fail
+        // In dry_run mode: simulate failure without DB writes
         // ====================================================================
         if (chaosMode === 'always_fail') {
           console.error("[CHAOS] C4: Forcing failure for", candidate.order_id);
@@ -467,10 +486,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
             error: 'chaos_always_fail',
           };
           
-          // Record the failed attempt
+          // Record the failed attempt (only if not dry_run)
           const duration = Date.now() - attemptStart;
           stats.durations.push(duration);
           
+          // In dry_run mode: NO writes to recovery_purchase_attempts
+          // dryRun is guaranteed false here since we returned early at line 335
+          // But for chaos tests with ?dry_run=1, this code path won't execute
+          // because we exit at line 335. This is just documentation.
           await supabase.from('recovery_purchase_attempts').insert({
             order_id: candidate.order_id,
             attempt_no: attemptNo,
