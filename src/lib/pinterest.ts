@@ -45,7 +45,23 @@ const POLL_INTERVAL_MS = 200;
 const POLL_MAX_DURATION_MS = 5000;
 const MAX_RETRY_COUNT = 3;
 
-// Debug logging helper
+// ============================================================================
+// BROWSER-SAFE DEV MODE DETECTION (Patch A)
+// Avoids process.env.NODE_ENV which can crash in Vite/Lovable builds
+// ============================================================================
+function isDevBuild(): boolean {
+  try {
+    return (
+      typeof import.meta !== 'undefined' &&
+      (import.meta as any).env &&
+      (import.meta as any).env.MODE !== 'production'
+    );
+  } catch {
+    return false; // Production-safe default
+  }
+}
+
+// Debug logging helper - gated by localStorage flag (never logs PII)
 function debugLog(...args: any[]): void {
   if (typeof window !== 'undefined' && localStorage.getItem('DEBUG_TRACKING') === '1') {
     console.log('[Pinterest Queue]', ...args);
@@ -124,28 +140,53 @@ function flushPinterestQueue(): void {
 
 // ============================================================================
 // POLLING MECHANISM - setTimeout chain (not setInterval)
+// Patch B: Only runs when queue has items AND Pinterest is not ready
 // ============================================================================
 function startPolling(): void {
   if (typeof window === 'undefined') return;
   if (window.__lov_pinterestPollingActive) return; // Already polling
   
+  // Patch B: Don't poll if Pinterest is already ready
+  if (isPinterestReady()) {
+    flushPinterestQueue();
+    return;
+  }
+  
+  // Patch B: Don't poll if queue is empty (nothing to flush)
+  const queue = ensureQueue();
+  if (queue.length === 0) {
+    debugLog('Polling skipped: queue empty');
+    return;
+  }
+  
   window.__lov_pinterestPollingActive = true;
   const startTime = Date.now();
+  debugLog('Polling started, queue size:', queue.length);
   
   function poll(): void {
     const elapsed = Date.now() - startTime;
+    const currentQueue = ensureQueue();
     
+    // Stop early if Pinterest ready - flush and exit
     if (isPinterestReady()) {
       debugLog('Pinterest ready detected via polling');
       flushPinterestQueue();
       window.__lov_pinterestPollingActive = false;
-      return; // Stop polling
+      return;
     }
     
-    if (elapsed >= POLL_MAX_DURATION_MS) {
-      debugLog('Polling timeout reached (5s), stopping');
+    // Patch B: Stop early if queue became empty (e.g., all events dropped)
+    if (currentQueue.length === 0) {
+      debugLog('Polling stopped: queue empty');
       window.__lov_pinterestPollingActive = false;
-      return; // Stop polling
+      return;
+    }
+    
+    // Stop after timeout
+    if (elapsed >= POLL_MAX_DURATION_MS) {
+      debugLog('Polling timeout reached (5s), stopping. Queue size:', currentQueue.length);
+      window.__lov_pinterestPollingActive = false;
+      return;
     }
     
     // Schedule next poll
@@ -206,9 +247,9 @@ function safePintrk(
     
     return false; // Event queued, not sent yet
   } catch (err) {
-    // Absolute safety net - never throw
-    if (process.env.NODE_ENV !== 'production') {
-      console.warn('[Pinterest] safePintrk error (suppressed):', err);
+    // Absolute safety net - never throw (Patch A: browser-safe logging)
+    if (isDevBuild() || (typeof window !== 'undefined' && localStorage.getItem('DEBUG_TRACKING') === '1')) {
+      console.warn('[Pinterest] safePintrk error (suppressed):', err instanceof Error ? err.message : 'unknown');
     }
     return false;
   }
@@ -216,20 +257,17 @@ function safePintrk(
 
 export { safePintrk };
 
-// Initialize polling on module load (catches script load event)
+// Initialize on module load - Patch B: only flush checks, no eager polling
+// Polling is now triggered on-demand by safePintrk() when events are queued
 if (typeof window !== 'undefined') {
-  // Start polling immediately to catch when Pinterest becomes ready
-  startPolling();
-  
-  // Also try to flush when Pinterest script fires load event (if we can detect it)
-  // This is a backup - polling is the primary mechanism
+  // Backup flush attempts when Pinterest script fires load event
   const checkAndFlush = () => {
     if (isPinterestReady()) {
       flushPinterestQueue();
     }
   };
   
-  // Check after a short delay (gives Pinterest time to initialize)
+  // Check after short delays (gives Pinterest time to initialize)
   setTimeout(checkAndFlush, 100);
   setTimeout(checkAndFlush, 500);
   setTimeout(checkAndFlush, 1000);
