@@ -48,6 +48,7 @@ import {
   MousePointer,
   Package,
   Fingerprint,
+  Target,
 } from "lucide-react";
 import { 
   LineChart, 
@@ -75,6 +76,7 @@ import ContextTab from "@/components/internal/ContextTab";
 import PhasesTab from "@/components/internal/PhasesTab";
 import ProductionMonitoringTab from "@/components/internal/ProductionMonitoringTab";
 import WeeklyReviewTab from "@/components/internal/WeeklyReviewTab";
+import PinterestSourceTruthTab from "@/components/internal/PinterestSourceTruthTab";
 
 interface AnalyticsStats {
   summary: {
@@ -651,7 +653,7 @@ const QuizRevealTracking = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full max-w-6xl grid-cols-8">
+          <TabsList className="grid w-full max-w-6xl grid-cols-9">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
               <span className="hidden sm:inline">Overview</span>
@@ -659,6 +661,10 @@ const QuizRevealTracking = () => {
             <TabsTrigger value="phase4" className="flex items-center gap-2">
               <Shield className="w-4 h-4" />
               <span className="hidden sm:inline">Phase 4</span>
+            </TabsTrigger>
+            <TabsTrigger value="sourcetruth" className="flex items-center gap-2">
+              <Target className="w-4 h-4" />
+              <span className="hidden sm:inline">Source Truth</span>
             </TabsTrigger>
             <TabsTrigger value="quiz" className="flex items-center gap-2">
               <Eye className="w-4 h-4" />
@@ -689,6 +695,11 @@ const QuizRevealTracking = () => {
           {/* Phase 4 Production Monitoring Tab */}
           <TabsContent value="phase4" className="mt-6">
             <ProductionMonitoringTab />
+          </TabsContent>
+
+          {/* Phase 4.2 Pinterest Source Truth Tab */}
+          <TabsContent value="sourcetruth" className="mt-6">
+            <PinterestSourceTruthTab />
           </TabsContent>
 
           {/* Phase 4.1 Weekly Review Tab */}
