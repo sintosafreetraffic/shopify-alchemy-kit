@@ -54,7 +54,10 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
+  AreaChart,
+  Area,
 } from "recharts";
+import { Radio } from "lucide-react";
 
 interface SourceTruthEvent {
   id: string;
@@ -213,10 +216,23 @@ const EventRow = ({ event }: { event: SourceTruthEvent }) => {
   );
 };
 
+interface TrendDataPoint {
+  date: string;
+  pinterest: number;
+  organic: number;
+  other: number;
+  unknown: number;
+  sent: number;
+  blocked: number;
+}
+
 export const PinterestSourceTruthTab = () => {
   const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState<SourceTruthEvent[]>([]);
   const [stats, setStats] = useState<SourceTruthStats | null>(null);
+  const [trendData, setTrendData] = useState<TrendDataPoint[]>([]);
+  const [liveEvents, setLiveEvents] = useState<SourceTruthEvent[]>([]);
+  const [isLiveConnected, setIsLiveConnected] = useState(false);
   const [days, setDays] = useState("7");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [pendingMode, setPendingMode] = useState<string | null>(null);
@@ -294,6 +310,26 @@ export const PinterestSourceTruthTab = () => {
       });
 
       setEvents(allEvents);
+
+      // Calculate daily trend data
+      const dailyData: Record<string, TrendDataPoint> = {};
+      nonTestEvents.forEach(e => {
+        const date = new Date(e.created_at).toISOString().split('T')[0];
+        if (!dailyData[date]) {
+          dailyData[date] = { date, pinterest: 0, organic: 0, other: 0, unknown: 0, sent: 0, blocked: 0 };
+        }
+        const source = e.attribution_source || 'unknown';
+        if (source === 'pinterest') dailyData[date].pinterest++;
+        else if (source === 'organic') dailyData[date].organic++;
+        else if (source === 'other') dailyData[date].other++;
+        else dailyData[date].unknown++;
+
+        if (e.send_status === 'sent') dailyData[date].sent++;
+        else dailyData[date].blocked++;
+      });
+
+      const sortedTrend = Object.values(dailyData).sort((a, b) => a.date.localeCompare(b.date));
+      setTrendData(sortedTrend);
     } catch (err) {
       console.error('Failed to fetch source truth data:', err);
     } finally {
@@ -303,6 +339,42 @@ export const PinterestSourceTruthTab = () => {
 
   useEffect(() => {
     fetchData();
+  }, [fetchData]);
+
+  // Real-time subscription for live purchase events
+  useEffect(() => {
+    console.log('[SourceTruth] Setting up real-time subscription');
+    
+    const channel = supabase
+      .channel('source-truth-live-events')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'pinterest_purchase_events',
+        },
+        (payload) => {
+          console.log('[SourceTruth] New purchase event:', payload);
+          const newEvent = payload.new as SourceTruthEvent;
+          
+          setLiveEvents(prev => [newEvent, ...prev].slice(0, 10));
+          
+          // Refresh stats if not a test event
+          if (!newEvent.is_test) {
+            fetchData();
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('[SourceTruth] Subscription status:', status);
+        setIsLiveConnected(status === 'SUBSCRIBED');
+      });
+
+    return () => {
+      console.log('[SourceTruth] Cleaning up subscription');
+      supabase.removeChannel(channel);
+    };
   }, [fetchData]);
 
   const updateSendMode = async (newMode: string) => {
@@ -560,7 +632,111 @@ export const PinterestSourceTruthTab = () => {
         </Card>
       </div>
 
-      {/* Recent Events Table */}
+      {/* Phase 4.4 - Attribution Trend Over Time */}
+      {trendData.length > 0 && (
+        <Card className="p-4">
+          <h3 className="font-semibold mb-4">Attribution Trend Over Time</h3>
+          <ResponsiveContainer width="100%" height={280}>
+            <AreaChart data={trendData}>
+              <defs>
+                <linearGradient id="pinterestGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="hsl(0, 80%, 55%)" stopOpacity={0.4}/>
+                  <stop offset="95%" stopColor="hsl(0, 80%, 55%)" stopOpacity={0}/>
+                </linearGradient>
+                <linearGradient id="organicGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="hsl(142, 60%, 45%)" stopOpacity={0.4}/>
+                  <stop offset="95%" stopColor="hsl(142, 60%, 45%)" stopOpacity={0}/>
+                </linearGradient>
+                <linearGradient id="otherGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="hsl(217, 60%, 55%)" stopOpacity={0.4}/>
+                  <stop offset="95%" stopColor="hsl(217, 60%, 55%)" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+              <XAxis 
+                dataKey="date" 
+                tick={{ fontSize: 11 }} 
+                tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              />
+              <YAxis tick={{ fontSize: 11 }} />
+              <Tooltip
+                contentStyle={{ 
+                  backgroundColor: 'hsl(var(--card))', 
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px',
+                }}
+                labelFormatter={(value) => new Date(value).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+              />
+              <Legend />
+              <Area
+                type="monotone"
+                dataKey="pinterest"
+                name="Pinterest"
+                stroke="hsl(0, 80%, 55%)"
+                strokeWidth={2}
+                fill="url(#pinterestGradient)"
+                stackId="1"
+              />
+              <Area
+                type="monotone"
+                dataKey="organic"
+                name="Organic"
+                stroke="hsl(142, 60%, 45%)"
+                strokeWidth={2}
+                fill="url(#organicGradient)"
+                stackId="1"
+              />
+              <Area
+                type="monotone"
+                dataKey="other"
+                name="Other"
+                stroke="hsl(217, 60%, 55%)"
+                strokeWidth={2}
+                fill="url(#otherGradient)"
+                stackId="1"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </Card>
+      )}
+
+      {/* Phase 4.5 - Real-time Purchase Stream */}
+      <Card className="p-4">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Radio className={`w-5 h-5 ${isLiveConnected ? 'text-emerald-500 animate-pulse' : 'text-muted-foreground'}`} />
+            <h3 className="font-semibold">Live Purchase Stream</h3>
+            <Badge variant={isLiveConnected ? 'default' : 'secondary'} className="ml-1">
+              {isLiveConnected ? 'Live' : 'Connecting...'}
+            </Badge>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setLiveEvents([])}
+            disabled={liveEvents.length === 0}
+          >
+            Clear
+          </Button>
+        </div>
+        
+        {liveEvents.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-6 text-muted-foreground border border-dashed rounded-lg">
+            <Radio className="w-8 h-8 mb-2 opacity-30" />
+            <p className="text-sm">Waiting for new purchase events...</p>
+            <p className="text-xs mt-1">Events will appear here in real-time</p>
+          </div>
+        ) : (
+          <ScrollArea className="h-48">
+            <div className="space-y-2">
+              {liveEvents.map((event) => (
+                <EventRow key={event.id} event={event} />
+              ))}
+            </div>
+          </ScrollArea>
+        )}
+      </Card>
+
       <Card className="p-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold">Recent Purchase Events</h3>
