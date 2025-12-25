@@ -22,6 +22,7 @@ import {
   Package,
   DollarSign,
   TrendingUp,
+  TrendingDown,
   AlertTriangle,
   CheckCircle,
   XCircle,
@@ -29,6 +30,8 @@ import {
   Copy,
   Activity,
   Loader2,
+  ArrowUpRight,
+  ArrowDownRight,
 } from "lucide-react";
 import {
   LineChart,
@@ -50,6 +53,15 @@ interface WeeklyMetrics {
   recovered: number;
   deadLetters: number;
   valueSampled: boolean;
+}
+
+interface PrevWeekMetrics {
+  purchasesTracked: number;
+  totalValueEur: number;
+  avgSuccessRate: number | null;
+  reconciliationMismatches: number;
+  recovered: number;
+  deadLetters: number;
 }
 
 interface TrendData {
@@ -99,11 +111,13 @@ interface JobMetrics {
   duration_p95: number | null;
 }
 
-// Helper to compute window
+// Helper to compute window (current and previous week)
 const getTimeWindow = () => {
   const now = new Date();
   const windowEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
   const windowStart = new Date(windowEnd.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const prevWindowEnd = windowStart;
+  const prevWindowStart = new Date(prevWindowEnd.getTime() - 7 * 24 * 60 * 60 * 1000);
   return {
     windowStart: windowStart.toISOString(),
     windowEnd: windowEnd.toISOString(),
@@ -111,6 +125,10 @@ const getTimeWindow = () => {
     windowEndDate: windowEnd.toISOString().split('T')[0],
     displayStart: windowStart.toISOString().split('T')[0],
     displayEnd: new Date(windowEnd.getTime() - 1).toISOString().split('T')[0],
+    prevWindowStart: prevWindowStart.toISOString(),
+    prevWindowEnd: prevWindowEnd.toISOString(),
+    prevWindowStartDate: prevWindowStart.toISOString().split('T')[0],
+    prevWindowEndDate: prevWindowEnd.toISOString().split('T')[0],
   };
 };
 
@@ -122,10 +140,25 @@ const calculatePercentile = (arr: number[], p: number): number | null => {
   return sorted[Math.max(0, index)];
 };
 
+// Helper to compute delta indicator
+const getDeltaIndicator = (current: number, previous: number, inverse = false) => {
+  if (previous === 0) return null;
+  const delta = ((current - previous) / previous) * 100;
+  const isPositive = inverse ? delta < 0 : delta > 0;
+  const isNegative = inverse ? delta > 0 : delta < 0;
+  return {
+    delta,
+    isPositive,
+    isNegative,
+    display: `${delta > 0 ? "+" : ""}${delta.toFixed(0)}%`,
+  };
+};
+
 export default function WeeklyReviewTab() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [metrics, setMetrics] = useState<WeeklyMetrics | null>(null);
+  const [prevMetrics, setPrevMetrics] = useState<PrevWeekMetrics | null>(null);
   const [trends, setTrends] = useState<TrendData[]>([]);
   const [alertSummary, setAlertSummary] = useState<AlertSummary[]>([]);
   const [recentAlerts, setRecentAlerts] = useState<RecentAlert[]>([]);
@@ -538,6 +571,81 @@ export default function WeeklyReviewTab() {
     }
   }, [window]);
 
+  // Fetch previous week metrics for comparison
+  const fetchPrevWeekMetrics = useCallback(async () => {
+    try {
+      // Previous week purchases
+      const { count: prevPurchases } = await supabase
+        .from("pinterest_purchase_events")
+        .select("id", { count: "exact", head: true })
+        .eq("is_test", false)
+        .gte("created_at", window.prevWindowStart)
+        .lt("created_at", window.prevWindowEnd);
+
+      // Previous week value (EUR only for simplicity)
+      const { data: prevValueData } = await supabase
+        .from("pinterest_purchase_events")
+        .select("value, currency")
+        .eq("is_test", false)
+        .gte("created_at", window.prevWindowStart)
+        .lt("created_at", window.prevWindowEnd)
+        .order("created_at", { ascending: false })
+        .limit(500);
+
+      let prevTotalEur = 0;
+      (prevValueData || []).forEach((r) => {
+        if (r.currency === "EUR") {
+          prevTotalEur += Number(r.value || 0);
+        }
+      });
+
+      // Previous week success rate
+      const { data: prevHealthData } = await supabase
+        .from("tracking_health_daily")
+        .select("success_rate, reconciliation_mismatches")
+        .gte("day", window.prevWindowStartDate)
+        .lt("day", window.prevWindowEndDate);
+
+      let prevAvgSuccessRate: number | null = null;
+      let prevMismatches = 0;
+      if (prevHealthData && prevHealthData.length > 0) {
+        const rates = prevHealthData.map((r) => Number(r.success_rate) || 0);
+        prevAvgSuccessRate = rates.reduce((a, b) => a + b, 0) / rates.length;
+        prevMismatches = prevHealthData.reduce((sum, r) => sum + (Number(r.reconciliation_mismatches) || 0), 0);
+      }
+
+      // Previous week recovered
+      const { data: prevRecoveryData } = await supabase
+        .from("recovery_purchase_attempts")
+        .select("outcome")
+        .gte("created_at", window.prevWindowStart)
+        .lt("created_at", window.prevWindowEnd);
+
+      const prevRecovered = (prevRecoveryData || []).filter((r) => {
+        const outcome = (r.outcome || "").toLowerCase();
+        return outcome === "success" || outcome === "recovered" || outcome.includes("success");
+      }).length;
+
+      // Previous week dead letters
+      const { count: prevDeadLetters } = await supabase
+        .from("recovery_dead_letters")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", window.prevWindowStart)
+        .lt("created_at", window.prevWindowEnd);
+
+      setPrevMetrics({
+        purchasesTracked: prevPurchases || 0,
+        totalValueEur: prevTotalEur,
+        avgSuccessRate: prevAvgSuccessRate,
+        reconciliationMismatches: prevMismatches,
+        recovered: prevRecovered,
+        deadLetters: prevDeadLetters || 0,
+      });
+    } catch {
+      console.warn("[WeeklyReview] Previous week metrics fetch error");
+    }
+  }, [window]);
+
   // Initial load
   const fetchAll = useCallback(async () => {
     setErrors({});
@@ -548,8 +656,9 @@ export default function WeeklyReviewTab() {
       fetchRecovery(),
       fetchDedupe(),
       fetchJobs(),
+      fetchPrevWeekMetrics(),
     ]);
-  }, [fetchScorecard, fetchTrends, fetchAlerts, fetchRecovery, fetchDedupe, fetchJobs]);
+  }, [fetchScorecard, fetchTrends, fetchAlerts, fetchRecovery, fetchDedupe, fetchJobs, fetchPrevWeekMetrics]);
 
   useEffect(() => {
     const load = async () => {
@@ -652,7 +761,19 @@ export default function WeeklyReviewTab() {
           {errors.purchases ? (
             <p className="text-sm text-muted-foreground">Data unavailable</p>
           ) : (
-            <p className="text-2xl font-bold">{metrics?.purchasesTracked || 0}</p>
+            <div className="flex items-end gap-2">
+              <p className="text-2xl font-bold">{metrics?.purchasesTracked || 0}</p>
+              {prevMetrics && (() => {
+                const delta = getDeltaIndicator(metrics?.purchasesTracked || 0, prevMetrics.purchasesTracked);
+                if (!delta) return null;
+                return (
+                  <span className={`text-xs flex items-center ${delta.isPositive ? 'text-green-600' : delta.isNegative ? 'text-red-600' : 'text-muted-foreground'}`}>
+                    {delta.isPositive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                    {delta.display}
+                  </span>
+                );
+              })()}
+            </div>
           )}
         </Card>
 
@@ -677,9 +798,21 @@ export default function WeeklyReviewTab() {
           ) : (
             <div className="space-y-1">
               {Object.entries(metrics?.totalValueByCurrency || {}).map(([currency, value]) => (
-                <p key={currency} className="text-lg font-semibold">
-                  {formatCurrency(value, currency)} <span className="text-xs text-muted-foreground">{currency}</span>
-                </p>
+                <div key={currency} className="flex items-end gap-2">
+                  <p className="text-lg font-semibold">
+                    {formatCurrency(value, currency)} <span className="text-xs text-muted-foreground">{currency}</span>
+                  </p>
+                  {currency === "EUR" && prevMetrics && (() => {
+                    const delta = getDeltaIndicator(value, prevMetrics.totalValueEur);
+                    if (!delta) return null;
+                    return (
+                      <span className={`text-xs flex items-center ${delta.isPositive ? 'text-green-600' : delta.isNegative ? 'text-red-600' : 'text-muted-foreground'}`}>
+                        {delta.isPositive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                        {delta.display}
+                      </span>
+                    );
+                  })()}
+                </div>
               ))}
               {Object.keys(metrics?.totalValueByCurrency || {}).length === 0 && (
                 <p className="text-lg font-semibold">$0.00</p>
@@ -697,7 +830,19 @@ export default function WeeklyReviewTab() {
           {errors.health ? (
             <p className="text-sm text-muted-foreground">Data unavailable</p>
           ) : metrics?.avgSuccessRate != null ? (
-            <p className="text-2xl font-bold">{metrics.avgSuccessRate.toFixed(1)}%</p>
+            <div className="flex items-end gap-2">
+              <p className="text-2xl font-bold">{metrics.avgSuccessRate.toFixed(1)}%</p>
+              {prevMetrics?.avgSuccessRate != null && (() => {
+                const delta = getDeltaIndicator(metrics.avgSuccessRate, prevMetrics.avgSuccessRate);
+                if (!delta) return null;
+                return (
+                  <span className={`text-xs flex items-center ${delta.isPositive ? 'text-green-600' : delta.isNegative ? 'text-red-600' : 'text-muted-foreground'}`}>
+                    {delta.isPositive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                    {delta.display}
+                  </span>
+                );
+              })()}
+            </div>
           ) : (
             <p className="text-sm text-muted-foreground">N/A</p>
           )}
@@ -712,7 +857,19 @@ export default function WeeklyReviewTab() {
           {errors.health ? (
             <p className="text-sm text-muted-foreground">Data unavailable</p>
           ) : (
-            <p className="text-2xl font-bold">{metrics?.reconciliationMismatches || 0}</p>
+            <div className="flex items-end gap-2">
+              <p className="text-2xl font-bold">{metrics?.reconciliationMismatches || 0}</p>
+              {prevMetrics && (() => {
+                const delta = getDeltaIndicator(metrics?.reconciliationMismatches || 0, prevMetrics.reconciliationMismatches, true);
+                if (!delta) return null;
+                return (
+                  <span className={`text-xs flex items-center ${delta.isPositive ? 'text-green-600' : delta.isNegative ? 'text-red-600' : 'text-muted-foreground'}`}>
+                    {delta.isPositive ? <ArrowDownRight className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />}
+                    {delta.display}
+                  </span>
+                );
+              })()}
+            </div>
           )}
         </Card>
 
@@ -726,7 +883,19 @@ export default function WeeklyReviewTab() {
             <p className="text-sm text-muted-foreground">Data unavailable</p>
           ) : (
             <>
-              <p className="text-2xl font-bold">{metrics?.recovered || 0}</p>
+              <div className="flex items-end gap-2">
+                <p className="text-2xl font-bold">{metrics?.recovered || 0}</p>
+                {prevMetrics && (() => {
+                  const delta = getDeltaIndicator(metrics?.recovered || 0, prevMetrics.recovered);
+                  if (!delta) return null;
+                  return (
+                    <span className={`text-xs flex items-center ${delta.isPositive ? 'text-green-600' : delta.isNegative ? 'text-red-600' : 'text-muted-foreground'}`}>
+                      {delta.isPositive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                      {delta.display}
+                    </span>
+                  );
+                })()}
+              </div>
               {metrics?.recovered === 0 && (
                 <p className="text-xs text-muted-foreground">No successful outcomes</p>
               )}
@@ -743,7 +912,19 @@ export default function WeeklyReviewTab() {
           {errors.deadLetters ? (
             <p className="text-sm text-muted-foreground">Data unavailable</p>
           ) : (
-            <p className="text-2xl font-bold">{metrics?.deadLetters || 0}</p>
+            <div className="flex items-end gap-2">
+              <p className="text-2xl font-bold">{metrics?.deadLetters || 0}</p>
+              {prevMetrics && (() => {
+                const delta = getDeltaIndicator(metrics?.deadLetters || 0, prevMetrics.deadLetters, true);
+                if (!delta) return null;
+                return (
+                  <span className={`text-xs flex items-center ${delta.isPositive ? 'text-green-600' : delta.isNegative ? 'text-red-600' : 'text-muted-foreground'}`}>
+                    {delta.isPositive ? <ArrowDownRight className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />}
+                    {delta.display}
+                  </span>
+                );
+              })()}
+            </div>
           )}
         </Card>
       </div>
