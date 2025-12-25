@@ -297,6 +297,63 @@ export const PhasesTab = () => {
     }
   };
 
+  // Webhook-based chaos tests (C1, C2, C3, C6, C8, C9)
+  const runWebhookChaosTest = async (testType: 'c1' | 'c2' | 'c3' | 'c6' | 'c8' | 'c9') => {
+    setChaosState(prev => ({ ...prev, running: testType }));
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/chaos-webhook-replay?test=${testType}&dry_run=${dryRunMode ? '1' : '0'}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+        }
+      );
+
+      const result = await response.json();
+      
+      setChaosState(prev => ({
+        running: null,
+        results: {
+          ...prev.results,
+          [testType]: response.ok ? result : { 
+            test: testType.toUpperCase(), 
+            success: false, 
+            dry_run: dryRunMode,
+            error: result.error || `HTTP ${response.status}`,
+            response: result,
+            duration_ms: 0,
+          },
+        },
+      }));
+    } catch (err) {
+      setChaosState(prev => ({
+        running: null,
+        results: {
+          ...prev.results,
+          [testType]: {
+            test: testType.toUpperCase(),
+            success: false,
+            dry_run: dryRunMode,
+            error: err instanceof Error ? err.message : 'Unknown error',
+            response: null,
+            duration_ms: 0,
+          },
+        },
+      }));
+    }
+  };
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -786,6 +843,59 @@ export const PhasesTab = () => {
                   className="w-full mb-2"
                   disabled={chaosState.running !== null}
                   onClick={() => runChaosTest(id)}
+                >
+                  {isRunning ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Zap className="w-4 h-4 mr-2" />
+                  )}
+                  {isRunning ? 'Running...' : label}
+                </Button>
+                <p className="text-xs text-muted-foreground text-center">{desc}</p>
+                
+                {result && (
+                  <div className={`mt-2 p-2 rounded text-xs ${result.success ? 'bg-emerald-50 dark:bg-emerald-950' : 'bg-red-50 dark:bg-red-950'}`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <Badge variant={result.success ? 'default' : 'destructive'} className="text-xs">
+                        {result.success ? 'PASS' : 'FAIL'}
+                      </Badge>
+                      <span className="text-muted-foreground">{result.duration_ms}ms</span>
+                    </div>
+                    <p className="text-muted-foreground">
+                      dry_run: {result.dry_run ? 'true' : 'false'}
+                    </p>
+                    {result.error && (
+                      <p className="text-red-600 dark:text-red-400 mt-1">{result.error}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Webhook-based Test Buttons (C1, C2, C3, C6, C8, C9) */}
+        <h4 className="text-sm font-medium text-muted-foreground mb-2 mt-4">Webhook Replay Tests</h4>
+        <div className="grid md:grid-cols-3 gap-3 mb-4">
+          {[
+            { id: 'c1' as const, label: 'C1: Pinterest Timeout', desc: 'chaos=pinterest_timeout' },
+            { id: 'c2' as const, label: 'C2: Pinterest Partial', desc: 'chaos=pinterest_partial_success' },
+            { id: 'c3' as const, label: 'C3: Duplicate Webhook', desc: 'idempotency test' },
+            { id: 'c6' as const, label: 'C6: DB Fail Before Send', desc: 'chaos=db_write_fail_before_send' },
+            { id: 'c8' as const, label: 'C8: DB Unavailable', desc: 'chaos=db_unavailable' },
+            { id: 'c9' as const, label: 'C9: Auth Failure', desc: 'invalid HMAC signature' },
+          ].map(({ id, label, desc }) => {
+            const result = chaosState.results[id];
+            const isRunning = chaosState.running === id;
+            
+            return (
+              <div key={id} className="border rounded-lg p-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full mb-2"
+                  disabled={chaosState.running !== null}
+                  onClick={() => runWebhookChaosTest(id)}
                 >
                   {isRunning ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
