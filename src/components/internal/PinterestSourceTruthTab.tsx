@@ -17,6 +17,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
+import {
   Loader2,
   RefreshCw,
   CheckCircle,
@@ -97,6 +108,24 @@ const CONFIDENCE_CONFIG: Record<string, { label: string; color: string }> = {
   high: { label: 'High', color: 'hsl(142, 60%, 45%)' },
   medium: { label: 'Medium', color: 'hsl(45, 80%, 50%)' },
   low: { label: 'Low', color: 'hsl(0, 0%, 60%)' },
+};
+
+const SEND_MODE_CONFIG: Record<string, { label: string; description: string; variant: 'default' | 'secondary' | 'destructive' }> = {
+  pinterest_only: { 
+    label: 'Pinterest Only', 
+    description: 'Only send Pinterest-attributed orders (EPIK or UTM). Organic orders are blocked.',
+    variant: 'default'
+  },
+  all_orders: { 
+    label: 'All Orders', 
+    description: 'Send all orders to Pinterest regardless of attribution. May inflate ROAS.',
+    variant: 'secondary'
+  },
+  disabled: { 
+    label: 'Disabled', 
+    description: 'No orders are sent to Pinterest. Use for testing or maintenance.',
+    variant: 'destructive'
+  },
 };
 
 const MetricCard = ({
@@ -190,6 +219,9 @@ export const PinterestSourceTruthTab = () => {
   const [stats, setStats] = useState<SourceTruthStats | null>(null);
   const [days, setDays] = useState("7");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [pendingMode, setPendingMode] = useState<string | null>(null);
+  const [isUpdatingMode, setIsUpdatingMode] = useState(false);
+  const { toast } = useToast();
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -273,6 +305,36 @@ export const PinterestSourceTruthTab = () => {
     fetchData();
   }, [fetchData]);
 
+  const updateSendMode = async (newMode: string) => {
+    setIsUpdatingMode(true);
+    try {
+      const { error } = await supabase
+        .from('app_settings')
+        .update({ value: { mode: newMode }, updated_at: new Date().toISOString() })
+        .eq('key', 'pinterest_purchase_send_mode');
+
+      if (error) throw error;
+
+      toast({
+        title: "Send Mode Updated",
+        description: `Pinterest tracking is now set to "${SEND_MODE_CONFIG[newMode]?.label || newMode}"`,
+      });
+
+      // Refresh data to show new mode
+      await fetchData();
+    } catch (err) {
+      console.error('Failed to update send mode:', err);
+      toast({
+        title: "Update Failed",
+        description: "Could not update send mode. Check admin permissions.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingMode(false);
+      setPendingMode(null);
+    }
+  };
+
   const filteredEvents = statusFilter === 'all'
     ? events
     : events.filter(e => e.send_status === statusFilter);
@@ -304,6 +366,43 @@ export const PinterestSourceTruthTab = () => {
 
   return (
     <div className="space-y-6">
+      {/* Confirmation Dialog */}
+      <AlertDialog open={!!pendingMode} onOpenChange={() => setPendingMode(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Change Pinterest Send Mode?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p>You are about to change the send mode to:</p>
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="font-semibold">{SEND_MODE_CONFIG[pendingMode || '']?.label}</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {SEND_MODE_CONFIG[pendingMode || '']?.description}
+                </p>
+              </div>
+              <p className="text-sm text-amber-600 dark:text-amber-400">
+                This change takes effect immediately for all new orders.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isUpdatingMode}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => pendingMode && updateSendMode(pendingMode)}
+              disabled={isUpdatingMode}
+            >
+              {isUpdatingMode ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                'Confirm Change'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -312,18 +411,44 @@ export const PinterestSourceTruthTab = () => {
           </div>
           <div>
             <h2 className="text-xl font-semibold">Pinterest Source Truth</h2>
-            <div className="flex items-center gap-3 mt-1">
-              <Badge variant={stats?.currentMode === 'pinterest_only' ? 'default' : 'secondary'}>
-                Mode: {stats?.currentMode || 'unknown'}
-              </Badge>
-              <span className="text-xs text-muted-foreground">
-                Phase 4.2 Attribution Gating
-              </span>
-            </div>
+            <span className="text-xs text-muted-foreground">
+              Phase 4.3 Attribution Gating
+            </span>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Send Mode Toggle */}
+          <Select 
+            value={stats?.currentMode || 'pinterest_only'} 
+            onValueChange={(value) => setPendingMode(value)}
+            disabled={isUpdatingMode}
+          >
+            <SelectTrigger className="w-44">
+              <SelectValue placeholder="Send Mode" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="pinterest_only">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                  Pinterest Only
+                </div>
+              </SelectItem>
+              <SelectItem value="all_orders">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-blue-600" />
+                  All Orders
+                </div>
+              </SelectItem>
+              <SelectItem value="disabled">
+                <div className="flex items-center gap-2">
+                  <XCircle className="w-4 h-4 text-red-600" />
+                  Disabled
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+
           <Select value={days} onValueChange={setDays}>
             <SelectTrigger className="w-36">
               <SelectValue />
