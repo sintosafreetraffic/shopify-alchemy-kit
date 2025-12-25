@@ -817,7 +817,7 @@ const QuizRevealTracking = () => {
                     <DollarSign className="w-5 h-5 text-green-600 dark:text-green-400" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold">€{pinterestStats?.totalValue.toFixed(0) || 0}</p>
+                    <p className="text-2xl font-bold">${pinterestStats?.totalValue.toFixed(0) || 0}</p>
                     <p className="text-xs text-muted-foreground">Revenue Tracked</p>
                   </div>
                 </div>
@@ -1460,7 +1460,7 @@ const QuizRevealTracking = () => {
                             <DollarSign className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                           </div>
                           <div>
-                            <p className="text-2xl font-bold">€{pinterestStats.totalValue.toFixed(0)}</p>
+                            <p className="text-2xl font-bold">${pinterestStats.totalValue.toFixed(0)}</p>
                             <p className="text-xs text-muted-foreground">Total Value</p>
                           </div>
                         </div>

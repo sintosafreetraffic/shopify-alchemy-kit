@@ -183,13 +183,13 @@ serve(async (req) => {
           .or("render_status.is.null,render_status.eq.pending");
         pending_count = pendingData?.length || 0;
 
-        // Total value EUR
+        // Total value (sum all currencies - stored as USD in column named total_value_eur for legacy reasons)
         const { data: valueData } = await supabase
           .from("pinterest_purchase_events")
           .select("value")
           .gte("created_at", windowStart)
           .lt("created_at", windowEnd)
-          .eq("currency", "EUR");
+          .eq("is_test", false);
         total_value_eur = valueData?.reduce((sum, row) => sum + (Number(row.value) || 0), 0) || 0;
       } else if (orderMetrics) {
         orders_seen = orderMetrics.orders_seen || 0;

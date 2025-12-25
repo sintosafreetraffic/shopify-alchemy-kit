@@ -713,7 +713,7 @@ export const PhasesTab = () => {
                   status={phase2.today.error_rate <= 5 ? 'ok' : phase2.today.error_rate <= 15 ? 'warn' : 'error'} />
                 <SingleMetricRow label="reconciliation_mismatches" value={phase2.today.reconciliation_mismatches} 
                   status={phase2.today.reconciliation_mismatches === 0 ? 'ok' : 'warn'} />
-                <SingleMetricRow label="total_value_eur" value={`€${phase2.today.total_value_eur.toFixed(0)}`} />
+                <SingleMetricRow label="total_value" value={`$${phase2.today.total_value_eur.toFixed(0)}`} />
               </div>
             </div>
 

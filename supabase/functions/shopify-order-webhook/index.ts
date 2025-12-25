@@ -634,7 +634,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     // PINTEREST TRACKING - Only on orders/paid to avoid double-tracking
     // IDEMPOTENCY: Insert pending row FIRST, exit early if duplicate
     const orderValue = parseFloat(order.total_price);
-    const orderCurrency = order.currency || 'EUR';
+    const orderCurrency = order.currency || 'USD';
     const orderId = String(order.id);
     
     if (shouldTrackPurchase) {
