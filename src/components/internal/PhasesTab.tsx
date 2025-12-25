@@ -124,6 +124,20 @@ interface Phase0ChecklistState {
   recovery_run: boolean;
 }
 
+interface ChaosTestResult {
+  test: string;
+  success: boolean;
+  dry_run: boolean;
+  response: unknown;
+  duration_ms: number;
+  error?: string;
+}
+
+interface ChaosTestState {
+  running: string | null;
+  results: Record<string, ChaosTestResult>;
+}
+
 const PHASE0_STORAGE_KEY = 'phases_checklist_state';
 
 const StatusPill = ({ status }: { status: 'ok' | 'warn' | 'error' | 'unknown' }) => {
@@ -214,10 +228,73 @@ export const PhasesTab = () => {
     };
   });
 
+  // Chaos testing state
+  const [chaosState, setChaosState] = useState<ChaosTestState>({
+    running: null,
+    results: {},
+  });
+  const [dryRunMode, setDryRunMode] = useState(true);
+
   const updateChecklist = (key: keyof Phase0ChecklistState, value: boolean) => {
     const newState = { ...checklist, [key]: value };
     setChecklist(newState);
     localStorage.setItem(PHASE0_STORAGE_KEY, JSON.stringify(newState));
+  };
+
+  const runChaosTest = async (testType: 'c4' | 'c5' | 'c7') => {
+    setChaosState(prev => ({ ...prev, running: testType }));
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/chaos-test-runner?test=${testType}&dry_run=${dryRunMode ? '1' : '0'}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+        }
+      );
+
+      const result = await response.json();
+      
+      setChaosState(prev => ({
+        running: null,
+        results: {
+          ...prev.results,
+          [testType]: response.ok ? result : { 
+            test: testType.toUpperCase(), 
+            success: false, 
+            dry_run: dryRunMode,
+            error: result.error || `HTTP ${response.status}`,
+            response: result,
+            duration_ms: 0,
+          },
+        },
+      }));
+    } catch (err) {
+      setChaosState(prev => ({
+        running: null,
+        results: {
+          ...prev.results,
+          [testType]: {
+            test: testType.toUpperCase(),
+            success: false,
+            dry_run: dryRunMode,
+            error: err instanceof Error ? err.message : 'Unknown error',
+            response: null,
+            duration_ms: 0,
+          },
+        },
+      }));
+    }
   };
 
   const fetchData = useCallback(async () => {
@@ -658,6 +735,99 @@ export const PhasesTab = () => {
               value={phase35.chaos_rows_last_7d}
               status={phase35.chaos_rows_last_7d === 0 ? 'ok' : 'warn'}
             />
+          </div>
+        )}
+      </Card>
+
+      {/* Section 5: Chaos Test Panel */}
+      <Card className="p-5 border-orange-200 dark:border-orange-900">
+        <div className="flex items-center gap-2 mb-4">
+          <SkullIcon className="w-5 h-5 text-orange-500" />
+          <h3 className="font-semibold">Chaos Test Panel</h3>
+          <Badge variant="outline" className="text-xs bg-orange-50 dark:bg-orange-950">Admin Only</Badge>
+        </div>
+        <p className="text-sm text-muted-foreground mb-4">
+          Execute chaos tests C4, C5, C7 directly. Uses stored CRON_SECRET internally.
+        </p>
+
+        {/* Dry Run Toggle */}
+        <div className="flex items-center gap-3 mb-4 p-3 rounded-lg bg-muted/50">
+          <Checkbox 
+            id="dry-run-mode" 
+            checked={dryRunMode} 
+            onCheckedChange={(v) => setDryRunMode(!!v)}
+          />
+          <label htmlFor="dry-run-mode" className="text-sm cursor-pointer flex-1">
+            <span className="font-medium">Dry Run Mode</span>
+            <span className="text-muted-foreground ml-2">(no DB writes, safe to test)</span>
+          </label>
+          {dryRunMode ? (
+            <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-400">SAFE</Badge>
+          ) : (
+            <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-400">LIVE</Badge>
+          )}
+        </div>
+
+        {/* Test Buttons */}
+        <div className="grid md:grid-cols-3 gap-3 mb-4">
+          {[
+            { id: 'c4' as const, label: 'C4: Retry Exhaustion', desc: 'chaos=always_fail' },
+            { id: 'c5' as const, label: 'C5: Rate Limit', desc: 'chaos=rate_limit' },
+            { id: 'c7' as const, label: 'C7: Timestamp Skew', desc: 'chaosMode=timestamp_skew' },
+          ].map(({ id, label, desc }) => {
+            const result = chaosState.results[id];
+            const isRunning = chaosState.running === id;
+            
+            return (
+              <div key={id} className="border rounded-lg p-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full mb-2"
+                  disabled={chaosState.running !== null}
+                  onClick={() => runChaosTest(id)}
+                >
+                  {isRunning ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Zap className="w-4 h-4 mr-2" />
+                  )}
+                  {isRunning ? 'Running...' : label}
+                </Button>
+                <p className="text-xs text-muted-foreground text-center">{desc}</p>
+                
+                {result && (
+                  <div className={`mt-2 p-2 rounded text-xs ${result.success ? 'bg-emerald-50 dark:bg-emerald-950' : 'bg-red-50 dark:bg-red-950'}`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <Badge variant={result.success ? 'default' : 'destructive'} className="text-xs">
+                        {result.success ? 'PASS' : 'FAIL'}
+                      </Badge>
+                      <span className="text-muted-foreground">{result.duration_ms}ms</span>
+                    </div>
+                    <p className="text-muted-foreground">
+                      dry_run: {result.dry_run ? 'true' : 'false'}
+                    </p>
+                    {result.error && (
+                      <p className="text-red-600 dark:text-red-400 mt-1">{result.error}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Results Detail */}
+        {Object.keys(chaosState.results).length > 0 && (
+          <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+            <h4 className="text-sm font-medium mb-2">Last Test Response</h4>
+            <pre className="text-xs overflow-auto max-h-48 p-2 bg-background rounded border">
+              {JSON.stringify(
+                chaosState.results[Object.keys(chaosState.results).pop() || '']?.response,
+                null,
+                2
+              )}
+            </pre>
           </div>
         )}
       </Card>

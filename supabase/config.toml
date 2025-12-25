@@ -185,3 +185,7 @@ verify_jwt = false
 # Tracking Phases Summary - Admin only, requires JWT and validates admin role internally
 [functions.tracking-phases-summary]
 verify_jwt = true
+
+# Chaos Test Runner - Admin only, requires JWT and validates admin role internally
+[functions.chaos-test-runner]
+verify_jwt = true
