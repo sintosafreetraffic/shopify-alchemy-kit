@@ -146,16 +146,8 @@ verify_jwt = true
 [functions.ugc-submit]
 verify_jwt = true
 
-# Pinterest Tracking - Public endpoint for purchase tracking
-[functions.pinterest-track]
-verify_jwt = false
-
-# Pinterest CAPI Direct - Direct Pinterest API integration (replaces Render)
+# Pinterest CAPI Direct - Direct Pinterest API integration (canonical path)
 [functions.pinterest-capi-direct]
-verify_jwt = false
-
-# Toggle Pinterest CAPI - Password protected toggle endpoint
-[functions.toggle-pinterest-capi]
 verify_jwt = false
 
 # Clarity Analytics - Admin only, requires apikey
