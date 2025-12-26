@@ -1527,8 +1527,11 @@ export type Database = {
       sleep_sources: {
         Row: {
           backfill_completed_at: string | null
+          backfill_days: number | null
+          backfill_error: string | null
           backfill_nights_count: number | null
           backfill_requested_at: string | null
+          backfill_status: string | null
           connected_at: string | null
           consent_granted_at: string | null
           consent_version: string | null
@@ -1547,8 +1550,11 @@ export type Database = {
         }
         Insert: {
           backfill_completed_at?: string | null
+          backfill_days?: number | null
+          backfill_error?: string | null
           backfill_nights_count?: number | null
           backfill_requested_at?: string | null
+          backfill_status?: string | null
           connected_at?: string | null
           consent_granted_at?: string | null
           consent_version?: string | null
@@ -1567,8 +1573,11 @@ export type Database = {
         }
         Update: {
           backfill_completed_at?: string | null
+          backfill_days?: number | null
+          backfill_error?: string | null
           backfill_nights_count?: number | null
           backfill_requested_at?: string | null
+          backfill_status?: string | null
           connected_at?: string | null
           consent_granted_at?: string | null
           consent_version?: string | null

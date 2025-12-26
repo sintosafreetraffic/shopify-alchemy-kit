@@ -196,8 +196,20 @@ Deno.serve(async (req) => {
       log('error', 'Garmin backfill request failed', { 
         userId, 
         status: backfillResponse.status,
-        error: errorText,
+        error: errorText.substring(0, 200), // Truncate for safety
       });
+
+      // Persist failure status
+      const sanitizedError = errorText.substring(0, 500).replace(/token|secret|key/gi, '[REDACTED]');
+      await supabaseAdmin
+        .from('sleep_sources')
+        .update({
+          backfill_error: sanitizedError,
+          backfill_status: 'failed',
+          backfill_days: days,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', source.id);
 
       // Handle specific errors
       if (backfillResponse.status === 401 || backfillResponse.status === 403) {
@@ -224,12 +236,15 @@ Deno.serve(async (req) => {
       // Some endpoints return empty body on success
     }
 
-    // Update source with backfill request timestamp
+    // Update source with backfill request timestamp and clear any previous error
     const now = new Date().toISOString();
     await supabaseAdmin
       .from('sleep_sources')
       .update({
         backfill_requested_at: now,
+        backfill_status: 'requested',
+        backfill_days: days,
+        backfill_error: null,
         updated_at: now,
       })
       .eq('id', source.id);
