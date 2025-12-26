@@ -509,26 +509,36 @@ Deno.serve(async (req) => {
     const sleepNightId = (sleepNight as { id: string }).id;
     log('info', 'Sleep night normalized', { sleepNightId, nightDate, totalSleepMinutes: metrics.total_sleep_minutes, isSplitNight });
     
-    // 9b. Update last_sync_at on sleep_sources (for pending: activate; for connected: just update sync time)
-    // First try to activate pending source
-    const { data: activatedSource } = await supabaseAdmin
+    // 9b. Update sleep_sources: pending→connected on first sync, always update last_sync_at
+    const now = new Date().toISOString();
+    
+    // First, check if this is a pending source (first sync = set connected_at)
+    const { data: pendingSource } = await supabaseAdmin
       .from('sleep_sources')
-      .update({ 
-        last_sync_at: new Date().toISOString(),
-        status: 'connected',
-        connected_at: new Date().toISOString(),
-      })
+      .select('id, connected_at')
       .eq('user_id', userId)
       .eq('source', input.source)
       .eq('status', 'pending')
-      .select('id');
+      .single();
     
-    // If no pending source was activated, update existing connected source
-    if (!activatedSource || activatedSource.length === 0) {
+    if (pendingSource) {
+      // First successful sync: activate and set connected_at
       await supabaseAdmin
         .from('sleep_sources')
         .update({ 
-          last_sync_at: new Date().toISOString(),
+          last_sync_at: now,
+          status: 'connected',
+          connected_at: now, // Only set on first activation
+        })
+        .eq('id', (pendingSource as { id: string }).id);
+      
+      log('info', 'Source activated on first sync', { userId, source: input.source });
+    } else {
+      // Already connected: just update last_sync_at (preserve original connected_at)
+      await supabaseAdmin
+        .from('sleep_sources')
+        .update({ 
+          last_sync_at: now,
         })
         .eq('user_id', userId)
         .eq('source', input.source)
