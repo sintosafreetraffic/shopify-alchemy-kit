@@ -190,29 +190,26 @@ Deno.serve(async (req) => {
       garminClientSecret
     );
     
-    // Add signature to params for Authorization header
-    const headerParams: Record<string, string> = { ...oauthParams, oauth_signature: signature };
-    
-    // Build Authorization header - params in sorted order
-    const authHeaderValue = 'OAuth ' + Object.keys(headerParams)
-      .sort()
-      .map((key) => `${oauthEncode(key)}="${oauthEncode(headerParams[key])}"`)
-      .join(', ');
-    
-    log('info', 'Requesting Garmin request token', { 
+    // Garmin is strict about where it reads parameters from; send OAuth params in the
+    // POST body as application/x-www-form-urlencoded (OAuth 1.0a compliant).
+    const tokenRequestParams: Record<string, string> = { ...oauthParams, oauth_signature: signature };
+    const tokenRequestBody = new URLSearchParams(tokenRequestParams).toString();
+
+    log('info', 'Requesting Garmin request token', {
       callbackUrl,
       timestamp,
-      nonceLen: nonce.length 
+      nonceLen: nonce.length,
+      bodyLen: tokenRequestBody.length,
     });
-    
+
     const requestTokenResponse = await fetch(requestTokenUrl, {
       method: 'POST',
       headers: {
-        'Authorization': authHeaderValue,
         // Garmin expects form-encoded requests for OAuth 1.0a endpoints
         'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/x-www-form-urlencoded',
       },
-      body: '',
+      body: tokenRequestBody,
     });
     
     if (!requestTokenResponse.ok) {
