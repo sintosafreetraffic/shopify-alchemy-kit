@@ -1,13 +1,14 @@
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // ============================================================
-// Sleep Data Integration Foundation v2.2
+// Sleep Data Integration Foundation v2.3
 // POST /sleep/intake - Unified vendor-agnostic intake endpoint
 // 
-// v2.2 Changes:
-// - Added consent guardrails: revoked → 409, missing source → 404
-// - Added COALESCE for connected_at (defensive)
-// - Added dev-only test_mode for pipeline validation
+// v2.3 Changes:
+// - Added is_test column support for analytics isolation
+// - Fixed timezone-correct test payload generation using user_timezone
+// - Skip sleep_logs insert in test mode (no analytics pollution)
+// - Deterministic dedupe_key uses night_date for test mode
 // ============================================================
 
 const corsHeaders = {
@@ -117,6 +118,11 @@ function extractTimezoneOffset(dateStr: string): number {
   return 0;
 }
 
+/**
+ * Derive night_date from start_time, respecting user's timezone.
+ * If userTimezone is provided (IANA format like "Europe/Copenhagen"), use it.
+ * Otherwise fall back to offset extracted from the timestamp.
+ */
 function deriveNightDate(startTime: string, userTimezone?: string): string {
   const startDate = new Date(startTime);
   
@@ -137,6 +143,59 @@ function deriveNightDate(startTime: string, userTimezone?: string): string {
   const offsetMinutes = extractTimezoneOffset(startTime);
   const localDate = new Date(startDate.getTime() + offsetMinutes * 60 * 1000);
   return localDate.toISOString().split('T')[0];
+}
+
+/**
+ * Get local date string in user's timezone (YYYY-MM-DD format)
+ */
+function getLocalDateInTimezone(date: Date, timezone?: string): string {
+  if (timezone) {
+    try {
+      const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+      return formatter.format(date);
+    } catch {
+      // Fall through to UTC
+    }
+  }
+  return date.toISOString().split('T')[0];
+}
+
+/**
+ * Get timezone offset string (e.g., "+01:00") for a timezone
+ */
+function getTimezoneOffsetString(timezone?: string): string {
+  if (!timezone) return 'Z';
+  
+  try {
+    const now = new Date();
+    // Get the offset by comparing UTC time with local time in the timezone
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      timeZoneName: 'shortOffset',
+    });
+    const parts = formatter.formatToParts(now);
+    const offsetPart = parts.find(p => p.type === 'timeZoneName');
+    
+    if (offsetPart) {
+      // Convert "GMT+1" or "GMT-5" to "+01:00" or "-05:00"
+      const match = offsetPart.value.match(/GMT([+-])(\d{1,2})(?::(\d{2}))?/);
+      if (match) {
+        const sign = match[1];
+        const hours = match[2].padStart(2, '0');
+        const minutes = match[3] || '00';
+        return `${sign}${hours}:${minutes}`;
+      }
+    }
+  } catch {
+    // Fall through to UTC
+  }
+  
+  return 'Z';
 }
 
 function computeDedupeKey(input: RawSleepInput, userId: string): string {
@@ -244,29 +303,40 @@ function validateInput(input: RawSleepInput): string | null {
 }
 
 // ============================================================
-// Test Mode Payload Generation
+// Test Mode Payload Generation (timezone-correct)
 // ============================================================
 
+/**
+ * Generate a timezone-correct test payload.
+ * Uses user's timezone to derive night_date and format timestamps correctly.
+ * The dedupe_key is deterministic per user/source/night_date (won't collide with real data).
+ */
 function generateTestPayload(userId: string, source: SleepSource, userTimezone?: string): RawSleepInput {
-  // Generate a test payload for today
   const now = new Date();
-  const todayStr = now.toISOString().split('T')[0];
   
-  // Create start_time at 23:00 yesterday in user's timezone (or UTC)
+  // Get the local date in user's timezone for night_date
+  const localNightDate = getLocalDateInTimezone(now, userTimezone);
+  
+  // Get yesterday's date for start_time
   const yesterday = new Date(now);
   yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = yesterday.toISOString().split('T')[0];
+  const localYesterday = getLocalDateInTimezone(yesterday, userTimezone);
   
-  // Use +01:00 as default offset (Europe/Copenhagen-ish)
-  const offset = '+01:00';
-  const startTime = `${yesterdayStr}T23:00:00${offset}`;
-  const endTime = `${todayStr}T06:00:00${offset}`;
+  // Get timezone offset string
+  const offset = getTimezoneOffsetString(userTimezone);
+  
+  // Create start_time at 23:00 yesterday, end_time at 06:00 today (7h sleep)
+  const startTime = `${localYesterday}T23:00:00${offset}`;
+  const endTime = `${localNightDate}T06:00:00${offset}`;
   
   // Generate minimal stages: 3.5h light + 3.5h deep (7h total)
-  const lightStart = `${yesterdayStr}T23:00:00${offset}`;
-  const lightEnd = `${todayStr}T02:30:00${offset}`;
-  const deepStart = `${todayStr}T02:30:00${offset}`;
-  const deepEnd = `${todayStr}T06:00:00${offset}`;
+  const lightStart = `${localYesterday}T23:00:00${offset}`;
+  const lightEnd = `${localNightDate}T02:30:00${offset}`;
+  const deepStart = `${localNightDate}T02:30:00${offset}`;
+  const deepEnd = `${localNightDate}T06:00:00${offset}`;
+  
+  // Deterministic dedupe key using night_date (not colliding with real vendor data)
+  const dedupeKey = `test:${userId}:${source}:${localNightDate}`;
   
   return {
     source,
@@ -276,8 +346,7 @@ function generateTestPayload(userId: string, source: SleepSource, userTimezone?:
       { stage: 'light', start_time: lightStart, end_time: lightEnd, confidence: 0.9 },
       { stage: 'deep', start_time: deepStart, end_time: deepEnd, confidence: 0.9 },
     ],
-    // Test mode dedupe key: deterministic per user/source/date (won't collide with real data)
-    dedupe_key: `test:${userId}:${source}:${todayStr}`,
+    dedupe_key: dedupeKey,
     test_mode: true,
   };
 }
@@ -495,7 +564,12 @@ Deno.serve(async (req) => {
     let input: RawSleepInput;
     if (isTestMode) {
       input = generateTestPayload(userId, rawInput.source, userTimezone);
-      log('info', 'Test mode: generated payload', { userId, source: input.source, dedupeKey: input.dedupe_key });
+      log('info', 'Test mode: generated timezone-correct payload', { 
+        userId, 
+        source: input.source, 
+        dedupeKey: input.dedupe_key,
+        userTimezone: userTimezone || 'UTC',
+      });
     } else {
       input = rawInput;
     }
@@ -548,7 +622,7 @@ Deno.serve(async (req) => {
       );
     }
     
-    // 10. Insert raw event
+    // 10. Insert raw event (with is_test flag, no raw_payload in test mode)
     const { data: rawEvent, error: rawInsertError } = await supabaseAdmin
       .from('sleep_raw_events')
       .insert({
@@ -560,6 +634,7 @@ Deno.serve(async (req) => {
         end_time: input.end_time,
         stages: input.stages || null,
         raw_payload: isTestMode ? null : (input.raw_payload || null), // Never store raw_payload in test mode
+        is_test: isTestMode, // Mark test data
       })
       .select('id')
       .single();
@@ -570,7 +645,7 @@ Deno.serve(async (req) => {
     }
     
     const rawEventId = (rawEvent as { id: string }).id;
-    log('info', 'Raw event stored', { rawEventId, source: input.source, testMode: isTestMode });
+    log('info', 'Raw event stored', { rawEventId, source: input.source, isTest: isTestMode });
     
     // 11. Normalize
     const metrics = normalizeToNightlyMetrics(input);
@@ -597,7 +672,7 @@ Deno.serve(async (req) => {
         .eq('night_date', nightDate);
     }
     
-    // Insert new sleep_night
+    // Insert new sleep_night (with is_test flag)
     const { data: sleepNight, error: nightInsertError } = await supabaseAdmin
       .from('sleep_nights')
       .insert({
@@ -612,6 +687,7 @@ Deno.serve(async (req) => {
         is_split_segment: isSplitNight,
         normalization_version: NORMALIZATION_VERSION,
         raw_event_id: rawEventId,
+        is_test: isTestMode, // Mark test data
       })
       .select('id')
       .single();
@@ -622,7 +698,7 @@ Deno.serve(async (req) => {
     }
     
     const sleepNightId = (sleepNight as { id: string }).id;
-    log('info', 'Sleep night normalized', { sleepNightId, nightDate, totalSleepMinutes: metrics.total_sleep_minutes, isSplitNight, testMode: isTestMode });
+    log('info', 'Sleep night normalized', { sleepNightId, nightDate, totalSleepMinutes: metrics.total_sleep_minutes, isSplitNight, isTest: isTestMode });
     
     // 13. Update sleep_sources: pending→connected on first sync, always update last_sync_at
     const now = new Date().toISOString();
@@ -641,7 +717,7 @@ Deno.serve(async (req) => {
         })
         .eq('id', typedSourceRow.id);
       
-      log('info', 'Source activated on first sync', { userId, source: input.source, testMode: isTestMode });
+      log('info', 'Source activated on first sync', { userId, source: input.source, isTest: isTestMode });
     } else {
       // Already connected: just update last_sync_at (preserve original connected_at)
       await supabaseAdmin
@@ -652,13 +728,12 @@ Deno.serve(async (req) => {
         .eq('id', typedSourceRow.id);
     }
     
-    // 14. Link to Sleep Coach (skip in test mode unless email is confidently present)
-    // Intent: test mode validates pipeline but avoids creating dirty sleep_logs
+    // 14. Link to Sleep Coach — SKIP ENTIRELY IN TEST MODE (no analytics pollution)
+    // Test mode validates normalization pipeline but avoids creating dirty sleep_logs
     const userEmail = authResult.email || input.email;
-    const shouldCreateLog = !isTestMode || (isTestMode && userEmail);
     
-    if (userEmail && shouldCreateLog) {
-      // Map source to correct log_source enum value
+    if (!isTestMode && userEmail) {
+      // Real mode: create sleep_log for Sleep Coach
       const logSource = mapSourceToLogSource(input.source);
       
       const { error: logInsertError } = await supabaseAdmin
@@ -673,24 +748,24 @@ Deno.serve(async (req) => {
           felt_hot: false,
           felt_stressed: false,
           source: logSource,
-          notes: isTestMode ? `[TEST] Auto-imported from ${input.source}` : `Auto-imported from ${input.source}`,
+          notes: `Auto-imported from ${input.source}`,
           sleep_night_id: sleepNightId,
         });
       
       if (logInsertError) {
-        log('warn', 'Failed to create sleep_log linkage', { error: logInsertError.message, sleepNightId, testMode: isTestMode });
+        log('warn', 'Failed to create sleep_log linkage', { error: logInsertError.message, sleepNightId });
       } else {
-        log('info', 'Sleep Coach linkage created', { sleepNightId, email: userEmail, logSource, testMode: isTestMode });
+        log('info', 'Sleep Coach linkage created', { sleepNightId, email: userEmail, logSource });
       }
     } else if (isTestMode) {
-      log('info', 'Test mode: skipped sleep_logs (no email or intentional skip)', { sleepNightId });
+      log('info', 'Test mode: skipped sleep_logs insert (no analytics pollution)', { sleepNightId });
     }
     
     // 15. Emit event
-    log('info', 'sleep_data_received event emitted', { userId, source: input.source, sleepNightId, nightDate, testMode: isTestMode });
+    log('info', 'sleep_data_received event emitted', { userId, source: input.source, sleepNightId, nightDate, isTest: isTestMode });
     
     const duration = Date.now() - startTime;
-    log('info', 'Intake completed successfully', { duration, sleepNightId, testMode: isTestMode });
+    log('info', 'Intake completed successfully', { duration, sleepNightId, isTest: isTestMode });
     
     return new Response(
       JSON.stringify({
