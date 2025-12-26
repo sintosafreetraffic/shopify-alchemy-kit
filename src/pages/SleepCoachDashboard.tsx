@@ -177,6 +177,7 @@ const SleepCoachDashboard = () => {
       if (session?.user) {
         setIsAuthenticated(true);
         setEmail(session.user.email || null);
+        setUserId(session.user.id);
         // Check access after confirming authentication
         await checkAccess(session);
       }
@@ -189,6 +190,7 @@ const SleepCoachDashboard = () => {
       if (session?.user) {
         setIsAuthenticated(true);
         setEmail(session.user.email || null);
+        setUserId(session.user.id);
         // Re-check access on auth state change
         if (event === 'SIGNED_IN') {
           await checkAccess(session);
@@ -196,6 +198,7 @@ const SleepCoachDashboard = () => {
       } else {
         setIsAuthenticated(false);
         setEmail(null);
+        setUserId(null);
         setAccessDenied(null);
       }
     });
@@ -622,6 +625,7 @@ const SleepCoachDashboard = () => {
                 <ProfileTab
                   profile={data.profile}
                   email={email}
+                  userId={userId || undefined}
                   adherenceRate={adherenceRate}
                   streakDays={completionStreak || streak}
                   onRefetch={refetch}
