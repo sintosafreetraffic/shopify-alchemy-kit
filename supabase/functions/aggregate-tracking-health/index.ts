@@ -304,6 +304,21 @@ serve(async (req) => {
         }
       }
 
+      // ========== CHAOS TEST DETECTION ==========
+      // Check if there were any test orders on this day (indicates chaos testing was running)
+      const { count: testOrderCount } = await supabase
+        .from("pinterest_purchase_events")
+        .select("*", { count: "exact", head: true })
+        .gte("created_at", windowStart)
+        .lt("created_at", windowEnd)
+        .eq("is_test", true);
+      
+      const chaosTestDetected = (testOrderCount || 0) > 0;
+      
+      if (chaosTestDetected) {
+        console.log(`[aggregate-tracking-health] Chaos test detected for ${dayStr}: ${testOrderCount} test orders found. Alerts will be auto-resolved.`);
+      }
+
       // ========== DRIFT DETECTION ==========
       let alertsCreated = 0;
 
@@ -352,6 +367,7 @@ serve(async (req) => {
       }
 
       // Helper to create alert (with dedupe and email notification)
+      // If chaos test detected, alerts are created but auto-resolved and flagged
       async function createAlert(
         type: string,
         severity: "warn" | "critical",
@@ -362,7 +378,7 @@ serve(async (req) => {
         dayAlerts.push(alertInfo);
         
         if (dryRun) {
-          console.log(`[aggregate-tracking-health] DRY RUN: Would create ${severity} alert: ${type} - ${message}`);
+          console.log(`[aggregate-tracking-health] DRY RUN: Would create ${severity} alert: ${type} - ${message}${chaosTestDetected ? ' (chaos-test, auto-resolved)' : ''}`);
           alertsCreated++;
           return;
         }
@@ -380,24 +396,37 @@ serve(async (req) => {
           return;
         }
 
+        // If chaos test detected, auto-resolve the alert and add flag to context
+        const alertStatus = chaosTestDetected ? "resolved" : "open";
+        const alertContext = chaosTestDetected 
+          ? { ...context, chaos_test_detected: true, test_order_count: testOrderCount, resolution: "auto_resolved_chaos_test" }
+          : context;
+        const alertMessage = chaosTestDetected 
+          ? `${message} [AUTO-RESOLVED: Chaos test detected - ${testOrderCount} test orders]`
+          : message;
+
         const { error: alertError } = await supabase
           .from("tracking_alerts")
           .insert({
             day: dayStr,
             severity,
             type,
-            message,
-            context,
+            message: alertMessage,
+            context: alertContext,
+            status: alertStatus,
+            acknowledged_at: chaosTestDetected ? new Date().toISOString() : null,
           });
 
         if (alertError) {
           console.error(`[aggregate-tracking-health] Alert insert error:`, alertError);
         } else {
-          console.log(`[aggregate-tracking-health] Created ${severity} alert: ${type}`);
+          console.log(`[aggregate-tracking-health] Created ${severity} alert: ${type}${chaosTestDetected ? ' (auto-resolved due to chaos test)' : ''}`);
           alertsCreated++;
           
-          // Send email notification for new alerts
-          await sendAlertEmail(type, severity, message, context);
+          // Only send email notification for NEW alerts that are NOT chaos-test related
+          if (!chaosTestDetected) {
+            await sendAlertEmail(type, severity, message, context);
+          }
         }
       }
 
