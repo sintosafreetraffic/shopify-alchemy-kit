@@ -66,6 +66,12 @@ async function verifyState(stateString: string, secret: string): Promise<{ valid
 }
 
 // OAuth 1.0a signature generation
+function oauthEncode(input: string): string {
+  return encodeURIComponent(input).replace(/[!'()*]/g, (c) =>
+    '%' + c.charCodeAt(0).toString(16).toUpperCase()
+  );
+}
+
 async function generateOAuthSignature(
   method: string,
   url: string,
@@ -75,12 +81,12 @@ async function generateOAuthSignature(
 ): Promise<string> {
   const sortedParams = Object.keys(params)
     .sort()
-    .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
+    .map((key) => `${oauthEncode(key)}=${oauthEncode(params[key])}`)
     .join('&');
-  
-  const signatureBase = `${method.toUpperCase()}&${encodeURIComponent(url)}&${encodeURIComponent(sortedParams)}`;
-  const signingKey = `${encodeURIComponent(consumerSecret)}&${encodeURIComponent(tokenSecret)}`;
-  
+
+  const signatureBase = `${method.toUpperCase()}&${oauthEncode(url)}&${oauthEncode(sortedParams)}`;
+  const signingKey = `${oauthEncode(consumerSecret)}&${oauthEncode(tokenSecret)}`;
+
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
     'raw',
@@ -89,7 +95,7 @@ async function generateOAuthSignature(
     false,
     ['sign']
   );
-  
+
   const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(signatureBase));
   return btoa(String.fromCharCode(...new Uint8Array(signature)));
 }
@@ -257,10 +263,11 @@ Deno.serve(async (req) => {
       requestTokenSecret
     );
     
-    oauthParams.oauth_signature = signature;
-    
-    const authHeaderValue = 'OAuth ' + Object.keys(oauthParams)
-      .map(key => `${encodeURIComponent(key)}="${encodeURIComponent(oauthParams[key])}"`)
+    const headerParams: Record<string, string> = { ...oauthParams, oauth_signature: signature };
+
+    const authHeaderValue = 'OAuth ' + Object.keys(headerParams)
+      .sort()
+      .map((key) => `${oauthEncode(key)}="${oauthEncode(headerParams[key])}"`)
       .join(', ');
     
     log('info', 'Exchanging verifier for access token', { userId });
