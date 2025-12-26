@@ -84,6 +84,7 @@ const SleepCoachDashboard = () => {
   const [isCheckingAccess, setIsCheckingAccess] = useState(false);
   const [accessDenied, setAccessDenied] = useState<{ reason: string; hasPurchased: boolean } | null>(null);
   const [email, setEmail] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [showWizard, setShowWizard] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);

@@ -11,6 +11,7 @@ import { ProductRecommendationCard } from './ProductRecommendationCard';
 import { OwnedProductsSection } from './OwnedProductsSection';
 import { AssessmentAccordion } from './AssessmentAccordion';
 import { SleepSyncProfileOverview } from './SleepSyncProfileOverview';
+import { ConnectedSourcesCard } from './ConnectedSourcesCard';
 import { SleepSetupForm } from '../SleepSetupForm';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -19,6 +20,7 @@ import { useProductOwnership } from '@/hooks/useProductOwnership';
 interface ProfileTabProps {
   profile: SleepProfile;
   email: string;
+  userId?: string;
   adherenceRate?: number;
   streakDays?: number;
   onRefetch?: () => void;
@@ -27,7 +29,8 @@ interface ProfileTabProps {
 
 export function ProfileTab({ 
   profile, 
-  email, 
+  email,
+  userId,
   adherenceRate, 
   streakDays,
   onRefetch,
@@ -89,7 +92,10 @@ export function ProfileTab({
       {/* Section 8: Assessment Accordion */}
       <AssessmentAccordion quizData={profile.quiz_data} />
 
-      {/* Section 9: SleepSync Profile Overview */}
+      {/* Section 9: Connected Wearables */}
+      {userId && <ConnectedSourcesCard userId={userId} />}
+
+      {/* Section 10: SleepSync Profile Overview */}
       <SleepSyncProfileOverview email={email} />
 
       {/* Retake Assessment CTA */}

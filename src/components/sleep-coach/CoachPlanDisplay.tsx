@@ -16,7 +16,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Calendar, FileText, Clock, Heart, Target, Loader2, AlertTriangle, RefreshCw, User } from "lucide-react";
+import { Sparkles, Calendar, FileText, Clock, Heart, Target, Loader2, AlertTriangle, RefreshCw, User, Watch } from "lucide-react";
+import { Link } from "react-router-dom";
 
 // Import v2 components
 import { WhyThisPlanCard } from "./WhyThisPlanCard";
@@ -158,13 +159,24 @@ export const CoachPlanDisplay = ({
             <>
               <Sparkles className="h-12 w-12 text-primary mx-auto mb-4 opacity-50" />
               <h3 className="text-lg font-semibold mb-2">No Sleep Plan Yet</h3>
-              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+              <p className="text-muted-foreground mb-4 max-w-md mx-auto">
                 Your personalized AI sleep plan will be generated automatically based on your profile and sleep logs.
               </p>
-              <Button onClick={() => onGeneratePlan('manual')}>
-                <Sparkles className="h-4 w-4 mr-2" />
-                Generate My Plan
-              </Button>
+              <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
+                Connect your Garmin or Apple Watch to get deeper insights from your sleep data.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button onClick={() => onGeneratePlan('manual')}>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Generate My Plan
+                </Button>
+                <Button variant="outline" asChild>
+                  <Link to="/settings/sleep-sources">
+                    <Watch className="h-4 w-4 mr-2" />
+                    Connect Wearable
+                  </Link>
+                </Button>
+              </div>
             </>
           )}
         </CardContent>
