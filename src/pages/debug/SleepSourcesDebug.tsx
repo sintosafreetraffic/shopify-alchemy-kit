@@ -14,7 +14,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Loader2, Shield, RefreshCw, Database, Clock, AlertTriangle } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 
@@ -59,13 +60,24 @@ const SleepSourcesDebug = () => {
   const [recentNights, setRecentNights] = useState<SleepNightDebug[]>([]);
   const [rateLimits, setRateLimits] = useState<RateLimitDebug[]>([]);
   const [duplicateCount, setDuplicateCount] = useState(0);
+  
+  // Test data toggle - persisted in localStorage
+  const [includeTestData, setIncludeTestData] = useState(() => {
+    const stored = localStorage.getItem('sleepDebug_includeTestData');
+    return stored === 'true';
+  });
 
   const isDev = import.meta.env.DEV;
   const debugParam = searchParams.get('debug') === '1';
+  
+  // Persist toggle to localStorage
+  useEffect(() => {
+    localStorage.setItem('sleepDebug_includeTestData', String(includeTestData));
+  }, [includeTestData]);
 
   useEffect(() => {
     checkAccess();
-  }, []);
+  }, [includeTestData]);
 
   const checkAccess = async () => {
     setAccessChecking(true);
@@ -116,10 +128,17 @@ const SleepSourcesDebug = () => {
       const { data: sourcesData } = await sourcesQuery;
       setSources((sourcesData as SleepSourceDebug[]) || []);
 
-      // Load recent sleep nights (include is_test for debug visibility)
-      const nightsQuery = isAdmin
-        ? supabase.from('sleep_nights').select('id, night_date, source, total_sleep_minutes, is_split_segment, is_test, created_at').order('created_at', { ascending: false }).limit(20)
-        : supabase.from('sleep_nights').select('id, night_date, source, total_sleep_minutes, is_split_segment, is_test, created_at').eq('user_id', uid).order('created_at', { ascending: false }).limit(10);
+      // Load recent sleep nights - filter by is_test based on toggle
+      let nightsQuery = isAdmin
+        ? supabase.from('sleep_nights').select('id, night_date, source, total_sleep_minutes, is_split_segment, is_test, created_at')
+        : supabase.from('sleep_nights').select('id, night_date, source, total_sleep_minutes, is_split_segment, is_test, created_at').eq('user_id', uid);
+      
+      // Apply is_test filter when toggle is OFF
+      if (!includeTestData) {
+        nightsQuery = nightsQuery.eq('is_test', false);
+      }
+      
+      nightsQuery = nightsQuery.order('created_at', { ascending: false }).limit(isAdmin ? 20 : 10);
 
       const { data: nightsData } = await nightsQuery;
       setRecentNights((nightsData as SleepNightDebug[]) || []);
@@ -139,7 +158,7 @@ const SleepSourcesDebug = () => {
         setRateLimits((rateLimitData as RateLimitDebug[]) || []);
       }
 
-      // Count split segments (duplicates indicator)
+      // Count split segments - only count from filtered results (real data only when toggle OFF)
       const splitCount = (nightsData as SleepNightDebug[] || []).filter(n => n.is_split_segment).length;
       setDuplicateCount(splitCount);
 
@@ -197,10 +216,22 @@ const SleepSourcesDebug = () => {
               Internal diagnostics for sleep data integration
             </p>
           </div>
-          <Button variant="outline" onClick={handleRefresh} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="include-test-data"
+                checked={includeTestData}
+                onCheckedChange={setIncludeTestData}
+              />
+              <Label htmlFor="include-test-data" className="text-sm text-muted-foreground cursor-pointer">
+                Include test data
+              </Label>
+            </div>
+            <Button variant="outline" onClick={handleRefresh} disabled={loading}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         {loading ? (
