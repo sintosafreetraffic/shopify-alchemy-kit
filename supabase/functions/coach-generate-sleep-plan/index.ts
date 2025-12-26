@@ -127,17 +127,38 @@ Deno.serve(async (req) => {
     console.log(`[coach-generate-sleep-plan] Generating ${planType} plan for: ${email}, reason: ${reason}`);
 
     // === STEP 1: Fetch fresh profile, logs, 3-layer attributes, plan history, and wearable data ===
+    // Freshness cap: only use wearable data from last 30 days
+    const freshnessDate = new Date();
+    freshnessDate.setDate(freshnessDate.getDate() - 30);
+    const freshnessDateStr = freshnessDate.toISOString().split('T')[0]; // YYYY-MM-DD
+    
     const [profileResult, logsResult, attrsResult, plansCountResult, wearableNightsResult, wearableSourcesResult, rawEventsResult] = await Promise.all([
       supabase.from('sleep_profiles').select('*').eq('email', email).single(),
       supabase.from('sleep_logs').select('*').eq('email', email).order('date', { ascending: false }).limit(30), // Extended for pattern detection
       supabase.from('sleep_attributes_state').select('data').eq('email', email).maybeSingle(),
       supabase.from('coach_plans').select('id', { count: 'exact' }).eq('email', email),
       // Fetch wearable sleep data (Garmin, Apple Health) for richer AI context
-      supabase.from('sleep_nights').select('night_date, total_sleep_minutes, sleep_efficiency, wake_events, source, device_model, start_time, end_time').eq('user_id', userId).eq('is_test', false).order('night_date', { ascending: false }).limit(14),
+      // Filters: not test, not split-segment, within 30-day freshness window
+      supabase.from('sleep_nights')
+        .select('night_date, total_sleep_minutes, sleep_efficiency, wake_events, source, device_model, start_time, end_time, timezone_offset_seconds')
+        .eq('user_id', userId)
+        .eq('is_test', false)
+        .or('is_split_segment.is.null,is_split_segment.eq.false') // Exclude split segments
+        .gte('night_date', freshnessDateStr) // 30-day freshness cap
+        .order('night_date', { ascending: false })
+        .limit(14),
       // Fetch connected wearable sources
       supabase.from('sleep_sources').select('source, status, connected_at, last_sync_at').eq('user_id', userId).eq('status', 'connected'),
       // Fetch raw events with sleep stages for architecture analysis
-      supabase.from('sleep_raw_events').select('stages, start_time, end_time').eq('user_id', userId).eq('is_test', false).not('stages', 'is', null).order('received_at', { ascending: false }).limit(14),
+      // Filters: not test, has stages, within 30-day freshness window
+      supabase.from('sleep_raw_events')
+        .select('stages, start_time, end_time')
+        .eq('user_id', userId)
+        .eq('is_test', false)
+        .not('stages', 'is', null)
+        .gte('start_time', freshnessDate.toISOString()) // 30-day freshness cap
+        .order('received_at', { ascending: false })
+        .limit(14),
     ]);
 
     const profile: SleepProfile | null = profileResult.data;
@@ -201,6 +222,11 @@ Deno.serve(async (req) => {
       for (const event of rawEvents) {
         if (!event.stages || !Array.isArray(event.stages) || event.stages.length === 0) continue;
         
+        // Calculate expected sleep duration from event timestamps
+        const eventStartMs = new Date(event.start_time).getTime();
+        const eventEndMs = new Date(event.end_time).getTime();
+        const expectedDurationMin = (eventEndMs - eventStartMs) / 60000;
+        
         let nightDeep = 0, nightLight = 0, nightRem = 0, nightAwake = 0;
         for (const stage of event.stages) {
           const startMs = new Date(stage.start_time).getTime();
@@ -218,6 +244,20 @@ Deno.serve(async (req) => {
         }
         
         const nightTotal = nightDeep + nightLight + nightRem + nightAwake;
+        
+        // Validation: skip nights where stage duration differs from sleep duration by >15%
+        if (expectedDurationMin > 0 && nightTotal > 0) {
+          const durationDiffPct = Math.abs(nightTotal - expectedDurationMin) / expectedDurationMin;
+          if (durationDiffPct > 0.15) {
+            console.log('[coach-generate-sleep-plan] Skipping night with stage/duration mismatch', {
+              expectedMin: Math.round(expectedDurationMin),
+              stageTotal: Math.round(nightTotal),
+              diffPct: Math.round(durationDiffPct * 100),
+            });
+            continue;
+          }
+        }
+        
         if (nightTotal > 60) { // At least 1 hour of data
           totalDeep += nightDeep;
           totalLight += nightLight;
@@ -228,7 +268,8 @@ Deno.serve(async (req) => {
         }
       }
       
-      if (validNightCount > 0 && totalMinutes > 0) {
+      // Only include architecture if we have >= 3 valid nights (acceptance criteria)
+      if (validNightCount >= 3 && totalMinutes > 0) {
         sleepArchitecture = {
           avgDeepPct: Math.round((totalDeep / totalMinutes) * 100),
           avgLightPct: Math.round((totalLight / totalMinutes) * 100),
@@ -237,6 +278,8 @@ Deno.serve(async (req) => {
           nightsAnalyzed: validNightCount,
         };
         console.log('[coach-generate-sleep-plan] Sleep architecture calculated', sleepArchitecture);
+      } else if (validNightCount > 0) {
+        console.log('[coach-generate-sleep-plan] Insufficient nights for architecture', { validNightCount, required: 3 });
       }
     }
     
@@ -254,8 +297,27 @@ Deno.serve(async (req) => {
       for (const night of wearableNights) {
         if (!night.start_time) continue;
         const startDate = new Date(night.start_time);
+        
+        // Apply timezone offset if available (convert UTC to local time)
+        const tzOffsetSeconds = (night as any).timezone_offset_seconds;
+        let localHours = startDate.getUTCHours();
+        let localMinutes = startDate.getUTCMinutes();
+        
+        if (tzOffsetSeconds != null) {
+          const offsetMinutes = tzOffsetSeconds / 60;
+          localMinutes += offsetMinutes;
+          localHours += Math.floor(localMinutes / 60);
+          localMinutes = localMinutes % 60;
+          if (localMinutes < 0) { localMinutes += 60; localHours -= 1; }
+          localHours = ((localHours % 24) + 24) % 24; // Normalize to 0-23
+        } else {
+          // Fallback to JS Date local interpretation
+          localHours = startDate.getHours();
+          localMinutes = startDate.getMinutes();
+        }
+        
         // Convert to minutes past midnight (handling times past midnight as next day)
-        let minutesPastMidnight = startDate.getHours() * 60 + startDate.getMinutes();
+        let minutesPastMidnight = localHours * 60 + localMinutes;
         // If bedtime is before 6 PM, assume it's past midnight (e.g., 1 AM = 25*60 = 1500 mins)
         if (minutesPastMidnight < 18 * 60) {
           minutesPastMidnight += 24 * 60;
