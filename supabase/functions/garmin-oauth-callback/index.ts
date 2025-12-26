@@ -19,7 +19,11 @@ interface StatePayload {
   source: 'garmin';
   timestamp: number;
   nonce: string;
+  redirect_origin: string;
 }
+
+// Default fallback origin
+const DEFAULT_ORIGIN = 'https://app.risebynight.com';
 
 // Verify HMAC signature on state
 async function verifyState(stateString: string, secret: string): Promise<{ valid: boolean; payload?: StatePayload; error?: string }> {
@@ -99,12 +103,12 @@ async function computeTokenHash(accessToken: string, pepper: string): Promise<st
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// Frontend redirect URLs
-const SUCCESS_REDIRECT = 'https://app.risebynight.com/settings/sleep-sources?garmin=success';
-const ERROR_REDIRECT_BASE = 'https://app.risebynight.com/settings/sleep-sources?garmin=error';
+function buildSuccessRedirect(origin: string): string {
+  return `${origin}/settings/sleep-sources?garmin=success`;
+}
 
-function buildErrorRedirect(reason: string): string {
-  return `${ERROR_REDIRECT_BASE}&reason=${encodeURIComponent(reason)}`;
+function buildErrorRedirect(origin: string, reason: string): string {
+  return `${origin}/settings/sleep-sources?garmin=error&reason=${encodeURIComponent(reason)}`;
 }
 
 Deno.serve(async (req) => {
@@ -119,6 +123,9 @@ Deno.serve(async (req) => {
     );
   }
   
+  // We'll extract redirect_origin from state, but need a fallback for early errors
+  let redirectOrigin = DEFAULT_ORIGIN;
+  
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -129,12 +136,12 @@ Deno.serve(async (req) => {
     
     if (!garminClientId || !garminClientSecret || !stateSigningSecret) {
       log('error', 'Missing required Garmin OAuth secrets');
-      return Response.redirect(buildErrorRedirect('server_config'), 302);
+      return Response.redirect(buildErrorRedirect(redirectOrigin, 'server_config'), 302);
     }
     
     if (!tokenHashPepper) {
       log('error', 'Missing GARMIN_TOKEN_HASH_PEPPER secret');
-      return Response.redirect(buildErrorRedirect('server_config'), 302);
+      return Response.redirect(buildErrorRedirect(redirectOrigin, 'server_config'), 302);
     }
     
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
@@ -148,28 +155,45 @@ Deno.serve(async (req) => {
     const error = url.searchParams.get('error');
     const errorDescription = url.searchParams.get('error_description');
     
+    // Try to extract redirect_origin from state early (even before full verification)
+    if (state) {
+      try {
+        const stateObject = JSON.parse(atob(state));
+        if (stateObject?.payload?.redirect_origin) {
+          redirectOrigin = stateObject.payload.redirect_origin;
+        }
+      } catch {
+        // State parsing failed, use default origin
+      }
+    }
+    
     // Handle Garmin error response (user denied consent)
     if (error) {
       log('warn', 'Garmin OAuth error response', { error, errorDescription });
       const reason = error === 'access_denied' ? 'access_denied' : 'garmin_error';
-      return Response.redirect(buildErrorRedirect(reason), 302);
+      return Response.redirect(buildErrorRedirect(redirectOrigin, reason), 302);
     }
     
     if (!code || !state) {
       log('warn', 'Missing OAuth callback parameters');
-      return Response.redirect(buildErrorRedirect('missing_params'), 302);
+      return Response.redirect(buildErrorRedirect(redirectOrigin, 'missing_params'), 302);
     }
     
     // Verify state
     const stateResult = await verifyState(state, stateSigningSecret);
     if (!stateResult.valid || !stateResult.payload) {
       log('warn', 'State verification failed', { error: stateResult.error });
-      return Response.redirect(buildErrorRedirect('invalid_state'), 302);
+      return Response.redirect(buildErrorRedirect(redirectOrigin, 'invalid_state'), 302);
     }
     
-    const { user_id: userId, nonce: stateNonce } = stateResult.payload;
+    const { user_id: userId, nonce: stateNonce, redirect_origin: stateRedirectOrigin } = stateResult.payload;
     
-    log('info', 'Processing Garmin OAuth 2.0 callback', { userId });
+    // Update redirect origin from verified state
+    if (stateRedirectOrigin) {
+      redirectOrigin = stateRedirectOrigin;
+    }
+    
+    log('info', 'Processing Garmin OAuth 2.0 callback', { userId, redirectOrigin });
     
     // Get stored code_verifier
     const { data: sourceRow, error: fetchError } = await supabaseAdmin
@@ -181,38 +205,41 @@ Deno.serve(async (req) => {
     
     if (fetchError || !sourceRow) {
       log('error', 'Failed to fetch stored OAuth state', { userId, error: fetchError?.message });
-      return Response.redirect(buildErrorRedirect('session_not_found'), 302);
+      return Response.redirect(buildErrorRedirect(redirectOrigin, 'session_not_found'), 302);
     }
     
     const metadata = sourceRow.metadata as Record<string, unknown>;
     const codeVerifier = metadata?.code_verifier as string;
     const storedNonce = metadata?.nonce as string;
+    const storedRedirectOrigin = metadata?.redirect_origin as string;
     
     if (!codeVerifier) {
       log('error', 'Missing code_verifier', { userId });
-      return Response.redirect(buildErrorRedirect('session_invalid'), 302);
+      return Response.redirect(buildErrorRedirect(redirectOrigin, 'session_invalid'), 302);
     }
     
     // Verify nonce matches
     if (storedNonce !== stateNonce) {
       log('error', 'Nonce mismatch', { userId });
-      return Response.redirect(buildErrorRedirect('nonce_mismatch'), 302);
+      return Response.redirect(buildErrorRedirect(redirectOrigin, 'nonce_mismatch'), 302);
     }
+    
+    // Use stored redirect origin for token exchange (must match what was sent to Garmin)
+    const tokenRedirectUri = `${storedRedirectOrigin || redirectOrigin}/auth/garmin/callback`;
     
     // Exchange authorization code for tokens
     const tokenEndpoint = 'https://connectapi.garmin.com/oauth-service/oauth/token';
-    const redirectUri = 'https://app.risebynight.com/auth/garmin/callback';
     
     const tokenParams = new URLSearchParams({
       grant_type: 'authorization_code',
       code: code,
-      redirect_uri: redirectUri,
+      redirect_uri: tokenRedirectUri,
       client_id: garminClientId,
       client_secret: garminClientSecret,
       code_verifier: codeVerifier,
     });
     
-    log('info', 'Exchanging authorization code for tokens', { userId });
+    log('info', 'Exchanging authorization code for tokens', { userId, tokenRedirectUri });
     
     const tokenResponse = await fetch(tokenEndpoint, {
       method: 'POST',
@@ -230,7 +257,7 @@ Deno.serve(async (req) => {
         status: tokenResponse.status, 
         error: errorText 
       });
-      return Response.redirect(buildErrorRedirect('token_exchange_failed'), 302);
+      return Response.redirect(buildErrorRedirect(redirectOrigin, 'token_exchange_failed'), 302);
     }
     
     let tokenData: {
@@ -244,14 +271,14 @@ Deno.serve(async (req) => {
       tokenData = await tokenResponse.json();
     } catch {
       log('error', 'Failed to parse token response', { userId });
-      return Response.redirect(buildErrorRedirect('invalid_token_response'), 302);
+      return Response.redirect(buildErrorRedirect(redirectOrigin, 'invalid_token_response'), 302);
     }
     
     const { access_token, refresh_token, expires_in } = tokenData;
     
     if (!access_token) {
       log('error', 'Missing access_token in response', { userId });
-      return Response.redirect(buildErrorRedirect('missing_access_token'), 302);
+      return Response.redirect(buildErrorRedirect(redirectOrigin, 'missing_access_token'), 302);
     }
     
     // Compute token hash for indexed lookup (webhook correlation)
@@ -284,6 +311,7 @@ Deno.serve(async (req) => {
           // Clear PKCE state
           code_verifier: null,
           nonce: null,
+          redirect_origin: null,
           // device_model will be populated on first webhook
         },
         updated_at: now.toISOString(),
@@ -293,7 +321,7 @@ Deno.serve(async (req) => {
     
     if (updateError) {
       log('error', 'Failed to store access tokens', { userId, error: updateError.message });
-      return Response.redirect(buildErrorRedirect('storage_failed'), 302);
+      return Response.redirect(buildErrorRedirect(redirectOrigin, 'storage_failed'), 302);
     }
     
     log('info', 'Garmin OAuth 2.0 completed successfully', { 
@@ -304,12 +332,12 @@ Deno.serve(async (req) => {
     });
     
     // Redirect to success page
-    return Response.redirect(SUCCESS_REDIRECT, 302);
+    return Response.redirect(buildSuccessRedirect(redirectOrigin), 302);
     
   } catch (error) {
     log('error', 'Unexpected error in garmin-oauth-callback', { 
       error: error instanceof Error ? error.message : String(error) 
     });
-    return Response.redirect(buildErrorRedirect('internal_error'), 302);
+    return Response.redirect(buildErrorRedirect(redirectOrigin, 'internal_error'), 302);
   }
 });
