@@ -1130,6 +1130,7 @@ export type Database = {
       sleep_nights: {
         Row: {
           created_at: string
+          device_model: string | null
           end_time: string
           id: string
           is_split_segment: boolean | null
@@ -1146,6 +1147,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          device_model?: string | null
           end_time: string
           id?: string
           is_split_segment?: boolean | null
@@ -1162,6 +1164,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          device_model?: string | null
           end_time?: string
           id?: string
           is_split_segment?: boolean | null
@@ -1458,6 +1461,7 @@ export type Database = {
       sleep_raw_events: {
         Row: {
           dedupe_key: string
+          device_model: string | null
           end_time: string
           external_night_id: string | null
           id: string
@@ -1471,6 +1475,7 @@ export type Database = {
         }
         Insert: {
           dedupe_key: string
+          device_model?: string | null
           end_time: string
           external_night_id?: string | null
           id?: string
@@ -1484,6 +1489,7 @@ export type Database = {
         }
         Update: {
           dedupe_key?: string
+          device_model?: string | null
           end_time?: string
           external_night_id?: string | null
           id?: string
@@ -1500,6 +1506,8 @@ export type Database = {
       sleep_sources: {
         Row: {
           connected_at: string | null
+          consent_granted_at: string | null
+          consent_version: string | null
           created_at: string
           id: string
           last_sync_at: string | null
@@ -1513,6 +1521,8 @@ export type Database = {
         }
         Insert: {
           connected_at?: string | null
+          consent_granted_at?: string | null
+          consent_version?: string | null
           created_at?: string
           id?: string
           last_sync_at?: string | null
@@ -1526,6 +1536,8 @@ export type Database = {
         }
         Update: {
           connected_at?: string | null
+          consent_granted_at?: string | null
+          consent_version?: string | null
           created_at?: string
           id?: string
           last_sync_at?: string | null
