@@ -250,44 +250,83 @@ function validateInput(input: RawSleepInput): string | null {
 }
 
 // ============================================================
-// Test Mode Payload Generation (DST-safe UTC timestamps)
+// Test Mode Payload Generation (DST-safe with deterministic night_date)
 // ============================================================
+
+/**
+ * Derive test night_date deterministically from user's timezone.
+ * 
+ * In test_mode, we generate night_date directly (not derived from timestamps)
+ * to avoid any DST/UTC drift causing split-night flags.
+ * 
+ * Uses "yesterday" in the user's local timezone as the test night.
+ */
+function deriveTestNightDate(userTimezone?: string): string {
+  const now = new Date();
+  
+  if (userTimezone) {
+    try {
+      // Get "now" in user's timezone, then subtract 1 day for "yesterday"
+      const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: userTimezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+      
+      // Format current date in user's timezone
+      const localToday = formatter.format(now);
+      
+      // Parse and subtract 1 day
+      const [year, month, day] = localToday.split('-').map(Number);
+      const yesterday = new Date(year, month - 1, day);
+      yesterday.setDate(yesterday.getDate() - 1);
+      
+      // Format back to YYYY-MM-DD
+      return yesterday.toISOString().split('T')[0];
+    } catch {
+      // Fall through to UTC fallback
+    }
+  }
+  
+  // UTC fallback: yesterday in UTC
+  const yesterday = new Date(now);
+  yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+  return yesterday.toISOString().split('T')[0];
+}
 
 /**
  * Generate a DST-safe test payload using UTC timestamps.
  * 
- * Rationale: Deriving timezone offsets dynamically is fragile during DST transitions.
- * Using UTC (Z) for start/end times avoids this entirely. The night_date is still
- * correctly derived via deriveNightDate() which respects the user's timezone.
+ * Key guarantee: night_date is derived FIRST (deterministic for user's TZ),
+ * then timestamps are generated to be consistent. The night_date will be
+ * used directly during insertion, NOT re-derived from timestamps.
  * 
- * The dedupe_key is deterministic per user/source/night_date (won't collide with real data).
+ * This prevents split-night flags from timezone/UTC drift in test mode.
  */
-function generateTestPayload(userId: string, source: SleepSource, userTimezone?: string): { input: RawSleepInput; nightDate: string } {
-  const now = new Date();
+function generateTestPayload(userId: string, source: SleepSource, userTimezone?: string): { input: RawSleepInput; testNightDate: string } {
+  // Step 1: Derive night_date FIRST (deterministic)
+  const testNightDate = deriveTestNightDate(userTimezone);
   
-  // Get yesterday in UTC for start_time (23:00 UTC)
-  const yesterday = new Date(now);
-  yesterday.setUTCDate(yesterday.getUTCDate() - 1);
-  const yesterdayStr = yesterday.toISOString().split('T')[0];
+  // Step 2: Generate UTC timestamps that span the night
+  // Use testNightDate as the base, sleep 23:00 -> 06:00 next day
+  const startTime = `${testNightDate}T23:00:00Z`;
   
-  // Get today in UTC for end_time (06:00 UTC)
-  const todayStr = now.toISOString().split('T')[0];
-  
-  // Use UTC (Z) for all timestamps - DST-safe
-  const startTime = `${yesterdayStr}T23:00:00Z`;
-  const endTime = `${todayStr}T06:00:00Z`;
-  
-  // Derive night_date using user's timezone (this is what matters for Sleep Coach)
-  const nightDate = deriveNightDate(startTime, userTimezone);
+  // Calculate next day for end time
+  const [year, month, day] = testNightDate.split('-').map(Number);
+  const nextDay = new Date(year, month - 1, day);
+  nextDay.setDate(nextDay.getDate() + 1);
+  const nextDayStr = nextDay.toISOString().split('T')[0];
+  const endTime = `${nextDayStr}T06:00:00Z`;
   
   // Generate minimal stages: 3.5h light + 3.5h deep (7h total)
-  const lightStart = `${yesterdayStr}T23:00:00Z`;
-  const lightEnd = `${todayStr}T02:30:00Z`;
-  const deepStart = `${todayStr}T02:30:00Z`;
-  const deepEnd = `${todayStr}T06:00:00Z`;
+  const lightStart = `${testNightDate}T23:00:00Z`;
+  const lightEnd = `${nextDayStr}T02:30:00Z`;
+  const deepStart = `${nextDayStr}T02:30:00Z`;
+  const deepEnd = `${nextDayStr}T06:00:00Z`;
   
   // Deterministic dedupe key using night_date (not colliding with real vendor data)
-  const dedupeKey = `test:${userId}:${source}:${nightDate}`;
+  const dedupeKey = `test:${userId}:${source}:${testNightDate}`;
   
   return {
     input: {
@@ -301,7 +340,7 @@ function generateTestPayload(userId: string, source: SleepSource, userTimezone?:
       dedupe_key: dedupeKey,
       test_mode: true,
     },
-    nightDate,
+    testNightDate,
   };
 }
 
@@ -521,12 +560,12 @@ Deno.serve(async (req) => {
     if (isTestMode) {
       const testPayload = generateTestPayload(userId, rawInput.source, userTimezone);
       input = testPayload.input;
-      testNightDate = testPayload.nightDate;
-      log('info', 'Test mode: generated DST-safe UTC payload', { 
+      testNightDate = testPayload.testNightDate;
+      log('info', 'Test mode: generated DST-safe payload with deterministic night_date', { 
         userId, 
         source: input.source, 
         dedupeKey: input.dedupe_key,
-        nightDate: testNightDate,
+        testNightDate,
         userTimezone: userTimezone || 'UTC',
       });
     } else {
@@ -608,7 +647,10 @@ Deno.serve(async (req) => {
     
     // 11. Normalize
     const metrics = normalizeToNightlyMetrics(input);
-    const nightDate = deriveNightDate(input.start_time, userTimezone);
+    
+    // In test_mode, use the pre-computed testNightDate directly (DST-safe)
+    // In real mode, derive from timestamps respecting user's timezone
+    const nightDate = isTestMode && testNightDate ? testNightDate : deriveNightDate(input.start_time, userTimezone);
     
     // 12. Check for existing night (split-night detection)
     const { data: existingNights } = await supabaseAdmin
