@@ -145,59 +145,6 @@ function deriveNightDate(startTime: string, userTimezone?: string): string {
   return localDate.toISOString().split('T')[0];
 }
 
-/**
- * Get local date string in user's timezone (YYYY-MM-DD format)
- */
-function getLocalDateInTimezone(date: Date, timezone?: string): string {
-  if (timezone) {
-    try {
-      const formatter = new Intl.DateTimeFormat('en-CA', {
-        timeZone: timezone,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-      });
-      return formatter.format(date);
-    } catch {
-      // Fall through to UTC
-    }
-  }
-  return date.toISOString().split('T')[0];
-}
-
-/**
- * Get timezone offset string (e.g., "+01:00") for a timezone
- */
-function getTimezoneOffsetString(timezone?: string): string {
-  if (!timezone) return 'Z';
-  
-  try {
-    const now = new Date();
-    // Get the offset by comparing UTC time with local time in the timezone
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: timezone,
-      timeZoneName: 'shortOffset',
-    });
-    const parts = formatter.formatToParts(now);
-    const offsetPart = parts.find(p => p.type === 'timeZoneName');
-    
-    if (offsetPart) {
-      // Convert "GMT+1" or "GMT-5" to "+01:00" or "-05:00"
-      const match = offsetPart.value.match(/GMT([+-])(\d{1,2})(?::(\d{2}))?/);
-      if (match) {
-        const sign = match[1];
-        const hours = match[2].padStart(2, '0');
-        const minutes = match[3] || '00';
-        return `${sign}${hours}:${minutes}`;
-      }
-    }
-  } catch {
-    // Fall through to UTC
-  }
-  
-  return 'Z';
-}
-
 function computeDedupeKey(input: RawSleepInput, userId: string): string {
   if (input.external_night_id) {
     return `${input.source}:${userId}:${input.external_night_id}`;
@@ -303,51 +250,58 @@ function validateInput(input: RawSleepInput): string | null {
 }
 
 // ============================================================
-// Test Mode Payload Generation (timezone-correct)
+// Test Mode Payload Generation (DST-safe UTC timestamps)
 // ============================================================
 
 /**
- * Generate a timezone-correct test payload.
- * Uses user's timezone to derive night_date and format timestamps correctly.
+ * Generate a DST-safe test payload using UTC timestamps.
+ * 
+ * Rationale: Deriving timezone offsets dynamically is fragile during DST transitions.
+ * Using UTC (Z) for start/end times avoids this entirely. The night_date is still
+ * correctly derived via deriveNightDate() which respects the user's timezone.
+ * 
  * The dedupe_key is deterministic per user/source/night_date (won't collide with real data).
  */
-function generateTestPayload(userId: string, source: SleepSource, userTimezone?: string): RawSleepInput {
+function generateTestPayload(userId: string, source: SleepSource, userTimezone?: string): { input: RawSleepInput; nightDate: string } {
   const now = new Date();
   
-  // Get the local date in user's timezone for night_date
-  const localNightDate = getLocalDateInTimezone(now, userTimezone);
-  
-  // Get yesterday's date for start_time
+  // Get yesterday in UTC for start_time (23:00 UTC)
   const yesterday = new Date(now);
-  yesterday.setDate(yesterday.getDate() - 1);
-  const localYesterday = getLocalDateInTimezone(yesterday, userTimezone);
+  yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split('T')[0];
   
-  // Get timezone offset string
-  const offset = getTimezoneOffsetString(userTimezone);
+  // Get today in UTC for end_time (06:00 UTC)
+  const todayStr = now.toISOString().split('T')[0];
   
-  // Create start_time at 23:00 yesterday, end_time at 06:00 today (7h sleep)
-  const startTime = `${localYesterday}T23:00:00${offset}`;
-  const endTime = `${localNightDate}T06:00:00${offset}`;
+  // Use UTC (Z) for all timestamps - DST-safe
+  const startTime = `${yesterdayStr}T23:00:00Z`;
+  const endTime = `${todayStr}T06:00:00Z`;
+  
+  // Derive night_date using user's timezone (this is what matters for Sleep Coach)
+  const nightDate = deriveNightDate(startTime, userTimezone);
   
   // Generate minimal stages: 3.5h light + 3.5h deep (7h total)
-  const lightStart = `${localYesterday}T23:00:00${offset}`;
-  const lightEnd = `${localNightDate}T02:30:00${offset}`;
-  const deepStart = `${localNightDate}T02:30:00${offset}`;
-  const deepEnd = `${localNightDate}T06:00:00${offset}`;
+  const lightStart = `${yesterdayStr}T23:00:00Z`;
+  const lightEnd = `${todayStr}T02:30:00Z`;
+  const deepStart = `${todayStr}T02:30:00Z`;
+  const deepEnd = `${todayStr}T06:00:00Z`;
   
   // Deterministic dedupe key using night_date (not colliding with real vendor data)
-  const dedupeKey = `test:${userId}:${source}:${localNightDate}`;
+  const dedupeKey = `test:${userId}:${source}:${nightDate}`;
   
   return {
-    source,
-    start_time: startTime,
-    end_time: endTime,
-    stages: [
-      { stage: 'light', start_time: lightStart, end_time: lightEnd, confidence: 0.9 },
-      { stage: 'deep', start_time: deepStart, end_time: deepEnd, confidence: 0.9 },
-    ],
-    dedupe_key: dedupeKey,
-    test_mode: true,
+    input: {
+      source,
+      start_time: startTime,
+      end_time: endTime,
+      stages: [
+        { stage: 'light', start_time: lightStart, end_time: lightEnd, confidence: 0.9 },
+        { stage: 'deep', start_time: deepStart, end_time: deepEnd, confidence: 0.9 },
+      ],
+      dedupe_key: dedupeKey,
+      test_mode: true,
+    },
+    nightDate,
   };
 }
 
@@ -562,12 +516,17 @@ Deno.serve(async (req) => {
     
     // 6. Generate or use provided payload
     let input: RawSleepInput;
+    let testNightDate: string | undefined;
+    
     if (isTestMode) {
-      input = generateTestPayload(userId, rawInput.source, userTimezone);
-      log('info', 'Test mode: generated timezone-correct payload', { 
+      const testPayload = generateTestPayload(userId, rawInput.source, userTimezone);
+      input = testPayload.input;
+      testNightDate = testPayload.nightDate;
+      log('info', 'Test mode: generated DST-safe UTC payload', { 
         userId, 
         source: input.source, 
         dedupeKey: input.dedupe_key,
+        nightDate: testNightDate,
         userTimezone: userTimezone || 'UTC',
       });
     } else {
