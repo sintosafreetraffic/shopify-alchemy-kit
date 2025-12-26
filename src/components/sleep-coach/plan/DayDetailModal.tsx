@@ -166,9 +166,9 @@ export function DayDetailModal({
         onClick={handleClose}
       />
 
-      {/* Modal - larger on desktop, full on mobile */}
+      {/* Modal - larger on desktop, proper spacing on mobile to avoid navbar */}
       <div 
-        className={`fixed inset-x-2 top-[3%] bottom-[3%] sm:inset-x-4 md:inset-x-auto md:left-1/2 md:top-[5%] md:bottom-[5%] md:-translate-x-1/2 md:translate-y-0 md:w-[680px] lg:w-[760px] z-50 bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col transition-all duration-200 ${isClosing ? "opacity-0 scale-95" : "opacity-100 scale-100"}`}
+        className={`fixed inset-x-2 top-20 bottom-4 sm:top-24 sm:bottom-6 sm:inset-x-4 md:inset-x-auto md:left-1/2 md:top-[5%] md:bottom-[5%] md:-translate-x-1/2 md:translate-y-0 md:w-[680px] lg:w-[760px] z-50 bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col transition-all duration-200 ${isClosing ? "opacity-0 scale-95" : "opacity-100 scale-100"}`}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4 sm:px-6 sm:py-5 border-b border-slate-100">
