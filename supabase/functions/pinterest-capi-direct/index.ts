@@ -220,6 +220,40 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
 
     // ========================================================================
+    // DAY 3: EVENT_ID DEDUPLICATION CHECK
+    // Check if this event_id was already sent successfully (prevents duplicate sends)
+    // ========================================================================
+    
+    if (shouldSendToPinterest) {
+      // Check for existing successful send with same order_id
+      const { data: existingSend } = await supabase
+        .from('pinterest_purchase_events')
+        .select('event_id, delivery_state')
+        .eq('order_id', eventData.order_id)
+        .eq('delivery_state', 'sent')
+        .limit(1)
+        .maybeSingle();
+      
+      if (existingSend) {
+        console.log("[Pinterest CAPI Direct] Duplicate detected - order already sent:", {
+          order_id: eventData.order_id,
+          existing_event_id: existingSend.event_id,
+        });
+        
+        // Block duplicate send
+        shouldSendToPinterest = false;
+        sendStatus = 'blocked_duplicate';
+        sendStatusReason = 'already_sent';
+        deliveryState = 'blocked_duplicate';
+        renderStatus = 'blocked_duplicate';
+        renderResponse = {
+          blocked_reason: 'Event already successfully sent',
+          existing_event_id: existingSend.event_id,
+        };
+      }
+    }
+
+    // ========================================================================
     // PINTEREST CAPI CALL (only if shouldSendToPinterest)
     // ========================================================================
 
