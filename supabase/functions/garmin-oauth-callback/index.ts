@@ -294,7 +294,7 @@ Deno.serve(async (req) => {
     const { error: updateError } = await supabaseAdmin
       .from('sleep_sources')
       .update({
-        status: 'pending', // Will become 'connected' on first successful data ingest
+        status: 'connected', // Mark as connected after successful token exchange
         connected_at: now.toISOString(),
         revoked_at: null,
         consent_granted_at: now.toISOString(),
