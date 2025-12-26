@@ -174,8 +174,8 @@ Deno.serve(async (req) => {
     // OAuth 2.0 configuration - use dynamic redirect URI
     const redirectUri = `${redirectOrigin}/auth/garmin/callback`;
     
-    // Garmin OAuth 2.0 endpoints (Health API)
-    const authorizeEndpoint = 'https://connect.garmin.com/oauthConfirm';
+    // Garmin OAuth 2.0 endpoints (Health API with PKCE)
+    const authorizeEndpoint = 'https://connect.garmin.com/oauth2Confirm';
     
     // Generate PKCE code_verifier and code_challenge
     const codeVerifier = generateCodeVerifier();
