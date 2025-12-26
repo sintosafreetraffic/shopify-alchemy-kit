@@ -13,6 +13,19 @@ const corsHeaders = {
 // Types
 type SleepSource = 'apple_health' | 'garmin';
 type SleepStage = 'awake' | 'light' | 'deep' | 'rem';
+type LogSource = 'manual' | 'whatsapp' | 'wearable_apple_health' | 'wearable_garmin';
+
+// Map sleep_sources.source to log_source enum
+function mapSourceToLogSource(source: SleepSource): LogSource {
+  switch (source) {
+    case 'apple_health':
+      return 'wearable_apple_health';
+    case 'garmin':
+      return 'wearable_garmin';
+    default:
+      return 'manual';
+  }
+}
 
 interface RawSleepStage {
   stage: SleepStage;
@@ -448,7 +461,28 @@ Deno.serve(async (req) => {
     const metrics = normalizeToNightlyMetrics(input);
     const nightDate = deriveNightDate(input.start_time, userTimezone);
     
-    // 9. Insert sleep_night
+    // 9. Check for existing night (split-night detection)
+    const { data: existingNights } = await supabaseAdmin
+      .from('sleep_nights')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('source', input.source)
+      .eq('night_date', nightDate);
+    
+    const isSplitNight = existingNights && existingNights.length > 0;
+    
+    // If split night detected, mark existing records
+    if (isSplitNight) {
+      log('info', 'Split night detected', { nightDate, existingCount: existingNights.length });
+      await supabaseAdmin
+        .from('sleep_nights')
+        .update({ is_split_segment: true })
+        .eq('user_id', userId)
+        .eq('source', input.source)
+        .eq('night_date', nightDate);
+    }
+    
+    // Insert new sleep_night
     const { data: sleepNight, error: nightInsertError } = await supabaseAdmin
       .from('sleep_nights')
       .insert({
@@ -460,7 +494,7 @@ Deno.serve(async (req) => {
         total_sleep_minutes: metrics.total_sleep_minutes,
         sleep_efficiency: metrics.sleep_efficiency,
         wake_events: metrics.wake_events,
-        is_split_segment: false,
+        is_split_segment: isSplitNight,
         normalization_version: NORMALIZATION_VERSION,
         raw_event_id: rawEventId,
       })
@@ -473,12 +507,41 @@ Deno.serve(async (req) => {
     }
     
     const sleepNightId = (sleepNight as { id: string }).id;
-    log('info', 'Sleep night normalized', { sleepNightId, nightDate, totalSleepMinutes: metrics.total_sleep_minutes });
+    log('info', 'Sleep night normalized', { sleepNightId, nightDate, totalSleepMinutes: metrics.total_sleep_minutes, isSplitNight });
+    
+    // 9b. Update last_sync_at on sleep_sources (for pending: activate; for connected: just update sync time)
+    // First try to activate pending source
+    const { data: activatedSource } = await supabaseAdmin
+      .from('sleep_sources')
+      .update({ 
+        last_sync_at: new Date().toISOString(),
+        status: 'connected',
+        connected_at: new Date().toISOString(),
+      })
+      .eq('user_id', userId)
+      .eq('source', input.source)
+      .eq('status', 'pending')
+      .select('id');
+    
+    // If no pending source was activated, update existing connected source
+    if (!activatedSource || activatedSource.length === 0) {
+      await supabaseAdmin
+        .from('sleep_sources')
+        .update({ 
+          last_sync_at: new Date().toISOString(),
+        })
+        .eq('user_id', userId)
+        .eq('source', input.source)
+        .eq('status', 'connected');
+    }
     
     // 10. Link to Sleep Coach
     const userEmail = authResult.email || input.email;
     
     if (userEmail) {
+      // Map source to correct log_source enum value
+      const logSource = mapSourceToLogSource(input.source);
+      
       const { error: logInsertError } = await supabaseAdmin
         .from('sleep_logs')
         .insert({
@@ -490,7 +553,7 @@ Deno.serve(async (req) => {
           wake_ups_per_night: metrics.wake_events,
           felt_hot: false,
           felt_stressed: false,
-          source: 'manual',
+          source: logSource,
           notes: `Auto-imported from ${input.source}`,
           sleep_night_id: sleepNightId,
         });
@@ -498,7 +561,7 @@ Deno.serve(async (req) => {
       if (logInsertError) {
         log('warn', 'Failed to create sleep_log linkage', { error: logInsertError.message, sleepNightId });
       } else {
-        log('info', 'Sleep Coach linkage created', { sleepNightId, email: userEmail });
+        log('info', 'Sleep Coach linkage created', { sleepNightId, email: userEmail, logSource });
       }
     }
     

@@ -1482,6 +1482,7 @@ export type Database = {
           connected_at: string | null
           created_at: string
           id: string
+          last_sync_at: string | null
           metadata: Json | null
           revoked_at: string | null
           source: string
@@ -1494,6 +1495,7 @@ export type Database = {
           connected_at?: string | null
           created_at?: string
           id?: string
+          last_sync_at?: string | null
           metadata?: Json | null
           revoked_at?: string | null
           source: string
@@ -1506,6 +1508,7 @@ export type Database = {
           connected_at?: string | null
           created_at?: string
           id?: string
+          last_sync_at?: string | null
           metadata?: Json | null
           revoked_at?: string | null
           source?: string
@@ -1811,7 +1814,11 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
-      log_source: "manual" | "whatsapp"
+      log_source:
+        | "manual"
+        | "whatsapp"
+        | "wearable_apple_health"
+        | "wearable_garmin"
       persona_cluster: "pain_sleeper" | "stress_insomnia" | "optimizer"
       sleep_position: "side" | "back" | "stomach" | "mixed"
       sleep_source: "apple_health" | "garmin"
@@ -1947,7 +1954,12 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
-      log_source: ["manual", "whatsapp"],
+      log_source: [
+        "manual",
+        "whatsapp",
+        "wearable_apple_health",
+        "wearable_garmin",
+      ],
       persona_cluster: ["pain_sleeper", "stress_insomnia", "optimizer"],
       sleep_position: ["side", "back", "stomach", "mixed"],
       sleep_source: ["apple_health", "garmin"],

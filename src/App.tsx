@@ -157,6 +157,8 @@ const SleepQuizDiagnostics = React.lazy(() => import("./pages/internal/SleepQuiz
 const QuizRevealTracking = React.lazy(() => import("./pages/internal/QuizRevealTracking"));
 const AnalyticsDiagnostics = React.lazy(() => import("./pages/internal/AnalyticsDiagnostics"));
 const ContextDiagnostics = React.lazy(() => import("./pages/internal/ContextDiagnostics"));
+const SleepSources = React.lazy(() => import("./pages/settings/SleepSources"));
+const SleepSourcesDebug = React.lazy(() => import("./pages/debug/SleepSourcesDebug"));
 
 const queryClient = new QueryClient();
 
@@ -270,7 +272,9 @@ const AppContent = () => {
             <Route path="/internal/sleep-quiz-diagnostics" element={<SleepQuizDiagnostics />} />
             <Route path="/risebynight/tracking" element={<QuizRevealTracking />} />
             <Route path="/debug/analytics" element={<AnalyticsDiagnostics />} />
+            <Route path="/debug/sleep-sources" element={<SleepSourcesDebug />} />
             <Route path="/internal/context-diagnostics" element={<ContextDiagnostics />} />
+            <Route path="/settings/sleep-sources" element={<SleepSources />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
