@@ -486,6 +486,11 @@ Deno.serve(async (req) => {
           ? Math.round((sleepMinutes / totalMinutes) * 100 * 100) / 100 
           : null;
         
+        // Determine data_origin: backfill if source has pending backfill request
+        // Garmin sends backfill data via the same webhook, so we check if backfill was requested
+        const isBackfillData = metadata?.backfill_requested_at && !metadata?.backfill_completed_at;
+        const dataOrigin = isBackfillData ? 'backfill' : 'webhook';
+        
         // Insert normalized night with UTC timestamps and timezone_offset_seconds
         const { error: nightError } = await supabaseAdmin
           .from('sleep_nights')
@@ -503,6 +508,8 @@ Deno.serve(async (req) => {
             raw_event_id: rawEvent.id,
             normalization_version: 1,
             is_test: false,
+            data_origin: dataOrigin,
+            ingested_at: new Date().toISOString(),
           });
         
         if (nightError) {

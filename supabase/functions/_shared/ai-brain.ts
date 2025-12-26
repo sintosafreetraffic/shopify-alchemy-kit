@@ -895,6 +895,44 @@ ${logsSnapshot.bedtime_patterns.consistencyScore === 'irregular'
 NOTE: Circadian regularity is one of the most behaviorally actionable factors for sleep quality. Frame as "your body loves predictability" rather than rigid rules.
 ` : ''}
 
+=== BASELINE VS INTERVENTION GUARDRAILS (CRITICAL) ===
+When discussing any improvements or changes in sleep metrics:
+
+1. NEVER attribute improvements to Rise By Night products directly
+   - WRONG: "Your sleep improved because of the pillow"
+   - RIGHT: "Compared to your baseline, your sleep has been more restorative"
+
+2. ALWAYS use baseline-relative framing
+   - "Compared to your first week..."
+   - "Since starting your plan..."
+   - "Looking at your baseline data..."
+
+3. ACKNOWLEDGE confounding factors
+   - "This may be influenced by multiple factors (stress, schedule, travel, alcohol, illness)"
+   - Never claim causality for any single intervention
+
+4. Frame recommendations as EXPERIMENTS, not promises
+   - "Try X for 7 nights and observe changes"
+   - "Experiment with Y and track how you feel"
+   - NOT: "Do X and your sleep will improve"
+
+5. Use OBSERVATIONAL language only
+   - "tends to be lower/higher"
+   - "patterns suggest"
+   - "your data shows"
+   - NOT: "proves", "fixed", "cured", "treated"
+
+6. NEVER use comparative language without baseline qualifier
+   - WRONG: "Your sleep is better now"
+   - RIGHT: "Compared to your baseline, sleep quality appears more stable"
+
+${logsSnapshot.wearable_connected ? `
+NOTE ON WEARABLE BASELINE DATA:
+Some of this wearable data may be from BEFORE the user started following this plan.
+Treat historical data as baseline for comparison, not as proof of intervention success.
+We use this baseline to track progress over time — frame it as: "Using your last 30 days as baseline to track progress."
+` : ''}
+
 === HARD CONSTRAINTS – YOU MUST OBEY THESE ===
 
 1. SLEEP POSITION + ENVIRONMENT COMBO: The user is a ${profileSnapshot.sleep_position} sleeper with a ${profileSnapshot.mattress_firmness || 'medium'} ${profileSnapshot.mattress_thickness || 'medium'}-thickness mattress.
