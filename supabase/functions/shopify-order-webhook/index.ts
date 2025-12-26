@@ -6,6 +6,9 @@
  * 
  * HARDENED: Logs all Pinterest purchase events to pinterest_purchase_events table
  * 
+ * Phase 5: Added preflight attribution classification to ensure only pinterest-capi-direct
+ * is used as the authoritative send path. Removed direct Render fallback to prevent drift.
+ * 
  * CHAOS INJECTION (Phase 3.5):
  * Supports controlled failure injection via query params or headers:
  * - chaos=pinterest_timeout (C1)
@@ -27,6 +30,11 @@ import {
   fullSleepSync,
 } from "../_shared/sleep-sync.ts";
 import { SleepSyncSource } from "../_shared/types.ts";
+import {
+  classifyAttribution,
+  getSendMode,
+  type AttributionResult,
+} from "../_shared/attribution.ts";
 
 // ============================================================================
 // CHAOS INJECTION HELPERS (Phase 3.5)
@@ -669,17 +677,32 @@ Deno.serve(async (req: Request): Promise<Response> => {
         return createSuccessResponse({ success: true, chaos: 'db_write_fail_before_send' });
       }
 
-      // STEP 2: Check if direct CAPI is enabled
-      const { data: capiSetting } = await supabase
-        .from('app_settings')
-        .select('value')
-        .eq('key', 'pinterest_direct_capi')
-        .single();
+      // ======================================================================
+      // PHASE 5: PREFLIGHT ATTRIBUTION CLASSIFICATION (B)
+      // Classify attribution BEFORE any Pinterest send attempt.
+      // This ensures consistent routing through pinterest-capi-direct only.
+      // ======================================================================
       
-      const useDirectCapi = capiSetting?.value?.enabled === true;
-      console.log("[Pinterest] Direct CAPI enabled:", useDirectCapi);
+      const preflightAttribution = classifyAttribution({
+        pinterest_click_id: attribution.pinterest_click_id,
+        utm_source: attribution.utm_source,
+        utm_medium: attribution.utm_medium,
+        utm_campaign: attribution.utm_campaign,
+        utm_content: attribution.utm_content,
+        utm_term: attribution.utm_term,
+      });
+      
+      const sendMode = await getSendMode(supabase);
+      
+      console.log("[Pinterest] Preflight attribution:", {
+        order_id: orderId,
+        attribution_source: preflightAttribution.attribution_source,
+        attribution_confidence: preflightAttribution.attribution_confidence,
+        should_send: preflightAttribution.should_send_to_pinterest,
+        send_mode: sendMode,
+      });
 
-      // Build products array (used by both methods)
+      // Build products array
       const products = (order.line_items || []).map((item: any) => ({
         id: String(item.product_id),
         name: item.title,
@@ -704,6 +727,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         utm_term: attribution.utm_term,
         landing_page: attribution.landing_page,
         referrer: attribution.referrer,
+        is_test: isChaosTest, // Pass test flag to CAPI
       };
       
       // Add match signals if available (from pinterest_context via joinPinterestContext)
@@ -722,12 +746,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
         has_ip: !!pinterestPayload.client_ip_address,
         has_ua: !!pinterestPayload.client_user_agent,
         utm_source: pinterestPayload.utm_source,
-        method: useDirectCapi ? 'DIRECT_CAPI' : 'RENDER',
+        method: 'DIRECT_CAPI_ONLY', // Phase 5: Only one path
       });
 
       // STEP 3: Attempt Pinterest tracking
       let trackingSuccess = false;
-      let finalStatus = 'error_direct_fallback_render';
+      let finalStatus = 'error';
       let finalResponse: any = null;
 
       // ======================================================================
@@ -754,98 +778,43 @@ Deno.serve(async (req: Request): Promise<Response> => {
         return createSuccessResponse({ success: true, chaos: 'pinterest_partial_success' });
       }
 
-      if (useDirectCapi) {
-        // Use direct Pinterest CAPI edge function
-        console.log("[Pinterest] Using DIRECT CAPI (Supabase edge function)");
-        try {
-          const directCapiResponse = await fetch(`${SUPABASE_URL}/functions/v1/pinterest-capi-direct`, {
-            method: 'POST',
-            headers: { 
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-            },
-            body: JSON.stringify(pinterestPayload),
-          });
+      // ======================================================================
+      // PHASE 5: SINGLE CANONICAL SEND PATH - pinterest-capi-direct ONLY
+      // Removed Render fallback to prevent attribution drift.
+      // pinterest-capi-direct handles all gating, logging, and blocking.
+      // ======================================================================
+      
+      console.log("[Pinterest] Using DIRECT CAPI (canonical path - Phase 5)");
+      try {
+        const directCapiResponse = await fetch(`${SUPABASE_URL}/functions/v1/pinterest-capi-direct`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          },
+          body: JSON.stringify(pinterestPayload),
+        });
 
-          const directCapiResult = await directCapiResponse.json();
-          
-          if (directCapiResponse.ok && directCapiResult.success) {
-            console.log("[Pinterest] ✅ DIRECT CAPI: Purchase tracked successfully:", orderId);
-            trackingSuccess = true;
-            finalStatus = 'success_direct';
-            finalResponse = { status: directCapiResponse.status, result: directCapiResult };
-          } else {
-            console.error("[Pinterest] DIRECT CAPI: Tracking failed:", directCapiResult);
-            finalResponse = { status: directCapiResponse.status, error: directCapiResult };
-            // Will fall through to Render fallback if configured
-          }
-        } catch (directError: any) {
-          console.error("[Pinterest] DIRECT CAPI Error:", directError.message);
-          finalResponse = { error: directError.message || 'Unknown direct CAPI error' };
-        }
-
-        // Fallback to Render if direct CAPI failed
-        if (!trackingSuccess) {
-          const trackingServerUrl = getEnvVar("TRACKING_SERVER_URL");
-          if (trackingServerUrl) {
-            console.log("[Pinterest] Falling back to RENDER tracking server");
-            try {
-              const renderResponse = await fetch(`${trackingServerUrl}/track/client`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(pinterestPayload),
-              });
-
-              const renderResult = await renderResponse.json();
-              
-              if (renderResponse.ok && renderResult.success) {
-                console.log("[Pinterest] ✅ RENDER fallback: Purchase tracked successfully:", orderId);
-                trackingSuccess = true;
-                finalStatus = 'fallback_render';
-                finalResponse = { status: renderResponse.status, result: renderResult };
-              } else {
-                console.error("[Pinterest] RENDER fallback: Tracking failed:", renderResult);
-                finalResponse = { direct_error: finalResponse, render_error: renderResult };
-              }
-            } catch (renderError: any) {
-              console.error("[Pinterest] RENDER fallback Error:", renderError.message);
-              finalResponse = { direct_error: finalResponse, render_error: renderError.message };
-            }
-          }
-        }
-      } else {
-        // Use Render tracking server (legacy - no direct CAPI)
-        const trackingServerUrl = getEnvVar("TRACKING_SERVER_URL");
+        const directCapiResult = await directCapiResponse.json();
         
-        if (trackingServerUrl) {
-          console.log("[Pinterest] Using RENDER tracking server (legacy)");
-          try {
-            const pinterestResponse = await fetch(`${trackingServerUrl}/track/client`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(pinterestPayload),
-            });
-
-            const pinterestResult = await pinterestResponse.json();
-            
-            if (pinterestResponse.ok && pinterestResult.success) {
-              console.log("[Pinterest] ✅ RENDER: Purchase tracked successfully:", orderId);
-              trackingSuccess = true;
-              finalStatus = 'fallback_render'; // Using Render without trying direct first
-              finalResponse = { status: pinterestResponse.status, result: pinterestResult };
-            } else {
-              console.error("[Pinterest] RENDER: Tracking failed:", pinterestResult);
-              finalResponse = { status: pinterestResponse.status, error: pinterestResult };
-            }
-          } catch (pinterestError: any) {
-            console.error("[Pinterest] RENDER Error:", pinterestError.message);
-            finalResponse = { error: pinterestError.message || 'Unknown render error' };
-          }
+        if (directCapiResponse.ok && directCapiResult.success) {
+          console.log("[Pinterest] ✅ DIRECT CAPI: Purchase processed:", orderId, {
+            send_status: directCapiResult.send_status,
+            attribution_source: directCapiResult.attribution_source,
+          });
+          trackingSuccess = true;
+          // Use send_status from CAPI response for accurate status
+          finalStatus = directCapiResult.send_status === 'sent' ? 'success_direct' : `blocked_${directCapiResult.send_status}`;
+          finalResponse = { status: directCapiResponse.status, result: directCapiResult };
         } else {
-          console.log("[Pinterest] TRACKING_SERVER_URL not configured and direct CAPI disabled");
-          finalStatus = 'skipped_no_url';
-          finalResponse = { reason: 'No tracking method configured' };
+          console.error("[Pinterest] DIRECT CAPI: Processing failed:", directCapiResult);
+          finalStatus = 'error_direct';
+          finalResponse = { status: directCapiResponse.status, error: directCapiResult };
         }
+      } catch (directError: any) {
+        console.error("[Pinterest] DIRECT CAPI Error:", directError.message);
+        finalStatus = 'error_direct';
+        finalResponse = { error: directError.message || 'Unknown direct CAPI error' };
       }
 
       // STEP 4: Update tracking status with final result
