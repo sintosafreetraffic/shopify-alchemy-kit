@@ -37,6 +37,7 @@ export type SendStatus =
   | 'blocked_disabled' 
   | 'blocked_test' 
   | 'blocked_error'
+  | 'blocked_duplicate' // Day 3: Duplicate send prevention
   | 'skipped_blocked_attribution'; // Used by recovery
 
 export type SendMode = 'pinterest_only' | 'all_orders' | 'disabled';

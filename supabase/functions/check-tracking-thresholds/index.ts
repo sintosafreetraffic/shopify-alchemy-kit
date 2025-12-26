@@ -246,6 +246,41 @@ serve(async (req) => {
       });
     }
 
+    // ========================================================================
+    // DAY 3: STUCK EVENT DETECTION
+    // Detect pending events older than 1 hour - indicates send path failure
+    // ========================================================================
+    const oneHourAgo = new Date(today.getTime() - 60 * 60 * 1000).toISOString();
+    
+    const { count: stuckCount, error: stuckError } = await supabase
+      .from("pinterest_purchase_events")
+      .select("id", { count: "exact", head: true })
+      .eq("delivery_state", "pending")
+      .lt("created_at", oneHourAgo)
+      .eq("is_test", false);
+
+    if (stuckError) {
+      console.error("[check-tracking-thresholds] Error fetching stuck events:", stuckError);
+    }
+
+    const stuckEvents = stuckCount || 0;
+    console.log(`[check-tracking-thresholds] stuck_pending_events=${stuckEvents}`);
+
+    if (stuckEvents > 0) {
+      // Any stuck events are concerning - severity based on count
+      const severity = stuckEvents >= 5 ? "critical" : "warn";
+      alerts.push({
+        severity,
+        type: "stuck_pending_events",
+        message: `${stuckEvents} event(s) stuck in 'pending' state for >1 hour. These may have failed silently.`,
+        context: {
+          stuck_count: stuckEvents,
+          threshold_age: "1 hour",
+          day: todayStr, // Use today since these are current stuck events
+        },
+      });
+    }
+
     // Structured logging: after evaluation
     console.log(`[check-tracking-thresholds] day=${yesterdayStr} alerts_generated=${alerts.length}`);
 
