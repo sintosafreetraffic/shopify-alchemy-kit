@@ -1,6 +1,7 @@
 // Design tokens: brand blue at ≤0.85 opacity, no traffic-light colors
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { SleepProfile, SleepAssessment } from "@/hooks/useSleepApi";
+import { X } from "lucide-react";
 
 interface MetricImprovementDrawerProps {
   open: boolean;
@@ -194,7 +195,16 @@ export function MetricImprovementDrawer({
         style={{ backgroundColor: '#FAFAF8' }}
       >
         <div className="mx-auto w-full max-w-lg px-6 pb-8">
-          <DrawerHeader className="px-0 pt-6 pb-4">
+          {/* Close button for mobile */}
+          <button
+            onClick={() => onOpenChange(false)}
+            className="absolute top-4 right-4 p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition-colors z-10"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          
+          <DrawerHeader className="px-0 pt-6 pb-4 pr-12">
             <div className="flex items-center gap-3">
               {renderIcon()}
               <div>
