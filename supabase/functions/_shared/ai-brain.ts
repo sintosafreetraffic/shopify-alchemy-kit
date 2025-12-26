@@ -765,6 +765,12 @@ export interface LogsSnapshot {
   engagement_level?: 'low' | 'medium' | 'high';
   sleep_stress_level?: 'low' | 'medium' | 'high';
   temperature_sensitive?: boolean;
+  // Wearable data fields (from sleep_nights - Garmin, Apple Health, etc.)
+  wearable_connected?: boolean;
+  wearable_sources?: string[];
+  wearable_avg_sleep_hours?: number | null;
+  wearable_avg_efficiency?: number | null;
+  wearable_avg_wake_events?: number | null;
 }
 
 /**
@@ -820,6 +826,22 @@ engagement_level: ${logsSnapshot.engagement_level || 'low'}
 risk_level: ${logsSnapshot.risk_level || 'low'}
 temperature_sensitive: ${logsSnapshot.temperature_sensitive ?? false}
 ${logsSnapshot.last_log_date ? `last_log_date: ${logsSnapshot.last_log_date}` : ''}
+${logsSnapshot.wearable_connected ? `
+=== WEARABLE DATA (Objective Sleep Metrics) ===
+wearable_sources: ${logsSnapshot.wearable_sources?.join(', ') || 'unknown'}
+avg_sleep_duration: ${logsSnapshot.wearable_avg_sleep_hours ? `${logsSnapshot.wearable_avg_sleep_hours} hours` : 'No data'}
+avg_sleep_efficiency: ${logsSnapshot.wearable_avg_efficiency ? `${logsSnapshot.wearable_avg_efficiency}%` : 'No data'}
+avg_wake_events_per_night: ${logsSnapshot.wearable_avg_wake_events ?? 'No data'}
+NOTE: User has a connected wearable device. Use this objective data to enhance recommendations.
+${logsSnapshot.wearable_avg_efficiency && logsSnapshot.wearable_avg_efficiency < 80 
+  ? '- Sleep efficiency is LOW (<80%). Focus on reducing wake events and improving sleep continuity.' 
+  : logsSnapshot.wearable_avg_efficiency && logsSnapshot.wearable_avg_efficiency >= 85 
+  ? '- Sleep efficiency is GOOD (≥85%). User maintains sleep well once asleep.'
+  : ''}
+${logsSnapshot.wearable_avg_wake_events && logsSnapshot.wearable_avg_wake_events >= 3 
+  ? '- Frequent wake events detected (≥3/night). Consider addressing sleep disruptions.' 
+  : ''}
+` : ''}
 
 === HARD CONSTRAINTS – YOU MUST OBEY THESE ===
 

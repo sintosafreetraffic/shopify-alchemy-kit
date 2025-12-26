@@ -126,16 +126,28 @@ Deno.serve(async (req) => {
 
     console.log(`[coach-generate-sleep-plan] Generating ${planType} plan for: ${email}, reason: ${reason}`);
 
-    // === STEP 1: Fetch fresh profile, logs, 3-layer attributes, and plan history ===
-    const [profileResult, logsResult, attrsResult, plansCountResult] = await Promise.all([
+    // === STEP 1: Fetch fresh profile, logs, 3-layer attributes, plan history, and wearable data ===
+    const [profileResult, logsResult, attrsResult, plansCountResult, wearableNightsResult, wearableSourcesResult] = await Promise.all([
       supabase.from('sleep_profiles').select('*').eq('email', email).single(),
       supabase.from('sleep_logs').select('*').eq('email', email).order('date', { ascending: false }).limit(30), // Extended for pattern detection
       supabase.from('sleep_attributes_state').select('data').eq('email', email).maybeSingle(),
       supabase.from('coach_plans').select('id', { count: 'exact' }).eq('email', email),
+      // Fetch wearable sleep data (Garmin, Apple Health) for richer AI context
+      supabase.from('sleep_nights').select('night_date, total_sleep_minutes, sleep_efficiency, wake_events, source, device_model').eq('user_id', userId).eq('is_test', false).order('night_date', { ascending: false }).limit(14),
+      // Fetch connected wearable sources
+      supabase.from('sleep_sources').select('source, status, connected_at, last_sync_at').eq('user_id', userId).eq('status', 'connected'),
     ]);
 
     const profile: SleepProfile | null = profileResult.data;
     const logs: SleepLog[] = logsResult.data || [];
+    const wearableNights = wearableNightsResult.data || [];
+    const connectedSources = wearableSourcesResult.data || [];
+    
+    // Log wearable data availability
+    console.log('[coach-generate-sleep-plan] Wearable data', {
+      connectedSources: connectedSources.map((s: any) => s.source),
+      wearableNightsCount: wearableNights.length,
+    });
     
     // Get or generate 3-layer attributes
     let sleepAttributes: SleepAttributes;
@@ -169,6 +181,43 @@ Deno.serve(async (req) => {
 
     const logsSnapshot: LogsSnapshot = calculateLogsSnapshot(logs);
     
+    // === Calculate wearable insights from sleep_nights ===
+    let wearableInsights: {
+      hasWearable: boolean;
+      sources: string[];
+      avgSleepMinutes: number | null;
+      avgSleepEfficiency: number | null;
+      avgWakeEvents: number | null;
+      deviceModels: string[];
+    } | null = null;
+    
+    if (wearableNights.length > 0) {
+      const validNights = wearableNights.filter((n: any) => n.total_sleep_minutes != null);
+      const avgSleepMinutes = validNights.length > 0 
+        ? validNights.reduce((sum: number, n: any) => sum + n.total_sleep_minutes, 0) / validNights.length 
+        : null;
+      const avgSleepEfficiency = validNights.filter((n: any) => n.sleep_efficiency != null).length > 0
+        ? validNights.filter((n: any) => n.sleep_efficiency != null).reduce((sum: number, n: any) => sum + n.sleep_efficiency, 0) / validNights.filter((n: any) => n.sleep_efficiency != null).length
+        : null;
+      const avgWakeEvents = validNights.filter((n: any) => n.wake_events != null).length > 0
+        ? validNights.filter((n: any) => n.wake_events != null).reduce((sum: number, n: any) => sum + n.wake_events, 0) / validNights.filter((n: any) => n.wake_events != null).length
+        : null;
+      
+      const sources = [...new Set(wearableNights.map((n: any) => n.source))];
+      const deviceModels = [...new Set(wearableNights.map((n: any) => n.device_model).filter(Boolean))];
+      
+      wearableInsights = {
+        hasWearable: true,
+        sources,
+        avgSleepMinutes,
+        avgSleepEfficiency,
+        avgWakeEvents,
+        deviceModels,
+      };
+      
+      console.log('[coach-generate-sleep-plan] Wearable insights calculated', wearableInsights);
+    }
+    
     // Add Layer 3 dynamic state to logs snapshot
     const enhancedLogsSnapshot: LogsSnapshot = {
       ...logsSnapshot,
@@ -183,9 +232,15 @@ Deno.serve(async (req) => {
       engagement_level: sleepAttributes.engagement_level,
       sleep_stress_level: sleepAttributes.sleep_stress_level,
       temperature_sensitive: sleepAttributes.temperature_sensitive,
+      // Wearable data additions
+      wearable_connected: wearableInsights?.hasWearable || false,
+      wearable_sources: wearableInsights?.sources || [],
+      wearable_avg_sleep_hours: wearableInsights?.avgSleepMinutes ? Math.round(wearableInsights.avgSleepMinutes / 60 * 10) / 10 : null,
+      wearable_avg_efficiency: wearableInsights?.avgSleepEfficiency ? Math.round(wearableInsights.avgSleepEfficiency) : null,
+      wearable_avg_wake_events: wearableInsights?.avgWakeEvents ? Math.round(wearableInsights.avgWakeEvents * 10) / 10 : null,
     };
 
-    // === LOG: Plan context summary with 3-layer data ===
+    // === LOG: Plan context summary with 3-layer data and wearables ===
     console.log('[SleepCoach] 3-layer plan context summary', {
       email,
       profileSnapshot: {
@@ -206,6 +261,12 @@ Deno.serve(async (req) => {
         streak_days: enhancedLogsSnapshot.streak_days,
         risk_level: enhancedLogsSnapshot.risk_level,
       },
+      wearableData: wearableInsights ? {
+        sources: wearableInsights.sources,
+        avgSleepHours: enhancedLogsSnapshot.wearable_avg_sleep_hours,
+        avgEfficiency: enhancedLogsSnapshot.wearable_avg_efficiency,
+        avgWakeEvents: enhancedLogsSnapshot.wearable_avg_wake_events,
+      } : 'none',
     });
 
     // === STEP 3: Calculate deterministic coach metrics ===
