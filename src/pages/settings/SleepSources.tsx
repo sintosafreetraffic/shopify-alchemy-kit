@@ -3,7 +3,7 @@
  * Manage connected sleep data sources (Apple Health, Garmin)
  * Route: /settings/sleep-sources
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,8 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Watch, Smartphone, RefreshCw, AlertCircle } from "lucide-react";
-import { format, formatDistanceToNow } from "date-fns";
+import { Loader2, Watch, Smartphone, RefreshCw, AlertCircle, FlaskConical } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 
 type SleepSourceStatus = 'pending' | 'connected' | 'revoked';
 
@@ -45,6 +45,9 @@ const COMMON_TIMEZONES = [
   'Australia/Sydney',
 ];
 
+// Check if we're in dev mode (Vite exposes this)
+const IS_DEV = import.meta.env.DEV;
+
 const SleepSources = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -56,23 +59,9 @@ const SleepSources = () => {
   const [connectingSource, setConnectingSource] = useState<'apple_health' | 'garmin' | null>(null);
   const [updatingTimezone, setUpdatingTimezone] = useState<string | null>(null);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
+  const [testingSyncFor, setTestingSyncFor] = useState<string | null>(null);
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      toast({ title: "Please sign in", description: "Authentication required", variant: "destructive" });
-      navigate("/auth?returnTo=/settings/sleep-sources");
-      return;
-    }
-    setUserId(session.user.id);
-    loadSources(session.user.id);
-  };
-
-  const loadSources = async (uid: string) => {
+  const loadSources = useCallback(async (uid: string) => {
     setLoading(true);
     const { data, error } = await supabase
       .from('sleep_sources')
@@ -87,7 +76,42 @@ const SleepSources = () => {
       setSources((data as SleepSource[]) || []);
     }
     setLoading(false);
-  };
+  }, []);
+
+  const checkAuth = useCallback(async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast({ title: "Please sign in", description: "Authentication required", variant: "destructive" });
+      navigate("/auth?returnTo=/settings/sleep-sources");
+      return;
+    }
+    setUserId(session.user.id);
+    loadSources(session.user.id);
+  }, [navigate, loadSources]);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  // Refresh-on-focus: re-fetch sources when window regains focus
+  useEffect(() => {
+    const handleFocus = () => {
+      if (userId) {
+        loadSources(userId);
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && userId) {
+        loadSources(userId);
+      }
+    });
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [userId, loadSources]);
 
   const getSourceForType = (type: 'apple_health' | 'garmin'): SleepSource | undefined => {
     return sources.find(s => s.source === type);
@@ -170,6 +194,88 @@ const SleepSources = () => {
     }
 
     setDisconnecting(null);
+  };
+
+  const handleTestSync = async (source: SleepSource) => {
+    setTestingSyncFor(source.id);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({ title: "Error", description: "Not authenticated", variant: "destructive" });
+        return;
+      }
+
+      const response = await supabase.functions.invoke('sleep-intake', {
+        body: { 
+          source: source.source, 
+          test_mode: true 
+        },
+      });
+
+      if (response.error) {
+        // Check for specific error codes
+        const errorData = response.error as { message?: string };
+        const message = errorData.message || 'Test sync failed';
+        
+        // Try to parse the message if it's JSON
+        try {
+          const parsed = JSON.parse(message);
+          if (parsed.code === 'TEST_MODE_DISABLED') {
+            toast({ 
+              title: "Test mode disabled", 
+              description: "Test sync is not enabled on the server", 
+              variant: "destructive" 
+            });
+          } else if (parsed.code === 'SOURCE_REVOKED') {
+            toast({ 
+              title: "Source disconnected", 
+              description: "Please reconnect this source first", 
+              variant: "destructive" 
+            });
+          } else {
+            toast({ title: "Error", description: parsed.message || message, variant: "destructive" });
+          }
+        } catch {
+          toast({ title: "Error", description: message, variant: "destructive" });
+        }
+        return;
+      }
+
+      const data = response.data as { status: string; sleep_night_id?: string; code?: string; message?: string };
+      
+      if (data.status === 'success') {
+        toast({ 
+          title: "Test sync complete", 
+          description: `Sleep night created: ${data.sleep_night_id?.slice(0, 8)}...` 
+        });
+        loadSources(userId!);
+      } else if (data.status === 'duplicate') {
+        toast({ 
+          title: "Already synced today", 
+          description: "Test data for today already exists" 
+        });
+      } else if (data.code === 'SOURCE_REVOKED') {
+        toast({ 
+          title: "Source disconnected", 
+          description: "Please reconnect this source first", 
+          variant: "destructive" 
+        });
+      } else if (data.code === 'TEST_MODE_DISABLED') {
+        toast({ 
+          title: "Test mode disabled", 
+          description: "Test sync is not enabled on the server", 
+          variant: "destructive" 
+        });
+      } else {
+        toast({ title: "Error", description: data.message || "Unknown error", variant: "destructive" });
+      }
+    } catch (err) {
+      console.error('Test sync error:', err);
+      toast({ title: "Error", description: "Failed to run test sync", variant: "destructive" });
+    } finally {
+      setTestingSyncFor(null);
+    }
   };
 
   const handleTimezoneUpdate = async (source: SleepSource, newTimezone: string) => {
@@ -293,31 +399,54 @@ const SleepSources = () => {
                     </>
                   )}
                   
-                  <div className="flex justify-end">
-                    {source.status === 'revoked' ? (
+                  <div className="flex justify-between items-center">
+                    {/* Dev-only Test Sync button */}
+                    {IS_DEV && source.status !== 'revoked' && (
                       <Button
                         variant="outline"
-                        onClick={() => handleConnect(source.source)}
-                        disabled={connectingSource === source.source}
+                        size="sm"
+                        onClick={() => handleTestSync(source)}
+                        disabled={testingSyncFor === source.id}
+                        className="text-muted-foreground"
                       >
-                        {connectingSource === source.source ? (
+                        {testingSyncFor === source.id ? (
                           <Loader2 className="h-4 w-4 animate-spin mr-2" />
                         ) : (
-                          <RefreshCw className="h-4 w-4 mr-2" />
+                          <FlaskConical className="h-4 w-4 mr-2" />
                         )}
-                        Reconnect
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="ghost"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => handleDisconnect(source)}
-                        disabled={disconnecting === source.id}
-                      >
-                        {disconnecting === source.id && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                        Disconnect
+                        Test Sync
                       </Button>
                     )}
+                    
+                    {/* Spacer when no test button */}
+                    {(!IS_DEV || source.status === 'revoked') && <div />}
+                    
+                    <div className="flex gap-2">
+                      {source.status === 'revoked' ? (
+                        <Button
+                          variant="outline"
+                          onClick={() => handleConnect(source.source)}
+                          disabled={connectingSource === source.source}
+                        >
+                          {connectingSource === source.source ? (
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          ) : (
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                          )}
+                          Reconnect
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleDisconnect(source)}
+                          disabled={disconnecting === source.id}
+                        >
+                          {disconnecting === source.id && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                          Disconnect
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
