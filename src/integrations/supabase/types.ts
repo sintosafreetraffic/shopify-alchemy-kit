@@ -1141,6 +1141,7 @@ export type Database = {
           sleep_efficiency: number | null
           source: string
           start_time: string
+          timezone_offset_seconds: number | null
           total_sleep_minutes: number | null
           user_id: string
           wake_events: number | null
@@ -1158,6 +1159,7 @@ export type Database = {
           sleep_efficiency?: number | null
           source: string
           start_time: string
+          timezone_offset_seconds?: number | null
           total_sleep_minutes?: number | null
           user_id: string
           wake_events?: number | null
@@ -1175,6 +1177,7 @@ export type Database = {
           sleep_efficiency?: number | null
           source?: string
           start_time?: string
+          timezone_offset_seconds?: number | null
           total_sleep_minutes?: number | null
           user_id?: string
           wake_events?: number | null
@@ -1471,6 +1474,7 @@ export type Database = {
           source: string
           stages: Json | null
           start_time: string
+          timezone_offset_seconds: number | null
           user_id: string
         }
         Insert: {
@@ -1485,6 +1489,7 @@ export type Database = {
           source: string
           stages?: Json | null
           start_time: string
+          timezone_offset_seconds?: number | null
           user_id: string
         }
         Update: {
@@ -1499,6 +1504,7 @@ export type Database = {
           source?: string
           stages?: Json | null
           start_time?: string
+          timezone_offset_seconds?: number | null
           user_id?: string
         }
         Relationships: []
@@ -1509,6 +1515,8 @@ export type Database = {
           consent_granted_at: string | null
           consent_version: string | null
           created_at: string
+          garmin_token_hash: string | null
+          garmin_token_hash_updated_at: string | null
           id: string
           last_sync_at: string | null
           metadata: Json | null
@@ -1524,6 +1532,8 @@ export type Database = {
           consent_granted_at?: string | null
           consent_version?: string | null
           created_at?: string
+          garmin_token_hash?: string | null
+          garmin_token_hash_updated_at?: string | null
           id?: string
           last_sync_at?: string | null
           metadata?: Json | null
@@ -1539,6 +1549,8 @@ export type Database = {
           consent_granted_at?: string | null
           consent_version?: string | null
           created_at?: string
+          garmin_token_hash?: string | null
+          garmin_token_hash_updated_at?: string | null
           id?: string
           last_sync_at?: string | null
           metadata?: Json | null

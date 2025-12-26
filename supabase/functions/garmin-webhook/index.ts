@@ -6,10 +6,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 // 
 // Features:
 // - Signature verification via X-Garmin-Signature
+// - Indexed token hash lookup with backfill for existing users
 // - Idempotency via dedupe_key
 // - Consent enforcement (rejects revoked sources)
+// - UTC timestamp storage with timezone_offset_seconds
 // - Device model propagation
-// - Transforms to sleep-intake format
 // - Feature flag rollback support
 // ============================================================
 
@@ -54,14 +55,26 @@ interface GarminWebhookPayload {
   userMetrics?: unknown[];
   moveIQActivities?: unknown[];
   allDayRespiration?: unknown[];
-  // etc.
+}
+
+interface SourceRow {
+  id: string;
+  user_id: string;
+  status: string;
+  metadata: Record<string, unknown> | null;
+  user_timezone: string | null;
+  garmin_token_hash: string | null;
 }
 
 function log(level: 'info' | 'warn' | 'error', message: string, data?: Record<string, unknown>) {
   const safeData = data ? { ...data } : {};
-  // Don't log full payloads
+  // Never log tokens, hashes, or payloads
   delete safeData.payload;
   delete safeData.raw_payload;
+  delete safeData.access_token;
+  delete safeData.userAccessToken;
+  delete safeData.token_hash;
+  delete safeData.garmin_token_hash;
   
   const entry = {
     timestamp: new Date().toISOString(),
@@ -107,27 +120,63 @@ async function verifySignature(body: string, signature: string, secret: string):
   }
 }
 
-// Convert Garmin sleep data to our intake format
-function transformGarminSleep(garminSleep: GarminSleepData, deviceModel?: string) {
-  const startTime = new Date(garminSleep.startTimeInSeconds * 1000);
-  const endTime = new Date((garminSleep.startTimeInSeconds + garminSleep.durationInSeconds) * 1000);
+// Compute SHA-256 hash of access token with pepper
+async function computeTokenHash(accessToken: string, pepper: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(`${accessToken}:${pepper}`);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Derive night_date from UTC timestamp using timezone
+function deriveNightDate(
+  startTimeSeconds: number, 
+  offsetSeconds: number, 
+  userTimezone?: string | null
+): string {
+  // Get the local time at sleep start
+  const startTimeMs = startTimeSeconds * 1000;
   
-  // Apply timezone offset
-  const offsetMs = garminSleep.startTimeOffsetInSeconds * 1000;
+  if (userTimezone) {
+    // Use IANA timezone for DST-safe derivation
+    try {
+      const localDate = new Date(startTimeMs).toLocaleDateString('en-CA', { 
+        timeZone: userTimezone 
+      });
+      return localDate; // Returns YYYY-MM-DD format
+    } catch {
+      // Fallback to offset if timezone is invalid
+    }
+  }
   
-  // Format with timezone offset
-  const formatWithOffset = (date: Date, offsetSeconds: number) => {
-    const offsetHours = Math.floor(Math.abs(offsetSeconds) / 3600);
-    const offsetMinutes = Math.floor((Math.abs(offsetSeconds) % 3600) / 60);
-    const sign = offsetSeconds >= 0 ? '+' : '-';
-    const offsetStr = `${sign}${String(offsetHours).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}`;
-    return date.toISOString().replace('Z', '') + offsetStr;
-  };
+  // Fallback: use offset to derive local date
+  const localTimeMs = startTimeMs + (offsetSeconds * 1000);
+  const localDate = new Date(localTimeMs);
+  return localDate.toISOString().split('T')[0];
+}
+
+// Convert Garmin sleep data to our intake format with UTC timestamps
+function transformGarminSleep(
+  garminSleep: GarminSleepData, 
+  deviceModel?: string,
+  userTimezone?: string | null
+) {
+  // Store as UTC (Z suffix)
+  const startTimeUtc = new Date(garminSleep.startTimeInSeconds * 1000).toISOString();
+  const endTimeUtc = new Date((garminSleep.startTimeInSeconds + garminSleep.durationInSeconds) * 1000).toISOString();
   
-  const startTimeStr = formatWithOffset(startTime, garminSleep.startTimeOffsetInSeconds);
-  const endTimeStr = formatWithOffset(endTime, garminSleep.startTimeOffsetInSeconds);
+  // Store offset for reference
+  const timezoneOffsetSeconds = garminSleep.startTimeOffsetInSeconds;
   
-  // Transform sleep stages
+  // Derive night_date using timezone or offset
+  const nightDate = deriveNightDate(
+    garminSleep.startTimeInSeconds,
+    timezoneOffsetSeconds,
+    userTimezone
+  );
+  
+  // Transform sleep stages with UTC timestamps
   const stages: Array<{ stage: string; start_time: string; end_time: string }> = [];
   
   if (garminSleep.sleepLevelsMap) {
@@ -140,14 +189,8 @@ function transformGarminSleep(garminSleep: GarminSleepData, deviceModel?: string
       for (const interval of intervals) {
         stages.push({
           stage: ourStage,
-          start_time: formatWithOffset(
-            new Date(interval.startTimeInSeconds * 1000), 
-            garminSleep.startTimeOffsetInSeconds
-          ),
-          end_time: formatWithOffset(
-            new Date(interval.endTimeInSeconds * 1000), 
-            garminSleep.startTimeOffsetInSeconds
-          ),
+          start_time: new Date(interval.startTimeInSeconds * 1000).toISOString(),
+          end_time: new Date(interval.endTimeInSeconds * 1000).toISOString(),
         });
       }
     }
@@ -158,8 +201,10 @@ function transformGarminSleep(garminSleep: GarminSleepData, deviceModel?: string
   
   return {
     source: 'garmin' as const,
-    start_time: startTimeStr,
-    end_time: endTimeStr,
+    start_time: startTimeUtc,
+    end_time: endTimeUtc,
+    timezone_offset_seconds: timezoneOffsetSeconds,
+    night_date: nightDate,
     stages,
     external_night_id: garminSleep.summaryId,
     device_model: deviceModel || garminSleep.deviceName || undefined,
@@ -185,6 +230,7 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const garminWebhookSecret = Deno.env.get('GARMIN_WEBHOOK_SECRET');
+    const tokenHashPepper = Deno.env.get('GARMIN_TOKEN_HASH_PEPPER');
     const garminSyncEnabled = Deno.env.get('GARMIN_SYNC_ENABLED') !== 'false'; // Default enabled
     
     // Feature flag check - graceful disable
@@ -198,6 +244,14 @@ Deno.serve(async (req) => {
     
     if (!garminWebhookSecret) {
       log('error', 'GARMIN_WEBHOOK_SECRET not configured');
+      return new Response(
+        JSON.stringify({ error: 'Webhook not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    if (!tokenHashPepper) {
+      log('error', 'GARMIN_TOKEN_HASH_PEPPER not configured');
       return new Response(
         JSON.stringify({ error: 'Webhook not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -263,38 +317,88 @@ Deno.serve(async (req) => {
     const results: Array<{ summaryId: string; status: string; error?: string }> = [];
     
     for (const garminSleep of sleeps) {
-      const garminUserId = garminSleep.userId;
       const summaryId = garminSleep.summaryId;
       
       try {
-        // Find our user by their Garmin OAuth token
-        // The userAccessToken in the payload matches what we stored
-        const { data: sources, error: sourceError } = await supabaseAdmin
-          .from('sleep_sources')
-          .select('user_id, status, metadata')
-          .eq('source', 'garmin')
-          .not('metadata', 'is', null);
+        // Compute token hash for lookup
+        const tokenHash = await computeTokenHash(garminSleep.userAccessToken, tokenHashPepper);
         
-        if (sourceError) {
-          log('error', 'Failed to query sleep_sources', { error: sourceError.message });
-          results.push({ summaryId, status: 'error', error: 'Database error' });
-          continue;
+        // STEP 1: Try indexed lookup first (O(1))
+        let matchingSource: SourceRow | null = null;
+        
+        const { data: indexedSource, error: indexedError } = await supabaseAdmin
+          .from('sleep_sources')
+          .select('id, user_id, status, metadata, user_timezone, garmin_token_hash')
+          .eq('source', 'garmin')
+          .eq('garmin_token_hash', tokenHash)
+          .limit(1)
+          .single();
+        
+        if (!indexedError && indexedSource) {
+          matchingSource = indexedSource as SourceRow;
+          log('info', 'User resolved via indexed hash lookup', { 
+            userId: matchingSource.user_id, 
+            summaryId 
+          });
+        } else {
+          // STEP 2: Fallback to legacy scan for users without hash (backfill)
+          log('info', 'Indexed lookup failed, attempting backfill scan', { summaryId });
+          
+          const { data: legacySources, error: legacyError } = await supabaseAdmin
+            .from('sleep_sources')
+            .select('id, user_id, status, metadata, user_timezone, garmin_token_hash')
+            .eq('source', 'garmin')
+            .is('garmin_token_hash', null)
+            .not('metadata', 'is', null);
+          
+          if (legacyError) {
+            log('error', 'Failed to query legacy sources', { error: legacyError.message });
+            results.push({ summaryId, status: 'error', error: 'Database error' });
+            continue;
+          }
+          
+          // Find matching user by access token
+          const foundSource = legacySources?.find(s => {
+            const meta = s.metadata as Record<string, unknown>;
+            return meta?.access_token === garminSleep.userAccessToken;
+          });
+          
+          if (foundSource) {
+            matchingSource = foundSource as SourceRow;
+            
+            // Backfill the hash for future indexed lookups
+            const { error: backfillError } = await supabaseAdmin
+              .from('sleep_sources')
+              .update({
+                garmin_token_hash: tokenHash,
+                garmin_token_hash_updated_at: new Date().toISOString(),
+              })
+              .eq('id', foundSource.id);
+            
+            if (backfillError) {
+              log('warn', 'Failed to backfill token hash', { 
+                userId: foundSource.user_id, 
+                error: backfillError.message 
+              });
+            } else {
+              log('info', 'Backfilled token hash for existing user', { 
+                userId: foundSource.user_id 
+              });
+            }
+          }
         }
         
-        // Find matching user by access token
-        const matchingSource = sources?.find(s => {
-          const meta = s.metadata as Record<string, unknown>;
-          return meta?.access_token === garminSleep.userAccessToken;
-        });
-        
+        // No user found
         if (!matchingSource) {
           log('warn', 'No matching user for Garmin access token', { summaryId });
-          results.push({ summaryId, status: 'error', error: 'SOURCE_NOT_FOUND' });
+          // Return 200 to prevent Garmin retries
+          results.push({ summaryId, status: 'skipped', error: 'SOURCE_NOT_FOUND' });
           continue;
         }
         
         const userId = matchingSource.user_id;
         const status = matchingSource.status as SourceStatus;
+        const userTimezone = matchingSource.user_timezone;
         
         // Consent enforcement
         if (status === 'revoked') {
@@ -302,15 +406,19 @@ Deno.serve(async (req) => {
           results.push({ 
             summaryId, 
             status: 'rejected', 
-            error: 'SOURCE_REVOKED: This source was disconnected. Please reconnect to resume syncing.' 
+            error: 'CONSENT_REVOKED' 
           });
           continue;
         }
         
-        // Transform to our format
+        // Transform to our format with UTC timestamps
         const metadata = matchingSource.metadata as Record<string, unknown>;
         const deviceModel = metadata?.device_model as string | undefined;
-        const sleepData = transformGarminSleep(garminSleep, deviceModel || garminSleep.deviceName);
+        const sleepData = transformGarminSleep(
+          garminSleep, 
+          deviceModel || garminSleep.deviceName,
+          userTimezone
+        );
         
         // Generate dedupe key
         const dedupeKey = `garmin:${userId}:${summaryId}`;
@@ -328,11 +436,7 @@ Deno.serve(async (req) => {
           continue;
         }
         
-        // Derive night_date from start_time
-        const startDate = new Date(sleepData.start_time);
-        const nightDate = startDate.toISOString().split('T')[0];
-        
-        // Insert raw event with device_model
+        // Insert raw event with UTC timestamps and timezone_offset_seconds
         const { data: rawEvent, error: insertError } = await supabaseAdmin
           .from('sleep_raw_events')
           .insert({
@@ -340,6 +444,7 @@ Deno.serve(async (req) => {
             source: 'garmin',
             start_time: sleepData.start_time,
             end_time: sleepData.end_time,
+            timezone_offset_seconds: sleepData.timezone_offset_seconds,
             stages: sleepData.stages,
             dedupe_key: dedupeKey,
             external_night_id: summaryId,
@@ -381,15 +486,16 @@ Deno.serve(async (req) => {
           ? Math.round((sleepMinutes / totalMinutes) * 100 * 100) / 100 
           : null;
         
-        // Insert normalized night with device_model
+        // Insert normalized night with UTC timestamps and timezone_offset_seconds
         const { error: nightError } = await supabaseAdmin
           .from('sleep_nights')
           .insert({
             user_id: userId,
             source: 'garmin',
-            night_date: nightDate,
+            night_date: sleepData.night_date,
             start_time: sleepData.start_time,
             end_time: sleepData.end_time,
+            timezone_offset_seconds: sleepData.timezone_offset_seconds,
             total_sleep_minutes: sleepMinutes,
             sleep_efficiency: efficiency,
             wake_events: wakeEvents,
@@ -420,7 +526,7 @@ Deno.serve(async (req) => {
             .eq('user_id', userId)
             .eq('source', 'garmin');
         } else {
-          // Just update last_sync_at
+          // Just update last_sync_at and device_model
           await supabaseAdmin
             .from('sleep_sources')
             .update({ 
@@ -437,9 +543,10 @@ Deno.serve(async (req) => {
         log('info', 'Successfully processed sleep data', { 
           userId, 
           summaryId, 
-          nightDate,
+          nightDate: sleepData.night_date,
           sleepMinutes,
           deviceModel: sleepData.device_model,
+          timezoneOffsetSeconds: sleepData.timezone_offset_seconds,
         });
         
         results.push({ summaryId, status: 'success' });
