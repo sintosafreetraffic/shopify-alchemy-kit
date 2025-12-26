@@ -132,7 +132,14 @@ Deno.serve(async (req) => {
     freshnessDate.setDate(freshnessDate.getDate() - 30);
     const freshnessDateStr = freshnessDate.toISOString().split('T')[0]; // YYYY-MM-DD
     
-    const [profileResult, logsResult, attrsResult, plansCountResult, wearableNightsResult, wearableSourcesResult, rawEventsResult] = await Promise.all([
+    // Define baseline vs recent windows
+    // Recent: last 7 days
+    // Baseline: last 30 days excluding last 7 days
+    const recentDate = new Date();
+    recentDate.setDate(recentDate.getDate() - 7);
+    const recentDateStr = recentDate.toISOString().split('T')[0]; // YYYY-MM-DD
+    
+    const [profileResult, logsResult, attrsResult, plansCountResult, wearableNightsResult, wearableSourcesResult, rawEventsResult, baselineNightsResult, recentNightsResult] = await Promise.all([
       supabase.from('sleep_profiles').select('*').eq('email', email).single(),
       supabase.from('sleep_logs').select('*').eq('email', email).order('date', { ascending: false }).limit(30), // Extended for pattern detection
       supabase.from('sleep_attributes_state').select('data').eq('email', email).maybeSingle(),
@@ -146,7 +153,7 @@ Deno.serve(async (req) => {
         .or('is_split_segment.is.null,is_split_segment.eq.false') // Exclude split segments
         .gte('night_date', freshnessDateStr) // 30-day freshness cap
         .order('night_date', { ascending: false })
-        .limit(14),
+        .limit(30),
       // Fetch connected wearable sources
       supabase.from('sleep_sources').select('source, status, connected_at, last_sync_at').eq('user_id', userId).eq('status', 'connected'),
       // Fetch raw events with sleep stages for architecture analysis
@@ -158,7 +165,26 @@ Deno.serve(async (req) => {
         .not('stages', 'is', null)
         .gte('start_time', freshnessDate.toISOString()) // 30-day freshness cap
         .order('received_at', { ascending: false })
-        .limit(14),
+        .limit(30),
+      // BASELINE: last 30 days excluding last 7 days
+      supabase.from('sleep_nights')
+        .select('night_date, total_sleep_minutes, sleep_efficiency, wake_events, start_time, timezone_offset_seconds')
+        .eq('user_id', userId)
+        .eq('is_test', false)
+        .or('is_split_segment.is.null,is_split_segment.eq.false')
+        .gte('night_date', freshnessDateStr)
+        .lt('night_date', recentDateStr)
+        .order('night_date', { ascending: false })
+        .limit(30),
+      // RECENT: last 7 days
+      supabase.from('sleep_nights')
+        .select('night_date, total_sleep_minutes, sleep_efficiency, wake_events, start_time, timezone_offset_seconds')
+        .eq('user_id', userId)
+        .eq('is_test', false)
+        .or('is_split_segment.is.null,is_split_segment.eq.false')
+        .gte('night_date', recentDateStr)
+        .order('night_date', { ascending: false })
+        .limit(10),
     ]);
 
     const profile: SleepProfile | null = profileResult.data;
@@ -166,13 +192,58 @@ Deno.serve(async (req) => {
     const wearableNights = wearableNightsResult.data || [];
     const connectedSources = wearableSourcesResult.data || [];
     const rawEvents = rawEventsResult.data || [];
+    const baselineNights = baselineNightsResult.data || [];
+    const recentNights = recentNightsResult.data || [];
     
     // Log wearable data availability
     console.log('[coach-generate-sleep-plan] Wearable data', {
       connectedSources: connectedSources.map((s: any) => s.source),
       wearableNightsCount: wearableNights.length,
       rawEventsWithStages: rawEvents.length,
+      baselineNightsCount: baselineNights.length,
+      recentNightsCount: recentNights.length,
     });
+    
+    // === Helper to compute window metrics ===
+    function computeWindowMetrics(nights: any[]): { nightsAnalyzed: number; avgSleepHours: number | null; avgEfficiency: number | null; avgWakeEvents: number | null; avgDeepPct: number | null; avgLightPct: number | null; avgRemPct: number | null; avgBedtimeHour: number | null; consistencyScore: 'consistent' | 'moderate' | 'irregular' | null } | null {
+      if (nights.length < 1) return null;
+      const valid = nights.filter((n: any) => n.total_sleep_minutes != null);
+      if (valid.length < 1) return null;
+      
+      const avgMins = valid.reduce((s: number, n: any) => s + n.total_sleep_minutes, 0) / valid.length;
+      const effNights = valid.filter((n: any) => n.sleep_efficiency != null);
+      const avgEff = effNights.length > 0 ? effNights.reduce((s: number, n: any) => s + n.sleep_efficiency, 0) / effNights.length : null;
+      const wakeNights = valid.filter((n: any) => n.wake_events != null);
+      const avgWake = wakeNights.length > 0 ? wakeNights.reduce((s: number, n: any) => s + n.wake_events, 0) / wakeNights.length : null;
+      
+      // Bedtime consistency (simplified)
+      let consistencyScore: 'consistent' | 'moderate' | 'irregular' | null = null;
+      if (valid.length >= 3) {
+        const bedtimes = valid.map((n: any) => {
+          const dt = new Date(n.start_time);
+          return dt.getHours() * 60 + dt.getMinutes();
+        });
+        const avg = bedtimes.reduce((a, b) => a + b, 0) / bedtimes.length;
+        const variance = bedtimes.reduce((sum, t) => sum + Math.pow(t - avg, 2), 0) / bedtimes.length;
+        const stdDev = Math.sqrt(variance);
+        consistencyScore = stdDev < 30 ? 'consistent' : stdDev < 60 ? 'moderate' : 'irregular';
+      }
+      
+      return {
+        nightsAnalyzed: valid.length,
+        avgSleepHours: Math.round(avgMins / 60 * 10) / 10,
+        avgEfficiency: avgEff ? Math.round(avgEff) : null,
+        avgWakeEvents: avgWake ? Math.round(avgWake * 10) / 10 : null,
+        avgDeepPct: null, // Stage data computed separately
+        avgLightPct: null,
+        avgRemPct: null,
+        avgBedtimeHour: valid.length > 0 ? new Date(valid[0].start_time).getHours() : null,
+        consistencyScore,
+      };
+    }
+    
+    const wearableBaseline = computeWindowMetrics(baselineNights);
+    const wearableRecent = computeWindowMetrics(recentNights);
     
     // Get or generate 3-layer attributes
     let sleepAttributes: SleepAttributes;

@@ -786,6 +786,31 @@ export interface LogsSnapshot {
     consistencyScore: 'consistent' | 'moderate' | 'irregular' | null;
     variabilityMinutes: number | null;
   } | null;
+  // === BASELINE VS RECENT SEPARATION (v1.1) ===
+  // Baseline window: historical data for comparison (last 30 days excluding last 7)
+  wearable_baseline?: {
+    nightsAnalyzed: number;
+    avgSleepHours: number | null;
+    avgEfficiency: number | null;
+    avgWakeEvents: number | null;
+    avgDeepPct: number | null;
+    avgLightPct: number | null;
+    avgRemPct: number | null;
+    avgBedtimeHour: number | null;
+    consistencyScore: 'consistent' | 'moderate' | 'irregular' | null;
+  } | null;
+  // Recent window: current state for coaching (last 7 days)
+  wearable_recent?: {
+    nightsAnalyzed: number;
+    avgSleepHours: number | null;
+    avgEfficiency: number | null;
+    avgWakeEvents: number | null;
+    avgDeepPct: number | null;
+    avgLightPct: number | null;
+    avgRemPct: number | null;
+    avgBedtimeHour: number | null;
+    consistencyScore: 'consistent' | 'moderate' | 'irregular' | null;
+  } | null;
 }
 
 /**
@@ -844,18 +869,49 @@ ${logsSnapshot.last_log_date ? `last_log_date: ${logsSnapshot.last_log_date}` : 
 ${logsSnapshot.wearable_connected ? `
 === WEARABLE DATA (Objective Sleep Metrics) ===
 wearable_sources: ${logsSnapshot.wearable_sources?.join(', ') || 'unknown'}
-avg_sleep_duration: ${logsSnapshot.wearable_avg_sleep_hours ? `${logsSnapshot.wearable_avg_sleep_hours} hours` : 'No data'}
-avg_sleep_efficiency: ${logsSnapshot.wearable_avg_efficiency ? `${logsSnapshot.wearable_avg_efficiency}%` : 'No data'}
-avg_wake_events_per_night: ${logsSnapshot.wearable_avg_wake_events ?? 'No data'}
-NOTE: User has a connected wearable device. Use this objective data to enhance recommendations.
-${logsSnapshot.wearable_avg_efficiency && logsSnapshot.wearable_avg_efficiency < 80 
+` : ''}
+${logsSnapshot.wearable_baseline && logsSnapshot.wearable_baseline.nightsAnalyzed >= 3 ? `
+=== WEARABLE BASELINE (historical pattern, NOT caused by us) ===
+Based on ${logsSnapshot.wearable_baseline.nightsAnalyzed} nights of historical data:
+- This is the user's BASELINE pattern before/around the current plan. Use it as REFERENCE ONLY.
+- avg_sleep_duration: ${logsSnapshot.wearable_baseline.avgSleepHours ? `${logsSnapshot.wearable_baseline.avgSleepHours} hours` : 'No data'}
+- avg_efficiency: ${logsSnapshot.wearable_baseline.avgEfficiency ? `${logsSnapshot.wearable_baseline.avgEfficiency}%` : 'No data'}
+- avg_wake_events: ${logsSnapshot.wearable_baseline.avgWakeEvents ?? 'No data'}
+- deep_sleep_pct: ${logsSnapshot.wearable_baseline.avgDeepPct !== null ? `${logsSnapshot.wearable_baseline.avgDeepPct}%` : 'No data'}
+- bedtime_consistency: ${logsSnapshot.wearable_baseline.consistencyScore || 'unknown'}
+NOTE: This baseline is for COMPARISON only. Never claim improvements are caused by RiseByNight products.
+` : ''}
+${logsSnapshot.wearable_recent && logsSnapshot.wearable_recent.nightsAnalyzed >= 1 ? `
+=== WEARABLE RECENT (current state, primary coaching driver) ===
+Based on ${logsSnapshot.wearable_recent.nightsAnalyzed} nights in the last 7 days:
+- This is the user's CURRENT pattern. Base this week's actions on this data.
+- avg_sleep_duration: ${logsSnapshot.wearable_recent.avgSleepHours ? `${logsSnapshot.wearable_recent.avgSleepHours} hours` : 'No data'}
+- avg_efficiency: ${logsSnapshot.wearable_recent.avgEfficiency ? `${logsSnapshot.wearable_recent.avgEfficiency}%` : 'No data'}
+- avg_wake_events: ${logsSnapshot.wearable_recent.avgWakeEvents ?? 'No data'}
+- deep_sleep_pct: ${logsSnapshot.wearable_recent.avgDeepPct !== null ? `${logsSnapshot.wearable_recent.avgDeepPct}%` : 'No data'}
+- bedtime_consistency: ${logsSnapshot.wearable_recent.consistencyScore || 'unknown'}
+${logsSnapshot.wearable_recent.avgEfficiency && logsSnapshot.wearable_recent.avgEfficiency < 80 
   ? '- Sleep efficiency is LOW (<80%). Focus on reducing wake events and improving sleep continuity.' 
-  : logsSnapshot.wearable_avg_efficiency && logsSnapshot.wearable_avg_efficiency >= 85 
+  : logsSnapshot.wearable_recent.avgEfficiency && logsSnapshot.wearable_recent.avgEfficiency >= 85 
   ? '- Sleep efficiency is GOOD (≥85%). User maintains sleep well once asleep.'
   : ''}
-${logsSnapshot.wearable_avg_wake_events && logsSnapshot.wearable_avg_wake_events >= 3 
-  ? '- Frequent wake events detected (≥3/night). Consider addressing sleep disruptions.' 
+${logsSnapshot.wearable_recent.avgDeepPct !== null && logsSnapshot.wearable_recent.avgDeepPct < 15 
+  ? '- Deep sleep is BELOW optimal (<15%). Focus on recovery and relaxation routines.' 
   : ''}
+` : ''}
+${logsSnapshot.wearable_baseline && logsSnapshot.wearable_recent && logsSnapshot.wearable_baseline.nightsAnalyzed >= 3 && logsSnapshot.wearable_recent.nightsAnalyzed >= 1 ? `
+=== BASELINE VS RECENT COMPARISON ===
+You may observe differences between baseline and recent patterns:
+- Frame as: "Compared to your baseline..."
+- NEVER claim: "Your sleep improved because of our products"
+- If patterns are better: "Your recent nights are trending better than your baseline. We'll track if this continues."
+- If patterns are worse: "Your recent nights show some variability compared to baseline. Let's focus on stabilization."
+- If similar: "Your patterns are consistent with your baseline. This gives us a clear picture to work from."
+CRITICAL: All improvements may be influenced by multiple factors (stress, schedule, travel, etc.). Never attribute to products.
+` : logsSnapshot.wearable_connected && !logsSnapshot.wearable_baseline ? `
+NOTE ON LIMITED DATA:
+Wearable is connected but we don't have enough historical data for baseline comparison yet.
+Frame as: "This is your baseline. We'll detect changes once new nights sync."
 ` : ''}
 ${logsSnapshot.sleep_architecture ? `
 === SLEEP ARCHITECTURE (Wearable Stage Data) ===
@@ -895,17 +951,19 @@ ${logsSnapshot.bedtime_patterns.consistencyScore === 'irregular'
 NOTE: Circadian regularity is one of the most behaviorally actionable factors for sleep quality. Frame as "your body loves predictability" rather than rigid rules.
 ` : ''}
 
-=== BASELINE VS INTERVENTION GUARDRAILS (CRITICAL) ===
+=== BASELINE VS INTERVENTION GUARDRAILS (CRITICAL - NON-NEGOTIABLE) ===
 When discussing any improvements or changes in sleep metrics:
 
 1. NEVER attribute improvements to Rise By Night products directly
    - WRONG: "Your sleep improved because of the pillow"
+   - WRONG: "The knee pillow is helping your deep sleep"
    - RIGHT: "Compared to your baseline, your sleep has been more restorative"
+   - RIGHT: "Your recent pattern shows improvement over your historical average"
 
 2. ALWAYS use baseline-relative framing
-   - "Compared to your first week..."
+   - "Compared to your baseline..."
    - "Since starting your plan..."
-   - "Looking at your baseline data..."
+   - "Your recent nights vs your historical pattern..."
 
 3. ACKNOWLEDGE confounding factors
    - "This may be influenced by multiple factors (stress, schedule, travel, alcohol, illness)"
@@ -914,6 +972,7 @@ When discussing any improvements or changes in sleep metrics:
 4. Frame recommendations as EXPERIMENTS, not promises
    - "Try X for 7 nights and observe changes"
    - "Experiment with Y and track how you feel"
+   - "Let's run a lightweight experiment to see what moves your sleep"
    - NOT: "Do X and your sleep will improve"
 
 5. Use OBSERVATIONAL language only
@@ -922,16 +981,15 @@ When discussing any improvements or changes in sleep metrics:
    - "your data shows"
    - NOT: "proves", "fixed", "cured", "treated"
 
-6. NEVER use comparative language without baseline qualifier
-   - WRONG: "Your sleep is better now"
-   - RIGHT: "Compared to your baseline, sleep quality appears more stable"
+6. PRODUCT EXPERIMENTATION FRAMING
+   - If user owns a product: "Try [positioning/timing adjustment] with your [product] for 7 nights and track changes"
+   - If user does NOT own a product: You may recommend ONCE, but never claim it will improve metrics
+   - NEVER: "Since you started using our pillow, your deep sleep improved"
 
-${logsSnapshot.wearable_connected ? `
-NOTE ON WEARABLE BASELINE DATA:
-Some of this wearable data may be from BEFORE the user started following this plan.
-Treat historical data as baseline for comparison, not as proof of intervention success.
-We use this baseline to track progress over time — frame it as: "Using your last 30 days as baseline to track progress."
-` : ''}
+7. WEARABLE DATA ATTRIBUTION RULE
+   - Historical/backfilled wearable data = BASELINE (not caused by us)
+   - Recent wearable data = CURRENT STATE (may or may not be influenced by plan)
+   - Never imply causality without explicit user-logged intervention dates
 
 === HARD CONSTRAINTS – YOU MUST OBEY THESE ===
 
