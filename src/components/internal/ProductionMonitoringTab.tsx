@@ -323,7 +323,8 @@ export const ProductionMonitoringTab = () => {
         system: {
           edgeFunctionsHealthy: true, // Assume healthy unless we see errors
           lastAlertTime: alertsData[0]?.created_at || null,
-          activeAlerts: alertsData.filter(a => a.status !== 'acknowledged').length,
+          // Only count alerts that are still "open" (not acknowledged or resolved)
+          activeAlerts: alertsData.filter(a => a.status === 'open').length,
         },
       };
 
