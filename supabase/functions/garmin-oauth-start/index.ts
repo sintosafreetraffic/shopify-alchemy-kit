@@ -209,7 +209,10 @@ Deno.serve(async (req) => {
       method: 'POST',
       headers: {
         'Authorization': authHeaderValue,
+        // Garmin expects form-encoded requests for OAuth 1.0a endpoints
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
+      body: '',
     });
     
     if (!requestTokenResponse.ok) {
