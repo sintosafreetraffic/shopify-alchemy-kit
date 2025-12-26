@@ -101,45 +101,34 @@ const SleepSources = () => {
 
     setConnectingSource(sourceType);
 
-    const existingSource = getSourceForType(sourceType);
-
-    if (existingSource) {
-      // Reconnect: update existing row
-      const { error } = await supabase
-        .from('sleep_sources')
-        .update({
-          status: 'pending',
-          user_timezone: pendingTimezone,
-          connected_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', existingSource.id);
-
-      if (error) {
-        console.error('Error reconnecting source:', error);
-        toast({ title: "Error", description: "Failed to reconnect source", variant: "destructive" });
-      } else {
-        toast({ title: "Source reconnected", description: `${sourceType === 'apple_health' ? 'Apple Health' : 'Garmin'} is now pending activation` });
-        loadSources(userId);
-      }
-    } else {
-      // New connection
-      const { error } = await supabase
-        .from('sleep_sources')
-        .insert({
+    // Use upsert with on_conflict to handle unique constraint (user_id, source)
+    // Status always goes to 'pending' - only intake can set 'connected'
+    const { error } = await supabase
+      .from('sleep_sources')
+      .upsert(
+        {
           user_id: userId,
           source: sourceType,
           status: 'pending',
           user_timezone: pendingTimezone,
-        });
+          updated_at: new Date().toISOString(),
+        },
+        { 
+          onConflict: 'user_id,source',
+          ignoreDuplicates: false 
+        }
+      );
 
-      if (error) {
-        console.error('Error connecting source:', error);
-        toast({ title: "Error", description: "Failed to connect source", variant: "destructive" });
-      } else {
-        toast({ title: "Source added", description: `${sourceType === 'apple_health' ? 'Apple Health' : 'Garmin'} is pending activation` });
-        loadSources(userId);
-      }
+    if (error) {
+      console.error('Error connecting source:', error);
+      toast({ title: "Error", description: "Failed to connect source", variant: "destructive" });
+    } else {
+      const sourceName = sourceType === 'apple_health' ? 'Apple Health' : 'Garmin';
+      toast({ 
+        title: "Source added", 
+        description: `${sourceName} is pending. It will activate when first sync completes.` 
+      });
+      loadSources(userId);
     }
 
     setConnectingSource(null);
@@ -152,6 +141,7 @@ const SleepSources = () => {
       .from('sleep_sources')
       .update({
         status: 'revoked',
+        revoked_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
       .eq('id', source.id);
