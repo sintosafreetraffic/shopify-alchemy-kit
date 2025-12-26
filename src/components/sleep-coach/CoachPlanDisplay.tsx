@@ -195,6 +195,14 @@ export const CoachPlanDisplay = ({
   const whyThisPlan = rawAiResponse?.whyThisPlan;
   const spineScoreHint = rawAiResponse?.spineScoreHint;
   const generatedReason = planAny.generated_reason || 'manual';
+  
+  // Extract wearable insights from logs_snapshot for trust hint
+  const logsSnapshot = planAny.logs_snapshot || {};
+  const wearableInsights = logsSnapshot.wearable_connected ? {
+    sources: logsSnapshot.wearable_sources || [],
+    hasSleepArchitecture: !!(logsSnapshot.sleep_architecture?.nightsAnalyzed >= 3),
+    hasBedtimePatterns: !!(logsSnapshot.bedtime_patterns?.consistencyScore),
+  } : null;
 
   return (
     <div className="space-y-4">
@@ -204,6 +212,7 @@ export const CoachPlanDisplay = ({
         whyThisPlan={whyThisPlan}
         refreshReason={generatedReason as RefreshReason}
         generatedAt={plan.generated_at}
+        wearableInsights={wearableInsights}
       />
 
       {/* Refresh notification banner */}
