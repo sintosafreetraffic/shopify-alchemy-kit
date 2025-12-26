@@ -821,6 +821,27 @@ export type Database = {
         }
         Relationships: []
       }
+      processed_webhook_ids: {
+        Row: {
+          id: string
+          processed_at: string
+          source: string
+          webhook_id: string
+        }
+        Insert: {
+          id?: string
+          processed_at?: string
+          source: string
+          webhook_id: string
+        }
+        Update: {
+          id?: string
+          processed_at?: string
+          source?: string
+          webhook_id?: string
+        }
+        Relationships: []
+      }
       quiz_reveal_analytics: {
         Row: {
           created_at: string
@@ -1012,6 +1033,30 @@ export type Database = {
         }
         Relationships: []
       }
+      sleep_intake_rate_limits: {
+        Row: {
+          id: string
+          request_count: number
+          source: string
+          user_id: string
+          window_start: string
+        }
+        Insert: {
+          id?: string
+          request_count?: number
+          source: string
+          user_id: string
+          window_start?: string
+        }
+        Update: {
+          id?: string
+          request_count?: number
+          source?: string
+          user_id?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       sleep_logs: {
         Row: {
           created_at: string
@@ -1022,6 +1067,7 @@ export type Database = {
           id: string
           notes: string | null
           pain_level_morning: number
+          sleep_night_id: string | null
           sleep_quality: number
           source: Database["public"]["Enums"]["log_source"]
           time_to_sleep_minutes: number | null
@@ -1036,6 +1082,7 @@ export type Database = {
           id?: string
           notes?: string | null
           pain_level_morning: number
+          sleep_night_id?: string | null
           sleep_quality: number
           source?: Database["public"]["Enums"]["log_source"]
           time_to_sleep_minutes?: number | null
@@ -1050,6 +1097,7 @@ export type Database = {
           id?: string
           notes?: string | null
           pain_level_morning?: number
+          sleep_night_id?: string | null
           sleep_quality?: number
           source?: Database["public"]["Enums"]["log_source"]
           time_to_sleep_minutes?: number | null
@@ -1062,6 +1110,69 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sleep_profiles"
             referencedColumns: ["email"]
+          },
+          {
+            foreignKeyName: "sleep_logs_sleep_night_id_fkey"
+            columns: ["sleep_night_id"]
+            isOneToOne: false
+            referencedRelation: "sleep_nights"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sleep_nights: {
+        Row: {
+          created_at: string
+          end_time: string
+          id: string
+          is_split_segment: boolean | null
+          night_date: string
+          normalization_version: number
+          raw_event_id: string | null
+          sleep_efficiency: number | null
+          source: string
+          start_time: string
+          total_sleep_minutes: number | null
+          user_id: string
+          wake_events: number | null
+        }
+        Insert: {
+          created_at?: string
+          end_time: string
+          id?: string
+          is_split_segment?: boolean | null
+          night_date: string
+          normalization_version?: number
+          raw_event_id?: string | null
+          sleep_efficiency?: number | null
+          source: string
+          start_time: string
+          total_sleep_minutes?: number | null
+          user_id: string
+          wake_events?: number | null
+        }
+        Update: {
+          created_at?: string
+          end_time?: string
+          id?: string
+          is_split_segment?: boolean | null
+          night_date?: string
+          normalization_version?: number
+          raw_event_id?: string | null
+          sleep_efficiency?: number | null
+          source?: string
+          start_time?: string
+          total_sleep_minutes?: number | null
+          user_id?: string
+          wake_events?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sleep_nights_raw_event_id_fkey"
+            columns: ["raw_event_id"]
+            isOneToOne: false
+            referencedRelation: "sleep_raw_events"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1324,6 +1435,84 @@ export type Database = {
             | null
           whatsapp_enabled?: boolean | null
           whatsapp_phone?: string | null
+        }
+        Relationships: []
+      }
+      sleep_raw_events: {
+        Row: {
+          dedupe_key: string
+          end_time: string
+          external_night_id: string | null
+          id: string
+          raw_payload: Json | null
+          received_at: string
+          source: string
+          stages: Json | null
+          start_time: string
+          user_id: string
+        }
+        Insert: {
+          dedupe_key: string
+          end_time: string
+          external_night_id?: string | null
+          id?: string
+          raw_payload?: Json | null
+          received_at?: string
+          source: string
+          stages?: Json | null
+          start_time: string
+          user_id: string
+        }
+        Update: {
+          dedupe_key?: string
+          end_time?: string
+          external_night_id?: string | null
+          id?: string
+          raw_payload?: Json | null
+          received_at?: string
+          source?: string
+          stages?: Json | null
+          start_time?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sleep_sources: {
+        Row: {
+          connected_at: string | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          revoked_at: string | null
+          source: string
+          status: string
+          updated_at: string
+          user_id: string
+          user_timezone: string | null
+        }
+        Insert: {
+          connected_at?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          revoked_at?: string | null
+          source: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          user_timezone?: string | null
+        }
+        Update: {
+          connected_at?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          revoked_at?: string | null
+          source?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          user_timezone?: string | null
         }
         Relationships: []
       }
@@ -1625,6 +1814,8 @@ export type Database = {
       log_source: "manual" | "whatsapp"
       persona_cluster: "pain_sleeper" | "stress_insomnia" | "optimizer"
       sleep_position: "side" | "back" | "stomach" | "mixed"
+      sleep_source: "apple_health" | "garmin"
+      sleep_stage: "awake" | "light" | "deep" | "rem"
       stress_level: "low" | "medium" | "high"
       temperature_preference: "cold" | "neutral" | "warm"
       wake_up_condition: "energized" | "neutral" | "tired" | "stiff"
@@ -1759,6 +1950,8 @@ export const Constants = {
       log_source: ["manual", "whatsapp"],
       persona_cluster: ["pain_sleeper", "stress_insomnia", "optimizer"],
       sleep_position: ["side", "back", "stomach", "mixed"],
+      sleep_source: ["apple_health", "garmin"],
+      sleep_stage: ["awake", "light", "deep", "rem"],
       stress_level: ["low", "medium", "high"],
       temperature_preference: ["cold", "neutral", "warm"],
       wake_up_condition: ["energized", "neutral", "tired", "stiff"],
