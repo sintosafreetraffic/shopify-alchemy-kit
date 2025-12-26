@@ -156,10 +156,10 @@ Deno.serve(async (req) => {
     const userId = user.id;
     log('info', 'Starting Garmin OAuth flow', { userId });
     
-    // Get callback URL from request or use default
+    // Get callback URL from request or use default app URL
     const url = new URL(req.url);
     const callbackUrl = url.searchParams.get('callback_url') || 
-      `${supabaseUrl}/functions/v1/garmin-oauth-callback`;
+      'https://app.risebynight.com/auth/garmin/callback';
     
     // Step 1: Get request token from Garmin (OAuth 1.0a)
     const requestTokenUrl = 'https://connectapi.garmin.com/oauth-service/oauth/request_token';
