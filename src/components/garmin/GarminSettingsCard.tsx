@@ -157,12 +157,15 @@ export function GarminSettingsCard({
       }
 
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const currentOrigin = window.location.origin;
+      
       const response = await fetch(`${supabaseUrl}/functions/v1/garmin-oauth-start`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.session.access_token}`,
         },
+        body: JSON.stringify({ redirect_origin: currentOrigin }),
       });
 
       const result = await response.json();

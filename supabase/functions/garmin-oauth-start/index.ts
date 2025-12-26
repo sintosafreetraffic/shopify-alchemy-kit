@@ -18,6 +18,7 @@ interface StatePayload {
   source: 'garmin';
   timestamp: number;
   nonce: string;
+  redirect_origin: string; // Store the origin for callback redirect
 }
 
 // HMAC-SHA256 signing for state parameter
@@ -147,10 +148,31 @@ Deno.serve(async (req) => {
     }
     
     const userId = user.id;
-    log('info', 'Starting Garmin OAuth 2.0 flow', { userId });
     
-    // OAuth 2.0 configuration
-    const redirectUri = 'https://app.risebynight.com/auth/garmin/callback';
+    // Get redirect_origin from request body or query params
+    let redirectOrigin = 'https://app.risebynight.com'; // Default fallback
+    
+    if (req.method === 'POST') {
+      try {
+        const body = await req.json();
+        if (body.redirect_origin) {
+          redirectOrigin = body.redirect_origin;
+        }
+      } catch {
+        // Body parsing failed, use default
+      }
+    } else {
+      const url = new URL(req.url);
+      const originParam = url.searchParams.get('redirect_origin');
+      if (originParam) {
+        redirectOrigin = originParam;
+      }
+    }
+    
+    log('info', 'Starting Garmin OAuth 2.0 flow', { userId, redirectOrigin });
+    
+    // OAuth 2.0 configuration - use dynamic redirect URI
+    const redirectUri = `${redirectOrigin}/auth/garmin/callback`;
     
     // Garmin OAuth 2.0 endpoints (Health API)
     const authorizeEndpoint = 'https://connect.garmin.com/oauthConfirm';
@@ -159,13 +181,14 @@ Deno.serve(async (req) => {
     const codeVerifier = generateCodeVerifier();
     const codeChallenge = await generateCodeChallenge(codeVerifier);
     
-    // Generate signed state with expiry
+    // Generate signed state with expiry - include redirect_origin for callback
     const nonce = generateNonce();
     const statePayload: StatePayload = {
       user_id: userId,
       source: 'garmin',
       timestamp: Date.now(),
       nonce,
+      redirect_origin: redirectOrigin,
     };
     
     const signedState = await signState(statePayload, stateSigningSecret);
@@ -183,6 +206,7 @@ Deno.serve(async (req) => {
           code_verifier: codeVerifier,
           oauth_started_at: new Date().toISOString(),
           nonce,
+          redirect_origin: redirectOrigin,
         },
         updated_at: new Date().toISOString(),
       }, {
