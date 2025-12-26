@@ -1126,6 +1126,7 @@ export type Database = {
           end_time: string
           id: string
           is_split_segment: boolean | null
+          is_test: boolean
           night_date: string
           normalization_version: number
           raw_event_id: string | null
@@ -1141,6 +1142,7 @@ export type Database = {
           end_time: string
           id?: string
           is_split_segment?: boolean | null
+          is_test?: boolean
           night_date: string
           normalization_version?: number
           raw_event_id?: string | null
@@ -1156,6 +1158,7 @@ export type Database = {
           end_time?: string
           id?: string
           is_split_segment?: boolean | null
+          is_test?: boolean
           night_date?: string
           normalization_version?: number
           raw_event_id?: string | null
@@ -1444,6 +1447,7 @@ export type Database = {
           end_time: string
           external_night_id: string | null
           id: string
+          is_test: boolean
           raw_payload: Json | null
           received_at: string
           source: string
@@ -1456,6 +1460,7 @@ export type Database = {
           end_time: string
           external_night_id?: string | null
           id?: string
+          is_test?: boolean
           raw_payload?: Json | null
           received_at?: string
           source: string
@@ -1468,6 +1473,7 @@ export type Database = {
           end_time?: string
           external_night_id?: string | null
           id?: string
+          is_test?: boolean
           raw_payload?: Json | null
           received_at?: string
           source?: string
