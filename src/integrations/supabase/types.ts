@@ -1118,6 +1118,13 @@ export type Database = {
             referencedRelation: "sleep_nights"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "sleep_logs_sleep_night_id_fkey"
+            columns: ["sleep_night_id"]
+            isOneToOne: false
+            referencedRelation: "sleep_nights_live"
+            referencedColumns: ["id"]
+          },
         ]
       }
       sleep_nights: {
@@ -1175,6 +1182,13 @@ export type Database = {
             columns: ["raw_event_id"]
             isOneToOne: false
             referencedRelation: "sleep_raw_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sleep_nights_raw_event_id_fkey"
+            columns: ["raw_event_id"]
+            isOneToOne: false
+            referencedRelation: "sleep_raw_events_live"
             referencedColumns: ["id"]
           },
         ]
@@ -1790,7 +1804,111 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      sleep_nights_live: {
+        Row: {
+          created_at: string | null
+          end_time: string | null
+          id: string | null
+          is_split_segment: boolean | null
+          is_test: boolean | null
+          night_date: string | null
+          normalization_version: number | null
+          raw_event_id: string | null
+          sleep_efficiency: number | null
+          source: string | null
+          start_time: string | null
+          total_sleep_minutes: number | null
+          user_id: string | null
+          wake_events: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          end_time?: string | null
+          id?: string | null
+          is_split_segment?: boolean | null
+          is_test?: boolean | null
+          night_date?: string | null
+          normalization_version?: number | null
+          raw_event_id?: string | null
+          sleep_efficiency?: number | null
+          source?: string | null
+          start_time?: string | null
+          total_sleep_minutes?: number | null
+          user_id?: string | null
+          wake_events?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          end_time?: string | null
+          id?: string | null
+          is_split_segment?: boolean | null
+          is_test?: boolean | null
+          night_date?: string | null
+          normalization_version?: number | null
+          raw_event_id?: string | null
+          sleep_efficiency?: number | null
+          source?: string | null
+          start_time?: string | null
+          total_sleep_minutes?: number | null
+          user_id?: string | null
+          wake_events?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sleep_nights_raw_event_id_fkey"
+            columns: ["raw_event_id"]
+            isOneToOne: false
+            referencedRelation: "sleep_raw_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sleep_nights_raw_event_id_fkey"
+            columns: ["raw_event_id"]
+            isOneToOne: false
+            referencedRelation: "sleep_raw_events_live"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sleep_raw_events_live: {
+        Row: {
+          dedupe_key: string | null
+          end_time: string | null
+          external_night_id: string | null
+          id: string | null
+          is_test: boolean | null
+          received_at: string | null
+          source: string | null
+          stages: Json | null
+          start_time: string | null
+          user_id: string | null
+        }
+        Insert: {
+          dedupe_key?: string | null
+          end_time?: string | null
+          external_night_id?: string | null
+          id?: string | null
+          is_test?: boolean | null
+          received_at?: string | null
+          source?: string | null
+          stages?: Json | null
+          start_time?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          dedupe_key?: string | null
+          end_time?: string | null
+          external_night_id?: string | null
+          id?: string | null
+          is_test?: boolean | null
+          received_at?: string | null
+          source?: string | null
+          stages?: Json | null
+          start_time?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_affiliate_commissions_safe: {
