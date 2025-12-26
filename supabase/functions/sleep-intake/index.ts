@@ -1,8 +1,13 @@
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // ============================================================
-// Sleep Data Integration Foundation v2.1
+// Sleep Data Integration Foundation v2.2
 // POST /sleep/intake - Unified vendor-agnostic intake endpoint
+// 
+// v2.2 Changes:
+// - Added consent guardrails: revoked → 409, missing source → 404
+// - Added COALESCE for connected_at (defensive)
+// - Added dev-only test_mode for pipeline validation
 // ============================================================
 
 const corsHeaders = {
@@ -14,6 +19,7 @@ const corsHeaders = {
 type SleepSource = 'apple_health' | 'garmin';
 type SleepStage = 'awake' | 'light' | 'deep' | 'rem';
 type LogSource = 'manual' | 'whatsapp' | 'wearable_apple_health' | 'wearable_garmin';
+type SourceStatus = 'pending' | 'connected' | 'revoked';
 
 // Map sleep_sources.source to log_source enum
 function mapSourceToLogSource(source: SleepSource): LogSource {
@@ -44,13 +50,23 @@ interface RawSleepInput {
   external_night_id?: string;
   dedupe_key?: string;
   raw_payload?: Record<string, unknown>;
+  test_mode?: boolean; // Dev-only test mode flag
 }
 
 interface IntakeResponse {
   status: 'success' | 'duplicate' | 'error';
+  code?: string;
   sleep_night_id?: string;
   existing_raw_event_id?: string;
   message?: string;
+  test_mode?: boolean;
+}
+
+interface SourceRow {
+  id: string;
+  status: SourceStatus;
+  user_timezone: string | null;
+  connected_at: string | null;
 }
 
 // Constants
@@ -193,6 +209,11 @@ function validateInput(input: RawSleepInput): string | null {
     return `Invalid source. Must be one of: ${VALID_SOURCES.join(', ')}`;
   }
   
+  // In test_mode, we generate payload so skip timestamp validation
+  if (input.test_mode) {
+    return null;
+  }
+  
   if (!input.start_time || !isValidISO8601WithOffset(input.start_time)) {
     return 'start_time must be a valid ISO8601 string with timezone offset';
   }
@@ -220,6 +241,45 @@ function validateInput(input: RawSleepInput): string | null {
   }
   
   return null;
+}
+
+// ============================================================
+// Test Mode Payload Generation
+// ============================================================
+
+function generateTestPayload(userId: string, source: SleepSource, userTimezone?: string): RawSleepInput {
+  // Generate a test payload for today
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+  
+  // Create start_time at 23:00 yesterday in user's timezone (or UTC)
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split('T')[0];
+  
+  // Use +01:00 as default offset (Europe/Copenhagen-ish)
+  const offset = '+01:00';
+  const startTime = `${yesterdayStr}T23:00:00${offset}`;
+  const endTime = `${todayStr}T06:00:00${offset}`;
+  
+  // Generate minimal stages: 3.5h light + 3.5h deep (7h total)
+  const lightStart = `${yesterdayStr}T23:00:00${offset}`;
+  const lightEnd = `${todayStr}T02:30:00${offset}`;
+  const deepStart = `${todayStr}T02:30:00${offset}`;
+  const deepEnd = `${todayStr}T06:00:00${offset}`;
+  
+  return {
+    source,
+    start_time: startTime,
+    end_time: endTime,
+    stages: [
+      { stage: 'light', start_time: lightStart, end_time: lightEnd, confidence: 0.9 },
+      { stage: 'deep', start_time: deepStart, end_time: deepEnd, confidence: 0.9 },
+    ],
+    // Test mode dedupe key: deterministic per user/source/date (won't collide with real data)
+    dedupe_key: `test:${userId}:${source}:${todayStr}`,
+    test_mode: true,
+  };
 }
 
 // ============================================================
@@ -338,6 +398,7 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const allowTestSync = Deno.env.get('ALLOW_TEST_SYNC') === 'true';
     
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { persistSession: false }
@@ -356,10 +417,10 @@ Deno.serve(async (req) => {
     
     const userId = authResult.userId!;
     
-    // 2. Parse and validate
-    let input: RawSleepInput;
+    // 2. Parse body
+    let rawInput: RawSleepInput;
     try {
-      input = await req.json();
+      rawInput = await req.json();
     } catch {
       return new Response(
         JSON.stringify({ status: 'error', message: 'Invalid JSON body' }),
@@ -367,16 +428,79 @@ Deno.serve(async (req) => {
       );
     }
     
-    const validationError = validateInput(input);
+    // 3. Check test_mode permission
+    if (rawInput.test_mode && !allowTestSync) {
+      log('warn', 'Test mode attempted but disabled', { userId });
+      return new Response(
+        JSON.stringify({ 
+          status: 'error', 
+          code: 'TEST_MODE_DISABLED',
+          message: 'Test mode is not enabled.' 
+        } as IntakeResponse),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // 4. Validate input (source must be valid for both real and test mode)
+    const validationError = validateInput(rawInput);
     if (validationError) {
-      log('warn', 'Validation failed', { error: validationError, source: input.source });
+      log('warn', 'Validation failed', { error: validationError, source: rawInput.source });
       return new Response(
         JSON.stringify({ status: 'error', message: validationError }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
-    // 3. Rate limit
+    // 5. CONSENT CHECK: Verify source row exists and status is valid
+    // This happens AFTER auth + validation, BEFORE any DB writes
+    const { data: sourceRow, error: sourceError } = await supabaseAdmin
+      .from('sleep_sources')
+      .select('id, status, user_timezone, connected_at')
+      .eq('user_id', userId)
+      .eq('source', rawInput.source)
+      .single();
+    
+    if (sourceError || !sourceRow) {
+      log('warn', 'Source not found', { userId, source: rawInput.source });
+      return new Response(
+        JSON.stringify({ 
+          status: 'error', 
+          code: 'SOURCE_NOT_FOUND',
+          message: 'No connected source found. Please connect this source first.' 
+        } as IntakeResponse),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const typedSourceRow = sourceRow as SourceRow;
+    
+    // 5b. Check if source is revoked - never auto-reactivate
+    if (typedSourceRow.status === 'revoked') {
+      log('warn', 'Revoked source attempted intake', { userId, source: rawInput.source });
+      return new Response(
+        JSON.stringify({ 
+          status: 'error', 
+          code: 'SOURCE_REVOKED',
+          message: 'This source was disconnected. Please reconnect to resume syncing.' 
+        } as IntakeResponse),
+        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // At this point, status is either 'pending' or 'connected' - both are allowed
+    const userTimezone = typedSourceRow.user_timezone || undefined;
+    const isTestMode = rawInput.test_mode === true;
+    
+    // 6. Generate or use provided payload
+    let input: RawSleepInput;
+    if (isTestMode) {
+      input = generateTestPayload(userId, rawInput.source, userTimezone);
+      log('info', 'Test mode: generated payload', { userId, source: input.source, dedupeKey: input.dedupe_key });
+    } else {
+      input = rawInput;
+    }
+    
+    // 7. Rate limit
     const rateLimit = await checkRateLimit(supabaseAdmin, userId, input.source);
     if (!rateLimit.allowed) {
       log('warn', 'Rate limit exceeded', { userId, source: input.source });
@@ -394,10 +518,10 @@ Deno.serve(async (req) => {
       );
     }
     
-    // 4. Dedupe key
+    // 8. Dedupe key
     const dedupeKey = input.dedupe_key || computeDedupeKey(input, userId);
     
-    // 5. Check duplicate
+    // 9. Check duplicate
     const { data: existingRawEvent } = await supabaseAdmin
       .from('sleep_raw_events')
       .select('id')
@@ -405,12 +529,13 @@ Deno.serve(async (req) => {
       .single();
     
     if (existingRawEvent) {
-      log('info', 'Duplicate intake ignored', { dedupeKey, existingId: (existingRawEvent as { id: string }).id });
+      log('info', 'Duplicate intake ignored', { dedupeKey, existingId: (existingRawEvent as { id: string }).id, testMode: isTestMode });
       return new Response(
         JSON.stringify({ 
           status: 'duplicate', 
           existing_raw_event_id: (existingRawEvent as { id: string }).id,
-          message: 'This sleep data has already been processed'
+          message: 'This sleep data has already been processed',
+          test_mode: isTestMode || undefined,
         } as IntakeResponse),
         { 
           status: 200, 
@@ -423,17 +548,7 @@ Deno.serve(async (req) => {
       );
     }
     
-    // 6. Get user timezone
-    const { data: sleepSource } = await supabaseAdmin
-      .from('sleep_sources')
-      .select('user_timezone')
-      .eq('user_id', userId)
-      .eq('source', input.source)
-      .single();
-    
-    const userTimezone = (sleepSource as { user_timezone: string | null } | null)?.user_timezone || undefined;
-    
-    // 7. Insert raw event
+    // 10. Insert raw event
     const { data: rawEvent, error: rawInsertError } = await supabaseAdmin
       .from('sleep_raw_events')
       .insert({
@@ -444,7 +559,7 @@ Deno.serve(async (req) => {
         start_time: input.start_time,
         end_time: input.end_time,
         stages: input.stages || null,
-        raw_payload: input.raw_payload || null,
+        raw_payload: isTestMode ? null : (input.raw_payload || null), // Never store raw_payload in test mode
       })
       .select('id')
       .single();
@@ -455,13 +570,13 @@ Deno.serve(async (req) => {
     }
     
     const rawEventId = (rawEvent as { id: string }).id;
-    log('info', 'Raw event stored', { rawEventId, source: input.source });
+    log('info', 'Raw event stored', { rawEventId, source: input.source, testMode: isTestMode });
     
-    // 8. Normalize
+    // 11. Normalize
     const metrics = normalizeToNightlyMetrics(input);
     const nightDate = deriveNightDate(input.start_time, userTimezone);
     
-    // 9. Check for existing night (split-night detection)
+    // 12. Check for existing night (split-night detection)
     const { data: existingNights } = await supabaseAdmin
       .from('sleep_nights')
       .select('id')
@@ -507,32 +622,26 @@ Deno.serve(async (req) => {
     }
     
     const sleepNightId = (sleepNight as { id: string }).id;
-    log('info', 'Sleep night normalized', { sleepNightId, nightDate, totalSleepMinutes: metrics.total_sleep_minutes, isSplitNight });
+    log('info', 'Sleep night normalized', { sleepNightId, nightDate, totalSleepMinutes: metrics.total_sleep_minutes, isSplitNight, testMode: isTestMode });
     
-    // 9b. Update sleep_sources: pending→connected on first sync, always update last_sync_at
+    // 13. Update sleep_sources: pending→connected on first sync, always update last_sync_at
     const now = new Date().toISOString();
     
-    // First, check if this is a pending source (first sync = set connected_at)
-    const { data: pendingSource } = await supabaseAdmin
-      .from('sleep_sources')
-      .select('id, connected_at')
-      .eq('user_id', userId)
-      .eq('source', input.source)
-      .eq('status', 'pending')
-      .single();
-    
-    if (pendingSource) {
+    if (typedSourceRow.status === 'pending') {
       // First successful sync: activate and set connected_at
+      // COALESCE: defensive guard - only set connected_at if not already set
+      const newConnectedAt = typedSourceRow.connected_at || now;
+      
       await supabaseAdmin
         .from('sleep_sources')
         .update({ 
           last_sync_at: now,
           status: 'connected',
-          connected_at: now, // Only set on first activation
+          connected_at: newConnectedAt, // COALESCE(connected_at, NOW())
         })
-        .eq('id', (pendingSource as { id: string }).id);
+        .eq('id', typedSourceRow.id);
       
-      log('info', 'Source activated on first sync', { userId, source: input.source });
+      log('info', 'Source activated on first sync', { userId, source: input.source, testMode: isTestMode });
     } else {
       // Already connected: just update last_sync_at (preserve original connected_at)
       await supabaseAdmin
@@ -540,15 +649,15 @@ Deno.serve(async (req) => {
         .update({ 
           last_sync_at: now,
         })
-        .eq('user_id', userId)
-        .eq('source', input.source)
-        .eq('status', 'connected');
+        .eq('id', typedSourceRow.id);
     }
     
-    // 10. Link to Sleep Coach
+    // 14. Link to Sleep Coach (skip in test mode unless email is confidently present)
+    // Intent: test mode validates pipeline but avoids creating dirty sleep_logs
     const userEmail = authResult.email || input.email;
+    const shouldCreateLog = !isTestMode || (isTestMode && userEmail);
     
-    if (userEmail) {
+    if (userEmail && shouldCreateLog) {
       // Map source to correct log_source enum value
       const logSource = mapSourceToLogSource(input.source);
       
@@ -564,28 +673,31 @@ Deno.serve(async (req) => {
           felt_hot: false,
           felt_stressed: false,
           source: logSource,
-          notes: `Auto-imported from ${input.source}`,
+          notes: isTestMode ? `[TEST] Auto-imported from ${input.source}` : `Auto-imported from ${input.source}`,
           sleep_night_id: sleepNightId,
         });
       
       if (logInsertError) {
-        log('warn', 'Failed to create sleep_log linkage', { error: logInsertError.message, sleepNightId });
+        log('warn', 'Failed to create sleep_log linkage', { error: logInsertError.message, sleepNightId, testMode: isTestMode });
       } else {
-        log('info', 'Sleep Coach linkage created', { sleepNightId, email: userEmail, logSource });
+        log('info', 'Sleep Coach linkage created', { sleepNightId, email: userEmail, logSource, testMode: isTestMode });
       }
+    } else if (isTestMode) {
+      log('info', 'Test mode: skipped sleep_logs (no email or intentional skip)', { sleepNightId });
     }
     
-    // 11. Emit event
-    log('info', 'sleep_data_received event emitted', { userId, source: input.source, sleepNightId, nightDate });
+    // 15. Emit event
+    log('info', 'sleep_data_received event emitted', { userId, source: input.source, sleepNightId, nightDate, testMode: isTestMode });
     
     const duration = Date.now() - startTime;
-    log('info', 'Intake completed successfully', { duration, sleepNightId });
+    log('info', 'Intake completed successfully', { duration, sleepNightId, testMode: isTestMode });
     
     return new Response(
       JSON.stringify({
         status: 'success',
         sleep_night_id: sleepNightId,
-        message: 'Sleep data processed and linked to Sleep Coach',
+        message: isTestMode ? 'Test sync complete' : 'Sleep data processed and linked to Sleep Coach',
+        test_mode: isTestMode || undefined,
       } as IntakeResponse),
       { 
         status: 201, 
