@@ -48,6 +48,13 @@ async function signState(payload: StatePayload, secret: string): Promise<string>
 }
 
 // OAuth 1.0a signature generation
+function oauthEncode(input: string): string {
+  // OAuth uses RFC3986 which requires encoding ! ' ( ) * as well
+  return encodeURIComponent(input).replace(/[!'()*]/g, (c) =>
+    '%' + c.charCodeAt(0).toString(16).toUpperCase()
+  );
+}
+
 async function generateOAuthSignature(
   method: string,
   url: string,
@@ -58,15 +65,15 @@ async function generateOAuthSignature(
   // Sort parameters alphabetically
   const sortedParams = Object.keys(params)
     .sort()
-    .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
+    .map((key) => `${oauthEncode(key)}=${oauthEncode(params[key])}`)
     .join('&');
-  
+
   // Create signature base string
-  const signatureBase = `${method.toUpperCase()}&${encodeURIComponent(url)}&${encodeURIComponent(sortedParams)}`;
-  
+  const signatureBase = `${method.toUpperCase()}&${oauthEncode(url)}&${oauthEncode(sortedParams)}`;
+
   // Create signing key
-  const signingKey = `${encodeURIComponent(consumerSecret)}&${encodeURIComponent(tokenSecret)}`;
-  
+  const signingKey = `${oauthEncode(consumerSecret)}&${oauthEncode(tokenSecret)}`;
+
   // Generate HMAC-SHA1 signature
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
@@ -76,7 +83,7 @@ async function generateOAuthSignature(
     false,
     ['sign']
   );
-  
+
   const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(signatureBase));
   return btoa(String.fromCharCode(...new Uint8Array(signature)));
 }
@@ -189,7 +196,7 @@ Deno.serve(async (req) => {
     // Build Authorization header - params in sorted order
     const authHeaderValue = 'OAuth ' + Object.keys(headerParams)
       .sort()
-      .map(key => `${encodeURIComponent(key)}="${encodeURIComponent(headerParams[key])}"`)
+      .map((key) => `${oauthEncode(key)}="${oauthEncode(headerParams[key])}"`)
       .join(', ');
     
     log('info', 'Requesting Garmin request token', { 
