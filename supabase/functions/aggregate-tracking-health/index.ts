@@ -148,20 +148,22 @@ serve(async (req) => {
       if (orderError) {
         console.log(`[aggregate-tracking-health] RPC fallback: querying pinterest_purchase_events directly`);
         
-        // Total orders
+        // Total orders (EXCLUDE test orders - is_test = false only)
         const { count: totalOrders } = await supabase
           .from("pinterest_purchase_events")
           .select("*", { count: "exact", head: true })
           .gte("created_at", windowStart)
-          .lt("created_at", windowEnd);
+          .lt("created_at", windowEnd)
+          .eq("is_test", false);
         orders_seen = totalOrders || 0;
 
-        // Success count
+        // Success count (exclude test orders)
         const { count: successOrders } = await supabase
           .from("pinterest_purchase_events")
           .select("*", { count: "exact", head: true })
           .gte("created_at", windowStart)
           .lt("created_at", windowEnd)
+          .eq("is_test", false)
           .ilike("render_status", "%success%");
         success_count = successOrders || 0;
 
@@ -174,12 +176,13 @@ serve(async (req) => {
           .or("render_status.ilike.%error%,render_status.ilike.%fail%");
         error_count = errorData?.length || 0;
 
-        // Pending count (NULL or 'pending')
+        // Pending count (NULL or 'pending', exclude test orders)
         const { data: pendingData } = await supabase
           .from("pinterest_purchase_events")
           .select("id")
           .gte("created_at", windowStart)
           .lt("created_at", windowEnd)
+          .eq("is_test", false)
           .or("render_status.is.null,render_status.eq.pending");
         pending_count = pendingData?.length || 0;
 
