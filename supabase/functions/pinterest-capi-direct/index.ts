@@ -99,15 +99,22 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const eventData: PurchaseEventData = await req.json();
     
+    // ========================================================================
+    // PHASE Day 1-2: Generate event_id BEFORE any API call (idempotency)
+    // This ensures we can deduplicate even if API call fails/times out
+    // ========================================================================
+    const eventId = `checkout_${eventData.order_id}_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
+    
     // Initialize tracking variables
     let sendStatus: SendStatus = 'pending';
     let sendStatusReason: string | null = null;
-    let eventId: string | null = null;
+    let deliveryState = 'pending'; // Operational state: pending -> sent/failed/blocked_*
     let renderStatus = 'pending';
     let renderResponse: Record<string, unknown> | null = null;
 
     console.log("[Pinterest CAPI Direct] Processing purchase:", {
       order_id: eventData.order_id,
+      event_id: eventId,
       value: eventData.value,
       has_epik: !!eventData.pinterest_click_id,
       has_email: !!eventData.email,
@@ -139,12 +146,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
     if (eventData.is_test === true) {
       sendStatus = 'blocked_test';
       sendStatusReason = 'is_test';
+      deliveryState = 'blocked_test';
       console.log("[Pinterest CAPI Direct] Blocked: test order");
     }
     // 3b: Kill switch disabled
     else if (sendMode === 'disabled') {
       sendStatus = 'blocked_disabled';
       sendStatusReason = 'mode_disabled';
+      deliveryState = 'blocked_disabled';
       console.log("[Pinterest CAPI Direct] Blocked: send mode disabled");
     }
     // 3c: Pinterest-only mode - check attribution
@@ -152,10 +161,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
       if (attribution.attribution_source === 'pinterest') {
         shouldSendToPinterest = true;
         sendStatus = 'pending'; // Will update to 'sent' after successful call
+        deliveryState = 'pending'; // Will update after API call
         console.log("[Pinterest CAPI Direct] Allowed: Pinterest attribution confirmed");
       } else {
         sendStatus = 'blocked_attribution';
         sendStatusReason = 'non_pinterest_attribution';
+        deliveryState = 'blocked_attribution';
         console.log("[Pinterest CAPI Direct] Blocked: non-Pinterest attribution", {
           source: attribution.attribution_source,
         });
@@ -165,6 +176,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     else if (sendMode === 'all_orders') {
       shouldSendToPinterest = true;
       sendStatus = 'pending';
+      deliveryState = 'pending';
       console.log("[Pinterest CAPI Direct] Allowed: all_orders mode");
     }
 
@@ -231,8 +243,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         userData.click_id = attribution.epik;
       }
 
-      // Generate unique event ID
-      eventId = `checkout_${eventData.order_id}_${Date.now()}`;
+      // event_id already generated at start of function for idempotency
 
       // Build custom data
       const customData: Record<string, unknown> = {
@@ -306,6 +317,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         if (pinterestResponse.ok) {
           sendStatus = 'sent';
           sendStatusReason = null;
+          deliveryState = 'sent'; // Operational: API call succeeded
           renderStatus = 'success_direct';
           renderResponse = {
             status: pinterestResponse.status,
@@ -315,6 +327,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         } else {
           sendStatus = 'blocked_error';
           sendStatusReason = 'pinterest_post_failed';
+          deliveryState = 'failed'; // Operational: API call failed
           renderStatus = 'failed_direct';
           renderResponse = {
             status: pinterestResponse.status,
@@ -327,6 +340,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         const errorMessage = fetchError instanceof Error ? fetchError.message : 'Unknown fetch error';
         sendStatus = 'blocked_error';
         sendStatusReason = 'pinterest_fetch_error';
+        deliveryState = 'failed'; // Operational: API call failed
         renderStatus = 'error_direct';
         renderResponse = { error: errorMessage };
         console.error("[Pinterest CAPI Direct] Fetch error:", errorMessage);
@@ -368,6 +382,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
         send_status: sendStatus,
         send_status_reason: sendStatusReason,
         send_mode: sendMode,
+        // Phase Day 1-2: Idempotency and operational state
+        event_id: eventId,
+        delivery_state: deliveryState,
       });
 
     if (insertResult.error) {

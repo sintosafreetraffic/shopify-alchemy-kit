@@ -690,10 +690,12 @@ export type Database = {
           consent_status: string
           context_id: string
           created_at: string
+          email_hash: string | null
           epik: string | null
           expires_at: string
           id: string
           landing_page: string | null
+          phone_hash: string | null
           referrer: string | null
           updated_at: string
           utm_campaign: string | null
@@ -708,10 +710,12 @@ export type Database = {
           consent_status: string
           context_id: string
           created_at?: string
+          email_hash?: string | null
           epik?: string | null
           expires_at: string
           id?: string
           landing_page?: string | null
+          phone_hash?: string | null
           referrer?: string | null
           updated_at?: string
           utm_campaign?: string | null
@@ -726,10 +730,12 @@ export type Database = {
           consent_status?: string
           context_id?: string
           created_at?: string
+          email_hash?: string | null
           epik?: string | null
           expires_at?: string
           id?: string
           landing_page?: string | null
+          phone_hash?: string | null
           referrer?: string | null
           updated_at?: string
           utm_campaign?: string | null
@@ -747,6 +753,7 @@ export type Database = {
           attribution_source: string | null
           created_at: string
           currency: string
+          delivery_state: string | null
           epik: string | null
           event_id: string | null
           id: string
@@ -773,6 +780,7 @@ export type Database = {
           attribution_source?: string | null
           created_at?: string
           currency?: string
+          delivery_state?: string | null
           epik?: string | null
           event_id?: string | null
           id?: string
@@ -799,6 +807,7 @@ export type Database = {
           attribution_source?: string | null
           created_at?: string
           currency?: string
+          delivery_state?: string | null
           epik?: string | null
           event_id?: string | null
           id?: string

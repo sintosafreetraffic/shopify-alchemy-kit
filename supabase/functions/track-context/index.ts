@@ -11,10 +11,36 @@
  * - Consent-gated: only store IP/UA when consent_status === 'granted'
  * - NEVER log raw IP or UA
  * - ALWAYS return 200 success (silent fail)
+ * - PII HASHING: email_hash and phone_hash are SHA-256 hashed at ingestion (Phase Day 1-2)
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+// ============================================================================
+// PII HASHING (Day 1-2: Compliance Risk Elimination)
+// ============================================================================
+
+/**
+ * SHA-256 hash for PII fields
+ * CRITICAL: Raw PII must not persist beyond ingestion
+ */
+async function sha256Hash(data: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const dataBuffer = encoder.encode(data.toLowerCase().trim());
+  const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Normalize phone to E.164 format before hashing
+ */
+function normalizePhone(phone: string | null | undefined): string | null {
+  if (!phone) return null;
+  const cleaned = phone.replace(/[^\d+]/g, '');
+  return cleaned.startsWith('+') ? cleaned : `+${cleaned}`;
+}
 
 // CORS configuration - allow production + preview origins
 const getAllowedOrigin = (origin: string | null): string => {
@@ -73,6 +99,9 @@ interface TrackContextPayload {
   utm_content?: string;
   utm_term?: string;
   referrer?: string;
+  // PII fields - will be hashed at ingestion, never stored raw
+  email?: string;
+  phone?: string;
 }
 
 serve(async (req: Request): Promise<Response> => {
@@ -177,6 +206,23 @@ serve(async (req: Request): Promise<Response> => {
     // LAST-TOUCH epik: overwrite if provided and different
     if (payload.epik) {
       upsertData.epik = payload.epik;
+    }
+    
+    // ========================================================================
+    // PII HASHING (Day 1-2: Compliance Risk Elimination)
+    // Hash email and phone at ingestion - NEVER store raw PII
+    // ========================================================================
+    if (payload.email) {
+      upsertData.email_hash = await sha256Hash(payload.email);
+      console.log('[track-context] Email hashed for context:', payload.context_id);
+    }
+    
+    if (payload.phone) {
+      const normalizedPhone = normalizePhone(payload.phone);
+      if (normalizedPhone) {
+        upsertData.phone_hash = await sha256Hash(normalizedPhone);
+        console.log('[track-context] Phone hashed for context:', payload.context_id);
+      }
     }
     
     // MATCH SIGNALS: consent-gated
