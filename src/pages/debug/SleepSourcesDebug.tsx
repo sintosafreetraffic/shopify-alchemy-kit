@@ -16,8 +16,24 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Loader2, Shield, RefreshCw, Database, Clock, AlertTriangle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Loader2, Shield, RefreshCw, Database, Clock, AlertTriangle, Trash2, ChevronDown } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
+import { toast } from "sonner";
 
 interface SleepSourceDebug {
   id: string;
@@ -60,12 +76,19 @@ const SleepSourcesDebug = () => {
   const [recentNights, setRecentNights] = useState<SleepNightDebug[]>([]);
   const [rateLimits, setRateLimits] = useState<RateLimitDebug[]>([]);
   const [duplicateCount, setDuplicateCount] = useState(0);
+  const [isAdmin, setIsAdmin] = useState(false);
   
   // Test data toggle - persisted in localStorage
   const [includeTestData, setIncludeTestData] = useState(() => {
     const stored = localStorage.getItem('sleepDebug_includeTestData');
     return stored === 'true';
   });
+  
+  // Clear test data dialog
+  const [clearDialogOpen, setClearDialogOpen] = useState(false);
+  const [clearScope, setClearScope] = useState<'me' | 'all'>('me');
+  const [confirmText, setConfirmText] = useState('');
+  const [clearing, setClearing] = useState(false);
 
   const isDev = import.meta.env.DEV;
   const debugParam = searchParams.get('debug') === '1';
@@ -99,16 +122,19 @@ const SleepSourcesDebug = () => {
     setUserId(session.user.id);
 
     // Check admin role
-    const { data: isAdmin } = await supabase.rpc('has_role', {
+    const { data: adminCheck } = await supabase.rpc('has_role', {
       _user_id: session.user.id,
       _role: 'admin'
     });
 
+    const isUserAdmin = !!adminCheck;
+    setIsAdmin(isUserAdmin);
+
     // Production: admin only
     // Non-prod: admin OR debug param
-    if (isAdmin || (isDev && debugParam)) {
+    if (isUserAdmin || (isDev && debugParam)) {
       setHasAccess(true);
-      loadDebugData(session.user.id, !!isAdmin);
+      loadDebugData(session.user.id, isUserAdmin);
     } else {
       setHasAccess(false);
     }
@@ -171,7 +197,52 @@ const SleepSourcesDebug = () => {
 
   const handleRefresh = () => {
     if (userId) {
-      loadDebugData(userId, true);
+      loadDebugData(userId, isAdmin);
+    }
+  };
+  
+  const openClearDialog = (scope: 'me' | 'all') => {
+    setClearScope(scope);
+    setConfirmText('');
+    setClearDialogOpen(true);
+  };
+  
+  const handleClearTestData = async () => {
+    if (confirmText !== 'DELETE') return;
+    
+    setClearing(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Not authenticated');
+        return;
+      }
+      
+      const response = await supabase.functions.invoke('sleep-clear-test-data', {
+        body: { scope: clearScope },
+      });
+      
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+      
+      const result = response.data;
+      
+      if (result.status === 'success') {
+        toast.success(result.message);
+        setClearDialogOpen(false);
+        // Refresh the data
+        if (userId) {
+          loadDebugData(userId, isAdmin);
+        }
+      } else {
+        toast.error(result.message || 'Failed to clear test data');
+      }
+    } catch (error) {
+      console.error('Error clearing test data:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to clear test data');
+    } finally {
+      setClearing(false);
     }
   };
 
@@ -227,12 +298,89 @@ const SleepSourcesDebug = () => {
                 Include test data
               </Label>
             </div>
+            
+            {/* Clear test data button with optional admin dropdown */}
+            {isAdmin ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="text-muted-foreground">
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Clear test data
+                    <ChevronDown className="h-3 w-3 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => openClearDialog('me')}>
+                    Clear my test data
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => openClearDialog('all')}>
+                    Clear all test data
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-muted-foreground"
+                onClick={() => openClearDialog('me')}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Clear test data
+              </Button>
+            )}
+            
             <Button variant="outline" onClick={handleRefresh} disabled={loading}>
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
           </div>
         </div>
+        
+        {/* Clear test data confirmation dialog */}
+        <Dialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Clear Test Data</DialogTitle>
+              <DialogDescription className="space-y-2">
+                <p>
+                  {clearScope === 'all' 
+                    ? 'This will delete ALL test records from all users.'
+                    : 'This will delete your test records only.'}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Only rows marked as TEST will be removed. Real sleep data stays intact.
+                </p>
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <Label htmlFor="confirm-delete" className="text-sm">
+                Type <span className="font-mono font-bold">DELETE</span> to confirm:
+              </Label>
+              <Input
+                id="confirm-delete"
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                placeholder="DELETE"
+                className="mt-2"
+                autoComplete="off"
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setClearDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={handleClearTestData}
+                disabled={confirmText !== 'DELETE' || clearing}
+              >
+                {clearing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Clear Test Data
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {loading ? (
           <div className="flex justify-center py-12">

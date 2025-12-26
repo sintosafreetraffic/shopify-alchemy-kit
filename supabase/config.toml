@@ -209,3 +209,7 @@ verify_jwt = false
 # Sleep Intake - Requires JWT for user auth, HMAC stub for webhooks
 [functions.sleep-intake]
 verify_jwt = false
+
+# Sleep Clear Test Data - Requires JWT, validates ALLOW_TEST_SYNC internally
+[functions.sleep-clear-test-data]
+verify_jwt = false
