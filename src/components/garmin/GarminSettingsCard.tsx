@@ -173,7 +173,19 @@ export function GarminSettingsCard({
 
       // Step 3: Redirect to Garmin authorization
       if (result.authorization_url) {
-        window.location.href = result.authorization_url;
+        // Garmin SSO refuses to load inside iframes (X-Frame-Options/CSP).
+        // In the Lovable preview, the app runs in an iframe, so we must navigate
+        // the *top* window (or fall back to opening a new tab).
+        const targetUrl = String(result.authorization_url);
+        try {
+          if (window.top && window.top !== window) {
+            window.top.location.href = targetUrl;
+          } else {
+            window.location.href = targetUrl;
+          }
+        } catch {
+          window.open(targetUrl, '_blank', 'noopener,noreferrer');
+        }
       } else {
         throw new Error('No authorization URL received');
       }

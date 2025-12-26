@@ -71,9 +71,19 @@ export default function GarminCallback() {
         const callbackUrl = new URL(`${supabaseUrl}/functions/v1/garmin-oauth-callback`);
         callbackUrl.searchParams.set('code', code);
         callbackUrl.searchParams.set('state', state);
-        
-        // Redirect to edge function - it will redirect back with success/error
-        window.location.href = callbackUrl.toString();
+
+        // Redirect to edge function - it will redirect back with success/error.
+        // Use top-level navigation to avoid iframe restrictions in preview.
+        const targetUrl = callbackUrl.toString();
+        try {
+          if (window.top && window.top !== window) {
+            window.top.location.href = targetUrl;
+          } else {
+            window.location.href = targetUrl;
+          }
+        } catch {
+          window.location.href = targetUrl;
+        }
         return;
       }
 
