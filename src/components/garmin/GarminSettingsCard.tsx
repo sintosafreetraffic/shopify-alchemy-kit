@@ -35,6 +35,8 @@ interface GarminSource {
   backfill_requested_at?: string | null;
   backfill_completed_at?: string | null;
   backfill_nights_count?: number | null;
+  backfill_status?: string | null;
+  backfill_error?: string | null;
 }
 
 interface GarminSettingsCardProps {
@@ -308,12 +310,24 @@ export function GarminSettingsCard({
           )}
           
           {/* Backfill in progress hint */}
-          {displayStatus === 'connected' && source?.backfill_requested_at && !source?.backfill_completed_at && !source?.last_sync_at && (
+          {displayStatus === 'connected' && source?.backfill_requested_at && !source?.backfill_completed_at && source?.backfill_status !== 'failed' && (
             <div className="flex items-start gap-2 text-sm bg-primary/5 rounded-lg p-3">
               <Clock className="h-4 w-4 mt-0.5 text-primary/60 flex-shrink-0" />
               <span className="text-muted-foreground">
-                Importing your sleep history... this usually takes 1-4 hours. New sleep will sync automatically.
+                Importing your sleep history ({source.backfill_nights_count || 0} nights so far)... this usually takes 1-4 hours.
               </span>
+            </div>
+          )}
+
+          {/* Backfill failed - calm status with retry */}
+          {source?.backfill_status === 'failed' && (
+            <div className="flex items-start justify-between gap-2 text-sm bg-muted/50 rounded-lg p-3">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+                <span className="text-muted-foreground">
+                  We couldn't import your history yet. New sleep will still sync nightly.
+                </span>
+              </div>
             </div>
           )}
 

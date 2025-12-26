@@ -518,33 +518,47 @@ Deno.serve(async (req) => {
           continue;
         }
         
-        // Update source status to connected on first successful ingest
+        // Update source status and backfill tracking
+        const nowTs = new Date().toISOString();
+        const updatePayload: Record<string, unknown> = {
+          last_sync_at: nowTs,
+          metadata: {
+            ...metadata,
+            device_model: sleepData.device_model || metadata?.device_model,
+          },
+        };
+
+        // Set status to connected on first successful ingest
         if (status === 'pending') {
+          updatePayload.status = 'connected';
+        }
+
+        // Track backfill completion: if this is backfill data, update counts
+        if (dataOrigin === 'backfill') {
+          const currentCount = (metadata?.backfill_nights_count as number) || 0;
+          const newCount = currentCount + 1;
+          updatePayload.backfill_nights_count = newCount;
+          
+          // Mark completed when ≥3 nights received
+          if (newCount >= 3 && !metadata?.backfill_completed_at) {
+            updatePayload.backfill_completed_at = nowTs;
+            updatePayload.backfill_status = 'completed';
+            log('info', 'Backfill completed', { userId, nightsCount: newCount });
+          }
+        }
+
+        // Soft-fail: don't block webhook if update fails
+        try {
           await supabaseAdmin
             .from('sleep_sources')
-            .update({ 
-              status: 'connected',
-              last_sync_at: new Date().toISOString(),
-              metadata: {
-                ...metadata,
-                device_model: sleepData.device_model || metadata?.device_model,
-              },
-            })
+            .update(updatePayload)
             .eq('user_id', userId)
             .eq('source', 'garmin');
-        } else {
-          // Just update last_sync_at and device_model
-          await supabaseAdmin
-            .from('sleep_sources')
-            .update({ 
-              last_sync_at: new Date().toISOString(),
-              metadata: {
-                ...metadata,
-                device_model: sleepData.device_model || metadata?.device_model,
-              },
-            })
-            .eq('user_id', userId)
-            .eq('source', 'garmin');
+        } catch (updateErr) {
+          log('warn', 'Failed to update sleep_sources', { 
+            userId, 
+            error: updateErr instanceof Error ? updateErr.message : String(updateErr) 
+          });
         }
         
         log('info', 'Successfully processed sleep data', { 
