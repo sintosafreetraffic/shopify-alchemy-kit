@@ -35,6 +35,7 @@ interface SleepNightDebug {
   source: string;
   total_sleep_minutes: number | null;
   is_split_segment: boolean | null;
+  is_test: boolean;
   created_at: string;
 }
 
@@ -115,10 +116,10 @@ const SleepSourcesDebug = () => {
       const { data: sourcesData } = await sourcesQuery;
       setSources((sourcesData as SleepSourceDebug[]) || []);
 
-      // Load recent sleep nights
+      // Load recent sleep nights (include is_test for debug visibility)
       const nightsQuery = isAdmin
-        ? supabase.from('sleep_nights').select('id, night_date, source, total_sleep_minutes, is_split_segment, created_at').order('created_at', { ascending: false }).limit(20)
-        : supabase.from('sleep_nights').select('id, night_date, source, total_sleep_minutes, is_split_segment, created_at').eq('user_id', uid).order('created_at', { ascending: false }).limit(10);
+        ? supabase.from('sleep_nights').select('id, night_date, source, total_sleep_minutes, is_split_segment, is_test, created_at').order('created_at', { ascending: false }).limit(20)
+        : supabase.from('sleep_nights').select('id, night_date, source, total_sleep_minutes, is_split_segment, is_test, created_at').eq('user_id', uid).order('created_at', { ascending: false }).limit(10);
 
       const { data: nightsData } = await nightsQuery;
       setRecentNights((nightsData as SleepNightDebug[]) || []);
@@ -291,6 +292,11 @@ const SleepSourcesDebug = () => {
                           <div className="flex items-center gap-3">
                             <span className="font-mono">{night.night_date}</span>
                             <Badge variant="outline">{night.source}</Badge>
+                            {night.is_test && (
+                              <Badge variant="outline" className="text-xs text-muted-foreground border-dashed">
+                                TEST
+                              </Badge>
+                            )}
                             {night.is_split_segment && (
                               <Badge variant="secondary" className="text-xs">
                                 <AlertTriangle className="h-3 w-3 mr-1" />
