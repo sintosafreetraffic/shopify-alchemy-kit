@@ -1139,9 +1139,11 @@ export type Database = {
       sleep_nights: {
         Row: {
           created_at: string
+          data_origin: Database["public"]["Enums"]["sleep_data_origin"] | null
           device_model: string | null
           end_time: string
           id: string
+          ingested_at: string | null
           is_split_segment: boolean | null
           is_test: boolean
           night_date: string
@@ -1157,9 +1159,11 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          data_origin?: Database["public"]["Enums"]["sleep_data_origin"] | null
           device_model?: string | null
           end_time: string
           id?: string
+          ingested_at?: string | null
           is_split_segment?: boolean | null
           is_test?: boolean
           night_date: string
@@ -1175,9 +1179,11 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          data_origin?: Database["public"]["Enums"]["sleep_data_origin"] | null
           device_model?: string | null
           end_time?: string
           id?: string
+          ingested_at?: string | null
           is_split_segment?: boolean | null
           is_test?: boolean
           night_date?: string
@@ -1520,6 +1526,9 @@ export type Database = {
       }
       sleep_sources: {
         Row: {
+          backfill_completed_at: string | null
+          backfill_nights_count: number | null
+          backfill_requested_at: string | null
           connected_at: string | null
           consent_granted_at: string | null
           consent_version: string | null
@@ -1537,6 +1546,9 @@ export type Database = {
           user_timezone: string | null
         }
         Insert: {
+          backfill_completed_at?: string | null
+          backfill_nights_count?: number | null
+          backfill_requested_at?: string | null
           connected_at?: string | null
           consent_granted_at?: string | null
           consent_version?: string | null
@@ -1554,6 +1566,9 @@ export type Database = {
           user_timezone?: string | null
         }
         Update: {
+          backfill_completed_at?: string | null
+          backfill_nights_count?: number | null
+          backfill_requested_at?: string | null
           connected_at?: string | null
           consent_granted_at?: string | null
           consent_version?: string | null
@@ -1977,6 +1992,7 @@ export type Database = {
         | "wearable_apple_health"
         | "wearable_garmin"
       persona_cluster: "pain_sleeper" | "stress_insomnia" | "optimizer"
+      sleep_data_origin: "webhook" | "backfill"
       sleep_position: "side" | "back" | "stomach" | "mixed"
       sleep_source: "apple_health" | "garmin"
       sleep_stage: "awake" | "light" | "deep" | "rem"
@@ -2118,6 +2134,7 @@ export const Constants = {
         "wearable_garmin",
       ],
       persona_cluster: ["pain_sleeper", "stress_insomnia", "optimizer"],
+      sleep_data_origin: ["webhook", "backfill"],
       sleep_position: ["side", "back", "stomach", "mixed"],
       sleep_source: ["apple_health", "garmin"],
       sleep_stage: ["awake", "light", "deep", "rem"],

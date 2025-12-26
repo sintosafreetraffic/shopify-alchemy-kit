@@ -225,3 +225,7 @@ verify_jwt = false
 # Garmin Deauth - Public, verifies X-Garmin-Signature internally
 [functions.garmin-deauth]
 verify_jwt = false
+
+# Garmin Backfill - Requires JWT to identify user
+[functions.garmin-backfill]
+verify_jwt = true

@@ -32,6 +32,9 @@ interface GarminSource {
   connected_at: string | null;
   last_sync_at: string | null;
   created_at: string;
+  backfill_requested_at?: string | null;
+  backfill_completed_at?: string | null;
+  backfill_nights_count?: number | null;
 }
 
 interface GarminSettingsCardProps {
@@ -297,8 +300,19 @@ export function GarminSettingsCard({
             <div className="flex items-start gap-2 text-sm bg-muted/50 rounded-lg p-3">
               <Clock className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
               <span className="text-muted-foreground">
-                Garmin can take up to 24 hours to send your first sleep session. 
-                You'll see your data here once it arrives.
+                {source?.backfill_requested_at 
+                  ? 'Requesting your sleep history... data will arrive within a few hours.'
+                  : 'Garmin can take up to 24 hours to send your first sleep session. You\'ll see your data here once it arrives.'}
+              </span>
+            </div>
+          )}
+          
+          {/* Backfill in progress hint */}
+          {displayStatus === 'connected' && source?.backfill_requested_at && !source?.backfill_completed_at && !source?.last_sync_at && (
+            <div className="flex items-start gap-2 text-sm bg-primary/5 rounded-lg p-3">
+              <Clock className="h-4 w-4 mt-0.5 text-primary/60 flex-shrink-0" />
+              <span className="text-muted-foreground">
+                Importing your sleep history... this usually takes 1-4 hours. New sleep will sync automatically.
               </span>
             </div>
           )}

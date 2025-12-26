@@ -64,25 +64,73 @@ const SleepSources = () => {
   const [testingSyncFor, setTestingSyncFor] = useState<string | null>(null);
   const [garminOauthError, setGarminOauthError] = useState<string | null>(null);
 
+  const [backfillStatus, setBackfillStatus] = useState<'idle' | 'requesting' | 'requested' | 'error'>('idle');
+
+  // Trigger backfill request for Garmin
+  const requestGarminBackfill = async () => {
+    setBackfillStatus('requesting');
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) return;
+
+      const response = await supabase.functions.invoke('garmin-backfill', {
+        body: { days: 30 },
+      });
+
+      if (response.error) {
+        console.error('Backfill request failed:', response.error);
+        setBackfillStatus('error');
+        return;
+      }
+
+      const data = response.data as { status: string };
+      if (data.status === 'requested' || data.status === 'already_requested') {
+        setBackfillStatus('requested');
+        toast({
+          title: "Requesting sleep history",
+          description: "Your last 30 days of sleep data will arrive within a few hours.",
+        });
+      }
+    } catch (err) {
+      console.error('Backfill error:', err);
+      setBackfillStatus('error');
+    }
+  };
+
   // Handle URL params for Garmin OAuth results
   useEffect(() => {
     const connected = searchParams.get('connected');
+    const garminSuccess = searchParams.get('garmin');
     const error = searchParams.get('error');
 
+    // Handle new OAuth 2.0 success param
+    if (garminSuccess === 'success') {
+      toast({
+        title: "Garmin connected",
+        description: "Requesting your sleep history...",
+      });
+      // Trigger backfill request
+      requestGarminBackfill();
+      // Clean up URL
+      searchParams.delete('garmin');
+      setSearchParams(searchParams, { replace: true });
+    }
+
+    // Legacy param handling
     if (connected === 'garmin') {
       toast({
         title: "Garmin connected",
-        description: "Your sleep data will sync automatically.",
+        description: "Requesting your sleep history...",
       });
-      // Clean up URL
+      requestGarminBackfill();
       searchParams.delete('connected');
       setSearchParams(searchParams, { replace: true });
     }
 
     if (error) {
       setGarminOauthError(error);
-      // Clean up URL
       searchParams.delete('error');
+      searchParams.delete('reason');
       setSearchParams(searchParams, { replace: true });
     }
   }, [searchParams, setSearchParams]);

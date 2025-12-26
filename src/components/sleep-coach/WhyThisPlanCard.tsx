@@ -118,6 +118,13 @@ export function WhyThisPlanCard({
               </div>
             )}
             
+            {/* Baseline tracking hint - show when wearable connected */}
+            {wearableInsights && wearableInsights.sources.length > 0 && (
+              <p className="text-xs text-muted-foreground/70 mt-1 italic">
+                Using your last 30 days as baseline to track progress.
+              </p>
+            )}
+            
             {/* Refresh context banner */}
             {refreshContext && refreshReason !== "manual" && refreshReason !== "no_plan" && (
               <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border/50">
