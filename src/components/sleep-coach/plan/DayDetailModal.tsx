@@ -160,38 +160,38 @@ export function DayDetailModal({
 
   return (
     <>
-      {/* Backdrop - darker for better focus */}
+      {/* Backdrop */}
       <div 
         className={`fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity duration-200 ${isClosing ? "opacity-0" : "opacity-100"}`}
         onClick={handleClose}
       />
 
-      {/* Modal */}
+      {/* Modal - larger on desktop, full on mobile */}
       <div 
-        className={`fixed inset-x-4 top-[8%] bottom-[8%] md:inset-x-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[540px] md:max-h-[85vh] z-50 bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col transition-all duration-200 ${isClosing ? "opacity-0 scale-95" : "opacity-100 scale-100"}`}
+        className={`fixed inset-x-2 top-[5%] bottom-[5%] sm:inset-x-4 md:inset-x-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[640px] lg:w-[720px] md:max-h-[90vh] z-50 bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col transition-all duration-200 ${isClosing ? "opacity-0 scale-95" : "opacity-100 scale-100"}`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+        <div className="flex items-center justify-between px-4 py-4 sm:px-6 sm:py-5 border-b border-slate-100">
           {/* Day navigation */}
           <div className="flex items-center gap-4">
             <button
               onClick={() => canNavigatePrev && onNavigate("prev")}
               disabled={!canNavigatePrev}
-              className={`p-2.5 rounded-xl border transition-all ${
+              className={`p-2 sm:p-2.5 rounded-xl border transition-all ${
                 canNavigatePrev 
                   ? "border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700" 
                   : "border-transparent text-slate-300 cursor-not-allowed"
               }`}
               aria-label="Previous day"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
             
-            <div className="text-center min-w-[140px]">
-              <h2 className="text-xl font-semibold text-slate-900">
+            <div className="text-center min-w-[100px] sm:min-w-[140px]">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-slate-900">
                 {dayLabel}
               </h2>
-              <p className="text-sm text-slate-500 mt-0.5">
+              <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
                 Your focus for tonight
               </p>
             </div>
@@ -199,20 +199,20 @@ export function DayDetailModal({
             <button
               onClick={() => canNavigateNext && onNavigate("next")}
               disabled={!canNavigateNext}
-              className={`p-2.5 rounded-xl border transition-all ${
+              className={`p-2 sm:p-2.5 rounded-xl border transition-all ${
                 canNavigateNext 
                   ? "border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700" 
                   : "border-transparent text-slate-300 cursor-not-allowed"
               }`}
               aria-label="Next day"
             >
-              <ChevronRight className="w-5 h-5" />
+              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
 
           {/* Status badge and close */}
-          <div className="flex items-center gap-3">
-            <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${status.className}`}>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <span className={`hidden sm:inline-block px-3 py-1.5 rounded-full text-xs font-medium ${status.className}`}>
               {status.label}
             </span>
             <button
@@ -225,8 +225,8 @@ export function DayDetailModal({
           </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-5">
+        {/* Content - tighter on mobile */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5">
           {!dayPlan ? (
             <div className="text-center py-12">
               <p className="text-slate-500">No plan available for this day.</p>
@@ -235,8 +235,8 @@ export function DayDetailModal({
             <>
               {/* Day Focus - prominent highlight */}
               {dayPlan.focus && (
-                <div className="p-5 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100">
-                  <p className="text-base font-medium text-slate-800 leading-relaxed">
+                <div className="p-4 sm:p-5 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100">
+                  <p className="text-sm sm:text-base md:text-lg font-medium text-slate-800 leading-relaxed">
                     {dayPlan.focus}
                   </p>
                 </div>
@@ -291,15 +291,15 @@ export function DayDetailModal({
 
               {/* Reflection */}
               <div className="pt-3 border-t border-slate-100">
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3 block">
+                <label className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2 sm:mb-3 block">
                   Reflection (optional)
                 </label>
                 <textarea
                   value={reflection}
                   onChange={(e) => setReflection(e.target.value)}
                   placeholder="How did today's routine feel..."
-                  rows={3}
-                  className="w-full px-4 py-3 rounded-xl text-sm border border-slate-200 bg-slate-50 text-slate-800 placeholder:text-slate-400 outline-none transition-all resize-none focus:border-blue-300 focus:bg-white focus:ring-2 focus:ring-blue-100"
+                  rows={2}
+                  className="w-full px-3 py-2.5 sm:px-4 sm:py-3 rounded-xl text-xs sm:text-sm border border-slate-200 bg-slate-50 text-slate-800 placeholder:text-slate-400 outline-none transition-all resize-none focus:border-blue-300 focus:bg-white focus:ring-2 focus:ring-blue-100"
                 />
                 <button
                   onClick={handleSaveReflection}
@@ -363,12 +363,12 @@ function ActionSection({
   const colors = colorClasses[accentColor];
 
   return (
-    <div className={`p-5 rounded-xl border transition-all ${colors.bg} ${colors.border}`}>
-      <div className="flex items-start gap-4">
+    <div className={`p-3 sm:p-5 rounded-xl border transition-all ${colors.bg} ${colors.border}`}>
+      <div className="flex items-start gap-3 sm:gap-4">
         {/* Checkbox */}
         <button
           onClick={() => onToggle(actionId)}
-          className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${colors.checkbox}`}
+          className={`flex-shrink-0 w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center transition-all ${colors.checkbox}`}
           aria-label={isCompleted ? "Mark as incomplete" : "Mark as complete"}
         >
           {isCompleted && (
@@ -377,13 +377,13 @@ function ActionSection({
         </button>
 
         <div className="flex-1 min-w-0">
-          <div className={`flex items-center gap-2 mb-2 ${colors.icon}`}>
-            {icon}
-            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <div className={`flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2 ${colors.icon}`}>
+            <span className="[&_svg]:w-4 [&_svg]:h-4 sm:[&_svg]:w-[18px] sm:[&_svg]:h-[18px]">{icon}</span>
+            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-slate-500">
               {label}
             </span>
           </div>
-          <p className={`text-sm leading-relaxed ${
+          <p className={`text-xs sm:text-sm leading-relaxed ${
             isCompleted 
               ? "text-slate-500 line-through" 
               : "text-slate-700"
@@ -407,14 +407,14 @@ function InfoSection({
   content: string;
 }) {
   return (
-    <div className="p-4 rounded-xl bg-slate-50 border-l-4 border-slate-300">
-      <div className="flex items-center gap-2 mb-2 text-slate-400">
-        {icon}
-        <span className="text-xs font-semibold uppercase tracking-wider">
+    <div className="p-3 sm:p-4 rounded-xl bg-slate-50 border-l-4 border-slate-300">
+      <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2 text-slate-400">
+        <span className="[&_svg]:w-4 [&_svg]:h-4 sm:[&_svg]:w-[18px] sm:[&_svg]:h-[18px]">{icon}</span>
+        <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">
           {label}
         </span>
       </div>
-      <p className="text-sm leading-relaxed text-slate-700">
+      <p className="text-xs sm:text-sm leading-relaxed text-slate-700">
         {content}
       </p>
     </div>
