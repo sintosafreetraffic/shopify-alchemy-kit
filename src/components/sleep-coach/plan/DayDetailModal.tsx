@@ -1,12 +1,12 @@
 /**
  * DayDetailModal - Full day plan detail with actions and reflections
  * 
- * Premium Scandinavian aesthetic with swipe navigation
+ * Clean, high-contrast design with clear visual hierarchy
  * Shows morning, evening, environment, behavioral focus
  */
 
 import { useState, useCallback, useMemo, useEffect } from "react";
-import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Check } from "lucide-react";
 
 interface DayPlan {
   focus: string;
@@ -42,34 +42,34 @@ const DAY_LABELS: Record<string, string> = {
   sunday: "Sunday",
 };
 
-// Monoline sun icon
+// Sun icon - morning
 const SunIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-    <circle cx="12" cy="12" r="4" stroke="#8E98A3" strokeWidth="1.5" opacity="0.8"/>
-    <path d="M12 2V5M12 19V22M2 12H5M19 12H22M4.93 4.93L7.05 7.05M16.95 16.95L19.07 19.07M4.93 19.07L7.05 16.95M16.95 7.05L19.07 4.93" stroke="#8E98A3" strokeWidth="1.5" strokeLinecap="round" opacity="0.8"/>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.5"/>
+    <path d="M12 2V5M12 19V22M2 12H5M19 12H22M4.93 4.93L7.05 7.05M16.95 16.95L19.07 19.07M4.93 19.07L7.05 16.95M16.95 7.05L19.07 4.93" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
   </svg>
 );
 
-// Monoline moon icon
+// Moon icon - evening
 const MoonIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-    <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="#8E98A3" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.8"/>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 
-// Monoline environment icon
+// Home icon - environment
 const EnvironmentIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-    <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" stroke="#8E98A3" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.8"/>
-    <polyline points="9,22 9,12 15,12 15,22" stroke="#8E98A3" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.8"/>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <polyline points="9,22 9,12 15,12 15,22" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 
-// Monoline focus icon
+// Target icon - behavioral focus
 const FocusIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-    <circle cx="12" cy="12" r="9" stroke="#8E98A3" strokeWidth="1.5" opacity="0.8"/>
-    <circle cx="12" cy="12" r="3" stroke="#8E98A3" strokeWidth="1.5" opacity="0.8"/>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5"/>
+    <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5"/>
   </svg>
 );
 
@@ -140,59 +140,58 @@ export function DayDetailModal({
 
   const dayLabel = DAY_LABELS[dayName.toLowerCase()] || dayName;
 
-  // Status styles
+  // Status badge styles
   const statusConfig = {
-    not_started: { label: "Upcoming", bg: "rgba(167, 180, 194, 0.1)", color: "#6F6A66" },
-    in_progress: { label: "In progress", bg: "rgba(60, 131, 246, 0.1)", color: "rgba(60, 131, 246, 0.85)" },
-    completed: { label: "Completed", bg: "rgba(60, 131, 246, 0.15)", color: "rgba(60, 131, 246, 0.9)" },
+    not_started: { 
+      label: "Upcoming", 
+      className: "bg-slate-100 text-slate-600" 
+    },
+    in_progress: { 
+      label: "In Progress", 
+      className: "bg-blue-50 text-blue-600" 
+    },
+    completed: { 
+      label: "Completed", 
+      className: "bg-emerald-50 text-emerald-600" 
+    },
   };
 
   const status = statusConfig[dayStatus];
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop - darker for better focus */}
       <div 
-        className={`fixed inset-0 z-50 transition-opacity duration-200 ${isClosing ? "opacity-0" : "opacity-100"}`}
-        style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
+        className={`fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity duration-200 ${isClosing ? "opacity-0" : "opacity-100"}`}
         onClick={handleClose}
       />
 
       {/* Modal */}
       <div 
-        className={`fixed inset-x-4 top-[10%] bottom-[10%] md:inset-x-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[520px] md:max-h-[80vh] z-50 rounded-3xl overflow-hidden flex flex-col transition-all duration-200 ${isClosing ? "opacity-0 scale-95" : "opacity-100 scale-100"}`}
-        style={{ backgroundColor: "#FAFAF8" }}
+        className={`fixed inset-x-4 top-[8%] bottom-[8%] md:inset-x-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[540px] md:max-h-[85vh] z-50 bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col transition-all duration-200 ${isClosing ? "opacity-0 scale-95" : "opacity-100 scale-100"}`}
       >
         {/* Header */}
-        <div 
-          className="flex items-center justify-between p-6 border-b"
-          style={{ borderColor: "rgba(167, 180, 194, 0.15)" }}
-        >
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+          {/* Day navigation */}
+          <div className="flex items-center gap-4">
             <button
               onClick={() => canNavigatePrev && onNavigate("prev")}
               disabled={!canNavigatePrev}
-              className="p-2 rounded-xl transition-colors"
-              style={{ 
-                backgroundColor: canNavigatePrev ? "rgba(167, 180, 194, 0.1)" : "transparent",
-                color: canNavigatePrev ? "#3D3B38" : "#A7A29C",
-                cursor: canNavigatePrev ? "pointer" : "not-allowed",
-              }}
+              className={`p-2.5 rounded-xl border transition-all ${
+                canNavigatePrev 
+                  ? "border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700" 
+                  : "border-transparent text-slate-300 cursor-not-allowed"
+              }`}
+              aria-label="Previous day"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
             
-            <div>
-              <h2 
-                className="text-xl font-semibold"
-                style={{ color: "#2D2B29" }}
-              >
+            <div className="text-center min-w-[140px]">
+              <h2 className="text-xl font-semibold text-slate-900">
                 {dayLabel}
               </h2>
-              <p 
-                className="text-xs mt-0.5"
-                style={{ color: "#6F6A66" }}
-              >
+              <p className="text-sm text-slate-500 mt-0.5">
                 Your focus for tonight
               </p>
             </div>
@@ -200,28 +199,26 @@ export function DayDetailModal({
             <button
               onClick={() => canNavigateNext && onNavigate("next")}
               disabled={!canNavigateNext}
-              className="p-2 rounded-xl transition-colors"
-              style={{ 
-                backgroundColor: canNavigateNext ? "rgba(167, 180, 194, 0.1)" : "transparent",
-                color: canNavigateNext ? "#3D3B38" : "#A7A29C",
-                cursor: canNavigateNext ? "pointer" : "not-allowed",
-              }}
+              className={`p-2.5 rounded-xl border transition-all ${
+                canNavigateNext 
+                  ? "border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700" 
+                  : "border-transparent text-slate-300 cursor-not-allowed"
+              }`}
+              aria-label="Next day"
             >
               <ChevronRight className="w-5 h-5" />
             </button>
           </div>
 
+          {/* Status badge and close */}
           <div className="flex items-center gap-3">
-            <span 
-              className="px-3 py-1 rounded-full text-xs font-medium"
-              style={{ backgroundColor: status.bg, color: status.color }}
-            >
+            <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${status.className}`}>
               {status.label}
             </span>
             <button
               onClick={handleClose}
-              className="p-2 rounded-xl transition-colors hover:bg-[rgba(167,180,194,0.1)]"
-              style={{ color: "#6F6A66" }}
+              className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              aria-label="Close"
             >
               <X className="w-5 h-5" />
             </button>
@@ -229,26 +226,17 @@ export function DayDetailModal({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-7">
+        <div className="flex-1 overflow-y-auto p-6 space-y-5">
           {!dayPlan ? (
             <div className="text-center py-12">
-              <p style={{ color: "#6F6A66" }}>No plan available for this day.</p>
+              <p className="text-slate-500">No plan available for this day.</p>
             </div>
           ) : (
             <>
-              {/* Day Focus */}
+              {/* Day Focus - prominent highlight */}
               {dayPlan.focus && (
-                <div 
-                  className="p-5 rounded-2xl"
-                  style={{ 
-                    backgroundColor: "rgba(60, 131, 246, 0.04)",
-                    border: "1px solid rgba(60, 131, 246, 0.1)",
-                  }}
-                >
-                  <p 
-                    className="text-lg font-medium"
-                    style={{ color: "#2D2B29" }}
-                  >
+                <div className="p-5 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100">
+                  <p className="text-base font-medium text-slate-800 leading-relaxed">
                     {dayPlan.focus}
                   </p>
                 </div>
@@ -262,6 +250,7 @@ export function DayDetailModal({
                 actionId="morning"
                 isCompleted={isActionCompleted("morning")}
                 onToggle={handleToggle}
+                accentColor="amber"
               />
 
               {/* Evening Wind-Down */}
@@ -272,6 +261,7 @@ export function DayDetailModal({
                 actionId="evening"
                 isCompleted={isActionCompleted("evening")}
                 onToggle={handleToggle}
+                accentColor="indigo"
               />
 
               {/* Environment Adjustment */}
@@ -294,20 +284,14 @@ export function DayDetailModal({
 
               {/* Product Cue */}
               {dayPlan.product_cue && (
-                <p 
-                  className="text-xs px-1"
-                  style={{ color: "#A7A29C" }}
-                >
+                <p className="text-xs text-slate-400 px-1 italic">
                   {dayPlan.product_cue}
                 </p>
               )}
 
               {/* Reflection */}
-              <div className="pt-4">
-                <label 
-                  className="text-[11px] font-semibold uppercase tracking-widest mb-3 block"
-                  style={{ color: "#A7B4C2", letterSpacing: "0.12em" }}
-                >
+              <div className="pt-3 border-t border-slate-100">
+                <label className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3 block">
                   Reflection (optional)
                 </label>
                 <textarea
@@ -315,28 +299,16 @@ export function DayDetailModal({
                   onChange={(e) => setReflection(e.target.value)}
                   placeholder="How did today's routine feel..."
                   rows={3}
-                  className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all resize-none"
-                  style={{ 
-                    backgroundColor: "#FFFFFF",
-                    border: "1px solid rgba(167, 180, 194, 0.2)",
-                    color: "#2D2B29",
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = "rgba(60, 131, 246, 0.4)";
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = "rgba(167, 180, 194, 0.2)";
-                  }}
+                  className="w-full px-4 py-3 rounded-xl text-sm border border-slate-200 bg-slate-50 text-slate-800 placeholder:text-slate-400 outline-none transition-all resize-none focus:border-blue-300 focus:bg-white focus:ring-2 focus:ring-blue-100"
                 />
                 <button
                   onClick={handleSaveReflection}
                   disabled={!reflection.trim()}
-                  className="mt-3 px-5 py-2.5 rounded-xl text-sm font-medium transition-all"
-                  style={{ 
-                    backgroundColor: reflection.trim() ? "rgba(60, 131, 246, 0.85)" : "rgba(167, 180, 194, 0.2)",
-                    color: reflection.trim() ? "#FFFFFF" : "#A7A29C",
-                    cursor: reflection.trim() ? "pointer" : "not-allowed",
-                  }}
+                  className={`mt-3 px-5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                    reflection.trim()
+                      ? "bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                      : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                  }`}
                 >
                   Save Reflection
                 </button>
@@ -357,6 +329,7 @@ function ActionSection({
   actionId,
   isCompleted,
   onToggle,
+  accentColor = "blue",
 }: {
   icon: React.ReactNode;
   label: string;
@@ -364,52 +337,57 @@ function ActionSection({
   actionId: string;
   isCompleted: boolean;
   onToggle: (actionId: string) => void;
+  accentColor?: "amber" | "indigo" | "blue";
 }) {
+  const colorClasses = {
+    amber: {
+      icon: "text-amber-500",
+      bg: isCompleted ? "bg-amber-50" : "bg-white",
+      border: isCompleted ? "border-amber-200" : "border-slate-200",
+      checkbox: isCompleted ? "bg-amber-500 border-amber-500" : "border-slate-300 hover:border-amber-400",
+    },
+    indigo: {
+      icon: "text-indigo-500",
+      bg: isCompleted ? "bg-indigo-50" : "bg-white",
+      border: isCompleted ? "border-indigo-200" : "border-slate-200",
+      checkbox: isCompleted ? "bg-indigo-500 border-indigo-500" : "border-slate-300 hover:border-indigo-400",
+    },
+    blue: {
+      icon: "text-blue-500",
+      bg: isCompleted ? "bg-blue-50" : "bg-white",
+      border: isCompleted ? "border-blue-200" : "border-slate-200",
+      checkbox: isCompleted ? "bg-blue-500 border-blue-500" : "border-slate-300 hover:border-blue-400",
+    },
+  };
+
+  const colors = colorClasses[accentColor];
+
   return (
-    <div 
-      className="p-5 rounded-2xl transition-colors"
-      style={{ 
-        backgroundColor: isCompleted ? "rgba(60, 131, 246, 0.04)" : "#FFFFFF",
-        border: isCompleted 
-          ? "1px solid rgba(60, 131, 246, 0.15)" 
-          : "1px solid rgba(167, 180, 194, 0.15)",
-      }}
-    >
+    <div className={`p-5 rounded-xl border transition-all ${colors.bg} ${colors.border}`}>
       <div className="flex items-start gap-4">
         {/* Checkbox */}
         <button
           onClick={() => onToggle(actionId)}
-          className="flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all mt-0.5"
-          style={{ 
-            borderColor: isCompleted ? "rgba(60, 131, 246, 0.6)" : "rgba(167, 180, 194, 0.4)",
-            backgroundColor: isCompleted ? "rgba(60, 131, 246, 0.1)" : "transparent",
-          }}
+          className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${colors.checkbox}`}
+          aria-label={isCompleted ? "Mark as incomplete" : "Mark as complete"}
         >
           {isCompleted && (
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path d="M2.5 6L5 8.5L9.5 4" stroke="rgba(60, 131, 246, 0.9)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+            <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
           )}
         </button>
 
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
+        <div className="flex-1 min-w-0">
+          <div className={`flex items-center gap-2 mb-2 ${colors.icon}`}>
             {icon}
-            <span 
-              className="text-xs font-semibold uppercase tracking-wide"
-              style={{ color: "#A7B4C2" }}
-            >
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
               {label}
             </span>
           </div>
-          <p 
-            className="text-sm leading-relaxed"
-            style={{ 
-              color: isCompleted ? "#6F6A66" : "#2D2B29",
-              textDecoration: isCompleted ? "line-through" : "none",
-              opacity: isCompleted ? 0.7 : 1,
-            }}
-          >
+          <p className={`text-sm leading-relaxed ${
+            isCompleted 
+              ? "text-slate-500 line-through" 
+              : "text-slate-700"
+          }`}>
             {content}
           </p>
         </div>
@@ -429,26 +407,14 @@ function InfoSection({
   content: string;
 }) {
   return (
-    <div 
-      className="p-4 rounded-2xl"
-      style={{ 
-        backgroundColor: "#F4F3F1",
-        borderLeft: "3px solid rgba(167, 180, 194, 0.35)",
-      }}
-    >
-      <div className="flex items-center gap-2 mb-2">
+    <div className="p-4 rounded-xl bg-slate-50 border-l-4 border-slate-300">
+      <div className="flex items-center gap-2 mb-2 text-slate-400">
         {icon}
-        <span 
-          className="text-[10px] font-semibold uppercase tracking-wider"
-          style={{ color: "#A7B4C2" }}
-        >
+        <span className="text-xs font-semibold uppercase tracking-wider">
           {label}
         </span>
       </div>
-      <p 
-        className="text-sm leading-relaxed"
-        style={{ color: "#2D2B29" }}
-      >
+      <p className="text-sm leading-relaxed text-slate-700">
         {content}
       </p>
     </div>
