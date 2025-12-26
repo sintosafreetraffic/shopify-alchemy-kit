@@ -227,8 +227,8 @@ Deno.serve(async (req) => {
     // Use stored redirect origin for token exchange (must match what was sent to Garmin)
     const tokenRedirectUri = `${storedRedirectOrigin || redirectOrigin}/auth/garmin/callback`;
     
-    // Exchange authorization code for tokens
-    const tokenEndpoint = 'https://connectapi.garmin.com/oauth-service/oauth/token';
+    // Exchange authorization code for tokens (Garmin OAuth 2.0 PKCE endpoint)
+    const tokenEndpoint = 'https://diauth.garmin.com/di-oauth2-service/oauth/token';
     
     const tokenParams = new URLSearchParams({
       grant_type: 'authorization_code',
