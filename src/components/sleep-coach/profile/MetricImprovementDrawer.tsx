@@ -194,11 +194,11 @@ export function MetricImprovementDrawer({
         className="border-0 rounded-t-2xl"
         style={{ backgroundColor: '#FAFAF8' }}
       >
-        <div className="mx-auto w-full max-w-lg px-6 pb-8">
+        <div className="relative mx-auto w-full max-w-lg px-6 pb-8">
           {/* Close button for mobile */}
           <button
             onClick={() => onOpenChange(false)}
-            className="absolute top-4 right-4 p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition-colors z-10"
+            className="absolute top-2 right-2 p-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-800 transition-colors z-10 shadow-sm"
             aria-label="Close"
           >
             <X className="w-5 h-5" />
