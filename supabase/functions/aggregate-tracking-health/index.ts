@@ -167,12 +167,13 @@ serve(async (req) => {
           .ilike("render_status", "%success%");
         success_count = successOrders || 0;
 
-        // Error count (error OR fail)
+        // Error count (error OR fail, exclude test orders)
         const { data: errorData } = await supabase
           .from("pinterest_purchase_events")
           .select("id")
           .gte("created_at", windowStart)
           .lt("created_at", windowEnd)
+          .eq("is_test", false)
           .or("render_status.ilike.%error%,render_status.ilike.%fail%");
         error_count = errorData?.length || 0;
 
