@@ -173,8 +173,11 @@ serve(async (req) => {
     }
 
     if (healthData) {
-      const successRate = Number(healthData.success_rate) || 0;
-      const errorRate = Number(healthData.error_rate) || 0;
+      // success_rate and error_rate are stored as decimals (0-1), convert to percentages for comparison
+      const successRateDecimal = Number(healthData.success_rate) || 0;
+      const errorRateDecimal = Number(healthData.error_rate) || 0;
+      const successRate = successRateDecimal * 100; // Convert to percentage
+      const errorRate = errorRateDecimal * 100; // Convert to percentage
 
       // Check success rate threshold
       if (successRate < THRESHOLDS.SUCCESS_RATE_MIN && healthData.orders_seen > 0) {
