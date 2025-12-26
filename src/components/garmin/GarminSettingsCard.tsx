@@ -72,7 +72,7 @@ function getStatusConfig(status: GarminStatus) {
         badge: null,
         icon: Watch,
         iconClass: 'text-muted-foreground',
-        description: 'Connect your Garmin to automatically import sleep data.',
+        description: 'Connect your Garmin to automatically import sleep data. For best AI coach results, allow access to your sleep history during authorization.',
       };
     case 'connecting':
       return {
