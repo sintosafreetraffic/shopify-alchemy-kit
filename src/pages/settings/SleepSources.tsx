@@ -4,7 +4,7 @@
  * Route: /settings/sleep-sources
  */
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,8 +12,9 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Watch, Smartphone, RefreshCw, AlertCircle, FlaskConical } from "lucide-react";
+import { Loader2, Smartphone, RefreshCw, AlertCircle, FlaskConical } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { GarminSettingsCard } from "@/components/garmin/GarminSettingsCard";
 
 type SleepSourceStatus = 'pending' | 'connected' | 'revoked';
 
@@ -50,16 +51,41 @@ const IS_DEV = import.meta.env.DEV;
 
 const SleepSources = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [sources, setSources] = useState<SleepSource[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
   const [pendingTimezone, setPendingTimezone] = useState<string>(
     Intl.DateTimeFormat().resolvedOptions().timeZone
   );
-  const [connectingSource, setConnectingSource] = useState<'apple_health' | 'garmin' | null>(null);
+  const [connectingSource, setConnectingSource] = useState<'apple_health' | null>(null);
   const [updatingTimezone, setUpdatingTimezone] = useState<string | null>(null);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const [testingSyncFor, setTestingSyncFor] = useState<string | null>(null);
+  const [garminOauthError, setGarminOauthError] = useState<string | null>(null);
+
+  // Handle URL params for Garmin OAuth results
+  useEffect(() => {
+    const connected = searchParams.get('connected');
+    const error = searchParams.get('error');
+
+    if (connected === 'garmin') {
+      toast({
+        title: "Garmin connected",
+        description: "Your sleep data will sync automatically.",
+      });
+      // Clean up URL
+      searchParams.delete('connected');
+      setSearchParams(searchParams, { replace: true });
+    }
+
+    if (error) {
+      setGarminOauthError(error);
+      // Clean up URL
+      searchParams.delete('error');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const loadSources = useCallback(async (uid: string) => {
     setLoading(true);
@@ -102,14 +128,16 @@ const SleepSources = () => {
     };
 
     window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', () => {
+    const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && userId) {
         loadSources(userId);
       }
-    });
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [userId, loadSources]);
 
@@ -117,39 +145,36 @@ const SleepSources = () => {
     return sources.find(s => s.source === type);
   };
 
-  const handleConnect = async (sourceType: 'apple_health' | 'garmin') => {
+  // Apple Health connect (simplified - no OAuth flow yet)
+  const handleAppleHealthConnect = async () => {
     if (!userId || !pendingTimezone) {
       toast({ title: "Timezone required", description: "Please select a timezone first", variant: "destructive" });
       return;
     }
 
-    const existingSource = getSourceForType(sourceType);
+    const existingSource = getSourceForType('apple_health');
     
-    // Guard: don't allow downgrading connected → pending
     if (existingSource?.status === 'connected') {
       toast({ title: "Already connected", description: "This source is already active" });
       return;
     }
     
-    // Guard: don't allow reconnecting pending (already waiting)
     if (existingSource?.status === 'pending') {
       toast({ title: "Already pending", description: "Waiting for first sync to complete" });
       return;
     }
 
-    setConnectingSource(sourceType);
+    setConnectingSource('apple_health');
 
-    // Only set pending when: no row exists OR status is revoked
-    // Use upsert with on_conflict to handle unique constraint (user_id, source)
     const { error } = await supabase
       .from('sleep_sources')
       .upsert(
         {
           user_id: userId,
-          source: sourceType,
+          source: 'apple_health',
           status: 'pending',
           user_timezone: pendingTimezone,
-          revoked_at: null, // Clear revoked_at on reconnect
+          revoked_at: null,
           updated_at: new Date().toISOString(),
         },
         { 
@@ -162,10 +187,9 @@ const SleepSources = () => {
       console.error('Error connecting source:', error);
       toast({ title: "Error", description: "Failed to connect source", variant: "destructive" });
     } else {
-      const sourceName = sourceType === 'apple_health' ? 'Apple Health' : 'Garmin';
       toast({ 
         title: "Source added", 
-        description: `${sourceName} is pending. It will activate when first sync completes.` 
+        description: "Apple Health is pending. It will activate when first sync completes." 
       });
       loadSources(userId);
     }
@@ -214,11 +238,9 @@ const SleepSources = () => {
       });
 
       if (response.error) {
-        // Check for specific error codes
         const errorData = response.error as { message?: string };
         const message = errorData.message || 'Test sync failed';
         
-        // Try to parse the message if it's JSON
         try {
           const parsed = JSON.parse(message);
           if (parsed.code === 'TEST_MODE_DISABLED') {
@@ -324,16 +346,6 @@ const SleepSources = () => {
     }
   };
 
-  const getSourceIcon = (source: 'apple_health' | 'garmin') => {
-    return source === 'apple_health' 
-      ? <Smartphone className="h-5 w-5" /> 
-      : <Watch className="h-5 w-5" />;
-  };
-
-  const getSourceName = (source: 'apple_health' | 'garmin') => {
-    return source === 'apple_health' ? 'Apple Health' : 'Garmin';
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -349,178 +361,120 @@ const SleepSources = () => {
     <div className="min-h-screen bg-background py-8 px-4">
       <div className="max-w-2xl mx-auto space-y-8">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Connected Sleep Sources</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Sleep Data Sources</h1>
           <p className="text-muted-foreground mt-1">
-            Sleep data is used to support your Sleep Coach insights. You can disconnect at any time.
+            Connect your wearable to automatically import sleep data for your personalized sleep plan.
           </p>
         </div>
 
-        {/* Existing sources */}
-        {sources.length > 0 && (
-          <div className="space-y-4">
-            {sources.map((source) => (
-              <Card key={source.id}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      {getSourceIcon(source.source)}
-                      <div>
-                        <CardTitle className="text-lg">{getSourceName(source.source)}</CardTitle>
-                        <CardDescription className="text-sm">
-                          {getStatusExplanation(source)}
-                        </CardDescription>
-                      </div>
-                    </div>
-                    {getStatusBadge(source.status)}
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {source.status !== 'revoked' && (
-                    <>
-                      <div className="flex items-center gap-4">
-                        <span className="text-sm text-muted-foreground min-w-20">Timezone</span>
-                        <Select
-                          value={source.user_timezone || ''}
-                          onValueChange={(val) => handleTimezoneUpdate(source, val)}
-                          disabled={updatingTimezone === source.id}
-                        >
-                          <SelectTrigger className="w-[200px]">
-                            <SelectValue placeholder="Select timezone" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {COMMON_TIMEZONES.map((tz) => (
-                              <SelectItem key={tz} value={tz}>{tz}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        {updatingTimezone === source.id && <Loader2 className="h-4 w-4 animate-spin" />}
-                      </div>
-                      <Separator />
-                    </>
-                  )}
-                  
-                  <div className="flex justify-between items-center">
-                    {/* Dev-only Test Sync button */}
-                    {IS_DEV && source.status !== 'revoked' && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleTestSync(source)}
-                        disabled={testingSyncFor === source.id}
-                        className="text-muted-foreground"
-                      >
-                        {testingSyncFor === source.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        ) : (
-                          <FlaskConical className="h-4 w-4 mr-2" />
-                        )}
-                        Test Sync
-                      </Button>
-                    )}
-                    
-                    {/* Spacer when no test button */}
-                    {(!IS_DEV || source.status === 'revoked') && <div />}
-                    
-                    <div className="flex gap-2">
-                      {source.status === 'revoked' ? (
-                        <Button
-                          variant="outline"
-                          onClick={() => handleConnect(source.source)}
-                          disabled={connectingSource === source.source}
-                        >
-                          {connectingSource === source.source ? (
-                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          ) : (
-                            <RefreshCw className="h-4 w-4 mr-2" />
-                          )}
-                          Reconnect
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="ghost"
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => handleDisconnect(source)}
-                          disabled={disconnecting === source.id}
-                        >
-                          {disconnecting === source.id && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                          Disconnect
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+        {/* Garmin Card - New v1 component */}
+        <GarminSettingsCard
+          source={garminSource || null}
+          userId={userId!}
+          onRefresh={() => loadSources(userId!)}
+          oauthError={garminOauthError}
+        />
 
-        {/* Add new sources */}
-        {(!appleSource || appleSource.status === 'revoked') || (!garminSource || garminSource.status === 'revoked') ? (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Add Sleep Source</CardTitle>
-              <CardDescription>
-                Connect a wearable to automatically import your sleep data.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-4">
-                <span className="text-sm text-muted-foreground min-w-20">Timezone</span>
-                <Select value={pendingTimezone} onValueChange={setPendingTimezone}>
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Select timezone" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {COMMON_TIMEZONES.map((tz) => (
-                      <SelectItem key={tz} value={tz}>{tz}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+        {/* Apple Health Card - Existing pattern, simplified */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-muted">
+                  <Smartphone className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Apple Health</CardTitle>
+                  <CardDescription className="text-sm">
+                    {appleSource ? getStatusExplanation(appleSource) : 'Coming soon — native app integration required'}
+                  </CardDescription>
+                </div>
               </div>
-
-              <div className="flex flex-col sm:flex-row gap-3">
-                {(!appleSource || appleSource.status === 'revoked') && (
+              {appleSource && getStatusBadge(appleSource.status)}
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {appleSource && appleSource.status !== 'revoked' && (
+              <>
+                <div className="flex items-center gap-4">
+                  <span className="text-sm text-muted-foreground min-w-20">Timezone</span>
+                  <Select
+                    value={appleSource.user_timezone || ''}
+                    onValueChange={(val) => handleTimezoneUpdate(appleSource, val)}
+                    disabled={updatingTimezone === appleSource.id}
+                  >
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue placeholder="Select timezone" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {COMMON_TIMEZONES.map((tz) => (
+                        <SelectItem key={tz} value={tz}>{tz}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {updatingTimezone === appleSource.id && <Loader2 className="h-4 w-4 animate-spin" />}
+                </div>
+                <Separator />
+              </>
+            )}
+            
+            <div className="flex justify-between items-center">
+              {/* Dev-only Test Sync button */}
+              {IS_DEV && appleSource && appleSource.status !== 'revoked' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleTestSync(appleSource)}
+                  disabled={testingSyncFor === appleSource.id}
+                  className="text-muted-foreground"
+                >
+                  {testingSyncFor === appleSource.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <FlaskConical className="h-4 w-4 mr-2" />
+                  )}
+                  Test Sync
+                </Button>
+              )}
+              
+              {(!IS_DEV || !appleSource || appleSource.status === 'revoked') && <div />}
+              
+              <div className="flex gap-2">
+                {appleSource?.status === 'revoked' && (
                   <Button
                     variant="outline"
-                    onClick={() => handleConnect('apple_health')}
+                    onClick={handleAppleHealthConnect}
                     disabled={connectingSource === 'apple_health'}
-                    className="flex-1"
                   >
                     {connectingSource === 'apple_health' ? (
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
                     ) : (
-                      <Smartphone className="h-4 w-4 mr-2" />
+                      <RefreshCw className="h-4 w-4 mr-2" />
                     )}
-                    Connect Apple Health
+                    Reconnect
                   </Button>
                 )}
-                {(!garminSource || garminSource.status === 'revoked') && (
+                {appleSource && appleSource.status !== 'revoked' && (
                   <Button
-                    variant="outline"
-                    onClick={() => handleConnect('garmin')}
-                    disabled={connectingSource === 'garmin'}
-                    className="flex-1"
+                    variant="ghost"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => handleDisconnect(appleSource)}
+                    disabled={disconnecting === appleSource.id}
                   >
-                    {connectingSource === 'garmin' ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : (
-                      <Watch className="h-4 w-4 mr-2" />
-                    )}
-                    Connect Garmin
+                    {disconnecting === appleSource.id && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                    Disconnect
                   </Button>
                 )}
+                {!appleSource && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <AlertCircle className="h-4 w-4" />
+                    Native app coming soon
+                  </div>
+                )}
               </div>
-
-              <div className="flex items-start gap-2 text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">
-                <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                <p>
-                  Native app integration coming soon. Once connected, sources will activate automatically 
-                  when the first sync completes.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        ) : null}
+            </div>
+          </CardContent>
+        </Card>
 
         <Button variant="ghost" onClick={() => navigate("/sleep-coach")} className="text-muted-foreground">
           ← Back to Sleep Coach
