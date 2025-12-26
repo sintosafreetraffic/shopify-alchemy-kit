@@ -189,11 +189,8 @@ const QuizRevealTracking = () => {
   const [eventLog, setEventLog] = useState<EventLogEntry[]>([]);
   const [addToCartEvents, setAddToCartEvents] = useState<any[]>([]);
   
-  // Pinterest CAPI toggle state
-  const [pinterestCapiEnabled, setPinterestCapiEnabled] = useState<boolean | null>(null);
-  const [pinterestCapiLoading, setPinterestCapiLoading] = useState(false);
-  const [pinterestCapiPassword, setPinterestCapiPassword] = useState("");
-  const [pinterestCapiError, setPinterestCapiError] = useState<string | null>(null);
+  // Pinterest CAPI toggle state - DEPRECATED: Render path removed, direct CAPI is now the only path
+  // Keeping minimal state for future send mode controls if needed
   
   // Auth state
   const [authChecking, setAuthChecking] = useState(true);
@@ -433,74 +430,15 @@ const QuizRevealTracking = () => {
     }
   };
 
-  // Fetch Pinterest CAPI toggle status
-  const fetchPinterestCapiStatus = async () => {
-    try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      
-      const response = await fetch(`${supabaseUrl}/functions/v1/toggle-pinterest-capi`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": supabaseKey,
-        },
-        body: JSON.stringify({ action: "get_status" }),
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setPinterestCapiEnabled(data.enabled);
-      }
-    } catch (err) {
-      console.error("Failed to fetch Pinterest CAPI status:", err);
-    }
-  };
-
-  // Toggle Pinterest CAPI
-  const togglePinterestCapi = async () => {
-    if (!pinterestCapiPassword) {
-      setPinterestCapiError("Password required");
-      return;
-    }
-    
-    setPinterestCapiLoading(true);
-    setPinterestCapiError(null);
-    
-    try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      
-      const response = await fetch(`${supabaseUrl}/functions/v1/toggle-pinterest-capi`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": supabaseKey,
-        },
-        body: JSON.stringify({ action: "toggle", password: pinterestCapiPassword }),
-      });
-      
-      const data = await response.json();
-      
-      if (response.ok) {
-        setPinterestCapiEnabled(data.enabled);
-        setPinterestCapiPassword("");
-      } else {
-        setPinterestCapiError(data.error || "Failed to toggle");
-      }
-    } catch (err: any) {
-      setPinterestCapiError(err.message || "Failed to toggle");
-    } finally {
-      setPinterestCapiLoading(false);
-    }
-  };
+  // DEPRECATED: Render path removed - Direct CAPI is now the only path
+  // fetchPinterestCapiStatus and togglePinterestCapi removed in Day 4-5 cleanup
 
   useEffect(() => {
     if (isAdmin) {
       fetchStats();
       fetchClarityData();
       refreshProviderStatuses();
-      fetchPinterestCapiStatus();
+      // fetchPinterestCapiStatus removed - Render path deprecated
       
       // Refresh provider statuses periodically
       const interval = setInterval(refreshProviderStatuses, 3000);
@@ -1701,75 +1639,21 @@ const QuizRevealTracking = () => {
               ))}
             </div>
 
-            {/* Pinterest CAPI Toggle */}
-            <Card className="p-5 border-2 border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20">
-              <div className="flex items-center justify-between mb-4">
+            {/* Pinterest CAPI Status - Render path deprecated, Direct CAPI is canonical */}
+            <Card className="p-5 border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-900/50 flex items-center justify-center">
-                    <Send className="w-5 h-5 text-red-600" />
+                  <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
+                    <Zap className="w-5 h-5 text-emerald-600" />
                   </div>
                   <div>
                     <h3 className="font-semibold">Pinterest CAPI Tracking</h3>
-                    <p className="text-sm text-muted-foreground">Toggle between Render server and direct Supabase edge function</p>
+                    <p className="text-sm text-muted-foreground">Direct CAPI is the canonical path (Render deprecated)</p>
                   </div>
                 </div>
-                {pinterestCapiEnabled === null ? (
-                  <Badge variant="outline">Loading...</Badge>
-                ) : pinterestCapiEnabled ? (
-                  <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">
-                    DIRECT (Supabase)
-                  </Badge>
-                ) : (
-                  <Badge className="bg-amber-100 text-amber-800 border-amber-200">
-                    RENDER (External)
-                  </Badge>
-                )}
-              </div>
-              
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className={`flex-1 p-3 rounded-lg border ${!pinterestCapiEnabled ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-200' : 'bg-muted/50 border-muted'}`}>
-                    <div className="flex items-center gap-2">
-                      <ExternalLink className="w-4 h-4" />
-                      <span className="font-medium">Render Server</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">External tracking via tracking.risebynight.com</p>
-                  </div>
-                  <div className="text-muted-foreground">→</div>
-                  <div className={`flex-1 p-3 rounded-lg border ${pinterestCapiEnabled ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200' : 'bg-muted/50 border-muted'}`}>
-                    <div className="flex items-center gap-2">
-                      <Zap className="w-4 h-4" />
-                      <span className="font-medium">Direct CAPI</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">Supabase edge function → Pinterest API</p>
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-border">
-                  <p className="text-sm text-muted-foreground mb-3">Enter password to toggle:</p>
-                  <div className="flex gap-3">
-                    <Input
-                      type="password"
-                      placeholder="Password"
-                      value={pinterestCapiPassword}
-                      onChange={(e) => setPinterestCapiPassword(e.target.value)}
-                      className="max-w-[200px]"
-                    />
-                    <Button 
-                      onClick={togglePinterestCapi}
-                      disabled={pinterestCapiLoading || !pinterestCapiPassword}
-                      variant={pinterestCapiEnabled ? "outline" : "default"}
-                    >
-                      {pinterestCapiLoading ? (
-                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      ) : null}
-                      {pinterestCapiEnabled ? "Switch to Render" : "Enable Direct CAPI"}
-                    </Button>
-                  </div>
-                  {pinterestCapiError && (
-                    <p className="text-sm text-destructive mt-2">{pinterestCapiError}</p>
-                  )}
-                </div>
+                <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">
+                  DIRECT (Supabase)
+                </Badge>
               </div>
             </Card>
 

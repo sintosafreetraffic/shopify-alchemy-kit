@@ -46,7 +46,7 @@ export const FUNNEL_EVENT_TABLE = [
   { event: 'pagevisit', providers: ['Pinterest', 'Supabase'], data: ['event_id', 'path'], location: 'analyticsRegistry.ts', deduplication: 'None' },
   { event: 'addtocart', providers: ['Pinterest', 'Klaviyo'], data: ['product_id', 'value', 'quantity'], location: 'pinterest.ts / klaviyo.ts', deduplication: 'None' },
   { event: 'initiatecheckout', providers: ['Pinterest'], data: ['event_id', 'order_quantity'], location: 'pinterest.ts', deduplication: '30s fingerprint (sessionStorage)' },
-  { event: 'purchase', providers: ['Pinterest (CAPI)'], data: ['order_id', 'value', 'products', 'epik'], location: 'shopify-order-webhook → pinterest-track → Render', deduplication: 'order_id (Render handles)' },
+  { event: 'purchase', providers: ['Pinterest (CAPI)'], data: ['order_id', 'value', 'products', 'epik'], location: 'shopify-order-webhook → pinterest-capi-direct', deduplication: 'order_id + event_id' },
   { event: 'lead', providers: ['Pinterest', 'Klaviyo'], data: ['lead_type'], location: 'pinterest.ts / klaviyo.ts', deduplication: 'None' },
   { event: 'signup', providers: ['Pinterest'], data: ['event_id'], location: 'pinterest.ts', deduplication: 'None' },
 ] as const;

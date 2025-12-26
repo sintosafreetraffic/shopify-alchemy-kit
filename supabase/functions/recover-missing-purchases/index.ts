@@ -12,6 +12,8 @@
  * Phase 5: Added attribution classification before retry attempts.
  * In pinterest_only mode, non-Pinterest orders are skipped with outcome 'skipped_blocked_attribution'.
  * 
+ * Day 4-5: RENDER FALLBACK REMOVED - Direct CAPI is the canonical and only path.
+ * 
  * CHAOS INJECTION (Phase 3.5):
  * Supports controlled failure injection via query params or headers:
  * - chaos=always_fail (C4): All recovery attempts fail
@@ -133,7 +135,6 @@ interface RecoveryStats {
   dead_lettered: number;
   rate_limited: boolean;
   method_direct_capi: number;
-  method_render: number;
   method_none: number;
   durations: number[];
 }
@@ -217,10 +218,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Detect available recovery methods
+    // Day 4-5: Render fallback removed - Direct CAPI is the only recovery method
     const hasDirectCapi = !!Deno.env.get('PINTEREST_CONVERSION_TOKEN');
-    const hasRenderServer = !!Deno.env.get('TRACKING_SERVER_URL');
-    console.log("[Recovery] Available methods:", { hasDirectCapi, hasRenderServer });
+    console.log("[Recovery] Available methods:", { hasDirectCapi });
 
     const stats: RecoveryStats = {
       candidates_found: 0,
@@ -232,7 +232,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
       dead_lettered: 0,
       rate_limited: false,
       method_direct_capi: 0,
-      method_render: 0,
       method_none: 0,
       durations: [],
     };
@@ -483,10 +482,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
         continue;
       }
 
-      // Determine method and attempt recovery
-      let method: 'direct_capi' | 'render' | 'none' = 'none';
+      // Day 4-5: Render fallback removed - Direct CAPI is the only recovery method
+      let method: 'direct_capi' | 'none' = 'none';
       if (hasDirectCapi) method = 'direct_capi';
-      else if (hasRenderServer) method = 'render';
 
       if (method === 'none') {
         console.log("[Recovery] No recovery method available for", candidate.order_id);
@@ -553,118 +551,63 @@ Deno.serve(async (req: Request): Promise<Response> => {
           continue; // Move to next candidate
         }
 
-        if (method === 'direct_capi') {
-          // Call pinterest-capi-direct
-          stats.method_direct_capi++;
+        // Day 4-5: Direct CAPI is the only recovery method (Render removed)
+        // Call pinterest-capi-direct
+        stats.method_direct_capi++;
+        
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
+        
+        try {
+          const response = await fetch(
+            `${SUPABASE_URL}/functions/v1/pinterest-capi-direct`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+              },
+              body: JSON.stringify({
+                order_id: candidate.order_id,
+                value: candidate.value,
+                currency: candidate.currency,
+                pinterest_click_id: candidate.epik,
+                utm_source: candidate.utm_source,
+                utm_medium: candidate.utm_medium,
+                utm_campaign: candidate.utm_campaign,
+                utm_content: candidate.utm_content,
+                utm_term: candidate.utm_term,
+                landing_page: candidate.landing_page,
+              }),
+              signal: controller.signal,
+            }
+          );
           
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
+          clearTimeout(timeout);
           
-          try {
-            const response = await fetch(
-              `${SUPABASE_URL}/functions/v1/pinterest-capi-direct`,
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-                },
-                body: JSON.stringify({
-                  order_id: candidate.order_id,
-                  value: candidate.value,
-                  currency: candidate.currency,
-                  pinterest_click_id: candidate.epik,
-                  utm_source: candidate.utm_source,
-                  utm_medium: candidate.utm_medium,
-                  utm_campaign: candidate.utm_campaign,
-                  utm_content: candidate.utm_content,
-                  utm_term: candidate.utm_term,
-                  landing_page: candidate.landing_page,
-                }),
-                signal: controller.signal,
-              }
-            );
-            
-            clearTimeout(timeout);
-            
-            const body = await response.json();
-            result = {
-              success: response.ok,
-              status: response.status,
-              response: body,
-              error: response.ok ? undefined : body.error || 'Unknown error',
-            };
+          const body = await response.json();
+          result = {
+            success: response.ok,
+            status: response.status,
+            response: body,
+            error: response.ok ? undefined : body.error || 'Unknown error',
+          };
 
-            // Check for rate limiting
-            if (response.status === 429) {
-              stats.rate_limited = true;
-              console.log("[Recovery] Rate limited by Pinterest API");
-            }
-          } catch (fetchError: any) {
-            if (fetchError.name === 'AbortError') {
-              result = {
-                success: false,
-                status: 0,
-                response: null,
-                error: 'timeout',
-              };
-            } else {
-              throw fetchError;
-            }
+          // Check for rate limiting
+          if (response.status === 429) {
+            stats.rate_limited = true;
+            console.log("[Recovery] Rate limited by Pinterest API");
           }
-        } else {
-          // Use render server
-          stats.method_render++;
-          const TRACKING_SERVER_URL = Deno.env.get('TRACKING_SERVER_URL')!;
-          
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 30000);
-          
-          try {
-            const response = await fetch(
-              `${TRACKING_SERVER_URL}/track`,
-              {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  event: 'purchase',
-                  order_id: candidate.order_id,
-                  value: candidate.value,
-                  currency: candidate.currency,
-                  epik: candidate.epik,
-                  utm_source: candidate.utm_source,
-                  utm_medium: candidate.utm_medium,
-                  utm_campaign: candidate.utm_campaign,
-                  landing_page: candidate.landing_page,
-                }),
-                signal: controller.signal,
-              }
-            );
-            
-            clearTimeout(timeout);
-            
-            const body = await response.json().catch(() => ({}));
+        } catch (fetchError: any) {
+          if (fetchError.name === 'AbortError') {
             result = {
-              success: response.ok,
-              status: response.status,
-              response: body,
-              error: response.ok ? undefined : 'Render tracking failed',
+              success: false,
+              status: 0,
+              response: null,
+              error: 'timeout',
             };
-
-            if (response.status === 429) {
-              stats.rate_limited = true;
-            }
-          } catch (fetchError: any) {
-            if (fetchError.name === 'AbortError') {
-              result = {
-                success: false,
-                status: 0,
-                response: null,
-                error: 'timeout',
-              };
-            } else {
-              throw fetchError;
-            }
+          } else {
+            throw fetchError;
           }
         }
 
@@ -775,7 +718,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
         rate_limited: stats.rate_limited,
         stats: {
           method_direct_capi: stats.method_direct_capi,
-          method_render: stats.method_render,
           method_none: stats.method_none,
           avg_duration_ms: avgDuration,
         },
