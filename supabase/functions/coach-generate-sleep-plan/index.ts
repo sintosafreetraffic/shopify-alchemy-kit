@@ -127,26 +127,30 @@ Deno.serve(async (req) => {
     console.log(`[coach-generate-sleep-plan] Generating ${planType} plan for: ${email}, reason: ${reason}`);
 
     // === STEP 1: Fetch fresh profile, logs, 3-layer attributes, plan history, and wearable data ===
-    const [profileResult, logsResult, attrsResult, plansCountResult, wearableNightsResult, wearableSourcesResult] = await Promise.all([
+    const [profileResult, logsResult, attrsResult, plansCountResult, wearableNightsResult, wearableSourcesResult, rawEventsResult] = await Promise.all([
       supabase.from('sleep_profiles').select('*').eq('email', email).single(),
       supabase.from('sleep_logs').select('*').eq('email', email).order('date', { ascending: false }).limit(30), // Extended for pattern detection
       supabase.from('sleep_attributes_state').select('data').eq('email', email).maybeSingle(),
       supabase.from('coach_plans').select('id', { count: 'exact' }).eq('email', email),
       // Fetch wearable sleep data (Garmin, Apple Health) for richer AI context
-      supabase.from('sleep_nights').select('night_date, total_sleep_minutes, sleep_efficiency, wake_events, source, device_model').eq('user_id', userId).eq('is_test', false).order('night_date', { ascending: false }).limit(14),
+      supabase.from('sleep_nights').select('night_date, total_sleep_minutes, sleep_efficiency, wake_events, source, device_model, start_time, end_time').eq('user_id', userId).eq('is_test', false).order('night_date', { ascending: false }).limit(14),
       // Fetch connected wearable sources
       supabase.from('sleep_sources').select('source, status, connected_at, last_sync_at').eq('user_id', userId).eq('status', 'connected'),
+      // Fetch raw events with sleep stages for architecture analysis
+      supabase.from('sleep_raw_events').select('stages, start_time, end_time').eq('user_id', userId).eq('is_test', false).not('stages', 'is', null).order('received_at', { ascending: false }).limit(14),
     ]);
 
     const profile: SleepProfile | null = profileResult.data;
     const logs: SleepLog[] = logsResult.data || [];
     const wearableNights = wearableNightsResult.data || [];
     const connectedSources = wearableSourcesResult.data || [];
+    const rawEvents = rawEventsResult.data || [];
     
     // Log wearable data availability
     console.log('[coach-generate-sleep-plan] Wearable data', {
       connectedSources: connectedSources.map((s: any) => s.source),
       wearableNightsCount: wearableNights.length,
+      rawEventsWithStages: rawEvents.length,
     });
     
     // Get or generate 3-layer attributes
@@ -180,6 +184,112 @@ Deno.serve(async (req) => {
     };
 
     const logsSnapshot: LogsSnapshot = calculateLogsSnapshot(logs);
+    
+    // === Calculate sleep architecture from raw events (Option A) ===
+    let sleepArchitecture: {
+      avgDeepPct: number | null;
+      avgLightPct: number | null;
+      avgRemPct: number | null;
+      avgAwakePct: number | null;
+      nightsAnalyzed: number;
+    } | null = null;
+    
+    if (rawEvents.length > 0) {
+      let totalDeep = 0, totalLight = 0, totalRem = 0, totalAwake = 0, totalMinutes = 0;
+      let validNightCount = 0;
+      
+      for (const event of rawEvents) {
+        if (!event.stages || !Array.isArray(event.stages) || event.stages.length === 0) continue;
+        
+        let nightDeep = 0, nightLight = 0, nightRem = 0, nightAwake = 0;
+        for (const stage of event.stages) {
+          const startMs = new Date(stage.start_time).getTime();
+          const endMs = new Date(stage.end_time).getTime();
+          const durationMin = (endMs - startMs) / 60000;
+          
+          if (durationMin <= 0 || durationMin > 600) continue; // Skip invalid durations (>10h for single stage)
+          
+          switch (stage.stage) {
+            case 'deep': nightDeep += durationMin; break;
+            case 'light': nightLight += durationMin; break;
+            case 'rem': nightRem += durationMin; break;
+            case 'awake': nightAwake += durationMin; break;
+          }
+        }
+        
+        const nightTotal = nightDeep + nightLight + nightRem + nightAwake;
+        if (nightTotal > 60) { // At least 1 hour of data
+          totalDeep += nightDeep;
+          totalLight += nightLight;
+          totalRem += nightRem;
+          totalAwake += nightAwake;
+          totalMinutes += nightTotal;
+          validNightCount++;
+        }
+      }
+      
+      if (validNightCount > 0 && totalMinutes > 0) {
+        sleepArchitecture = {
+          avgDeepPct: Math.round((totalDeep / totalMinutes) * 100),
+          avgLightPct: Math.round((totalLight / totalMinutes) * 100),
+          avgRemPct: Math.round((totalRem / totalMinutes) * 100),
+          avgAwakePct: Math.round((totalAwake / totalMinutes) * 100),
+          nightsAnalyzed: validNightCount,
+        };
+        console.log('[coach-generate-sleep-plan] Sleep architecture calculated', sleepArchitecture);
+      }
+    }
+    
+    // === Calculate bedtime timing patterns (Option B) ===
+    let bedtimePatterns: {
+      avgBedtimeHour: number | null; // 0-23
+      avgBedtimeMinutes: number | null; // Minutes past midnight
+      consistencyScore: 'consistent' | 'moderate' | 'irregular' | null;
+      variabilityMinutes: number | null;
+    } | null = null;
+    
+    if (wearableNights.length >= 3) {
+      const bedtimesInMinutes: number[] = [];
+      
+      for (const night of wearableNights) {
+        if (!night.start_time) continue;
+        const startDate = new Date(night.start_time);
+        // Convert to minutes past midnight (handling times past midnight as next day)
+        let minutesPastMidnight = startDate.getHours() * 60 + startDate.getMinutes();
+        // If bedtime is before 6 PM, assume it's past midnight (e.g., 1 AM = 25*60 = 1500 mins)
+        if (minutesPastMidnight < 18 * 60) {
+          minutesPastMidnight += 24 * 60;
+        }
+        bedtimesInMinutes.push(minutesPastMidnight);
+      }
+      
+      if (bedtimesInMinutes.length >= 3) {
+        const avgBedtimeMinutes = Math.round(bedtimesInMinutes.reduce((a, b) => a + b, 0) / bedtimesInMinutes.length);
+        const normalizedAvg = avgBedtimeMinutes >= 24 * 60 ? avgBedtimeMinutes - 24 * 60 : avgBedtimeMinutes;
+        
+        // Calculate variability (standard deviation proxy: avg absolute deviation from mean)
+        const deviations = bedtimesInMinutes.map(t => Math.abs(t - avgBedtimeMinutes));
+        const avgDeviation = Math.round(deviations.reduce((a, b) => a + b, 0) / deviations.length);
+        
+        // Classify consistency
+        let consistencyScore: 'consistent' | 'moderate' | 'irregular';
+        if (avgDeviation <= 30) {
+          consistencyScore = 'consistent'; // <30 min variation
+        } else if (avgDeviation <= 60) {
+          consistencyScore = 'moderate'; // 30-60 min variation
+        } else {
+          consistencyScore = 'irregular'; // >60 min variation
+        }
+        
+        bedtimePatterns = {
+          avgBedtimeHour: Math.floor(normalizedAvg / 60),
+          avgBedtimeMinutes: normalizedAvg,
+          consistencyScore,
+          variabilityMinutes: avgDeviation,
+        };
+        console.log('[coach-generate-sleep-plan] Bedtime patterns calculated', bedtimePatterns);
+      }
+    }
     
     // === Calculate wearable insights from sleep_nights ===
     let wearableInsights: {
@@ -238,6 +348,10 @@ Deno.serve(async (req) => {
       wearable_avg_sleep_hours: wearableInsights?.avgSleepMinutes ? Math.round(wearableInsights.avgSleepMinutes / 60 * 10) / 10 : null,
       wearable_avg_efficiency: wearableInsights?.avgSleepEfficiency ? Math.round(wearableInsights.avgSleepEfficiency) : null,
       wearable_avg_wake_events: wearableInsights?.avgWakeEvents ? Math.round(wearableInsights.avgWakeEvents * 10) / 10 : null,
+      // Sleep architecture (Option A) - deep/light/REM percentages
+      sleep_architecture: sleepArchitecture,
+      // Bedtime patterns (Option B) - timing consistency
+      bedtime_patterns: bedtimePatterns,
     };
 
     // === LOG: Plan context summary with 3-layer data and wearables ===
@@ -266,6 +380,21 @@ Deno.serve(async (req) => {
         avgSleepHours: enhancedLogsSnapshot.wearable_avg_sleep_hours,
         avgEfficiency: enhancedLogsSnapshot.wearable_avg_efficiency,
         avgWakeEvents: enhancedLogsSnapshot.wearable_avg_wake_events,
+      } : 'none',
+      // New: Sleep architecture from stages
+      sleepArchitecture: sleepArchitecture ? {
+        nightsAnalyzed: sleepArchitecture.nightsAnalyzed,
+        avgDeepPct: sleepArchitecture.avgDeepPct,
+        avgLightPct: sleepArchitecture.avgLightPct,
+        avgRemPct: sleepArchitecture.avgRemPct,
+      } : 'none',
+      // New: Bedtime timing patterns
+      bedtimePatterns: bedtimePatterns ? {
+        avgBedtime: bedtimePatterns.avgBedtimeHour !== null 
+          ? `${bedtimePatterns.avgBedtimeHour.toString().padStart(2, '0')}:${(bedtimePatterns.avgBedtimeMinutes! % 60).toString().padStart(2, '0')}`
+          : 'unknown',
+        consistency: bedtimePatterns.consistencyScore,
+        variabilityMins: bedtimePatterns.variabilityMinutes,
       } : 'none',
     });
 

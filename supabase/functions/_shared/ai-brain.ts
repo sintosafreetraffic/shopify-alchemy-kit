@@ -771,6 +771,21 @@ export interface LogsSnapshot {
   wearable_avg_sleep_hours?: number | null;
   wearable_avg_efficiency?: number | null;
   wearable_avg_wake_events?: number | null;
+  // Sleep architecture (from sleep_raw_events.stages) - Option A
+  sleep_architecture?: {
+    avgDeepPct: number | null;
+    avgLightPct: number | null;
+    avgRemPct: number | null;
+    avgAwakePct: number | null;
+    nightsAnalyzed: number;
+  } | null;
+  // Bedtime timing patterns (from sleep_nights) - Option B
+  bedtime_patterns?: {
+    avgBedtimeHour: number | null;
+    avgBedtimeMinutes: number | null;
+    consistencyScore: 'consistent' | 'moderate' | 'irregular' | null;
+    variabilityMinutes: number | null;
+  } | null;
 }
 
 /**
@@ -841,6 +856,43 @@ ${logsSnapshot.wearable_avg_efficiency && logsSnapshot.wearable_avg_efficiency <
 ${logsSnapshot.wearable_avg_wake_events && logsSnapshot.wearable_avg_wake_events >= 3 
   ? '- Frequent wake events detected (≥3/night). Consider addressing sleep disruptions.' 
   : ''}
+` : ''}
+${logsSnapshot.sleep_architecture ? `
+=== SLEEP ARCHITECTURE (Wearable Stage Data) ===
+Based on ${logsSnapshot.sleep_architecture.nightsAnalyzed} nights of wearable sleep stage data:
+- Deep sleep: ${logsSnapshot.sleep_architecture.avgDeepPct}% (target: 15-25% for adults)
+- Light sleep: ${logsSnapshot.sleep_architecture.avgLightPct}%
+- REM sleep: ${logsSnapshot.sleep_architecture.avgRemPct}% (target: 20-25% for adults)
+- Awake time: ${logsSnapshot.sleep_architecture.avgAwakePct}%
+${logsSnapshot.sleep_architecture.avgDeepPct !== null && logsSnapshot.sleep_architecture.avgDeepPct < 15 
+  ? '- Deep sleep is BELOW optimal. Deep sleep is critical for physical recovery and immune function. Consider earlier wind-down routines and limiting alcohol/caffeine.' 
+  : logsSnapshot.sleep_architecture.avgDeepPct !== null && logsSnapshot.sleep_architecture.avgDeepPct >= 20 
+  ? '- Deep sleep is EXCELLENT. User is getting good restorative sleep.'
+  : ''}
+${logsSnapshot.sleep_architecture.avgRemPct !== null && logsSnapshot.sleep_architecture.avgRemPct < 15 
+  ? '- REM sleep is BELOW optimal. REM is important for memory consolidation and emotional regulation. Stress management may help.' 
+  : logsSnapshot.sleep_architecture.avgRemPct !== null && logsSnapshot.sleep_architecture.avgRemPct >= 20 
+  ? '- REM sleep is GOOD. User is getting adequate dream sleep.'
+  : ''}
+NOTE: Use sleep architecture patterns to inform recommendations. Low deep sleep suggests recovery/relaxation focus. Low REM suggests stress management.
+` : ''}
+${logsSnapshot.bedtime_patterns ? `
+=== BEDTIME TIMING PATTERNS ===
+Average bedtime: ${logsSnapshot.bedtime_patterns.avgBedtimeHour !== null 
+  ? `${logsSnapshot.bedtime_patterns.avgBedtimeHour.toString().padStart(2, '0')}:${(logsSnapshot.bedtime_patterns.avgBedtimeMinutes! % 60).toString().padStart(2, '0')}` 
+  : 'Unknown'}
+Bedtime consistency: ${logsSnapshot.bedtime_patterns.consistencyScore || 'unknown'}
+Variability: ${logsSnapshot.bedtime_patterns.variabilityMinutes !== null 
+  ? `±${logsSnapshot.bedtime_patterns.variabilityMinutes} minutes` 
+  : 'Unknown'}
+${logsSnapshot.bedtime_patterns.consistencyScore === 'irregular' 
+  ? '- Bedtime is IRREGULAR (>1 hour variability). Circadian rhythm may be disrupted. Focus on "consistency over perfection" - even a 30-minute bedtime window helps.' 
+  : logsSnapshot.bedtime_patterns.consistencyScore === 'moderate'
+  ? '- Bedtime is MODERATELY consistent (30-60 min variability). Good foundation, small improvements in regularity could help.'
+  : logsSnapshot.bedtime_patterns.consistencyScore === 'consistent'
+  ? '- Bedtime is CONSISTENT (<30 min variability). Excellent circadian rhythm support.'
+  : ''}
+NOTE: Circadian regularity is one of the most behaviorally actionable factors for sleep quality. Frame as "your body loves predictability" rather than rigid rules.
 ` : ''}
 
 === HARD CONSTRAINTS – YOU MUST OBEY THESE ===
