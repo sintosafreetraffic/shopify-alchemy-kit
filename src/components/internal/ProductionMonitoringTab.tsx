@@ -49,6 +49,7 @@ import {
   AreaChart,
   Area,
 } from "recharts";
+import { DeliveryStateDashboard } from "./DeliveryStateDashboard";
 
 interface HealthMetrics {
   pinterestCapi: {
@@ -676,6 +677,9 @@ export const ProductionMonitoringTab = () => {
           </div>
         </Card>
       )}
+
+      {/* Delivery State Dashboard */}
+      <DeliveryStateDashboard />
 
       {/* Alert History */}
       <Card className="p-5">
