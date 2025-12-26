@@ -99,10 +99,24 @@ const SleepSources = () => {
       return;
     }
 
+    const existingSource = getSourceForType(sourceType);
+    
+    // Guard: don't allow downgrading connected → pending
+    if (existingSource?.status === 'connected') {
+      toast({ title: "Already connected", description: "This source is already active" });
+      return;
+    }
+    
+    // Guard: don't allow reconnecting pending (already waiting)
+    if (existingSource?.status === 'pending') {
+      toast({ title: "Already pending", description: "Waiting for first sync to complete" });
+      return;
+    }
+
     setConnectingSource(sourceType);
 
+    // Only set pending when: no row exists OR status is revoked
     // Use upsert with on_conflict to handle unique constraint (user_id, source)
-    // Status always goes to 'pending' - only intake can set 'connected'
     const { error } = await supabase
       .from('sleep_sources')
       .upsert(
@@ -111,6 +125,7 @@ const SleepSources = () => {
           source: sourceType,
           status: 'pending',
           user_timezone: pendingTimezone,
+          revoked_at: null, // Clear revoked_at on reconnect
           updated_at: new Date().toISOString(),
         },
         { 
@@ -190,6 +205,19 @@ const SleepSources = () => {
     }
   };
 
+  const getStatusExplanation = (source: SleepSource): string => {
+    switch (source.status) {
+      case 'pending':
+        return 'Waiting for first sync from your device';
+      case 'connected':
+        return source.last_sync_at 
+          ? `Last sync ${formatDistanceToNow(new Date(source.last_sync_at), { addSuffix: true })}`
+          : 'Connected — awaiting first data';
+      case 'revoked':
+        return 'Disconnected — your historical data is preserved';
+    }
+  };
+
   const getSourceIcon = (source: 'apple_health' | 'garmin') => {
     return source === 'apple_health' 
       ? <Smartphone className="h-5 w-5" /> 
@@ -232,11 +260,9 @@ const SleepSources = () => {
                       {getSourceIcon(source.source)}
                       <div>
                         <CardTitle className="text-lg">{getSourceName(source.source)}</CardTitle>
-                        {source.last_sync_at && (
-                          <CardDescription>
-                            Last sync: {formatDistanceToNow(new Date(source.last_sync_at), { addSuffix: true })}
-                          </CardDescription>
-                        )}
+                        <CardDescription className="text-sm">
+                          {getStatusExplanation(source)}
+                        </CardDescription>
                       </div>
                     </div>
                     {getStatusBadge(source.status)}
