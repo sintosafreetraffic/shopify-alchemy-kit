@@ -5,9 +5,12 @@
  * Handles purchase event tracking with proper hashing and attribution.
  * 
  * Phase 4.2a: Added attribution classifier and send gating (Strategy A)
+ * Phase 5: Uses shared attribution classifier from _shared/attribution.ts
+ * 
  * - Only sends to Pinterest when attribution_source === 'pinterest'
  * - Respects kill switch in app_settings
  * - Always records to DB with source-truth fields
+ * - Invariant check prevents impossible states
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -17,6 +20,14 @@ import {
   createErrorResponse,
   createSuccessResponse,
 } from "../_shared/env.ts";
+import {
+  classifyAttribution,
+  getSendMode,
+  determineSendDecision,
+  type AttributionResult,
+  type SendStatus,
+  type SendMode,
+} from "../_shared/attribution.ts";
 
 // ============================================================================
 // TYPES
@@ -45,16 +56,6 @@ interface PurchaseEventData {
   is_test?: boolean;
 }
 
-interface AttributionResult {
-  attribution_source: 'pinterest' | 'organic' | 'other' | 'unknown';
-  confidence: 'high' | 'medium' | 'low';
-  reason: string;
-  epik: string | null;
-}
-
-type SendStatus = 'pending' | 'sent' | 'blocked_attribution' | 'blocked_disabled' | 'blocked_test' | 'blocked_error';
-type SendMode = 'pinterest_only' | 'all_orders' | 'disabled';
-
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
@@ -75,112 +76,6 @@ function normalizePhone(phone: string | null | undefined): string | null {
   const cleaned = phone.replace(/[^\d+]/g, '');
   // If it starts with +, keep it, otherwise add +
   return cleaned.startsWith('+') ? cleaned : `+${cleaned}`;
-}
-
-/**
- * Attribution Classifier (Strategy A)
- * 
- * Determines if an order is Pinterest-attributed based on available signals.
- * MUST NOT THROW - returns 'unknown' on any error.
- * 
- * Rules:
- * 1. If epik exists and non-empty → pinterest, high confidence
- * 2. If utm_source indicates pinterest → pinterest, medium confidence
- * 3. If utm_source is another known source → other, low confidence
- * 4. Otherwise → organic, low confidence
- */
-function classifyAttribution(input: PurchaseEventData): AttributionResult {
-  try {
-    const epik = input.pinterest_click_id?.trim() || null;
-    const utmSource = input.utm_source?.toLowerCase().trim() || '';
-    const utmMedium = input.utm_medium?.toLowerCase().trim() || '';
-
-    // Rule 1: EPIK present = Pinterest-attributed (high confidence)
-    if (epik && epik.length > 0) {
-      return {
-        attribution_source: 'pinterest',
-        confidence: 'high',
-        reason: 'epik_present',
-        epik,
-      };
-    }
-
-    // Rule 2: UTM indicates Pinterest (medium confidence)
-    const isPinterestUtm = 
-      utmSource === 'pinterest' || 
-      utmSource.includes('pinterest') ||
-      (utmMedium === 'paid_social' && utmSource.includes('pin'));
-    
-    if (isPinterestUtm) {
-      return {
-        attribution_source: 'pinterest',
-        confidence: 'medium',
-        reason: 'utm_pinterest',
-        epik: null,
-      };
-    }
-
-    // Rule 3: Other known sources
-    const otherSources = ['google', 'facebook', 'meta', 'tiktok', 'email', 'klaviyo', 'instagram', 'youtube'];
-    const isOtherSource = otherSources.some(src => utmSource.includes(src));
-    
-    if (isOtherSource) {
-      return {
-        attribution_source: 'other',
-        confidence: 'low',
-        reason: `utm_${utmSource.split(/[^a-z]/)[0] || 'other'}`,
-        epik: null,
-      };
-    }
-
-    // Rule 4: No Pinterest signal = organic
-    return {
-      attribution_source: 'organic',
-      confidence: 'low',
-      reason: 'no_pinterest_signal',
-      epik: null,
-    };
-  } catch (error) {
-    // Never throw - return unknown on any error
-    console.warn('[Pinterest CAPI Direct] Attribution classification error:', error);
-    return {
-      attribution_source: 'unknown',
-      confidence: 'low',
-      reason: 'classification_error',
-      epik: null,
-    };
-  }
-}
-
-/**
- * Read send mode from app_settings
- * Returns 'pinterest_only' if missing or unreadable
- */
-// deno-lint-ignore no-explicit-any
-async function getSendMode(supabase: any): Promise<SendMode> {
-  try {
-    const { data, error } = await supabase
-      .from('app_settings')
-      .select('value')
-      .eq('key', 'pinterest_purchase_send_mode')
-      .single();
-
-    if (error || !data?.value) {
-      console.log('[Pinterest CAPI Direct] No send_mode setting found, defaulting to pinterest_only');
-      return 'pinterest_only';
-    }
-
-    const mode = data.value?.mode;
-    if (mode && ['pinterest_only', 'all_orders', 'disabled'].includes(mode)) {
-      return mode as SendMode;
-    }
-
-    console.warn('[Pinterest CAPI Direct] Invalid send_mode value:', mode);
-    return 'pinterest_only';
-  } catch (error) {
-    console.warn('[Pinterest CAPI Direct] Error reading send_mode:', error);
-    return 'pinterest_only';
-  }
 }
 
 // ============================================================================
@@ -232,8 +127,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const attribution = classifyAttribution(eventData);
     console.log("[Pinterest CAPI Direct] Attribution:", {
       source: attribution.attribution_source,
-      confidence: attribution.confidence,
-      reason: attribution.reason,
+      confidence: attribution.attribution_confidence,
+      reason: attribution.attribution_reason,
       has_epik: !!attribution.epik,
     });
 
@@ -271,6 +166,45 @@ Deno.serve(async (req: Request): Promise<Response> => {
       shouldSendToPinterest = true;
       sendStatus = 'pending';
       console.log("[Pinterest CAPI Direct] Allowed: all_orders mode");
+    }
+
+    // ========================================================================
+    // PHASE 5: INVARIANT GUARDRAIL (D)
+    // Detect impossible states before sending - sent requires pinterest source
+    // ========================================================================
+    if (shouldSendToPinterest && attribution.attribution_source !== 'pinterest' && sendMode === 'pinterest_only') {
+      // INVARIANT VIOLATION: About to send non-Pinterest order in pinterest_only mode
+      console.error("[Pinterest CAPI Direct] INVARIANT VIOLATION: Attempted to send non-Pinterest order", {
+        order_id: eventData.order_id,
+        attribution_source: attribution.attribution_source,
+        send_mode: sendMode,
+      });
+      
+      // Force block
+      shouldSendToPinterest = false;
+      sendStatus = 'blocked_error';
+      sendStatusReason = 'invariant_violation_sent_requires_pinterest_source';
+      
+      // Create tracking alert (non-blocking)
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        await supabase.from('tracking_alerts').insert({
+          day: today,
+          severity: 'critical',
+          type: 'invariant_violation',
+          message: `Invariant violation: Attempted to send non-Pinterest order in pinterest_only mode`,
+          context: {
+            order_id: eventData.order_id,
+            attribution_source: attribution.attribution_source,
+            send_mode: sendMode,
+            blocked_by: 'phase5_invariant_check',
+          },
+          status: 'open',
+        });
+        console.log("[Pinterest CAPI Direct] Invariant violation alert created");
+      } catch (alertError) {
+        console.error("[Pinterest CAPI Direct] Failed to create invariant alert:", alertError);
+      }
     }
 
     // ========================================================================
@@ -429,8 +363,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
         is_test: eventData.is_test || false,
         // Phase 4.2a: New source-truth fields
         attribution_source: attribution.attribution_source,
-        attribution_confidence: attribution.confidence,
-        attribution_reason: attribution.reason,
+        attribution_confidence: attribution.attribution_confidence,
+        attribution_reason: attribution.attribution_reason,
         send_status: sendStatus,
         send_status_reason: sendStatusReason,
         send_mode: sendMode,

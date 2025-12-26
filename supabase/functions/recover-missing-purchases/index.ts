@@ -9,6 +9,9 @@
  * - limit: Max orders per run (default 50, clamped to 50)
  * - max_age_days: How far back to look (default 7, clamped to 30)
  * 
+ * Phase 5: Added attribution classification before retry attempts.
+ * In pinterest_only mode, non-Pinterest orders are skipped with outcome 'skipped_blocked_attribution'.
+ * 
  * CHAOS INJECTION (Phase 3.5):
  * Supports controlled failure injection via query params or headers:
  * - chaos=always_fail (C4): All recovery attempts fail
@@ -18,6 +21,12 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { requireCronSecret } from "../_shared/cronAuth.ts";
+import {
+  classifyAttribution,
+  getSendMode,
+  type AttributionResult,
+  type SendMode,
+} from "../_shared/attribution.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -120,6 +129,7 @@ interface RecoveryStats {
   succeeded: number;
   failed: number;
   skipped: number;
+  skipped_blocked_attribution: number; // Phase 5: Non-Pinterest in pinterest_only mode
   dead_lettered: number;
   rate_limited: boolean;
   method_direct_capi: number;
@@ -218,6 +228,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       succeeded: 0,
       failed: 0,
       skipped: 0,
+      skipped_blocked_attribution: 0, // Phase 5
       dead_lettered: 0,
       rate_limited: false,
       method_direct_capi: 0,
@@ -225,6 +236,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
       method_none: 0,
       durations: [],
     };
+    
+    // Phase 5: Read send mode for attribution filtering
+    const sendMode = await getSendMode(supabase);
+    console.log("[Recovery] Send mode:", sendMode);
 
     // ========================================================================
     // CHAOS C5: Rate Limit - Simulate immediate rate limit at start
@@ -433,6 +448,39 @@ Deno.serve(async (req: Request): Promise<Response> => {
           stats.skipped++;
           continue;
         }
+      }
+
+      // ======================================================================
+      // PHASE 5: ATTRIBUTION CHECK BEFORE RECOVERY (C)
+      // Skip non-Pinterest orders in pinterest_only mode
+      // ======================================================================
+      const recoveryAttribution = classifyAttribution({
+        pinterest_click_id: candidate.epik,
+        utm_source: candidate.utm_source,
+        utm_medium: candidate.utm_medium,
+        utm_campaign: candidate.utm_campaign,
+        utm_content: candidate.utm_content,
+        utm_term: candidate.utm_term,
+      });
+
+      if (sendMode === 'pinterest_only' && !recoveryAttribution.should_send_to_pinterest) {
+        console.log("[Recovery] Skipping non-Pinterest order in pinterest_only mode:", candidate.order_id, {
+          attribution_source: recoveryAttribution.attribution_source,
+        });
+        
+        const fingerprint = await computeFingerprint(candidate.order_id, candidate.value, candidate.currency);
+        await supabase.from('recovery_purchase_attempts').insert({
+          order_id: candidate.order_id,
+          attempt_no: attemptNo,
+          method: 'skipped',
+          payload_fingerprint: fingerprint,
+          outcome: 'skipped_blocked_attribution',
+          error_code: 'non_pinterest_attribution',
+          error_message: `Skipped: attribution_source=${recoveryAttribution.attribution_source} in pinterest_only mode`,
+        });
+
+        stats.skipped_blocked_attribution++;
+        continue;
       }
 
       // Determine method and attempt recovery
