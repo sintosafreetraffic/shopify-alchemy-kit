@@ -125,6 +125,7 @@ import KneePillowProduct from "./pages/KneePillowProduct";
 import SleepMaskProduct from "./pages/SleepMaskProduct";
 import SleepBundleProduct from "./pages/SleepBundleProduct";
 import Auth from "./pages/Auth";
+import GarminCallback from "./pages/auth/GarminCallback";
 import Benefits from "./pages/Benefits";
 import Reviews from "./pages/Reviews";
 import FAQ from "./pages/FAQ";
@@ -241,6 +242,7 @@ const AppContent = () => {
             <Route path="/product/sleep-bundle" element={<SleepBundleProduct />} />
             <Route path="/product" element={<ErgonomicPillowProduct />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/auth/garmin/callback" element={<GarminCallback />} />
             <Route path="/benefits" element={<Benefits />} />
             <Route path="/reviews" element={<Reviews />} />
             <Route path="/faq" element={<FAQ />} />
