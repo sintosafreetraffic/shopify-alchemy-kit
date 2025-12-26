@@ -252,6 +252,8 @@ async function joinPinterestContext(
  * Insert pending tracking row for idempotency.
  * Returns true if this is a NEW order (we should proceed with tracking).
  * Returns false if duplicate (we should exit early).
+ * 
+ * Day 1-2: Added delivery_state for operational tracking
  */
 async function insertPendingTrackingRow(
   supabase: any,
@@ -280,6 +282,8 @@ async function insertPendingTrackingRow(
         render_status: 'pending',
         render_response: null,
         is_test: isTest,
+        // Day 1-2: Operational delivery state
+        delivery_state: 'pending',
       })
       .select('id')
       .maybeSingle();
@@ -311,26 +315,42 @@ async function insertPendingTrackingRow(
 
 /**
  * Update tracking row status after Pinterest attempt
+ * Day 1-2: Also updates delivery_state for operational tracking
  */
 async function updateTrackingStatus(
   supabase: any,
   orderId: string,
   renderStatus: string,
-  renderResponse: any = null
+  renderResponse: any = null,
+  deliveryState?: string
 ): Promise<void> {
   try {
+    const updateData: Record<string, any> = {
+      render_status: renderStatus,
+      render_response: renderResponse,
+    };
+    
+    // Day 1-2: Map render_status to delivery_state if not explicitly provided
+    if (deliveryState) {
+      updateData.delivery_state = deliveryState;
+    } else if (renderStatus.includes('success')) {
+      updateData.delivery_state = 'sent';
+    } else if (renderStatus.includes('error') || renderStatus.includes('fail')) {
+      updateData.delivery_state = 'failed';
+    } else if (renderStatus.includes('blocked') || renderStatus.includes('chaos')) {
+      updateData.delivery_state = renderStatus; // Use the specific blocked reason
+    }
+    
     const { error } = await supabase
       .from('pinterest_purchase_events')
-      .update({
-        render_status: renderStatus,
-        render_response: renderResponse,
-      })
+      .update(updateData)
       .eq('order_id', orderId);
 
     if (error) {
       console.error("[Pinterest] Failed to update tracking status:", error);
     } else {
-      console.log("[Pinterest] Tracking status updated:", orderId, "->", renderStatus);
+      console.log("[Pinterest] Tracking status updated:", orderId, "->", renderStatus, 
+        updateData.delivery_state ? `(delivery: ${updateData.delivery_state})` : '');
     }
   } catch (updateError) {
     console.error("[Pinterest] Error updating tracking status (non-blocking):", updateError);
