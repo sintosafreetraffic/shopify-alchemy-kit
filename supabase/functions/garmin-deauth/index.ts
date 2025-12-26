@@ -5,7 +5,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 // POST /garmin/deauth
 // 
 // When user revokes access in Garmin Connect, this endpoint
-// is called to mark the source as revoked.
+// is called to mark the source as revoked and clear tokens/hash.
 // ============================================================
 
 const corsHeaders = {
@@ -19,12 +19,18 @@ interface GarminDeauthPayload {
 }
 
 function log(level: 'info' | 'warn' | 'error', message: string, data?: Record<string, unknown>) {
+  // Never log tokens or hashes
+  const safeData = data ? { ...data } : {};
+  delete safeData.access_token;
+  delete safeData.userAccessToken;
+  delete safeData.token_hash;
+  
   const entry = {
     timestamp: new Date().toISOString(),
     level,
     function: 'garmin-deauth',
     message,
-    ...data,
+    ...safeData,
   };
   if (level === 'error') {
     console.error(JSON.stringify(entry));
@@ -63,6 +69,15 @@ async function verifySignature(body: string, signature: string, secret: string):
   }
 }
 
+// Compute SHA-256 hash of access token with pepper
+async function computeTokenHash(accessToken: string, pepper: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(`${accessToken}:${pepper}`);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -79,6 +94,7 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const garminWebhookSecret = Deno.env.get('GARMIN_WEBHOOK_SECRET');
+    const tokenHashPepper = Deno.env.get('GARMIN_TOKEN_HASH_PEPPER');
     
     if (!garminWebhookSecret) {
       log('error', 'GARMIN_WEBHOOK_SECRET not configured');
@@ -138,26 +154,52 @@ Deno.serve(async (req) => {
     
     log('info', 'Processing Garmin deauth request');
     
-    // Find user by access token
-    const { data: sources, error: fetchError } = await supabaseAdmin
-      .from('sleep_sources')
-      .select('id, user_id, metadata')
-      .eq('source', 'garmin')
-      .not('metadata', 'is', null);
+    // Try indexed lookup first if pepper is available
+    let matchingSource: { id: string; user_id: string; metadata: Record<string, unknown> } | null = null;
     
-    if (fetchError) {
-      log('error', 'Failed to query sleep_sources', { error: fetchError.message });
-      return new Response(
-        JSON.stringify({ error: 'Database error' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (tokenHashPepper) {
+      const tokenHash = await computeTokenHash(userAccessToken, tokenHashPepper);
+      
+      const { data: indexedSource, error: indexedError } = await supabaseAdmin
+        .from('sleep_sources')
+        .select('id, user_id, metadata')
+        .eq('source', 'garmin')
+        .eq('garmin_token_hash', tokenHash)
+        .limit(1)
+        .single();
+      
+      if (!indexedError && indexedSource) {
+        matchingSource = indexedSource as { id: string; user_id: string; metadata: Record<string, unknown> };
+        log('info', 'User resolved via indexed hash lookup for deauth', { userId: matchingSource.user_id });
+      }
     }
     
-    // Find matching user
-    const matchingSource = sources?.find(s => {
-      const meta = s.metadata as Record<string, unknown>;
-      return meta?.access_token === userAccessToken;
-    });
+    // Fallback to legacy scan
+    if (!matchingSource) {
+      const { data: sources, error: fetchError } = await supabaseAdmin
+        .from('sleep_sources')
+        .select('id, user_id, metadata')
+        .eq('source', 'garmin')
+        .not('metadata', 'is', null);
+      
+      if (fetchError) {
+        log('error', 'Failed to query sleep_sources', { error: fetchError.message });
+        return new Response(
+          JSON.stringify({ error: 'Database error' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // Find matching user by access token
+      const found = sources?.find(s => {
+        const meta = s.metadata as Record<string, unknown>;
+        return meta?.access_token === userAccessToken;
+      });
+      
+      if (found) {
+        matchingSource = found as { id: string; user_id: string; metadata: Record<string, unknown> };
+      }
+    }
     
     if (!matchingSource) {
       log('warn', 'No matching user for deauth token');
@@ -172,12 +214,14 @@ Deno.serve(async (req) => {
     const now = new Date().toISOString();
     const metadata = matchingSource.metadata as Record<string, unknown>;
     
-    // Update status to revoked, preserve historical data
+    // Update status to revoked, clear tokens AND hash for security
     const { error: updateError } = await supabaseAdmin
       .from('sleep_sources')
       .update({
         status: 'revoked',
         revoked_at: now,
+        garmin_token_hash: null, // Clear hash on revoke
+        garmin_token_hash_updated_at: null,
         metadata: {
           ...metadata,
           // Clear tokens for security
@@ -198,7 +242,7 @@ Deno.serve(async (req) => {
       );
     }
     
-    log('info', 'Garmin source revoked successfully', { userId });
+    log('info', 'Garmin source revoked successfully', { userId, hashCleared: true });
     
     return new Response(
       JSON.stringify({ 

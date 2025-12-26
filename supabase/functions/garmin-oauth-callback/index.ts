@@ -5,7 +5,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 // GET /garmin/oauth/callback
 // 
 // Verifies state, exchanges verifier for access token,
-// stores tokens in sleep_sources.metadata
+// stores tokens in sleep_sources.metadata + garmin_token_hash
 // ============================================================
 
 const corsHeaders = {
@@ -101,18 +101,33 @@ function generateNonce(): string {
 }
 
 function log(level: 'info' | 'warn' | 'error', message: string, data?: Record<string, unknown>) {
+  // Never log tokens or hashes
+  const safeData = data ? { ...data } : {};
+  delete safeData.access_token;
+  delete safeData.token_hash;
+  delete safeData.pepper;
+  
   const entry = {
     timestamp: new Date().toISOString(),
     level,
     function: 'garmin-oauth-callback',
     message,
-    ...data,
+    ...safeData,
   };
   if (level === 'error') {
     console.error(JSON.stringify(entry));
   } else {
     console.log(JSON.stringify(entry));
   }
+}
+
+// Compute SHA-256 hash of access token with pepper
+async function computeTokenHash(accessToken: string, pepper: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(`${accessToken}:${pepper}`);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 Deno.serve(async (req) => {
@@ -133,9 +148,18 @@ Deno.serve(async (req) => {
     const garminClientId = Deno.env.get('GARMIN_CLIENT_ID');
     const garminClientSecret = Deno.env.get('GARMIN_CLIENT_SECRET');
     const stateSigningSecret = Deno.env.get('STATE_SIGNING_SECRET');
+    const tokenHashPepper = Deno.env.get('GARMIN_TOKEN_HASH_PEPPER');
     
     if (!garminClientId || !garminClientSecret || !stateSigningSecret) {
       log('error', 'Missing required Garmin OAuth secrets');
+      return new Response(
+        JSON.stringify({ error: 'Garmin OAuth not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    if (!tokenHashPepper) {
+      log('error', 'Missing GARMIN_TOKEN_HASH_PEPPER secret');
       return new Response(
         JSON.stringify({ error: 'Garmin OAuth not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -275,7 +299,10 @@ Deno.serve(async (req) => {
       );
     }
     
-    // Store tokens and update status
+    // Compute token hash for indexed lookup
+    const tokenHash = await computeTokenHash(accessToken, tokenHashPepper);
+    
+    // Store tokens, hash, and update status
     const now = new Date().toISOString();
     const { error: updateError } = await supabaseAdmin
       .from('sleep_sources')
@@ -285,6 +312,8 @@ Deno.serve(async (req) => {
         revoked_at: null,
         consent_granted_at: now,
         consent_version: '1.0',
+        garmin_token_hash: tokenHash,
+        garmin_token_hash_updated_at: now,
         metadata: {
           access_token: accessToken,
           access_token_secret: accessTokenSecret,
@@ -305,7 +334,7 @@ Deno.serve(async (req) => {
       );
     }
     
-    log('info', 'Garmin OAuth completed successfully', { userId });
+    log('info', 'Garmin OAuth completed successfully', { userId, hashSet: true });
     
     // Redirect to success page or return success JSON
     // For now, return JSON - frontend can redirect
