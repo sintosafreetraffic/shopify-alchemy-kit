@@ -485,6 +485,9 @@ Deno.serve(async (req) => {
       sleep_architecture: sleepArchitecture,
       // Bedtime patterns (Option B) - timing consistency
       bedtime_patterns: bedtimePatterns,
+      // Baseline vs Recent windows for causal guardrails
+      wearable_baseline: wearableBaseline,
+      wearable_recent: wearableRecent,
     };
 
     // === LOG: Plan context summary with 3-layer data and wearables ===
