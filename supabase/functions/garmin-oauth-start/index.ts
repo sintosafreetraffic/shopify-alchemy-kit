@@ -1,11 +1,11 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // ============================================================
-// Garmin OAuth Start - Initiates OAuth 1.0a flow
-// GET /garmin/oauth/start
+// Garmin OAuth Start - Initiates OAuth 2.0 Authorization Code flow
+// GET/POST /garmin-oauth-start
 // 
-// Creates signed state with HMAC, stores request token,
-// and redirects user to Garmin consent screen.
+// Generates signed state with PKCE, stores code_verifier,
+// and returns Garmin OAuth2 authorize URL for redirect.
 // ============================================================
 
 const corsHeaders = {
@@ -17,7 +17,7 @@ interface StatePayload {
   user_id: string;
   source: 'garmin';
   timestamp: number;
-  request_token?: string;
+  nonce: string;
 }
 
 // HMAC-SHA256 signing for state parameter
@@ -38,7 +38,6 @@ async function signState(payload: StatePayload, secret: string): Promise<string>
     .map(b => b.toString(16).padStart(2, '0'))
     .join('');
   
-  // Encode payload + signature as base64
   const stateObject = {
     payload,
     signature: signatureHex,
@@ -47,45 +46,27 @@ async function signState(payload: StatePayload, secret: string): Promise<string>
   return btoa(JSON.stringify(stateObject));
 }
 
-// OAuth 1.0a signature generation
-function oauthEncode(input: string): string {
-  // OAuth uses RFC3986 which requires encoding ! ' ( ) * as well
-  return encodeURIComponent(input).replace(/[!'()*]/g, (c) =>
-    '%' + c.charCodeAt(0).toString(16).toUpperCase()
-  );
+// Generate random string for PKCE code_verifier
+function generateCodeVerifier(): string {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  // Use URL-safe base64 encoding
+  return btoa(String.fromCharCode(...array))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
 }
 
-async function generateOAuthSignature(
-  method: string,
-  url: string,
-  params: Record<string, string>,
-  consumerSecret: string,
-  tokenSecret: string = ''
-): Promise<string> {
-  // Sort parameters alphabetically
-  const sortedParams = Object.keys(params)
-    .sort()
-    .map((key) => `${oauthEncode(key)}=${oauthEncode(params[key])}`)
-    .join('&');
-
-  // Create signature base string
-  const signatureBase = `${method.toUpperCase()}&${oauthEncode(url)}&${oauthEncode(sortedParams)}`;
-
-  // Create signing key
-  const signingKey = `${oauthEncode(consumerSecret)}&${oauthEncode(tokenSecret)}`;
-
-  // Generate HMAC-SHA1 signature
+// Generate SHA-256 hash for code_challenge
+async function generateCodeChallenge(verifier: string): Promise<string> {
   const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    'raw',
-    encoder.encode(signingKey),
-    { name: 'HMAC', hash: 'SHA-1' },
-    false,
-    ['sign']
-  );
-
-  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(signatureBase));
-  return btoa(String.fromCharCode(...new Uint8Array(signature)));
+  const data = encoder.encode(verifier);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  // URL-safe base64 encoding
+  return btoa(String.fromCharCode(...new Uint8Array(hash)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
 }
 
 function generateNonce(): string {
@@ -95,12 +76,17 @@ function generateNonce(): string {
 }
 
 function log(level: 'info' | 'warn' | 'error', message: string, data?: Record<string, unknown>) {
+  // Never log sensitive data
+  const safeData = data ? { ...data } : {};
+  delete safeData.code_verifier;
+  delete safeData.client_secret;
+  
   const entry = {
     timestamp: new Date().toISOString(),
     level,
     function: 'garmin-oauth-start',
     message,
-    ...data,
+    ...safeData,
   };
   if (level === 'error') {
     console.error(JSON.stringify(entry));
@@ -161,94 +147,30 @@ Deno.serve(async (req) => {
     }
     
     const userId = user.id;
-    log('info', 'Starting Garmin OAuth flow', { userId });
+    log('info', 'Starting Garmin OAuth 2.0 flow', { userId });
     
-    // Get callback URL from request or use default app URL
-    const url = new URL(req.url);
-    const callbackUrl = url.searchParams.get('callback_url') || 
-      'https://app.risebynight.com/auth/garmin/callback';
+    // OAuth 2.0 configuration
+    const redirectUri = 'https://app.risebynight.com/auth/garmin/callback';
     
-    // Step 1: Get request token from Garmin (OAuth 1.0a)
-    const requestTokenUrl = 'https://connectapi.garmin.com/oauth-service/oauth/request_token';
-    const timestamp = Math.floor(Date.now() / 1000).toString();
+    // Garmin OAuth 2.0 endpoints (Health API)
+    const authorizeEndpoint = 'https://connect.garmin.com/oauthConfirm';
+    
+    // Generate PKCE code_verifier and code_challenge
+    const codeVerifier = generateCodeVerifier();
+    const codeChallenge = await generateCodeChallenge(codeVerifier);
+    
+    // Generate signed state with expiry
     const nonce = generateNonce();
-    
-    // OAuth params for signature - oauth_callback must be included in signature base
-    const oauthParams: Record<string, string> = {
-      oauth_callback: callbackUrl,
-      oauth_consumer_key: garminClientId,
-      oauth_nonce: nonce,
-      oauth_signature_method: 'HMAC-SHA1',
-      oauth_timestamp: timestamp,
-      oauth_version: '1.0',
-    };
-    
-    const signature = await generateOAuthSignature(
-      'POST',
-      requestTokenUrl,
-      oauthParams,
-      garminClientSecret
-    );
-    
-    // Garmin is strict about where it reads parameters from; send OAuth params in the
-    // POST body as application/x-www-form-urlencoded (OAuth 1.0a compliant).
-    const tokenRequestParams: Record<string, string> = { ...oauthParams, oauth_signature: signature };
-    const tokenRequestBody = new URLSearchParams(tokenRequestParams).toString();
-
-    log('info', 'Requesting Garmin request token', {
-      callbackUrl,
-      timestamp,
-      nonceLen: nonce.length,
-      bodyLen: tokenRequestBody.length,
-    });
-
-    const requestTokenResponse = await fetch(requestTokenUrl, {
-      method: 'POST',
-      headers: {
-        // Garmin expects form-encoded requests for OAuth 1.0a endpoints
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Accept': 'application/x-www-form-urlencoded',
-      },
-      body: tokenRequestBody,
-    });
-    
-    if (!requestTokenResponse.ok) {
-      const errorText = await requestTokenResponse.text();
-      log('error', 'Failed to get Garmin request token', { 
-        status: requestTokenResponse.status, 
-        error: errorText 
-      });
-      return new Response(
-        JSON.stringify({ error: 'Failed to initiate Garmin OAuth', details: errorText }),
-        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
-    const responseText = await requestTokenResponse.text();
-    const responseParams = new URLSearchParams(responseText);
-    const requestToken = responseParams.get('oauth_token');
-    const requestTokenSecret = responseParams.get('oauth_token_secret');
-    
-    if (!requestToken || !requestTokenSecret) {
-      log('error', 'Missing tokens in Garmin response', { response: responseText });
-      return new Response(
-        JSON.stringify({ error: 'Invalid Garmin response' }),
-        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
-    // Create signed state with request token
     const statePayload: StatePayload = {
       user_id: userId,
       source: 'garmin',
       timestamp: Date.now(),
-      request_token: requestToken,
+      nonce,
     };
     
     const signedState = await signState(statePayload, stateSigningSecret);
     
-    // Store request token secret temporarily (needed for callback)
-    // Using sleep_sources metadata to store pending OAuth state
+    // Store code_verifier and OAuth state in database
     const { error: upsertError } = await supabaseAdmin
       .from('sleep_sources')
       .upsert({
@@ -257,9 +179,10 @@ Deno.serve(async (req) => {
         status: 'pending',
         metadata: {
           oauth_pending: true,
-          request_token: requestToken,
-          request_token_secret: requestTokenSecret,
+          oauth_version: '2.0',
+          code_verifier: codeVerifier,
           oauth_started_at: new Date().toISOString(),
+          nonce,
         },
         updated_at: new Date().toISOString(),
       }, {
@@ -274,10 +197,25 @@ Deno.serve(async (req) => {
       );
     }
     
-    // Build Garmin authorization URL
-    const authorizeUrl = `https://connect.garmin.com/oauthConfirm?oauth_token=${encodeURIComponent(requestToken)}&oauth_callback=${encodeURIComponent(callbackUrl)}&state=${encodeURIComponent(signedState)}`;
+    // Build Garmin OAuth 2.0 authorization URL
+    // Garmin uses standard OAuth 2.0 with PKCE
+    const authParams = new URLSearchParams({
+      client_id: garminClientId,
+      redirect_uri: redirectUri,
+      response_type: 'code',
+      scope: 'sleep',  // Request sleep data access
+      state: signedState,
+      code_challenge: codeChallenge,
+      code_challenge_method: 'S256',
+    });
     
-    log('info', 'Garmin OAuth started successfully', { userId, authorizeUrl });
+    const authorizeUrl = `${authorizeEndpoint}?${authParams.toString()}`;
+    
+    log('info', 'Garmin OAuth 2.0 started successfully', { 
+      userId, 
+      redirectUri,
+      hasCodeChallenge: true,
+    });
     
     // Return the authorization URL for the frontend to redirect
     return new Response(

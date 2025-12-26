@@ -1,11 +1,12 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // ============================================================
-// Garmin OAuth Callback - Completes OAuth 1.0a flow
-// GET /garmin/oauth/callback
+// Garmin OAuth Callback - Completes OAuth 2.0 Authorization Code flow
+// GET /garmin-oauth-callback
 // 
-// Verifies state, exchanges verifier for access token,
+// Verifies state, exchanges authorization code for tokens,
 // stores tokens in sleep_sources.metadata + garmin_token_hash
+// Redirects to frontend with success/error params
 // ============================================================
 
 const corsHeaders = {
@@ -17,7 +18,7 @@ interface StatePayload {
   user_id: string;
   source: 'garmin';
   timestamp: number;
-  request_token?: string;
+  nonce: string;
 }
 
 // Verify HMAC signature on state
@@ -65,51 +66,13 @@ async function verifyState(stateString: string, secret: string): Promise<{ valid
   }
 }
 
-// OAuth 1.0a signature generation
-function oauthEncode(input: string): string {
-  return encodeURIComponent(input).replace(/[!'()*]/g, (c) =>
-    '%' + c.charCodeAt(0).toString(16).toUpperCase()
-  );
-}
-
-async function generateOAuthSignature(
-  method: string,
-  url: string,
-  params: Record<string, string>,
-  consumerSecret: string,
-  tokenSecret: string = ''
-): Promise<string> {
-  const sortedParams = Object.keys(params)
-    .sort()
-    .map((key) => `${oauthEncode(key)}=${oauthEncode(params[key])}`)
-    .join('&');
-
-  const signatureBase = `${method.toUpperCase()}&${oauthEncode(url)}&${oauthEncode(sortedParams)}`;
-  const signingKey = `${oauthEncode(consumerSecret)}&${oauthEncode(tokenSecret)}`;
-
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    'raw',
-    encoder.encode(signingKey),
-    { name: 'HMAC', hash: 'SHA-1' },
-    false,
-    ['sign']
-  );
-
-  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(signatureBase));
-  return btoa(String.fromCharCode(...new Uint8Array(signature)));
-}
-
-function generateNonce(): string {
-  const array = new Uint8Array(16);
-  crypto.getRandomValues(array);
-  return Array.from(array).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
 function log(level: 'info' | 'warn' | 'error', message: string, data?: Record<string, unknown>) {
-  // Never log tokens or hashes
+  // Never log tokens, codes, or hashes
   const safeData = data ? { ...data } : {};
   delete safeData.access_token;
+  delete safeData.refresh_token;
+  delete safeData.code;
+  delete safeData.code_verifier;
   delete safeData.token_hash;
   delete safeData.pepper;
   
@@ -136,6 +99,14 @@ async function computeTokenHash(accessToken: string, pepper: string): Promise<st
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+// Frontend redirect URLs
+const SUCCESS_REDIRECT = 'https://app.risebynight.com/settings/sleep-sources?garmin=success';
+const ERROR_REDIRECT_BASE = 'https://app.risebynight.com/settings/sleep-sources?garmin=error';
+
+function buildErrorRedirect(reason: string): string {
+  return `${ERROR_REDIRECT_BASE}&reason=${encodeURIComponent(reason)}`;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -158,18 +129,12 @@ Deno.serve(async (req) => {
     
     if (!garminClientId || !garminClientSecret || !stateSigningSecret) {
       log('error', 'Missing required Garmin OAuth secrets');
-      return new Response(
-        JSON.stringify({ error: 'Garmin OAuth not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return Response.redirect(buildErrorRedirect('server_config'), 302);
     }
     
     if (!tokenHashPepper) {
       log('error', 'Missing GARMIN_TOKEN_HASH_PEPPER secret');
-      return new Response(
-        JSON.stringify({ error: 'Garmin OAuth not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return Response.redirect(buildErrorRedirect('server_config'), 302);
     }
     
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
@@ -178,42 +143,35 @@ Deno.serve(async (req) => {
     
     // Parse callback parameters
     const url = new URL(req.url);
-    const oauthToken = url.searchParams.get('oauth_token');
-    const oauthVerifier = url.searchParams.get('oauth_verifier');
+    const code = url.searchParams.get('code');
     const state = url.searchParams.get('state');
+    const error = url.searchParams.get('error');
+    const errorDescription = url.searchParams.get('error_description');
     
-    if (!oauthToken || !oauthVerifier || !state) {
+    // Handle Garmin error response (user denied consent)
+    if (error) {
+      log('warn', 'Garmin OAuth error response', { error, errorDescription });
+      const reason = error === 'access_denied' ? 'access_denied' : 'garmin_error';
+      return Response.redirect(buildErrorRedirect(reason), 302);
+    }
+    
+    if (!code || !state) {
       log('warn', 'Missing OAuth callback parameters');
-      return new Response(
-        JSON.stringify({ error: 'Missing OAuth callback parameters' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return Response.redirect(buildErrorRedirect('missing_params'), 302);
     }
     
     // Verify state
     const stateResult = await verifyState(state, stateSigningSecret);
     if (!stateResult.valid || !stateResult.payload) {
       log('warn', 'State verification failed', { error: stateResult.error });
-      return new Response(
-        JSON.stringify({ error: 'Invalid or expired state', details: stateResult.error }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return Response.redirect(buildErrorRedirect('invalid_state'), 302);
     }
     
-    const { user_id: userId, request_token: stateRequestToken } = stateResult.payload;
+    const { user_id: userId, nonce: stateNonce } = stateResult.payload;
     
-    // Verify request token matches
-    if (stateRequestToken !== oauthToken) {
-      log('warn', 'Request token mismatch', { userId });
-      return new Response(
-        JSON.stringify({ error: 'Token mismatch' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    log('info', 'Processing Garmin OAuth 2.0 callback', { userId });
     
-    log('info', 'Processing Garmin OAuth callback', { userId });
-    
-    // Get stored request token secret
+    // Get stored code_verifier
     const { data: sourceRow, error: fetchError } = await supabaseAdmin
       .from('sleep_sources')
       .select('metadata')
@@ -223,147 +181,135 @@ Deno.serve(async (req) => {
     
     if (fetchError || !sourceRow) {
       log('error', 'Failed to fetch stored OAuth state', { userId, error: fetchError?.message });
-      return new Response(
-        JSON.stringify({ error: 'OAuth session not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return Response.redirect(buildErrorRedirect('session_not_found'), 302);
     }
     
     const metadata = sourceRow.metadata as Record<string, unknown>;
-    const requestTokenSecret = metadata?.request_token_secret as string;
+    const codeVerifier = metadata?.code_verifier as string;
+    const storedNonce = metadata?.nonce as string;
     
-    if (!requestTokenSecret) {
-      log('error', 'Missing request token secret', { userId });
-      return new Response(
-        JSON.stringify({ error: 'OAuth session invalid' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (!codeVerifier) {
+      log('error', 'Missing code_verifier', { userId });
+      return Response.redirect(buildErrorRedirect('session_invalid'), 302);
     }
     
-    // Exchange for access token
-    const accessTokenUrl = 'https://connectapi.garmin.com/oauth-service/oauth/access_token';
-    const timestamp = Math.floor(Date.now() / 1000).toString();
-    const nonce = generateNonce();
+    // Verify nonce matches
+    if (storedNonce !== stateNonce) {
+      log('error', 'Nonce mismatch', { userId });
+      return Response.redirect(buildErrorRedirect('nonce_mismatch'), 302);
+    }
     
-    const oauthParams: Record<string, string> = {
-      oauth_consumer_key: garminClientId,
-      oauth_token: oauthToken,
-      oauth_signature_method: 'HMAC-SHA1',
-      oauth_timestamp: timestamp,
-      oauth_nonce: nonce,
-      oauth_version: '1.0',
-      oauth_verifier: oauthVerifier,
-    };
+    // Exchange authorization code for tokens
+    const tokenEndpoint = 'https://connectapi.garmin.com/oauth-service/oauth/token';
+    const redirectUri = 'https://app.risebynight.com/auth/garmin/callback';
     
-    const signature = await generateOAuthSignature(
-      'POST',
-      accessTokenUrl,
-      oauthParams,
-      garminClientSecret,
-      requestTokenSecret
-    );
-    
-    const headerParams: Record<string, string> = { ...oauthParams, oauth_signature: signature };
-
-    const authHeaderValue = 'OAuth ' + Object.keys(headerParams)
-      .sort()
-      .map((key) => `${oauthEncode(key)}="${oauthEncode(headerParams[key])}"`)
-      .join(', ');
-    
-    log('info', 'Exchanging verifier for access token', { userId });
-    
-    const accessTokenResponse = await fetch(accessTokenUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': authHeaderValue,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
+    const tokenParams = new URLSearchParams({
+      grant_type: 'authorization_code',
+      code: code,
+      redirect_uri: redirectUri,
+      client_id: garminClientId,
+      client_secret: garminClientSecret,
+      code_verifier: codeVerifier,
     });
     
-    if (!accessTokenResponse.ok) {
-      const errorText = await accessTokenResponse.text();
-      log('error', 'Failed to exchange for access token', { 
+    log('info', 'Exchanging authorization code for tokens', { userId });
+    
+    const tokenResponse = await fetch(tokenEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json',
+      },
+      body: tokenParams.toString(),
+    });
+    
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text();
+      log('error', 'Failed to exchange code for tokens', { 
         userId, 
-        status: accessTokenResponse.status, 
+        status: tokenResponse.status, 
         error: errorText 
       });
-      return new Response(
-        JSON.stringify({ error: 'Failed to complete Garmin OAuth', details: errorText }),
-        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return Response.redirect(buildErrorRedirect('token_exchange_failed'), 302);
     }
     
-    const accessResponseText = await accessTokenResponse.text();
-    const accessParams = new URLSearchParams(accessResponseText);
-    const accessToken = accessParams.get('oauth_token');
-    const accessTokenSecret = accessParams.get('oauth_token_secret');
+    let tokenData: {
+      access_token: string;
+      refresh_token?: string;
+      expires_in?: number;
+      token_type?: string;
+    };
     
-    if (!accessToken || !accessTokenSecret) {
-      log('error', 'Missing access tokens in Garmin response', { userId });
-      return new Response(
-        JSON.stringify({ error: 'Invalid Garmin access token response' }),
-        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    try {
+      tokenData = await tokenResponse.json();
+    } catch {
+      log('error', 'Failed to parse token response', { userId });
+      return Response.redirect(buildErrorRedirect('invalid_token_response'), 302);
     }
     
-    // Compute token hash for indexed lookup
-    const tokenHash = await computeTokenHash(accessToken, tokenHashPepper);
+    const { access_token, refresh_token, expires_in } = tokenData;
     
-    // Store tokens, hash, and update status
-    const now = new Date().toISOString();
+    if (!access_token) {
+      log('error', 'Missing access_token in response', { userId });
+      return Response.redirect(buildErrorRedirect('missing_access_token'), 302);
+    }
+    
+    // Compute token hash for indexed lookup (webhook correlation)
+    const tokenHash = await computeTokenHash(access_token, tokenHashPepper);
+    
+    // Calculate token expiry timestamp
+    const now = new Date();
+    const expiresAt = expires_in 
+      ? new Date(now.getTime() + expires_in * 1000).toISOString() 
+      : null;
+    
+    // Store tokens and update status
     const { error: updateError } = await supabaseAdmin
       .from('sleep_sources')
       .update({
         status: 'pending', // Will become 'connected' on first successful data ingest
-        connected_at: now,
+        connected_at: now.toISOString(),
         revoked_at: null,
-        consent_granted_at: now,
-        consent_version: '1.0',
+        consent_granted_at: now.toISOString(),
+        consent_version: '2.0',
         garmin_token_hash: tokenHash,
-        garmin_token_hash_updated_at: now,
+        garmin_token_hash_updated_at: now.toISOString(),
         metadata: {
-          access_token: accessToken,
-          access_token_secret: accessTokenSecret,
-          oauth_completed_at: now,
+          oauth_version: '2.0',
+          access_token,
+          refresh_token: refresh_token || null,
+          expires_at: expiresAt,
+          oauth_completed_at: now.toISOString(),
           oauth_pending: false,
+          // Clear PKCE state
+          code_verifier: null,
+          nonce: null,
           // device_model will be populated on first webhook
         },
-        updated_at: now,
+        updated_at: now.toISOString(),
       })
       .eq('user_id', userId)
       .eq('source', 'garmin');
     
     if (updateError) {
       log('error', 'Failed to store access tokens', { userId, error: updateError.message });
-      return new Response(
-        JSON.stringify({ error: 'Failed to store credentials' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return Response.redirect(buildErrorRedirect('storage_failed'), 302);
     }
     
-    log('info', 'Garmin OAuth completed successfully', { userId, hashSet: true });
+    log('info', 'Garmin OAuth 2.0 completed successfully', { 
+      userId, 
+      hashSet: true,
+      hasRefreshToken: !!refresh_token,
+      expiresIn: expires_in,
+    });
     
-    // Redirect to success page or return success JSON
-    // For now, return JSON - frontend can redirect
-    return new Response(
-      JSON.stringify({ 
-        success: true,
-        message: 'Garmin connected successfully. Sleep data will sync automatically.',
-        user_id: userId,
-      }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
+    // Redirect to success page
+    return Response.redirect(SUCCESS_REDIRECT, 302);
     
   } catch (error) {
     log('error', 'Unexpected error in garmin-oauth-callback', { 
       error: error instanceof Error ? error.message : String(error) 
     });
-    return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return Response.redirect(buildErrorRedirect('internal_error'), 302);
   }
 });
