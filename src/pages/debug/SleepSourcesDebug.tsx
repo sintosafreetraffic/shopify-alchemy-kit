@@ -76,6 +76,7 @@ const SleepSourcesDebug = () => {
   const [recentNights, setRecentNights] = useState<SleepNightDebug[]>([]);
   const [rateLimits, setRateLimits] = useState<RateLimitDebug[]>([]);
   const [duplicateCount, setDuplicateCount] = useState(0);
+  const [testRowCount, setTestRowCount] = useState(0);
   const [isAdmin, setIsAdmin] = useState(false);
   
   // Test data toggle - persisted in localStorage
@@ -168,6 +169,14 @@ const SleepSourcesDebug = () => {
 
       const { data: nightsData } = await nightsQuery;
       setRecentNights((nightsData as SleepNightDebug[]) || []);
+      
+      // Count test rows separately (always count for badge display)
+      const testCountQuery = isAdmin
+        ? supabase.from('sleep_nights').select('id', { count: 'exact', head: true }).eq('is_test', true)
+        : supabase.from('sleep_nights').select('id', { count: 'exact', head: true }).eq('user_id', uid).eq('is_test', true);
+      
+      const { count: testCount } = await testCountQuery;
+      setTestRowCount(testCount || 0);
 
       // Load rate limits (admin sees all recent ones)
       if (isAdmin) {
@@ -297,6 +306,11 @@ const SleepSourcesDebug = () => {
               <Label htmlFor="include-test-data" className="text-sm text-muted-foreground cursor-pointer">
                 Include test data
               </Label>
+              {includeTestData && testRowCount > 0 && (
+                <Badge variant="secondary" className="text-xs">
+                  {testRowCount} TEST
+                </Badge>
+              )}
             </div>
             
             {/* Clear test data button with optional admin dropdown */}
