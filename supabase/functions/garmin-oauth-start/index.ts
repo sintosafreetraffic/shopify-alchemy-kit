@@ -166,13 +166,14 @@ Deno.serve(async (req) => {
     const timestamp = Math.floor(Date.now() / 1000).toString();
     const nonce = generateNonce();
     
+    // OAuth params for signature - oauth_callback must be included in signature base
     const oauthParams: Record<string, string> = {
+      oauth_callback: callbackUrl,
       oauth_consumer_key: garminClientId,
+      oauth_nonce: nonce,
       oauth_signature_method: 'HMAC-SHA1',
       oauth_timestamp: timestamp,
-      oauth_nonce: nonce,
       oauth_version: '1.0',
-      oauth_callback: callbackUrl,
     };
     
     const signature = await generateOAuthSignature(
@@ -182,20 +183,25 @@ Deno.serve(async (req) => {
       garminClientSecret
     );
     
-    oauthParams.oauth_signature = signature;
+    // Add signature to params for Authorization header
+    const headerParams: Record<string, string> = { ...oauthParams, oauth_signature: signature };
     
-    // Build Authorization header
-    const authHeaderValue = 'OAuth ' + Object.keys(oauthParams)
-      .map(key => `${encodeURIComponent(key)}="${encodeURIComponent(oauthParams[key])}"`)
+    // Build Authorization header - params in sorted order
+    const authHeaderValue = 'OAuth ' + Object.keys(headerParams)
+      .sort()
+      .map(key => `${encodeURIComponent(key)}="${encodeURIComponent(headerParams[key])}"`)
       .join(', ');
     
-    log('info', 'Requesting Garmin request token');
+    log('info', 'Requesting Garmin request token', { 
+      callbackUrl,
+      timestamp,
+      nonceLen: nonce.length 
+    });
     
     const requestTokenResponse = await fetch(requestTokenUrl, {
       method: 'POST',
       headers: {
         'Authorization': authHeaderValue,
-        'Content-Type': 'application/x-www-form-urlencoded',
       },
     });
     
@@ -269,7 +275,7 @@ Deno.serve(async (req) => {
     // Return the authorization URL for the frontend to redirect
     return new Response(
       JSON.stringify({ 
-        authorize_url: authorizeUrl,
+        authorization_url: authorizeUrl,
         state: signedState,
       }),
       { 
