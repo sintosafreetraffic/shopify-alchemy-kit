@@ -205,3 +205,7 @@ verify_jwt = false
 # Check Tracking Thresholds - CRON job for automated alerts (validates CRON_SECRET internally)
 [functions.check-tracking-thresholds]
 verify_jwt = false
+
+# Sleep Intake - Requires JWT for user auth, HMAC stub for webhooks
+[functions.sleep-intake]
+verify_jwt = false
