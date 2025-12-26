@@ -15,7 +15,8 @@ import {
   CheckCircle,
   Clock,
   XCircle,
-  Shield
+  Shield,
+  Download
 } from "lucide-react";
 import { formatDistanceToNow, differenceInHours } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -124,10 +125,73 @@ export function GarminSettingsCard({
   const [showDisconnectModal, setShowDisconnectModal] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
 
   const displayStatus = getDisplayStatus(source, oauthError);
   const config = getStatusConfig(displayStatus);
   const StatusIcon = config.icon;
+
+  // Determine if retry button should be shown
+  const shouldShowRetry = () => {
+    if (!source) return false;
+    
+    // Show if failed
+    if (source.backfill_status === 'failed') return true;
+    
+    // Show if stalled: requested >1h ago and not completed
+    if (source.backfill_status === 'requested' && source.backfill_requested_at && !source.backfill_completed_at) {
+      const requestedAt = new Date(source.backfill_requested_at);
+      const hourAgo = new Date(Date.now() - 60 * 60 * 1000);
+      if (requestedAt < hourAgo) return true;
+    }
+    
+    return false;
+  };
+
+  const handleRetryImport = async () => {
+    if (!source) return;
+    setIsRetrying(true);
+
+    try {
+      const response = await supabase.functions.invoke('garmin-backfill', {
+        body: { days: 30 },
+      });
+
+      if (response.error) {
+        console.error('Retry import failed:', response.error);
+        toast({
+          title: "Import failed",
+          description: "Please try again later.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const data = response.data as { status: string; message?: string };
+      
+      if (data.status === 'already_requested') {
+        toast({
+          title: "Import already in progress",
+          description: "Check back in a bit.",
+        });
+      } else if (data.status === 'requested') {
+        toast({
+          title: "Import requested",
+          description: "We'll pull in your last 30 days soon.",
+        });
+        onRefresh();
+      }
+    } catch (err) {
+      console.error('Retry error:', err);
+      toast({
+        title: "Error",
+        description: "Failed to request import.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRetrying(false);
+    }
+  };
 
   const handleConnect = async (timezone: string) => {
     setIsConnecting(true);
@@ -321,13 +385,53 @@ export function GarminSettingsCard({
 
           {/* Backfill failed - calm status with retry */}
           {source?.backfill_status === 'failed' && (
-            <div className="flex items-start justify-between gap-2 text-sm bg-muted/50 rounded-lg p-3">
-              <div className="flex items-start gap-2">
+            <div className="flex items-start justify-between gap-3 text-sm bg-muted/50 rounded-lg p-3">
+              <div className="flex items-start gap-2 flex-1">
                 <AlertTriangle className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
                 <span className="text-muted-foreground">
                   We couldn't import your history yet. New sleep will still sync nightly.
                 </span>
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRetryImport}
+                disabled={isRetrying}
+                className="flex-shrink-0"
+              >
+                {isRetrying ? (
+                  <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                ) : (
+                  <Download className="h-3 w-3 mr-1" />
+                )}
+                Retry import
+              </Button>
+            </div>
+          )}
+
+          {/* Stalled backfill - show retry (requested >1h ago, not completed) */}
+          {shouldShowRetry() && source?.backfill_status !== 'failed' && (
+            <div className="flex items-start justify-between gap-3 text-sm bg-muted/50 rounded-lg p-3">
+              <div className="flex items-start gap-2 flex-1">
+                <Clock className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+                <span className="text-muted-foreground">
+                  History import is taking longer than expected. You can try again.
+                </span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRetryImport}
+                disabled={isRetrying}
+                className="flex-shrink-0"
+              >
+                {isRetrying ? (
+                  <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                ) : (
+                  <Download className="h-3 w-3 mr-1" />
+                )}
+                Retry import
+              </Button>
             </div>
           )}
 
