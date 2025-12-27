@@ -59,7 +59,7 @@ export const ExitIntentPopup = () => {
                 ✓ Free Shipping & Returns
               </p>
               <p className="font-bold text-primary text-lg">
-                ✓ Limited Christmas 1+1 Deal
+                ✓ Free Sleep Mask Included
               </p>
             </div>
             <p className="text-sm text-muted-foreground">

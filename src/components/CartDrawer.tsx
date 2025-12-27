@@ -131,31 +131,30 @@ export const CartDrawer = () => {
   const subtotal = items.reduce((sum, item) => sum + (getItemPrice(item) * item.quantity), 0);
   
   // Calculate pillow items for free gift logic
-  const pillowItems = items.filter(item => 
-    item.product.node.title.toLowerCase().includes('pillow')
-  );
-  const totalPillows = pillowItems.reduce((sum, item) => sum + item.quantity, 0);
-  
-  // Free gifts logic: Only for 2+ pillows - pairs of 2 = 2 masks each
-  const freeGifts = totalPillows >= 2 ? Math.floor(totalPillows / 2) * 2 : 0;
-  
-  // Calculate discounts based on Shopify discount codes that will be applied
-  let totalDiscount = 0;
-  
-  // FREESLEEPPILLOW discount: Buy 1 get 1 free for Ergonomic Sleep Pillow
-  const sleepPillowItems = items.filter(item => 
+  const ergonomicPillowItems = items.filter(item => 
     item.product.node.title.toLowerCase().includes('ergonomic sleep pillow')
   );
-  sleepPillowItems.forEach(item => {
-    const freePillows = Math.floor(item.quantity / 2);
-    totalDiscount += freePillows * getItemPrice(item);
-  });
-  
-  // FREEKNEEPILLOW discount: Buy 1 get 1 free for Knee Pillow
   const kneePillowItems = items.filter(item => 
     item.product.node.title.toLowerCase().includes('knee pillow') && 
     !item.product.node.title.toLowerCase().includes('free gift')
   );
+  
+  const totalErgonomicPillows = ergonomicPillowItems.reduce((sum, item) => sum + item.quantity, 0);
+  const totalKneePillows = kneePillowItems.reduce((sum, item) => sum + item.quantity, 0);
+  
+  // Free gifts logic: 
+  // - Ergonomic pillow: 1 mask per pillow (included with each pillow)
+  // - Knee pillow: 2 masks per pair of 2 (1+1 deal still active)
+  const ergonomicMasks = totalErgonomicPillows;
+  const kneeMasks = totalKneePillows >= 2 ? Math.floor(totalKneePillows / 2) * 2 : 0;
+  const freeGifts = ergonomicMasks + kneeMasks;
+  
+  // Calculate discounts based on Shopify discount codes that will be applied
+  let totalDiscount = 0;
+  
+  // NO MORE 1+1 for Ergonomic Sleep Pillow - removed BOGO discount
+  
+  // FREEKNEEPILLOW discount: Buy 1 get 1 free for Knee Pillow (still active)
   kneePillowItems.forEach(item => {
     const freePillows = Math.floor(item.quantity / 2);
     totalDiscount += freePillows * getItemPrice(item);
@@ -311,8 +310,8 @@ export const CartDrawer = () => {
             {recommendedProducts.map((product) => {
               const variant = product.node.variants.edges[0]?.node;
               const image = product.node.images.edges[0]?.node;
-              const hasOnePlusOneDeal = product.node.title.toLowerCase().includes('ergonomic sleep pillow') || 
-                                       product.node.title.toLowerCase().includes('knee pillow');
+              // Only knee pillow has 1+1 deal now
+              const hasOnePlusOneDeal = product.node.title.toLowerCase().includes('knee pillow');
               
               return (
                 <div
@@ -453,8 +452,8 @@ export const CartDrawer = () => {
                 <div className="space-y-2">
                 {/* Cart Items */}
                 {items.map((item) => {
-                    const hasActiveDeal = (item.product.node.title.toLowerCase().includes('ergonomic sleep pillow') || 
-                                          item.product.node.title.toLowerCase().includes('knee pillow')) && 
+                    // Only knee pillow has 1+1 deal now (not ergonomic pillow)
+                    const hasActiveDeal = item.product.node.title.toLowerCase().includes('knee pillow') && 
                                          item.quantity >= 2;
                     
                     // Get color-specific image for sleep mask
@@ -551,8 +550,8 @@ export const CartDrawer = () => {
                         {/* Price + Quantity row */}
                         <div className="flex items-center justify-between mt-2">
                           <div className="flex items-center gap-1.5">
-                            {(item.product.node.title.toLowerCase().includes('ergonomic sleep pillow') || 
-                             item.product.node.title.toLowerCase().includes('knee pillow')) && 
+                            {/* Only knee pillow has 1+1 deal with crossed pricing now */}
+                            {item.product.node.title.toLowerCase().includes('knee pillow') && 
                             item.quantity >= 2 ? (
                               <>
                                 <span className="text-xs text-muted-foreground line-through">
@@ -690,8 +689,8 @@ export const CartDrawer = () => {
                         {recommendedProducts.map((product) => {
                           const variant = product.node.variants.edges[0]?.node;
                           const image = product.node.images.edges[0]?.node;
-                          const hasOnePlusOneDeal = product.node.title.toLowerCase().includes('ergonomic sleep pillow') || 
-                                                   product.node.title.toLowerCase().includes('knee pillow');
+                          // Only knee pillow has 1+1 deal now
+                          const hasOnePlusOneDeal = product.node.title.toLowerCase().includes('knee pillow');
                           
                           return (
                             <div 
