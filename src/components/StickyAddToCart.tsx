@@ -30,10 +30,13 @@ interface StickyAddToCartProps {
 }
 
 export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
-  const isPillowProduct = productType === "ergonomic-pillow" || productType === "knee-pillow";
+  const isErgonomicPillow = productType === "ergonomic-pillow";
+  const isKneePillow = productType === "knee-pillow";
+  const isPillowProduct = isErgonomicPillow || isKneePillow;
   const isSleepMask = productType === "sleep-mask";
   const isSleepBundle = productType === "sleep-bundle";
-  const [selectedBundle, setSelectedBundle] = useState<"1" | "2">(isPillowProduct ? "2" : "1");
+  // For ergonomic pillow, always use single quantity; for knee pillow keep bundle selection
+  const [selectedBundle, setSelectedBundle] = useState<"1" | "2">(isKneePillow ? "2" : "1");
   const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState("navy");
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -92,6 +95,10 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
         variant = product.node.variants.edges.find(
           v => v.node.title === (selectedBundle === "1" ? "Single Bundle" : "Double Bundle")
         )?.node;
+      } else if (isErgonomicPillow) {
+        // Ergonomic pillow: always single quantity
+        variant = product.node.variants.edges[0].node;
+        itemQuantity = 1;
       } else if (isPillowProduct) {
         variant = product.node.variants.edges[0].node;
         itemQuantity = selectedBundle === "1" ? 1 : 2;
@@ -146,22 +153,25 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
     }
   };
 
-  const productPrice = product ? parseFloat(product.node.variants.edges[0].node.price.amount) : 129.99;
+  // For ergonomic pillow, use fixed price of $79.99
+  const productPrice = isErgonomicPillow ? 79.99 : (product ? parseFloat(product.node.variants.edges[0].node.price.amount) : 129.99);
   
   // Calculate the value being added to cart (not current cart total)
   const addToCartValue = isSleepBundle
     ? (selectedBundle === "2" 
         ? parseFloat(product?.node.variants.edges[1]?.node.price.amount || "249.99")
         : parseFloat(product?.node.variants.edges[0]?.node.price.amount || "149.99"))
-    : isPillowProduct 
-      ? (selectedBundle === "2" ? productPrice : productPrice) // 1+1 deal: pay for 1, get 1 free
-      : (productPrice * quantity); // Sleep mask: price * quantity
+    : isErgonomicPillow
+      ? productPrice // Always single pillow for ergonomic
+      : isPillowProduct 
+        ? (selectedBundle === "2" ? productPrice : productPrice)
+        : (productPrice * quantity);
 
   const bundles = {
     "1": {
       quantity: 1,
       price: productPrice,
-      discount: "CHRISTMAS"
+      discount: ""
     },
     "2": {
       quantity: 2,
@@ -210,17 +220,19 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                   <p className="text-xs text-muted-foreground">
                     {isSleepBundle
                       ? `${selectedBundle === "1" ? "Single" : "Double"} Bundle`
-                      : isPillowProduct 
-                        ? `${selectedOption.quantity} ${selectedOption.quantity === 1 ? "Pillow" : "Pillows"} • ${selectedOption.discount}`
-                        : "Sleep Mask"}
+                      : isErgonomicPillow
+                        ? "1 Pillow + Sleep Mask Included"
+                        : isPillowProduct 
+                          ? `${selectedOption.quantity} ${selectedOption.quantity === 1 ? "Pillow" : "Pillows"}${selectedOption.discount ? ` • ${selectedOption.discount}` : ""}`
+                          : "Sleep Mask"}
                   </p>
                 </div>
               </div>
 
               {/* Bundle Selection & Add to Cart */}
               <div className="flex items-center gap-2 w-full sm:w-auto">
-                {/* Bundle Selector - Only show for pillow products and sleep bundle */}
-                {(isPillowProduct || isSleepBundle) && (
+                {/* Bundle Selector - Only show for knee pillow and sleep bundle, NOT ergonomic pillow */}
+                {(isKneePillow || isSleepBundle) && (
                   <div className="flex gap-2">
                     <button
                       onClick={() => setSelectedBundle("1")}
