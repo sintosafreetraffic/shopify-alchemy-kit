@@ -120,17 +120,19 @@ async function checkAndIncrementRateLimit(supabase: SupabaseClient): Promise<{ a
   return { allowed: true };
 }
 
-// Record a rate limit event
+// Record a rate limit event (best effort, ignore errors)
 async function recordRateLimitEvent(supabase: SupabaseClient, userId: string) {
-  await supabase.from('garmin_events_raw').insert({
-    garmin_user_id: userId,
-    domain: 'backfill_rate_limit',
-    summary_type: 'rate_limit_marker',
-    payload: { marker: true },
-    payload_hash: crypto.randomUUID(),
-  }).catch(() => {
+  try {
+    await supabase.from('garmin_events_raw').insert({
+      garmin_user_id: userId,
+      domain: 'backfill_rate_limit',
+      summary_type: 'rate_limit_marker',
+      payload: { marker: true },
+      payload_hash: crypto.randomUUID(),
+    });
+  } catch {
     // Ignore errors - rate limiting is best effort
-  });
+  }
 }
 
 // Sleep with jitter
