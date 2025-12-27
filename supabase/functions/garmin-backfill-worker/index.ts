@@ -21,21 +21,34 @@ const corsHeaders = {
 // deno-lint-ignore no-explicit-any
 type SupabaseClient = any;
 
-const GARMIN_BACKFILL_API = 'https://apis.garmin.com/wellness-api/rest/backfill';
+// Base URLs for different OAuth versions
+// OAuth 1.0a uses the Wellness API
+const GARMIN_WELLNESS_BACKFILL_API = 'https://apis.garmin.com/wellness-api/rest/backfill';
+// OAuth 2.0 uses the Connect API
+const GARMIN_CONNECT_BACKFILL_API = 'https://apis.garmin.com/connectapi/v1/backfill';
+
 const MAX_JOBS_PER_RUN = 10;
 const MAX_ATTEMPTS = 6;
 const BACKOFF_SCHEDULE_SECONDS = [10, 30, 90, 300, 900]; // 10s, 30s, 90s, 5m, 15m
 
-// OAuth 2.0 endpoint mapping
+// OAuth 2.0 endpoint mapping for Connect API
+// Connect API uses consistent naming for backfill endpoints
 const OAUTH2_ENDPOINT_MAP: Record<string, string> = {
   'activitySummary': 'activities',
   'activityDetails': 'activityDetails', 
   'activityFile': 'manuallyUploadedActivities',
   'moveIQActivities': 'moveIQActivities',
+  // Sleep endpoints
+  'sleeps': 'sleeps',
+  'sleep': 'sleeps',
 };
 
 function getOAuth2Endpoint(endpoint: string): string {
   return OAUTH2_ENDPOINT_MAP[endpoint] || endpoint;
+}
+
+function getBackfillBaseUrl(useOAuth2: boolean): string {
+  return useOAuth2 ? GARMIN_CONNECT_BACKFILL_API : GARMIN_WELLNESS_BACKFILL_API;
 }
 
 function log(level: 'info' | 'warn' | 'error', message: string, data?: Record<string, unknown>) {
@@ -155,7 +168,8 @@ async function processJob(
   
   const useOAuth2 = oauthVersion === '2.0' || !tokenSecret;
   const endpoint = useOAuth2 ? getOAuth2Endpoint(job.summary_type) : job.summary_type;
-  const url = `${GARMIN_BACKFILL_API}/${endpoint}`;
+  const baseUrl = getBackfillBaseUrl(useOAuth2);
+  const url = `${baseUrl}/${endpoint}`;
   const queryString = `summaryStartTimeInSeconds=${job.start_seconds}&summaryEndTimeInSeconds=${job.end_seconds}`;
   const fullUrl = `${url}?${queryString}`;
   
