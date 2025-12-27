@@ -35,8 +35,8 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
   const isPillowProduct = isErgonomicPillow || isKneePillow;
   const isSleepMask = productType === "sleep-mask";
   const isSleepBundle = productType === "sleep-bundle";
-  // For ergonomic pillow, always use single quantity; for knee pillow keep bundle selection
-  const [selectedBundle, setSelectedBundle] = useState<"1" | "2">(isKneePillow ? "2" : "1");
+  // For ergonomic and knee pillow, always use single quantity; no more bundle selection
+  const [selectedBundle, setSelectedBundle] = useState<"1" | "2">("1");
   const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState("navy");
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -99,9 +99,10 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
         // Ergonomic pillow: always single quantity
         variant = product.node.variants.edges[0].node;
         itemQuantity = 1;
-      } else if (isPillowProduct) {
+      } else if (isKneePillow) {
+        // Knee pillow: always single quantity (no more 1+1)
         variant = product.node.variants.edges[0].node;
-        itemQuantity = selectedBundle === "1" ? 1 : 2;
+        itemQuantity = 1;
       } else {
         variant = product.node.variants.edges[0].node;
         itemQuantity = quantity;
@@ -153,19 +154,17 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
     }
   };
 
-  // For ergonomic pillow, use fixed price of $79.99
-  const productPrice = isErgonomicPillow ? 79.99 : (product ? parseFloat(product.node.variants.edges[0].node.price.amount) : 129.99);
+  // Fixed prices: ergonomic pillow $79.99, knee pillow $39.99
+  const productPrice = isErgonomicPillow ? 79.99 : isKneePillow ? 39.99 : (product ? parseFloat(product.node.variants.edges[0].node.price.amount) : 129.99);
   
   // Calculate the value being added to cart (not current cart total)
   const addToCartValue = isSleepBundle
     ? (selectedBundle === "2" 
         ? parseFloat(product?.node.variants.edges[1]?.node.price.amount || "249.99")
         : parseFloat(product?.node.variants.edges[0]?.node.price.amount || "149.99"))
-    : isErgonomicPillow
-      ? productPrice // Always single pillow for ergonomic
-      : isPillowProduct 
-        ? (selectedBundle === "2" ? productPrice : productPrice)
-        : (productPrice * quantity);
+    : isPillowProduct
+      ? productPrice // Always single pillow now (no more bundles)
+      : (productPrice * quantity);
 
   const bundles = {
     "1": {
@@ -176,7 +175,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
     "2": {
       quantity: 2,
       price: productPrice,
-      discount: "1+1 FREE"
+      discount: ""
     }
   };
 
@@ -220,19 +219,17 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                   <p className="text-xs text-muted-foreground">
                     {isSleepBundle
                       ? `${selectedBundle === "1" ? "Single" : "Double"} Bundle`
-                      : isErgonomicPillow
+                      : isPillowProduct
                         ? "1 Pillow + Sleep Mask Included"
-                        : isPillowProduct 
-                          ? `${selectedOption.quantity} ${selectedOption.quantity === 1 ? "Pillow" : "Pillows"}${selectedOption.discount ? ` • ${selectedOption.discount}` : ""}`
-                          : "Sleep Mask"}
+                        : "Sleep Mask"}
                   </p>
                 </div>
               </div>
 
               {/* Bundle Selection & Add to Cart */}
               <div className="flex items-center gap-2 w-full sm:w-auto">
-                {/* Bundle Selector - Only show for knee pillow and sleep bundle, NOT ergonomic pillow */}
-                {(isKneePillow || isSleepBundle) && (
+                {/* Bundle Selector - Only show for sleep bundle, NOT pillows */}
+                {isSleepBundle && (
                   <div className="flex gap-2">
                     <button
                       onClick={() => setSelectedBundle("1")}

@@ -35,8 +35,8 @@ BRAND VOICE:
 - Reference Rise By Night products naturally when relevant
 
 PRODUCT KNOWLEDGE:
-- Rise By Night™ Ergonomic Sleep Pillow ($129.99) - Contoured memory foam for neck/back pain relief
-- Rise By Night™ Ergonomic Knee Pillow ($69.99) - Memory foam for hip alignment
+- Rise By Night™ Ergonomic Sleep Pillow ($79.99) - Contoured memory foam for neck/back pain relief
+- Rise By Night™ Ergonomic Knee Pillow ($39.99) - Memory foam for hip alignment
 - Rise By Night™ Silk Deep Sleep Mask ($29.99) - Premium silk for light blocking
 - Rise By Night™ Complete Sleep Bundle ($149.99) - All three products
 
@@ -119,8 +119,8 @@ Keep it under 100 words.`;
       return `You are a sleep health expert for RiseByNight. Analyze quiz responses and recommend products.
 
 Available Products:
-1. Rise By Night™ Ergonomic Sleep Pillow ($129.99) - Contoured memory foam for neck/back pain relief, ideal for side and back sleepers
-2. Rise By Night™ Ergonomic Knee Pillow ($69.99) - Memory foam for hip alignment, great for side sleepers with lower back pain
+1. Rise By Night™ Ergonomic Sleep Pillow ($79.99) - Contoured memory foam for neck/back pain relief, ideal for side and back sleepers
+2. Rise By Night™ Ergonomic Knee Pillow ($39.99) - Memory foam for hip alignment, great for side sleepers with lower back pain
 3. Rise By Night™ Silk Deep Sleep Mask ($29.99) - Premium silk for light blocking, helps with light sensitivity
 4. Rise By Night™ Complete Sleep Bundle ($149.99) - All three products bundled at a discount
 

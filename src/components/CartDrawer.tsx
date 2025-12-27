@@ -144,21 +144,13 @@ export const CartDrawer = () => {
   
   // Free gifts logic: 
   // - Ergonomic pillow: 1 mask per pillow (included with each pillow)
-  // - Knee pillow: 2 masks per pair of 2 (1+1 deal still active)
+  // - Knee pillow: 1 mask per pillow (included with each pillow, no more 1+1 deal)
   const ergonomicMasks = totalErgonomicPillows;
-  const kneeMasks = totalKneePillows >= 2 ? Math.floor(totalKneePillows / 2) * 2 : 0;
+  const kneeMasks = totalKneePillows;
   const freeGifts = ergonomicMasks + kneeMasks;
   
-  // Calculate discounts based on Shopify discount codes that will be applied
-  let totalDiscount = 0;
-  
-  // NO MORE 1+1 for Ergonomic Sleep Pillow - removed BOGO discount
-  
-  // FREEKNEEPILLOW discount: Buy 1 get 1 free for Knee Pillow (still active)
-  kneePillowItems.forEach(item => {
-    const freePillows = Math.floor(item.quantity / 2);
-    totalDiscount += freePillows * getItemPrice(item);
-  });
+  // No more BOGO discounts for any pillows
+  const totalDiscount = 0;
   
   // FREEMASKSFORYOU discount: 100% off free gift masks (already calculated)
   const freeGiftValue = freeGifts * 29.99;
@@ -310,8 +302,6 @@ export const CartDrawer = () => {
             {recommendedProducts.map((product) => {
               const variant = product.node.variants.edges[0]?.node;
               const image = product.node.images.edges[0]?.node;
-              // Only knee pillow has 1+1 deal now
-              const hasOnePlusOneDeal = product.node.title.toLowerCase().includes('knee pillow');
               
               return (
                 <div
@@ -330,11 +320,6 @@ export const CartDrawer = () => {
                         loading="lazy"
                         decoding="async"
                       />
-                      {hasOnePlusOneDeal && (
-                        <div className="absolute top-2 right-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-md shadow-lg">
-                          1+1 DEAL
-                        </div>
-                      )}
                     </div>
                   )}
                   <h4 className="font-semibold text-sm leading-tight mb-3">
@@ -452,9 +437,6 @@ export const CartDrawer = () => {
                 <div className="space-y-2">
                 {/* Cart Items */}
                 {items.map((item) => {
-                    // Only knee pillow has 1+1 deal now (not ergonomic pillow)
-                    const hasActiveDeal = item.product.node.title.toLowerCase().includes('knee pillow') && 
-                                         item.quantity >= 2;
                     
                     // Get color-specific image for sleep mask
                     const getItemImage = () => {
@@ -529,12 +511,6 @@ export const CartDrawer = () => {
                                   .join(' • ')}
                               </p>
                             )}
-                            {hasActiveDeal && (
-                              <span className="inline-flex items-center gap-1 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded mt-1">
-                                <Gift className="w-2.5 h-2.5" />
-                                1+1 DEAL
-                              </span>
-                            )}
                           </div>
                           <Button
                             variant="ghost"
@@ -550,18 +526,8 @@ export const CartDrawer = () => {
                         {/* Price + Quantity row */}
                         <div className="flex items-center justify-between mt-2">
                           <div className="flex items-center gap-1.5">
-                            {/* Only knee pillow has 1+1 deal with crossed pricing now */}
-                            {item.product.node.title.toLowerCase().includes('knee pillow') && 
-                            item.quantity >= 2 ? (
-                              <>
-                                <span className="text-xs text-muted-foreground line-through">
-                                  ${(getItemPrice(item) * item.quantity).toFixed(2)}
-                                </span>
-                                <span className="font-bold text-sm text-primary">
-                                  ${((getItemPrice(item) * item.quantity) - (Math.floor(item.quantity / 2) * getItemPrice(item))).toFixed(2)}
-                                </span>
-                              </>
-                            ) : getItemCompareAtPrice(item) ? (
+                            {/* Simple price display - no more BOGO discounts */}
+                            {getItemCompareAtPrice(item) ? (
                               <>
                                 <span className="text-xs text-muted-foreground line-through">
                                   ${(getItemCompareAtPrice(item)! * item.quantity).toFixed(2)}
@@ -689,8 +655,6 @@ export const CartDrawer = () => {
                         {recommendedProducts.map((product) => {
                           const variant = product.node.variants.edges[0]?.node;
                           const image = product.node.images.edges[0]?.node;
-                          // Only knee pillow has 1+1 deal now
-                          const hasOnePlusOneDeal = product.node.title.toLowerCase().includes('knee pillow');
                           
                           return (
                             <div 
@@ -707,11 +671,6 @@ export const CartDrawer = () => {
                                     loading="lazy"
                                     decoding="async"
                                   />
-                                  {hasOnePlusOneDeal && (
-                                    <div className="absolute top-0 left-0 bg-red-600 text-white text-[6px] font-bold px-1 rounded-br">
-                                      1+1
-                                    </div>
-                                  )}
                                 </div>
                               )}
                               <div className="flex-1 min-w-0">
