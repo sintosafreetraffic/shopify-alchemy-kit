@@ -3,7 +3,7 @@
  * Displays Garmin connection status and actions
  * States: disconnected | connecting | connected | stale | revoked | error
  */
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -138,9 +138,14 @@ export function GarminSettingsCard({
 
   // Check if activity is enabled and backfill can be requested
   const isActivityEnabled = source?.domains?.includes('activity') && source?.activity_status === 'enabled';
-  const canRequestActivityBackfill = isActivityEnabled && 
-    displayStatus === 'connected' &&
-    !source?.backfill_status?.includes('activity'); // No activity backfill requested yet
+  const activityBackfillRequested = source?.backfill_status?.includes('activity');
+  const activityBackfillFailed = source?.backfill_status === 'activity_failed';
+  
+  // Only show retry button if backfill was requested but failed
+  const shouldShowActivityRetry = isActivityEnabled && displayStatus === 'connected' && activityBackfillFailed;
+  
+  // Auto-trigger activity backfill ref (actual effect is after handler definition)
+  const hasTriggeredAutoBackfill = useRef(false);
 
   // Determine if retry button should be shown
   const shouldShowRetry = () => {
@@ -249,6 +254,19 @@ export function GarminSettingsCard({
       setIsRequestingActivityBackfill(false);
     }
   };
+
+  // Auto-trigger activity backfill when enabled but not yet requested
+  useEffect(() => {
+    if (
+      isActivityEnabled && 
+      displayStatus === 'connected' && 
+      !activityBackfillRequested &&
+      !hasTriggeredAutoBackfill.current
+    ) {
+      hasTriggeredAutoBackfill.current = true;
+      handleRequestActivityBackfill();
+    }
+  }, [isActivityEnabled, displayStatus, activityBackfillRequested]);
 
   const handleConnect = async (timezone: string) => {
     setIsConnecting(true);
@@ -492,13 +510,13 @@ export function GarminSettingsCard({
             </div>
           )}
 
-          {/* Activity Backfill - only show if activity is enabled and not yet requested */}
-          {canRequestActivityBackfill && (
+          {/* Activity Backfill Retry - only show if failed */}
+          {shouldShowActivityRetry && (
             <div className="flex items-start justify-between gap-3 text-sm bg-muted/50 rounded-lg p-3">
               <div className="flex items-start gap-2 flex-1">
-                <Download className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+                <AlertTriangle className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
                 <span className="text-muted-foreground">
-                  New workouts sync automatically. Want to import your past 14 days of activity history?
+                  Activity history import failed. New workouts still sync automatically.
                 </span>
               </div>
               <Button
@@ -513,7 +531,7 @@ export function GarminSettingsCard({
                 ) : (
                   <Download className="h-3 w-3 mr-1" />
                 )}
-                Import history
+                Retry
               </Button>
             </div>
           )}
