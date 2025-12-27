@@ -43,6 +43,9 @@ interface GarminSource {
   domains?: string[];
   activity_status?: string;
   activity_last_sync_at?: string | null;
+  // Health API fields
+  health_last_sync_at?: string | null;
+  on_hold?: boolean;
 }
 
 interface GarminSettingsCardProps {
@@ -448,6 +451,16 @@ export function GarminSettingsCard({
             <GarminActivitySyncInfo 
               isActivityEnabled={isActivityEnabled}
             />
+          )}
+
+          {/* Health API Sync Status */}
+          {displayStatus === 'connected' && source?.health_last_sync_at && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground/70">
+              <CheckCircle className="h-3 w-3 text-green-600/60" />
+              <span>
+                Health data synced {formatDistanceToNow(new Date(source.health_last_sync_at), { addSuffix: true })}
+              </span>
+            </div>
           )}
 
           {/* Actions */}

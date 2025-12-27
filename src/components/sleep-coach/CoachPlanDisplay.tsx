@@ -228,6 +228,7 @@ export const CoachPlanDisplay = ({
     bedtimeConsistency: computeBedtimeConsistency(effectiveData?.consistencyScore),
     trainingLoadLabel: logsSnapshot.activity_signals?.training_load_label ?? null,
     lateWorkoutFlag: logsSnapshot.activity_signals?.late_workout_flag ?? false,
+    coachSignals: logsSnapshot.coach_signals ?? null,
   } : null;
 
   return (

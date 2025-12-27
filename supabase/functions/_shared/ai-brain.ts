@@ -820,6 +820,11 @@ export interface LogsSnapshot {
     signal_freshness: 'fresh' | 'stale' | 'insufficient_data';
     workouts_count_7d: number;
   } | null;
+  // === COACH SIGNALS (v1.3) - Qualitative Health API metrics ===
+  coach_signals?: {
+    signal_key: string;
+    signal_value: string;
+  }[] | null;
 }
 
 /**
