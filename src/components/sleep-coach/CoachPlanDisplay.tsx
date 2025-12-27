@@ -198,10 +198,34 @@ export const CoachPlanDisplay = ({
   
   // Extract wearable insights from logs_snapshot for trust hint
   const logsSnapshot = planAny.logs_snapshot || {};
+  
+  // Compute qualitative labels from baseline/recent data
+  const computeEfficiencyLevel = (efficiency?: number): 'high' | 'moderate' | 'low' | null => {
+    if (efficiency == null) return null;
+    if (efficiency >= 85) return 'high';
+    if (efficiency >= 70) return 'moderate';
+    return 'low';
+  };
+  
+  const computeBedtimeConsistency = (score?: number): 'consistent' | 'variable' | 'irregular' | null => {
+    if (score == null) return null;
+    if (score >= 80) return 'consistent';
+    if (score >= 50) return 'variable';
+    return 'irregular';
+  };
+  
+  // Use baseline data for qualitative hints (prefer baseline, fallback to recent)
+  const baselineData = logsSnapshot.wearable_baseline;
+  const recentData = logsSnapshot.wearable_recent;
+  const effectiveData = baselineData?.nightsAnalyzed >= 3 ? baselineData : recentData;
+  
   const wearableInsights = logsSnapshot.wearable_connected ? {
     sources: logsSnapshot.wearable_sources || [],
     hasSleepArchitecture: !!(logsSnapshot.sleep_architecture?.nightsAnalyzed >= 3),
     hasBedtimePatterns: !!(logsSnapshot.bedtime_patterns?.consistencyScore),
+    nightsAnalyzed: effectiveData?.nightsAnalyzed ?? 0,
+    efficiencyLevel: computeEfficiencyLevel(effectiveData?.avgEfficiency),
+    bedtimeConsistency: computeBedtimeConsistency(effectiveData?.consistencyScore),
   } : null;
 
   return (
