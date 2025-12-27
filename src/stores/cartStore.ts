@@ -178,25 +178,27 @@ export const useCartStore = create<CartStore>()(
 
         setLoading(true);
         try {
-          // Track Pinterest InitiateCheckout event (re-enabled after Shopify Pinterest App deactivation)
+          // Fire-and-forget analytics - don't block checkout
           const checkoutItems = items.map(item => ({
             variantId: item.variantId,
             quantity: item.quantity,
             price: item.price,
             currencyCode: item.price.currencyCode,
           }));
-          trackInitiateCheckout(checkoutItems);
           
-          // Track revenue attribution for checkout initiation
+          // Non-blocking: Pinterest tracking
+          Promise.resolve().then(() => trackInitiateCheckout(checkoutItems)).catch(() => {});
+          
+          // Non-blocking: Persona analytics
           const totalValue = items.reduce((sum, item) => sum + parseFloat(item.price.amount) * item.quantity, 0);
           if (items.length > 0) {
-            trackRevenueAttribution("begin_checkout", {
+            Promise.resolve().then(() => trackRevenueAttribution("begin_checkout", {
               id: items[0].product.node.id,
               title: `Checkout (${items.length} items)`,
               price: totalValue,
               currency: items[0].price.currencyCode,
               quantity: items.reduce((sum, item) => sum + item.quantity, 0),
-            });
+            })).catch(() => {});
           }
 
           // Calculate pillow items for free mask calculation
