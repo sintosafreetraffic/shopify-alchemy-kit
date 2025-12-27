@@ -241,3 +241,11 @@ verify_jwt = false
 # Garmin Compute Activity Signals - CRON job for daily activity signal computation
 [functions.garmin-compute-activity-signals]
 verify_jwt = false
+
+# Garmin Backfill Worker - CRON job for processing backfill queue (validates CRON_SECRET internally)
+[functions.garmin-backfill-worker]
+verify_jwt = false
+
+# Garmin Backfill Status - Requires JWT to identify user
+[functions.garmin-backfill-status]
+verify_jwt = true
