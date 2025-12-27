@@ -139,7 +139,7 @@ Deno.serve(async (req) => {
     recentDate.setDate(recentDate.getDate() - 7);
     const recentDateStr = recentDate.toISOString().split('T')[0]; // YYYY-MM-DD
     
-    const [profileResult, logsResult, attrsResult, plansCountResult, wearableNightsResult, wearableSourcesResult, rawEventsResult, baselineNightsResult, recentNightsResult] = await Promise.all([
+    const [profileResult, logsResult, attrsResult, plansCountResult, wearableNightsResult, wearableSourcesResult, rawEventsResult, baselineNightsResult, recentNightsResult, activitySignalsResult] = await Promise.all([
       supabase.from('sleep_profiles').select('*').eq('email', email).single(),
       supabase.from('sleep_logs').select('*').eq('email', email).order('date', { ascending: false }).limit(30), // Extended for pattern detection
       supabase.from('sleep_attributes_state').select('data').eq('email', email).maybeSingle(),
@@ -185,6 +185,13 @@ Deno.serve(async (req) => {
         .gte('night_date', recentDateStr)
         .order('night_date', { ascending: false })
         .limit(10),
+      // Fetch latest activity signals for coach context
+      supabase.from('sleep_coach_activity_signals_daily')
+        .select('training_load_label, late_workout_flag, late_workout_days_7d, most_common_activity_type, signal_freshness, workouts_count_7d')
+        .eq('user_id', userId)
+        .order('date', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
     ]);
 
     const profile: SleepProfile | null = profileResult.data;
@@ -194,6 +201,7 @@ Deno.serve(async (req) => {
     const rawEvents = rawEventsResult.data || [];
     const baselineNights = baselineNightsResult.data || [];
     const recentNights = recentNightsResult.data || [];
+    const activitySignals = activitySignalsResult.data;
     
     // Log wearable data availability
     console.log('[coach-generate-sleep-plan] Wearable data', {
@@ -201,6 +209,11 @@ Deno.serve(async (req) => {
       wearableNightsCount: wearableNights.length,
       rawEventsWithStages: rawEvents.length,
       baselineNightsCount: baselineNights.length,
+      activitySignals: activitySignals ? {
+        training_load: activitySignals.training_load_label,
+        late_workout: activitySignals.late_workout_flag,
+        freshness: activitySignals.signal_freshness
+      } : null,
       recentNightsCount: recentNights.length,
     });
     
@@ -488,6 +501,15 @@ Deno.serve(async (req) => {
       // Baseline vs Recent windows for causal guardrails
       wearable_baseline: wearableBaseline,
       wearable_recent: wearableRecent,
+      // Activity signals for coach context (qualitative only)
+      activity_signals: activitySignals ? {
+        training_load_label: activitySignals.training_load_label,
+        late_workout_flag: activitySignals.late_workout_flag,
+        late_workout_days_7d: activitySignals.late_workout_days_7d,
+        most_common_activity_type: activitySignals.most_common_activity_type,
+        signal_freshness: activitySignals.signal_freshness,
+        workouts_count_7d: activitySignals.workouts_count_7d,
+      } : null,
     };
 
     // === LOG: Plan context summary with 3-layer data and wearables ===

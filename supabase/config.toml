@@ -237,3 +237,7 @@ verify_jwt = true
 # Garmin Activity File Download - CRON or manual (validates CRON_SECRET internally)
 [functions.garmin-activity-file-download]
 verify_jwt = false
+
+# Garmin Compute Activity Signals - CRON job for daily activity signal computation
+[functions.garmin-compute-activity-signals]
+verify_jwt = false

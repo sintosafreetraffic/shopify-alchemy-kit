@@ -811,6 +811,15 @@ export interface LogsSnapshot {
     avgBedtimeHour: number | null;
     consistencyScore: 'consistent' | 'moderate' | 'irregular' | null;
   } | null;
+  // === ACTIVITY SIGNALS (v1.2) - Qualitative training context ===
+  activity_signals?: {
+    training_load_label: 'unknown' | 'low' | 'moderate' | 'high' | 'very_high';
+    late_workout_flag: boolean;
+    late_workout_days_7d: number;
+    most_common_activity_type: string | null;
+    signal_freshness: 'fresh' | 'stale' | 'insufficient_data';
+    workouts_count_7d: number;
+  } | null;
 }
 
 /**
@@ -990,6 +999,27 @@ When discussing any improvements or changes in sleep metrics:
    - Historical/backfilled wearable data = BASELINE (not caused by us)
    - Recent wearable data = CURRENT STATE (may or may not be influenced by plan)
    - Never imply causality without explicit user-logged intervention dates
+
+${logsSnapshot.activity_signals && logsSnapshot.activity_signals.signal_freshness !== 'insufficient_data' ? `
+=== WEARABLE ACTIVITY (Context Only - Not a Fitness Feature) ===
+Training load this week: ${logsSnapshot.activity_signals.training_load_label}
+${logsSnapshot.activity_signals.training_load_label === 'high' || logsSnapshot.activity_signals.training_load_label === 'very_high' 
+  ? '- Training volume is ELEVATED compared to baseline. User may need extra recovery support.'
+  : logsSnapshot.activity_signals.training_load_label === 'low'
+  ? '- Training volume is LOWER than baseline. If intentional, fine. If unexpected, may indicate fatigue or schedule disruption.'
+  : '- Training volume is within normal range.'}
+${logsSnapshot.activity_signals.late_workout_flag
+  ? `- LATE WORKOUTS detected (${logsSnapshot.activity_signals.late_workout_days_7d} days this week ended after 8 PM). Late exercise can delay sleep onset and reduce deep sleep. Consider suggesting earlier workout timing.`
+  : ''}
+${logsSnapshot.activity_signals.most_common_activity_type 
+  ? `- Primary activity type: ${logsSnapshot.activity_signals.most_common_activity_type}`
+  : ''}
+IMPORTANT: This data provides CONTEXT for sleep coaching only. RiseByNight is NOT a fitness platform.
+- Use to personalize recovery recommendations (e.g., "given your training load...")
+- NEVER claim to improve athletic performance
+- NEVER make specific training recommendations
+- Frame as: "Your activity patterns may be influencing your sleep..."
+` : ''}
 
 === HARD CONSTRAINTS – YOU MUST OBEY THESE ===
 

@@ -226,6 +226,8 @@ export const CoachPlanDisplay = ({
     nightsAnalyzed: effectiveData?.nightsAnalyzed ?? 0,
     efficiencyLevel: computeEfficiencyLevel(effectiveData?.avgEfficiency),
     bedtimeConsistency: computeBedtimeConsistency(effectiveData?.consistencyScore),
+    trainingLoadLabel: logsSnapshot.activity_signals?.training_load_label ?? null,
+    lateWorkoutFlag: logsSnapshot.activity_signals?.late_workout_flag ?? false,
   } : null;
 
   return (
