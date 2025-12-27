@@ -9,7 +9,7 @@ import {
   trackCheckoutPopupBlocked 
 } from "./checkoutAnalytics";
 
-const CHECKOUT_TIMEOUT_MS = 20000; // 20 seconds
+const CHECKOUT_TIMEOUT_MS = 15000; // 15 seconds (reduced from 20)
 const MAX_RETRIES = 1;
 
 interface CheckoutResult {
@@ -67,8 +67,8 @@ export async function createCheckoutWithResilience(
     if (attempt < MAX_RETRIES) {
       retryCount++;
       trackCheckoutRetry(retryCount);
-      // Small delay before retry
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Minimal delay before retry
+      await new Promise(resolve => setTimeout(resolve, 200));
     }
   }
   
@@ -127,10 +127,8 @@ async function createCheckoutWithTimeout(
  */
 export function openCheckoutUrl(checkoutUrl: string, isMobile: boolean): void {
   if (isMobile) {
-    // Force flush any pending UI updates before redirect
-    requestAnimationFrame(() => {
-      window.location.href = checkoutUrl;
-    });
+    // Immediate redirect for mobile - no delay
+    window.location.href = checkoutUrl;
     return;
   }
   
