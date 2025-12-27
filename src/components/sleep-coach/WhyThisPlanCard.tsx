@@ -17,6 +17,10 @@ interface WearableInsightsHint {
   sources: string[];
   hasSleepArchitecture: boolean;
   hasBedtimePatterns: boolean;
+  nightsAnalyzed?: number;
+  // Qualitative labels (not raw numbers)
+  efficiencyLevel?: 'high' | 'moderate' | 'low' | null;
+  bedtimeConsistency?: 'consistent' | 'variable' | 'irregular' | null;
 }
 
 interface WhyThisPlanCardProps {
@@ -59,27 +63,46 @@ export function WhyThisPlanCard({
   const rationale = whyThisPlan || 
     "This plan is personalized based on your sleep profile, environment setup, and recent sleep patterns.";
 
-  // Build wearable insights description
+  // Build qualitative wearable baseline description
   const buildWearableHint = () => {
     if (!wearableInsights || wearableInsights.sources.length === 0) return null;
     
-    const parts: string[] = [];
     const sourceNames = wearableInsights.sources.map(s => 
       s === 'garmin' ? 'Garmin' : s === 'apple_health' ? 'Apple Watch' : s
     );
     
-    if (wearableInsights.hasSleepArchitecture) {
-      parts.push('sleep stages');
-    }
-    if (wearableInsights.hasBedtimePatterns) {
-      parts.push('bedtime patterns');
+    const nightsCount = wearableInsights.nightsAnalyzed ?? 0;
+    
+    // Building baseline fallback: connected but <3 nights
+    if (nightsCount < 3) {
+      return {
+        type: 'building' as const,
+        text: `Building your baseline from ${sourceNames.join(' & ')} — more insights in a few days.`,
+      };
     }
     
-    if (parts.length === 0) {
-      return `Using ${sourceNames.join(' & ')} sleep data`;
+    // Qualitative baseline hint
+    const qualifiers: string[] = [];
+    
+    if (wearableInsights.bedtimeConsistency) {
+      qualifiers.push(`${wearableInsights.bedtimeConsistency} bedtimes`);
+    }
+    if (wearableInsights.efficiencyLevel) {
+      qualifiers.push(`${wearableInsights.efficiencyLevel} sleep efficiency`);
     }
     
-    return `Using ${sourceNames.join(' & ')} ${parts.join(' + ')}`;
+    if (qualifiers.length > 0) {
+      return {
+        type: 'baseline' as const,
+        text: `Your baseline shows ${qualifiers.join(' and ')}.`,
+      };
+    }
+    
+    // Fallback: has data but no qualifiers computed
+    return {
+      type: 'baseline' as const,
+      text: `Using ${sourceNames.join(' & ')} sleep patterns as your baseline.`,
+    };
   };
   
   const wearableHint = buildWearableHint();
@@ -108,21 +131,14 @@ export function WhyThisPlanCard({
               {rationale}
             </p>
             
-            {/* Wearable insights trust hint */}
+            {/* Wearable baseline trust hint */}
             {wearableHint && (
-              <div className="flex items-center gap-2 mt-2">
+              <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border/30">
                 <Watch className="h-3.5 w-3.5 text-primary/60" />
-                <span className="text-xs text-muted-foreground/80">
-                  {wearableHint}
+                <span className={`text-xs ${wearableHint.type === 'building' ? 'text-muted-foreground/70 italic' : 'text-muted-foreground/80'}`}>
+                  {wearableHint.text}
                 </span>
               </div>
-            )}
-            
-            {/* Baseline tracking hint - show when wearable connected */}
-            {wearableInsights && wearableInsights.sources.length > 0 && (
-              <p className="text-xs text-muted-foreground/70 mt-1 italic">
-                Using your last 30 days as baseline to track progress.
-              </p>
             )}
             
             {/* Refresh context banner */}
