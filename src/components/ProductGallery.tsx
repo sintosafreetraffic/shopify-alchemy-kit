@@ -40,24 +40,8 @@ export const ProductGallery = () => {
     loadProducts();
   }, []);
 
-  // Get knee pillow dynamic pricing from Shopify
-  const getKneePillowPricing = () => {
-    if (kneePillowProduct) {
-      const variant = kneePillowProduct.node.variants.edges.find(
-        v => v.node.title === "2 Pillows"
-      );
-      if (variant) {
-        const price = parseFloat(variant.node.price.amount).toFixed(2);
-        const compareAt = variant.node.compareAtPrice?.amount 
-          ? parseFloat(variant.node.compareAtPrice.amount).toFixed(2)
-          : null;
-        return { price: `$${price}`, originalPrice: compareAt ? `$${compareAt}` : "" };
-      }
-    }
-    return { price: "$69.99", originalPrice: "$139.98" };
-  };
-
-  const kneePricing = getKneePillowPricing();
+  // Knee pillow fixed pricing - no more dynamic 1+1 deal
+  const kneePricing = { price: "$39.99", originalPrice: undefined };
 
   const products = [
     {
@@ -88,7 +72,7 @@ export const ProductGallery = () => {
         "Memory foam comfort",
         "Adjustable strap included",
       ],
-      badge: "Christmas 1+1 Deal",
+      badge: "Sleep Mask Included",
       link: "/product/knee-pillow",
     },
     {

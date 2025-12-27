@@ -27,7 +27,6 @@ const CarouselFallback = () => (
 );
 
 export const KneePillowHero = () => {
-  const [selectedBundle, setSelectedBundle] = useState<"1" | "2">("2");
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { addItem, setCartOpen } = useCartStore();
   const hasTrackedView = useRef(false);
@@ -60,7 +59,6 @@ export const KneePillowHero = () => {
     setIsCheckingOut(true);
     try {
       const variant = product.node.variants.edges[0].node;
-      const quantity = selectedBundle === "1" ? 1 : 2;
       
       const cartItem = {
         product,
@@ -68,13 +66,13 @@ export const KneePillowHero = () => {
         variantTitle: variant.title,
         price: variant.price,
         compareAtPrice: variant.compareAtPrice,
-        quantity,
+        quantity: 1,
         selectedOptions: variant.selectedOptions || []
       };
       
       addItem(cartItem);
       const toastId = toast.success("Added to cart!", {
-        description: `${quantity} ${quantity === 1 ? 'pillow' : 'pillows'} added to your cart.`,
+        description: `1 pillow added to your cart.`,
         cancel: {
           label: "✕",
           onClick: () => {
@@ -91,37 +89,8 @@ export const KneePillowHero = () => {
     }
   };
 
-  const productPrice = product ? parseFloat(product.node.variants.edges[0].node.price.amount) : 69.99;
-  
-  // Get variants by quantity
-  const variant1Pillow = product?.node.variants.edges.find(v => 
-    v.node.selectedOptions.find(opt => opt.value === "1 Pillow")
-  )?.node;
-  
-  const variant2Pillows = product?.node.variants.edges.find(v => 
-    v.node.selectedOptions.find(opt => opt.value === "2 Pillows")
-  )?.node;
-  
-  const bundles = {
-    "1": {
-      quantity: 1,
-      price: variant1Pillow ? parseFloat(variant1Pillow.price.amount) : 69.99,
-      originalPrice: variant1Pillow?.compareAtPrice ? parseFloat(variant1Pillow.compareAtPrice.amount) : null,
-      discount: "CHRISTMAS",
-      savings: 0,
-      freeGift: "+ FREE Gift",
-      note: "Perfect for trying it out"
-    },
-    "2": {
-      quantity: 2,
-      price: variant2Pillows ? parseFloat(variant2Pillows.price.amount) : 69.99,
-      originalPrice: variant2Pillows?.compareAtPrice ? parseFloat(variant2Pillows.compareAtPrice.amount) : null,
-      discount: "CHRISTMAS 1+1",
-      savings: variant2Pillows?.compareAtPrice ? parseFloat(variant2Pillows.compareAtPrice.amount) - parseFloat(variant2Pillows.price.amount) : 0,
-      freeGift: "+ FREE GIFT 2X",
-      note: "Best Value - Buy 1 Get 1 FREE!"
-    }
-  };
+  // Fixed price for knee pillow
+  const productPrice = 39.99;
 
   return (
     <section className="pt-0 pb-3 md:pb-6 bg-background overflow-visible">
@@ -235,70 +204,20 @@ export const KneePillowHero = () => {
               </div>
             </div>
 
-            {/* Limited Time Offer */}
-            <div className="border-t border-b py-3 my-1.5 space-y-2">
-              <p className="text-center font-bold text-sm md:text-base tracking-wide">🎉 LIMITED CHRISTMAS OFFER 🎉</p>
+            {/* Price Section - Simple layout matching ergonomic pillow */}
+            <div className="border-t border-b py-3 my-1.5 space-y-3">
+              {/* Price Display */}
+              <div className="flex items-baseline gap-2">
+                <span className="text-xl md:text-2xl font-bold">${productPrice.toFixed(2)}</span>
+              </div>
               
-              <div className="grid grid-cols-2 gap-3 mb-2">
-                <button
-                  onClick={() => setSelectedBundle("1")}
-                  className={`border-2 rounded-lg p-3 text-center transition-all relative min-h-[120px] ${
-                    selectedBundle === "1"
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
-                  }`}
-                >
-                  <Badge className="absolute -top-2 left-1/2 -translate-x-1/2 bg-destructive text-destructive-foreground text-xs px-2 py-0.5">
-                    {bundles["1"].discount}
-                  </Badge>
-                  <div className="flex items-center justify-center mb-2 mt-2">
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                      selectedBundle === "1" ? "border-primary" : "border-border"
-                    }`}>
-                      {selectedBundle === "1" && (
-                        <div className="w-2.5 h-2.5 rounded-full bg-primary" />
-                      )}
-                    </div>
-                  </div>
-                  <p className="font-bold text-base">1 Knee Pillow</p>
-                  <p className="text-xs text-muted-foreground mb-1">{bundles["1"].note}</p>
-                  <p className="text-xl font-bold">${bundles["1"].price.toFixed(2)}</p>
-                  {bundles["1"].originalPrice && (
-                    <p className="text-sm text-muted-foreground line-through">${bundles["1"].originalPrice.toFixed(2)}</p>
-                  )}
-                </button>
-
-                <button
-                  onClick={() => setSelectedBundle("2")}
-                  className={`border-2 rounded-lg p-3 text-center transition-all relative min-h-[120px] ${
-                    selectedBundle === "2"
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
-                  }`}
-                >
-                  <Badge className="absolute -top-2 left-1/2 -translate-x-1/2 bg-destructive text-destructive-foreground text-xs px-2 py-0.5">
-                    {bundles["2"].discount}
-                  </Badge>
-                  <div className="flex items-center justify-center mb-2">
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                      selectedBundle === "2" ? "border-primary" : "border-border"
-                    }`}>
-                      {selectedBundle === "2" && (
-                        <div className="w-2.5 h-2.5 rounded-full bg-primary" />
-                      )}
-                    </div>
-                  </div>
-                  <p className="font-bold text-base">2 Knee Pillows</p>
-                  <p className="text-xs text-muted-foreground mb-1">{bundles["2"].note}</p>
-                  <p className="text-xl font-bold">${bundles["2"].price.toFixed(2)}</p>
-                  {bundles["2"].originalPrice && (
-                    <p className="text-sm text-muted-foreground line-through">${bundles["2"].originalPrice.toFixed(2)}</p>
-                  )}
-                  <div className="flex items-center justify-center gap-1 mt-1">
-                    <p className="text-sm font-medium">+ FREE GIFT 2X</p>
-                    <img src={eyeMaskGift} alt="Free eye mask gift" className="w-12 h-12 object-contain" loading="lazy" decoding="async" />
-                  </div>
-                </button>
+              {/* Included Gift */}
+              <div className="flex items-center gap-2 bg-primary/10 rounded-lg p-2">
+                <img src={eyeMaskGift} alt="Free sleep mask included" className="w-10 h-10 object-contain" loading="lazy" decoding="async" />
+                <div>
+                  <p className="text-sm font-semibold text-primary">Sleep Mask Included</p>
+                  <p className="text-xs text-muted-foreground">Free with your pillow</p>
+                </div>
               </div>
             </div>
 
