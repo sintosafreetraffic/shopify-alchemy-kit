@@ -209,8 +209,8 @@ export function GarminSyncStatus({ isActivityEnabled, onRetryComplete }: GarminS
           {getStatusBadge(status.status, status.status_label)}
         </div>
         
-        {/* Retry button - only show when can_retry is true */}
-        {status.can_retry && (
+        {/* Retry button - only show when can_retry is true AND the issue is actually retryable */}
+        {status.can_retry && status.status !== 'needs_permission' && (
           <Button
             variant="outline"
             size="sm"
