@@ -222,6 +222,18 @@ Deno.serve(async (req) => {
         );
       }
 
+      // 502 with HTML usually means the Health API isn't accessible with Connect OAuth tokens
+      if (backfillResponse.status === 502 || (backfillResponse.status >= 500 && errorText.includes('<!DOCTYPE'))) {
+        log('warn', 'Health API not accessible - may require separate Health API partnership', { userId });
+        return new Response(
+          JSON.stringify({ 
+            error: 'Garmin Health API access not available. Sleep data will sync automatically when you sleep with your device.', 
+            code: 'HEALTH_API_UNAVAILABLE' 
+          }),
+          { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
       return new Response(
         JSON.stringify({ error: 'Failed to request historical data from Garmin', code: 'BACKFILL_FAILED' }),
         { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
