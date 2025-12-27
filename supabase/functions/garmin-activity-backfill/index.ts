@@ -84,7 +84,57 @@ async function createOAuthSignature(
   return btoa(String.fromCharCode(...new Uint8Array(signature)));
 }
 
-async function requestBackfill(
+// OAuth 2.0 Bearer token backfill request
+async function requestBackfillOAuth2(
+  endpoint: string,
+  accessToken: string,
+  summaryStartTimeInSeconds: number,
+  summaryEndTimeInSeconds: number
+): Promise<{ success: boolean; status: number; body?: string; error?: string }> {
+  const url = `${GARMIN_BACKFILL_API}/${endpoint}`;
+  
+  // Build query string
+  const queryString = `summaryStartTimeInSeconds=${summaryStartTimeInSeconds}&summaryEndTimeInSeconds=${summaryEndTimeInSeconds}`;
+  const fullUrl = `${url}?${queryString}`;
+  
+  log('info', 'OAuth 2.0 backfill request', { 
+    url: fullUrl.replace(accessToken, '[REDACTED]'),
+    endpoint,
+  });
+  
+  try {
+    const response = await fetch(fullUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    });
+    
+    const body = await response.text();
+    
+    log('info', 'OAuth 2.0 backfill response', { 
+      endpoint,
+      status: response.status,
+      statusText: response.statusText,
+      body: body.substring(0, 500), // Truncate for logging
+      headers: Object.fromEntries(response.headers.entries()),
+    });
+    
+    if (response.status === 202) {
+      return { success: true, status: 202, body };
+    }
+    
+    return { success: false, status: response.status, body, error: body || `HTTP_${response.status}` };
+    
+  } catch (error) {
+    log('error', 'OAuth 2.0 backfill request failed', { endpoint, error: String(error) });
+    return { success: false, status: 0, error: String(error) };
+  }
+}
+
+// OAuth 1.0a signed backfill request
+async function requestBackfillOAuth1(
   endpoint: string,
   accessToken: string,
   tokenSecret: string,
@@ -92,7 +142,7 @@ async function requestBackfill(
   consumerSecret: string,
   summaryStartTimeInSeconds: number,
   summaryEndTimeInSeconds: number
-): Promise<{ success: boolean; status: number; error?: string }> {
+): Promise<{ success: boolean; status: number; body?: string; error?: string }> {
   const url = `${GARMIN_BACKFILL_API}/${endpoint}`;
   
   // OAuth 1.0a parameters
@@ -144,27 +194,26 @@ async function requestBackfill(
       },
     });
     
+    const body = await response.text();
+    
+    log('info', 'OAuth 1.0a backfill response', { 
+      endpoint,
+      status: response.status,
+      body: body.substring(0, 500),
+    });
+    
     if (response.status === 202) {
-      return { success: true, status: 202 };
+      return { success: true, status: 202, body };
     }
     
     if (response.status === 409) {
-      return { success: false, status: 409, error: 'DUPLICATE_REQUEST' };
+      return { success: false, status: 409, body, error: 'DUPLICATE_REQUEST' };
     }
     
-    if (response.status === 403) {
-      return { success: false, status: 403, error: 'PERMISSION_DENIED' };
-    }
-    
-    if (response.status === 412) {
-      return { success: false, status: 412, error: 'MISSING_PERMISSION' };
-    }
-    
-    const text = await response.text();
-    return { success: false, status: response.status, error: text || `HTTP_${response.status}` };
+    return { success: false, status: response.status, body, error: body || `HTTP_${response.status}` };
     
   } catch (error) {
-    log('error', 'Backfill request failed', { endpoint, error: String(error) });
+    log('error', 'OAuth 1.0a backfill request failed', { endpoint, error: String(error) });
     return { success: false, status: 0, error: String(error) };
   }
 }
@@ -280,27 +329,23 @@ Deno.serve(async (req) => {
     const accessToken = metadata?.access_token as string;
     const tokenSecret = metadata?.token_secret as string;
     
-    // OAuth 2.0 connections don't support backfill (requires OAuth 1.0a)
-    if (oauthVersion === '2.0' || !tokenSecret) {
-      log('info', 'OAuth 2.0 connection - backfill not available', { userId, oauthVersion });
-      return new Response(
-        JSON.stringify({ 
-          success: true,
-          backfill_available: false,
-          message: 'Historical backfill requires OAuth 1.0a. New activities sync automatically via webhook.',
-          reason: 'oauth2_no_backfill'
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
     if (!accessToken) {
-      log('error', 'Missing OAuth tokens', { userId });
+      log('error', 'Missing access token', { userId });
       return new Response(
         JSON.stringify({ error: 'Invalid Garmin connection' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    
+    // Determine which auth method to use
+    const useOAuth2 = oauthVersion === '2.0' || !tokenSecret;
+    
+    log('info', 'OAuth version detected', { 
+      userId, 
+      oauthVersion, 
+      useOAuth2,
+      hasTokenSecret: !!tokenSecret,
+    });
     
     // Calculate time range
     const now = Math.floor(Date.now() / 1000);
@@ -311,30 +356,45 @@ Deno.serve(async (req) => {
       userId, 
       days, 
       endpoints,
+      authMethod: useOAuth2 ? 'OAuth2_Bearer' : 'OAuth1_Signed',
       startTime: new Date(summaryStartTimeInSeconds * 1000).toISOString(),
       endTime: new Date(summaryEndTimeInSeconds * 1000).toISOString(),
     });
     
     // Request backfill for each endpoint
-    const results: Record<string, { success: boolean; status: number; error?: string }> = {};
+    const results: Record<string, { success: boolean; status: number; body?: string; error?: string }> = {};
     
     for (const endpoint of endpoints) {
-      const result = await requestBackfill(
-        endpoint,
-        accessToken,
-        tokenSecret,
-        garminClientId,
-        garminClientSecret,
-        summaryStartTimeInSeconds,
-        summaryEndTimeInSeconds
-      );
+      let result: { success: boolean; status: number; body?: string; error?: string };
+      
+      if (useOAuth2) {
+        // Try OAuth 2.0 Bearer token
+        result = await requestBackfillOAuth2(
+          endpoint,
+          accessToken,
+          summaryStartTimeInSeconds,
+          summaryEndTimeInSeconds
+        );
+      } else {
+        // Use OAuth 1.0a signed request
+        result = await requestBackfillOAuth1(
+          endpoint,
+          accessToken,
+          tokenSecret,
+          garminClientId,
+          garminClientSecret,
+          summaryStartTimeInSeconds,
+          summaryEndTimeInSeconds
+        );
+      }
       
       results[endpoint] = result;
       
       log('info', `Backfill request for ${endpoint}`, { 
         userId, 
         success: result.success, 
-        status: result.status 
+        status: result.status,
+        body: result.body?.substring(0, 200),
       });
       
       // Small delay between requests
