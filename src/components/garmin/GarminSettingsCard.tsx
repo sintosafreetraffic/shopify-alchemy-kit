@@ -137,16 +137,12 @@ export function GarminSettingsCard({
   const config = getStatusConfig(displayStatus);
   const StatusIcon = config.icon;
 
-  // Check if activity is enabled and backfill can be requested
+  // Check if activity is enabled
   const isActivityEnabled = source?.domains?.includes('activity') && source?.activity_status === 'enabled';
-  const activityBackfillRequested = source?.backfill_status?.includes('activity');
-  const activityBackfillFailed = source?.backfill_status === 'activity_failed';
-  
-  // Only show retry button if backfill was requested but failed
-  const shouldShowActivityRetry = isActivityEnabled && displayStatus === 'connected' && activityBackfillFailed;
-  
-  // Auto-trigger activity backfill ref (actual effect is after handler definition)
+
+  // Auto-trigger activity backfill (once per user) when activity is enabled
   const hasTriggeredAutoBackfill = useRef(false);
+  const autoBackfillKey = `garmin_activity_backfill_auto_${userId}`;
 
   // Determine if retry button should be shown
   const shouldShowRetry = () => {
@@ -219,96 +215,73 @@ export function GarminSettingsCard({
         body: { days: 14 },
       });
 
+      // With the new idempotent backend behavior, "already in progress" returns 200.
+      const data = response.data as
+        | {
+            success?: boolean;
+            already_in_progress?: boolean;
+            pending_jobs?: number;
+            jobs_created?: number;
+            message?: string;
+          }
+        | null;
+
       if (response.error) {
-        // Debug: log what we actually receive
-        console.log('Backfill error response:', { error: response.error, data: response.data });
-        
-        // Try to parse error response - data may contain the JSON body even on error
-        const errorData = response.data as { error?: string; pending_jobs?: number; message?: string } | null;
-        
-        // Check if it's a 409 "already in progress" response
-        if (errorData?.error === 'Backfill already in progress') {
-          toast({
-            title: "Sync already in progress",
-            description: `${errorData.pending_jobs || 'Some'} job(s) are still processing. Please wait for them to complete.`,
-          });
-          onRefresh();
-          return;
-        }
-        
-        // Also check error message for this case (fallback)
-        const errorMessage = response.error?.message || '';
-        if (errorMessage.includes('409') || errorMessage.toLowerCase().includes('already in progress')) {
-          toast({
-            title: "Sync already in progress",
-            description: "Please wait for current jobs to complete before starting new ones.",
-          });
-          onRefresh();
-          return;
-        }
-        
         console.error('Activity backfill request failed:', response.error);
         toast({
-          title: "Request failed",
-          description: "Could not request activity history. Please try again later.",
-          variant: "destructive",
+          title: 'Request failed',
+          description: 'Could not request activity history. Please try again later.',
+          variant: 'destructive',
         });
         return;
       }
 
-      const data = response.data as { 
-        success: boolean; 
-        backfill_available?: boolean;
-        reason?: string;
-        message?: string;
-        results?: Record<string, unknown>;
-      };
-      
-      // OAuth 2.0 doesn't support backfill - this is expected
-      if (data.success && data.backfill_available === false) {
-        // Silently succeed - new activities sync via webhook automatically
-        console.log('Activity backfill not available (OAuth 2.0), webhook sync active');
+      if (data?.already_in_progress) {
+        toast({
+          title: 'Sync already in progress',
+          description: `${data.pending_jobs ?? 'Some'} job(s) are still processing. Please wait for them to complete.`,
+        });
         onRefresh();
         return;
       }
-      
-      if (data.success) {
-        toast({
-          title: "Activity history requested",
-          description: "Your last 14 days of workout data will arrive within a few hours.",
-        });
-        onRefresh();
-      } else {
-        toast({
-          title: "Request sent",
-          description: "Garmin is processing your activity history request.",
-        });
-        onRefresh();
-      }
+
+      toast({
+        title: 'Activity sync started',
+        description: 'We’ll sync what we can automatically. If historical import isn’t supported, new workouts will still sync going forward.',
+      });
+      onRefresh();
     } catch (err) {
       console.error('Activity backfill error:', err);
       toast({
-        title: "Error",
-        description: "Failed to request activity history.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to request activity history.',
+        variant: 'destructive',
       });
     } finally {
       setIsRequestingActivityBackfill(false);
     }
   };
 
-  // Auto-trigger activity backfill when enabled but not yet requested
+  // Auto-trigger activity backfill when activity is enabled.
+  // Uses localStorage to prevent repeated queueing across remounts.
   useEffect(() => {
-    if (
-      isActivityEnabled && 
-      displayStatus === 'connected' && 
-      !activityBackfillRequested &&
-      !hasTriggeredAutoBackfill.current
-    ) {
+    if (!isActivityEnabled || displayStatus !== 'connected') return;
+    if (hasTriggeredAutoBackfill.current) return;
+
+    const alreadyTriggered = typeof window !== 'undefined' && window.localStorage.getItem(autoBackfillKey) === '1';
+    if (alreadyTriggered) {
       hasTriggeredAutoBackfill.current = true;
-      handleRequestActivityBackfill();
+      return;
     }
-  }, [isActivityEnabled, displayStatus, activityBackfillRequested]);
+
+    hasTriggeredAutoBackfill.current = true;
+    try {
+      window.localStorage.setItem(autoBackfillKey, '1');
+    } catch {
+      // ignore
+    }
+    handleRequestActivityBackfill();
+  }, [isActivityEnabled, displayStatus, autoBackfillKey]);
 
   const handleConnect = async (timezone: string) => {
     setIsConnecting(true);

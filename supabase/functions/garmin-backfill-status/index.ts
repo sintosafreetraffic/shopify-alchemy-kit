@@ -158,7 +158,8 @@ Deno.serve(async (req) => {
       }
     } else if (hasNeedsPermission) {
       overallStatus = 'needs_permission';
-      canRetry = true;
+      // "needs_permission" is not retryable for activity backfill (e.g. OAuth 2.0 cannot use backfill endpoints)
+      canRetry = false;
     } else if (hasFailed) {
       overallStatus = 'failed';
       canRetry = true;

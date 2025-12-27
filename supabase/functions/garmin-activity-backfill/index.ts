@@ -102,14 +102,15 @@ Deno.serve(async (req) => {
       userId = user.id;
     }
     
-    // If retry_failed is true, re-enqueue failed/needs_permission jobs
+    // If retry_failed is true, re-enqueue failed jobs
+    // Note: "needs_permission" is not retryable (e.g. OAuth 2.0 users cannot use backfill endpoints)
     if (body.retry_failed) {
       const { data: failedJobs, error: fetchError } = await supabaseAdmin
         .from('garmin_backfill_jobs')
         .select('id')
         .eq('user_id', userId)
-        .in('status', ['failed', 'needs_permission']);
-      
+        .in('status', ['failed']);
+
       if (fetchError) {
         log('error', 'Failed to fetch failed jobs', { error: fetchError.message });
         return new Response(
@@ -117,19 +118,19 @@ Deno.serve(async (req) => {
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      
+
       if (failedJobs && failedJobs.length > 0) {
         const { error: updateError } = await supabaseAdmin
           .from('garmin_backfill_jobs')
-          .update({ 
-            status: 'queued', 
+          .update({
+            status: 'queued',
             attempt_count: 0,
             next_attempt_at: new Date().toISOString(),
             last_error_message: null,
           })
           .eq('user_id', userId)
-          .in('status', ['failed', 'needs_permission']);
-        
+          .in('status', ['failed']);
+
         if (updateError) {
           log('error', 'Failed to re-enqueue jobs', { error: updateError.message });
           return new Response(
@@ -137,18 +138,18 @@ Deno.serve(async (req) => {
             { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
-        
+
         log('info', 'Re-enqueued failed jobs', { userId, count: failedJobs.length });
         return new Response(
-          JSON.stringify({ 
-            success: true, 
+          JSON.stringify({
+            success: true,
             message: `Re-enqueued ${failedJobs.length} failed jobs`,
             jobs_requeued: failedJobs.length,
           }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      
+
       return new Response(
         JSON.stringify({ success: true, message: 'No failed jobs to retry', jobs_requeued: 0 }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -193,16 +194,19 @@ Deno.serve(async (req) => {
       .select('id, status')
       .eq('user_id', userId)
       .in('status', ['queued', 'running', 'rate_limited', 'retrying']);
-    
+
+    // IMPORTANT: return 200 (idempotent) so the client can handle it gracefully.
+    // Supabase client treats non-2xx as "response.error" without exposing the JSON body reliably.
     if (existingJobs && existingJobs.length > 0) {
       log('info', 'User already has pending jobs', { userId, count: existingJobs.length });
       return new Response(
-        JSON.stringify({ 
-          error: 'Backfill already in progress',
+        JSON.stringify({
+          success: true,
+          already_in_progress: true,
           pending_jobs: existingJobs.length,
-          message: 'Please wait for current jobs to complete before starting new ones.'
+          message: 'Backfill already in progress. Please wait for current jobs to complete.',
         }),
-        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
