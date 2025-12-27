@@ -217,43 +217,6 @@ const CART_CREATE_MUTATION = `
             currencyCode
           }
         }
-        lines(first: 100) {
-          edges {
-            node {
-              id
-              quantity
-              merchandise {
-                ... on ProductVariant {
-                  id
-                  title
-                  price {
-                    amount
-                    currencyCode
-                  }
-                  product {
-                    title
-                    handle
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-      userErrors {
-        field
-        message
-      }
-    }
-  }
-`;
-
-const CART_DISCOUNT_CODES_UPDATE = `
-  mutation cartDiscountCodesUpdate($cartId: ID!, $discountCodes: [String!]!) {
-    cartDiscountCodesUpdate(cartId: $cartId, discountCodes: $discountCodes) {
-      cart {
-        id
-        checkoutUrl
         discountCodes {
           code
           applicable
@@ -359,8 +322,13 @@ export async function createStorefrontCheckout(
     });
   }
 
-  // Build cart input with attribution - NEVER throw on attribution failure
+  // Build cart input with attribution and discount codes - NEVER throw on attribution failure
   const cartInput: any = { lines };
+  
+  // Add discount codes directly to cart input (single API call optimization)
+  if (discountCodes.length > 0) {
+    cartInput.discountCodes = discountCodes;
+  }
   
   try {
     const attributionAttributes = getPinterestAttributionData();
@@ -373,33 +341,14 @@ export async function createStorefrontCheckout(
     console.warn('[Shopify] Attribution capture failed (non-blocking):', attrError);
   }
 
-  // Create cart
+  // Create cart with discount codes in single API call
   const cartData = await storefrontApiRequest(CART_CREATE_MUTATION, { input: cartInput });
 
   if (cartData.data.cartCreate.userErrors.length > 0) {
     throw new Error(`Cart creation failed: ${cartData.data.cartCreate.userErrors.map((e: any) => e.message).join(', ')}`);
   }
 
-  let cart = cartData.data.cartCreate.cart;
-
-  // Apply discount codes
-  if (discountCodes.length > 0) {
-    try {
-      const discountData = await storefrontApiRequest(CART_DISCOUNT_CODES_UPDATE, {
-        cartId: cart.id,
-        discountCodes,
-      });
-
-      if (discountData.data.cartDiscountCodesUpdate.userErrors.length > 0) {
-        console.error('Discount code failed:', discountData.data.cartDiscountCodesUpdate.userErrors);
-      } else {
-        cart = discountData.data.cartDiscountCodesUpdate.cart;
-      }
-    } catch (discountError) {
-      console.error('Discount application error:', discountError);
-      // Continue with checkout even if discount fails
-    }
-  }
+  const cart = cartData.data.cartCreate.cart;
 
   if (!cart.checkoutUrl) {
     throw new Error('No checkout URL returned from Shopify');
