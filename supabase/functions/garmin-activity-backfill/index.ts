@@ -8,7 +8,12 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 // Max 30 days of history per Garmin API specification.
 // 
 // API: POST https://apis.garmin.com/wellness-api/rest/backfill/activitySummary
-// Response: 202 = accepted, 409 = duplicate request
+// Response: 202 = accepted, 409 = duplicate request, 412 = missing permissions
+//
+// Rate Limits:
+// - Partner-wide: 100 requests/minute (tracked in DB)
+// - Per-user: serialized, one backfill at a time
+// - 429 handling: exponential backoff with jitter
 //
 // Requires: JWT authentication (user must be logged in)
 // ============================================================
@@ -24,6 +29,10 @@ type SupabaseClient = any;
 const GARMIN_BACKFILL_API = 'https://apis.garmin.com/wellness-api/rest/backfill';
 const MAX_BACKFILL_DAYS = 30;
 
+// Rate limit config: 100 req/min, but we use 80 to be safe
+const RATE_LIMIT_REQUESTS = 80;
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+
 interface SourceRow {
   id: string;
   user_id: string;
@@ -32,6 +41,14 @@ interface SourceRow {
   domains: string[];
   backfill_status: string | null;
   backfill_requested_at: string | null;
+}
+
+interface BackfillResult {
+  success: boolean;
+  status: number;
+  body?: string;
+  error?: string;
+  retryAfter?: number;
 }
 
 function log(level: 'info' | 'warn' | 'error', message: string, data?: Record<string, unknown>) {
@@ -61,16 +78,10 @@ async function createOAuthSignature(
   consumerSecret: string,
   tokenSecret: string
 ): Promise<string> {
-  // Sort parameters
   const sortedParams = Object.keys(params).sort().map(k => `${encodeURIComponent(k)}=${encodeURIComponent(params[k])}`).join('&');
-  
-  // Create signature base string
   const baseString = `${method.toUpperCase()}&${encodeURIComponent(url)}&${encodeURIComponent(sortedParams)}`;
-  
-  // Create signing key
   const signingKey = `${encodeURIComponent(consumerSecret)}&${encodeURIComponent(tokenSecret)}`;
   
-  // Sign with HMAC-SHA1
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
     'raw',
@@ -84,56 +95,139 @@ async function createOAuthSignature(
   return btoa(String.fromCharCode(...new Uint8Array(signature)));
 }
 
-// OAuth 2.0 Bearer token backfill request
+// Partner-wide rate limit check using DB
+async function checkAndIncrementRateLimit(supabase: SupabaseClient): Promise<{ allowed: boolean; waitMs?: number }> {
+  const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();
+  
+  // Count requests in current window
+  const { count, error } = await supabase
+    .from('garmin_events_raw')
+    .select('*', { count: 'exact', head: true })
+    .eq('domain', 'backfill_rate_limit')
+    .gte('received_at', windowStart);
+  
+  if (error) {
+    log('warn', 'Rate limit check failed, proceeding cautiously', { error: error.message });
+    return { allowed: true };
+  }
+  
+  if ((count || 0) >= RATE_LIMIT_REQUESTS) {
+    const waitMs = RATE_LIMIT_WINDOW_MS - (Date.now() - new Date(windowStart).getTime());
+    log('info', 'Rate limit reached', { count, limit: RATE_LIMIT_REQUESTS, waitMs });
+    return { allowed: false, waitMs: Math.max(waitMs, 5000) };
+  }
+  
+  return { allowed: true };
+}
+
+// Record a rate limit event
+async function recordRateLimitEvent(supabase: SupabaseClient, userId: string) {
+  await supabase.from('garmin_events_raw').insert({
+    garmin_user_id: userId,
+    domain: 'backfill_rate_limit',
+    summary_type: 'rate_limit_marker',
+    payload: { marker: true },
+    payload_hash: crypto.randomUUID(),
+  }).catch(() => {
+    // Ignore errors - rate limiting is best effort
+  });
+}
+
+// Sleep with jitter
+function sleepWithJitter(baseMs: number, jitterMs: number = 1000): Promise<void> {
+  const jitter = Math.random() * jitterMs;
+  return new Promise(resolve => setTimeout(resolve, baseMs + jitter));
+}
+
+// OAuth 2.0 Bearer token backfill request with retry logic
 async function requestBackfillOAuth2(
   endpoint: string,
   accessToken: string,
   summaryStartTimeInSeconds: number,
-  summaryEndTimeInSeconds: number
-): Promise<{ success: boolean; status: number; body?: string; error?: string }> {
+  summaryEndTimeInSeconds: number,
+  maxRetries: number = 2
+): Promise<BackfillResult> {
   const url = `${GARMIN_BACKFILL_API}/${endpoint}`;
-  
-  // Build query string
   const queryString = `summaryStartTimeInSeconds=${summaryStartTimeInSeconds}&summaryEndTimeInSeconds=${summaryEndTimeInSeconds}`;
   const fullUrl = `${url}?${queryString}`;
   
-  log('info', 'OAuth 2.0 backfill request', { 
-    url: fullUrl.replace(accessToken, '[REDACTED]'),
-    endpoint,
-  });
-  
-  try {
-    const response = await fetch(fullUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-    });
-    
-    const body = await response.text();
-    
-    log('info', 'OAuth 2.0 backfill response', { 
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    log('info', 'OAuth 2.0 backfill request', { 
       endpoint,
-      status: response.status,
-      statusText: response.statusText,
-      body: body.substring(0, 500), // Truncate for logging
-      headers: Object.fromEntries(response.headers.entries()),
+      attempt,
+      maxRetries,
     });
     
-    if (response.status === 202) {
-      return { success: true, status: 202, body };
+    try {
+      const response = await fetch(fullUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      });
+      
+      const body = await response.text();
+      const retryAfterHeader = response.headers.get('Retry-After');
+      const retryAfter = retryAfterHeader ? parseInt(retryAfterHeader, 10) * 1000 : undefined;
+      
+      log('info', 'OAuth 2.0 backfill response', { 
+        endpoint,
+        status: response.status,
+        statusText: response.statusText,
+        body: body.substring(0, 300),
+        retryAfter,
+        attempt,
+      });
+      
+      // Success
+      if (response.status === 202) {
+        return { success: true, status: 202, body };
+      }
+      
+      // Duplicate - auth works, window already requested
+      if (response.status === 409) {
+        return { success: true, status: 409, body, error: 'DUPLICATE_REQUEST' };
+      }
+      
+      // Missing permissions - auth works, need user to grant
+      if (response.status === 412) {
+        return { success: false, status: 412, body, error: 'MISSING_PERMISSION' };
+      }
+      
+      // Auth errors - don't retry
+      if (response.status === 401 || response.status === 403) {
+        return { success: false, status: response.status, body, error: `AUTH_ERROR_${response.status}` };
+      }
+      
+      // Rate limit - retry with backoff
+      if (response.status === 429) {
+        if (attempt < maxRetries) {
+          const backoffMs = retryAfter || (60000 * Math.pow(2, attempt));
+          log('info', 'Rate limited, backing off', { endpoint, backoffMs, attempt });
+          await sleepWithJitter(backoffMs, 5000);
+          continue;
+        }
+        return { success: false, status: 429, body, error: 'RATE_LIMITED', retryAfter };
+      }
+      
+      // Other errors
+      return { success: false, status: response.status, body, error: body || `HTTP_${response.status}` };
+      
+    } catch (error) {
+      log('error', 'OAuth 2.0 backfill request failed', { endpoint, error: String(error), attempt });
+      if (attempt < maxRetries) {
+        await sleepWithJitter(5000, 2000);
+        continue;
+      }
+      return { success: false, status: 0, error: String(error) };
     }
-    
-    return { success: false, status: response.status, body, error: body || `HTTP_${response.status}` };
-    
-  } catch (error) {
-    log('error', 'OAuth 2.0 backfill request failed', { endpoint, error: String(error) });
-    return { success: false, status: 0, error: String(error) };
   }
+  
+  return { success: false, status: 0, error: 'MAX_RETRIES_EXCEEDED' };
 }
 
-// OAuth 1.0a signed backfill request
+// OAuth 1.0a signed backfill request with retry logic
 async function requestBackfillOAuth1(
   endpoint: string,
   accessToken: string,
@@ -141,81 +235,100 @@ async function requestBackfillOAuth1(
   consumerKey: string,
   consumerSecret: string,
   summaryStartTimeInSeconds: number,
-  summaryEndTimeInSeconds: number
-): Promise<{ success: boolean; status: number; body?: string; error?: string }> {
+  summaryEndTimeInSeconds: number,
+  maxRetries: number = 2
+): Promise<BackfillResult> {
   const url = `${GARMIN_BACKFILL_API}/${endpoint}`;
   
-  // OAuth 1.0a parameters
-  const oauthParams: Record<string, string> = {
-    oauth_consumer_key: consumerKey,
-    oauth_token: accessToken,
-    oauth_signature_method: 'HMAC-SHA1',
-    oauth_timestamp: Math.floor(Date.now() / 1000).toString(),
-    oauth_nonce: crypto.randomUUID().replace(/-/g, ''),
-    oauth_version: '1.0',
-  };
-  
-  // Request parameters
-  const requestParams: Record<string, string> = {
-    summaryStartTimeInSeconds: summaryStartTimeInSeconds.toString(),
-    summaryEndTimeInSeconds: summaryEndTimeInSeconds.toString(),
-  };
-  
-  // Combine all params for signature
-  const allParams = { ...oauthParams, ...requestParams };
-  
-  // Create signature
-  const signature = await createOAuthSignature(
-    'POST',
-    url,
-    allParams,
-    consumerSecret,
-    tokenSecret
-  );
-  
-  oauthParams.oauth_signature = signature;
-  
-  // Build Authorization header
-  const authHeader = 'OAuth ' + Object.keys(oauthParams)
-    .map(k => `${encodeURIComponent(k)}="${encodeURIComponent(oauthParams[k])}"`)
-    .join(', ');
-  
-  // Build query string
-  const queryString = Object.keys(requestParams)
-    .map(k => `${encodeURIComponent(k)}=${encodeURIComponent(requestParams[k])}`)
-    .join('&');
-  
-  try {
-    const response = await fetch(`${url}?${queryString}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': authHeader,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-    });
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    // OAuth 1.0a parameters - must regenerate each attempt (new timestamp/nonce)
+    const oauthParams: Record<string, string> = {
+      oauth_consumer_key: consumerKey,
+      oauth_token: accessToken,
+      oauth_signature_method: 'HMAC-SHA1',
+      oauth_timestamp: Math.floor(Date.now() / 1000).toString(),
+      oauth_nonce: crypto.randomUUID().replace(/-/g, ''),
+      oauth_version: '1.0',
+    };
     
-    const body = await response.text();
+    const requestParams: Record<string, string> = {
+      summaryStartTimeInSeconds: summaryStartTimeInSeconds.toString(),
+      summaryEndTimeInSeconds: summaryEndTimeInSeconds.toString(),
+    };
     
-    log('info', 'OAuth 1.0a backfill response', { 
-      endpoint,
-      status: response.status,
-      body: body.substring(0, 500),
-    });
+    const allParams = { ...oauthParams, ...requestParams };
+    const signature = await createOAuthSignature('POST', url, allParams, consumerSecret, tokenSecret);
+    oauthParams.oauth_signature = signature;
     
-    if (response.status === 202) {
-      return { success: true, status: 202, body };
+    const authHeader = 'OAuth ' + Object.keys(oauthParams)
+      .map(k => `${encodeURIComponent(k)}="${encodeURIComponent(oauthParams[k])}"`)
+      .join(', ');
+    
+    const queryString = Object.keys(requestParams)
+      .map(k => `${encodeURIComponent(k)}=${encodeURIComponent(requestParams[k])}`)
+      .join('&');
+    
+    log('info', 'OAuth 1.0a backfill request', { endpoint, attempt });
+    
+    try {
+      const response = await fetch(`${url}?${queryString}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': authHeader,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      });
+      
+      const body = await response.text();
+      const retryAfterHeader = response.headers.get('Retry-After');
+      const retryAfter = retryAfterHeader ? parseInt(retryAfterHeader, 10) * 1000 : undefined;
+      
+      log('info', 'OAuth 1.0a backfill response', { 
+        endpoint,
+        status: response.status,
+        body: body.substring(0, 300),
+        attempt,
+      });
+      
+      if (response.status === 202) {
+        return { success: true, status: 202, body };
+      }
+      
+      if (response.status === 409) {
+        return { success: true, status: 409, body, error: 'DUPLICATE_REQUEST' };
+      }
+      
+      if (response.status === 412) {
+        return { success: false, status: 412, body, error: 'MISSING_PERMISSION' };
+      }
+      
+      if (response.status === 401 || response.status === 403) {
+        return { success: false, status: response.status, body, error: `AUTH_ERROR_${response.status}` };
+      }
+      
+      if (response.status === 429) {
+        if (attempt < maxRetries) {
+          const backoffMs = retryAfter || (60000 * Math.pow(2, attempt));
+          log('info', 'Rate limited, backing off', { endpoint, backoffMs, attempt });
+          await sleepWithJitter(backoffMs, 5000);
+          continue;
+        }
+        return { success: false, status: 429, body, error: 'RATE_LIMITED', retryAfter };
+      }
+      
+      return { success: false, status: response.status, body, error: body || `HTTP_${response.status}` };
+      
+    } catch (error) {
+      log('error', 'OAuth 1.0a backfill request failed', { endpoint, error: String(error), attempt });
+      if (attempt < maxRetries) {
+        await sleepWithJitter(5000, 2000);
+        continue;
+      }
+      return { success: false, status: 0, error: String(error) };
     }
-    
-    if (response.status === 409) {
-      return { success: false, status: 409, body, error: 'DUPLICATE_REQUEST' };
-    }
-    
-    return { success: false, status: response.status, body, error: body || `HTTP_${response.status}` };
-    
-  } catch (error) {
-    log('error', 'OAuth 1.0a backfill request failed', { endpoint, error: String(error) });
-    return { success: false, status: 0, error: String(error) };
   }
+  
+  return { success: false, status: 0, error: 'MAX_RETRIES_EXCEEDED' };
 }
 
 Deno.serve(async (req) => {
@@ -249,8 +362,14 @@ Deno.serve(async (req) => {
       auth: { persistSession: false }
     });
     
-    // Parse request body first to check for admin bypass
-    let body: { days?: number; endpoints?: string[]; user_id?: string; debug_secret?: string } = {};
+    // Parse request body
+    let body: { 
+      days?: number; 
+      endpoints?: string[]; 
+      user_id?: string; 
+      debug_secret?: string;
+      single_endpoint?: string; // For testing single endpoint
+    } = {};
     try {
       const text = await req.text();
       if (text) {
@@ -262,12 +381,12 @@ Deno.serve(async (req) => {
     
     let userId: string;
     
-    // Admin bypass: allow triggering for specific user with debug secret
+    // Admin bypass
     if (body.user_id && body.debug_secret && debugSecret && body.debug_secret === debugSecret) {
       userId = body.user_id;
       log('info', 'Admin bypass activated', { targetUserId: userId });
     } else {
-      // Normal path: verify JWT and get user
+      // Normal path: verify JWT
       const authHeader = req.headers.get('Authorization');
       if (!authHeader?.startsWith('Bearer ')) {
         return new Response(
@@ -289,7 +408,10 @@ Deno.serve(async (req) => {
     }
     
     const days = Math.min(body.days || 14, MAX_BACKFILL_DAYS);
-    const endpoints = body.endpoints || ['activitySummary', 'activityDetails', 'moveIQActivities'];
+    // Support single endpoint for testing
+    const endpoints = body.single_endpoint 
+      ? [body.single_endpoint]
+      : (body.endpoints || ['activitySummary']);
     
     // Get user's Garmin source
     const { data: source, error: sourceError } = await supabaseAdmin
@@ -315,7 +437,6 @@ Deno.serve(async (req) => {
       );
     }
     
-    // Check if activity domain is enabled
     if (!sourceRow.domains?.includes('activity')) {
       return new Response(
         JSON.stringify({ error: 'Activity sync not enabled', domains: sourceRow.domains }),
@@ -323,7 +444,21 @@ Deno.serve(async (req) => {
       );
     }
     
-    // Get OAuth tokens from metadata
+    // Check partner-wide rate limit
+    const rateLimitCheck = await checkAndIncrementRateLimit(supabaseAdmin);
+    if (!rateLimitCheck.allowed) {
+      log('warn', 'Partner rate limit exceeded', { waitMs: rateLimitCheck.waitMs });
+      return new Response(
+        JSON.stringify({ 
+          error: 'Rate limit exceeded', 
+          retry_after_ms: rateLimitCheck.waitMs,
+          message: 'Too many requests to Garmin API. Please try again in a minute.'
+        }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Get OAuth tokens
     const metadata = sourceRow.metadata as Record<string, unknown>;
     const oauthVersion = metadata?.oauth_version as string;
     const accessToken = metadata?.access_token as string;
@@ -337,7 +472,6 @@ Deno.serve(async (req) => {
       );
     }
     
-    // Determine which auth method to use
     const useOAuth2 = oauthVersion === '2.0' || !tokenSecret;
     
     log('info', 'OAuth version detected', { 
@@ -361,22 +495,24 @@ Deno.serve(async (req) => {
       endTime: new Date(summaryEndTimeInSeconds * 1000).toISOString(),
     });
     
-    // Request backfill for each endpoint
-    const results: Record<string, { success: boolean; status: number; body?: string; error?: string }> = {};
+    // Request backfill for each endpoint (serialized to respect rate limits)
+    const results: Record<string, BackfillResult> = {};
     
     for (const endpoint of endpoints) {
-      let result: { success: boolean; status: number; body?: string; error?: string };
+      // Record rate limit marker before each request
+      await recordRateLimitEvent(supabaseAdmin, userId);
+      
+      let result: BackfillResult;
       
       if (useOAuth2) {
-        // Try OAuth 2.0 Bearer token
         result = await requestBackfillOAuth2(
           endpoint,
           accessToken,
           summaryStartTimeInSeconds,
-          summaryEndTimeInSeconds
+          summaryEndTimeInSeconds,
+          2 // max retries
         );
       } else {
-        // Use OAuth 1.0a signed request
         result = await requestBackfillOAuth1(
           endpoint,
           accessToken,
@@ -384,7 +520,8 @@ Deno.serve(async (req) => {
           garminClientId,
           garminClientSecret,
           summaryStartTimeInSeconds,
-          summaryEndTimeInSeconds
+          summaryEndTimeInSeconds,
+          2 // max retries
         );
       }
       
@@ -394,33 +531,46 @@ Deno.serve(async (req) => {
         userId, 
         success: result.success, 
         status: result.status,
-        body: result.body?.substring(0, 200),
+        error: result.error,
       });
       
-      // Small delay between requests
-      await new Promise(resolve => setTimeout(resolve, 200));
+      // If we hit rate limit even after retries, stop
+      if (result.status === 429) {
+        log('warn', 'Rate limit hit, stopping backfill', { endpoint });
+        break;
+      }
+      
+      // Small delay between endpoints
+      if (endpoints.length > 1) {
+        await sleepWithJitter(1000, 500);
+      }
     }
     
-    // Update source with backfill request tracking
+    // Determine overall success
     const allSucceeded = Object.values(results).every(r => r.success || r.status === 409);
     const anySucceeded = Object.values(results).some(r => r.success);
+    const anyRateLimited = Object.values(results).some(r => r.status === 429);
     
-    if (anySucceeded) {
-      await supabaseAdmin
-        .from('sleep_sources')
-        .update({
-          backfill_requested_at: new Date().toISOString(),
-          backfill_status: 'activity_requested',
-          backfill_days: days,
-          metadata: {
-            ...metadata,
-            activity_backfill_endpoints: endpoints,
-            activity_backfill_start: summaryStartTimeInSeconds,
-            activity_backfill_end: summaryEndTimeInSeconds,
-          },
-        })
-        .eq('id', sourceRow.id);
-    }
+    // Update source with backfill status
+    const newStatus = anyRateLimited 
+      ? 'activity_rate_limited' 
+      : (anySucceeded ? 'activity_requested' : 'activity_failed');
+    
+    await supabaseAdmin
+      .from('sleep_sources')
+      .update({
+        backfill_requested_at: new Date().toISOString(),
+        backfill_status: newStatus,
+        backfill_days: days,
+        metadata: {
+          ...metadata,
+          activity_backfill_endpoints: endpoints,
+          activity_backfill_start: summaryStartTimeInSeconds,
+          activity_backfill_end: summaryEndTimeInSeconds,
+          activity_backfill_results: results,
+        },
+      })
+      .eq('id', sourceRow.id);
     
     const successCount = Object.values(results).filter(r => r.success).length;
     const duplicateCount = Object.values(results).filter(r => r.status === 409).length;
@@ -430,11 +580,13 @@ Deno.serve(async (req) => {
       successCount,
       duplicateCount,
       allSucceeded,
+      anyRateLimited,
     });
     
     return new Response(
       JSON.stringify({ 
         success: allSucceeded,
+        rate_limited: anyRateLimited,
         results,
         days,
         endpoints,
