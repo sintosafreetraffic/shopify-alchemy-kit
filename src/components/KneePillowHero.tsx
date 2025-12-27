@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { trackPageVisit } from "@/lib/pinterest";
 import { trackViewedProduct } from "@/lib/klaviyo";
 import { CountdownTimerDisplay } from "./CountdownTimer";
-import eyeMaskGift from "@/assets/eye-mask-gift-new.webp";
+
 
 // Lazy load the image carousel to reduce initial bundle
 const KneePillowImageCarousel = lazy(() => 
@@ -204,20 +204,11 @@ export const KneePillowHero = () => {
               </div>
             </div>
 
-            {/* Price Section - Simple layout matching ergonomic pillow */}
-            <div className="border-t border-b py-3 my-1.5 space-y-3">
+            {/* Price Section - Above USPs */}
+            <div className="border-t border-b py-3 my-1.5">
               {/* Price Display */}
               <div className="flex items-baseline gap-2">
                 <span className="text-xl md:text-2xl font-bold">${productPrice.toFixed(2)}</span>
-              </div>
-              
-              {/* Included Gift */}
-              <div className="flex items-center gap-2 bg-primary/10 rounded-lg p-2">
-                <img src={eyeMaskGift} alt="Free sleep mask included" className="w-10 h-10 object-contain" loading="lazy" decoding="async" />
-                <div>
-                  <p className="text-sm font-semibold text-primary">Sleep Mask Included</p>
-                  <p className="text-xs text-muted-foreground">Free with your pillow</p>
-                </div>
               </div>
             </div>
 
