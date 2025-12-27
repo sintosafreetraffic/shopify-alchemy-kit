@@ -97,7 +97,10 @@ const SleepSources = () => {
     }
   };
 
-  // Handle URL params for Garmin OAuth results
+  // Track if we need to trigger backfill after auth is ready
+  const [pendingBackfill, setPendingBackfill] = useState(false);
+
+  // Handle URL params for Garmin OAuth results - only parse and clean URL
   useEffect(() => {
     const connected = searchParams.get('connected');
     const garminSuccess = searchParams.get('garmin');
@@ -109,8 +112,8 @@ const SleepSources = () => {
         title: "Garmin connected",
         description: "Requesting your sleep history...",
       });
-      // Trigger backfill request
-      requestGarminBackfill();
+      // Mark that we need backfill once auth is ready
+      setPendingBackfill(true);
       // Clean up URL
       searchParams.delete('garmin');
       setSearchParams(searchParams, { replace: true });
@@ -122,7 +125,7 @@ const SleepSources = () => {
         title: "Garmin connected",
         description: "Requesting your sleep history...",
       });
-      requestGarminBackfill();
+      setPendingBackfill(true);
       searchParams.delete('connected');
       setSearchParams(searchParams, { replace: true });
     }
@@ -134,6 +137,14 @@ const SleepSources = () => {
       setSearchParams(searchParams, { replace: true });
     }
   }, [searchParams, setSearchParams]);
+
+  // Trigger backfill once auth is ready and we have a pending request
+  useEffect(() => {
+    if (pendingBackfill && userId) {
+      setPendingBackfill(false);
+      requestGarminBackfill();
+    }
+  }, [pendingBackfill, userId]);
 
   const loadSources = useCallback(async (uid: string) => {
     setLoading(true);
