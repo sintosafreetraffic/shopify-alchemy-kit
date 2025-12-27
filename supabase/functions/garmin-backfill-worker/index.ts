@@ -160,6 +160,23 @@ async function processJob(
   }
   
   const useOAuth2 = oauthVersion === '2.0' || !tokenSecret;
+  
+  // IMPORTANT: The Wellness API backfill endpoints ONLY support OAuth 1.0a
+  // OAuth 2.0 users cannot use backfill - the API returns 502 with Cloudflare error
+  if (useOAuth2) {
+    log('info', 'OAuth 2.0 user - backfill not supported', {
+      jobId: job.id,
+      userId: job.user_id,
+      summaryType: job.summary_type,
+    });
+    return {
+      success: false,
+      newStatus: 'needs_permission',
+      httpStatus: undefined,
+      errorMessage: 'Backfill not available for OAuth 2.0 connections. Activity history will sync as new data arrives.',
+    };
+  }
+  
   const endpoint = getEndpoint(job.summary_type);
   const url = `${GARMIN_BACKFILL_API}/${endpoint}`;
   const queryString = `summaryStartTimeInSeconds=${job.start_seconds}&summaryEndTimeInSeconds=${job.end_seconds}`;
@@ -168,47 +185,36 @@ async function processJob(
   try {
     let response: Response;
     
-    if (useOAuth2) {
-      // OAuth 2.0 Bearer token
-      response = await fetch(fullUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      });
-    } else {
-      // OAuth 1.0a signed request
-      const oauthParams: Record<string, string> = {
-        oauth_consumer_key: garminClientId,
-        oauth_token: accessToken,
-        oauth_signature_method: 'HMAC-SHA1',
-        oauth_timestamp: Math.floor(Date.now() / 1000).toString(),
-        oauth_nonce: crypto.randomUUID().replace(/-/g, ''),
-        oauth_version: '1.0',
-      };
-      
-      const requestParams: Record<string, string> = {
-        summaryStartTimeInSeconds: job.start_seconds.toString(),
-        summaryEndTimeInSeconds: job.end_seconds.toString(),
-      };
-      
-      const allParams = { ...oauthParams, ...requestParams };
-      const signature = await createOAuthSignature('POST', url, allParams, garminClientSecret, tokenSecret);
-      oauthParams.oauth_signature = signature;
-      
-      const authHeader = 'OAuth ' + Object.keys(oauthParams)
-        .map(k => `${encodeURIComponent(k)}=\"${encodeURIComponent(oauthParams[k])}\"`)
-        .join(', ');
-      
-      response = await fetch(fullUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': authHeader,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      });
-    }
+    // OAuth 1.0a signed request
+    const oauthParams: Record<string, string> = {
+      oauth_consumer_key: garminClientId,
+      oauth_token: accessToken,
+      oauth_signature_method: 'HMAC-SHA1',
+      oauth_timestamp: Math.floor(Date.now() / 1000).toString(),
+      oauth_nonce: crypto.randomUUID().replace(/-/g, ''),
+      oauth_version: '1.0',
+    };
+    
+    const requestParams: Record<string, string> = {
+      summaryStartTimeInSeconds: job.start_seconds.toString(),
+      summaryEndTimeInSeconds: job.end_seconds.toString(),
+    };
+    
+    const allParams = { ...oauthParams, ...requestParams };
+    const signature = await createOAuthSignature('POST', url, allParams, garminClientSecret, tokenSecret);
+    oauthParams.oauth_signature = signature;
+    
+    const authHeader = 'OAuth ' + Object.keys(oauthParams)
+      .map(k => `${encodeURIComponent(k)}=\"${encodeURIComponent(oauthParams[k])}\"`)
+      .join(', ');
+    
+    response = await fetch(fullUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': authHeader,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    });
     
     const body = await response.text();
     const responseKind = getResponseKind(body);
