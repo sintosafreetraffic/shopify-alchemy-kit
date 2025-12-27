@@ -228,7 +228,21 @@ export function GarminSettingsCard({
         return;
       }
 
-      const data = response.data as { success: boolean; results?: Record<string, unknown> };
+      const data = response.data as { 
+        success: boolean; 
+        backfill_available?: boolean;
+        reason?: string;
+        message?: string;
+        results?: Record<string, unknown>;
+      };
+      
+      // OAuth 2.0 doesn't support backfill - this is expected
+      if (data.success && data.backfill_available === false) {
+        // Silently succeed - new activities sync via webhook automatically
+        console.log('Activity backfill not available (OAuth 2.0), webhook sync active');
+        onRefresh();
+        return;
+      }
       
       if (data.success) {
         toast({

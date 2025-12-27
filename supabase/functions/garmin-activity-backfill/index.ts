@@ -276,10 +276,25 @@ Deno.serve(async (req) => {
     
     // Get OAuth tokens from metadata
     const metadata = sourceRow.metadata as Record<string, unknown>;
+    const oauthVersion = metadata?.oauth_version as string;
     const accessToken = metadata?.access_token as string;
     const tokenSecret = metadata?.token_secret as string;
     
-    if (!accessToken || !tokenSecret) {
+    // OAuth 2.0 connections don't support backfill (requires OAuth 1.0a)
+    if (oauthVersion === '2.0' || !tokenSecret) {
+      log('info', 'OAuth 2.0 connection - backfill not available', { userId, oauthVersion });
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          backfill_available: false,
+          message: 'Historical backfill requires OAuth 1.0a. New activities sync automatically via webhook.',
+          reason: 'oauth2_no_backfill'
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    if (!accessToken) {
       log('error', 'Missing OAuth tokens', { userId });
       return new Response(
         JSON.stringify({ error: 'Invalid Garmin connection' }),
