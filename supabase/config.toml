@@ -249,3 +249,19 @@ verify_jwt = false
 # Garmin Backfill Status - Requires JWT to identify user
 [functions.garmin-backfill-status]
 verify_jwt = true
+
+# ============================================================
+# GARMIN HEALTH API
+# ============================================================
+
+# Garmin Health Ping - Public, verifies X-Garmin-Signature internally
+[functions.garmin-health-ping]
+verify_jwt = false
+
+# Garmin Health Push - Public, verifies X-Garmin-Signature internally
+[functions.garmin-health-push]
+verify_jwt = false
+
+# Garmin Compute Coach Signals - CRON job for daily signal computation
+[functions.garmin-compute-coach-signals]
+verify_jwt = false
