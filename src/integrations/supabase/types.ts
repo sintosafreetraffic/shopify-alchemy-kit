@@ -561,6 +561,293 @@ export type Database = {
         }
         Relationships: []
       }
+      garmin_activity_details: {
+        Row: {
+          activity_id: string | null
+          created_at: string
+          duration_seconds: number | null
+          garmin_user_id: string
+          has_samples: boolean
+          id: string
+          lap_count: number | null
+          raw_event_id: string | null
+          samples_count: number | null
+          start_time_seconds: number
+          summary_id: string
+          user_id: string | null
+        }
+        Insert: {
+          activity_id?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          garmin_user_id: string
+          has_samples?: boolean
+          id?: string
+          lap_count?: number | null
+          raw_event_id?: string | null
+          samples_count?: number | null
+          start_time_seconds: number
+          summary_id: string
+          user_id?: string | null
+        }
+        Update: {
+          activity_id?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          garmin_user_id?: string
+          has_samples?: boolean
+          id?: string
+          lap_count?: number | null
+          raw_event_id?: string | null
+          samples_count?: number | null
+          start_time_seconds?: number
+          summary_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "garmin_activity_details_raw_event_id_fkey"
+            columns: ["raw_event_id"]
+            isOneToOne: false
+            referencedRelation: "garmin_events_raw"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      garmin_activity_files: {
+        Row: {
+          activity_id: string | null
+          activity_name: string | null
+          activity_type: string | null
+          callback_expires_at: string | null
+          callback_url_hash: string | null
+          created_at: string
+          device_name: string | null
+          download_status: string
+          downloaded_at: string | null
+          file_type: string | null
+          garmin_user_id: string
+          id: string
+          is_manual: boolean
+          raw_event_id: string | null
+          start_time_seconds: number | null
+          storage_path: string | null
+          summary_id: string
+          user_id: string | null
+        }
+        Insert: {
+          activity_id?: string | null
+          activity_name?: string | null
+          activity_type?: string | null
+          callback_expires_at?: string | null
+          callback_url_hash?: string | null
+          created_at?: string
+          device_name?: string | null
+          download_status?: string
+          downloaded_at?: string | null
+          file_type?: string | null
+          garmin_user_id: string
+          id?: string
+          is_manual?: boolean
+          raw_event_id?: string | null
+          start_time_seconds?: number | null
+          storage_path?: string | null
+          summary_id: string
+          user_id?: string | null
+        }
+        Update: {
+          activity_id?: string | null
+          activity_name?: string | null
+          activity_type?: string | null
+          callback_expires_at?: string | null
+          callback_url_hash?: string | null
+          created_at?: string
+          device_name?: string | null
+          download_status?: string
+          downloaded_at?: string | null
+          file_type?: string | null
+          garmin_user_id?: string
+          id?: string
+          is_manual?: boolean
+          raw_event_id?: string | null
+          start_time_seconds?: number | null
+          storage_path?: string | null
+          summary_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "garmin_activity_files_raw_event_id_fkey"
+            columns: ["raw_event_id"]
+            isOneToOne: false
+            referencedRelation: "garmin_events_raw"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      garmin_activity_summaries: {
+        Row: {
+          active_kilocalories: number | null
+          activity_name: string | null
+          activity_type: string | null
+          avg_heart_rate_bpm: number | null
+          created_at: string
+          device_name: string | null
+          distance_meters: number | null
+          duration_seconds: number | null
+          garmin_user_id: string
+          id: string
+          is_manual: boolean
+          is_web_upload: boolean
+          max_heart_rate_bpm: number | null
+          raw_event_id: string | null
+          start_time_offset_seconds: number | null
+          start_time_seconds: number
+          summary_id: string
+          user_id: string | null
+        }
+        Insert: {
+          active_kilocalories?: number | null
+          activity_name?: string | null
+          activity_type?: string | null
+          avg_heart_rate_bpm?: number | null
+          created_at?: string
+          device_name?: string | null
+          distance_meters?: number | null
+          duration_seconds?: number | null
+          garmin_user_id: string
+          id?: string
+          is_manual?: boolean
+          is_web_upload?: boolean
+          max_heart_rate_bpm?: number | null
+          raw_event_id?: string | null
+          start_time_offset_seconds?: number | null
+          start_time_seconds: number
+          summary_id: string
+          user_id?: string | null
+        }
+        Update: {
+          active_kilocalories?: number | null
+          activity_name?: string | null
+          activity_type?: string | null
+          avg_heart_rate_bpm?: number | null
+          created_at?: string
+          device_name?: string | null
+          distance_meters?: number | null
+          duration_seconds?: number | null
+          garmin_user_id?: string
+          id?: string
+          is_manual?: boolean
+          is_web_upload?: boolean
+          max_heart_rate_bpm?: number | null
+          raw_event_id?: string | null
+          start_time_offset_seconds?: number | null
+          start_time_seconds?: number
+          summary_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "garmin_activity_summaries_raw_event_id_fkey"
+            columns: ["raw_event_id"]
+            isOneToOne: false
+            referencedRelation: "garmin_events_raw"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      garmin_events_raw: {
+        Row: {
+          domain: string
+          garmin_user_id: string
+          id: string
+          payload: Json
+          payload_hash: string
+          received_at: string
+          summary_id: string | null
+          summary_type: string
+          upload_window_end: number | null
+          upload_window_start: number | null
+        }
+        Insert: {
+          domain?: string
+          garmin_user_id: string
+          id?: string
+          payload: Json
+          payload_hash: string
+          received_at?: string
+          summary_id?: string | null
+          summary_type: string
+          upload_window_end?: number | null
+          upload_window_start?: number | null
+        }
+        Update: {
+          domain?: string
+          garmin_user_id?: string
+          id?: string
+          payload?: Json
+          payload_hash?: string
+          received_at?: string
+          summary_id?: string | null
+          summary_type?: string
+          upload_window_end?: number | null
+          upload_window_start?: number | null
+        }
+        Relationships: []
+      }
+      garmin_moveiq_events: {
+        Row: {
+          activity_subtype: string | null
+          activity_type: string | null
+          calendar_date: string
+          created_at: string
+          duration_seconds: number | null
+          garmin_user_id: string
+          id: string
+          offset_seconds: number | null
+          raw_event_id: string | null
+          start_time_seconds: number
+          summary_id: string
+          user_id: string | null
+        }
+        Insert: {
+          activity_subtype?: string | null
+          activity_type?: string | null
+          calendar_date: string
+          created_at?: string
+          duration_seconds?: number | null
+          garmin_user_id: string
+          id?: string
+          offset_seconds?: number | null
+          raw_event_id?: string | null
+          start_time_seconds: number
+          summary_id: string
+          user_id?: string | null
+        }
+        Update: {
+          activity_subtype?: string | null
+          activity_type?: string | null
+          calendar_date?: string
+          created_at?: string
+          duration_seconds?: number | null
+          garmin_user_id?: string
+          id?: string
+          offset_seconds?: number | null
+          raw_event_id?: string | null
+          start_time_seconds?: number
+          summary_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "garmin_moveiq_events_raw_event_id_fkey"
+            columns: ["raw_event_id"]
+            isOneToOne: false
+            referencedRelation: "garmin_events_raw"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       missing_purchase_events: {
         Row: {
           detected_at: string
@@ -1039,6 +1326,48 @@ export type Database = {
           data?: Json
           email?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      sleep_coach_activity_signals_daily: {
+        Row: {
+          baseline_workouts_count_30d: number | null
+          computed_at: string
+          date: string
+          id: string
+          late_workout_days_7d: number | null
+          late_workout_flag: boolean
+          most_common_activity_type: string | null
+          signal_freshness: string
+          training_load_label: string
+          user_id: string
+          workouts_count_7d: number | null
+        }
+        Insert: {
+          baseline_workouts_count_30d?: number | null
+          computed_at?: string
+          date: string
+          id?: string
+          late_workout_days_7d?: number | null
+          late_workout_flag?: boolean
+          most_common_activity_type?: string | null
+          signal_freshness?: string
+          training_load_label?: string
+          user_id: string
+          workouts_count_7d?: number | null
+        }
+        Update: {
+          baseline_workouts_count_30d?: number | null
+          computed_at?: string
+          date?: string
+          id?: string
+          late_workout_days_7d?: number | null
+          late_workout_flag?: boolean
+          most_common_activity_type?: string | null
+          signal_freshness?: string
+          training_load_label?: string
+          user_id?: string
+          workouts_count_7d?: number | null
         }
         Relationships: []
       }
@@ -1526,6 +1855,10 @@ export type Database = {
       }
       sleep_sources: {
         Row: {
+          activity_error_code: string | null
+          activity_error_message: string | null
+          activity_last_sync_at: string | null
+          activity_status: string
           backfill_completed_at: string | null
           backfill_days: number | null
           backfill_error: string | null
@@ -1536,6 +1869,7 @@ export type Database = {
           consent_granted_at: string | null
           consent_version: string | null
           created_at: string
+          domains: string[]
           garmin_token_hash: string | null
           garmin_token_hash_updated_at: string | null
           id: string
@@ -1549,6 +1883,10 @@ export type Database = {
           user_timezone: string | null
         }
         Insert: {
+          activity_error_code?: string | null
+          activity_error_message?: string | null
+          activity_last_sync_at?: string | null
+          activity_status?: string
           backfill_completed_at?: string | null
           backfill_days?: number | null
           backfill_error?: string | null
@@ -1559,6 +1897,7 @@ export type Database = {
           consent_granted_at?: string | null
           consent_version?: string | null
           created_at?: string
+          domains?: string[]
           garmin_token_hash?: string | null
           garmin_token_hash_updated_at?: string | null
           id?: string
@@ -1572,6 +1911,10 @@ export type Database = {
           user_timezone?: string | null
         }
         Update: {
+          activity_error_code?: string | null
+          activity_error_message?: string | null
+          activity_last_sync_at?: string | null
+          activity_status?: string
           backfill_completed_at?: string | null
           backfill_days?: number | null
           backfill_error?: string | null
@@ -1582,6 +1925,7 @@ export type Database = {
           consent_granted_at?: string | null
           consent_version?: string | null
           created_at?: string
+          domains?: string[]
           garmin_token_hash?: string | null
           garmin_token_hash_updated_at?: string | null
           id?: string
