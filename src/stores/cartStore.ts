@@ -254,6 +254,21 @@ export const useCartStore = create<CartStore>()(
     {
       name: 'shopify-cart',
       storage: createJSONStorage(() => localStorage),
+      // Don't persist loading state - it should always start as false
+      partialize: (state) => ({
+        items: state.items,
+        cartId: state.cartId,
+        checkoutUrl: state.checkoutUrl,
+        freeMaskSelections: state.freeMaskSelections,
+        // Explicitly exclude: isLoading, isCartOpen
+      }),
+      // Reset loading state on rehydrate to fix any stuck states
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.isLoading = false;
+          state.isCartOpen = false;
+        }
+      },
     }
   )
 );
