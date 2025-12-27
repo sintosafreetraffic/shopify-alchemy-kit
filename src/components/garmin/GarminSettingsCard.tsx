@@ -23,6 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { GarminConnectModal } from "./GarminConnectModal";
 import { GarminDisconnectModal } from "./GarminDisconnectModal";
+import { GarminSyncStatus } from "./GarminSyncStatus";
 
 export type GarminStatus = 'disconnected' | 'connecting' | 'connected' | 'stale' | 'revoked' | 'error';
 
@@ -524,30 +525,12 @@ export function GarminSettingsCard({
             </div>
           )}
 
-          {/* Activity Backfill Retry - only show if failed */}
-          {shouldShowActivityRetry && (
-            <div className="flex items-start justify-between gap-3 text-sm bg-muted/50 rounded-lg p-3">
-              <div className="flex items-start gap-2 flex-1">
-                <AlertTriangle className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
-                <span className="text-muted-foreground">
-                  Activity history import failed. New workouts still sync automatically.
-                </span>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRequestActivityBackfill}
-                disabled={isRequestingActivityBackfill}
-                className="flex-shrink-0"
-              >
-                {isRequestingActivityBackfill ? (
-                  <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                ) : (
-                  <Download className="h-3 w-3 mr-1" />
-                )}
-                Retry
-              </Button>
-            </div>
+          {/* Activity Sync Status - new job-based system */}
+          {isActivityEnabled && displayStatus === 'connected' && (
+            <GarminSyncStatus 
+              isActivityEnabled={isActivityEnabled} 
+              onRetryComplete={onRefresh}
+            />
           )}
 
           {/* Actions */}

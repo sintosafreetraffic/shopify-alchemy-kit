@@ -756,6 +756,54 @@ export type Database = {
           },
         ]
       }
+      garmin_backfill_jobs: {
+        Row: {
+          attempt_count: number
+          created_at: string
+          end_seconds: number
+          id: string
+          last_error_message: string | null
+          last_http_status: number | null
+          last_response_kind: string | null
+          next_attempt_at: string | null
+          start_seconds: number
+          status: string
+          summary_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attempt_count?: number
+          created_at?: string
+          end_seconds: number
+          id?: string
+          last_error_message?: string | null
+          last_http_status?: number | null
+          last_response_kind?: string | null
+          next_attempt_at?: string | null
+          start_seconds: number
+          status?: string
+          summary_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attempt_count?: number
+          created_at?: string
+          end_seconds?: number
+          id?: string
+          last_error_message?: string | null
+          last_http_status?: number | null
+          last_response_kind?: string | null
+          next_attempt_at?: string | null
+          start_seconds?: number
+          status?: string
+          summary_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       garmin_events_raw: {
         Row: {
           domain: string
