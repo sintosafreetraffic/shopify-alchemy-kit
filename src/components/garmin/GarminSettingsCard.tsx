@@ -494,11 +494,11 @@ export function GarminSettingsCard({
 
           {/* Activity Backfill - only show if activity is enabled and not yet requested */}
           {canRequestActivityBackfill && (
-            <div className="flex items-start justify-between gap-3 text-sm bg-primary/5 rounded-lg p-3">
+            <div className="flex items-start justify-between gap-3 text-sm bg-muted/50 rounded-lg p-3">
               <div className="flex items-start gap-2 flex-1">
-                <Download className="h-4 w-4 mt-0.5 text-primary/60 flex-shrink-0" />
+                <Download className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
                 <span className="text-muted-foreground">
-                  Activity tracking is enabled. Import your recent workout history for better sleep coaching insights.
+                  New workouts sync automatically. Want to import your past 14 days of activity history?
                 </span>
               </div>
               <Button
@@ -513,7 +513,7 @@ export function GarminSettingsCard({
                 ) : (
                   <Download className="h-3 w-3 mr-1" />
                 )}
-                Import workouts
+                Import history
               </Button>
             </div>
           )}
