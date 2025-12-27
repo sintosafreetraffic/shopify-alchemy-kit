@@ -220,12 +220,28 @@ export function GarminSettingsCard({
       });
 
       if (response.error) {
-        // Check if it's a 409 "already in progress" response
+        // Debug: log what we actually receive
+        console.log('Backfill error response:', { error: response.error, data: response.data });
+        
+        // Try to parse error response - data may contain the JSON body even on error
         const errorData = response.data as { error?: string; pending_jobs?: number; message?: string } | null;
+        
+        // Check if it's a 409 "already in progress" response
         if (errorData?.error === 'Backfill already in progress') {
           toast({
             title: "Sync already in progress",
             description: `${errorData.pending_jobs || 'Some'} job(s) are still processing. Please wait for them to complete.`,
+          });
+          onRefresh();
+          return;
+        }
+        
+        // Also check error message for this case (fallback)
+        const errorMessage = response.error?.message || '';
+        if (errorMessage.includes('409') || errorMessage.toLowerCase().includes('already in progress')) {
+          toast({
+            title: "Sync already in progress",
+            description: "Please wait for current jobs to complete before starting new ones.",
           });
           onRefresh();
           return;
