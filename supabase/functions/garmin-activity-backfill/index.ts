@@ -186,6 +186,7 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const garminClientId = Deno.env.get('GARMIN_CLIENT_ID');
     const garminClientSecret = Deno.env.get('GARMIN_CLIENT_SECRET');
+    const debugSecret = Deno.env.get('DEBUG_SECRET');
     
     if (!garminClientId || !garminClientSecret) {
       log('error', 'Garmin credentials not configured');
@@ -195,32 +196,12 @@ Deno.serve(async (req) => {
       );
     }
     
-    // Verify JWT and get user
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return new Response(
-        JSON.stringify({ error: 'Missing authorization' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { persistSession: false }
     });
     
-    // Get user from JWT
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
-    
-    if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
-    // Parse request body
-    let body: { days?: number; endpoints?: string[] } = {};
+    // Parse request body first to check for admin bypass
+    let body: { days?: number; endpoints?: string[]; user_id?: string; debug_secret?: string } = {};
     try {
       const text = await req.text();
       if (text) {
@@ -230,6 +211,34 @@ Deno.serve(async (req) => {
       // Use defaults
     }
     
+    let userId: string;
+    
+    // Admin bypass: allow triggering for specific user with debug secret
+    if (body.user_id && body.debug_secret && debugSecret && body.debug_secret === debugSecret) {
+      userId = body.user_id;
+      log('info', 'Admin bypass activated', { targetUserId: userId });
+    } else {
+      // Normal path: verify JWT and get user
+      const authHeader = req.headers.get('Authorization');
+      if (!authHeader?.startsWith('Bearer ')) {
+        return new Response(
+          JSON.stringify({ code: 401, message: 'Missing authorization header' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      const token = authHeader.replace('Bearer ', '');
+      const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
+      
+      if (userError || !user) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid token' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      userId = user.id;
+    }
+    
     const days = Math.min(body.days || 14, MAX_BACKFILL_DAYS);
     const endpoints = body.endpoints || ['activitySummary', 'activityDetails', 'moveIQActivities'];
     
@@ -237,7 +246,7 @@ Deno.serve(async (req) => {
     const { data: source, error: sourceError } = await supabaseAdmin
       .from('sleep_sources')
       .select('id, user_id, status, metadata, domains, backfill_status, backfill_requested_at')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .eq('source', 'garmin')
       .single();
     
@@ -257,10 +266,10 @@ Deno.serve(async (req) => {
       );
     }
     
-    // Check if activities domain is enabled
-    if (!sourceRow.domains?.includes('activities')) {
+    // Check if activity domain is enabled
+    if (!sourceRow.domains?.includes('activity')) {
       return new Response(
-        JSON.stringify({ error: 'Activity sync not enabled' }),
+        JSON.stringify({ error: 'Activity sync not enabled', domains: sourceRow.domains }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -271,7 +280,7 @@ Deno.serve(async (req) => {
     const tokenSecret = metadata?.token_secret as string;
     
     if (!accessToken || !tokenSecret) {
-      log('error', 'Missing OAuth tokens', { userId: user.id });
+      log('error', 'Missing OAuth tokens', { userId });
       return new Response(
         JSON.stringify({ error: 'Invalid Garmin connection' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -284,7 +293,7 @@ Deno.serve(async (req) => {
     const summaryStartTimeInSeconds = now - (days * 24 * 60 * 60);
     
     log('info', 'Starting activity backfill', { 
-      userId: user.id, 
+      userId, 
       days, 
       endpoints,
       startTime: new Date(summaryStartTimeInSeconds * 1000).toISOString(),
@@ -308,7 +317,7 @@ Deno.serve(async (req) => {
       results[endpoint] = result;
       
       log('info', `Backfill request for ${endpoint}`, { 
-        userId: user.id, 
+        userId, 
         success: result.success, 
         status: result.status 
       });
@@ -342,7 +351,7 @@ Deno.serve(async (req) => {
     const duplicateCount = Object.values(results).filter(r => r.status === 409).length;
     
     log('info', 'Activity backfill request complete', { 
-      userId: user.id,
+      userId,
       successCount,
       duplicateCount,
       allSucceeded,
