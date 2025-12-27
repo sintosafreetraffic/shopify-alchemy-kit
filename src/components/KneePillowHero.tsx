@@ -184,11 +184,9 @@ export const KneePillowHero = () => {
               Perfect Support for Side Sleepers
             </p>
 
-            {/* Price Section - Above USPs */}
-            <div className="border-t border-b py-3 my-2">
-              <div className="flex items-baseline gap-2">
-                <span className="text-xl md:text-2xl font-bold">${productPrice.toFixed(2)}</span>
-              </div>
+            {/* Price Display - Above USPs */}
+            <div className="flex items-center gap-3 mt-2 mb-3">
+              <p className="text-xl md:text-2xl font-bold">${productPrice.toFixed(2)}</p>
             </div>
 
             {/* Benefit-Focused USPs Section */}
