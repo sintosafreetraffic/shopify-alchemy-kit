@@ -24,6 +24,13 @@ interface WearableInsightsHint {
   // Activity signals (qualitative only)
   trainingLoadLabel?: 'unknown' | 'low' | 'moderate' | 'high' | 'very_high' | null;
   lateWorkoutFlag?: boolean;
+  // Coach signals from sleep_coach_metrics_daily
+  coachSignals?: CoachSignal[] | null;
+}
+
+interface CoachSignal {
+  signal_key: string;
+  signal_value: string;
 }
 
 interface WhyThisPlanCardProps {
@@ -41,6 +48,29 @@ const REASON_ICONS: Record<string, React.ReactNode> = {
   expired: <RefreshCw className="h-4 w-4" />,
   manual: <Target className="h-4 w-4" />,
 };
+
+// Format coach signals into readable text
+function formatCoachSignal(key: string, value: string): string {
+  switch (key) {
+    case 'bedtime_consistency':
+      if (value === 'consistent') return '✓ Consistent bedtimes';
+      if (value === 'moderate') return '~ Variable bedtimes';
+      if (value === 'irregular') return '↺ Irregular bedtimes';
+      return '';
+    case 'sleep_fragmentation':
+      if (value === 'improved') return '↑ Less fragmented sleep';
+      if (value === 'stable') return '• Steady sleep quality';
+      if (value === 'worse') return '↓ More fragmented sleep recently';
+      return '';
+    case 'recovery_proxy':
+      if (value === 'strong') return '★ Strong recovery';
+      if (value === 'moderate') return '• Moderate recovery';
+      if (value === 'low') return '○ Lower recovery lately';
+      return '';
+    default:
+      return '';
+  }
+}
 
 export function WhyThisPlanCard({
   planHeadline,
@@ -155,6 +185,17 @@ export function WhyThisPlanCard({
                     : 'Steady training week'}
                   {wearableInsights.lateWorkoutFlag && ' • Late workouts detected'}
                 </span>
+              </div>
+            )}
+            
+            {/* Coach signals from Health API (qualitative insights) */}
+            {wearableInsights?.coachSignals && wearableInsights.coachSignals.length > 0 && (
+              <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1">
+                {wearableInsights.coachSignals.map((signal) => (
+                  <span key={signal.signal_key} className="text-xs text-muted-foreground/70">
+                    {formatCoachSignal(signal.signal_key, signal.signal_value)}
+                  </span>
+                ))}
               </div>
             )}
             

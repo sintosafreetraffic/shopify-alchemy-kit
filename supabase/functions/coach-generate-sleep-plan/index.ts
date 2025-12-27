@@ -139,7 +139,7 @@ Deno.serve(async (req) => {
     recentDate.setDate(recentDate.getDate() - 7);
     const recentDateStr = recentDate.toISOString().split('T')[0]; // YYYY-MM-DD
     
-    const [profileResult, logsResult, attrsResult, plansCountResult, wearableNightsResult, wearableSourcesResult, rawEventsResult, baselineNightsResult, recentNightsResult, activitySignalsResult] = await Promise.all([
+    const [profileResult, logsResult, attrsResult, plansCountResult, wearableNightsResult, wearableSourcesResult, rawEventsResult, baselineNightsResult, recentNightsResult, activitySignalsResult, coachSignalsResult] = await Promise.all([
       supabase.from('sleep_profiles').select('*').eq('email', email).single(),
       supabase.from('sleep_logs').select('*').eq('email', email).order('date', { ascending: false }).limit(30), // Extended for pattern detection
       supabase.from('sleep_attributes_state').select('data').eq('email', email).maybeSingle(),
@@ -192,6 +192,12 @@ Deno.serve(async (req) => {
         .order('date', { ascending: false })
         .limit(1)
         .maybeSingle(),
+      // Fetch coach signals from Health API (qualitative metrics)
+      supabase.from('sleep_coach_metrics_daily')
+        .select('signal_key, signal_value, calendar_date')
+        .eq('user_id', userId)
+        .order('calendar_date', { ascending: false })
+        .limit(10),
     ]);
 
     const profile: SleepProfile | null = profileResult.data;
@@ -202,6 +208,7 @@ Deno.serve(async (req) => {
     const baselineNights = baselineNightsResult.data || [];
     const recentNights = recentNightsResult.data || [];
     const activitySignals = activitySignalsResult.data;
+    const coachSignals = coachSignalsResult.data || [];
     
     // Log wearable data availability
     console.log('[coach-generate-sleep-plan] Wearable data', {
@@ -510,6 +517,11 @@ Deno.serve(async (req) => {
         signal_freshness: activitySignals.signal_freshness,
         workouts_count_7d: activitySignals.workouts_count_7d,
       } : null,
+      // Coach signals from Health API (qualitative metrics from garmin_sleeps/garmin_dailies)
+      coach_signals: coachSignals.length > 0 ? coachSignals.map((s: any) => ({
+        signal_key: s.signal_key,
+        signal_value: s.signal_value,
+      })) : null,
     };
 
     // === LOG: Plan context summary with 3-layer data and wearables ===
