@@ -804,6 +804,68 @@ export type Database = {
         }
         Relationships: []
       }
+      garmin_dailies: {
+        Row: {
+          active_seconds: number | null
+          calendar_date: string
+          created_at: string
+          duration_seconds: number | null
+          floors_climbed: number | null
+          garmin_user_id: string
+          id: string
+          intensity_minutes_goal: number | null
+          raw_event_id: string | null
+          start_time_seconds: number
+          steps: number | null
+          summary_id: string
+          updated_at: string
+          user_id: string | null
+          vigorous_activity_seconds: number | null
+        }
+        Insert: {
+          active_seconds?: number | null
+          calendar_date: string
+          created_at?: string
+          duration_seconds?: number | null
+          floors_climbed?: number | null
+          garmin_user_id: string
+          id?: string
+          intensity_minutes_goal?: number | null
+          raw_event_id?: string | null
+          start_time_seconds: number
+          steps?: number | null
+          summary_id: string
+          updated_at?: string
+          user_id?: string | null
+          vigorous_activity_seconds?: number | null
+        }
+        Update: {
+          active_seconds?: number | null
+          calendar_date?: string
+          created_at?: string
+          duration_seconds?: number | null
+          floors_climbed?: number | null
+          garmin_user_id?: string
+          id?: string
+          intensity_minutes_goal?: number | null
+          raw_event_id?: string | null
+          start_time_seconds?: number
+          steps?: number | null
+          summary_id?: string
+          updated_at?: string
+          user_id?: string | null
+          vigorous_activity_seconds?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "garmin_dailies_raw_event_id_fkey"
+            columns: ["raw_event_id"]
+            isOneToOne: false
+            referencedRelation: "garmin_events_raw"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       garmin_events_raw: {
         Row: {
           domain: string
@@ -889,6 +951,68 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "garmin_moveiq_events_raw_event_id_fkey"
+            columns: ["raw_event_id"]
+            isOneToOne: false
+            referencedRelation: "garmin_events_raw"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      garmin_sleeps: {
+        Row: {
+          awake_seconds: number | null
+          calendar_date: string
+          created_at: string
+          deep_seconds: number | null
+          duration_sleep_seconds: number | null
+          garmin_user_id: string
+          id: string
+          light_seconds: number | null
+          raw_event_id: string | null
+          rem_seconds: number | null
+          start_time_seconds: number
+          summary_id: string
+          updated_at: string
+          user_id: string | null
+          validation: string | null
+        }
+        Insert: {
+          awake_seconds?: number | null
+          calendar_date: string
+          created_at?: string
+          deep_seconds?: number | null
+          duration_sleep_seconds?: number | null
+          garmin_user_id: string
+          id?: string
+          light_seconds?: number | null
+          raw_event_id?: string | null
+          rem_seconds?: number | null
+          start_time_seconds: number
+          summary_id: string
+          updated_at?: string
+          user_id?: string | null
+          validation?: string | null
+        }
+        Update: {
+          awake_seconds?: number | null
+          calendar_date?: string
+          created_at?: string
+          deep_seconds?: number | null
+          duration_sleep_seconds?: number | null
+          garmin_user_id?: string
+          id?: string
+          light_seconds?: number | null
+          raw_event_id?: string | null
+          rem_seconds?: number | null
+          start_time_seconds?: number
+          summary_id?: string
+          updated_at?: string
+          user_id?: string | null
+          validation?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "garmin_sleeps_raw_event_id_fkey"
             columns: ["raw_event_id"]
             isOneToOne: false
             referencedRelation: "garmin_events_raw"
@@ -1419,6 +1543,36 @@ export type Database = {
         }
         Relationships: []
       }
+      sleep_coach_metrics_daily: {
+        Row: {
+          calendar_date: string
+          computed_at: string
+          data_sources: string[]
+          id: string
+          signal_key: string
+          signal_value: string
+          user_id: string
+        }
+        Insert: {
+          calendar_date: string
+          computed_at?: string
+          data_sources?: string[]
+          id?: string
+          signal_key: string
+          signal_value: string
+          user_id: string
+        }
+        Update: {
+          calendar_date?: string
+          computed_at?: string
+          data_sources?: string[]
+          id?: string
+          signal_key?: string
+          signal_value?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       sleep_intake_rate_limits: {
         Row: {
           id: string
@@ -1920,9 +2074,11 @@ export type Database = {
           domains: string[]
           garmin_token_hash: string | null
           garmin_token_hash_updated_at: string | null
+          health_last_sync_at: string | null
           id: string
           last_sync_at: string | null
           metadata: Json | null
+          on_hold: boolean
           revoked_at: string | null
           source: string
           status: string
@@ -1948,9 +2104,11 @@ export type Database = {
           domains?: string[]
           garmin_token_hash?: string | null
           garmin_token_hash_updated_at?: string | null
+          health_last_sync_at?: string | null
           id?: string
           last_sync_at?: string | null
           metadata?: Json | null
+          on_hold?: boolean
           revoked_at?: string | null
           source: string
           status?: string
@@ -1976,9 +2134,11 @@ export type Database = {
           domains?: string[]
           garmin_token_hash?: string | null
           garmin_token_hash_updated_at?: string | null
+          health_last_sync_at?: string | null
           id?: string
           last_sync_at?: string | null
           metadata?: Json | null
+          on_hold?: boolean
           revoked_at?: string | null
           source?: string
           status?: string
