@@ -170,8 +170,8 @@ Deno.serve(async (req) => {
     const endTimestamp = Math.floor(endDate.getTime() / 1000);
 
     // Request backfill from Garmin Health API
-    // Garmin's backfill endpoint: POST /wellness-api/rest/backfill/sleepData
-    const backfillUrl = 'https://healthapi.garmin.com/wellness-api/rest/backfill/sleepData';
+    // Garmin's backfill endpoint: POST /wellness-api/rest/backfill/sleeps
+    const backfillUrl = 'https://healthapi.garmin.com/wellness-api/rest/backfill/sleeps';
     
     log('info', 'Calling Garmin backfill API', { 
       userId, 
