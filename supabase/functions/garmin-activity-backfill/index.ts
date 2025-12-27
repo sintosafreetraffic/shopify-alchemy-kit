@@ -33,6 +33,20 @@ const MAX_BACKFILL_DAYS = 30;
 const RATE_LIMIT_REQUESTS = 80;
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 
+// OAuth 2.0 uses different endpoint names than OAuth 1.0a
+// Map from our internal names to OAuth 2.0 API names
+const OAUTH2_ENDPOINT_MAP: Record<string, string> = {
+  'activitySummary': 'activities',
+  'activityDetails': 'activityDetails', 
+  'activityFile': 'manuallyUploadedActivities',
+  'moveIQActivities': 'moveIQActivities',
+  // Add more as needed
+};
+
+function getOAuth2Endpoint(endpoint: string): string {
+  return OAUTH2_ENDPOINT_MAP[endpoint] || endpoint;
+}
+
 interface SourceRow {
   id: string;
   user_id: string;
@@ -149,13 +163,17 @@ async function requestBackfillOAuth2(
   summaryEndTimeInSeconds: number,
   maxRetries: number = 2
 ): Promise<BackfillResult> {
-  const url = `${GARMIN_BACKFILL_API}/${endpoint}`;
+  // Map endpoint name to OAuth 2.0 API name
+  const oauth2Endpoint = getOAuth2Endpoint(endpoint);
+  const url = `${GARMIN_BACKFILL_API}/${oauth2Endpoint}`;
   const queryString = `summaryStartTimeInSeconds=${summaryStartTimeInSeconds}&summaryEndTimeInSeconds=${summaryEndTimeInSeconds}`;
   const fullUrl = `${url}?${queryString}`;
   
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     log('info', 'OAuth 2.0 backfill request', { 
       endpoint,
+      oauth2Endpoint,
+      url: fullUrl,
       attempt,
       maxRetries,
     });
