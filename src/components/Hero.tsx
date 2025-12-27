@@ -140,7 +140,7 @@ export const Hero = () => {
             </p>
             
             {/* Mobile Price - Above USPs */}
-            <p className="text-2xl font-bold mt-2">${productPrice.toFixed(2)}</p>
+            <p className="text-xl font-bold mt-2">${productPrice.toFixed(2)}</p>
           </div>
         </div>
 
@@ -193,7 +193,7 @@ export const Hero = () => {
 
             {/* Price Display - Above USPs like reference */}
             <div className="flex items-center gap-3 mt-2 mb-3">
-              <p className="text-2xl md:text-3xl font-bold">${productPrice.toFixed(2)}</p>
+              <p className="text-xl md:text-2xl font-bold">${productPrice.toFixed(2)}</p>
             </div>
 
             {/* Benefit-Focused USPs Section */}
