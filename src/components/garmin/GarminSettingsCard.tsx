@@ -220,6 +220,17 @@ export function GarminSettingsCard({
       });
 
       if (response.error) {
+        // Check if it's a 409 "already in progress" response
+        const errorData = response.data as { error?: string; pending_jobs?: number; message?: string } | null;
+        if (errorData?.error === 'Backfill already in progress') {
+          toast({
+            title: "Sync already in progress",
+            description: `${errorData.pending_jobs || 'Some'} job(s) are still processing. Please wait for them to complete.`,
+          });
+          onRefresh();
+          return;
+        }
+        
         console.error('Activity backfill request failed:', response.error);
         toast({
           title: "Request failed",
