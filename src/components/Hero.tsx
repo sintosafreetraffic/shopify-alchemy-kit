@@ -138,6 +138,9 @@ export const Hero = () => {
             <p className="text-sm text-muted-foreground mt-0.5">
               The #1 Rated Ergonomic Pillow in the U.S.
             </p>
+            
+            {/* Mobile Price - Above USPs */}
+            <p className="text-2xl font-bold mt-2">${productPrice.toFixed(2)}</p>
           </div>
         </div>
 
@@ -184,12 +187,17 @@ export const Hero = () => {
               Rise By Night™ Ergonomic Sleep Pillow
             </h1>
             
-            <p className="hidden md:block text-sm md:text-base text-muted-foreground mb-0">
+            <p className="hidden md:block text-sm md:text-base text-muted-foreground mb-2">
               The #1 Rated Ergonomic Pillow in the U.S.
             </p>
 
+            {/* Price Display - Above USPs like reference */}
+            <div className="flex items-center gap-3 mt-2 mb-3">
+              <p className="text-2xl md:text-3xl font-bold">${productPrice.toFixed(2)}</p>
+            </div>
+
             {/* Benefit-Focused USPs Section */}
-            <div className="space-y-2 mt-0 mb-2 md:mt-2 md:mb-4">
+            <div className="space-y-2 mb-3">
               <div className="flex items-center gap-2">
                 <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0" />
                 <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">Wake up pain-free</span> – Scientifically designed to relieve neck & shoulder pain</p>
@@ -208,19 +216,12 @@ export const Hero = () => {
               </div>
             </div>
 
-            <div className="border-t border-b py-4 my-1.5 space-y-3">
-              {/* Price Display */}
-              <div className="text-center">
-                <p className="text-3xl font-bold">${productPrice.toFixed(2)}</p>
-              </div>
-              
-              {/* Included Free Gift */}
-              <div className="flex items-center justify-center gap-2 bg-green-50 dark:bg-green-900/20 rounded-lg py-2 px-3">
-                <img src={eyeMaskGift} alt="Included sleep mask" className="w-10 h-10 object-contain" loading="lazy" decoding="async" />
-                <div className="text-left">
-                  <p className="text-sm font-semibold text-green-700 dark:text-green-300">Sleep Mask Included</p>
-                  <p className="text-xs text-green-600 dark:text-green-400">$29.99 value • Choose color at checkout</p>
-                </div>
+            {/* Included Free Gift */}
+            <div className="flex items-center gap-3 bg-green-50 dark:bg-green-900/20 rounded-xl py-3 px-4 mb-4 border border-green-200 dark:border-green-800">
+              <img src={eyeMaskGift} alt="Included sleep mask" className="w-12 h-12 object-contain" loading="lazy" decoding="async" />
+              <div className="text-left">
+                <p className="text-sm font-semibold text-green-700 dark:text-green-300">Sleep Mask Included</p>
+                <p className="text-xs text-green-600 dark:text-green-400">$29.99 value • Choose color at checkout</p>
               </div>
             </div>
 
