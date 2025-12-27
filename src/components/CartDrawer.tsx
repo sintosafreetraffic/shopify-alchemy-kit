@@ -264,11 +264,13 @@ export const CartDrawer = () => {
         const isMobile = isMobileDevice();
         openCheckoutUrl(result.checkoutUrl, isMobile);
         
-        // Only close drawer for desktop (mobile will redirect)
+        // Only end checkout and close drawer for desktop
+        // Mobile will redirect, so keep loading state visible until page navigates away
         if (!isMobile) {
           setIsOpen(false);
+          endCheckout();
         }
-        endCheckout();
+        // On mobile: intentionally don't call endCheckout() - loading stays visible until redirect completes
       } else {
         endCheckout(result.error);
         toast.error("We couldn't start checkout", {
