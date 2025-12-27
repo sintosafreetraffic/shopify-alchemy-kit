@@ -38,6 +38,10 @@ interface GarminSource {
   backfill_nights_count?: number | null;
   backfill_status?: string | null;
   backfill_error?: string | null;
+  // Activity fields
+  domains?: string[];
+  activity_status?: string;
+  activity_last_sync_at?: string | null;
 }
 
 interface GarminSettingsCardProps {
@@ -126,10 +130,17 @@ export function GarminSettingsCard({
   const [isConnecting, setIsConnecting] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
+  const [isRequestingActivityBackfill, setIsRequestingActivityBackfill] = useState(false);
 
   const displayStatus = getDisplayStatus(source, oauthError);
   const config = getStatusConfig(displayStatus);
   const StatusIcon = config.icon;
+
+  // Check if activity is enabled and backfill can be requested
+  const isActivityEnabled = source?.domains?.includes('activity') && source?.activity_status === 'enabled';
+  const canRequestActivityBackfill = isActivityEnabled && 
+    displayStatus === 'connected' &&
+    !source?.backfill_status?.includes('activity'); // No activity backfill requested yet
 
   // Determine if retry button should be shown
   const shouldShowRetry = () => {
@@ -190,6 +201,52 @@ export function GarminSettingsCard({
       });
     } finally {
       setIsRetrying(false);
+    }
+  };
+
+  const handleRequestActivityBackfill = async () => {
+    if (!source) return;
+    setIsRequestingActivityBackfill(true);
+
+    try {
+      const response = await supabase.functions.invoke('garmin-activity-backfill', {
+        body: { days: 14 },
+      });
+
+      if (response.error) {
+        console.error('Activity backfill request failed:', response.error);
+        toast({
+          title: "Request failed",
+          description: "Could not request activity history. Please try again later.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const data = response.data as { success: boolean; results?: Record<string, unknown> };
+      
+      if (data.success) {
+        toast({
+          title: "Activity history requested",
+          description: "Your last 14 days of workout data will arrive within a few hours.",
+        });
+        onRefresh();
+      } else {
+        toast({
+          title: "Request sent",
+          description: "Garmin is processing your activity history request.",
+        });
+        onRefresh();
+      }
+    } catch (err) {
+      console.error('Activity backfill error:', err);
+      toast({
+        title: "Error",
+        description: "Failed to request activity history.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRequestingActivityBackfill(false);
     }
   };
 
@@ -431,6 +488,32 @@ export function GarminSettingsCard({
                   <Download className="h-3 w-3 mr-1" />
                 )}
                 Retry import
+              </Button>
+            </div>
+          )}
+
+          {/* Activity Backfill - only show if activity is enabled and not yet requested */}
+          {canRequestActivityBackfill && (
+            <div className="flex items-start justify-between gap-3 text-sm bg-primary/5 rounded-lg p-3">
+              <div className="flex items-start gap-2 flex-1">
+                <Download className="h-4 w-4 mt-0.5 text-primary/60 flex-shrink-0" />
+                <span className="text-muted-foreground">
+                  Activity tracking is enabled. Import your recent workout history for better sleep coaching insights.
+                </span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRequestActivityBackfill}
+                disabled={isRequestingActivityBackfill}
+                className="flex-shrink-0"
+              >
+                {isRequestingActivityBackfill ? (
+                  <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                ) : (
+                  <Download className="h-3 w-3 mr-1" />
+                )}
+                Import workouts
               </Button>
             </div>
           )}
