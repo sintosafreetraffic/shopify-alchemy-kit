@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchProducts, ShopifyProduct } from "@/lib/shopify";
 
-// Stale time: 5 minutes - products won't refetch for 5 minutes
-const STALE_TIME = 5 * 60 * 1000;
+// Stale time: keep prices reasonably fresh so Shopify changes reflect quickly
+const STALE_TIME = 60 * 1000; // 1 minute
 // Cache time: 30 minutes - keep in cache even when stale
 const GC_TIME = 30 * 60 * 1000;
 
@@ -16,8 +16,9 @@ export function useShopifyProducts(limit = 50, query?: string) {
     queryFn: () => fetchProducts(limit, query),
     staleTime: STALE_TIME,
     gcTime: GC_TIME,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    // Allow refresh when user returns to the tab or navigates between pages
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 }
 
