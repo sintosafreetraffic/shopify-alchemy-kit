@@ -3,7 +3,7 @@
  * Displays Garmin connection status and actions
  * States: disconnected | connecting | connected | stale | revoked | error
  */
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { GarminConnectModal } from "./GarminConnectModal";
 import { GarminDisconnectModal } from "./GarminDisconnectModal";
-import { GarminSyncStatus } from "./GarminSyncStatus";
+import { GarminActivitySyncInfo } from "./GarminActivitySyncInfo";
 
 export type GarminStatus = 'disconnected' | 'connecting' | 'connected' | 'stale' | 'revoked' | 'error';
 
@@ -131,7 +131,6 @@ export function GarminSettingsCard({
   const [isConnecting, setIsConnecting] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
-  const [isRequestingActivityBackfill, setIsRequestingActivityBackfill] = useState(false);
 
   const displayStatus = getDisplayStatus(source, oauthError);
   const config = getStatusConfig(displayStatus);
@@ -140,11 +139,7 @@ export function GarminSettingsCard({
   // Check if activity is enabled
   const isActivityEnabled = source?.domains?.includes('activity') && source?.activity_status === 'enabled';
 
-  // Auto-trigger activity backfill (once per user) when activity is enabled
-  const hasTriggeredAutoBackfill = useRef(false);
-  const autoBackfillKey = `garmin_activity_backfill_auto_${userId}`;
-
-  // Determine if retry button should be shown
+  // Determine if retry button should be shown (for sleep backfill only)
   const shouldShowRetry = () => {
     if (!source) return false;
     
@@ -205,83 +200,6 @@ export function GarminSettingsCard({
       setIsRetrying(false);
     }
   };
-
-  const handleRequestActivityBackfill = async () => {
-    if (!source) return;
-    setIsRequestingActivityBackfill(true);
-
-    try {
-      const response = await supabase.functions.invoke('garmin-activity-backfill', {
-        body: { days: 14 },
-      });
-
-      // With the new idempotent backend behavior, "already in progress" returns 200.
-      const data = response.data as
-        | {
-            success?: boolean;
-            already_in_progress?: boolean;
-            pending_jobs?: number;
-            jobs_created?: number;
-            message?: string;
-          }
-        | null;
-
-      if (response.error) {
-        console.error('Activity backfill request failed:', response.error);
-        toast({
-          title: 'Request failed',
-          description: 'Could not request activity history. Please try again later.',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      if (data?.already_in_progress) {
-        toast({
-          title: 'Sync already in progress',
-          description: `${data.pending_jobs ?? 'Some'} job(s) are still processing. Please wait for them to complete.`,
-        });
-        onRefresh();
-        return;
-      }
-
-      toast({
-        title: 'Activity sync started',
-        description: 'We’ll sync what we can automatically. If historical import isn’t supported, new workouts will still sync going forward.',
-      });
-      onRefresh();
-    } catch (err) {
-      console.error('Activity backfill error:', err);
-      toast({
-        title: 'Error',
-        description: 'Failed to request activity history.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsRequestingActivityBackfill(false);
-    }
-  };
-
-  // Auto-trigger activity backfill when activity is enabled.
-  // Uses localStorage to prevent repeated queueing across remounts.
-  useEffect(() => {
-    if (!isActivityEnabled || displayStatus !== 'connected') return;
-    if (hasTriggeredAutoBackfill.current) return;
-
-    const alreadyTriggered = typeof window !== 'undefined' && window.localStorage.getItem(autoBackfillKey) === '1';
-    if (alreadyTriggered) {
-      hasTriggeredAutoBackfill.current = true;
-      return;
-    }
-
-    hasTriggeredAutoBackfill.current = true;
-    try {
-      window.localStorage.setItem(autoBackfillKey, '1');
-    } catch {
-      // ignore
-    }
-    handleRequestActivityBackfill();
-  }, [isActivityEnabled, displayStatus, autoBackfillKey]);
 
   const handleConnect = async (timezone: string) => {
     setIsConnecting(true);
@@ -525,11 +443,10 @@ export function GarminSettingsCard({
             </div>
           )}
 
-          {/* Activity Sync Status - new job-based system */}
-          {isActivityEnabled && displayStatus === 'connected' && (
-            <GarminSyncStatus 
-              isActivityEnabled={isActivityEnabled} 
-              onRetryComplete={onRefresh}
+          {/* Activity Sync Info - calm reassuring messaging */}
+          {displayStatus === 'connected' && (
+            <GarminActivitySyncInfo 
+              isActivityEnabled={isActivityEnabled}
             />
           )}
 
