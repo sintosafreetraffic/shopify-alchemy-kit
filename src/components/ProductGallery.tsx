@@ -64,13 +64,13 @@ export const ProductGallery = () => {
       id: 2,
       name: "Rise By Night™ Ergonomic Pillow",
       tagline: "The #1 Rated Orthopedic Pillow",
-      price: "$129.99",
-      originalPrice: "$259.98",
+      price: "$79.99",
+      originalPrice: undefined,
       rating: 4.8,
       reviews: "6,247",
       image: ergonomicPillowProduct,
       features: ["Ergonomic contour design", "Cooling gel technology", "High-density memory foam", "3-5 year lifespan"],
-      badge: "Christmas 1+1 Deal",
+      badge: "Sleep Mask Included",
       link: "/product/ergonomic-pillow",
     },
     {
@@ -209,7 +209,11 @@ export const ProductGallery = () => {
                 <div className="relative">
                   {product.badge && (
                     <div className="absolute top-4 left-4 z-10">
-                      <span className="bg-destructive text-destructive-foreground px-3 py-1 rounded-full text-sm font-semibold">
+                      <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                        product.badge.toLowerCase().includes('included') 
+                          ? 'bg-green-600 text-white' 
+                          : 'bg-destructive text-destructive-foreground'
+                      }`}>
                         {product.badge}
                       </span>
                     </div>

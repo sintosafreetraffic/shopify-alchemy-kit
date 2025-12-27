@@ -1,10 +1,8 @@
 // Performance: Using WebP images with lazy loading for below-fold content
 // Carousel is lazy-loaded to reduce initial bundle size
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Check, Shield, Moon, Truck, Loader2, Star, Users, ImageIcon } from "lucide-react";
+import { Check, Shield, Moon, Truck, Loader2, Star, ImageIcon } from "lucide-react";
 import { PolicyAccordion } from "./PolicyAccordion";
-import { CountdownTimerDisplay } from "./CountdownTimer";
 import { useState, useEffect, useRef, Suspense, lazy } from "react";
 import { useCartStore } from "@/stores/cartStore";
 import { useShopifyProducts } from "@/hooks/useShopifyProducts";
@@ -31,7 +29,6 @@ const CarouselFallback = () => (
 );
 
 export const Hero = () => {
-  const [selectedBundle, setSelectedBundle] = useState<"1" | "2">("2");
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { addItem, setCartOpen } = useCartStore();
   const hasTrackedView = useRef(false);
@@ -65,7 +62,7 @@ export const Hero = () => {
     setIsCheckingOut(true);
     try {
       const variant = product.node.variants.edges[0].node;
-      const quantity = selectedBundle === "1" ? 1 : 2;
+      const quantity = 1;
       
       const cartItem = {
         product,
@@ -96,30 +93,8 @@ export const Hero = () => {
     }
   };
 
-  const productPrice = product ? parseFloat(product.node.variants.edges[0].node.price.amount) : 129.99;
-  
-  const bundles = {
-    "1": {
-      quantity: 1,
-      price: productPrice,
-      originalPrice: productPrice * 2,
-      discount: "CHRISTMAS",
-      savings: 0,
-      freeGift: "+ FREE Gift",
-      freeGiftValue: "$29.99"
-    },
-    "2": {
-      quantity: 2,
-      price: productPrice,
-      originalPrice: productPrice * 2,
-      discount: "1+1 FREE",
-      savings: productPrice,
-      freeGifts: "+2 FREE Gifts",
-      freeGiftValue: "$59.98"
-    }
-  };
-
-  const selectedOption = bundles[selectedBundle];
+  // Fixed price for ergonomic pillow
+  const productPrice = 79.99;
 
   return (
     <section className="pb-3 md:pb-6 bg-background overflow-visible" style={{ paddingTop: Math.max(headerHeight - 80, 0) }}>
@@ -233,60 +208,19 @@ export const Hero = () => {
               </div>
             </div>
 
-            <div className="border-t border-b py-3 my-1.5 space-y-2">
-              <p className="text-center font-bold text-sm md:text-base tracking-wide">🎉 LIMITED CHRISTMAS OFFER 🎉</p>
-              <CountdownTimerDisplay />
+            <div className="border-t border-b py-4 my-1.5 space-y-3">
+              {/* Price Display */}
+              <div className="text-center">
+                <p className="text-3xl font-bold">${productPrice.toFixed(2)}</p>
+              </div>
               
-              <div className="grid grid-cols-2 gap-3 mb-2">
-                <button
-                  onClick={() => setSelectedBundle("1")}
-                  className={`border-2 rounded-lg p-3 text-center transition-all relative min-h-[120px] ${
-                    selectedBundle === "1"
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
-                  }`}
-                >
-                  <div className="flex items-center justify-center mb-2 mt-2">
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                      selectedBundle === "1" ? "border-primary" : "border-border"
-                    }`}>
-                      {selectedBundle === "1" && (
-                        <div className="w-2.5 h-2.5 rounded-full bg-primary" />
-                      )}
-                    </div>
-                  </div>
-                  <p className="font-bold text-base">1 Pillow</p>
-                  <p className="text-xl font-bold">${bundles["1"].price.toFixed(2)}</p>
-                </button>
-
-                <button
-                  onClick={() => setSelectedBundle("2")}
-                  className={`border-2 rounded-lg p-3 text-center transition-all relative min-h-[120px] ${
-                    selectedBundle === "2"
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
-                  }`}
-                >
-                  <Badge className="absolute -top-2 left-1/2 -translate-x-1/2 bg-destructive text-destructive-foreground text-xs px-2 py-0.5">
-                    {bundles["2"].discount}
-                  </Badge>
-                  <div className="flex items-center justify-center mb-2">
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                      selectedBundle === "2" ? "border-primary" : "border-border"
-                    }`}>
-                      {selectedBundle === "2" && (
-                        <div className="w-2.5 h-2.5 rounded-full bg-primary" />
-                      )}
-                    </div>
-                  </div>
-                  <p className="font-bold text-base">2 Pillows</p>
-                  <p className="text-xl font-bold">${bundles["2"].price.toFixed(2)}</p>
-                  <p className="text-sm text-muted-foreground line-through">${bundles["2"].originalPrice.toFixed(2)}</p>
-                  <div className="flex items-center justify-center gap-1 mt-1">
-                    <p className="text-sm font-medium">+ FREE GIFT 2X</p>
-                    <img src={eyeMaskGift} alt="Free eye mask gift" className="w-12 h-12 object-contain" loading="lazy" decoding="async" />
-                  </div>
-                </button>
+              {/* Included Free Gift */}
+              <div className="flex items-center justify-center gap-2 bg-green-50 dark:bg-green-900/20 rounded-lg py-2 px-3">
+                <img src={eyeMaskGift} alt="Included sleep mask" className="w-10 h-10 object-contain" loading="lazy" decoding="async" />
+                <div className="text-left">
+                  <p className="text-sm font-semibold text-green-700 dark:text-green-300">Sleep Mask Included</p>
+                  <p className="text-xs text-green-600 dark:text-green-400">$29.99 value • Choose color at checkout</p>
+                </div>
               </div>
             </div>
 
