@@ -229,3 +229,11 @@ verify_jwt = false
 # Garmin Backfill - Requires JWT to identify user
 [functions.garmin-backfill]
 verify_jwt = true
+
+# Garmin Activity Backfill - Requires JWT to identify user
+[functions.garmin-activity-backfill]
+verify_jwt = true
+
+# Garmin Activity File Download - CRON or manual (validates CRON_SECRET internally)
+[functions.garmin-activity-file-download]
+verify_jwt = false
