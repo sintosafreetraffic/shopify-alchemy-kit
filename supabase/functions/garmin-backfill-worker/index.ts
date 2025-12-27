@@ -315,16 +315,22 @@ Deno.serve(async (req) => {
     const garminClientId = Deno.env.get('GARMIN_CLIENT_ID');
     const garminClientSecret = Deno.env.get('GARMIN_CLIENT_SECRET');
     
-    // Verify CRON_SECRET
-    let body: { cron_secret?: string } = {};
+    // Verify CRON_SECRET - check both header and body for flexibility
+    const headerSecret = req.headers.get('x-cron-secret');
+    let bodySecret: string | undefined;
     try {
       const text = await req.text();
-      if (text) body = JSON.parse(text);
+      if (text) {
+        const body = JSON.parse(text);
+        bodySecret = body.cron_secret;
+      }
     } catch {
       // Ignore parse errors
     }
     
-    if (!cronSecret || body.cron_secret !== cronSecret) {
+    const providedSecret = headerSecret || bodySecret;
+    if (!cronSecret || providedSecret !== cronSecret) {
+      log('warn', 'Unauthorized request', { hasHeaderSecret: !!headerSecret, hasBodySecret: !!bodySecret });
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
