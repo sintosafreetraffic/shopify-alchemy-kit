@@ -21,6 +21,9 @@ interface WearableInsightsHint {
   // Qualitative labels (not raw numbers)
   efficiencyLevel?: 'high' | 'moderate' | 'low' | null;
   bedtimeConsistency?: 'consistent' | 'variable' | 'irregular' | null;
+  // Activity signals (qualitative only)
+  trainingLoadLabel?: 'unknown' | 'low' | 'moderate' | 'high' | 'very_high' | null;
+  lateWorkoutFlag?: boolean;
 }
 
 interface WhyThisPlanCardProps {
@@ -137,6 +140,20 @@ export function WhyThisPlanCard({
                 <Watch className="h-3.5 w-3.5 text-primary/60" />
                 <span className={`text-xs ${wearableHint.type === 'building' ? 'text-muted-foreground/70 italic' : 'text-muted-foreground/80'}`}>
                   {wearableHint.text}
+                </span>
+              </div>
+            )}
+            
+            {/* Activity insights hint (qualitative only) */}
+            {wearableInsights?.trainingLoadLabel && wearableInsights.trainingLoadLabel !== 'unknown' && (
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-xs text-muted-foreground/70">
+                  {wearableInsights.trainingLoadLabel === 'high' || wearableInsights.trainingLoadLabel === 'very_high'
+                    ? '↑ Training heavier than usual this week'
+                    : wearableInsights.trainingLoadLabel === 'low'
+                    ? '↓ Lighter training week'
+                    : 'Steady training week'}
+                  {wearableInsights.lateWorkoutFlag && ' • Late workouts detected'}
                 </span>
               </div>
             )}
