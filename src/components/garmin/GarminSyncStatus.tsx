@@ -250,7 +250,7 @@ export function GarminSyncStatus({ isActivityEnabled, onRetryComplete }: GarminS
           <div className="flex items-start gap-1 text-amber-700">
             <ShieldAlert className="h-3 w-3 mt-0.5 flex-shrink-0" />
             <span className="text-xs">
-              Garmin requires additional permissions. Try disconnecting and reconnecting with activity access enabled.
+              Activity history import isn't available with your current connection type. New workouts will still sync automatically going forward.
             </span>
           </div>
         )}
