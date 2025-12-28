@@ -337,8 +337,7 @@ const QuizRevealTracking = () => {
           .from('page_visits')
           .select('session_id, path, created_at')
           .gte('created_at', startDate.toISOString())
-          .order('created_at', { ascending: false })
-          .limit(1000),
+          .order('created_at', { ascending: false }),
         supabase
           .from('add_to_cart_analytics')
           .select('*')
