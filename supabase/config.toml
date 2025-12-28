@@ -265,3 +265,7 @@ verify_jwt = false
 # Garmin Compute Coach Signals - CRON job for daily signal computation
 [functions.garmin-compute-coach-signals]
 verify_jwt = false
+
+# Email Popup Analytics - Public for admin dashboard
+[functions.email-popup-analytics]
+verify_jwt = false

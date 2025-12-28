@@ -163,6 +163,17 @@ const QuizRevealTracking = () => {
   const navigate = useNavigate();
   const [stats, setStats] = useState<AnalyticsStats | null>(null);
   const [checkoutStats, setCheckoutStats] = useState<CheckoutStats | null>(null);
+  const [popupStats, setPopupStats] = useState<{
+    summary: {
+      total_views: number;
+      total_submissions: number;
+      unique_view_sessions: number;
+      unique_submit_sessions: number;
+      converted_sessions: number;
+      submission_rate: number;
+    };
+    daily_breakdown: Array<{ date: string; views: number; submissions: number }>;
+  } | null>(null);
   const [pinterestPurchases, setPinterestPurchases] = useState<PinterestPurchaseEvent[]>([]);
   const [pinterestStats, setPinterestStats] = useState<{
     total: number;
@@ -187,7 +198,7 @@ const QuizRevealTracking = () => {
   // Client-side tracking state
   const [providerStatuses, setProviderStatuses] = useState<ProviderStatus[]>([]);
   const [eventLog, setEventLog] = useState<EventLogEntry[]>([]);
-  const [addToCartEvents, setAddToCartEvents] = useState<any[]>([]);
+  const [addToCartEvents, setAddToCartEvents] = useState<any[]>();
   
   // Pinterest CAPI toggle state - DEPRECATED: Render path removed, direct CAPI is now the only path
   // Keeping minimal state for future send mode controls if needed
@@ -261,7 +272,7 @@ const QuizRevealTracking = () => {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - daysNum);
 
-      const [quizResponse, checkoutResponse, pinterestResult, pageVisitsResult, addToCartResult] = await Promise.all([
+      const [quizResponse, checkoutResponse, popupResponse, pinterestResult, pageVisitsResult, addToCartResult] = await Promise.all([
         fetch(`${supabaseUrl}/functions/v1/quiz-reveal-analytics`, {
           method: "POST",
           headers: {
@@ -274,6 +285,17 @@ const QuizRevealTracking = () => {
           }),
         }),
         fetch(`${supabaseUrl}/functions/v1/checkout-analytics`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": supabaseKey,
+          },
+          body: JSON.stringify({
+            action: "get_stats",
+            days: daysNum,
+          }),
+        }),
+        fetch(`${supabaseUrl}/functions/v1/email-popup-analytics`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -315,6 +337,12 @@ const QuizRevealTracking = () => {
       if (checkoutResponse.ok) {
         const checkoutData = await checkoutResponse.json();
         setCheckoutStats(checkoutData);
+      }
+
+      // Process email popup stats
+      if (popupResponse.ok) {
+        const popupData = await popupResponse.json();
+        setPopupStats(popupData);
       }
 
       // Process Pinterest purchase events
@@ -948,6 +976,42 @@ const QuizRevealTracking = () => {
                 </div>
               </Card>
             )}
+
+            {/* Email Popup Analytics */}
+            <Card className="p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <Mail className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold">Email Popup Performance</h3>
+                <Badge variant="outline" className="ml-2">Klaviyo</Badge>
+              </div>
+              {popupStats ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-center">
+                    <p className="text-xs text-muted-foreground mb-1">Popup Views</p>
+                    <p className="text-2xl font-bold text-blue-600">{popupStats.summary.unique_view_sessions}</p>
+                  </div>
+                  <div className="p-4 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-center">
+                    <p className="text-xs text-muted-foreground mb-1">Submissions</p>
+                    <p className="text-2xl font-bold text-emerald-600">{popupStats.summary.unique_submit_sessions}</p>
+                  </div>
+                  <div className="p-4 rounded-lg bg-violet-50 dark:bg-violet-900/20 text-center">
+                    <p className="text-xs text-muted-foreground mb-1">Submission Rate</p>
+                    <p className="text-2xl font-bold text-violet-600">{popupStats.summary.submission_rate}%</p>
+                  </div>
+                  <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-center">
+                    <p className="text-xs text-muted-foreground mb-1">Total Events</p>
+                    <p className="text-2xl font-bold text-amber-600">{popupStats.summary.total_views + popupStats.summary.total_submissions}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="h-24 flex items-center justify-center text-muted-foreground">
+                  <div className="text-center">
+                    <Mail className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <p>No popup data yet. Views will appear as users see the popup.</p>
+                  </div>
+                </div>
+              )}
+            </Card>
           </TabsContent>
 
           <TabsContent value="quiz" className="space-y-6 mt-6">
