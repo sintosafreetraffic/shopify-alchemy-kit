@@ -71,10 +71,13 @@ export function useKlaviyoPopupTracking(): UseKlaviyoPopupTrackingReturn {
         ...Object.fromEntries(new URLSearchParams(window.location.search).entries()),
       };
 
+      // Important: many ad blockers block URLs containing "track".
+      // We route tracking through the analytics function (which supports action: "track_event").
       const { data, error } = await supabase.functions.invoke(
-        "track-klaviyo-form-event",
+        "klaviyo-popup-analytics",
         {
           body: {
+            action: "track_event",
             session_id: sessionId.current,
             event_type: eventType,
             form_id: options?.formId || "email_popup",
@@ -85,7 +88,6 @@ export function useKlaviyoPopupTracking(): UseKlaviyoPopupTrackingReturn {
       );
 
       if (error) {
-        // Not silent: we want to know when tracking is broken
         console.warn("[klaviyo-popup-tracking] Track failed:", error.message);
         return;
       }
