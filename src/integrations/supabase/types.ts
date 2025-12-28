@@ -1020,6 +1020,45 @@ export type Database = {
           },
         ]
       }
+      klaviyo_form_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          form_id: string | null
+          form_version: string | null
+          id: string
+          meta: Json | null
+          page_path: string
+          session_id: string
+          source: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          form_id?: string | null
+          form_version?: string | null
+          id?: string
+          meta?: Json | null
+          page_path: string
+          session_id: string
+          source?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          form_id?: string | null
+          form_version?: string | null
+          id?: string
+          meta?: Json | null
+          page_path?: string
+          session_id?: string
+          source?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       missing_purchase_events: {
         Row: {
           detected_at: string

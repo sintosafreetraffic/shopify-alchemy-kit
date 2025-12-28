@@ -269,3 +269,15 @@ verify_jwt = false
 # Email Popup Analytics - Public for admin dashboard
 [functions.email-popup-analytics]
 verify_jwt = false
+
+# ============================================================
+# KLAVIYO POPUP TRACKING
+# ============================================================
+
+# Track Klaviyo Form Event - Public for popup tracking (no auth required for incognito)
+[functions.track-klaviyo-form-event]
+verify_jwt = false
+
+# Klaviyo Popup Analytics - Public, returns aggregates only
+[functions.klaviyo-popup-analytics]
+verify_jwt = false

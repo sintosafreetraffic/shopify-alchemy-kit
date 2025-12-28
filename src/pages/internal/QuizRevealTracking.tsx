@@ -174,6 +174,28 @@ const QuizRevealTracking = () => {
     };
     daily_breakdown: Array<{ date: string; views: number; submissions: number }>;
   } | null>(null);
+  const [klaviyoPopupStats, setKlaviyoPopupStats] = useState<{
+    views_unique_sessions: number;
+    submits_unique_sessions: number;
+    dismissed_unique_sessions: number;
+    submission_rate: number;
+    dismissal_rate: number;
+    period_days: number;
+    trend: {
+      views_delta: number;
+      submits_delta: number;
+      rate_delta: number;
+    };
+    top_pages: Array<{ page_path: string; views: number; submits: number }>;
+    debug_events?: Array<{
+      id: string;
+      created_at: string;
+      event_type: string;
+      page_path: string;
+      session_id_hash: string;
+    }>;
+  } | null>(null);
+  const [showKlaviyoDebug, setShowKlaviyoDebug] = useState(false);
   const [pinterestPurchases, setPinterestPurchases] = useState<PinterestPurchaseEvent[]>([]);
   const [pinterestStats, setPinterestStats] = useState<{
     total: number;
@@ -272,7 +294,7 @@ const QuizRevealTracking = () => {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - daysNum);
 
-      const [quizResponse, checkoutResponse, popupResponse, pinterestResult, pageVisitsResult, addToCartResult] = await Promise.all([
+      const [quizResponse, checkoutResponse, popupResponse, klaviyoPopupResponse, pinterestResult, pageVisitsResult, addToCartResult] = await Promise.all([
         fetch(`${supabaseUrl}/functions/v1/quiz-reveal-analytics`, {
           method: "POST",
           headers: {
@@ -306,11 +328,23 @@ const QuizRevealTracking = () => {
             days: daysNum,
           }),
         }),
+        fetch(`${supabaseUrl}/functions/v1/klaviyo-popup-analytics`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": supabaseKey,
+          },
+          body: JSON.stringify({
+            action: "get_stats",
+            days: daysNum,
+            include_debug: showKlaviyoDebug,
+          }),
+        }),
         supabase
           .from('pinterest_purchase_events')
           .select('*')
           .gte('created_at', startDate.toISOString())
-          .eq('is_test', false) // Exclude all test orders
+          .eq('is_test', false)
           .order('created_at', { ascending: false })
           .limit(100),
         supabase
@@ -339,10 +373,16 @@ const QuizRevealTracking = () => {
         setCheckoutStats(checkoutData);
       }
 
-      // Process email popup stats
+      // Process email popup stats (legacy)
       if (popupResponse.ok) {
         const popupData = await popupResponse.json();
         setPopupStats(popupData);
+      }
+
+      // Process Klaviyo popup stats (new dedicated tracking)
+      if (klaviyoPopupResponse.ok) {
+        const klaviyoData = await klaviyoPopupResponse.json();
+        setKlaviyoPopupStats(klaviyoData);
       }
 
       // Process Pinterest purchase events
@@ -977,37 +1017,72 @@ const QuizRevealTracking = () => {
               </Card>
             )}
 
-            {/* Email Popup Analytics */}
+            {/* Klaviyo Popup Analytics */}
             <Card className="p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <Mail className="w-5 h-5 text-primary" />
-                <h3 className="font-semibold">Email Popup Performance</h3>
-                <Badge variant="outline" className="ml-2">Klaviyo</Badge>
-              </div>
-              {popupStats ? (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-center">
-                    <p className="text-xs text-muted-foreground mb-1">Popup Views</p>
-                    <p className="text-2xl font-bold text-blue-600">{popupStats.summary.unique_view_sessions}</p>
-                  </div>
-                  <div className="p-4 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-center">
-                    <p className="text-xs text-muted-foreground mb-1">Submissions</p>
-                    <p className="text-2xl font-bold text-emerald-600">{popupStats.summary.unique_submit_sessions}</p>
-                  </div>
-                  <div className="p-4 rounded-lg bg-violet-50 dark:bg-violet-900/20 text-center">
-                    <p className="text-xs text-muted-foreground mb-1">Submission Rate</p>
-                    <p className="text-2xl font-bold text-violet-600">{popupStats.summary.submission_rate}%</p>
-                  </div>
-                  <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-center">
-                    <p className="text-xs text-muted-foreground mb-1">Total Events</p>
-                    <p className="text-2xl font-bold text-amber-600">{popupStats.summary.total_views + popupStats.summary.total_submissions}</p>
-                  </div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Mail className="w-5 h-5 text-primary" />
+                  <h3 className="font-semibold">Klaviyo Popup Performance</h3>
+                  <Badge variant="outline" className="ml-2">Dedicated Tracking</Badge>
                 </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Debug</span>
+                  <Switch checked={showKlaviyoDebug} onCheckedChange={setShowKlaviyoDebug} />
+                </div>
+              </div>
+              {klaviyoPopupStats ? (
+                <>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-center">
+                      <p className="text-xs text-muted-foreground mb-1">Views (unique)</p>
+                      <p className="text-2xl font-bold text-blue-600">{klaviyoPopupStats.views_unique_sessions}</p>
+                      {klaviyoPopupStats.trend.views_delta !== 0 && (
+                        <p className={`text-xs mt-1 ${klaviyoPopupStats.trend.views_delta > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                          {klaviyoPopupStats.trend.views_delta > 0 ? '+' : ''}{klaviyoPopupStats.trend.views_delta} vs prev
+                        </p>
+                      )}
+                    </div>
+                    <div className="p-4 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-center">
+                      <p className="text-xs text-muted-foreground mb-1">Submissions</p>
+                      <p className="text-2xl font-bold text-emerald-600">{klaviyoPopupStats.submits_unique_sessions}</p>
+                    </div>
+                    <div className="p-4 rounded-lg bg-violet-50 dark:bg-violet-900/20 text-center">
+                      <p className="text-xs text-muted-foreground mb-1">Submission Rate</p>
+                      <p className="text-2xl font-bold text-violet-600">{klaviyoPopupStats.submission_rate}%</p>
+                      {klaviyoPopupStats.trend.rate_delta !== 0 && (
+                        <p className={`text-xs mt-1 ${klaviyoPopupStats.trend.rate_delta > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                          {klaviyoPopupStats.trend.rate_delta > 0 ? '+' : ''}{klaviyoPopupStats.trend.rate_delta}% vs prev
+                        </p>
+                      )}
+                    </div>
+                    <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-center">
+                      <p className="text-xs text-muted-foreground mb-1">Dismissed</p>
+                      <p className="text-2xl font-bold text-amber-600">{klaviyoPopupStats.dismissed_unique_sessions}</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-3">Counts unique sessions to avoid double-counting.</p>
+                  
+                  {/* Debug events for admins */}
+                  {showKlaviyoDebug && klaviyoPopupStats.debug_events && klaviyoPopupStats.debug_events.length > 0 && (
+                    <div className="mt-4 pt-4 border-t">
+                      <p className="text-xs font-medium mb-2">Last 10 Events (Admin Only)</p>
+                      <div className="text-xs space-y-1 max-h-32 overflow-y-auto">
+                        {klaviyoPopupStats.debug_events.map((e) => (
+                          <div key={e.id} className="flex justify-between text-muted-foreground">
+                            <span>{e.event_type}</span>
+                            <span>{e.page_path}</span>
+                            <span>{new Date(e.created_at).toLocaleTimeString()}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="h-24 flex items-center justify-center text-muted-foreground">
                   <div className="text-center">
                     <Mail className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                    <p>No popup data yet. Views will appear as users see the popup.</p>
+                    <p>Collecting baseline — check back after more traffic.</p>
                   </div>
                 </div>
               )}
