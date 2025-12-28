@@ -73,12 +73,21 @@ export const EmailPopup = ({
 
       if (error) throw error;
 
-      // Set Pinterest enhanced match and track lead
-      await setEnhancedMatch(email);
-      trackLead('Newsletter');
+      // Track popup submission (don't pass email to avoid PII).
+      // Do this immediately after subscribe so tracking isn't blocked by ad pixels.
+      try {
+        await trackSubmit({ formId: "email_popup" });
+      } catch (e) {
+        console.warn("[email-popup] Failed to track submit", e);
+      }
 
-      // Track popup submission (don't pass email to avoid PII)
-      await trackSubmit({ formId: "email_popup" });
+      // Set Pinterest enhanced match and track lead (best-effort)
+      try {
+        await setEnhancedMatch(email);
+        trackLead("Newsletter");
+      } catch (e) {
+        console.warn("[email-popup] Pinterest tracking failed", e);
+      }
 
       setIsSuccess(true);
       toast({

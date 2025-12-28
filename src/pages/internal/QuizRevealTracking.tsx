@@ -286,59 +286,44 @@ const QuizRevealTracking = () => {
     setError(null);
     
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-
       // Fetch quiz, checkout stats, and Pinterest purchases in parallel
       const daysNum = parseInt(days);
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - daysNum);
 
-      const [quizResponse, checkoutResponse, popupResponse, klaviyoPopupResponse, pinterestResult, pageVisitsResult, addToCartResult] = await Promise.all([
-        fetch(`${supabaseUrl}/functions/v1/quiz-reveal-analytics`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": supabaseKey,
-          },
-          body: JSON.stringify({
+      const [
+        quizInvoke,
+        checkoutInvoke,
+        popupInvoke,
+        klaviyoPopupInvoke,
+        pinterestResult,
+        pageVisitsResult,
+        addToCartResult,
+      ] = await Promise.all([
+        supabase.functions.invoke("quiz-reveal-analytics", {
+          body: {
             action: "get_stats",
             days: daysNum,
-          }),
-        }),
-        fetch(`${supabaseUrl}/functions/v1/checkout-analytics`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": supabaseKey,
           },
-          body: JSON.stringify({
+        }),
+        supabase.functions.invoke("checkout-analytics", {
+          body: {
             action: "get_stats",
             days: daysNum,
-          }),
-        }),
-        fetch(`${supabaseUrl}/functions/v1/email-popup-analytics`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": supabaseKey,
           },
-          body: JSON.stringify({
+        }),
+        supabase.functions.invoke("email-popup-analytics", {
+          body: {
             action: "get_stats",
             days: daysNum,
-          }),
-        }),
-        fetch(`${supabaseUrl}/functions/v1/klaviyo-popup-analytics`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": supabaseKey,
           },
-          body: JSON.stringify({
+        }),
+        supabase.functions.invoke("klaviyo-popup-analytics", {
+          body: {
             action: "get_stats",
             days: daysNum,
             include_debug: showKlaviyoDebug,
-          }),
+          },
         }),
         supabase
           .from('pinterest_purchase_events')
@@ -361,28 +346,25 @@ const QuizRevealTracking = () => {
           .limit(1000),
       ]);
 
-      if (!quizResponse.ok) {
-        throw new Error(`Failed to fetch quiz stats: ${quizResponse.status}`);
+      if (quizInvoke.error) {
+        throw new Error(`Failed to fetch quiz stats: ${quizInvoke.error.message}`);
       }
-      
-      const quizData = await quizResponse.json();
-      setStats(quizData);
-      
-      if (checkoutResponse.ok) {
-        const checkoutData = await checkoutResponse.json();
-        setCheckoutStats(checkoutData);
+
+      setStats(quizInvoke.data);
+
+      // Process checkout stats
+      if (!checkoutInvoke.error) {
+        setCheckoutStats(checkoutInvoke.data);
       }
 
       // Process email popup stats (legacy)
-      if (popupResponse.ok) {
-        const popupData = await popupResponse.json();
-        setPopupStats(popupData);
+      if (!popupInvoke.error) {
+        setPopupStats(popupInvoke.data);
       }
 
       // Process Klaviyo popup stats (new dedicated tracking)
-      if (klaviyoPopupResponse.ok) {
-        const klaviyoData = await klaviyoPopupResponse.json();
-        setKlaviyoPopupStats(klaviyoData);
+      if (!klaviyoPopupInvoke.error) {
+        setKlaviyoPopupStats(klaviyoPopupInvoke.data);
       }
 
       // Process Pinterest purchase events
