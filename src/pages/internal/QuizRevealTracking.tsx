@@ -198,7 +198,7 @@ const QuizRevealTracking = () => {
   // Client-side tracking state
   const [providerStatuses, setProviderStatuses] = useState<ProviderStatus[]>([]);
   const [eventLog, setEventLog] = useState<EventLogEntry[]>([]);
-  const [addToCartEvents, setAddToCartEvents] = useState<any[]>();
+  const [addToCartEvents, setAddToCartEvents] = useState<any[]>([]);
   
   // Pinterest CAPI toggle state - DEPRECATED: Render path removed, direct CAPI is now the only path
   // Keeping minimal state for future send mode controls if needed
