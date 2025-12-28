@@ -77,6 +77,9 @@ serve(async (req: Request) => {
       tracked_at: new Date().toISOString(),
     };
 
+    // Use 'default' for null form_id to match unique constraint
+    const formId = body.form_id || "default";
+
     // Insert with ON CONFLICT DO NOTHING for idempotency
     const { data, error } = await supabase
       .from("klaviyo_form_events")
@@ -84,7 +87,7 @@ serve(async (req: Request) => {
         {
           session_id: body.session_id,
           event_type: body.event_type,
-          form_id: body.form_id || null,
+          form_id: formId,
           page_path: body.page_path,
           user_id: userId,
           meta,
