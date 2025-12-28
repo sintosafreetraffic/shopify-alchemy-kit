@@ -8,7 +8,7 @@ const corsHeaders = {
 
 interface TrackEventRequest {
   action: "track";
-  event_type: "pre_reveal_viewed" | "full_reveal_unlocked";
+  event_type: "pre_reveal_viewed" | "full_reveal_unlocked" | "email_popup_viewed" | "email_popup_submitted";
   session_id: string;
   persona_cluster?: string;
   insight_count?: number;
