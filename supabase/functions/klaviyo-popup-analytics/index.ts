@@ -12,6 +12,17 @@ interface AnalyticsRequest {
   include_debug?: boolean; // Only for admins
 }
 
+interface TrackEventRequest {
+  action: "track_event";
+  session_id: string;
+  event_type: "viewed" | "submitted" | "dismissed";
+  form_id?: string;
+  page_path: string;
+  meta?: Record<string, unknown>;
+}
+
+type RequestBody = AnalyticsRequest | TrackEventRequest;
+
 interface PopupStats {
   views_unique_sessions: number;
   submits_unique_sessions: number;
@@ -41,34 +52,132 @@ serve(async (req: Request) => {
   }
 
   try {
-    const body = await req.json() as AnalyticsRequest;
-    
-    if (body.action !== "get_stats") {
-      return new Response(
-        JSON.stringify({ error: "Invalid action" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    const body = (await req.json()) as RequestBody;
 
-    const days = body.days === 30 ? 30 : 7;
-    
     // Create Supabase client with service role
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // --- Tracking endpoint (kept inside this function to avoid ad blockers that block URLs containing "track")
+    if (body.action === "track_event") {
+      // Validate required fields
+      if (!body.session_id || typeof body.session_id !== "string") {
+        return new Response(JSON.stringify({ ok: false, error: "session_id is required" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (!body.event_type || !["viewed", "submitted", "dismissed"].includes(body.event_type)) {
+        return new Response(JSON.stringify({ ok: false, error: "event_type must be viewed, submitted, or dismissed" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (!body.page_path || typeof body.page_path !== "string") {
+        return new Response(JSON.stringify({ ok: false, error: "page_path is required" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Extract user_id from auth header if present (optional)
+      let userId: string | null = null;
+      const authHeader = req.headers.get("authorization");
+      if (authHeader?.startsWith("Bearer ")) {
+        try {
+          const anonClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!);
+          const {
+            data: { user },
+          } = await anonClient.auth.getUser(authHeader.replace("Bearer ", ""));
+          userId = user?.id || null;
+        } catch {
+          // ignore
+        }
+      }
+
+      const meta = {
+        ...(body.meta || {}),
+        tracked_at: new Date().toISOString(),
+      };
+
+      // Use 'default' for null form_id to match unique constraint
+      const formId = body.form_id || "default";
+
+      const { data, error } = await supabase
+        .from("klaviyo_form_events")
+        .upsert(
+          {
+            session_id: body.session_id,
+            event_type: body.event_type,
+            form_id: formId,
+            page_path: body.page_path,
+            user_id: userId,
+            meta,
+            source: "web",
+          },
+          {
+            onConflict: "session_id,form_id,event_type",
+            ignoreDuplicates: true,
+          }
+        )
+        .select("id")
+        .maybeSingle();
+
+      if (error) {
+        if (error.code === "23505") {
+          console.log("[klaviyo-popup-analytics] Deduped track_event", {
+            session_id_hash: body.session_id.substring(0, 8),
+            event_type: body.event_type,
+            form_id: formId,
+          });
+          return new Response(JSON.stringify({ ok: true, deduped: true }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        console.error("[klaviyo-popup-analytics] track_event insert error:", error);
+        return new Response(JSON.stringify({ ok: false, error: error.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const inserted = data?.id != null;
+      console.log("[klaviyo-popup-analytics] track_event", {
+        session_id_hash: body.session_id.substring(0, 8),
+        event_type: body.event_type,
+        form_id: formId,
+        page_path: body.page_path,
+        inserted,
+      });
+
+      return new Response(JSON.stringify({ ok: true, deduped: !inserted }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // --- Analytics endpoint
+    if (body.action !== "get_stats") {
+      return new Response(JSON.stringify({ error: "Invalid action" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const days = body.days === 30 ? 30 : 7;
 
     // Check if requester is admin (for debug data)
     let isAdmin = false;
     const authHeader = req.headers.get("authorization");
     if (authHeader?.startsWith("Bearer ")) {
       try {
-        const anonClient = createClient(
-          supabaseUrl,
-          Deno.env.get("SUPABASE_ANON_KEY")!
-        );
-        const { data: { user } } = await anonClient.auth.getUser(
-          authHeader.replace("Bearer ", "")
-        );
+        const anonClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!);
+        const {
+          data: { user },
+        } = await anonClient.auth.getUser(authHeader.replace("Bearer ", ""));
         if (user) {
           const { data: roleData } = await supabase
             .from("user_roles")
@@ -111,34 +220,24 @@ serve(async (req: Request) => {
     }
 
     // Calculate current period metrics (unique sessions per event type)
-    const currentViews = new Set(
-      (currentEvents || []).filter(e => e.event_type === "viewed").map(e => e.session_id)
-    );
+    const currentViews = new Set((currentEvents || []).filter((e) => e.event_type === "viewed").map((e) => e.session_id));
     const currentSubmits = new Set(
-      (currentEvents || []).filter(e => e.event_type === "submitted").map(e => e.session_id)
+      (currentEvents || []).filter((e) => e.event_type === "submitted").map((e) => e.session_id)
     );
     const currentDismissed = new Set(
-      (currentEvents || []).filter(e => e.event_type === "dismissed").map(e => e.session_id)
+      (currentEvents || []).filter((e) => e.event_type === "dismissed").map((e) => e.session_id)
     );
 
     // Calculate previous period metrics
-    const prevViews = new Set(
-      (previousEvents || []).filter(e => e.event_type === "viewed").map(e => e.session_id)
-    );
+    const prevViews = new Set((previousEvents || []).filter((e) => e.event_type === "viewed").map((e) => e.session_id));
     const prevSubmits = new Set(
-      (previousEvents || []).filter(e => e.event_type === "submitted").map(e => e.session_id)
+      (previousEvents || []).filter((e) => e.event_type === "submitted").map((e) => e.session_id)
     );
 
     // Calculate rates
-    const currentRate = currentViews.size > 0 
-      ? (currentSubmits.size / currentViews.size) * 100 
-      : 0;
-    const prevRate = prevViews.size > 0 
-      ? (prevSubmits.size / prevViews.size) * 100 
-      : 0;
-    const dismissalRate = currentViews.size > 0
-      ? (currentDismissed.size / currentViews.size) * 100
-      : 0;
+    const currentRate = currentViews.size > 0 ? (currentSubmits.size / currentViews.size) * 100 : 0;
+    const prevRate = prevViews.size > 0 ? (prevSubmits.size / prevViews.size) * 100 : 0;
+    const dismissalRate = currentViews.size > 0 ? (currentDismissed.size / currentViews.size) * 100 : 0;
 
     // Calculate top pages
     const pageStats: Record<string, { views: Set<string>; submits: Set<string> }> = {};
@@ -185,7 +284,7 @@ serve(async (req: Request) => {
         .order("created_at", { ascending: false })
         .limit(10);
 
-      stats.debug_events = (recentEvents || []).map(e => ({
+      stats.debug_events = (recentEvents || []).map((e) => ({
         id: e.id,
         created_at: e.created_at,
         event_type: e.event_type,
@@ -201,15 +300,14 @@ serve(async (req: Request) => {
       rate: stats.submission_rate,
     });
 
-    return new Response(
-      JSON.stringify(stats),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify(stats), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error) {
     console.error("[klaviyo-popup-analytics] Unexpected error:", error);
-    return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
