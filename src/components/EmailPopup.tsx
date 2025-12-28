@@ -1,5 +1,5 @@
 // Performance: Using OptimizedImage for lazy loading
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X, Copy, Check, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -7,6 +7,44 @@ import { setEnhancedMatch, trackLead } from "@/lib/pinterest";
 import OptimizedImage from "@/components/OptimizedImage";
 import logo from "@/assets/risebynight-logo-official.png";
 import moonIcon from "@/assets/moon-icon-blue.png";
+
+// Get or create a session ID for popup analytics
+const getPopupSessionId = (): string => {
+  const key = "rbn_popup_session_id";
+  let sessionId = sessionStorage.getItem(key);
+  if (!sessionId) {
+    sessionId = `popup_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    sessionStorage.setItem(key, sessionId);
+  }
+  return sessionId;
+};
+
+// Track popup event (fire and forget)
+const trackPopupEvent = async (eventType: "email_popup_viewed" | "email_popup_submitted", email?: string) => {
+  try {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    
+    await fetch(`${supabaseUrl}/functions/v1/quiz-reveal-analytics`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": supabaseKey,
+      },
+      body: JSON.stringify({
+        action: "track",
+        event_type: eventType,
+        session_id: getPopupSessionId(),
+        email: email || null,
+        user_agent: navigator.userAgent,
+        referrer: document.referrer,
+      }),
+    });
+  } catch (e) {
+    // Silent fail - analytics shouldn't block UX
+    console.warn("[popup-analytics] Tracking failed:", e);
+  }
+};
 
 interface EmailPopupProps {
   isOpen: boolean;
@@ -30,6 +68,15 @@ export const EmailPopup = ({
   const [isSuccess, setIsSuccess] = useState(false);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
+  const hasTrackedView = useRef(false);
+
+  // Track popup view when opened
+  useEffect(() => {
+    if (isOpen && !hasTrackedView.current) {
+      hasTrackedView.current = true;
+      trackPopupEvent("email_popup_viewed");
+    }
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,6 +102,9 @@ export const EmailPopup = ({
       // Set Pinterest enhanced match and track lead
       await setEnhancedMatch(email);
       trackLead('Newsletter');
+
+      // Track popup submission
+      trackPopupEvent("email_popup_submitted", email);
 
       setIsSuccess(true);
       toast({
