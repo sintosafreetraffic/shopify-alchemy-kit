@@ -2576,6 +2576,13 @@ export type Database = {
         }[]
       }
       get_auth_email: { Args: never; Returns: string }
+      get_page_visits_stats: {
+        Args: { start_date: string }
+        Returns: {
+          total_pageviews: number
+          unique_sessions: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

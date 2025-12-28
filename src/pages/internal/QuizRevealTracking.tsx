@@ -299,6 +299,7 @@ const QuizRevealTracking = () => {
         pinterestResult,
         pageVisitsResult,
         addToCartResult,
+        pageVisitsStatsResult,
       ] = await Promise.all([
         supabase.functions.invoke("quiz-reveal-analytics", {
           body: {
@@ -337,13 +338,15 @@ const QuizRevealTracking = () => {
           .select('session_id, path, created_at')
           .gte('created_at', startDate.toISOString())
           .order('created_at', { ascending: false })
-          .limit(5000),
+          .limit(1000),
         supabase
           .from('add_to_cart_analytics')
           .select('*')
           .gte('created_at', startDate.toISOString())
           .order('created_at', { ascending: false })
           .limit(1000),
+        // Use server-side aggregation for accurate totals (no row limit)
+        supabase.rpc('get_page_visits_stats', { start_date: startDate.toISOString() }),
       ]);
 
       if (quizInvoke.error) {
@@ -395,16 +398,18 @@ const QuizRevealTracking = () => {
         });
       }
 
-      // Process page visits for comparison chart
+      // Process page visits stats from server-side aggregation (accurate totals)
+      if (pageVisitsStatsResult.data && pageVisitsStatsResult.data.length > 0) {
+        const stats = pageVisitsStatsResult.data[0] as { total_pageviews: number; unique_sessions: number };
+        setPageVisitsTotal({
+          sessions: stats.unique_sessions,
+          pageviews: stats.total_pageviews,
+        });
+      }
+
+      // Process page visits for comparison chart (limited sample for chart display)
       if (pageVisitsResult.data) {
         const visits = pageVisitsResult.data as Array<{ session_id: string; path: string; created_at: string }>;
-        
-        // Calculate totals
-        const uniqueSessions = new Set(visits.map(v => v.session_id)).size;
-        setPageVisitsTotal({
-          sessions: uniqueSessions,
-          pageviews: visits.length,
-        });
 
         // Group by date for chart
         const dailyData: Record<string, { sessions: Set<string>; pageviews: number }> = {};
