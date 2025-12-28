@@ -1,50 +1,13 @@
 // Performance: Using OptimizedImage for lazy loading
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { X, Copy, Check, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { setEnhancedMatch, trackLead } from "@/lib/pinterest";
+import { useKlaviyoPopupTracking } from "@/hooks/useKlaviyoPopupTracking";
 import OptimizedImage from "@/components/OptimizedImage";
 import logo from "@/assets/risebynight-logo-official.png";
 import moonIcon from "@/assets/moon-icon-blue.png";
-
-// Get or create a session ID for popup analytics
-const getPopupSessionId = (): string => {
-  const key = "rbn_popup_session_id";
-  let sessionId = sessionStorage.getItem(key);
-  if (!sessionId) {
-    sessionId = `popup_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-    sessionStorage.setItem(key, sessionId);
-  }
-  return sessionId;
-};
-
-// Track popup event (fire and forget)
-const trackPopupEvent = async (eventType: "email_popup_viewed" | "email_popup_submitted", email?: string) => {
-  try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-    
-    await fetch(`${supabaseUrl}/functions/v1/quiz-reveal-analytics`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "apikey": supabaseKey,
-      },
-      body: JSON.stringify({
-        action: "track",
-        event_type: eventType,
-        session_id: getPopupSessionId(),
-        email: email || null,
-        user_agent: navigator.userAgent,
-        referrer: document.referrer,
-      }),
-    });
-  } catch (e) {
-    // Silent fail - analytics shouldn't block UX
-    console.warn("[popup-analytics] Tracking failed:", e);
-  }
-};
 
 interface EmailPopupProps {
   isOpen: boolean;
@@ -68,15 +31,26 @@ export const EmailPopup = ({
   const [isSuccess, setIsSuccess] = useState(false);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
-  const hasTrackedView = useRef(false);
+  const { trackView, trackSubmit, trackDismiss } = useKlaviyoPopupTracking();
 
-  // Track popup view when opened
+  // Track popup view when opened (with visibility check)
   useEffect(() => {
-    if (isOpen && !hasTrackedView.current) {
-      hasTrackedView.current = true;
-      trackPopupEvent("email_popup_viewed");
+    if (isOpen) {
+      // Small delay to ensure popup is actually visible
+      const timer = setTimeout(() => {
+        trackView({ formId: "email_popup" });
+      }, 100);
+      return () => clearTimeout(timer);
     }
-  }, [isOpen]);
+  }, [isOpen, trackView]);
+
+  const handleClose = () => {
+    // Track dismiss before closing
+    if (!isSuccess) {
+      trackDismiss({ formId: "email_popup" });
+    }
+    onClose();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,8 +77,8 @@ export const EmailPopup = ({
       await setEnhancedMatch(email);
       trackLead('Newsletter');
 
-      // Track popup submission
-      trackPopupEvent("email_popup_submitted", email);
+      // Track popup submission (don't pass email to avoid PII)
+      await trackSubmit({ formId: "email_popup" });
 
       setIsSuccess(true);
       toast({
@@ -154,7 +128,7 @@ export const EmailPopup = ({
               <div className="relative p-8">
                 {/* Close button */}
                 <button
-                  onClick={onClose}
+                  onClick={handleClose}
                   className="absolute right-4 top-4 rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                   aria-label="Close popup"
                 >
@@ -238,7 +212,7 @@ export const EmailPopup = ({
 
                     {/* No thanks link */}
                     <button
-                      onClick={onClose}
+                      onClick={handleClose}
                       className="mt-4 w-full text-center text-sm font-bold uppercase tracking-wider text-foreground hover:text-muted-foreground transition-colors"
                     >
                       No, Thanks
