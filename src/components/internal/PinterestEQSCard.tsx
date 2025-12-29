@@ -19,6 +19,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
   Loader2,
   RefreshCw,
   TrendingUp,
@@ -29,6 +34,10 @@ import {
   Info,
   Link,
   ExternalLink,
+  ChevronDown,
+  ChevronRight,
+  Wrench,
+  Zap,
 } from "lucide-react";
 
 // ============================================================================
@@ -42,6 +51,19 @@ interface BlockingIssue {
   recommendation: string;
 }
 
+interface EventTypeDetail {
+  coverage: number;
+  issues?: Array<{ id: string; name: string; reason: string }>;
+}
+
+interface QualityComponentDetail {
+  [eventType: string]: EventTypeDetail;
+}
+
+interface QualityComponents {
+  [componentName: string]: QualityComponentDetail;
+}
+
 interface EQSSnapshot {
   id: string;
   created_at: string;
@@ -52,6 +74,7 @@ interface EQSSnapshot {
   coverage_click_id: number | null;
   blocking_issues: BlockingIssue[];
   api_error_message: string | null;
+  quality_components?: QualityComponents;
 }
 
 interface OAuthStatus {
@@ -150,6 +173,215 @@ const CoverageBar = ({ label, value, tooltip }: CoverageBarProps) => {
           )}
         </Tooltip>
       </TooltipProvider>
+    </div>
+  );
+};
+
+// ============================================================================
+// ACTIONABLE FIX SUGGESTIONS
+// ============================================================================
+
+const COMPONENT_FIXES: Record<string, {
+  displayName: string;
+  priority: "high" | "medium" | "low";
+  description: string;
+  actionable: string;
+  implementation: string;
+}> = {
+  email: {
+    displayName: "Email",
+    priority: "high",
+    description: "Hashed email enables customer matching across devices and sessions",
+    actionable: "Capture email earlier in the funnel (e.g., email popup before checkout)",
+    implementation: "Add email hash to Pinterest Conversions API payload: em: SHA256(email.toLowerCase().trim())",
+  },
+  click_id: {
+    displayName: "Click ID (EPIK)",
+    priority: "high",
+    description: "Pinterest click parameter is critical for attribution",
+    actionable: "Ensure _epik URL parameter is captured on landing pages and stored through checkout",
+    implementation: "Capture from URL: new URLSearchParams(window.location.search).get('_epik') and persist in localStorage/cookie",
+  },
+  order_id: {
+    displayName: "Order ID",
+    priority: "medium",
+    description: "Unique order identifiers for deduplication",
+    actionable: "Ensure order_id is sent with all checkout events",
+    implementation: "Include order_id in Conversions API payload for checkout events",
+  },
+  external_id: {
+    displayName: "External ID",
+    priority: "medium",
+    description: "Customer identifier for cross-device matching",
+    actionable: "Add customer ID to conversion events for better matching",
+    implementation: "Add external_id (customer ID hash) to Pinterest Conversions API payload",
+  },
+  user_agent: {
+    displayName: "User Agent",
+    priority: "low",
+    description: "Browser information helps with matching",
+    actionable: "Ensure user agent is passed through Conversions API",
+    implementation: "Capture navigator.userAgent and pass to backend for API calls",
+  },
+  ip_address: {
+    displayName: "IP Address",
+    priority: "low",
+    description: "IP helps with geographic and device matching",
+    actionable: "Capture client IP on server-side for Conversions API",
+    implementation: "Use req.headers['x-forwarded-for'] or req.socket.remoteAddress on server",
+  },
+  source_url: {
+    displayName: "Source URL",
+    priority: "low",
+    description: "Page URL provides context for events",
+    actionable: "Include page URL with all events",
+    implementation: "Add event_source_url: window.location.href to event payloads",
+  },
+};
+
+const EVENT_TYPE_LABELS: Record<string, string> = {
+  checkout: "Checkout",
+  add_to_cart: "Add to Cart",
+  page_visit: "Page Visit",
+  lead: "Lead",
+  search: "Search",
+  view_category: "View Category",
+  custom: "Custom",
+};
+
+// ============================================================================
+// DETAILED BREAKDOWN COMPONENT
+// ============================================================================
+
+interface DetailedBreakdownProps {
+  qualityComponents: QualityComponents;
+}
+
+const DetailedBreakdown = ({ qualityComponents }: DetailedBreakdownProps) => {
+  const [expandedComponent, setExpandedComponent] = useState<string | null>(null);
+
+  if (!qualityComponents || Object.keys(qualityComponents).length === 0) {
+    return null;
+  }
+
+  // Sort components by priority
+  const sortedComponents = Object.entries(qualityComponents).sort(([a], [b]) => {
+    const priorityOrder = { high: 0, medium: 1, low: 2 };
+    const aPriority = COMPONENT_FIXES[a]?.priority || "low";
+    const bPriority = COMPONENT_FIXES[b]?.priority || "low";
+    return priorityOrder[aPriority] - priorityOrder[bPriority];
+  });
+
+  return (
+    <div className="border-t border-border pt-4 mt-4">
+      <p className="text-xs text-muted-foreground mb-3 flex items-center gap-1.5">
+        <Zap className="w-3.5 h-3.5" />
+        Detailed Breakdown by Event Type
+      </p>
+      <div className="space-y-2">
+        {sortedComponents.map(([componentName, eventTypes]) => {
+          const fix = COMPONENT_FIXES[componentName];
+          const displayName = fix?.displayName || componentName;
+          const isExpanded = expandedComponent === componentName;
+          
+          // Calculate average coverage and find issues
+          const eventEntries = Object.entries(eventTypes);
+          const coverages = eventEntries
+            .filter(([, data]) => typeof data.coverage === "number")
+            .map(([, data]) => data.coverage);
+          const avgCoverage = coverages.length > 0 
+            ? Math.round(coverages.reduce((a, b) => a + b, 0) / coverages.length) 
+            : null;
+          
+          const allIssues = eventEntries.flatMap(([eventType, data]) => 
+            (data.issues || []).map(issue => ({ ...issue, eventType }))
+          );
+          
+          const hasIssues = allIssues.length > 0;
+          const coverageColor = avgCoverage === null ? "text-muted-foreground" 
+            : avgCoverage >= 90 ? "text-emerald-600 dark:text-emerald-400"
+            : avgCoverage >= 70 ? "text-amber-600 dark:text-amber-400"
+            : "text-rose-600 dark:text-rose-400";
+
+          return (
+            <Collapsible key={componentName} open={isExpanded} onOpenChange={(open) => setExpandedComponent(open ? componentName : null)}>
+              <CollapsibleTrigger className="w-full">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer">
+                  <div className="flex items-center gap-2">
+                    {isExpanded ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+                    <span className="text-sm font-medium">{displayName}</span>
+                    {hasIssues && (
+                      <Badge variant="outline" className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800">
+                        {allIssues.length} issue{allIssues.length > 1 ? "s" : ""}
+                      </Badge>
+                    )}
+                  </div>
+                  <span className={`font-mono text-sm tabular-nums ${coverageColor}`}>
+                    {avgCoverage !== null ? `${avgCoverage}%` : "—"}
+                  </span>
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="mt-2 ml-6 space-y-3 pb-2">
+                  {/* Per-event-type breakdown */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {eventEntries.map(([eventType, data]) => {
+                      const eventLabel = EVENT_TYPE_LABELS[eventType] || eventType;
+                      const coverage = Math.round(data.coverage);
+                      const eventHasIssues = (data.issues || []).length > 0;
+                      const eventColor = coverage >= 90 ? "text-emerald-600 dark:text-emerald-400"
+                        : coverage >= 70 ? "text-amber-600 dark:text-amber-400"
+                        : "text-rose-600 dark:text-rose-400";
+                      
+                      return (
+                        <div key={eventType} className="flex items-center justify-between text-xs p-2 rounded bg-background border border-border">
+                          <span className="text-muted-foreground flex items-center gap-1">
+                            {eventLabel}
+                            {eventHasIssues && <AlertCircle className="w-3 h-3 text-amber-500" />}
+                          </span>
+                          <span className={`font-mono ${eventColor}`}>{coverage}%</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Issues list */}
+                  {allIssues.length > 0 && (
+                    <div className="space-y-1.5">
+                      {allIssues.map((issue, idx) => (
+                        <div key={idx} className="text-xs p-2 rounded bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                          <p className="font-medium text-amber-700 dark:text-amber-400">
+                            {issue.name} ({EVENT_TYPE_LABELS[issue.eventType] || issue.eventType})
+                          </p>
+                          <p className="text-amber-600/80 dark:text-amber-500/80 mt-0.5">{issue.reason}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Actionable fix */}
+                  {fix && (
+                    <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
+                      <div className="flex items-start gap-2">
+                        <Wrench className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                        <div className="space-y-1.5">
+                          <p className="text-xs font-medium text-foreground">{fix.actionable}</p>
+                          <details className="text-xs">
+                            <summary className="cursor-pointer text-primary hover:underline">Implementation details</summary>
+                            <code className="block mt-1.5 p-2 rounded bg-muted text-muted-foreground font-mono text-[11px] break-all">
+                              {fix.implementation}
+                            </code>
+                          </details>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          );
+        })}
+      </div>
     </div>
   );
 };
@@ -551,9 +783,14 @@ export const PinterestEQSCard = () => {
         />
       </div>
 
+      {/* Detailed Breakdown by Event Type */}
+      {snapshot.quality_components && Object.keys(snapshot.quality_components).length > 0 && (
+        <DetailedBreakdown qualityComponents={snapshot.quality_components} />
+      )}
+
       {/* Blocking Issues */}
       {snapshot.blocking_issues.length > 0 && (
-        <div className="border-t border-border pt-4">
+        <div className="border-t border-border pt-4 mt-4">
           <p className="text-xs text-muted-foreground mb-3">Limiting factors</p>
           <div className="space-y-2">
             {snapshot.blocking_issues.map((issue, idx) => {
