@@ -1358,6 +1358,39 @@ export type Database = {
         }
         Relationships: []
       }
+      pinterest_oauth_tokens: {
+        Row: {
+          access_token: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          refresh_token: string | null
+          scopes: string[] | null
+          token_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          refresh_token?: string | null
+          scopes?: string[] | null
+          token_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          refresh_token?: string | null
+          scopes?: string[] | null
+          token_type?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       pinterest_purchase_events: {
         Row: {
           attribution_confidence: string | null
