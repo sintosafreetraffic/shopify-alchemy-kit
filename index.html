@@ -110,6 +110,13 @@
       })();
     </script>
     
+    <!-- Klaviyo initialization - must be before deferred scripts -->
+    <script type="text/javascript">
+      // Initialize Klaviyo queues immediately so events can be queued before script loads
+      window._learnq = window._learnq || [];
+      window._klOnsite = window._klOnsite || [];
+    </script>
+    
     <!-- Third-party scripts deferred until first user interaction for better TTI -->
     <script type="text/javascript">
       (function() {
@@ -118,10 +125,10 @@
           if (scriptsLoaded) return;
           scriptsLoaded = true;
           
-          // Klaviyo Onsite
+          // Klaviyo Onsite (handles both _learnq and _klOnsite)
           var kl = document.createElement('script');
           kl.async = true;
-          kl.src = 'https://a.klaviyo.com/media/js/onsite/onsite.js?company_id=ThHaCi';
+          kl.src = 'https://static.klaviyo.com/onsite/js/klaviyo.js?company_id=ThHaCi';
           document.head.appendChild(kl);
           
           // Microsoft Clarity
