@@ -42,7 +42,7 @@ enable_confirmations = false
 # AUTHENTICATED ENDPOINTS (verify_jwt = true or omitted):
 # - User-facing features requiring login
 # - Endpoints that access user-specific data
-#
+# #
 # CRON/INTERNAL ENDPOINTS (verify_jwt = false but require CRON_SECRET):
 # - Scheduled jobs that validate CRON_SECRET internally
 # ============================================================
@@ -109,6 +109,10 @@ verify_jwt = true
 
 # Klaviyo profile - Public for quiz flow, validates email internally
 [functions.klaviyo-profile]
+verify_jwt = false
+
+# Klaviyo public key discovery - Public (returns company_id used by onsite JS)
+[functions.klaviyo-public-key]
 verify_jwt = false
 
 # Debug endpoints - Require DEBUG_SECRET internally
