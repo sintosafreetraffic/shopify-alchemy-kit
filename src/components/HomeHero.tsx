@@ -3,8 +3,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 
 // Hero images
-import heroDesktop from "@/assets/hero-christmas-desktop.webp";
-import heroMobile from "@/assets/hero-mobile-christmas.webp";
+import heroDesktop from "@/assets/hero-cloud-sleep.webp";
+import heroMobile from "@/assets/hero-cloud-sleep.webp";
 
 // ============================================================================
 // HERO HEADLINE VARIANTS (Future A/B Testing)
