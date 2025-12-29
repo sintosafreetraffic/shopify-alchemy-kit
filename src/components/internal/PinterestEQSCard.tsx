@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import {
   Tooltip,
   TooltipContent,
@@ -166,47 +167,24 @@ export const PinterestEQSCard = () => {
   const [error, setError] = useState<string | null>(null);
   const [oauthStatus, setOauthStatus] = useState<OAuthStatus | null>(null);
 
-  const checkOAuthStatus = async () => {
+  const checkOAuthStatus = async (): Promise<OAuthStatus> => {
     try {
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pinterest-oauth?action=status`;
-      const res = await fetch(url);
+      const res = await fetch(url, { cache: "no-store" });
       if (res.ok) {
-        const data = await res.json();
+        const data = (await res.json()) as OAuthStatus;
         setOauthStatus(data);
-      } else {
-        setOauthStatus({ connected: false });
+        return data;
       }
+
+      const fallback = { connected: false } as OAuthStatus;
+      setOauthStatus(fallback);
+      return fallback;
     } catch (err) {
       console.error("[EQS Card] OAuth status check failed:", err);
-      setOauthStatus({ connected: false });
-    }
-  };
-
-  const handleConnectPinterest = async () => {
-    setConnecting(true);
-    try {
-      // Include origin so the edge function can redirect back to the correct app
-      const origin = window.location.origin;
-      const url = new URL(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pinterest-oauth`);
-      url.searchParams.set("action", "authorize");
-      url.searchParams.set("origin", origin);
-      
-      const res = await fetch(url.toString());
-      
-      if (!res.ok) {
-        throw new Error("Failed to get authorization URL");
-      }
-      
-      const data = await res.json();
-      if (data.auth_url) {
-        // Open Pinterest authorization in new window
-        window.open(data.auth_url, "_blank", "width=600,height=700");
-      }
-    } catch (err) {
-      console.error("[EQS Card] Connect error:", err);
-      setError(err instanceof Error ? err.message : "Failed to connect");
-    } finally {
-      setConnecting(false);
+      const fallback = { connected: false } as OAuthStatus;
+      setOauthStatus(fallback);
+      return fallback;
     }
   };
 
@@ -228,8 +206,8 @@ export const PinterestEQSCard = () => {
         // Parse blocking_issues from JSONB
         const parseSnapshot = (s: any): EQSSnapshot => ({
           ...s,
-          blocking_issues: Array.isArray(s.blocking_issues) 
-            ? s.blocking_issues 
+          blocking_issues: Array.isArray(s.blocking_issues)
+            ? s.blocking_issues
             : JSON.parse(s.blocking_issues || "[]"),
         });
 
@@ -243,6 +221,105 @@ export const PinterestEQSCard = () => {
       setError(err instanceof Error ? err.message : "Failed to load EQS data");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleManualSync = async (opts?: { showToast?: boolean }) => {
+    setSyncing(true);
+    const showToast = opts?.showToast ?? true;
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error("Not authenticated");
+      }
+
+      const response = await supabase.functions.invoke("pinterest-eqs-fetch", {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || "Sync failed");
+      }
+
+      if (showToast) toast.success("EQS synced");
+
+      // Refetch data after successful sync
+      await fetchLatestSnapshot();
+    } catch (err) {
+      console.error("[EQS Card] Manual sync error:", err);
+      if (showToast) toast.error(err instanceof Error ? err.message : "Sync failed");
+      setError(err instanceof Error ? err.message : "Sync failed");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleConnectPinterest = async () => {
+    setConnecting(true);
+    try {
+      // Include origin so the edge function can redirect back to the correct app
+      const origin = window.location.origin;
+      const url = new URL(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pinterest-oauth`);
+      url.searchParams.set("action", "authorize");
+      url.searchParams.set("origin", origin);
+
+      const res = await fetch(url.toString(), { cache: "no-store" });
+
+      if (!res.ok) {
+        throw new Error("Failed to get authorization URL");
+      }
+
+      const data = await res.json();
+      if (!data.auth_url) throw new Error("Authorization URL missing");
+
+      const popup = window.open(data.auth_url, "_blank", "width=600,height=700");
+      toast("Complete Pinterest authorization in the opened window.");
+
+      const startedAt = Date.now();
+      const poll = window.setInterval(async () => {
+        try {
+          // Stop polling if popup was closed
+          if (popup && popup.closed) {
+            window.clearInterval(poll);
+            setConnecting(false);
+            return;
+          }
+
+          const status = await checkOAuthStatus();
+          if (status.connected) {
+            window.clearInterval(poll);
+            try {
+              popup?.close();
+            } catch {
+              // ignore
+            }
+
+            toast.success("Pinterest connected");
+
+            // Run a fresh EQS fetch so we don't keep showing stale 401 snapshots
+            await handleManualSync({ showToast: false });
+            return;
+          }
+
+          // Time out after 2 minutes
+          if (Date.now() - startedAt > 2 * 60 * 1000) {
+            window.clearInterval(poll);
+            toast.error("Pinterest connection timed out");
+            setConnecting(false);
+          }
+        } catch (e) {
+          console.error("[EQS Card] OAuth poll error:", e);
+        }
+      }, 2000);
+    } catch (err) {
+      console.error("[EQS Card] Connect error:", err);
+      setError(err instanceof Error ? err.message : "Failed to connect");
+      toast.error(err instanceof Error ? err.message : "Failed to connect");
+    } finally {
+      setConnecting(false);
     }
   };
 
@@ -353,33 +430,7 @@ export const PinterestEQSCard = () => {
     );
   }
 
-  const handleManualSync = async () => {
-    setSyncing(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        throw new Error("Not authenticated");
-      }
-      
-      const response = await supabase.functions.invoke("pinterest-eqs-fetch", {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-      
-      if (response.error) {
-        throw new Error(response.error.message || "Sync failed");
-      }
-      
-      // Refetch data after successful sync
-      await fetchLatestSnapshot();
-    } catch (err) {
-      console.error("[EQS Card] Manual sync error:", err);
-      setError(err instanceof Error ? err.message : "Sync failed");
-    } finally {
-      setSyncing(false);
-    }
-  };
+  // handleManualSync declared above
 
   if (!snapshot) {
     return (
@@ -393,7 +444,7 @@ export const PinterestEQSCard = () => {
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={handleManualSync} 
+            onClick={() => handleManualSync()} 
             disabled={syncing}
             className="ml-auto"
           >
@@ -420,6 +471,16 @@ export const PinterestEQSCard = () => {
             <StatusIcon className="w-3 h-3 mr-1" />
             {statusConfig.label}
           </Badge>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleManualSync()}
+            disabled={syncing}
+            className="gap-2"
+          >
+            {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            {syncing ? "Syncing..." : "Sync Now"}
+          </Button>
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={fetchLatestSnapshot}>
             <RefreshCw className="w-4 h-4" />
           </Button>
