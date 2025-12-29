@@ -4,6 +4,18 @@
  * Cron-based worker that processes pending shipment notifications via Klaviyo.
  * Runs every 2 minutes to pick up pending notifications and send them.
  * 
+ * Klaviyo Event: "Shipment Status Updated"
+ * 
+ * Payload format:
+ * {
+ *   order_id: string,
+ *   tracking_number: string,
+ *   shipping_status: string (internal state),
+ *   shipping_status_label: string (human readable),
+ *   carrier: string,
+ *   estimated_delivery: string | null
+ * }
+ * 
  * Endpoint: POST /functions/v1/shipments-send-worker
  */
 
@@ -14,19 +26,25 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Human-readable status labels for emails
+// Human-readable status labels for emails (calm, Scandinavian copy)
 const STATUS_LABELS: Record<string, string> = {
+  'label_created': 'Shipment information received',
+  'in_transit': 'On the way',
+  'ready_for_pickup': 'Ready for pickup',
+  'out_for_delivery': 'Out for delivery — arriving soon',
+  'delivered': 'Delivered — we hope tonight feels better',
+  'delivery_issue': 'Delivery attempted',
+  'shipping_exception': 'Attention needed',
+  'shipment_stalled': 'Tracking update needed',
+  // Legacy status mappings (for backwards compatibility)
   'info_received': 'Shipment information received',
-  'in_transit': 'In transit',
-  'out_for_delivery': 'Out for delivery',
-  'delivered': 'Delivered',
   'pickup': 'Ready for pickup',
   'undelivered': 'Delivery attempted',
-  'alert': 'Attention required',
-  'expired': 'Tracking expired',
+  'alert': 'Attention needed',
+  'expired': 'Tracking update needed',
 };
 
-// Build tracking URL
+// Build tracking URL (our site, not 17TRACK)
 function buildTrackingUrl(orderId: string): string {
   // Use environment variable or default to production URL
   const baseUrl = Deno.env.get('TRACKING_BASE_URL') || 'https://rise-by-night.lovable.app';
@@ -51,29 +69,28 @@ interface ShipmentTracking {
 }
 
 interface TrackingEvent {
-  description?: string;
-  location?: string;
-  event_time?: string;
+  status_detail?: {
+    origin_country?: string;
+    destination_country?: string;
+  };
 }
 
-// Send event to Klaviyo
+interface OrderTracking {
+  email: string;
+  carrier_name?: string;
+  carrier_code?: string;
+  estimated_delivery?: string;
+}
+
+// Send event to Klaviyo with exact payload format per spec
 async function sendToKlaviyo(
   klaviyoApiKey: string,
   email: string,
   notification: ShipmentNotification,
-  tracking: ShipmentTracking,
-  lastEvent?: TrackingEvent
+  carrier: string,
+  estimatedDelivery: string | null
 ): Promise<{ success: boolean; error?: string }> {
   const eventName = 'Shipment Status Updated';
-  
-  // Parse location from last event
-  let lastCheckpointCity = '';
-  let lastCheckpointCountry = '';
-  if (lastEvent?.location) {
-    const locationParts = lastEvent.location.split(',').map(p => p.trim());
-    lastCheckpointCity = locationParts[0] || '';
-    lastCheckpointCountry = locationParts[locationParts.length - 1] || '';
-  }
   
   const eventData = {
     data: {
@@ -88,14 +105,12 @@ async function sendToKlaviyo(
         properties: {
           order_id: notification.order_id,
           tracking_number: notification.tracking_number,
-          status: notification.status,
-          status_label: STATUS_LABELS[notification.status] || notification.status,
+          shipping_status: notification.status,
+          shipping_status_label: STATUS_LABELS[notification.status] || notification.status,
+          carrier: carrier || '',
+          estimated_delivery: estimatedDelivery,
+          // CTA URL for email (our site, not 17TRACK)
           tracking_url: buildTrackingUrl(notification.order_id),
-          carrier: tracking.carrier || '',
-          last_checkpoint_city: lastCheckpointCity,
-          last_checkpoint_country: lastCheckpointCountry,
-          last_event_description: lastEvent?.description || '',
-          last_event_time: lastEvent?.event_time || '',
         },
         time: new Date().toISOString(),
       },
@@ -103,6 +118,7 @@ async function sendToKlaviyo(
   };
 
   console.log(`[shipments-send-worker] Sending Klaviyo event for ${notification.order_id}:`, eventName);
+  console.log(`[shipments-send-worker] Payload:`, JSON.stringify(eventData.data.attributes.properties));
 
   try {
     const response = await fetch('https://a.klaviyo.com/api/events/', {
@@ -246,23 +262,21 @@ Deno.serve(async (req) => {
 
       // If no tracking data, try order_tracking table
       let email = (trackingData as ShipmentTracking | null)?.email;
-      let tracking = trackingData as ShipmentTracking | null;
+      let carrier = (trackingData as ShipmentTracking | null)?.carrier || '';
+      let estimatedDelivery: string | null = null;
       
       if (!email) {
         const { data: orderTrackingData } = await supabase
           .from('order_tracking')
-          .select('email, carrier_code, status, last_event_time')
+          .select('email, carrier_name, carrier_code, estimated_delivery')
           .eq('tracking_number', notification.tracking_number)
           .single();
         
         if (orderTrackingData) {
-          email = (orderTrackingData as { email: string }).email;
-          tracking = {
-            email: (orderTrackingData as { email: string }).email,
-            carrier: (orderTrackingData as { carrier_code: string }).carrier_code,
-            current_status: (orderTrackingData as { status: string }).status,
-            last_status_at: (orderTrackingData as { last_event_time: string }).last_event_time,
-          };
+          const otd = orderTrackingData as OrderTracking;
+          email = otd.email;
+          carrier = otd.carrier_name || otd.carrier_code || '';
+          estimatedDelivery = otd.estimated_delivery || null;
         }
       }
 
@@ -280,22 +294,13 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Get the latest tracking event for context
-      const { data: latestEvent } = await supabase
-        .from('tracking_events')
-        .select('description, location, event_time')
-        .eq('tracking_number', notification.tracking_number)
-        .order('event_time', { ascending: false })
-        .limit(1)
-        .single();
-
-      // Send to Klaviyo
+      // Send to Klaviyo with exact payload format
       const sendResult = await sendToKlaviyo(
         klaviyoApiKey,
         email,
         notification,
-        tracking!,
-        latestEvent as TrackingEvent | undefined
+        carrier,
+        estimatedDelivery
       );
 
       if (sendResult.success) {

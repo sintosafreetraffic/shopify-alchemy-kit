@@ -4,6 +4,16 @@
  * Receives tracking updates from 17TRACK, stores events, and enqueues email notifications.
  * Verified using the 17token header (same as API key).
  * Endpoint: POST /functions/v1/track17-webhook
+ * 
+ * Status Mapping (17TRACK → Internal):
+ * - Info received → label_created
+ * - In transit → in_transit
+ * - Pick up → ready_for_pickup
+ * - Out for delivery → out_for_delivery
+ * - Delivered → delivered
+ * - Undelivered → delivery_issue
+ * - Alert → shipping_exception
+ * - Expired → shipment_stalled
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -13,41 +23,54 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, 17token',
 };
 
-// 17TRACK status mapping to canonical statuses
+// 17TRACK status code mapping to canonical internal states
+// See: https://api.17track.net/docs/v2.4
 const STATUS_MAP: Record<number, string> = {
-  0: 'pending',           // Not found
-  10: 'info_received',    // Info received
-  20: 'in_transit',       // In transit
-  30: 'expired',          // Expired
-  35: 'undelivered',      // Undelivered (failed attempt)
-  40: 'pickup',           // Ready for pickup
-  50: 'out_for_delivery', // Out for delivery
-  60: 'delivered',        // Delivered
-  70: 'alert',            // Exception/Alert
+  // 0: Not found - IGNORED (too noisy per spec)
+  10: 'label_created',      // Info received
+  20: 'in_transit',         // In transit
+  30: 'shipment_stalled',   // Expired
+  35: 'delivery_issue',     // Undelivered (failed attempt)
+  40: 'ready_for_pickup',   // Pick up
+  50: 'out_for_delivery',   // Out for delivery
+  60: 'delivered',          // Delivered
+  70: 'shipping_exception', // Exception/Alert
 };
 
-// Statuses that can trigger email notifications
+// Statuses that can trigger email notifications (per spec)
 const NOTIFIABLE_STATUSES = [
-  'info_received',
-  'in_transit',
-  'out_for_delivery',
-  'delivered',
-  'pickup',
-  'undelivered',
-  'alert',
-  'expired'
+  'label_created',       // Optional, off by default
+  'in_transit',          // Optional, off by default
+  'ready_for_pickup',    // Optional, off by default
+  'out_for_delivery',    // On
+  'delivered',           // Always on
+  'delivery_issue',      // On
+  'shipping_exception',  // On
+  'shipment_stalled',    // On
 ];
 
-// Human-readable status labels for emails
+// Human-readable status labels for emails (calm, Scandinavian copy)
 const STATUS_LABELS: Record<string, string> = {
-  'info_received': 'Shipment information received',
-  'in_transit': 'In transit',
-  'out_for_delivery': 'Out for delivery',
+  'label_created': 'Shipment information received',
+  'in_transit': 'On the way',
+  'ready_for_pickup': 'Ready for pickup',
+  'out_for_delivery': 'Out for delivery — arriving soon',
   'delivered': 'Delivered',
-  'pickup': 'Ready for pickup',
-  'undelivered': 'Delivery attempted',
-  'alert': 'Attention required',
-  'expired': 'Tracking expired',
+  'delivery_issue': 'Delivery attempted',
+  'shipping_exception': 'Attention needed',
+  'shipment_stalled': 'Tracking update needed',
+};
+
+// Status progression order (for regression detection)
+const STATUS_ORDER: Record<string, number> = {
+  'label_created': 1,
+  'in_transit': 2,
+  'ready_for_pickup': 3,
+  'out_for_delivery': 4,
+  'delivered': 5,
+  'delivery_issue': 3, // Can occur at any point after in_transit
+  'shipping_exception': 3,
+  'shipment_stalled': 3,
 };
 
 interface TrackEvent {
@@ -121,9 +144,9 @@ async function hashPayload(payload: unknown): Promise<string> {
 // Get app settings for email notification configuration
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getEmailSettings(supabase: any): Promise<{
-  infoReceivedEnabled: boolean;
+  labelCreatedEnabled: boolean;
+  inTransitEnabled: boolean;
   pickupEnabled: boolean;
-  cooldownHours: number;
   maxPerOrder: number;
 }> {
   const { data: settings } = await supabase
@@ -131,8 +154,8 @@ async function getEmailSettings(supabase: any): Promise<{
     .select('key, value')
     .in('key', [
       'shipping_email_info_received_enabled',
+      'shipping_email_in_transit_enabled',
       'shipping_email_pickup_enabled',
-      'shipping_email_cooldown_hours',
       'shipping_email_max_per_order'
     ]);
 
@@ -140,13 +163,25 @@ async function getEmailSettings(supabase: any): Promise<{
   const settingsMap = Object.fromEntries((settings || []).map((s: any) => [s.key, s.value]));
   
   return {
-    infoReceivedEnabled: settingsMap['shipping_email_info_received_enabled'] === true,
+    labelCreatedEnabled: settingsMap['shipping_email_info_received_enabled'] === true,
+    inTransitEnabled: settingsMap['shipping_email_in_transit_enabled'] === true,
     pickupEnabled: settingsMap['shipping_email_pickup_enabled'] === true,
-    cooldownHours: typeof settingsMap['shipping_email_cooldown_hours'] === 'number' 
-      ? settingsMap['shipping_email_cooldown_hours'] : 12,
     maxPerOrder: typeof settingsMap['shipping_email_max_per_order'] === 'number'
-      ? settingsMap['shipping_email_max_per_order'] : 6,
+      ? settingsMap['shipping_email_max_per_order'] : 4, // Default: max 4 emails per order
   };
+}
+
+// Check if new status is a regression (going backwards in flow)
+function isRegression(previousStatus: string | null, newStatus: string): boolean {
+  if (!previousStatus) return false;
+  
+  const previousOrder = STATUS_ORDER[previousStatus] || 0;
+  const newOrder = STATUS_ORDER[newStatus] || 0;
+  
+  // If new status has lower order, it's a regression (except for delivered which is always valid)
+  if (newStatus === 'delivered') return false;
+  
+  return newOrder < previousOrder;
 }
 
 // Enqueue an email notification with dedupe and rate limiting
@@ -156,9 +191,10 @@ async function enqueueShipmentEmail(
   orderId: string,
   trackingNumber: string,
   status: string,
+  previousStatus: string | null,
   settings: Awaited<ReturnType<typeof getEmailSettings>>
 ): Promise<{ enqueued: boolean; reason?: string }> {
-  console.log(`[17track-webhook] Enqueue email check: order=${orderId}, status=${status}`);
+  console.log(`[17track-webhook] Enqueue email check: order=${orderId}, status=${status}, previous=${previousStatus}`);
 
   // Check if status is notifiable
   if (!NOTIFIABLE_STATUSES.includes(status)) {
@@ -166,17 +202,27 @@ async function enqueueShipmentEmail(
     return { enqueued: false, reason: 'not_notifiable' };
   }
 
+  // Check for regression (going backwards in status flow)
+  if (isRegression(previousStatus, status)) {
+    console.log(`[17track-webhook] Regression detected: ${previousStatus} → ${status}, skipping`);
+    return { enqueued: false, reason: 'regression' };
+  }
+
   // Check settings for optional statuses
-  if (status === 'info_received' && !settings.infoReceivedEnabled) {
-    console.log(`[17track-webhook] info_received emails disabled`);
+  if (status === 'label_created' && !settings.labelCreatedEnabled) {
+    console.log(`[17track-webhook] label_created emails disabled`);
     return { enqueued: false, reason: 'status_disabled' };
   }
-  if (status === 'pickup' && !settings.pickupEnabled) {
-    console.log(`[17track-webhook] pickup emails disabled`);
+  if (status === 'in_transit' && !settings.inTransitEnabled) {
+    console.log(`[17track-webhook] in_transit emails disabled`);
+    return { enqueued: false, reason: 'status_disabled' };
+  }
+  if (status === 'ready_for_pickup' && !settings.pickupEnabled) {
+    console.log(`[17track-webhook] ready_for_pickup emails disabled`);
     return { enqueued: false, reason: 'status_disabled' };
   }
 
-  // Check for existing notification (dedupe)
+  // Check for existing notification (dedupe) - one email per state change ever
   const { data: existingNotification } = await supabase
     .from('shipment_notifications')
     .select('id, status_state')
@@ -191,7 +237,7 @@ async function enqueueShipmentEmail(
     return { enqueued: false, reason: 'already_exists' };
   }
 
-  // Check total sent count (cap)
+  // Check total sent count (cap) - max 4 emails per order
   const { count: sentCount } = await supabase
     .from('shipment_notifications')
     .select('id', { count: 'exact', head: true })
@@ -199,7 +245,8 @@ async function enqueueShipmentEmail(
     .eq('channel', 'email')
     .eq('status_state', 'sent');
 
-  if ((sentCount || 0) >= settings.maxPerOrder) {
+  // Always allow delivered even if cap reached
+  if (status !== 'delivered' && (sentCount || 0) >= settings.maxPerOrder) {
     console.log(`[17track-webhook] Max emails reached for order ${orderId}: ${sentCount}/${settings.maxPerOrder}`);
     
     // Insert as skipped_cap
@@ -214,61 +261,6 @@ async function enqueueShipmentEmail(
     });
     
     return { enqueued: false, reason: 'cap_reached' };
-  }
-
-  // Check cooldown (last sent within cooldownHours, unless it's the first notification for this status)
-  const cooldownTime = new Date(Date.now() - settings.cooldownHours * 60 * 60 * 1000).toISOString();
-  
-  const { data: recentNotifications } = await supabase
-    .from('shipment_notifications')
-    .select('id, sent_at, status')
-    .eq('order_id', orderId)
-    .eq('channel', 'email')
-    .eq('status_state', 'sent')
-    .gte('sent_at', cooldownTime)
-    .limit(1);
-
-  // If there's a recent notification and this isn't the first occurrence of this status, apply cooldown
-  if (recentNotifications && recentNotifications.length > 0) {
-    // Check if this is the first time we're seeing this status for this order
-    const { count: statusCount } = await supabase
-      .from('shipment_notifications')
-      .select('id', { count: 'exact', head: true })
-      .eq('order_id', orderId)
-      .eq('tracking_number', trackingNumber)
-      .eq('status', status)
-      .eq('channel', 'email')
-      .in('status_state', ['sent', 'skipped_rate_limit', 'skipped_cap']);
-
-    // For statuses like in_transit, we only send on first occurrence
-    if (status === 'in_transit' && (statusCount || 0) > 0) {
-      console.log(`[17track-webhook] in_transit already sent for this tracking, skipping`);
-      await supabase.from('shipment_notifications').insert({
-        order_id: orderId,
-        tracking_number: trackingNumber,
-        status,
-        channel: 'email',
-        provider: 'klaviyo',
-        status_state: 'skipped_dedupe',
-        reason: 'in_transit already notified',
-      });
-      return { enqueued: false, reason: 'in_transit_duplicate' };
-    }
-
-    // Apply cooldown for non-first-time statuses
-    if ((statusCount || 0) > 0) {
-      console.log(`[17track-webhook] Cooldown active for order ${orderId}, last sent within ${settings.cooldownHours}h`);
-      await supabase.from('shipment_notifications').insert({
-        order_id: orderId,
-        tracking_number: trackingNumber,
-        status,
-        channel: 'email',
-        provider: 'klaviyo',
-        status_state: 'skipped_rate_limit',
-        reason: `Cooldown: last email sent within ${settings.cooldownHours} hours`,
-      });
-      return { enqueued: false, reason: 'cooldown' };
-    }
   }
 
   // Insert as pending
@@ -358,6 +350,20 @@ Deno.serve(async (req) => {
     
     // Extract status
     const statusCode = trackData?.e ?? 0;
+    
+    // Ignore "Not found" status (code 0) - too noisy per spec
+    if (statusCode === 0) {
+      console.log('[17track-webhook] Ignoring "Not found" status (code 0)');
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: 'Status "Not found" ignored per policy',
+        tracking_number: trackingNumber,
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
     const status = STATUS_MAP[statusCode] || 'unknown';
     const subStatus = trackData?.f?.toString();
     
@@ -501,14 +507,15 @@ Deno.serve(async (req) => {
       console.log('[17track-webhook] Updated order_tracking:', trackingNumber, 'Status:', status);
     }
 
-    // Enqueue email notification if status changed
-    if (status !== previousStatus && status !== 'pending' && status !== 'unknown') {
+    // Enqueue email notification if status changed and valid
+    if (status !== previousStatus && status !== 'unknown') {
       const settings = await getEmailSettings(supabase);
       const enqueueResult = await enqueueShipmentEmail(
         supabase,
         orderId,
         trackingNumber,
         status,
+        previousStatus,
         settings
       );
       console.log('[17track-webhook] Enqueue result:', enqueueResult);
