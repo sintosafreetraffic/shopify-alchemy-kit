@@ -154,23 +154,39 @@ const ISSUE_SEVERITY_MAP: Record<string, "high" | "medium" | "low"> = {
 /**
  * Extract coverage percentage from quality components.
  * Pinterest often returns coverage as either 0..1 or 0..100 depending on endpoint/version.
+ * Component names from Pinterest: email, external_id, click_id, order_id, user_agent, ip_address, source_url
  */
 function extractCoverage(components: EQSComponent[], componentName: string): number | null {
+  // Map our names to Pinterest's actual field names
+  const nameMap: Record<string, string[]> = {
+    "email": ["email", "em", "hashed_email"],
+    "click_id": ["click_id", "epik", "click"],
+    "order_id": ["order_id", "order"],
+    "external_id": ["external_id", "external"],
+  };
+  
+  const searchNames = nameMap[componentName.toLowerCase()] || [componentName.toLowerCase()];
+  
   const component = components.find((c) =>
-    c.name.toLowerCase().includes(componentName.toLowerCase())
+    searchNames.some(name => c.name.toLowerCase() === name || c.name.toLowerCase().includes(name))
   );
 
   const raw = component?.coverage;
   if (typeof raw !== "number") return null;
 
-  // Normalize 0..1 → 0..100
+  // Coverage is usually 0..100, but normalize just in case
   if (raw >= 0 && raw <= 1) return Math.round(raw * 10000) / 100;
 
-  return raw;
+  return Math.round(raw * 100) / 100;
 }
 
 function normalizeEqsPayload(payload: any): { overall_status: string | null; quality_components: EQSComponent[] } {
-  const root = payload?.data ?? payload;
+  // Pinterest often returns an array - extract first element
+  let root = payload?.data ?? payload;
+  if (Array.isArray(root) && root.length > 0) {
+    root = root[0];
+    console.log("[Pinterest EQS] Extracted first element from array response");
+  }
 
   const overall =
     typeof root?.overall_status === "string"
@@ -184,18 +200,46 @@ function normalizeEqsPayload(payload: any): { overall_status: string | null; qua
     return { overall_status: overall, quality_components: root.quality_components };
   }
 
-  // Sometimes returned as object keyed by component name
+  // Sometimes returned as object keyed by component name (e.g., { email: {...}, click_id: {...} })
   if (root?.quality_components && typeof root.quality_components === "object") {
-    const components: EQSComponent[] = Object.entries(root.quality_components).map(([name, value]: any) => ({
-      name,
-      status: String(value?.status ?? value?.overall_status ?? value?.overallStatus ?? "UNKNOWN"),
-      coverage: typeof value?.coverage === "number" ? value.coverage : undefined,
-      recommendation: typeof value?.recommendation === "string" ? value.recommendation : undefined,
-    }));
+    const components: EQSComponent[] = [];
+    
+    for (const [componentName, eventTypes] of Object.entries(root.quality_components)) {
+      // eventTypes is like { checkout: { coverage: 100 }, add_to_cart: { coverage: 100 } }
+      if (typeof eventTypes === "object" && eventTypes !== null) {
+        // Calculate average coverage across all event types for this component
+        let totalCoverage = 0;
+        let coverageCount = 0;
+        let hasIssues = false;
+        
+        for (const [eventType, data] of Object.entries(eventTypes as Record<string, any>)) {
+          if (typeof data?.coverage === "number") {
+            totalCoverage += data.coverage;
+            coverageCount++;
+          }
+          if (Array.isArray(data?.issues) && data.issues.length > 0) {
+            hasIssues = true;
+          }
+        }
+        
+        const avgCoverage = coverageCount > 0 ? totalCoverage / coverageCount : undefined;
+        const status = hasIssues ? "NEEDS_IMPROVEMENT" : (avgCoverage && avgCoverage >= 90 ? "GOOD" : "FAIR");
+        
+        components.push({
+          name: componentName,
+          status,
+          coverage: avgCoverage !== undefined ? Math.round(avgCoverage * 100) / 100 : undefined,
+          recommendation: undefined,
+        });
+      }
+    }
+    
+    console.log(`[Pinterest EQS] Parsed ${components.length} components from object format`);
     return { overall_status: overall, quality_components: components };
   }
 
   // Unknown shape
+  console.log("[Pinterest EQS] Unknown payload shape, returning empty components");
   return { overall_status: overall, quality_components: [] };
 }
 
