@@ -72,7 +72,7 @@ export const ProductGallery = () => {
         "Memory foam comfort",
         "Adjustable strap included",
       ],
-      badge: "Sleep Mask Included",
+      badge: "",
       link: "/product/knee-pillow",
     },
     {
