@@ -409,20 +409,23 @@ Deno.serve(async (req: Request): Promise<Response> => {
         );
 
     // ========================================================================
-    // FETCH EQS FROM PINTEREST API
+    // FETCH EQS FROM PINTEREST API - BOTH INGESTION SOURCES
     // ========================================================================
 
     const lookbackPeriod = "14d";
     const sourcePlatform = "WEB";
     const ingestionSources = ["CONVERSIONS_API", "TAG"] as const;
 
-    let responseStatus = 0;
-    let apiErrorMessage: string | null = null;
-    let overallStatus: string = "UNKNOWN";
-    let components: EQSComponent[] = [];
-    let detailedComponents: DetailedComponent[] = [];
-    let rawQualityComponents: any = {};
-    let ingestionSourceUsed: (typeof ingestionSources)[number] = "CONVERSIONS_API";
+    interface IngestionResult {
+      ingestionSource: string;
+      responseStatus: number;
+      apiErrorMessage: string | null;
+      overallStatus: string;
+      components: EQSComponent[];
+      rawQualityComponents: any;
+    }
+
+    const results: IngestionResult[] = [];
 
     for (const ingestionSource of ingestionSources) {
       const eqsUrl = new URL(
@@ -434,135 +437,158 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
       console.log("[Pinterest EQS Fetch] Calling Pinterest API:", eqsUrl.toString());
 
-      const pinterestResponse = await fetch(eqsUrl.toString(), {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${PINTEREST_ACCESS_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      responseStatus = pinterestResponse.status;
-      const responseText = await pinterestResponse.text();
-
-      if (!pinterestResponse.ok) {
-        apiErrorMessage = `API error ${responseStatus}: ${responseText.slice(0, 500)}`;
-        console.error("[Pinterest EQS Fetch] API error:", apiErrorMessage);
-        break;
-      }
-
-      console.log("[Pinterest EQS Fetch] Raw response (first 500):", responseText.slice(0, 500));
-
-      let parsed: any;
       try {
-        parsed = JSON.parse(responseText);
-      } catch (parseError) {
-        apiErrorMessage = `Failed to parse response: ${responseText.slice(0, 200)}`;
-        console.error("[Pinterest EQS Fetch] Parse error:", apiErrorMessage);
-        break;
+        const pinterestResponse = await fetch(eqsUrl.toString(), {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${PINTEREST_ACCESS_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        const responseStatus = pinterestResponse.status;
+        const responseText = await pinterestResponse.text();
+
+        if (!pinterestResponse.ok) {
+          console.error(`[Pinterest EQS Fetch] API error for ${ingestionSource}:`, responseStatus, responseText.slice(0, 200));
+          results.push({
+            ingestionSource,
+            responseStatus,
+            apiErrorMessage: `API error ${responseStatus}: ${responseText.slice(0, 200)}`,
+            overallStatus: "ERROR",
+            components: [],
+            rawQualityComponents: {},
+          });
+          continue;
+        }
+
+        console.log(`[Pinterest EQS Fetch] ${ingestionSource} raw response (first 500):`, responseText.slice(0, 500));
+
+        let parsed: any;
+        try {
+          parsed = JSON.parse(responseText);
+        } catch (parseError) {
+          console.error(`[Pinterest EQS Fetch] Parse error for ${ingestionSource}:`, responseText.slice(0, 200));
+          results.push({
+            ingestionSource,
+            responseStatus,
+            apiErrorMessage: `Failed to parse response`,
+            overallStatus: "ERROR",
+            components: [],
+            rawQualityComponents: {},
+          });
+          continue;
+        }
+
+        const normalized = normalizeEqsPayload(parsed);
+        
+        console.log(`[Pinterest EQS Fetch] ${ingestionSource} EQS data received:`, {
+          overall_status: normalized.overall_status,
+          component_count: normalized.quality_components.length,
+          raw_keys: Object.keys(normalized.raw_quality_components),
+        });
+
+        results.push({
+          ingestionSource,
+          responseStatus,
+          apiErrorMessage: null,
+          overallStatus: normalized.overall_status || "UNKNOWN",
+          components: normalized.quality_components,
+          rawQualityComponents: normalized.raw_quality_components,
+        });
+
+      } catch (err) {
+        console.error(`[Pinterest EQS Fetch] Fetch error for ${ingestionSource}:`, err);
+        results.push({
+          ingestionSource,
+          responseStatus: 0,
+          apiErrorMessage: err instanceof Error ? err.message : "Unknown error",
+          overallStatus: "ERROR",
+          components: [],
+          rawQualityComponents: {},
+        });
+      }
+    }
+
+    // ========================================================================
+    // PERSIST SNAPSHOTS FOR EACH INGESTION SOURCE
+    // ========================================================================
+
+    const savedSnapshots: string[] = [];
+
+    for (const result of results) {
+      // Skip if no meaningful data
+      if (result.overallStatus === "ERROR" && result.components.length === 0) {
+        console.log(`[Pinterest EQS Fetch] Skipping ${result.ingestionSource} - error/no data`);
+        continue;
       }
 
-      const normalized = normalizeEqsPayload(parsed);
-      const normalizedComponents = normalized.quality_components || [];
-      const normalizedDetailed = normalized.detailed_components || [];
-      const normalizedOverall = normalized.overall_status;
-      const normalizedRaw = normalized.raw_quality_components || {};
+      const coverageEmail = extractCoverage(result.components, "email");
+      const coverageExternalId = extractCoverage(result.components, "external_id");
+      const coverageOrderId = extractCoverage(result.components, "order_id");
+      const coverageClickId = extractCoverage(result.components, "click_id");
+      const blockingIssues = deriveBlockingIssues(result.components);
 
-      console.log("[Pinterest EQS Fetch] EQS data received:", {
-        overall_status: normalizedOverall,
-        component_count: Array.isArray(normalizedComponents) ? normalizedComponents.length : 0,
-        detailed_count: normalizedDetailed.length,
-        ingestion_source: ingestionSource,
+      console.log(`[Pinterest EQS Fetch] ${result.ingestionSource} derived metrics:`, {
+        overall_status: result.overallStatus,
+        coverage_email: coverageEmail,
+        coverage_click_id: coverageClickId,
+        component_keys: Object.keys(result.rawQualityComponents),
       });
 
-      // If we got anything meaningful, keep it and stop.
-      if ((normalizedOverall && normalizedOverall !== "UNKNOWN") || normalizedComponents.length > 0) {
-        components = normalizedComponents;
-        detailedComponents = normalizedDetailed;
-        rawQualityComponents = normalizedRaw;
-        overallStatus = normalizedOverall || "UNKNOWN";
-        ingestionSourceUsed = ingestionSource;
-        apiErrorMessage = null;
-        break;
+      const { data: insertData, error: insertError } = await supabase
+        .from("pinterest_eqs_snapshots")
+        .insert({
+          ad_account_id: PINTEREST_AD_ACCOUNT_ID,
+          overall_status: result.overallStatus,
+          source_platform: sourcePlatform,
+          ingestion_source: result.ingestionSource,
+          lookback_period: lookbackPeriod,
+          quality_components: result.rawQualityComponents,
+          coverage_email: coverageEmail,
+          coverage_external_id: coverageExternalId,
+          coverage_order_id: coverageOrderId,
+          coverage_click_id: coverageClickId,
+          blocking_issues: blockingIssues,
+          api_response_status: result.responseStatus,
+          api_error_message: result.apiErrorMessage,
+        })
+        .select("id")
+        .single();
+
+      if (insertError) {
+        console.error(`[Pinterest EQS Fetch] DB insert error for ${result.ingestionSource}:`, insertError);
+      } else {
+        console.log(`[Pinterest EQS Fetch] Snapshot saved for ${result.ingestionSource}:`, insertData?.id);
+        savedSnapshots.push(insertData?.id || "");
       }
-
-      // Otherwise, try next ingestion_source.
-      ingestionSourceUsed = ingestionSource;
-      components = normalizedComponents;
-      detailedComponents = normalizedDetailed;
-      rawQualityComponents = normalizedRaw;
-      overallStatus = normalizedOverall || "UNKNOWN";
     }
-
-    // If 200 but no useful fields returned, annotate so UI doesn't look "broken".
-    if (responseStatus === 200 && components.length === 0 && overallStatus === "UNKNOWN") {
-      apiErrorMessage =
-        "EQS returned no components yet. This usually means Pinterest hasn't computed EQS for this account/source (or there were no eligible events in the last 14 days).";
-    }
-
-    // ========================================================================
-    // DERIVE INSIGHTS AND PERSIST SNAPSHOT
-    // ========================================================================
-
-    const coverageEmail = extractCoverage(components, "email");
-    const coverageExternalId = extractCoverage(components, "external_id");
-    const coverageOrderId = extractCoverage(components, "order_id");
-    const coverageClickId = extractCoverage(components, "click_id");
-
-    const blockingIssues = deriveBlockingIssues(components);
-
-    console.log("[Pinterest EQS Fetch] Derived metrics:", {
-      overall_status: overallStatus,
-      coverage_email: coverageEmail,
-      coverage_click_id: coverageClickId,
-      blocking_issues_count: blockingIssues.length,
-    });
-
-    // Insert snapshot - store both normalized components and raw data for detailed UI
-    const { data: insertData, error: insertError } = await supabase
-      .from("pinterest_eqs_snapshots")
-      .insert({
-        ad_account_id: PINTEREST_AD_ACCOUNT_ID,
-        overall_status: overallStatus,
-        source_platform: sourcePlatform,
-        ingestion_source: ingestionSourceUsed,
-        lookback_period: lookbackPeriod,
-        quality_components: rawQualityComponents, // Store raw data for detailed event-type breakdown
-        coverage_email: coverageEmail,
-        coverage_external_id: coverageExternalId,
-        coverage_order_id: coverageOrderId,
-        coverage_click_id: coverageClickId,
-        blocking_issues: blockingIssues,
-        api_response_status: responseStatus,
-        api_error_message: apiErrorMessage,
-      })
-      .select("id")
-      .single();
-
-    if (insertError) {
-      console.error("[Pinterest EQS Fetch] DB insert error:", insertError);
-      return createErrorResponse(`Database error: ${insertError.message}`, 500);
-    }
-
-    console.log("[Pinterest EQS Fetch] Snapshot saved:", insertData?.id);
 
     // ========================================================================
     // RESPONSE
     // ========================================================================
 
+    // Use CONVERSIONS_API as primary for response summary
+    const primaryResult = results.find(r => r.ingestionSource === "CONVERSIONS_API") || results[0];
+    const primaryCoverage = {
+      email: extractCoverage(primaryResult?.components || [], "email"),
+      external_id: extractCoverage(primaryResult?.components || [], "external_id"),
+      order_id: extractCoverage(primaryResult?.components || [], "order_id"),
+      click_id: extractCoverage(primaryResult?.components || [], "click_id"),
+    };
+
     return createSuccessResponse({
       success: true,
-      snapshot_id: insertData?.id,
-      overall_status: overallStatus,
-      coverage: {
-        email: coverageEmail,
-        external_id: coverageExternalId,
-        order_id: coverageOrderId,
-        click_id: coverageClickId,
-      },
-      blocking_issues: blockingIssues.length,
-      api_status: responseStatus,
-      message: apiErrorMessage ? "EQS fetch failed, snapshot saved with error" : "EQS snapshot saved successfully",
+      snapshots_saved: savedSnapshots.length,
+      snapshot_ids: savedSnapshots,
+      sources_fetched: results.map(r => ({
+        source: r.ingestionSource,
+        status: r.overallStatus,
+        components: Object.keys(r.rawQualityComponents).length,
+      })),
+      overall_status: primaryResult?.overallStatus || "UNKNOWN",
+      coverage: primaryCoverage,
+      message: `EQS snapshots saved for ${savedSnapshots.length} ingestion source(s)`,
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
