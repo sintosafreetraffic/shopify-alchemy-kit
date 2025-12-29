@@ -15,7 +15,7 @@ const corsHeaders = {
 
 const TRACK17_API_URL = 'https://api.17track.net/track/v2.4';
 const RATE_LIMIT_MAX_REQUESTS = 5; // Max requests per window
-const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour in milliseconds
+const RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
 interface TrackLookupRequest {
   order_number: string;
