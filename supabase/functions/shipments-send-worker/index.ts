@@ -97,10 +97,20 @@ async function sendToKlaviyo(
       type: 'event',
       attributes: {
         profile: {
-          email: email,
+          data: {
+            type: 'profile',
+            attributes: {
+              email: email,
+            },
+          },
         },
         metric: {
-          name: eventName,
+          data: {
+            type: 'metric',
+            attributes: {
+              name: eventName,
+            },
+          },
         },
         properties: {
           order_id: notification.order_id,
@@ -109,7 +119,6 @@ async function sendToKlaviyo(
           shipping_status_label: STATUS_LABELS[notification.status] || notification.status,
           carrier: carrier || '',
           estimated_delivery: estimatedDelivery,
-          // CTA URL for email (our site, not 17TRACK)
           tracking_url: buildTrackingUrl(notification.order_id),
         },
         time: new Date().toISOString(),
