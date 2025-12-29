@@ -168,17 +168,13 @@ export const PinterestEQSCard = () => {
 
   const checkOAuthStatus = async () => {
     try {
-      const response = await supabase.functions.invoke("pinterest-oauth", {
-        body: null,
-        method: "GET",
-      });
-      
-      // Parse from the function response
-      const url = new URL(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pinterest-oauth?action=status`);
-      const res = await fetch(url.toString());
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pinterest-oauth?action=status`;
+      const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
         setOauthStatus(data);
+      } else {
+        setOauthStatus({ connected: false });
       }
     } catch (err) {
       console.error("[EQS Card] OAuth status check failed:", err);
