@@ -1558,6 +1558,114 @@ export type Database = {
           },
         ]
       }
+      shipment_notifications: {
+        Row: {
+          channel: string
+          created_at: string
+          id: string
+          order_id: string
+          provider: string
+          reason: string | null
+          sent_at: string | null
+          status: string
+          status_state: string
+          tracking_number: string
+        }
+        Insert: {
+          channel?: string
+          created_at?: string
+          id?: string
+          order_id: string
+          provider?: string
+          reason?: string | null
+          sent_at?: string | null
+          status: string
+          status_state: string
+          tracking_number: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          id?: string
+          order_id?: string
+          provider?: string
+          reason?: string | null
+          sent_at?: string | null
+          status?: string
+          status_state?: string
+          tracking_number?: string
+        }
+        Relationships: []
+      }
+      shipment_tracking_events: {
+        Row: {
+          id: string
+          occurred_at: string
+          order_id: string
+          payload_hash: string | null
+          received_at: string
+          status: string
+          status_detail: Json
+          tracking_number: string
+        }
+        Insert: {
+          id?: string
+          occurred_at: string
+          order_id: string
+          payload_hash?: string | null
+          received_at?: string
+          status: string
+          status_detail?: Json
+          tracking_number: string
+        }
+        Update: {
+          id?: string
+          occurred_at?: string
+          order_id?: string
+          payload_hash?: string | null
+          received_at?: string
+          status?: string
+          status_detail?: Json
+          tracking_number?: string
+        }
+        Relationships: []
+      }
+      shipment_trackings: {
+        Row: {
+          carrier: string | null
+          created_at: string
+          current_status: string
+          email: string
+          id: string
+          last_status_at: string | null
+          order_id: string
+          tracking_number: string
+          updated_at: string
+        }
+        Insert: {
+          carrier?: string | null
+          created_at?: string
+          current_status?: string
+          email: string
+          id?: string
+          last_status_at?: string | null
+          order_id: string
+          tracking_number: string
+          updated_at?: string
+        }
+        Update: {
+          carrier?: string | null
+          created_at?: string
+          current_status?: string
+          email?: string
+          id?: string
+          last_status_at?: string | null
+          order_id?: string
+          tracking_number?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sleep_attributes_history: {
         Row: {
           created_at: string

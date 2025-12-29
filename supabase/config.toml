@@ -293,3 +293,7 @@ verify_jwt = false
 # Track Lookup - Public, no auth required for order lookups
 [functions.track-lookup]
 verify_jwt = false
+
+# Shipments Send Worker - CRON job for sending shipment emails via Klaviyo
+[functions.shipments-send-worker]
+verify_jwt = false
