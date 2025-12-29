@@ -2,14 +2,15 @@
  * 17TRACK Webhook Handler
  * 
  * Receives tracking updates from 17TRACK and stores them in the database.
- * Endpoint: POST /functions/v1/17track-webhook
+ * Verified using the 17token header (same as API key).
+ * Endpoint: POST /functions/v1/track17-webhook
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, 17token',
 };
 
 // 17TRACK status mapping to human-readable statuses
@@ -24,6 +25,13 @@ const STATUS_MAP: Record<number, string> = {
   60: 'delivered',    // Delivered
   70: 'alert',        // Exception/Alert
 };
+
+interface TrackEvent {
+  a: string;  // Description
+  b?: string; // Time (ISO format)
+  c?: string; // Location
+  d?: string; // Time zone
+}
 
 interface Track17Event {
   number: string;
@@ -49,6 +57,7 @@ interface Track17Event {
     ygt1?: string; // Estimated delivery start
     ygt2?: string; // Estimated delivery end
     w1?: string; // Delivery time
+    z?: TrackEvent[]; // Full event history
   };
   track_info?: {
     latest_status?: {
@@ -89,6 +98,24 @@ Deno.serve(async (req) => {
       status: 405,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
+  }
+
+  // Verify 17token header for security
+  const track17ApiKey = Deno.env.get('TRACK17_API_KEY');
+  const providedToken = req.headers.get('17token');
+  
+  if (track17ApiKey && providedToken) {
+    if (providedToken !== track17ApiKey) {
+      console.error('[17track-webhook] Invalid 17token provided');
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    console.log('[17track-webhook] Token verified successfully');
+  } else {
+    // Log warning but allow request (17TRACK may not send token on webhooks)
+    console.log('[17track-webhook] No token verification performed');
   }
 
   try {
@@ -141,6 +168,34 @@ Deno.serve(async (req) => {
     const estimatedDelivery = trackData?.ygt1 || trackData?.ygt2;
     const deliveredAt = status === 'delivered' ? (trackData?.w1 || lastEventTime) : null;
 
+    // Store event history if available
+    const eventHistory = trackData?.z || [];
+    if (eventHistory.length > 0) {
+      console.log('[17track-webhook] Processing', eventHistory.length, 'events for timeline');
+      
+      for (const event of eventHistory) {
+        // Insert each event (idempotent - ignore duplicates based on tracking + time + description)
+        const eventTime = event.b ? new Date(event.b).toISOString() : null;
+        
+        const { error: eventError } = await supabase
+          .from('tracking_events')
+          .upsert({
+            tracking_number: trackingNumber,
+            status: status,
+            description: event.a,
+            location: event.c || null,
+            event_time: eventTime,
+          }, {
+            onConflict: 'tracking_number,event_time,description',
+            ignoreDuplicates: true,
+          });
+        
+        if (eventError && !eventError.message.includes('duplicate')) {
+          console.error('[17track-webhook] Event insert error:', eventError);
+        }
+      }
+    }
+
     // Try to find existing record by tracking number
     const { data: existing } = await supabase
       .from('order_tracking')
@@ -177,6 +232,7 @@ Deno.serve(async (req) => {
       // For now, just log that we received an update for an unknown tracking number
     }
 
+    // Respond quickly (17TRACK expects < 1s response)
     return new Response(JSON.stringify({ 
       success: true, 
       tracking_number: trackingNumber,

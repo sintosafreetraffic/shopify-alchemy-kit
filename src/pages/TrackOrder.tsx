@@ -8,7 +8,8 @@ import {
   CheckCircle, 
   Clock, 
   MapPin,
-  ExternalLink
+  PackageCheck,
+  Info
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,15 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+
+interface TrackingEvent {
+  id: string;
+  tracking_number: string;
+  status: string;
+  description: string;
+  location?: string;
+  event_time?: string;
+}
 
 interface TrackingInfo {
   id?: string;
@@ -31,6 +41,7 @@ interface TrackingInfo {
   destination_country?: string;
   estimated_delivery?: string;
   delivered_at?: string;
+  events?: TrackingEvent[];
 }
 
 const STATUS_CONFIG: Record<string, { 
@@ -38,18 +49,27 @@ const STATUS_CONFIG: Record<string, {
   label: string; 
   color: string;
   bgColor: string;
+  step: number;
 }> = {
-  pending: { icon: Clock, label: "Pending", color: "text-amber-600", bgColor: "bg-amber-50" },
-  processing: { icon: Package, label: "Processing", color: "text-blue-600", bgColor: "bg-blue-50" },
-  info_received: { icon: Package, label: "Info Received", color: "text-blue-600", bgColor: "bg-blue-50" },
-  in_transit: { icon: Truck, label: "In Transit", color: "text-primary", bgColor: "bg-primary/10" },
-  out_for_delivery: { icon: Truck, label: "Out for Delivery", color: "text-emerald-600", bgColor: "bg-emerald-50" },
-  pickup: { icon: MapPin, label: "Ready for Pickup", color: "text-purple-600", bgColor: "bg-purple-50" },
-  delivered: { icon: CheckCircle, label: "Delivered", color: "text-green-600", bgColor: "bg-green-50" },
-  alert: { icon: AlertCircle, label: "Attention Required", color: "text-red-600", bgColor: "bg-red-50" },
-  undelivered: { icon: AlertCircle, label: "Delivery Failed", color: "text-orange-600", bgColor: "bg-orange-50" },
-  expired: { icon: AlertCircle, label: "Tracking Expired", color: "text-muted-foreground", bgColor: "bg-muted" },
+  pending: { icon: Clock, label: "Order Received", color: "text-muted-foreground", bgColor: "bg-muted/50", step: 0 },
+  processing: { icon: Package, label: "Preparing", color: "text-muted-foreground", bgColor: "bg-muted/50", step: 0 },
+  info_received: { icon: PackageCheck, label: "Ready to Ship", color: "text-primary", bgColor: "bg-primary/10", step: 1 },
+  in_transit: { icon: Truck, label: "On the Way", color: "text-primary", bgColor: "bg-primary/10", step: 2 },
+  out_for_delivery: { icon: Truck, label: "Out for Delivery", color: "text-emerald-600", bgColor: "bg-emerald-50", step: 3 },
+  pickup: { icon: MapPin, label: "Ready for Pickup", color: "text-emerald-600", bgColor: "bg-emerald-50", step: 3 },
+  delivered: { icon: CheckCircle, label: "Delivered", color: "text-green-600", bgColor: "bg-green-50", step: 4 },
+  alert: { icon: AlertCircle, label: "Attention Required", color: "text-amber-600", bgColor: "bg-amber-50", step: -1 },
+  undelivered: { icon: AlertCircle, label: "Delivery Attempted", color: "text-amber-600", bgColor: "bg-amber-50", step: -1 },
+  expired: { icon: Info, label: "Tracking Unavailable", color: "text-muted-foreground", bgColor: "bg-muted/50", step: -1 },
 };
+
+const TIMELINE_STEPS = [
+  { key: 'received', label: 'Order Received', icon: Package },
+  { key: 'shipped', label: 'Shipped', icon: PackageCheck },
+  { key: 'transit', label: 'In Transit', icon: Truck },
+  { key: 'delivery', label: 'Out for Delivery', icon: MapPin },
+  { key: 'delivered', label: 'Delivered', icon: CheckCircle },
+];
 
 export default function TrackOrder() {
   const [orderNumber, setOrderNumber] = useState("");
@@ -86,6 +106,11 @@ export default function TrackOrder() {
       }
 
       if (!data.success) {
+        if (data.error === 'Rate limit exceeded') {
+          setShowError(true);
+          setErrorMessage('You\'ve checked this order too many times. Please wait a bit before trying again.');
+          return;
+        }
         setShowError(true);
         setErrorMessage(data.message || 'An error occurred while looking up your order.');
         return;
@@ -119,7 +144,6 @@ export default function TrackOrder() {
         weekday: 'short',
         month: 'short',
         day: 'numeric',
-        year: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
       });
@@ -132,78 +156,83 @@ export default function TrackOrder() {
     return STATUS_CONFIG[status] || STATUS_CONFIG.pending;
   };
 
+  const getActiveStep = (status: string) => {
+    const config = getStatusConfig(status);
+    return config.step >= 0 ? config.step : 2; // Default to in_transit for alerts
+  };
+
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-16 max-w-4xl">
+      <div className="container mx-auto px-4 py-16 max-w-3xl">
+        {/* Header */}
         <div className="text-center mb-12">
-          <Package className="w-16 h-16 text-primary mx-auto mb-6" />
-          <h1 className="text-4xl md:text-6xl font-bold mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-6">
+            <Package className="w-8 h-8 text-primary" />
+          </div>
+          <h1 className="text-3xl md:text-4xl font-semibold mb-3 tracking-tight">
             Track Your Order
           </h1>
-          <p className="text-lg text-muted-foreground">
-            Enter your order details below to track your shipment
+          <p className="text-muted-foreground">
+            We'll show the latest shipping updates for your order.
           </p>
         </div>
         
         {/* Tracking Form */}
-        <div className="bg-card border rounded-xl p-8 md:p-12 shadow-lg">
-          <form onSubmit={handleTrackOrder} className="space-y-6">
+        <div className="bg-card border border-border/50 rounded-2xl p-6 md:p-8 shadow-sm">
+          <form onSubmit={handleTrackOrder} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="orderNumber" className="text-base font-semibold">
+              <Label htmlFor="orderNumber" className="text-sm font-medium">
                 Order Number
               </Label>
               <div className="relative">
-                <Package className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Package className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   id="orderNumber"
                   type="text"
-                  placeholder="e.g., #1001 or RBN12345"
+                  placeholder="e.g., #1001"
                   value={orderNumber}
                   onChange={(e) => setOrderNumber(e.target.value)}
-                  className="pl-11 h-12 text-base"
+                  className="pl-10 h-11 bg-background"
                   required
                 />
               </div>
-              <p className="text-sm text-muted-foreground">
-                You can find your order number in your confirmation email
+              <p className="text-xs text-muted-foreground">
+                Found in your order confirmation email
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-base font-semibold">
+              <Label htmlFor="email" className="text-sm font-medium">
                 Email Address
               </Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   id="email"
                   type="email"
                   placeholder="your.email@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-11 h-12 text-base"
+                  className="pl-10 h-11 bg-background"
                   required
                 />
               </div>
-              <p className="text-sm text-muted-foreground">
-                Use the email address from your order
-              </p>
             </div>
 
             <Button 
               type="submit" 
-              className="w-full h-12 text-base"
+              className="w-full h-11"
               disabled={isSearching}
             >
               {isSearching ? (
                 <>
-                  <Search className="w-5 h-5 mr-2 animate-spin" />
-                  Searching...
+                  <div className="w-4 h-4 mr-2 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  Looking up...
                 </>
               ) : (
                 <>
-                  <Search className="w-5 h-5 mr-2" />
-                  Track My Order
+                  <Search className="w-4 h-4 mr-2" />
+                  Track Order
                 </>
               )}
             </Button>
@@ -211,19 +240,18 @@ export default function TrackOrder() {
 
           {/* Error Message */}
           {showError && (
-            <Alert variant="destructive" className="mt-6">
+            <Alert variant="destructive" className="mt-5">
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
+              <AlertDescription className="text-sm">
                 {errorMessage || (
                   <>
-                    Something went wrong. Please contact our customer support at{" "}
+                    Something went wrong. Please contact{" "}
                     <a 
                       href="mailto:support@risebynight.com" 
-                      className="font-semibold underline hover:no-underline"
+                      className="font-medium underline hover:no-underline"
                     >
                       support@risebynight.com
                     </a>
-                    , and we will help you as soon as possible.
                   </>
                 )}
               </AlertDescription>
@@ -234,96 +262,157 @@ export default function TrackOrder() {
         {/* Tracking Results */}
         {trackingResults && trackingResults.length > 0 && (
           <div className="mt-8 space-y-6">
-            <h2 className="text-2xl font-bold text-center">Tracking Information</h2>
-            
             {trackingResults.map((tracking, index) => {
               const statusConfig = getStatusConfig(tracking.status);
               const StatusIcon = statusConfig.icon;
+              const activeStep = getActiveStep(tracking.status);
               
               return (
                 <div 
                   key={tracking.id || index}
-                  className="bg-card border rounded-xl p-6 md:p-8 shadow-lg"
+                  className="bg-card border border-border/50 rounded-2xl p-6 md:p-8 shadow-sm"
                 >
-                  {/* Status Header */}
-                  <div className={`flex items-center gap-4 p-4 rounded-lg ${statusConfig.bgColor} mb-6`}>
-                    <StatusIcon className={`w-8 h-8 ${statusConfig.color}`} />
-                    <div>
-                      <p className={`text-lg font-bold ${statusConfig.color}`}>
+                  {/* Current Status */}
+                  <div className={`flex items-center gap-3 p-4 rounded-xl ${statusConfig.bgColor} mb-8`}>
+                    <StatusIcon className={`w-6 h-6 ${statusConfig.color}`} />
+                    <div className="flex-1">
+                      <p className={`font-semibold ${statusConfig.color}`}>
                         {statusConfig.label}
                       </p>
                       {tracking.last_event && (
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-muted-foreground mt-0.5">
                           {tracking.last_event}
                         </p>
                       )}
                     </div>
+                    {tracking.last_event_time && (
+                      <p className="text-xs text-muted-foreground">
+                        {formatDate(tracking.last_event_time)}
+                      </p>
+                    )}
                   </div>
 
-                  {/* Tracking Details */}
-                  <div className="grid gap-4 md:grid-cols-2">
+                  {/* Progress Timeline */}
+                  {statusConfig.step >= 0 && (
+                    <div className="mb-8">
+                      <div className="flex items-center justify-between relative">
+                        {/* Progress line */}
+                        <div className="absolute top-4 left-0 right-0 h-0.5 bg-border" />
+                        <div 
+                          className="absolute top-4 left-0 h-0.5 bg-primary transition-all duration-500"
+                          style={{ width: `${(activeStep / (TIMELINE_STEPS.length - 1)) * 100}%` }}
+                        />
+                        
+                        {TIMELINE_STEPS.map((step, stepIndex) => {
+                          const isCompleted = stepIndex <= activeStep;
+                          const isCurrent = stepIndex === activeStep;
+                          const StepIcon = step.icon;
+                          
+                          return (
+                            <div 
+                              key={step.key}
+                              className="flex flex-col items-center z-10"
+                            >
+                              <div 
+                                className={`
+                                  w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300
+                                  ${isCompleted 
+                                    ? 'bg-primary text-primary-foreground' 
+                                    : 'bg-muted text-muted-foreground border-2 border-border'
+                                  }
+                                  ${isCurrent ? 'ring-4 ring-primary/20' : ''}
+                                `}
+                              >
+                                <StepIcon className="w-4 h-4" />
+                              </div>
+                              <span 
+                                className={`
+                                  text-xs mt-2 text-center max-w-[60px] leading-tight
+                                  ${isCompleted ? 'text-foreground font-medium' : 'text-muted-foreground'}
+                                `}
+                              >
+                                {step.label}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Order Details */}
+                  <div className="grid gap-4 sm:grid-cols-2 text-sm">
                     <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">Order Number</p>
-                      <p className="font-semibold">{tracking.order_number}</p>
+                      <p className="text-muted-foreground">Order</p>
+                      <p className="font-medium">{tracking.order_number}</p>
                     </div>
                     
-                    {tracking.tracking_number && (
+                    {tracking.carrier_name && tracking.carrier_name !== 'Unknown' && (
                       <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground">Tracking Number</p>
-                        <p className="font-mono font-semibold">{tracking.tracking_number}</p>
-                      </div>
-                    )}
-                    
-                    {tracking.carrier_name && (
-                      <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground">Carrier</p>
-                        <p className="font-semibold">{tracking.carrier_name}</p>
-                      </div>
-                    )}
-
-                    {tracking.last_event_time && (
-                      <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground">Last Update</p>
-                        <p className="font-semibold">{formatDate(tracking.last_event_time)}</p>
+                        <p className="text-muted-foreground">Carrier</p>
+                        <p className="font-medium">{tracking.carrier_name}</p>
                       </div>
                     )}
 
                     {tracking.estimated_delivery && tracking.status !== 'delivered' && (
                       <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground">Estimated Delivery</p>
-                        <p className="font-semibold text-primary">{formatDate(tracking.estimated_delivery)}</p>
+                        <p className="text-muted-foreground">Expected Delivery</p>
+                        <p className="font-medium text-primary">{formatDate(tracking.estimated_delivery)}</p>
                       </div>
                     )}
 
                     {tracking.delivered_at && (
                       <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground">Delivered On</p>
-                        <p className="font-semibold text-green-600">{formatDate(tracking.delivered_at)}</p>
+                        <p className="text-muted-foreground">Delivered</p>
+                        <p className="font-medium text-green-600">{formatDate(tracking.delivered_at)}</p>
                       </div>
                     )}
 
                     {(tracking.origin_country || tracking.destination_country) && (
-                      <div className="space-y-1 md:col-span-2">
-                        <p className="text-sm text-muted-foreground">Route</p>
-                        <p className="font-semibold">
+                      <div className="space-y-1 sm:col-span-2">
+                        <p className="text-muted-foreground">Shipping Route</p>
+                        <p className="font-medium">
                           {tracking.origin_country || 'Origin'} → {tracking.destination_country || 'Destination'}
                         </p>
                       </div>
                     )}
                   </div>
 
-                  {/* Track on carrier site */}
-                  {tracking.tracking_number && (
-                    <div className="mt-6 pt-6 border-t">
-                      <a
-                        href={`https://t.17track.net/en#nums=${tracking.tracking_number}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
-                      >
-                        View detailed tracking on 17track.net
-                        <ExternalLink className="w-4 h-4" />
-                      </a>
+                  {/* Event Timeline */}
+                  {tracking.events && tracking.events.length > 0 && (
+                    <div className="mt-8 pt-6 border-t border-border/50">
+                      <h3 className="text-sm font-medium mb-4">Tracking History</h3>
+                      <div className="space-y-4">
+                        {tracking.events.slice(0, 10).map((event, eventIndex) => (
+                          <div 
+                            key={event.id || eventIndex}
+                            className="flex gap-3 text-sm"
+                          >
+                            <div className="flex flex-col items-center">
+                              <div className={`w-2 h-2 rounded-full mt-1.5 ${eventIndex === 0 ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
+                              {eventIndex < (tracking.events?.length || 0) - 1 && (
+                                <div className="w-px h-full bg-border flex-1 mt-1" />
+                              )}
+                            </div>
+                            <div className="flex-1 pb-4">
+                              <p className={eventIndex === 0 ? 'font-medium' : 'text-muted-foreground'}>
+                                {event.description}
+                              </p>
+                              <div className="flex gap-2 text-xs text-muted-foreground mt-1">
+                                {event.event_time && (
+                                  <span>{formatDate(event.event_time)}</span>
+                                )}
+                                {event.location && (
+                                  <>
+                                    <span>•</span>
+                                    <span>{event.location}</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -333,9 +422,9 @@ export default function TrackOrder() {
         )}
 
         {/* Help Section */}
-        <div className="mt-12 text-center text-sm text-muted-foreground">
-          <p>
-            Having trouble tracking your order?{" "}
+        <div className="mt-12 text-center">
+          <p className="text-sm text-muted-foreground">
+            Need help?{" "}
             <a 
               href="mailto:support@risebynight.com" 
               className="text-primary hover:underline"

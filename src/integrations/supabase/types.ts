@@ -2283,6 +2283,36 @@ export type Database = {
         }
         Relationships: []
       }
+      tracking_events: {
+        Row: {
+          created_at: string
+          description: string | null
+          event_time: string | null
+          id: string
+          location: string | null
+          status: string
+          tracking_number: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          event_time?: string | null
+          id?: string
+          location?: string | null
+          status: string
+          tracking_number: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          event_time?: string | null
+          id?: string
+          location?: string | null
+          status?: string
+          tracking_number?: string
+        }
+        Relationships: []
+      }
       tracking_health_daily: {
         Row: {
           consent_granted: number
@@ -2394,6 +2424,33 @@ export type Database = {
           success?: boolean
           window_end?: string | null
           window_start?: string | null
+        }
+        Relationships: []
+      }
+      tracking_requests: {
+        Row: {
+          first_request_at: string
+          id: string
+          ip_hash: string
+          last_request_at: string
+          request_count: number
+          tracking_lookup_key: string
+        }
+        Insert: {
+          first_request_at?: string
+          id?: string
+          ip_hash: string
+          last_request_at?: string
+          request_count?: number
+          tracking_lookup_key: string
+        }
+        Update: {
+          first_request_at?: string
+          id?: string
+          ip_hash?: string
+          last_request_at?: string
+          request_count?: number
+          tracking_lookup_key?: string
         }
         Relationships: []
       }
