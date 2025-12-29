@@ -124,6 +124,38 @@ function deriveBlockingIssues(components: EQSComponent[]): BlockingIssue[] {
 // MAIN HANDLER
 // ============================================================================
 
+/**
+ * Validate admin user via Supabase JWT
+ */
+async function validateAdminAuth(authHeader: string | null): Promise<boolean> {
+  if (!authHeader?.startsWith("Bearer ")) return false;
+  
+  const token = authHeader.replace("Bearer ", "");
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+  const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return false;
+  
+  try {
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error || !user) return false;
+    
+    // Check if user has admin role
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .single();
+    
+    return !!roles;
+  } catch {
+    return false;
+  }
+}
+
 Deno.serve(async (req: Request): Promise<Response> => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -132,12 +164,17 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   console.log("[Pinterest EQS Fetch] Request received");
 
-  // Validate CRON_SECRET for scheduled execution
+  // Validate auth - accept either CRON_SECRET or admin JWT
   const authHeader = req.headers.get("Authorization");
-  if (!validateCronSecret(authHeader)) {
-    console.error("[Pinterest EQS Fetch] Unauthorized - invalid CRON_SECRET");
+  const isCronAuth = validateCronSecret(authHeader);
+  const isAdminAuth = !isCronAuth && await validateAdminAuth(authHeader);
+  
+  if (!isCronAuth && !isAdminAuth) {
+    console.error("[Pinterest EQS Fetch] Unauthorized - invalid credentials");
     return createErrorResponse("Unauthorized", 401);
   }
+  
+  console.log(`[Pinterest EQS Fetch] Auth: ${isCronAuth ? "cron" : "admin"}`);
 
   try {
     const PINTEREST_CONVERSION_TOKEN = requireEnvVar("PINTEREST_CONVERSION_TOKEN");

@@ -150,6 +150,7 @@ const CoverageBar = ({ label, value, tooltip }: CoverageBarProps) => {
 
 export const PinterestEQSCard = () => {
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [snapshot, setSnapshot] = useState<EQSSnapshot | null>(null);
   const [previousSnapshot, setPreviousSnapshot] = useState<EQSSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -243,6 +244,34 @@ export const PinterestEQSCard = () => {
     );
   }
 
+  const handleManualSync = async () => {
+    setSyncing(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error("Not authenticated");
+      }
+      
+      const response = await supabase.functions.invoke("pinterest-eqs-fetch", {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+      
+      if (response.error) {
+        throw new Error(response.error.message || "Sync failed");
+      }
+      
+      // Refetch data after successful sync
+      await fetchLatestSnapshot();
+    } catch (err) {
+      console.error("[EQS Card] Manual sync error:", err);
+      setError(err instanceof Error ? err.message : "Sync failed");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   if (!snapshot) {
     return (
       <Card className="p-6">
@@ -250,8 +279,18 @@ export const PinterestEQSCard = () => {
           <Info className="w-5 h-5" />
           <div>
             <p className="text-sm font-medium">No EQS data yet</p>
-            <p className="text-xs">Daily sync will populate metrics</p>
+            <p className="text-xs">Daily sync will populate metrics, or sync manually</p>
           </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleManualSync} 
+            disabled={syncing}
+            className="ml-auto"
+          >
+            {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-1" />}
+            {syncing ? "Syncing..." : "Sync Now"}
+          </Button>
         </div>
       </Card>
     );
