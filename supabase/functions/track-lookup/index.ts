@@ -2,6 +2,7 @@
  * Track Lookup Edge Function
  * 
  * Looks up tracking info by order number + email.
+ * Includes rate limiting (max 3 lookups per hour per IP).
  * If not found locally, registers with 17TRACK API.
  */
 
@@ -13,6 +14,8 @@ const corsHeaders = {
 };
 
 const TRACK17_API_URL = 'https://api.17track.net/track/v2.4';
+const RATE_LIMIT_MAX_REQUESTS = 5; // Max requests per window
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour in milliseconds
 
 interface TrackLookupRequest {
   order_number: string;
@@ -27,6 +30,17 @@ interface ShopifyOrder {
     tracking_company?: string;
     tracking_url?: string;
   }>;
+}
+
+// Simple hash function for IP anonymization
+function hashIP(ip: string): string {
+  let hash = 0;
+  for (let i = 0; i < ip.length; i++) {
+    const char = ip.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return 'ip_' + Math.abs(hash).toString(16);
 }
 
 Deno.serve(async (req) => {
@@ -57,6 +71,13 @@ Deno.serve(async (req) => {
 
     const normalizedEmail = email.toLowerCase().trim();
     const normalizedOrderNumber = order_number.trim();
+    
+    // Get client IP for rate limiting
+    const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() 
+      || req.headers.get('x-real-ip') 
+      || 'unknown';
+    const ipHash = hashIP(clientIP);
+    const lookupKey = `${normalizedOrderNumber}:${normalizedEmail}`;
 
     console.log('[track-lookup] Looking up order:', normalizedOrderNumber, 'email:', normalizedEmail);
 
@@ -69,6 +90,53 @@ Deno.serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Check rate limit
+    const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();
+    
+    const { data: rateData } = await supabase
+      .from('tracking_requests')
+      .select('request_count, last_request_at')
+      .eq('ip_hash', ipHash)
+      .eq('tracking_lookup_key', lookupKey)
+      .gte('last_request_at', windowStart)
+      .single();
+
+    if (rateData && rateData.request_count >= RATE_LIMIT_MAX_REQUESTS) {
+      console.log('[track-lookup] Rate limit exceeded for IP hash:', ipHash);
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Rate limit exceeded',
+        message: 'Too many tracking requests. Please try again later.',
+      }), {
+        status: 429,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Update rate limit counter
+    if (rateData) {
+      await supabase
+        .from('tracking_requests')
+        .update({ 
+          request_count: rateData.request_count + 1,
+          last_request_at: new Date().toISOString(),
+        })
+        .eq('ip_hash', ipHash)
+        .eq('tracking_lookup_key', lookupKey);
+    } else {
+      await supabase
+        .from('tracking_requests')
+        .upsert({
+          ip_hash: ipHash,
+          tracking_lookup_key: lookupKey,
+          request_count: 1,
+          first_request_at: new Date().toISOString(),
+          last_request_at: new Date().toISOString(),
+        }, {
+          onConflict: 'ip_hash,tracking_lookup_key',
+        });
+    }
 
     // Check if we have existing tracking data
     const { data: existingTracking, error: lookupError } = await supabase
@@ -84,10 +152,27 @@ Deno.serve(async (req) => {
 
     if (existingTracking && existingTracking.length > 0) {
       console.log('[track-lookup] Found existing tracking data');
+      
+      // Fetch event history for each tracking number
+      const trackingWithEvents = await Promise.all(
+        existingTracking.map(async (tracking) => {
+          if (!tracking.tracking_number) return { ...tracking, events: [] };
+          
+          const { data: events } = await supabase
+            .from('tracking_events')
+            .select('*')
+            .eq('tracking_number', tracking.tracking_number)
+            .order('event_time', { ascending: false })
+            .limit(20);
+          
+          return { ...tracking, events: events || [] };
+        })
+      );
+      
       return new Response(JSON.stringify({
         success: true,
         found: true,
-        tracking: existingTracking,
+        tracking: trackingWithEvents,
       }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -96,7 +181,7 @@ Deno.serve(async (req) => {
 
     // No existing tracking - try to get from Shopify
     const shopifyToken = Deno.env.get('SHOPIFY_ACCESS_TOKEN');
-    const shopifyDomain = 'rise-by-night.myshopify.com'; // Hardcoded for now
+    const shopifyDomain = 'rise-by-night.myshopify.com';
     
     if (!shopifyToken) {
       console.log('[track-lookup] No Shopify token, cannot look up order');
@@ -165,6 +250,7 @@ Deno.serve(async (req) => {
           email: normalizedEmail,
           status: 'processing',
           last_event: 'Your order is being prepared for shipment.',
+          events: [],
         }],
       }), {
         status: 200,
@@ -201,7 +287,7 @@ Deno.serve(async (req) => {
       if (insertError) {
         console.error('[track-lookup] Insert error:', insertError);
       } else {
-        trackingResults.push(inserted);
+        trackingResults.push({ ...inserted, events: [] });
       }
 
       // Register with 17TRACK if we have API key
@@ -239,6 +325,7 @@ Deno.serve(async (req) => {
         email: normalizedEmail,
         status: 'processing',
         last_event: 'Your order is being prepared for shipment.',
+        events: [],
       }],
     }), {
       status: 200,
