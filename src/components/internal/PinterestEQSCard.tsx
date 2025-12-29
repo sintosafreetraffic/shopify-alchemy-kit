@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import {
   Tooltip,
@@ -68,6 +69,7 @@ interface EQSSnapshot {
   id: string;
   created_at: string;
   overall_status: string;
+  ingestion_source?: string;
   coverage_email: number | null;
   coverage_external_id: number | null;
   coverage_order_id: number | null;
@@ -237,6 +239,13 @@ const COMPONENT_FIXES: Record<string, {
     actionable: "Include page URL with all events",
     implementation: "Add event_source_url: window.location.href to event payloads",
   },
+  order_value: {
+    displayName: "Order Value",
+    priority: "medium",
+    description: "Transaction value is required for ROAS calculation",
+    actionable: "Ensure order value is sent with checkout and add_to_cart events",
+    implementation: "Add value: orderTotal and currency: 'EUR' to event payloads",
+  },
 };
 
 const EVENT_TYPE_LABELS: Record<string, string> = {
@@ -395,8 +404,8 @@ export const PinterestEQSCard = () => {
   const [syncing, setSyncing] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
-  const [snapshot, setSnapshot] = useState<EQSSnapshot | null>(null);
-  const [previousSnapshot, setPreviousSnapshot] = useState<EQSSnapshot | null>(null);
+  const [snapshots, setSnapshots] = useState<Record<string, EQSSnapshot>>({});
+  const [activeSource, setActiveSource] = useState<string>("CONVERSIONS_API");
   const [error, setError] = useState<string | null>(null);
   const [oauthStatus, setOauthStatus] = useState<OAuthStatus | null>(null);
 
@@ -421,22 +430,21 @@ export const PinterestEQSCard = () => {
     }
   };
 
-  const fetchLatestSnapshot = async () => {
+  const fetchLatestSnapshots = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      // Fetch latest 2 snapshots to show trend
+      // Fetch latest snapshot for each ingestion source
       const { data, error: fetchError } = await supabase
         .from("pinterest_eqs_snapshots")
         .select("*")
         .order("created_at", { ascending: false })
-        .limit(2);
+        .limit(10);
 
       if (fetchError) throw fetchError;
 
       if (data && data.length > 0) {
-        // Parse blocking_issues from JSONB
         const parseSnapshot = (s: any): EQSSnapshot => ({
           ...s,
           blocking_issues: Array.isArray(s.blocking_issues)
@@ -444,9 +452,21 @@ export const PinterestEQSCard = () => {
             : JSON.parse(s.blocking_issues || "[]"),
         });
 
-        setSnapshot(parseSnapshot(data[0]));
-        if (data.length > 1) {
-          setPreviousSnapshot(parseSnapshot(data[1]));
+        // Group by ingestion_source and take the latest for each
+        const bySource: Record<string, EQSSnapshot> = {};
+        for (const row of data) {
+          const source = row.ingestion_source || "CONVERSIONS_API";
+          if (!bySource[source]) {
+            bySource[source] = parseSnapshot(row);
+          }
+        }
+        
+        setSnapshots(bySource);
+        
+        // Set active tab to first available source
+        const sources = Object.keys(bySource);
+        if (sources.length > 0 && !bySource[activeSource]) {
+          setActiveSource(sources[0]);
         }
       }
     } catch (err) {
@@ -480,7 +500,7 @@ export const PinterestEQSCard = () => {
       if (showToast) toast.success("EQS synced");
 
       // Refetch data after successful sync
-      await fetchLatestSnapshot();
+      await fetchLatestSnapshots();
     } catch (err) {
       console.error("[EQS Card] Manual sync error:", err);
       if (showToast) toast.error(err instanceof Error ? err.message : "Sync failed");
@@ -576,7 +596,7 @@ export const PinterestEQSCard = () => {
   };
 
   useEffect(() => {
-    fetchLatestSnapshot();
+    fetchLatestSnapshots();
     checkOAuthStatus();
     
     // Check for OAuth callback params
@@ -585,28 +605,19 @@ export const PinterestEQSCard = () => {
       // Refresh status after successful connection
       setTimeout(() => {
         checkOAuthStatus();
-        fetchLatestSnapshot();
+        fetchLatestSnapshots();
       }, 1000);
       // Clean URL
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, []);
 
-  // Calculate trend indicator
-  const getTrend = (current: number | null, previous: number | null) => {
-    if (current === null || previous === null) return null;
-    const diff = current - previous;
-    if (diff > 2) return "up";
-    if (diff < -2) return "down";
-    return "stable";
-  };
-
-  const statusConfig = STATUS_CONFIG[snapshot?.overall_status || "UNKNOWN"];
-  const StatusIcon = statusConfig.icon;
+  const hasAnySnapshot = Object.keys(snapshots).length > 0;
+  const currentSnapshot = snapshots[activeSource];
 
   // Format last update time
-  const lastUpdated = snapshot?.created_at
-    ? new Date(snapshot.created_at).toLocaleDateString("en-US", {
+  const lastUpdated = currentSnapshot?.created_at
+    ? new Date(currentSnapshot.created_at).toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
         hour: "2-digit",
@@ -625,27 +636,20 @@ export const PinterestEQSCard = () => {
   }
 
   // Show connect button if not connected or no data
-  if (!oauthStatus?.connected && !snapshot) {
+  if (!oauthStatus?.connected && !hasAnySnapshot) {
     return (
       <Card className="p-6">
-        <div className="flex flex-col items-center justify-center py-8 gap-4">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Link className="w-5 h-5" />
-            <span className="text-sm font-medium">Pinterest API not connected</span>
+        <div className="flex flex-col items-center justify-center py-6 text-center gap-4">
+          <div className="text-muted-foreground">
+            <h3 className="text-sm font-medium">Pinterest EQS Not Connected</h3>
+            <p className="text-xs mt-1">Connect your Pinterest account to monitor event quality</p>
           </div>
-          <p className="text-xs text-muted-foreground text-center max-w-xs">
-            Connect your Pinterest Ads account to monitor Event Quality Score metrics
-          </p>
-          <Button 
-            onClick={handleConnectPinterest} 
+          <Button
+            onClick={handleConnectPinterest}
             disabled={connecting}
             className="gap-2"
           >
-            {connecting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <ExternalLink className="w-4 h-4" />
-            )}
+            {connecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ExternalLink className="w-4 h-4" />}
             Connect Pinterest
           </Button>
         </div>
@@ -653,10 +657,10 @@ export const PinterestEQSCard = () => {
     );
   }
 
-  if (error) {
+  if (error && !hasAnySnapshot) {
     return (
       <Card className="p-6">
-        <div className="flex items-center gap-3 text-muted-foreground">
+        <div className="flex items-center gap-3 text-rose-600/80 dark:text-rose-400/80">
           <AlertCircle className="w-5 h-5" />
           <div>
             <p className="text-sm font-medium">EQS data unavailable</p>
@@ -673,7 +677,7 @@ export const PinterestEQSCard = () => {
                 {connecting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Connect"}
               </Button>
             )}
-            <Button variant="ghost" size="sm" onClick={fetchLatestSnapshot}>
+            <Button variant="ghost" size="sm" onClick={fetchLatestSnapshots}>
               <RefreshCw className="w-4 h-4" />
             </Button>
           </div>
@@ -682,9 +686,7 @@ export const PinterestEQSCard = () => {
     );
   }
 
-  // handleManualSync declared above
-
-  if (!snapshot) {
+  if (!hasAnySnapshot) {
     return (
       <Card className="p-6">
         <div className="flex items-center gap-3 text-muted-foreground">
@@ -708,10 +710,16 @@ export const PinterestEQSCard = () => {
     );
   }
 
+  const availableSources = Object.keys(snapshots);
+  const sourceLabels: Record<string, string> = {
+    "CONVERSIONS_API": "Server-side (CAPI)",
+    "TAG": "Client-side (Tag)",
+  };
+
   return (
     <Card className="p-6">
       {/* Header */}
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex items-start justify-between mb-4">
         <div>
           <h3 className="text-sm font-medium text-foreground">Pinterest Measurement Quality</h3>
           <p className="text-xs text-muted-foreground mt-0.5">
@@ -719,10 +727,6 @@ export const PinterestEQSCard = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge className={`${statusConfig.bgColor} ${statusConfig.color} border-0`}>
-            <StatusIcon className="w-3 h-3 mr-1" />
-            {statusConfig.label}
-          </Badge>
           <Button
             variant="outline"
             size="sm"
@@ -759,80 +763,107 @@ export const PinterestEQSCard = () => {
         </div>
       </div>
 
-      {/* Coverage Bars */}
-      <div className="space-y-3 mb-6">
-        <CoverageBar
-          label="Email"
-          value={snapshot.coverage_email}
-          tooltip="Percentage of events with hashed email for customer matching"
-        />
-        <CoverageBar
-          label="Click ID (EPIK)"
-          value={snapshot.coverage_click_id}
-          tooltip="Pinterest click tracking parameter - critical for attribution"
-        />
-        <CoverageBar
-          label="Order ID"
-          value={snapshot.coverage_order_id}
-          tooltip="Unique order identifiers for deduplication"
-        />
-        <CoverageBar
-          label="External ID"
-          value={snapshot.coverage_external_id}
-          tooltip="Customer identifier for cross-device matching"
-        />
-      </div>
+      {/* Source Tabs */}
+      <Tabs value={activeSource} onValueChange={setActiveSource} className="w-full">
+        <TabsList className="mb-4 w-full grid grid-cols-2">
+          {availableSources.map((source) => {
+            const snap = snapshots[source];
+            const statusConfig = STATUS_CONFIG[snap?.overall_status || "UNKNOWN"];
+            return (
+              <TabsTrigger key={source} value={source} className="text-xs gap-2">
+                <span className={`w-2 h-2 rounded-full ${statusConfig.bgColor}`} />
+                {sourceLabels[source] || source}
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
 
-      {/* Detailed Breakdown by Event Type */}
-      {snapshot.quality_components && Object.keys(snapshot.quality_components).length > 0 && (
-        <DetailedBreakdown qualityComponents={snapshot.quality_components} />
-      )}
+        {availableSources.map((source) => {
+          const snap = snapshots[source];
+          if (!snap) return null;
 
-      {/* Blocking Issues */}
-      {snapshot.blocking_issues.length > 0 && (
-        <div className="border-t border-border pt-4 mt-4">
-          <p className="text-xs text-muted-foreground mb-3">Limiting factors</p>
-          <div className="space-y-2">
-            {snapshot.blocking_issues.map((issue, idx) => {
-              const severityConfig = SEVERITY_CONFIG[issue.severity];
-              return (
-                <div key={idx} className={`p-3 rounded-lg ${severityConfig.bgColor}`}>
-                  <p className={`text-xs font-medium ${severityConfig.color}`}>
-                    {issue.description}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    → {issue.recommendation}
-                  </p>
+          const statusConfig = STATUS_CONFIG[snap.overall_status || "UNKNOWN"];
+          const StatusIcon = statusConfig.icon;
+
+          return (
+            <TabsContent key={source} value={source} className="mt-0">
+              {/* Status Badge */}
+              <div className="flex items-center gap-2 mb-4">
+                <Badge className={`${statusConfig.bgColor} ${statusConfig.color} border-0`}>
+                  <StatusIcon className="w-3 h-3 mr-1" />
+                  {statusConfig.label}
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  {sourceLabels[source] || source}
+                </span>
+              </div>
+
+              {/* Coverage Bars */}
+              <div className="space-y-3 mb-4">
+                <CoverageBar
+                  label="Email"
+                  value={snap.coverage_email}
+                  tooltip="Percentage of events with hashed email for customer matching"
+                />
+                <CoverageBar
+                  label="Click ID (EPIK)"
+                  value={snap.coverage_click_id}
+                  tooltip="Pinterest click tracking parameter - critical for attribution"
+                />
+                <CoverageBar
+                  label="Order ID"
+                  value={snap.coverage_order_id}
+                  tooltip="Unique order identifiers for deduplication"
+                />
+                <CoverageBar
+                  label="External ID"
+                  value={snap.coverage_external_id}
+                  tooltip="Customer identifier for cross-device matching"
+                />
+              </div>
+
+              {/* Detailed Breakdown by Event Type */}
+              {snap.quality_components && Object.keys(snap.quality_components).length > 0 && (
+                <DetailedBreakdown qualityComponents={snap.quality_components} />
+              )}
+
+              {/* Blocking Issues */}
+              {snap.blocking_issues && snap.blocking_issues.length > 0 && (
+                <div className="border-t border-border pt-4 mt-4">
+                  <p className="text-xs text-muted-foreground mb-3">Limiting factors</p>
+                  <div className="space-y-2">
+                    {snap.blocking_issues.map((issue, idx) => {
+                      const severityConfig = SEVERITY_CONFIG[issue.severity];
+                      return (
+                        <div key={idx} className={`p-3 rounded-lg ${severityConfig.bgColor}`}>
+                          <p className={`text-xs font-medium ${severityConfig.color}`}>
+                            {issue.description}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            → {issue.recommendation}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+              )}
 
-      {/* API Error Display */}
-      {snapshot.api_error_message && (
-        <div className="border-t border-border pt-4 mt-4">
-          <div className="p-3 rounded-lg bg-muted flex items-start justify-between gap-3">
-            <p className="text-xs text-muted-foreground flex-1">
-              API error: {snapshot.api_error_message.slice(0, 100)}
-              {snapshot.api_error_message.length > 100 && "..."}
-            </p>
-            {snapshot.api_error_message.includes("401") && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleConnectPinterest}
-                disabled={connecting}
-                className="shrink-0"
-              >
-                {connecting ? <Loader2 className="w-3 h-3 animate-spin" /> : <ExternalLink className="w-3 h-3 mr-1" />}
-                Reconnect
-              </Button>
-            )}
-          </div>
-        </div>
-      )}
+              {/* API Error Display */}
+              {snap.api_error_message && (
+                <div className="border-t border-border pt-4 mt-4">
+                  <div className="p-3 rounded-lg bg-muted flex items-start justify-between gap-3">
+                    <p className="text-xs text-muted-foreground flex-1">
+                      API error: {snap.api_error_message.slice(0, 100)}
+                      {snap.api_error_message.length > 100 && "..."}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </TabsContent>
+          );
+        })}
+      </Tabs>
 
       {/* Footer */}
       <div className="border-t border-border pt-3 mt-4">
