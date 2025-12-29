@@ -33,28 +33,41 @@ interface NotificationStats {
 
 interface EmailSettings {
   shipping_email_info_received_enabled: boolean;
+  shipping_email_in_transit_enabled: boolean;
   shipping_email_pickup_enabled: boolean;
-  shipping_email_cooldown_hours: number;
   shipping_email_max_per_order: number;
 }
 
+// Updated status labels matching new internal states
 const STATUS_LABELS: Record<string, string> = {
-  'info_received': 'Info Received',
+  'label_created': 'Label Created',
   'in_transit': 'In Transit',
+  'ready_for_pickup': 'Ready for Pickup',
   'out_for_delivery': 'Out for Delivery',
   'delivered': 'Delivered',
+  'delivery_issue': 'Delivery Issue',
+  'shipping_exception': 'Exception',
+  'shipment_stalled': 'Stalled',
+  // Legacy mappings
+  'info_received': 'Info Received',
   'pickup': 'Ready for Pickup',
-  'undelivered': 'Delivery Attempted',
-  'alert': 'Alert',
-  'expired': 'Expired',
+  'undelivered': 'Delivery Issue',
+  'alert': 'Exception',
+  'expired': 'Stalled',
   'pending': 'Pending',
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  'info_received': 'bg-blue-100 text-blue-800',
+  'label_created': 'bg-blue-100 text-blue-800',
   'in_transit': 'bg-yellow-100 text-yellow-800',
+  'ready_for_pickup': 'bg-purple-100 text-purple-800',
   'out_for_delivery': 'bg-orange-100 text-orange-800',
   'delivered': 'bg-green-100 text-green-800',
+  'delivery_issue': 'bg-red-100 text-red-800',
+  'shipping_exception': 'bg-red-100 text-red-800',
+  'shipment_stalled': 'bg-gray-100 text-gray-800',
+  // Legacy mappings
+  'info_received': 'bg-blue-100 text-blue-800',
   'pickup': 'bg-purple-100 text-purple-800',
   'undelivered': 'bg-red-100 text-red-800',
   'alert': 'bg-red-100 text-red-800',
@@ -70,9 +83,9 @@ export default function AdminShipmentTracking() {
   const [stats, setStats] = useState<NotificationStats | null>(null);
   const [settings, setSettings] = useState<EmailSettings>({
     shipping_email_info_received_enabled: false,
+    shipping_email_in_transit_enabled: false,
     shipping_email_pickup_enabled: false,
-    shipping_email_cooldown_hours: 12,
-    shipping_email_max_per_order: 6,
+    shipping_email_max_per_order: 4, // Default: max 4 per spec
   });
   const [savingSettings, setSavingSettings] = useState(false);
 
@@ -142,8 +155,8 @@ export default function AdminShipmentTracking() {
         .select('key, value')
         .in('key', [
           'shipping_email_info_received_enabled',
+          'shipping_email_in_transit_enabled',
           'shipping_email_pickup_enabled',
-          'shipping_email_cooldown_hours',
           'shipping_email_max_per_order',
         ]);
 
@@ -152,12 +165,12 @@ export default function AdminShipmentTracking() {
         settingsData.forEach((s: { key: string; value: unknown }) => {
           if (s.key === 'shipping_email_info_received_enabled') {
             newSettings.shipping_email_info_received_enabled = s.value === true;
+          } else if (s.key === 'shipping_email_in_transit_enabled') {
+            newSettings.shipping_email_in_transit_enabled = s.value === true;
           } else if (s.key === 'shipping_email_pickup_enabled') {
             newSettings.shipping_email_pickup_enabled = s.value === true;
-          } else if (s.key === 'shipping_email_cooldown_hours') {
-            newSettings.shipping_email_cooldown_hours = typeof s.value === 'number' ? s.value : 12;
           } else if (s.key === 'shipping_email_max_per_order') {
-            newSettings.shipping_email_max_per_order = typeof s.value === 'number' ? s.value : 6;
+            newSettings.shipping_email_max_per_order = typeof s.value === 'number' ? s.value : 4;
           }
         });
         setSettings(newSettings);
@@ -175,8 +188,8 @@ export default function AdminShipmentTracking() {
     try {
       const updates = [
         { key: 'shipping_email_info_received_enabled', value: settings.shipping_email_info_received_enabled },
+        { key: 'shipping_email_in_transit_enabled', value: settings.shipping_email_in_transit_enabled },
         { key: 'shipping_email_pickup_enabled', value: settings.shipping_email_pickup_enabled },
-        { key: 'shipping_email_cooldown_hours', value: settings.shipping_email_cooldown_hours },
         { key: 'shipping_email_max_per_order', value: settings.shipping_email_max_per_order },
       ];
 
@@ -298,7 +311,7 @@ export default function AdminShipmentTracking() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <Label htmlFor="info_received">Info Received emails</Label>
+              <Label htmlFor="info_received">Label Created emails</Label>
               <Switch
                 id="info_received"
                 checked={settings.shipping_email_info_received_enabled}
@@ -308,28 +321,22 @@ export default function AdminShipmentTracking() {
               />
             </div>
             <div className="flex items-center justify-between">
-              <Label htmlFor="pickup">Pickup emails</Label>
+              <Label htmlFor="in_transit">In Transit emails</Label>
+              <Switch
+                id="in_transit"
+                checked={settings.shipping_email_in_transit_enabled}
+                onCheckedChange={(checked) =>
+                  setSettings({ ...settings, shipping_email_in_transit_enabled: checked })
+                }
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="pickup">Ready for Pickup emails</Label>
               <Switch
                 id="pickup"
                 checked={settings.shipping_email_pickup_enabled}
                 onCheckedChange={(checked) =>
                   setSettings({ ...settings, shipping_email_pickup_enabled: checked })
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="cooldown">Cooldown (hours)</Label>
-              <Input
-                id="cooldown"
-                type="number"
-                min={1}
-                max={48}
-                value={settings.shipping_email_cooldown_hours}
-                onChange={(e) =>
-                  setSettings({
-                    ...settings,
-                    shipping_email_cooldown_hours: parseInt(e.target.value) || 12,
-                  })
                 }
               />
             </div>
