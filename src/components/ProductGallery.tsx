@@ -85,7 +85,7 @@ export const ProductGallery = () => {
       reviews: "3,200+",
       image: eyeMaskGift,
       features: ["Blocks 100% of light", "Gentle on skin & eyelashes", "Contoured eye design", "Hypoallergenic silk"],
-      badge: "Special Offer",
+      badge: "",
       link: "/product/sleep-mask",
     },
   ];
