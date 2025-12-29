@@ -162,6 +162,7 @@ export const PinterestEQSCard = () => {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [connecting, setConnecting] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
   const [snapshot, setSnapshot] = useState<EQSSnapshot | null>(null);
   const [previousSnapshot, setPreviousSnapshot] = useState<EQSSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -323,6 +324,25 @@ export const PinterestEQSCard = () => {
     }
   };
 
+  const handleDisconnectPinterest = async () => {
+    setDisconnecting(true);
+    try {
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pinterest-oauth?action=disconnect`;
+      const res = await fetch(url, { method: "POST", cache: "no-store" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to disconnect");
+      }
+      toast.success("Pinterest disconnected");
+      setOauthStatus({ connected: false });
+    } catch (err) {
+      console.error("[EQS Card] Disconnect error:", err);
+      toast.error(err instanceof Error ? err.message : "Failed to disconnect");
+    } finally {
+      setDisconnecting(false);
+    }
+  };
+
   useEffect(() => {
     fetchLatestSnapshot();
     checkOAuthStatus();
@@ -481,16 +501,29 @@ export const PinterestEQSCard = () => {
             {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
             {syncing ? "Syncing..." : "Sync Now"}
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleConnectPinterest}
-            disabled={connecting}
-            className="gap-1"
-          >
-            {connecting ? <Loader2 className="w-3 h-3 animate-spin" /> : <ExternalLink className="w-3 h-3" />}
-            Reconnect
-          </Button>
+          {oauthStatus?.connected ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleDisconnectPinterest}
+              disabled={disconnecting}
+              className="gap-1 text-muted-foreground hover:text-destructive"
+            >
+              {disconnecting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Link className="w-3 h-3" />}
+              Disconnect
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleConnectPinterest}
+              disabled={connecting}
+              className="gap-1"
+            >
+              {connecting ? <Loader2 className="w-3 h-3 animate-spin" /> : <ExternalLink className="w-3 h-3" />}
+              Connect
+            </Button>
+          )}
         </div>
       </div>
 

@@ -286,10 +286,32 @@ serve(async (req) => {
       );
     }
 
+    // ACTION: Disconnect - remove stored tokens
+    if (action === "disconnect") {
+      const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+      const { error: deleteError } = await supabase
+        .from("pinterest_oauth_tokens")
+        .delete()
+        .neq("id", "00000000-0000-0000-0000-000000000000"); // delete all rows
+
+      if (deleteError) {
+        console.error("[Pinterest OAuth] Disconnect error:", deleteError);
+        throw new Error("Failed to disconnect Pinterest");
+      }
+
+      console.log("[Pinterest OAuth] Disconnected successfully");
+
+      return new Response(
+        JSON.stringify({ success: true, message: "Pinterest disconnected" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     return new Response(
       JSON.stringify({ 
         error: "Invalid request",
-        hint: "Use ?action=authorize to start OAuth, ?action=status to check connection, or ?action=refresh to refresh tokens"
+        hint: "Use ?action=authorize to start OAuth, ?action=status to check connection, ?action=refresh to refresh tokens, or ?action=disconnect to remove connection"
       }),
       { 
         status: 400,
