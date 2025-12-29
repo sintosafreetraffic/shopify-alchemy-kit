@@ -144,7 +144,11 @@ export const ProductGallery = () => {
                       <span className="text-3xl md:text-4xl font-bold text-primary">
                         ${parseFloat(bundleProduct.node.variants.edges[0]?.node.price.amount || "0").toFixed(2)}
                       </span>
-                      <span className="text-xl text-muted-foreground line-through">$229.97</span>
+                      {bundleProduct.node.variants.edges[0]?.node.compareAtPrice?.amount && (
+                        <span className="text-xl text-muted-foreground line-through">
+                          ${parseFloat(bundleProduct.node.variants.edges[0].node.compareAtPrice.amount).toFixed(2)}
+                        </span>
+                      )}
                     </div>
 
                     <ul className="space-y-3 mb-8">
