@@ -195,9 +195,9 @@ export const ProductGallery = () => {
                     <div className="absolute top-4 left-4 z-10">
                       <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
                         product.badge.toLowerCase().includes('included') 
-                          ? 'bg-green-600 text-white' 
+                          ? 'text-white' 
                           : 'bg-destructive text-destructive-foreground'
-                      }`}>
+                      }`} style={product.badge.toLowerCase().includes('included') ? { backgroundColor: '#3e81e0' } : undefined}>
                         {product.badge}
                       </span>
                     </div>
