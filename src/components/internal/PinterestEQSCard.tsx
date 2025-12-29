@@ -185,7 +185,12 @@ export const PinterestEQSCard = () => {
   const handleConnectPinterest = async () => {
     setConnecting(true);
     try {
-      const url = new URL(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pinterest-oauth?action=authorize`);
+      // Include origin so the edge function can redirect back to the correct app
+      const origin = window.location.origin;
+      const url = new URL(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pinterest-oauth`);
+      url.searchParams.set("action", "authorize");
+      url.searchParams.set("origin", origin);
+      
       const res = await fetch(url.toString());
       
       if (!res.ok) {
