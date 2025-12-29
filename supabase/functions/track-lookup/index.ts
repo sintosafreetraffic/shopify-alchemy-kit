@@ -180,11 +180,12 @@ Deno.serve(async (req) => {
     }
 
     // No existing tracking - try to get from Shopify
-    const shopifyToken = Deno.env.get('SHOPIFY_ACCESS_TOKEN');
+    // Prefer SHOPIFY_ADMIN_API_TOKEN, fall back to SHOPIFY_ACCESS_TOKEN
+    const shopifyToken = Deno.env.get('SHOPIFY_ADMIN_API_TOKEN') || Deno.env.get('SHOPIFY_ACCESS_TOKEN');
     const shopifyDomain = 'rise-by-night.myshopify.com';
     
     if (!shopifyToken) {
-      console.log('[track-lookup] No Shopify token, cannot look up order');
+      console.log('[track-lookup] No Shopify token available, cannot look up order');
       return new Response(JSON.stringify({
         success: true,
         found: false,
@@ -195,8 +196,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Search Shopify for the order
-    const shopifySearchUrl = `https://${shopifyDomain}/admin/api/2024-01/orders.json?name=${encodeURIComponent(normalizedOrderNumber)}&status=any`;
+    // Shopify order names are prefixed with '#', so search with and without
+    // E.g., order "1006" is stored as "#1006" in Shopify
+    const orderNameToSearch = normalizedOrderNumber.startsWith('#') 
+      ? normalizedOrderNumber 
+      : `#${normalizedOrderNumber}`;
+    
+    console.log('[track-lookup] Searching Shopify for order name:', orderNameToSearch);
+    
+    const shopifySearchUrl = `https://${shopifyDomain}/admin/api/2024-01/orders.json?name=${encodeURIComponent(orderNameToSearch)}&status=any`;
     
     const shopifyResponse = await fetch(shopifySearchUrl, {
       headers: {
