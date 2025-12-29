@@ -3,7 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { createStorefrontCheckout } from '@/lib/shopify';
 import type { ShopifyProduct } from '@/lib/shopify';
 import { trackAddToCart, trackInitiateCheckout, clearInitiateCheckoutFingerprint } from '@/lib/pinterest';
-import { trackAddedToCart as trackKlaviyoAddToCart } from '@/lib/klaviyo';
+import { trackAddedToCart as trackKlaviyoAddToCart, trackStartedCheckout as trackKlaviyoStartedCheckout } from '@/lib/klaviyo';
 import { trackRevenueAttribution } from '@/lib/personaAnalytics';
 import { trackAddToCartEvent } from '@/lib/addToCartAnalytics';
 
@@ -189,14 +189,30 @@ export const useCartStore = create<CartStore>()(
           // Non-blocking: Pinterest tracking
           Promise.resolve().then(() => trackInitiateCheckout(checkoutItems)).catch(() => {});
           
-          // Non-blocking: Persona analytics
+          // Non-blocking: Klaviyo Started Checkout tracking
           const totalValue = items.reduce((sum, item) => sum + parseFloat(item.price.amount) * item.quantity, 0);
+          const currencyCode = items[0]?.price.currencyCode || 'EUR';
+          
+          Promise.resolve().then(() => trackKlaviyoStartedCheckout({
+            items: items.map(item => ({
+              id: item.product.node.id,
+              title: item.product.node.title,
+              price: parseFloat(item.price.amount),
+              quantity: item.quantity,
+              variantTitle: item.variantTitle,
+              imageUrl: item.product.node.images?.edges?.[0]?.node?.url || "",
+            })),
+            totalValue,
+            currencyCode,
+          })).catch(() => {});
+          
+          // Non-blocking: Persona analytics
           if (items.length > 0) {
             Promise.resolve().then(() => trackRevenueAttribution("begin_checkout", {
               id: items[0].product.node.id,
               title: `Checkout (${items.length} items)`,
               price: totalValue,
-              currency: items[0].price.currencyCode,
+              currency: currencyCode,
               quantity: items.reduce((sum, item) => sum + item.quantity, 0),
             })).catch(() => {});
           }
