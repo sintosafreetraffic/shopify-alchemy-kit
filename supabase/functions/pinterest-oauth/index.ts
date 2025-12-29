@@ -23,8 +23,8 @@ const corsHeaders = {
 
 const PINTEREST_AUTH_URL = "https://www.pinterest.com/oauth/";
 const PINTEREST_API_URL = "https://api.pinterest.com/v5";
-// Scopes needed for EQS API
-const SCOPES = "ads:read";
+// Scopes needed for Pinterest API (EQS, boards, pins, etc.)
+const SCOPES = "user_accounts:read,ads:read,boards:read,pins:read";
 
 function requireEnvVar(name: string): string {
   const value = Deno.env.get(name);
