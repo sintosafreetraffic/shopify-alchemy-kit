@@ -182,7 +182,8 @@ Deno.serve(async (req) => {
     // No existing tracking - try to get from Shopify
     // Prefer SHOPIFY_ADMIN_API_TOKEN, fall back to SHOPIFY_ACCESS_TOKEN
     const shopifyToken = Deno.env.get('SHOPIFY_ADMIN_API_TOKEN') || Deno.env.get('SHOPIFY_ACCESS_TOKEN');
-    const shopifyDomain = 'rise-by-night.myshopify.com';
+    // Use the actual Shopify store domain
+    const shopifyDomain = 'lovable-project-swlbs.myshopify.com';
     
     if (!shopifyToken) {
       console.log('[track-lookup] No Shopify token available, cannot look up order');
