@@ -116,8 +116,11 @@ serve(async (req) => {
 
     // ACTION: Start authorization flow
     if (action === "authorize") {
-      // Generate state for CSRF protection
-      const stateToken = crypto.randomUUID();
+      // Get the origin for redirect back (passed from frontend)
+      const origin = url.searchParams.get("origin") || "https://risebynight.nl";
+      
+      // Generate state for CSRF protection - include origin for redirect
+      const stateToken = `${crypto.randomUUID()}|${origin}`;
       
       const authUrl = new URL(PINTEREST_AUTH_URL);
       authUrl.searchParams.set("client_id", PINTEREST_APP_ID);
@@ -126,7 +129,7 @@ serve(async (req) => {
       authUrl.searchParams.set("scope", SCOPES);
       authUrl.searchParams.set("state", stateToken);
 
-      console.log("[Pinterest OAuth] Redirecting to Pinterest authorization");
+      console.log("[Pinterest OAuth] Redirecting to Pinterest authorization, origin:", origin);
       
       // Return the auth URL for the frontend to redirect to
       return new Response(
@@ -142,13 +145,24 @@ serve(async (req) => {
 
     // ACTION: Handle OAuth callback (code exchange)
     if (code && state) {
+      // Get the app URL from the state parameter or use a fallback
+      // The state is expected to be in format: uuid|app_url
+      let appUrl = "https://risebynight.nl"; // Fallback app URL
+      let stateToken = state;
+      
+      if (state.includes("|")) {
+        const parts = state.split("|");
+        stateToken = parts[0];
+        appUrl = parts[1] || appUrl;
+      }
+
       if (error) {
         console.error("[Pinterest OAuth] Authorization denied:", error);
         // Redirect back to app with error
         return new Response(null, {
           status: 302,
           headers: {
-            Location: `/risebynight/tracking?pinterest_error=${encodeURIComponent(error)}`,
+            Location: `${appUrl}/risebynight/tracking?pinterest_error=${encodeURIComponent(error)}`,
           },
         });
       }
@@ -189,7 +203,7 @@ serve(async (req) => {
       return new Response(null, {
         status: 302,
         headers: {
-          Location: `/risebynight/tracking?pinterest_connected=true`,
+          Location: `${appUrl}/risebynight/tracking?pinterest_connected=true`,
         },
       });
     }
