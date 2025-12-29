@@ -470,11 +470,23 @@ export const PinterestEQSCard = () => {
       {/* API Error Display */}
       {snapshot.api_error_message && (
         <div className="border-t border-border pt-4 mt-4">
-          <div className="p-3 rounded-lg bg-muted">
-            <p className="text-xs text-muted-foreground">
+          <div className="p-3 rounded-lg bg-muted flex items-start justify-between gap-3">
+            <p className="text-xs text-muted-foreground flex-1">
               API error: {snapshot.api_error_message.slice(0, 100)}
               {snapshot.api_error_message.length > 100 && "..."}
             </p>
+            {snapshot.api_error_message.includes("401") && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleConnectPinterest}
+                disabled={connecting}
+                className="shrink-0"
+              >
+                {connecting ? <Loader2 className="w-3 h-3 animate-spin" /> : <ExternalLink className="w-3 h-3 mr-1" />}
+                Reconnect
+              </Button>
+            )}
           </div>
         </div>
       )}
