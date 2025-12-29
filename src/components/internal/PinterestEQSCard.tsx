@@ -481,8 +481,15 @@ export const PinterestEQSCard = () => {
             {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
             {syncing ? "Syncing..." : "Sync Now"}
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={fetchLatestSnapshot}>
-            <RefreshCw className="w-4 h-4" />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleConnectPinterest}
+            disabled={connecting}
+            className="gap-1"
+          >
+            {connecting ? <Loader2 className="w-3 h-3 animate-spin" /> : <ExternalLink className="w-3 h-3" />}
+            Reconnect
           </Button>
         </div>
       </div>
