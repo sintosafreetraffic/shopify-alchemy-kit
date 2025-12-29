@@ -26,6 +26,8 @@ import {
   AlertCircle,
   CheckCircle2,
   Info,
+  Link,
+  ExternalLink,
 } from "lucide-react";
 
 // ============================================================================
@@ -49,6 +51,13 @@ interface EQSSnapshot {
   coverage_click_id: number | null;
   blocking_issues: BlockingIssue[];
   api_error_message: string | null;
+}
+
+interface OAuthStatus {
+  connected: boolean;
+  expired?: boolean;
+  expires_at?: string;
+  last_updated?: string;
 }
 
 // ============================================================================
@@ -151,9 +160,54 @@ const CoverageBar = ({ label, value, tooltip }: CoverageBarProps) => {
 export const PinterestEQSCard = () => {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [connecting, setConnecting] = useState(false);
   const [snapshot, setSnapshot] = useState<EQSSnapshot | null>(null);
   const [previousSnapshot, setPreviousSnapshot] = useState<EQSSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [oauthStatus, setOauthStatus] = useState<OAuthStatus | null>(null);
+
+  const checkOAuthStatus = async () => {
+    try {
+      const response = await supabase.functions.invoke("pinterest-oauth", {
+        body: null,
+        method: "GET",
+      });
+      
+      // Parse from the function response
+      const url = new URL(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pinterest-oauth?action=status`);
+      const res = await fetch(url.toString());
+      if (res.ok) {
+        const data = await res.json();
+        setOauthStatus(data);
+      }
+    } catch (err) {
+      console.error("[EQS Card] OAuth status check failed:", err);
+      setOauthStatus({ connected: false });
+    }
+  };
+
+  const handleConnectPinterest = async () => {
+    setConnecting(true);
+    try {
+      const url = new URL(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pinterest-oauth?action=authorize`);
+      const res = await fetch(url.toString());
+      
+      if (!res.ok) {
+        throw new Error("Failed to get authorization URL");
+      }
+      
+      const data = await res.json();
+      if (data.auth_url) {
+        // Open Pinterest authorization in new window
+        window.open(data.auth_url, "_blank", "width=600,height=700");
+      }
+    } catch (err) {
+      console.error("[EQS Card] Connect error:", err);
+      setError(err instanceof Error ? err.message : "Failed to connect");
+    } finally {
+      setConnecting(false);
+    }
+  };
 
   const fetchLatestSnapshot = async () => {
     setLoading(true);
@@ -193,6 +247,19 @@ export const PinterestEQSCard = () => {
 
   useEffect(() => {
     fetchLatestSnapshot();
+    checkOAuthStatus();
+    
+    // Check for OAuth callback params
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("pinterest_connected") === "true") {
+      // Refresh status after successful connection
+      setTimeout(() => {
+        checkOAuthStatus();
+        fetchLatestSnapshot();
+      }, 1000);
+      // Clean URL
+      window.history.replaceState({}, "", window.location.pathname);
+    }
   }, []);
 
   // Calculate trend indicator
@@ -227,6 +294,35 @@ export const PinterestEQSCard = () => {
     );
   }
 
+  // Show connect button if not connected or no data
+  if (!oauthStatus?.connected && !snapshot) {
+    return (
+      <Card className="p-6">
+        <div className="flex flex-col items-center justify-center py-8 gap-4">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Link className="w-5 h-5" />
+            <span className="text-sm font-medium">Pinterest API not connected</span>
+          </div>
+          <p className="text-xs text-muted-foreground text-center max-w-xs">
+            Connect your Pinterest Ads account to monitor Event Quality Score metrics
+          </p>
+          <Button 
+            onClick={handleConnectPinterest} 
+            disabled={connecting}
+            className="gap-2"
+          >
+            {connecting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <ExternalLink className="w-4 h-4" />
+            )}
+            Connect Pinterest
+          </Button>
+        </div>
+      </Card>
+    );
+  }
+
   if (error) {
     return (
       <Card className="p-6">
@@ -236,9 +332,21 @@ export const PinterestEQSCard = () => {
             <p className="text-sm font-medium">EQS data unavailable</p>
             <p className="text-xs">{error}</p>
           </div>
-          <Button variant="ghost" size="sm" onClick={fetchLatestSnapshot} className="ml-auto">
-            <RefreshCw className="w-4 h-4" />
-          </Button>
+          <div className="ml-auto flex gap-2">
+            {!oauthStatus?.connected && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleConnectPinterest}
+                disabled={connecting}
+              >
+                {connecting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Connect"}
+              </Button>
+            )}
+            <Button variant="ghost" size="sm" onClick={fetchLatestSnapshot}>
+              <RefreshCw className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       </Card>
     );
