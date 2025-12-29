@@ -1,6 +1,7 @@
 /**
  * Phase 4.2b - Pinterest Source Truth Dashboard
  * Shows sent vs blocked purchases, attribution breakdown, and recent events
+ * Phase 5: Added EQS (Event Quality Score) monitoring card
  */
 
 import { useState, useEffect, useCallback } from "react";
@@ -58,6 +59,7 @@ import {
   Area,
 } from "recharts";
 import { Radio } from "lucide-react";
+import { PinterestEQSCard } from "./PinterestEQSCard";
 
 interface SourceTruthEvent {
   id: string;
@@ -568,6 +570,9 @@ export const PinterestSourceTruthTab = () => {
           icon={TrendingUp}
         />
       </div>
+
+      {/* EQS Measurement Quality Card */}
+      <PinterestEQSCard />
 
       {/* Charts Row */}
       <div className="grid md:grid-cols-2 gap-6">

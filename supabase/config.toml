@@ -301,3 +301,7 @@ verify_jwt = false
 # Shipments Send Worker - CRON job for sending shipment emails via Klaviyo
 [functions.shipments-send-worker]
 verify_jwt = false
+
+# Pinterest EQS Fetch - CRON job for daily EQS metrics (validates CRON_SECRET internally)
+[functions.pinterest-eqs-fetch]
+verify_jwt = false

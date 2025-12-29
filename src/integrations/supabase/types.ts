@@ -1304,6 +1304,60 @@ export type Database = {
         }
         Relationships: []
       }
+      pinterest_eqs_snapshots: {
+        Row: {
+          ad_account_id: string
+          api_error_message: string | null
+          api_response_status: number | null
+          blocking_issues: Json | null
+          coverage_click_id: number | null
+          coverage_email: number | null
+          coverage_external_id: number | null
+          coverage_order_id: number | null
+          created_at: string
+          id: string
+          ingestion_source: string
+          lookback_period: string
+          overall_status: string
+          quality_components: Json
+          source_platform: string
+        }
+        Insert: {
+          ad_account_id: string
+          api_error_message?: string | null
+          api_response_status?: number | null
+          blocking_issues?: Json | null
+          coverage_click_id?: number | null
+          coverage_email?: number | null
+          coverage_external_id?: number | null
+          coverage_order_id?: number | null
+          created_at?: string
+          id?: string
+          ingestion_source?: string
+          lookback_period?: string
+          overall_status: string
+          quality_components?: Json
+          source_platform?: string
+        }
+        Update: {
+          ad_account_id?: string
+          api_error_message?: string | null
+          api_response_status?: number | null
+          blocking_issues?: Json | null
+          coverage_click_id?: number | null
+          coverage_email?: number | null
+          coverage_external_id?: number | null
+          coverage_order_id?: number | null
+          created_at?: string
+          id?: string
+          ingestion_source?: string
+          lookback_period?: string
+          overall_status?: string
+          quality_components?: Json
+          source_platform?: string
+        }
+        Relationships: []
+      }
       pinterest_purchase_events: {
         Row: {
           attribution_confidence: string | null
