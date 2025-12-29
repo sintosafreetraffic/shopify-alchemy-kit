@@ -281,3 +281,15 @@ verify_jwt = false
 # Klaviyo Popup Analytics - Public, returns aggregates only
 [functions.klaviyo-popup-analytics]
 verify_jwt = false
+
+# ============================================================
+# 17TRACK ORDER TRACKING
+# ============================================================
+
+# 17TRACK Webhook - Public, validates payload structure internally
+[functions.17track-webhook]
+verify_jwt = false
+
+# Track Lookup - Public, no auth required for order lookups
+[functions.track-lookup]
+verify_jwt = false
