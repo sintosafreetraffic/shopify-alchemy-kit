@@ -7,7 +7,7 @@
  * Pinterest EQS API: GET /v5/ad_accounts/{AD_ACCOUNT_ID}/conversion_eqs
  * 
  * Required secrets:
- * - PINTEREST_CONVERSION_TOKEN (OAuth token with ads:read scope)
+ * - PINTEREST_ACCESS_TOKEN (OAuth token with ads:read scope)
  * - PINTEREST_AD_ACCOUNT_ID
  */
 
@@ -177,7 +177,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   console.log(`[Pinterest EQS Fetch] Auth: ${isCronAuth ? "cron" : "admin"}`);
 
   try {
-    const PINTEREST_CONVERSION_TOKEN = requireEnvVar("PINTEREST_CONVERSION_TOKEN");
+    const PINTEREST_ACCESS_TOKEN = requireEnvVar("PINTEREST_ACCESS_TOKEN");
     const PINTEREST_AD_ACCOUNT_ID = requireEnvVar("PINTEREST_AD_ACCOUNT_ID");
     const SUPABASE_URL = requireEnvVar("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = requireEnvVar("SUPABASE_SERVICE_ROLE_KEY");
@@ -198,7 +198,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const pinterestResponse = await fetch(eqsUrl.toString(), {
       method: "GET",
       headers: {
-        "Authorization": `Bearer ${PINTEREST_CONVERSION_TOKEN}`,
+        "Authorization": `Bearer ${PINTEREST_ACCESS_TOKEN}`,
         "Content-Type": "application/json",
       },
     });
