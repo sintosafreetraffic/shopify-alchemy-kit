@@ -7,11 +7,11 @@
  * Pinterest EQS API: GET /v5/ad_accounts/{AD_ACCOUNT_ID}/conversion_eqs
  * 
  * Required secrets:
- * - PINTEREST_APP_ID (for token refresh)
- * - PINTEREST_APP_SECRET (for token refresh)
  * - PINTEREST_AD_ACCOUNT_ID
+ * - (optional) PINTEREST_ACCESS_TOKEN (preferred if provided)
+ * - (optional) PINTEREST_APP_ID + PINTEREST_APP_SECRET (used for OAuth token refresh)
  * 
- * Tokens are stored in pinterest_oauth_tokens table via OAuth flow.
+ * OAuth tokens are stored in pinterest_oauth_tokens table via OAuth flow.
  */
 
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -152,16 +152,51 @@ const ISSUE_SEVERITY_MAP: Record<string, "high" | "medium" | "low"> = {
 // ============================================================================
 
 /**
- * Extract coverage percentage from quality components
+ * Extract coverage percentage from quality components.
+ * Pinterest often returns coverage as either 0..1 or 0..100 depending on endpoint/version.
  */
 function extractCoverage(components: EQSComponent[], componentName: string): number | null {
-  const component = components.find(c => 
+  const component = components.find((c) =>
     c.name.toLowerCase().includes(componentName.toLowerCase())
   );
-  if (component && typeof component.coverage === "number") {
-    return component.coverage;
+
+  const raw = component?.coverage;
+  if (typeof raw !== "number") return null;
+
+  // Normalize 0..1 → 0..100
+  if (raw >= 0 && raw <= 1) return Math.round(raw * 10000) / 100;
+
+  return raw;
+}
+
+function normalizeEqsPayload(payload: any): { overall_status: string | null; quality_components: EQSComponent[] } {
+  const root = payload?.data ?? payload;
+
+  const overall =
+    typeof root?.overall_status === "string"
+      ? root.overall_status
+      : typeof root?.overallStatus === "string"
+        ? root.overallStatus
+        : null;
+
+  // Most common: array of components
+  if (Array.isArray(root?.quality_components)) {
+    return { overall_status: overall, quality_components: root.quality_components };
   }
-  return null;
+
+  // Sometimes returned as object keyed by component name
+  if (root?.quality_components && typeof root.quality_components === "object") {
+    const components: EQSComponent[] = Object.entries(root.quality_components).map(([name, value]: any) => ({
+      name,
+      status: String(value?.status ?? value?.overall_status ?? value?.overallStatus ?? "UNKNOWN"),
+      coverage: typeof value?.coverage === "number" ? value.coverage : undefined,
+      recommendation: typeof value?.recommendation === "string" ? value.recommendation : undefined,
+    }));
+    return { overall_status: overall, quality_components: components };
+  }
+
+  // Unknown shape
+  return { overall_status: overall, quality_components: [] };
 }
 
 /**
@@ -270,72 +305,114 @@ Deno.serve(async (req: Request): Promise<Response> => {
   console.log(`[Pinterest EQS Fetch] Auth: ${isCronAuth ? "cron" : "admin"}`);
 
   try {
-    const PINTEREST_APP_ID = requireEnvVar("PINTEREST_APP_ID");
-    const PINTEREST_APP_SECRET = requireEnvVar("PINTEREST_APP_SECRET");
     const PINTEREST_AD_ACCOUNT_ID = requireEnvVar("PINTEREST_AD_ACCOUNT_ID");
     const SUPABASE_URL = requireEnvVar("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = requireEnvVar("SUPABASE_SERVICE_ROLE_KEY");
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    
-    // Get valid access token (auto-refreshes if expired)
-    const PINTEREST_ACCESS_TOKEN = await getValidAccessToken(supabase, PINTEREST_APP_ID, PINTEREST_APP_SECRET);
+
+    // Prefer a direct long-lived access token if provided; otherwise use stored OAuth tokens.
+    const directAccessToken = Deno.env.get("PINTEREST_ACCESS_TOKEN")?.trim();
+    const PINTEREST_ACCESS_TOKEN = directAccessToken
+      ? (console.log("[Pinterest EQS] Using PINTEREST_ACCESS_TOKEN secret"), directAccessToken)
+      : await getValidAccessToken(
+          supabase,
+          requireEnvVar("PINTEREST_APP_ID"),
+          requireEnvVar("PINTEREST_APP_SECRET")
+        );
 
     // ========================================================================
     // FETCH EQS FROM PINTEREST API
     // ========================================================================
 
-    const eqsUrl = new URL(`https://api.pinterest.com/v5/ad_accounts/${PINTEREST_AD_ACCOUNT_ID}/conversion_eqs`);
-    eqsUrl.searchParams.set("lookback_period", "14d");
-    eqsUrl.searchParams.set("ingestion_source", "CONVERSIONS_API");
-    eqsUrl.searchParams.set("source_platform", "WEB");
+    const lookbackPeriod = "14d";
+    const sourcePlatform = "WEB";
+    const ingestionSources = ["CONVERSIONS_API", "TAG"] as const;
 
-    console.log("[Pinterest EQS Fetch] Calling Pinterest API:", eqsUrl.toString());
-
-    const pinterestResponse = await fetch(eqsUrl.toString(), {
-      method: "GET",
-      headers: {
-        "Authorization": `Bearer ${PINTEREST_ACCESS_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    const responseStatus = pinterestResponse.status;
-    let eqsData: EQSResponse | null = null;
+    let responseStatus = 0;
     let apiErrorMessage: string | null = null;
+    let overallStatus: string = "UNKNOWN";
+    let components: EQSComponent[] = [];
+    let ingestionSourceUsed: (typeof ingestionSources)[number] = "CONVERSIONS_API";
 
-    if (pinterestResponse.ok) {
+    for (const ingestionSource of ingestionSources) {
+      const eqsUrl = new URL(
+        `https://api.pinterest.com/v5/ad_accounts/${PINTEREST_AD_ACCOUNT_ID}/conversion_eqs`
+      );
+      eqsUrl.searchParams.set("lookback_period", lookbackPeriod);
+      eqsUrl.searchParams.set("ingestion_source", ingestionSource);
+      eqsUrl.searchParams.set("source_platform", sourcePlatform);
+
+      console.log("[Pinterest EQS Fetch] Calling Pinterest API:", eqsUrl.toString());
+
+      const pinterestResponse = await fetch(eqsUrl.toString(), {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${PINTEREST_ACCESS_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      responseStatus = pinterestResponse.status;
       const responseText = await pinterestResponse.text();
+
+      if (!pinterestResponse.ok) {
+        apiErrorMessage = `API error ${responseStatus}: ${responseText.slice(0, 500)}`;
+        console.error("[Pinterest EQS Fetch] API error:", apiErrorMessage);
+        break;
+      }
+
+      console.log("[Pinterest EQS Fetch] Raw response (first 300):", responseText.slice(0, 300));
+
+      let parsed: any;
       try {
-        eqsData = JSON.parse(responseText);
-        console.log("[Pinterest EQS Fetch] EQS data received:", {
-          overall_status: eqsData?.overall_status,
-          component_count: eqsData?.quality_components?.length || 0,
-        });
+        parsed = JSON.parse(responseText);
       } catch (parseError) {
         apiErrorMessage = `Failed to parse response: ${responseText.slice(0, 200)}`;
         console.error("[Pinterest EQS Fetch] Parse error:", apiErrorMessage);
+        break;
       }
-    } else {
-      const errorText = await pinterestResponse.text();
-      apiErrorMessage = `API error ${responseStatus}: ${errorText.slice(0, 500)}`;
-      console.error("[Pinterest EQS Fetch] API error:", apiErrorMessage);
+
+      const normalized = normalizeEqsPayload(parsed);
+      const normalizedComponents = normalized.quality_components || [];
+      const normalizedOverall = normalized.overall_status;
+
+      console.log("[Pinterest EQS Fetch] EQS data received:", {
+        overall_status: normalizedOverall,
+        component_count: Array.isArray(normalizedComponents) ? normalizedComponents.length : 0,
+        ingestion_source: ingestionSource,
+      });
+
+      // If we got anything meaningful, keep it and stop.
+      if ((normalizedOverall && normalizedOverall !== "UNKNOWN") || normalizedComponents.length > 0) {
+        components = normalizedComponents;
+        overallStatus = normalizedOverall || "UNKNOWN";
+        ingestionSourceUsed = ingestionSource;
+        apiErrorMessage = null;
+        break;
+      }
+
+      // Otherwise, try next ingestion_source.
+      ingestionSourceUsed = ingestionSource;
+      components = normalizedComponents;
+      overallStatus = normalizedOverall || "UNKNOWN";
+    }
+
+    // If 200 but no useful fields returned, annotate so UI doesn't look "broken".
+    if (responseStatus === 200 && components.length === 0 && overallStatus === "UNKNOWN") {
+      apiErrorMessage =
+        "EQS returned no components yet. This usually means Pinterest hasn't computed EQS for this account/source (or there were no eligible events in the last 14 days).";
     }
 
     // ========================================================================
     // DERIVE INSIGHTS AND PERSIST SNAPSHOT
     // ========================================================================
 
-    const components = eqsData?.quality_components || [];
-    const overallStatus = eqsData?.overall_status || "UNKNOWN";
-
-    // Extract coverage metrics
     const coverageEmail = extractCoverage(components, "email");
     const coverageExternalId = extractCoverage(components, "external_id");
     const coverageOrderId = extractCoverage(components, "order_id");
     const coverageClickId = extractCoverage(components, "click_id");
 
-    // Derive blocking issues
     const blockingIssues = deriveBlockingIssues(components);
 
     console.log("[Pinterest EQS Fetch] Derived metrics:", {
@@ -351,9 +428,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .insert({
         ad_account_id: PINTEREST_AD_ACCOUNT_ID,
         overall_status: overallStatus,
-        source_platform: "WEB",
-        ingestion_source: "CONVERSIONS_API",
-        lookback_period: "14d",
+        source_platform: sourcePlatform,
+        ingestion_source: ingestionSourceUsed,
+        lookback_period: lookbackPeriod,
         quality_components: components,
         coverage_email: coverageEmail,
         coverage_external_id: coverageExternalId,
