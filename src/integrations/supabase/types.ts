@@ -1092,6 +1092,66 @@ export type Database = {
         }
         Relationships: []
       }
+      order_tracking: {
+        Row: {
+          carrier_code: string | null
+          carrier_name: string | null
+          created_at: string
+          delivered_at: string | null
+          destination_country: string | null
+          email: string
+          estimated_delivery: string | null
+          id: string
+          last_event: string | null
+          last_event_time: string | null
+          order_number: string
+          origin_country: string | null
+          status: string
+          sub_status: string | null
+          track17_data: Json | null
+          tracking_number: string
+          updated_at: string
+        }
+        Insert: {
+          carrier_code?: string | null
+          carrier_name?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          destination_country?: string | null
+          email: string
+          estimated_delivery?: string | null
+          id?: string
+          last_event?: string | null
+          last_event_time?: string | null
+          order_number: string
+          origin_country?: string | null
+          status?: string
+          sub_status?: string | null
+          track17_data?: Json | null
+          tracking_number: string
+          updated_at?: string
+        }
+        Update: {
+          carrier_code?: string | null
+          carrier_name?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          destination_country?: string | null
+          email?: string
+          estimated_delivery?: string | null
+          id?: string
+          last_event?: string | null
+          last_event_time?: string | null
+          order_number?: string
+          origin_country?: string | null
+          status?: string
+          sub_status?: string | null
+          track17_data?: Json | null
+          tracking_number?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       page_visits: {
         Row: {
           created_at: string
