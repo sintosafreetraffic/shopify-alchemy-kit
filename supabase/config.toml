@@ -305,3 +305,7 @@ verify_jwt = false
 # Pinterest EQS Fetch - CRON job for daily EQS metrics (validates CRON_SECRET internally)
 [functions.pinterest-eqs-fetch]
 verify_jwt = false
+
+# Pinterest OAuth - Handles Pinterest API OAuth flow
+[functions.pinterest-oauth]
+verify_jwt = false

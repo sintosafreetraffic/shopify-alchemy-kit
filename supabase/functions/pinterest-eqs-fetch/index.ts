@@ -7,11 +7,14 @@
  * Pinterest EQS API: GET /v5/ad_accounts/{AD_ACCOUNT_ID}/conversion_eqs
  * 
  * Required secrets:
- * - PINTEREST_ACCESS_TOKEN (OAuth token with ads:read scope)
+ * - PINTEREST_APP_ID (for token refresh)
+ * - PINTEREST_APP_SECRET (for token refresh)
  * - PINTEREST_AD_ACCOUNT_ID
+ * 
+ * Tokens are stored in pinterest_oauth_tokens table via OAuth flow.
  */
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
   corsHeaders,
   requireEnvVar,
@@ -19,6 +22,96 @@ import {
   createSuccessResponse,
   validateCronSecret,
 } from "../_shared/env.ts";
+
+// ============================================================================
+// OAUTH TOKEN MANAGEMENT
+// ============================================================================
+
+interface PinterestTokens {
+  id: string;
+  access_token: string;
+  refresh_token: string | null;
+  expires_at: string;
+}
+
+/**
+ * Get valid Pinterest access token, refreshing if expired
+ */
+async function getValidAccessToken(
+  supabase: SupabaseClient,
+  appId: string,
+  appSecret: string
+): Promise<string> {
+  // Fetch current tokens from database
+  const { data: tokenData, error: fetchError } = await supabase
+    .from("pinterest_oauth_tokens")
+    .select("id, access_token, refresh_token, expires_at")
+    .single();
+
+  if (fetchError || !tokenData) {
+    throw new Error("No Pinterest OAuth tokens found. Please connect Pinterest via OAuth first.");
+  }
+
+  const expiresAt = new Date(tokenData.expires_at);
+  const now = new Date();
+  const bufferMs = 5 * 60 * 1000; // 5 minute buffer before expiry
+
+  // Check if token is still valid (with buffer)
+  if (expiresAt.getTime() - now.getTime() > bufferMs) {
+    console.log("[Pinterest EQS] Using existing valid token");
+    return tokenData.access_token;
+  }
+
+  // Token expired or expiring soon - refresh it
+  if (!tokenData.refresh_token) {
+    throw new Error("Access token expired and no refresh token available. Please re-authorize.");
+  }
+
+  console.log("[Pinterest EQS] Token expired, refreshing...");
+  
+  const credentials = btoa(`${appId}:${appSecret}`);
+  
+  const response = await fetch("https://api.pinterest.com/v5/oauth/token", {
+    method: "POST",
+    headers: {
+      "Authorization": `Basic ${credentials}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({
+      grant_type: "refresh_token",
+      refresh_token: tokenData.refresh_token,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("[Pinterest EQS] Token refresh failed:", response.status, errorText);
+    throw new Error(`Token refresh failed: ${response.status}. Please re-authorize Pinterest.`);
+  }
+
+  const newTokens = await response.json();
+  const newExpiresAt = new Date(Date.now() + newTokens.expires_in * 1000).toISOString();
+
+  // Update tokens in database
+  const { error: updateError } = await supabase
+    .from("pinterest_oauth_tokens")
+    .update({
+      access_token: newTokens.access_token,
+      refresh_token: newTokens.refresh_token || tokenData.refresh_token,
+      expires_at: newExpiresAt,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", tokenData.id);
+
+  if (updateError) {
+    console.error("[Pinterest EQS] Failed to update tokens:", updateError);
+    // Still return the new token even if db update fails
+  } else {
+    console.log("[Pinterest EQS] Token refreshed successfully");
+  }
+
+  return newTokens.access_token;
+}
 
 // ============================================================================
 // TYPES
@@ -177,12 +270,16 @@ Deno.serve(async (req: Request): Promise<Response> => {
   console.log(`[Pinterest EQS Fetch] Auth: ${isCronAuth ? "cron" : "admin"}`);
 
   try {
-    const PINTEREST_ACCESS_TOKEN = requireEnvVar("PINTEREST_ACCESS_TOKEN");
+    const PINTEREST_APP_ID = requireEnvVar("PINTEREST_APP_ID");
+    const PINTEREST_APP_SECRET = requireEnvVar("PINTEREST_APP_SECRET");
     const PINTEREST_AD_ACCOUNT_ID = requireEnvVar("PINTEREST_AD_ACCOUNT_ID");
     const SUPABASE_URL = requireEnvVar("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = requireEnvVar("SUPABASE_SERVICE_ROLE_KEY");
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    
+    // Get valid access token (auto-refreshes if expired)
+    const PINTEREST_ACCESS_TOKEN = await getValidAccessToken(supabase, PINTEREST_APP_ID, PINTEREST_APP_SECRET);
 
     // ========================================================================
     // FETCH EQS FROM PINTEREST API
