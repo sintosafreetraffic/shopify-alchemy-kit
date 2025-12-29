@@ -180,7 +180,19 @@ function extractCoverage(components: EQSComponent[], componentName: string): num
   return Math.round(raw * 100) / 100;
 }
 
-function normalizeEqsPayload(payload: any): { overall_status: string | null; quality_components: EQSComponent[] } {
+interface DetailedComponent {
+  name: string;
+  status: string;
+  coverage: number | undefined;
+  event_types: Record<string, { coverage: number; issues?: Array<{ id: string; name: string; reason: string }> }>;
+}
+
+function normalizeEqsPayload(payload: any): { 
+  overall_status: string | null; 
+  quality_components: EQSComponent[];
+  detailed_components: DetailedComponent[];
+  raw_quality_components: any;
+} {
   // Pinterest often returns an array - extract first element
   let root = payload?.data ?? payload;
   if (Array.isArray(root) && root.length > 0) {
@@ -195,14 +207,23 @@ function normalizeEqsPayload(payload: any): { overall_status: string | null; qua
         ? root.overallStatus
         : null;
 
+  // Store raw for detailed display
+  const rawQualityComponents = root?.quality_components || {};
+
   // Most common: array of components
   if (Array.isArray(root?.quality_components)) {
-    return { overall_status: overall, quality_components: root.quality_components };
+    return { 
+      overall_status: overall, 
+      quality_components: root.quality_components,
+      detailed_components: [],
+      raw_quality_components: rawQualityComponents,
+    };
   }
 
   // Sometimes returned as object keyed by component name (e.g., { email: {...}, click_id: {...} })
   if (root?.quality_components && typeof root.quality_components === "object") {
     const components: EQSComponent[] = [];
+    const detailedComponents: DetailedComponent[] = [];
     
     for (const [componentName, eventTypes] of Object.entries(root.quality_components)) {
       // eventTypes is like { checkout: { coverage: 100 }, add_to_cart: { coverage: 100 } }
@@ -211,11 +232,16 @@ function normalizeEqsPayload(payload: any): { overall_status: string | null; qua
         let totalCoverage = 0;
         let coverageCount = 0;
         let hasIssues = false;
+        const eventTypeDetails: DetailedComponent["event_types"] = {};
         
         for (const [eventType, data] of Object.entries(eventTypes as Record<string, any>)) {
           if (typeof data?.coverage === "number") {
             totalCoverage += data.coverage;
             coverageCount++;
+            eventTypeDetails[eventType] = {
+              coverage: Math.round(data.coverage * 100) / 100,
+              issues: Array.isArray(data.issues) ? data.issues : undefined,
+            };
           }
           if (Array.isArray(data?.issues) && data.issues.length > 0) {
             hasIssues = true;
@@ -231,16 +257,33 @@ function normalizeEqsPayload(payload: any): { overall_status: string | null; qua
           coverage: avgCoverage !== undefined ? Math.round(avgCoverage * 100) / 100 : undefined,
           recommendation: undefined,
         });
+
+        detailedComponents.push({
+          name: componentName,
+          status,
+          coverage: avgCoverage !== undefined ? Math.round(avgCoverage * 100) / 100 : undefined,
+          event_types: eventTypeDetails,
+        });
       }
     }
     
     console.log(`[Pinterest EQS] Parsed ${components.length} components from object format`);
-    return { overall_status: overall, quality_components: components };
+    return { 
+      overall_status: overall, 
+      quality_components: components,
+      detailed_components: detailedComponents,
+      raw_quality_components: rawQualityComponents,
+    };
   }
 
   // Unknown shape
   console.log("[Pinterest EQS] Unknown payload shape, returning empty components");
-  return { overall_status: overall, quality_components: [] };
+  return { 
+    overall_status: overall, 
+    quality_components: [],
+    detailed_components: [],
+    raw_quality_components: rawQualityComponents,
+  };
 }
 
 /**
@@ -377,6 +420,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
     let apiErrorMessage: string | null = null;
     let overallStatus: string = "UNKNOWN";
     let components: EQSComponent[] = [];
+    let detailedComponents: DetailedComponent[] = [];
+    let rawQualityComponents: any = {};
     let ingestionSourceUsed: (typeof ingestionSources)[number] = "CONVERSIONS_API";
 
     for (const ingestionSource of ingestionSources) {
@@ -406,7 +451,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         break;
       }
 
-      console.log("[Pinterest EQS Fetch] Raw response (first 300):", responseText.slice(0, 300));
+      console.log("[Pinterest EQS Fetch] Raw response (first 500):", responseText.slice(0, 500));
 
       let parsed: any;
       try {
@@ -419,17 +464,22 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
       const normalized = normalizeEqsPayload(parsed);
       const normalizedComponents = normalized.quality_components || [];
+      const normalizedDetailed = normalized.detailed_components || [];
       const normalizedOverall = normalized.overall_status;
+      const normalizedRaw = normalized.raw_quality_components || {};
 
       console.log("[Pinterest EQS Fetch] EQS data received:", {
         overall_status: normalizedOverall,
         component_count: Array.isArray(normalizedComponents) ? normalizedComponents.length : 0,
+        detailed_count: normalizedDetailed.length,
         ingestion_source: ingestionSource,
       });
 
       // If we got anything meaningful, keep it and stop.
       if ((normalizedOverall && normalizedOverall !== "UNKNOWN") || normalizedComponents.length > 0) {
         components = normalizedComponents;
+        detailedComponents = normalizedDetailed;
+        rawQualityComponents = normalizedRaw;
         overallStatus = normalizedOverall || "UNKNOWN";
         ingestionSourceUsed = ingestionSource;
         apiErrorMessage = null;
@@ -439,6 +489,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
       // Otherwise, try next ingestion_source.
       ingestionSourceUsed = ingestionSource;
       components = normalizedComponents;
+      detailedComponents = normalizedDetailed;
+      rawQualityComponents = normalizedRaw;
       overallStatus = normalizedOverall || "UNKNOWN";
     }
 
@@ -466,7 +518,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       blocking_issues_count: blockingIssues.length,
     });
 
-    // Insert snapshot
+    // Insert snapshot - store both normalized components and raw data for detailed UI
     const { data: insertData, error: insertError } = await supabase
       .from("pinterest_eqs_snapshots")
       .insert({
@@ -475,7 +527,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         source_platform: sourcePlatform,
         ingestion_source: ingestionSourceUsed,
         lookback_period: lookbackPeriod,
-        quality_components: components,
+        quality_components: rawQualityComponents, // Store raw data for detailed event-type breakdown
         coverage_email: coverageEmail,
         coverage_external_id: coverageExternalId,
         coverage_order_id: coverageOrderId,
