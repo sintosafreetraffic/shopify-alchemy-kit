@@ -185,18 +185,22 @@ export default function AdsReportingSection() {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Data Quality Badge */}
-            {data && dataQualityPercent < 100 && (
+            {/* Attribution Lag Badge - only show when there ARE entries with lag */}
+            {data && hasAttributionLagEntries && (
               <TooltipProvider>
                 <UITooltip>
                   <TooltipTrigger>
-                    <Badge variant="outline" className="text-xs gap-1">
-                      <AlertTriangle className="h-3 w-3 text-yellow-500" />
-                      {dataQualityPercent}% complete
+                    <Badge variant="outline" className="text-xs gap-1 text-amber-600 border-amber-300">
+                      <AlertTriangle className="h-3 w-3" />
+                      Last 2 days pending
                     </Badge>
                   </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="text-sm">Recent dates may have incomplete conversion data (24-48h attribution lag)</p>
+                  <TooltipContent className="max-w-xs">
+                    <p className="text-sm font-medium mb-1">Attribution Lag (24-48h)</p>
+                    <p className="text-xs text-muted-foreground">
+                      Conversion data for the last 2 days may be incomplete due to Pinterest's attribution window. 
+                      Use trends rather than recent absolutes for decisions.
+                    </p>
                   </TooltipContent>
                 </UITooltip>
               </TooltipProvider>
