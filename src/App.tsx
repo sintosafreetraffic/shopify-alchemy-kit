@@ -8,8 +8,9 @@ import { Header } from "./components/Header";
 import { Footer } from "./components/Footer";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { UrgencyBanner } from "./components/UrgencyBanner";
-import { EmailPopup } from "./components/EmailPopup";
-import { useEmailPopup } from "./hooks/useEmailPopup";
+// Email popup disabled - using Klaviyo native forms instead
+// import { EmailPopup } from "./components/EmailPopup";
+// import { useEmailPopup } from "./hooks/useEmailPopup";
 import { trackPageView } from "./lib/analyticsRegistry";
 
 import { FullPageLoader } from "./components/FullPageLoader";
@@ -202,13 +203,14 @@ const capturePinterestClickId = () => {
 
 const AppContent = () => {
   const location = useLocation();
-  const { isOpen, showTeaser, closePopup, openFromTeaser } = useEmailPopup({
-    delay: 45000,
-    showOnScroll: true,
-    scrollThreshold: 50,
-    exitIntent: true,
-    storageKey: "risebynight_email_popup_v1",
-  });
+  // Email popup disabled - using Klaviyo native forms instead
+  // const { isOpen, showTeaser, closePopup, openFromTeaser } = useEmailPopup({
+  //   delay: 45000,
+  //   showOnScroll: true,
+  //   scrollThreshold: 50,
+  //   exitIntent: true,
+  //   storageKey: "risebynight_email_popup_v1",
+  // });
 
   // Capture Pinterest click ID on initial load AND when query string changes
   useEffect(() => {
@@ -285,14 +287,7 @@ const AppContent = () => {
         </Suspense>
       </main>
       <Footer />
-      <EmailPopup
-        isOpen={isOpen}
-        showTeaser={showTeaser}
-        onClose={closePopup}
-        onOpenFromTeaser={openFromTeaser}
-        listId="UEJzEU"
-        discountCode="MYSTERYDISCOUNT"
-      />
+      {/* Email popup disabled - using Klaviyo native forms instead */}
     </div>
   );
 };
