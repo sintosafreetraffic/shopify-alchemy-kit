@@ -74,15 +74,15 @@ interface AdsReportingResponse {
   error?: string;
 }
 
-// Pinterest metrics we request
+// Pinterest metrics we request (verified against API v5)
 const METRICS_COLUMNS = [
   "SPEND_IN_MICRO_DOLLAR",
   "TOTAL_IMPRESSION",
   "TOTAL_CLICKTHROUGH",
   "TOTAL_CONVERSIONS",
   "TOTAL_CHECKOUT",
-  "TOTAL_ADD_TO_CART",
-  "TOTAL_CONVERSIONS_VALUE_IN_MICRO_DOLLAR",
+  "TOTAL_CLICK_ADD_TO_CART",  // Correct name (not TOTAL_ADD_TO_CART)
+  "TOTAL_CHECKOUT_VALUE_IN_MICRO_DOLLAR",  // Correct name for revenue
 ].join(",");
 
 const CACHE_TTL_MINUTES = 30;
@@ -224,11 +224,11 @@ async function setCacheData(
 
 function processRawMetrics(raw: Record<string, any>): ProcessedMetrics {
   const spendMicro = raw.SPEND_IN_MICRO_DOLLAR || 0;
-  const revenueMicro = raw.TOTAL_CONVERSIONS_VALUE_IN_MICRO_DOLLAR || 0;
+  const revenueMicro = raw.TOTAL_CHECKOUT_VALUE_IN_MICRO_DOLLAR || 0;  // Updated
   const impressions = raw.TOTAL_IMPRESSION || 0;
   const clicks = raw.TOTAL_CLICKTHROUGH || 0;
   const checkouts = raw.TOTAL_CHECKOUT || 0;
-  const addToCarts = raw.TOTAL_ADD_TO_CART || 0;
+  const addToCarts = raw.TOTAL_CLICK_ADD_TO_CART || 0;  // Updated
   const conversions = raw.TOTAL_CONVERSIONS || 0;
 
   const spend = spendMicro / 1_000_000;
