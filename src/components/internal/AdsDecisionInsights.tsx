@@ -150,13 +150,8 @@ export function AdsDecisionInsights({ data, eqsScore }: AdsDecisionInsightsProps
     }
   }, [data, dataHash, eqsScore]);
 
-  // Reset insights when data changes significantly (user must click to regenerate)
-  useEffect(() => {
-    if (dataHash !== lastDataHash && insights) {
-      // Data changed, clear old insights so user can regenerate
-      setInsights(null);
-    }
-  }, [dataHash, lastDataHash, insights]);
+  // Track if data has changed since last generation (for showing stale indicator)
+  const isStale = insights && dataHash !== lastDataHash;
 
   // Loading state
   if (isLoading) {
