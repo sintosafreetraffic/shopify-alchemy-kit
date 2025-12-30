@@ -406,6 +406,7 @@ export const PinterestEQSCard = () => {
   const [disconnecting, setDisconnecting] = useState(false);
   const [snapshots, setSnapshots] = useState<Record<string, EQSSnapshot>>({});
   const [activeSource, setActiveSource] = useState<string>("CONVERSIONS_API");
+  const [lookbackPeriod, setLookbackPeriod] = useState<"7d" | "14d" | "30d">("14d");
   const [error, setError] = useState<string | null>(null);
   const [oauthStatus, setOauthStatus] = useState<OAuthStatus | null>(null);
 
@@ -430,15 +431,17 @@ export const PinterestEQSCard = () => {
     }
   };
 
-  const fetchLatestSnapshots = async () => {
+  const fetchLatestSnapshots = async (period?: "7d" | "14d" | "30d") => {
+    const targetPeriod = period || lookbackPeriod;
     setLoading(true);
     setError(null);
 
     try {
-      // Fetch latest snapshot for each ingestion source
+      // Fetch latest snapshot for each ingestion source filtered by lookback period
       const { data, error: fetchError } = await supabase
         .from("pinterest_eqs_snapshots")
         .select("*")
+        .eq("lookback_period", targetPeriod)
         .order("created_at", { ascending: false })
         .limit(10);
 
@@ -477,9 +480,10 @@ export const PinterestEQSCard = () => {
     }
   };
 
-  const handleManualSync = async (opts?: { showToast?: boolean }) => {
+  const handleManualSync = async (opts?: { showToast?: boolean; period?: "7d" | "14d" | "30d" }) => {
     setSyncing(true);
     const showToast = opts?.showToast ?? true;
+    const targetPeriod = opts?.period || lookbackPeriod;
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -491,6 +495,9 @@ export const PinterestEQSCard = () => {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
+        body: {
+          lookback_period: targetPeriod,
+        },
       });
 
       if (response.error) {
@@ -500,7 +507,7 @@ export const PinterestEQSCard = () => {
       if (showToast) toast.success("EQS synced");
 
       // Refetch data after successful sync
-      await fetchLatestSnapshots();
+      await fetchLatestSnapshots(targetPeriod);
     } catch (err) {
       console.error("[EQS Card] Manual sync error:", err);
       if (showToast) toast.error(err instanceof Error ? err.message : "Sync failed");
@@ -677,7 +684,7 @@ export const PinterestEQSCard = () => {
                 {connecting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Connect"}
               </Button>
             )}
-            <Button variant="ghost" size="sm" onClick={fetchLatestSnapshots}>
+            <Button variant="ghost" size="sm" onClick={() => fetchLatestSnapshots()}>
               <RefreshCw className="w-4 h-4" />
             </Button>
           </div>
@@ -716,6 +723,17 @@ export const PinterestEQSCard = () => {
     "TAG": "Client-side (Tag)",
   };
 
+  const lookbackLabels: Record<string, string> = {
+    "7d": "7 days",
+    "14d": "14 days",
+    "30d": "30 days",
+  };
+
+  const handleLookbackChange = async (newPeriod: "7d" | "14d" | "30d") => {
+    setLookbackPeriod(newPeriod);
+    await fetchLatestSnapshots(newPeriod);
+  };
+
   return (
     <Card className="p-6">
       {/* Header */}
@@ -723,10 +741,27 @@ export const PinterestEQSCard = () => {
         <div>
           <h3 className="text-sm font-medium text-foreground">Pinterest Measurement Quality</h3>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Event Quality Score (14-day lookback)
+            Event Quality Score
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {/* Lookback Period Selector */}
+          <div className="flex items-center rounded-md border border-input bg-background">
+            {(["7d", "14d", "30d"] as const).map((period) => (
+              <button
+                key={period}
+                onClick={() => handleLookbackChange(period)}
+                disabled={syncing || loading}
+                className={`px-2.5 py-1 text-xs font-medium transition-colors ${
+                  lookbackPeriod === period
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                } ${period === "7d" ? "rounded-l-md" : ""} ${period === "30d" ? "rounded-r-md" : ""}`}
+              >
+                {lookbackLabels[period]}
+              </button>
+            ))}
+          </div>
           <Button
             variant="outline"
             size="sm"

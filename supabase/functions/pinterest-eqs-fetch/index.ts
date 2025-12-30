@@ -409,10 +409,28 @@ Deno.serve(async (req: Request): Promise<Response> => {
         );
 
     // ========================================================================
+    // PARSE LOOKBACK PERIOD FROM REQUEST
+    // Supports: 7d, 14d, 30d (Pinterest API supported values)
+    // ========================================================================
+    
+    let lookbackPeriod = "14d"; // Default
+    const validLookbackPeriods = ["7d", "14d", "30d"];
+    
+    try {
+      const body = await req.json();
+      if (body.lookback_period && validLookbackPeriods.includes(body.lookback_period)) {
+        lookbackPeriod = body.lookback_period;
+      }
+    } catch {
+      // No body or invalid JSON - use default
+    }
+    
+    console.log(`[Pinterest EQS Fetch] Using lookback_period: ${lookbackPeriod}`);
+
+    // ========================================================================
     // FETCH EQS FROM PINTEREST API - BOTH INGESTION SOURCES
     // ========================================================================
 
-    const lookbackPeriod = "14d";
     const sourcePlatform = "WEB";
     const ingestionSources = ["CONVERSIONS_API", "TAG"] as const;
 
