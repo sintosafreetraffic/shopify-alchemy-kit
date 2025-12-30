@@ -66,7 +66,7 @@ function KPICard({ label, value, icon: Icon, format = "number", tooltip }: KPICa
     if (typeof value === "string") return value;
     switch (format) {
       case "currency":
-        return `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        return `€${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       case "percent":
         return `${value.toFixed(2)}%`;
       default:
@@ -337,7 +337,7 @@ export default function AdsReportingSection() {
                         <YAxis 
                           tick={{ fontSize: 10 }} 
                           stroke="hsl(var(--muted-foreground))"
-                          tickFormatter={(v) => `$${v}`}
+                          tickFormatter={(v) => `€${v}`}
                         />
                         <Tooltip
                           contentStyle={{
@@ -345,7 +345,7 @@ export default function AdsReportingSection() {
                             border: "1px solid hsl(var(--border))",
                             borderRadius: "8px",
                           }}
-                          formatter={(value: number) => [`$${value.toFixed(2)}`, ""]}
+                          formatter={(value: number) => [`€${value.toFixed(2)}`, ""]}
                         />
                         <Legend />
                         <Line
@@ -475,8 +475,8 @@ export default function AdsReportingSection() {
                         {[...data.timeseries].reverse().map((entry) => (
                           <TableRow key={entry.date} className="hover:bg-muted/20">
                             <TableCell className="text-xs font-medium">{entry.date}</TableCell>
-                            <TableCell className="text-xs text-right">${entry.spend.toFixed(2)}</TableCell>
-                            <TableCell className="text-xs text-right">${entry.revenue.toFixed(2)}</TableCell>
+                            <TableCell className="text-xs text-right">€{entry.spend.toFixed(2)}</TableCell>
+                            <TableCell className="text-xs text-right">€{entry.revenue.toFixed(2)}</TableCell>
                             <TableCell className="text-xs text-right">
                               <span className={cn(
                                 entry.roas >= 2 ? "text-green-500" : 
@@ -490,7 +490,7 @@ export default function AdsReportingSection() {
                             <TableCell className="text-xs text-right">{entry.ctr.toFixed(2)}%</TableCell>
                             <TableCell className="text-xs text-right">{entry.checkouts}</TableCell>
                             <TableCell className="text-xs text-right">
-                              {entry.checkouts > 0 ? `$${entry.cpa.toFixed(2)}` : "-"}
+                              {entry.checkouts > 0 ? `€${entry.cpa.toFixed(2)}` : "-"}
                             </TableCell>
                           </TableRow>
                         ))}
