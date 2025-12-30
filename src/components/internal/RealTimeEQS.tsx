@@ -409,6 +409,17 @@ export const RealTimeEQS = () => {
           priority: "low",
           tooltip: "Browser user agent helps with device matching.",
         },
+        {
+          name: "landing_page",
+          displayName: "Source URL",
+          coverage: contextEvents.length > 0 
+            ? (contextEvents.filter(e => e.landing_page).length / contextEvents.length) * 100 
+            : 0,
+          withParam: contextEvents.filter(e => e.landing_page).length,
+          total: contextEvents.length,
+          priority: "medium",
+          tooltip: "Landing page URL provides event context for attribution.",
+        },
       ];
       
       // Build final data structure
