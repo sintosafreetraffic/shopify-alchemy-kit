@@ -323,6 +323,63 @@ export async function captureContextOnConsentChange(options?: { bypassRateLimit?
 }
 
 /**
+ * Send email to track-context for CAPI enrichment
+ * Called when user identifies themselves (email popup, quiz, etc.)
+ * This ensures CAPI events (checkout) have access to email hash
+ * 
+ * @param email - Raw email to be hashed server-side
+ */
+export async function captureEmail(email: string): Promise<void> {
+  try {
+    if (typeof window === 'undefined' || !email) return;
+    
+    const contextId = getContextId();
+    if (!contextId) {
+      console.warn('[ContextTracking] No context_id for email capture');
+      return;
+    }
+    
+    const consentStatus = getConsentStatus();
+    
+    const payload = {
+      context_id: contextId,
+      consent_status: consentStatus,
+      email: email.trim().toLowerCase(),
+    };
+    
+    console.log('[ContextTracking] Sending email to context:', {
+      context_id: contextId,
+      has_email: true,
+    });
+    
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    if (!supabaseUrl) {
+      console.warn('[ContextTracking] VITE_SUPABASE_URL not configured');
+      return;
+    }
+    
+    // Fire and forget
+    fetch(`${supabaseUrl}/functions/v1/track-context`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    })
+      .then((response) => {
+        if (response.ok) {
+          console.log('[ContextTracking] ✅ Email captured for CAPI enrichment');
+        }
+      })
+      .catch((error) => {
+        console.warn('[ContextTracking] Email capture failed:', error);
+      });
+  } catch (e) {
+    console.warn('[ContextTracking] captureEmail error:', e);
+  }
+}
+
+/**
  * Initialize context tracking on app load
  * Should be called once on app init
  */

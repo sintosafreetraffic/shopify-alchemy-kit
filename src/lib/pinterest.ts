@@ -299,23 +299,52 @@ function markEnhancedMatchSet(): void {
   }
 }
 
+// ============================================================================
+// EMAIL PERSISTENCE FOR PINTEREST MATCHING
+// Store hashed email in localStorage for subsequent events (AddToCart, Lead)
+// ============================================================================
+
+const EMAIL_HASH_KEY = '__lov_pinterest_em';
+
+function storeEmailHash(hashedEmail: string): void {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(EMAIL_HASH_KEY, hashedEmail);
+    } catch (e) {
+      console.warn('[Pinterest] Failed to store email hash:', e);
+    }
+  }
+}
+
+export function getStoredEmailHash(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return localStorage.getItem(EMAIL_HASH_KEY);
+  } catch (e) {
+    return null;
+  }
+}
+
 // Set enhanced match data (call when user email is known)
 // Includes session guard to avoid duplicate calls
+// ALSO stores hashed email for subsequent events
 export async function setEnhancedMatch(email?: string) {
-  if (!isPinterestReady() || !email) return;
-  
-  // Skip if already set this session
-  if (wasEnhancedMatchSet()) {
-    console.log('[Pinterest] Enhanced match already set this session, skipping');
-    return;
-  }
+  if (!email) return;
   
   try {
     const hashedEmail = await sha256(email);
-    const success = safePintrk('set', undefined, { em: hashedEmail });
-    if (success) {
-      markEnhancedMatchSet();
-      console.log('[Pinterest] Enhanced match set');
+    
+    // Always store the hash for subsequent events (AddToCart, Lead)
+    storeEmailHash(hashedEmail);
+    console.log('[Pinterest] Email hash stored for future events');
+    
+    // Only call pintrk.set if Pinterest is ready and not already set
+    if (isPinterestReady() && !wasEnhancedMatchSet()) {
+      const success = safePintrk('set', undefined, { em: hashedEmail });
+      if (success) {
+        markEnhancedMatchSet();
+        console.log('[Pinterest] Enhanced match set via pintrk');
+      }
     }
   } catch (e) {
     console.warn('[Pinterest] Enhanced match failed:', e);
@@ -369,6 +398,7 @@ export async function trackPageVisit(productId?: string): Promise<void> {
 // Track add to cart event
 // Now queues event if Pinterest isn't ready (instead of dropping)
 // Includes external_id for 100% coverage
+// Includes em (email hash) if available from earlier capture
 export async function trackAddToCart(
   productId: string,
   variantId: string,
@@ -377,6 +407,7 @@ export async function trackAddToCart(
   quantity: number = 1
 ): Promise<void> {
   const hashedExternalId = await getHashedExternalId();
+  const storedEmailHash = getStoredEmailHash();
   
   const data: Record<string, any> = {
     event_id: generateEventId(),
@@ -390,9 +421,14 @@ export async function trackAddToCart(
     data.external_id = hashedExternalId;
   }
   
+  // Include email hash if available (for improved coverage)
+  if (storedEmailHash) {
+    data.em = storedEmailHash;
+  }
+  
   const success = safePintrk('track', 'addtocart', data);
   if (success) {
-    console.log('[Pinterest] AddToCart tracked', data);
+    console.log('[Pinterest] AddToCart tracked', { ...data, em: storedEmailHash ? '[set]' : '[not set]' });
   } else {
     debugLog('AddToCart queued or failed', data);
   }
@@ -498,8 +534,16 @@ export function clearInitiateCheckoutFingerprint(): void {
 // Track lead event (e.g., newsletter signup)
 // Now queues event if Pinterest isn't ready (instead of dropping)
 // Includes external_id for 100% coverage
-export async function trackLead(leadType: string = 'Newsletter'): Promise<void> {
+// Track lead event with email hash included
+// Email should be passed directly when capturing leads for 100% coverage
+export async function trackLead(leadType: string = 'Newsletter', email?: string): Promise<void> {
   const hashedExternalId = await getHashedExternalId();
+  
+  // Get email hash: prefer passed email, fallback to stored
+  let emailHash = getStoredEmailHash();
+  if (email) {
+    emailHash = await sha256(email);
+  }
   
   const data: Record<string, any> = {
     event_id: generateEventId(),
@@ -510,9 +554,14 @@ export async function trackLead(leadType: string = 'Newsletter'): Promise<void> 
     data.external_id = hashedExternalId;
   }
   
+  // Include email hash for 100% coverage
+  if (emailHash) {
+    data.em = emailHash;
+  }
+  
   const success = safePintrk('track', 'lead', data);
   if (success) {
-    console.log('[Pinterest] Lead tracked', data);
+    console.log('[Pinterest] Lead tracked', { ...data, em: emailHash ? '[set]' : '[not set]' });
   } else {
     debugLog('Lead queued or failed', data);
   }

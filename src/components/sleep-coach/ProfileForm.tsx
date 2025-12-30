@@ -9,7 +9,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { UserPlus, Loader2, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { trackLead } from "@/lib/pinterest";
+import { trackLead, setEnhancedMatch } from "@/lib/pinterest";
+import { captureEmail } from "@/lib/contextTracking";
 
 interface ProfileFormProps {
   email: string;
@@ -104,7 +105,9 @@ export const ProfileForm = ({ email, existingProfile, onSubmit, loading }: Profi
     if (result) {
       // Track Pinterest Lead for profile creation (only for new profiles)
       if (!existingProfile) {
-        trackLead("SleepProfileCreation").catch(() => {});
+        setEnhancedMatch(email).catch(() => {});
+        trackLead("SleepProfileCreation", email).catch(() => {});
+        captureEmail(email); // Send to CAPI context for checkout enrichment
       }
       await syncToKlaviyo(profileData);
     }
