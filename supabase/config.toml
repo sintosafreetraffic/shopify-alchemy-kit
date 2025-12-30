@@ -309,3 +309,7 @@ verify_jwt = false
 # Pinterest OAuth - Handles Pinterest API OAuth flow
 [functions.pinterest-oauth]
 verify_jwt = false
+
+# Pinterest Ads Reporting - Analytics data for ads dashboard (public, uses internal token)
+[functions.pinterest-ads-reporting]
+verify_jwt = false

@@ -2,6 +2,7 @@
  * Phase 4.2b - Pinterest Source Truth Dashboard
  * Shows sent vs blocked purchases, attribution breakdown, and recent events
  * Phase 5: Added EQS (Event Quality Score) monitoring card
+ * Phase 6: Added Ads Reporting section
  */
 
 import { useState, useEffect, useCallback } from "react";
@@ -60,6 +61,7 @@ import {
 } from "recharts";
 import { Radio } from "lucide-react";
 import { PinterestEQSCard } from "./PinterestEQSCard";
+import AdsReportingSection from "./AdsReportingSection";
 
 interface SourceTruthEvent {
   id: string;
@@ -570,6 +572,9 @@ export const PinterestSourceTruthTab = () => {
           icon={TrendingUp}
         />
       </div>
+
+      {/* Ads Reporting Section */}
+      <AdsReportingSection />
 
       {/* EQS Measurement Quality Card */}
       <PinterestEQSCard />
