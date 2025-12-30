@@ -255,12 +255,57 @@ const QuizRevealTracking = () => {
     }
   }, [adsReporting.selectedPreset, isAdmin]);
 
-  // Calculate ROAS from ads data
+  // Shopify revenue stats (net revenue after refunds)
+  const [shopifyRevenueStats, setShopifyRevenueStats] = useState<{
+    grossRevenue: number;
+    totalRefunds: number;
+    netRevenue: number;
+    orderCount: number;
+    refundedOrderCount: number;
+    currency: string;
+  } | null>(null);
+  const [shopifyRevenueLoading, setShopifyRevenueLoading] = useState(false);
+
+  // Fetch Shopify revenue stats
+  useEffect(() => {
+    if (!isAdmin) return;
+    
+    const fetchShopifyRevenue = async () => {
+      setShopifyRevenueLoading(true);
+      try {
+        const { data, error } = await supabase.functions.invoke("shopify-revenue-stats", {
+          body: { days: parseInt(days) },
+        });
+        if (error) throw error;
+        setShopifyRevenueStats(data);
+      } catch (err) {
+        console.error("Failed to fetch Shopify revenue:", err);
+      } finally {
+        setShopifyRevenueLoading(false);
+      }
+    };
+    
+    fetchShopifyRevenue();
+  }, [days, isAdmin]);
+
+  // Calculate ROAS from ads spend + Shopify net revenue (after refunds)
   const overviewRoas = useMemo(() => {
     if (!adsReporting.data?.totals) return null;
-    const { spend, revenue, roas } = adsReporting.data.totals;
-    return { spend, revenue, roas };
-  }, [adsReporting.data?.totals]);
+    const { spend } = adsReporting.data.totals;
+    
+    // Use Shopify net revenue if available, otherwise fall back to Pinterest revenue
+    const revenue = shopifyRevenueStats?.netRevenue ?? adsReporting.data.totals.revenue;
+    const roas = spend > 0 ? Math.round((revenue / spend) * 100) / 100 : 0;
+    
+    return { 
+      spend, 
+      revenue, 
+      roas,
+      isShopifyRevenue: !!shopifyRevenueStats?.netRevenue,
+      grossRevenue: shopifyRevenueStats?.grossRevenue,
+      refunds: shopifyRevenueStats?.totalRefunds,
+    };
+  }, [adsReporting.data?.totals, shopifyRevenueStats]);
 
   // Refresh client-side provider statuses
   const refreshProviderStatuses = useCallback(() => {
@@ -912,13 +957,20 @@ const QuizRevealTracking = () => {
                           ? 'text-yellow-600 dark:text-yellow-400'
                           : ''
                     }`}>
-                      {adsReporting.loading ? (
+                      {adsReporting.loading || shopifyRevenueLoading ? (
                         <Loader2 className="w-5 h-5 animate-spin" />
                       ) : overviewRoas ? (
                         `${overviewRoas.roas.toFixed(2)}x`
                       ) : '—'}
                     </p>
-                    <p className="text-xs text-muted-foreground">ROAS</p>
+                    <p className="text-xs text-muted-foreground">
+                      ROAS {overviewRoas?.isShopifyRevenue && <span className="text-green-600">(net)</span>}
+                    </p>
+                    {overviewRoas?.isShopifyRevenue && overviewRoas.refunds && overviewRoas.refunds > 0 && (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        ${overviewRoas.grossRevenue?.toFixed(0)} - ${overviewRoas.refunds?.toFixed(0)} refunds
+                      </p>
+                    )}
                   </div>
                 </div>
               </Card>
