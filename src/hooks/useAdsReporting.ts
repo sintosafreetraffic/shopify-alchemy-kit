@@ -26,6 +26,18 @@ export interface TimeseriesEntry extends ProcessedMetrics {
   has_attribution_lag: boolean;
 }
 
+// Entity breakdown for individual campaigns/ad groups/ads
+export interface EntityMetrics extends ProcessedMetrics {
+  id: string;
+  name: string;
+  entity_type: "campaign" | "ad_group" | "ad";
+  status?: string;
+  // Parsed from naming conventions
+  creative_category?: string; // UGC, Lifestyle, Testimonial, Before/After
+  creative_format?: string;   // Static, Video
+  product_focus?: string;
+}
+
 export interface AdsReportingData {
   range: {
     start: string;
@@ -39,6 +51,7 @@ export interface AdsReportingData {
   };
   totals: ProcessedMetrics;
   timeseries: TimeseriesEntry[];
+  entities?: EntityMetrics[]; // Individual entity breakdown
   cached_at: string | null;
   is_cached: boolean;
   rate_limited?: boolean;
