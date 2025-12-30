@@ -102,6 +102,13 @@ export default function TrackOrder() {
 
       if (error) {
         console.error('[TrackOrder] Function error:', error);
+        // Check if this is a rate limit error (429 response)
+        const errorContext = error.context;
+        if (errorContext?.status === 429 || error.message?.includes('429')) {
+          setShowError(true);
+          setErrorMessage('You\'ve checked this order too many times. Please wait 24 hours before trying again.');
+          return;
+        }
         throw new Error('Unable to look up your order. Please try again.');
       }
 
