@@ -243,6 +243,11 @@ export function AdsDecisionInsights({ data, eqsScore }: AdsDecisionInsightsProps
             <Badge variant="outline" className="ml-2 text-xs font-normal">
               AI-powered
             </Badge>
+            {isStale && (
+              <Badge variant="outline" className="ml-1 text-xs font-normal bg-amber-500/10 text-amber-600 border-amber-500/30">
+                Data changed
+              </Badge>
+            )}
           </CardTitle>
           <Button variant="ghost" size="sm" onClick={fetchInsights} disabled={isLoading}>
             <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
