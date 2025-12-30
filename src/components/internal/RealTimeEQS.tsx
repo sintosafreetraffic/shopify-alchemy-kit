@@ -263,7 +263,9 @@ export const RealTimeEQS = () => {
         // Purchase events
         supabase
           .from("pinterest_purchase_events")
-          .select("id, order_id, value, epik, send_status, attribution_source")
+          .select("id, order_id, value, epik, delivery_state, is_test, render_status")
+          .eq("is_test", false)
+          .not("render_status", "like", "chaos%")
           .gte("created_at", threshold),
         
         // Context (for attribution metrics)
@@ -348,12 +350,12 @@ export const RealTimeEQS = () => {
           tooltip: "Pinterest click ID (_epik) is critical for attribution. Without it, Pinterest can't credit your ads.",
         },
         {
-          name: "send_status",
+          name: "delivery_state",
           displayName: "CAPI Delivery",
           coverage: purchaseEvents.length > 0 
-            ? (purchaseEvents.filter(e => e.send_status === "sent").length / purchaseEvents.length) * 100 
+            ? (purchaseEvents.filter(e => e.delivery_state === "sent").length / purchaseEvents.length) * 100 
             : 0,
-          withParam: purchaseEvents.filter(e => e.send_status === "sent").length,
+          withParam: purchaseEvents.filter(e => e.delivery_state === "sent").length,
           total: purchaseEvents.length,
           priority: "high",
           tooltip: "Percentage of events successfully sent to Pinterest Conversions API.",
