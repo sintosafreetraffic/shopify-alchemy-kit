@@ -34,6 +34,7 @@ interface AdsDecisionInsightsProps {
 }
 
 interface DecisionInsight {
+  level: "ad" | "ad_group" | "campaign" | "account";
   type: "scale" | "burn" | "improving" | "declining" | "info";
   title: string;
   explanation: string;
@@ -41,6 +42,7 @@ interface DecisionInsight {
   recommended_action: string;
   confidence: "high" | "medium" | "low";
   severity: "high" | "medium" | "low";
+  risk_if_wrong: string;
 }
 
 interface AIInsightsResponse {
@@ -320,10 +322,26 @@ export function AdsDecisionInsights({ data, eqsScore }: AdsDecisionInsightsProps
   );
 }
 
+function getLevelBadge(level: DecisionInsight["level"]) {
+  switch (level) {
+    case "ad":
+      return { label: "Ad", className: "bg-purple-500/20 text-purple-500" };
+    case "ad_group":
+      return { label: "Ad Group", className: "bg-blue-500/20 text-blue-500" };
+    case "campaign":
+      return { label: "Campaign", className: "bg-indigo-500/20 text-indigo-500" };
+    case "account":
+      return { label: "Account", className: "bg-slate-500/20 text-slate-400" };
+    default:
+      return { label: "Unknown", className: "bg-muted text-muted-foreground" };
+  }
+}
+
 function InsightCard({ insight }: { insight: DecisionInsight }) {
   const Icon = getInsightIcon(insight.type);
   const colorClass = getInsightColor(insight.type);
   const confidenceBadge = getConfidenceBadge(insight.confidence);
+  const levelBadge = insight.level ? getLevelBadge(insight.level) : null;
   
   return (
     <div className={cn(
@@ -335,6 +353,11 @@ function InsightCard({ insight }: { insight: DecisionInsight }) {
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
+          {levelBadge && (
+            <Badge variant="outline" className={cn("text-xs", levelBadge.className)}>
+              {levelBadge.label}
+            </Badge>
+          )}
           <span className="font-medium text-sm">{insight.title}</span>
           <Badge variant="outline" className={cn("text-xs", confidenceBadge.className)}>
             {confidenceBadge.label}
@@ -350,6 +373,11 @@ function InsightCard({ insight }: { insight: DecisionInsight }) {
           <div className="mt-2 pt-2 border-t border-current/20">
             <span className="text-xs font-medium">Action: </span>
             <span className="text-xs">{insight.recommended_action}</span>
+          </div>
+        )}
+        {insight.risk_if_wrong && (
+          <div className="mt-1 text-xs text-muted-foreground/80 italic">
+            Risk if wrong: {insight.risk_if_wrong}
           </div>
         )}
       </div>
