@@ -120,6 +120,8 @@ export default function AdsReportingSection() {
     setSelectedPreset,
     granularity,
     setGranularity,
+    level,
+    setLevel,
     datePresets,
     isStale,
     cachedAt,
@@ -202,12 +204,17 @@ export default function AdsReportingSection() {
             </TabsList>
           </Tabs>
 
-          {/* Level (disabled for now) */}
-          <div className="flex items-center gap-1">
-            <Badge variant="secondary" className="text-xs">Account</Badge>
-            <Badge variant="outline" className="text-xs text-muted-foreground opacity-50">Campaign</Badge>
-            <Badge variant="outline" className="text-xs text-muted-foreground opacity-50">Ad Group</Badge>
-          </div>
+          {/* Level */}
+          <Tabs
+            value={level}
+            onValueChange={(v) => setLevel(v as "ACCOUNT" | "CAMPAIGN" | "AD_GROUP")}
+          >
+            <TabsList className="h-8">
+              <TabsTrigger value="ACCOUNT" className="text-xs px-2 h-6">Account</TabsTrigger>
+              <TabsTrigger value="CAMPAIGN" className="text-xs px-2 h-6">Campaign</TabsTrigger>
+              <TabsTrigger value="AD_GROUP" className="text-xs px-2 h-6">Ad Group</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
       </CardHeader>
 

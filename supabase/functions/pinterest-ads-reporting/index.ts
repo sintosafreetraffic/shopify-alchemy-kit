@@ -250,12 +250,76 @@ function processRawMetrics(raw: Record<string, any>): ProcessedMetrics {
   };
 }
 
+async function fetchCampaignIds(
+  accessToken: string,
+  adAccountId: string
+): Promise<string[]> {
+  const url = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/campaigns`);
+  url.searchParams.set("page_size", "100");
+
+  const response = await fetch(url.toString(), {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    console.error("[Pinterest Ads] Failed to fetch campaigns:", response.status);
+    return [];
+  }
+
+  const data = await response.json();
+  return (data.items || []).map((c: any) => c.id);
+}
+
+async function fetchAdGroupIds(
+  accessToken: string,
+  adAccountId: string
+): Promise<string[]> {
+  const url = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/ad_groups`);
+  url.searchParams.set("page_size", "100");
+
+  const response = await fetch(url.toString(), {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    console.error("[Pinterest Ads] Failed to fetch ad groups:", response.status);
+    return [];
+  }
+
+  const data = await response.json();
+  return (data.items || []).map((ag: any) => ag.id);
+}
+
 async function fetchPinterestAnalytics(
   accessToken: string,
   adAccountId: string,
   params: AdsReportingRequest
 ): Promise<AdsReportingResponse> {
-  const url = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/analytics`);
+  // Different endpoints for different levels
+  let url: URL;
+  
+  if (params.level === "CAMPAIGN") {
+    const campaignIds = await fetchCampaignIds(accessToken, adAccountId);
+    if (campaignIds.length === 0) {
+      throw new Error("No campaigns found in this ad account");
+    }
+    url = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/campaigns/analytics`);
+    url.searchParams.set("campaign_ids", campaignIds.join(","));
+  } else if (params.level === "AD_GROUP") {
+    const adGroupIds = await fetchAdGroupIds(accessToken, adAccountId);
+    if (adGroupIds.length === 0) {
+      throw new Error("No ad groups found in this ad account");
+    }
+    url = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/ad_groups/analytics`);
+    url.searchParams.set("ad_group_ids", adGroupIds.join(","));
+  } else {
+    url = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/analytics`);
+  }
+
   url.searchParams.set("start_date", params.start_date);
   url.searchParams.set("end_date", params.end_date);
   url.searchParams.set("granularity", params.granularity);
@@ -293,8 +357,8 @@ async function fetchPinterestAnalytics(
     TOTAL_CLICKTHROUGH: 0,
     TOTAL_CONVERSIONS: 0,
     TOTAL_CHECKOUT: 0,
-    TOTAL_ADD_TO_CART: 0,
-    TOTAL_CONVERSIONS_VALUE_IN_MICRO_DOLLAR: 0,
+    TOTAL_CLICK_ADD_TO_CART: 0,
+    TOTAL_CHECKOUT_VALUE_IN_MICRO_DOLLAR: 0,
   };
 
   // Pinterest returns array of daily entries
