@@ -1,44 +1,55 @@
 /**
- * AdsDecisionInsights - Decision-focused insights for Pinterest Ads
+ * AdsDecisionInsights - AI-Powered Decision Intelligence for Pinterest Ads
  * 
- * Interprets metrics to answer:
+ * Interprets metrics using AI to answer:
  * - What should we scale?
  * - What is silently burning money?
- * - What is improving?
+ * - What is improving or declining?
+ * - What needs more data?
  */
 
-import { useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { 
   TrendingUp, 
   TrendingDown, 
-  AlertTriangle, 
   Rocket, 
   Flame,
-  CheckCircle,
-  XCircle,
   Lightbulb,
-  ArrowUp,
-  ArrowDown,
-  Minus,
+  RefreshCw,
+  AlertCircle,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { AdsReportingData, TimeseriesEntry } from "@/hooks/useAdsReporting";
+import { supabase } from "@/integrations/supabase/client";
+import type { AdsReportingData } from "@/hooks/useAdsReporting";
+import { toast } from "sonner";
 
 interface AdsDecisionInsightsProps {
   data: AdsReportingData;
+  eqsScore?: number;
 }
 
-interface Insight {
+interface DecisionInsight {
   type: "scale" | "burn" | "improving" | "declining" | "info";
   title: string;
-  description: string;
-  metric?: string;
+  explanation: string;
+  metric_reference?: string;
+  recommended_action: string;
+  confidence: "high" | "medium" | "low";
   severity: "high" | "medium" | "low";
 }
 
-function getInsightIcon(type: Insight["type"]) {
+interface AIInsightsResponse {
+  insights: DecisionInsight[];
+  summary: string;
+  generated_at: string;
+}
+
+function getInsightIcon(type: DecisionInsight["type"]) {
   switch (type) {
     case "scale":
       return Rocket;
@@ -54,7 +65,7 @@ function getInsightIcon(type: Insight["type"]) {
   }
 }
 
-function getInsightColor(type: Insight["type"]) {
+function getInsightColor(type: DecisionInsight["type"]) {
   switch (type) {
     case "scale":
       return "text-emerald-500 bg-emerald-500/10 border-emerald-500/30";
@@ -70,214 +81,182 @@ function getInsightColor(type: Insight["type"]) {
   }
 }
 
-function calculateTrend(entries: TimeseriesEntry[], key: keyof TimeseriesEntry): "up" | "down" | "flat" {
-  if (entries.length < 3) return "flat";
-  
-  // Filter out entries with attribution lag for more accurate trends
-  const validEntries = entries.filter(e => !e.has_attribution_lag);
-  if (validEntries.length < 3) return "flat";
-  
-  // Compare first half average to second half average
-  const midpoint = Math.floor(validEntries.length / 2);
-  const firstHalf = validEntries.slice(0, midpoint);
-  const secondHalf = validEntries.slice(midpoint);
-  
-  const firstAvg = firstHalf.reduce((sum, e) => sum + (Number(e[key]) || 0), 0) / firstHalf.length;
-  const secondAvg = secondHalf.reduce((sum, e) => sum + (Number(e[key]) || 0), 0) / secondHalf.length;
-  
-  const changePercent = firstAvg > 0 ? ((secondAvg - firstAvg) / firstAvg) * 100 : 0;
-  
-  if (changePercent > 10) return "up";
-  if (changePercent < -10) return "down";
-  return "flat";
+function getConfidenceBadge(confidence: DecisionInsight["confidence"]) {
+  switch (confidence) {
+    case "high":
+      return { label: "High confidence", className: "bg-emerald-500/20 text-emerald-500" };
+    case "medium":
+      return { label: "Medium confidence", className: "bg-amber-500/20 text-amber-500" };
+    case "low":
+      return { label: "Low confidence", className: "bg-muted text-muted-foreground" };
+  }
 }
 
-function generateInsights(data: AdsReportingData): Insight[] {
-  const insights: Insight[] = [];
-  const { totals, timeseries } = data;
-  
-  // Filter out entries with attribution lag for analysis
-  const validEntries = timeseries.filter(e => !e.has_attribution_lag);
-  
-  // ===== SCALE SIGNALS =====
-  
-  // High ROAS = scale signal
-  if (totals.roas >= 2) {
-    insights.push({
-      type: "scale",
-      title: "Strong ROAS - Consider Scaling",
-      description: `Your ${totals.roas.toFixed(2)}x ROAS exceeds the 2x target. Consider increasing daily budget by 20-30% to capture more conversions.`,
-      metric: `${totals.roas.toFixed(2)}x ROAS`,
-      severity: "high",
-    });
-  } else if (totals.roas >= 1.5) {
-    insights.push({
-      type: "scale",
-      title: "Profitable - Room to Scale",
-      description: `${totals.roas.toFixed(2)}x ROAS is profitable. Test increasing budget on your best-performing days (check which weekdays convert best).`,
-      metric: `${totals.roas.toFixed(2)}x ROAS`,
-      severity: "medium",
-    });
-  }
-  
-  // Good ATC to Checkout ratio
-  const atcToCheckoutRate = totals.add_to_carts > 0 
-    ? (totals.checkouts / totals.add_to_carts) * 100 
-    : 0;
-  
-  if (atcToCheckoutRate > 30 && totals.checkouts >= 3) {
-    insights.push({
-      type: "scale",
-      title: "Strong Checkout Intent",
-      description: `${atcToCheckoutRate.toFixed(0)}% of add-to-carts convert to checkout. Your landing page is working well.`,
-      metric: `${atcToCheckoutRate.toFixed(0)}% ATC→Checkout`,
-      severity: "medium",
-    });
-  }
-  
-  // ===== BURN SIGNALS =====
-  
-  // Low ROAS with significant spend
-  if (totals.roas < 1 && totals.spend > 100) {
-    insights.push({
-      type: "burn",
-      title: "Negative ROI - Review Strategy",
-      description: `Spending €${totals.spend.toFixed(0)} with only ${totals.roas.toFixed(2)}x ROAS means you're losing money. Consider pausing underperforming campaigns or testing new creatives.`,
-      metric: `€${(totals.spend - totals.revenue).toFixed(0)} loss`,
-      severity: "high",
-    });
-  }
-  
-  // High CPM with low CTR
-  if (totals.cpm > 10 && totals.ctr < 0.5) {
-    insights.push({
-      type: "burn",
-      title: "Expensive, Low-Engagement Impressions",
-      description: `€${totals.cpm.toFixed(2)} CPM with only ${totals.ctr.toFixed(2)}% CTR suggests creative fatigue or poor audience targeting. Refresh creatives or narrow targeting.`,
-      metric: `€${totals.cpm.toFixed(2)} CPM, ${totals.ctr.toFixed(2)}% CTR`,
-      severity: "medium",
-    });
-  }
-  
-  // High clicks but no conversions
-  if (totals.clicks > 100 && totals.checkouts === 0 && totals.add_to_carts < 5) {
-    insights.push({
-      type: "burn",
-      title: "Traffic Without Intent",
-      description: `${totals.clicks} clicks but minimal add-to-carts. Traffic may be low-quality or the landing page isn't converting. Check audience and page experience.`,
-      metric: `${totals.clicks} clicks, 0 checkouts`,
-      severity: "high",
-    });
-  }
-  
-  // Low ATC to Checkout ratio
-  if (atcToCheckoutRate < 10 && totals.add_to_carts >= 5) {
-    insights.push({
-      type: "burn",
-      title: "Cart Abandonment Issue",
-      description: `Only ${atcToCheckoutRate.toFixed(0)}% of add-to-carts complete checkout. Check for checkout friction, shipping costs, or trust signals.`,
-      metric: `${atcToCheckoutRate.toFixed(0)}% completion`,
-      severity: "medium",
-    });
-  }
-  
-  // ===== TREND SIGNALS =====
-  
-  const roasTrend = calculateTrend(timeseries, "roas");
-  const ctrTrend = calculateTrend(timeseries, "ctr");
-  const cpaTrend = calculateTrend(timeseries, "cpa");
-  
-  if (roasTrend === "up") {
-    insights.push({
-      type: "improving",
-      title: "ROAS Trending Up",
-      description: "Efficiency is improving over time. Whatever you changed recently is working - keep optimizing in that direction.",
-      severity: "medium",
-    });
-  } else if (roasTrend === "down" && totals.roas < 1.5) {
-    insights.push({
-      type: "declining",
-      title: "ROAS Declining",
-      description: "Efficiency is decreasing. Could indicate creative fatigue, seasonal shifts, or increased competition. Review recent changes.",
-      severity: "medium",
-    });
-  }
-  
-  if (ctrTrend === "up") {
-    insights.push({
-      type: "improving",
-      title: "CTR Improving",
-      description: "Click-through rate is increasing, suggesting better creative resonance or improved targeting.",
-      severity: "low",
-    });
-  }
-  
-  if (cpaTrend === "down" && totals.checkouts > 0) {
-    insights.push({
-      type: "improving",
-      title: "CPA Decreasing",
-      description: "Cost per acquisition is going down - you're getting more efficient at driving conversions.",
-      severity: "medium",
-    });
-  } else if (cpaTrend === "up" && totals.cpa > 100) {
-    insights.push({
-      type: "declining",
-      title: "CPA Rising",
-      description: `At €${totals.cpa.toFixed(0)} per checkout, acquisition cost is high and trending up. Review audience quality and conversion path.`,
-      metric: `€${totals.cpa.toFixed(0)} CPA`,
-      severity: "medium",
-    });
-  }
-  
-  // ===== CONTEXT SIGNALS =====
-  
-  // No conversions yet - provide context
-  if (totals.checkouts === 0 && totals.add_to_carts === 0) {
-    insights.push({
-      type: "info",
-      title: "Waiting for Conversion Data",
-      description: "No conversions yet in this period. Pinterest attribution can lag 24-48h. If spend is recent, check back tomorrow.",
-      severity: "low",
-    });
-  }
-  
-  // Low sample size warning
-  if (validEntries.length < 5) {
-    insights.push({
-      type: "info",
-      title: "Limited Data for Trends",
-      description: `Only ${validEntries.length} days of complete data. Extend your date range for more reliable trend analysis.`,
-      severity: "low",
-    });
-  }
-  
-  // Sort by severity
-  const severityOrder = { high: 0, medium: 1, low: 2 };
-  insights.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
-  
-  return insights;
-}
+export function AdsDecisionInsights({ data, eqsScore }: AdsDecisionInsightsProps) {
+  const [insights, setInsights] = useState<AIInsightsResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [lastDataHash, setLastDataHash] = useState<string>("");
 
-export function AdsDecisionInsights({ data }: AdsDecisionInsightsProps) {
-  const insights = useMemo(() => generateInsights(data), [data]);
-  
-  if (insights.length === 0) {
-    return null;
+  // Create a simple hash of the data to detect changes
+  const dataHash = JSON.stringify({
+    spend: data.totals.spend,
+    revenue: data.totals.revenue,
+    checkouts: data.totals.checkouts,
+    days: data.timeseries.length,
+  });
+
+  const fetchInsights = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { data: responseData, error: functionError } = await supabase.functions.invoke(
+        "ads-decision-insights",
+        {
+          body: {
+            totals: data.totals,
+            timeseries: data.timeseries,
+            range: data.range,
+            level: data.level,
+            attribution: data.attribution,
+            eqs_score: eqsScore,
+          },
+        }
+      );
+
+      if (functionError) {
+        throw new Error(functionError.message);
+      }
+
+      if (responseData.error) {
+        throw new Error(responseData.error);
+      }
+
+      setInsights(responseData as AIInsightsResponse);
+      setLastDataHash(dataHash);
+    } catch (err) {
+      console.error("Failed to fetch AI insights:", err);
+      const message = err instanceof Error ? err.message : "Failed to generate insights";
+      setError(message);
+      
+      if (message.includes("rate limit") || message.includes("429")) {
+        toast.error("AI rate limit exceeded. Please wait a moment and try again.");
+      } else if (message.includes("402") || message.includes("credits")) {
+        toast.error("AI credits exhausted. Please add funds to continue.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [data, dataHash, eqsScore]);
+
+  // Auto-fetch when data changes significantly
+  useEffect(() => {
+    if (dataHash !== lastDataHash && data.totals.spend > 0) {
+      fetchInsights();
+    }
+  }, [dataHash, lastDataHash, data.totals.spend, fetchInsights]);
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <Card className="bg-card/50 border-border/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary animate-pulse" />
+            Generating Decision Insights...
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-16 w-full" />
+        </CardContent>
+      </Card>
+    );
   }
-  
+
+  // Error state
+  if (error && !insights) {
+    return (
+      <Card className="bg-card/50 border-border/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 text-destructive" />
+            Decision Insights
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between p-3 rounded-lg bg-destructive/10 border border-destructive/30">
+            <span className="text-sm text-muted-foreground">{error}</span>
+            <Button variant="ghost" size="sm" onClick={fetchInsights}>
+              <RefreshCw className="h-4 w-4 mr-1" />
+              Retry
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // No insights yet
+  if (!insights || insights.insights.length === 0) {
+    return (
+      <Card className="bg-card/50 border-border/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            Decision Insights
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
+            <span className="text-sm text-muted-foreground">
+              {data.totals.spend === 0 
+                ? "No spend data available for analysis" 
+                : "Click to generate AI-powered insights"}
+            </span>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={fetchInsights}
+              disabled={data.totals.spend === 0}
+            >
+              <Sparkles className="h-4 w-4 mr-1" />
+              Generate
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   // Group insights by type
-  const scaleInsights = insights.filter(i => i.type === "scale");
-  const burnInsights = insights.filter(i => i.type === "burn");
-  const trendInsights = insights.filter(i => i.type === "improving" || i.type === "declining");
-  const infoInsights = insights.filter(i => i.type === "info");
-  
+  const scaleInsights = insights.insights.filter(i => i.type === "scale");
+  const burnInsights = insights.insights.filter(i => i.type === "burn");
+  const trendInsights = insights.insights.filter(i => i.type === "improving" || i.type === "declining");
+  const infoInsights = insights.insights.filter(i => i.type === "info");
+
   return (
     <Card className="bg-card/50 border-border/50">
       <CardHeader className="pb-3">
-        <CardTitle className="text-base font-semibold flex items-center gap-2">
-          <Lightbulb className="h-4 w-4 text-primary" />
-          Decision Insights
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            Decision Insights
+            <Badge variant="outline" className="ml-2 text-xs font-normal">
+              AI-powered
+            </Badge>
+          </CardTitle>
+          <Button variant="ghost" size="sm" onClick={fetchInsights} disabled={isLoading}>
+            <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
+          </Button>
+        </div>
+        {insights.summary && (
+          <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+            {insights.summary}
+          </p>
+        )}
       </CardHeader>
       <CardContent className="space-y-3">
         {/* Priority: Scale or Burn first */}
@@ -307,21 +286,27 @@ export function AdsDecisionInsights({ data }: AdsDecisionInsightsProps) {
         )}
         
         {/* Info (lowest priority) */}
-        {infoInsights.length > 0 && scaleInsights.length === 0 && burnInsights.length === 0 && (
+        {infoInsights.length > 0 && (
           <div className="space-y-2">
             {infoInsights.map((insight, idx) => (
               <InsightCard key={`info-${idx}`} insight={insight} />
             ))}
           </div>
         )}
+
+        {/* Timestamp */}
+        <p className="text-xs text-muted-foreground text-right pt-2">
+          Generated {new Date(insights.generated_at).toLocaleTimeString()}
+        </p>
       </CardContent>
     </Card>
   );
 }
 
-function InsightCard({ insight }: { insight: Insight }) {
+function InsightCard({ insight }: { insight: DecisionInsight }) {
   const Icon = getInsightIcon(insight.type);
   const colorClass = getInsightColor(insight.type);
+  const confidenceBadge = getConfidenceBadge(insight.confidence);
   
   return (
     <div className={cn(
@@ -334,13 +319,22 @@ function InsightCard({ insight }: { insight: Insight }) {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="font-medium text-sm">{insight.title}</span>
-          {insight.metric && (
-            <Badge variant="outline" className="text-xs font-mono">
-              {insight.metric}
-            </Badge>
-          )}
+          <Badge variant="outline" className={cn("text-xs", confidenceBadge.className)}>
+            {confidenceBadge.label}
+          </Badge>
         </div>
-        <p className="text-xs text-muted-foreground mt-1">{insight.description}</p>
+        <p className="text-xs text-muted-foreground mt-1">{insight.explanation}</p>
+        {insight.metric_reference && (
+          <Badge variant="outline" className="text-xs font-mono mt-2">
+            {insight.metric_reference}
+          </Badge>
+        )}
+        {insight.recommended_action && (
+          <div className="mt-2 pt-2 border-t border-current/20">
+            <span className="text-xs font-medium">Action: </span>
+            <span className="text-xs">{insight.recommended_action}</span>
+          </div>
+        )}
       </div>
     </div>
   );
