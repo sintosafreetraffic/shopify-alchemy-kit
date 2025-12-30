@@ -1241,6 +1241,30 @@ export type Database = {
           },
         ]
       }
+      pinterest_ads_cache: {
+        Row: {
+          cache_key: string
+          created_at: string | null
+          expires_at: string
+          id: string
+          payload: Json
+        }
+        Insert: {
+          cache_key: string
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          payload: Json
+        }
+        Update: {
+          cache_key?: string
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          payload?: Json
+        }
+        Relationships: []
+      }
       pinterest_context: {
         Row: {
           client_ip_address: string | null
