@@ -150,12 +150,13 @@ export function AdsDecisionInsights({ data, eqsScore }: AdsDecisionInsightsProps
     }
   }, [data, dataHash, eqsScore]);
 
-  // Auto-fetch when data changes significantly
+  // Reset insights when data changes significantly (user must click to regenerate)
   useEffect(() => {
-    if (dataHash !== lastDataHash && data.totals.spend > 0) {
-      fetchInsights();
+    if (dataHash !== lastDataHash && insights) {
+      // Data changed, clear old insights so user can regenerate
+      setInsights(null);
     }
-  }, [dataHash, lastDataHash, data.totals.spend, fetchInsights]);
+  }, [dataHash, lastDataHash, insights]);
 
   // Loading state
   if (isLoading) {
