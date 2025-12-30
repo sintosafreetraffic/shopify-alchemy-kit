@@ -9,6 +9,7 @@ import { useCartStore } from "@/stores/cartStore";
 import { fetchProducts, ShopifyProduct } from "@/lib/shopify";
 import { trackQuizStarted } from "@/lib/klaviyo";
 import { setEnhancedMatch, trackLead } from "@/lib/pinterest";
+import { captureEmail } from "@/lib/contextTracking";
 import { supabase } from "@/integrations/supabase/client";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import {
@@ -415,8 +416,10 @@ const SleepQuiz = () => {
       }
 
       // Set Pinterest enhanced match and track lead for quiz completion
-      await setEnhancedMatch(email.trim());
-      trackLead("SleepQuizCompletion").catch(() => {});
+      const trimmedEmail = email.trim();
+      await setEnhancedMatch(trimmedEmail);
+      trackLead("SleepQuizCompletion", trimmedEmail).catch(() => {});
+      captureEmail(trimmedEmail); // Send to CAPI context for checkout enrichment
 
       if (analysisResult.profileCreated) {
         toast.success("Sleep Coach profile created!");

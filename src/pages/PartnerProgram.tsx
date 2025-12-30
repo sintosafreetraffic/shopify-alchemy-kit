@@ -22,7 +22,8 @@ import {
 import { Moon, Users, Sparkles, Heart, Star, Gift, Mail, MessageSquare, ArrowRight, Check } from "lucide-react";
 import { toast } from "sonner";
 import { UGCTestimonialGrid } from "@/components/home/UGCTestimonialGrid";
-import { trackLead } from "@/lib/pinterest";
+import { trackLead, setEnhancedMatch } from "@/lib/pinterest";
+import { captureEmail } from "@/lib/contextTracking";
 
 // Partnership tier data
 const partnershipTiers = [
@@ -136,8 +137,11 @@ const SleepCollective = () => {
 
       if (error) throw error;
 
-      // Track Pinterest Lead event for partner application
-      trackLead("PartnerApplication").catch(() => {});
+      // Track Pinterest Lead event for partner application (with email for 100% coverage)
+      const trimmedEmail = formData.email.trim().toLowerCase();
+      setEnhancedMatch(trimmedEmail).catch(() => {});
+      trackLead("PartnerApplication", trimmedEmail).catch(() => {});
+      captureEmail(trimmedEmail); // Send to CAPI context for checkout enrichment
 
       toast.success("Application submitted! We'll be in touch soon.");
       setFormData({
