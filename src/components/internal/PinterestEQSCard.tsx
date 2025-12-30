@@ -798,28 +798,97 @@ export const PinterestEQSCard = () => {
                 </span>
               </div>
 
-              {/* Coverage Bars */}
-              <div className="space-y-3 mb-4">
-                <CoverageBar
-                  label="Email"
-                  value={snap.coverage_email}
-                  tooltip="Percentage of events with hashed email for customer matching"
-                />
-                <CoverageBar
-                  label="Click ID (EPIK)"
-                  value={snap.coverage_click_id}
-                  tooltip="Pinterest click tracking parameter - critical for attribution"
-                />
-                <CoverageBar
-                  label="Order ID"
-                  value={snap.coverage_order_id}
-                  tooltip="Unique order identifiers for deduplication"
-                />
-                <CoverageBar
-                  label="External ID"
-                  value={snap.coverage_external_id}
-                  tooltip="Customer identifier for cross-device matching"
-                />
+              {/* Coverage Summary - All Components */}
+              <div className="space-y-2 mb-4">
+                {(() => {
+                  // Build all component coverage from quality_components for complete view
+                  const components = snap.quality_components || {};
+                  
+                  // Define display order and labels
+                  const componentOrder = [
+                    { key: "email", label: "Email", fallback: snap.coverage_email },
+                    { key: "click_id", label: "Click ID (EPIK)", fallback: snap.coverage_click_id },
+                    { key: "order_id", label: "Order ID", fallback: snap.coverage_order_id },
+                    { key: "external_id", label: "External ID", fallback: snap.coverage_external_id },
+                    { key: "ip_address", label: "IP Address", fallback: null },
+                    { key: "user_agent", label: "User Agent", fallback: null },
+                    { key: "source_url", label: "Source URL", fallback: null },
+                    { key: "order_value", label: "Order Value", fallback: null },
+                  ];
+                  
+                  return componentOrder.map(({ key, label, fallback }) => {
+                    const compData = components[key];
+                    let avgCoverage: number | null = fallback;
+                    let eventCount = 0;
+                    let issueCount = 0;
+                    
+                    if (compData) {
+                      const entries = Object.entries(compData);
+                      eventCount = entries.length;
+                      const coverages = entries
+                        .filter(([, data]: [string, any]) => typeof data.coverage === "number")
+                        .map(([, data]: [string, any]) => data.coverage);
+                      
+                      if (coverages.length > 0) {
+                        avgCoverage = Math.round((coverages.reduce((a, b) => a + b, 0) / coverages.length) * 100) / 100;
+                      }
+                      
+                      issueCount = entries.reduce((count, [, data]: [string, any]) => 
+                        count + ((data.issues || []).length), 0);
+                    }
+                    
+                    // Skip components with no data
+                    if (avgCoverage === null && !compData) return null;
+                    
+                    const displayValue = avgCoverage !== null ? Math.round(avgCoverage) : null;
+                    const progressValue = displayValue ?? 0;
+                    
+                    let progressColor = "bg-muted-foreground";
+                    let statusIcon = null;
+                    if (displayValue !== null) {
+                      if (displayValue >= 90) {
+                        progressColor = "bg-emerald-500";
+                        statusIcon = <CheckCircle2 className="w-3 h-3 text-emerald-500" />;
+                      } else if (displayValue >= 70) {
+                        progressColor = "bg-amber-500";
+                        statusIcon = <AlertCircle className="w-3 h-3 text-amber-500" />;
+                      } else {
+                        progressColor = "bg-rose-400";
+                        statusIcon = <AlertCircle className="w-3 h-3 text-rose-400" />;
+                      }
+                    }
+                    
+                    return (
+                      <div key={key} className="space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground flex items-center gap-1.5">
+                            {statusIcon}
+                            {label}
+                            {eventCount > 0 && (
+                              <span className="text-muted-foreground/60">
+                                ({eventCount} event{eventCount !== 1 ? "s" : ""})
+                              </span>
+                            )}
+                            {issueCount > 0 && (
+                              <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800">
+                                {issueCount} issue{issueCount !== 1 ? "s" : ""}
+                              </Badge>
+                            )}
+                          </span>
+                          <span className="font-mono tabular-nums">
+                            {displayValue !== null ? `${displayValue}%` : "—"}
+                          </span>
+                        </div>
+                        <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full ${progressColor} transition-all duration-500`}
+                            style={{ width: `${progressValue}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
               </div>
 
               {/* Detailed Breakdown by Event Type */}
