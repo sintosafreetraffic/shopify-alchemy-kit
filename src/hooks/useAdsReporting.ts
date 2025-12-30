@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export type Granularity = "DAY" | "WEEK" | "MONTH";
-export type Level = "ACCOUNT" | "CAMPAIGN" | "AD_GROUP";
+export type Level = "ACCOUNT" | "CAMPAIGN" | "AD_GROUP" | "PIN_PROMOTION";
 
 export interface ProcessedMetrics {
   spend: number;
