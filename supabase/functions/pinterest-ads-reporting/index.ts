@@ -37,7 +37,7 @@ interface AdsReportingRequest {
   start_date: string;
   end_date: string;
   granularity: "DAY" | "WEEK" | "MONTH" | "TOTAL";
-  level: "ACCOUNT" | "CAMPAIGN" | "AD_GROUP";
+  level: "ACCOUNT" | "CAMPAIGN" | "AD_GROUP" | "PIN_PROMOTION";
   click_window_days: number;
   view_window_days: number;
   force_refresh?: boolean;
@@ -384,6 +384,21 @@ async function fetchAdGroupIds(
   return (data.items || []).map((ag: { id: string }) => ag.id);
 }
 
+async function fetchAdIds(
+  accessToken: string,
+  adAccountId: string
+): Promise<string[]> {
+  const url = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/ads`);
+  url.searchParams.set("page_size", "100");
+
+  const response = await fetchWithRetry(url.toString(), {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  const data = await response.json();
+  return (data.items || []).map((ad: { id: string }) => ad.id);
+}
+
 function isWithinAttributionLag(dateStr: string): boolean {
   const date = new Date(dateStr + "T00:00:00Z");
   const now = new Date();
@@ -415,6 +430,13 @@ async function fetchPinterestAnalytics(
     }
     url = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/ad_groups/analytics`);
     url.searchParams.set("ad_group_ids", adGroupIds.join(","));
+  } else if (params.level === "PIN_PROMOTION") {
+    const adIds = await fetchAdIds(accessToken, adAccountId);
+    if (adIds.length === 0) {
+      throw new Error("No ads found in this ad account");
+    }
+    url = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/ads/analytics`);
+    url.searchParams.set("ad_ids", adIds.join(","));
   } else {
     url = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/analytics`);
   }

@@ -283,12 +283,13 @@ export default function AdsReportingSection() {
           {/* Level */}
           <Tabs
             value={level}
-            onValueChange={(v) => setLevel(v as "ACCOUNT" | "CAMPAIGN" | "AD_GROUP")}
+            onValueChange={(v) => setLevel(v as "ACCOUNT" | "CAMPAIGN" | "AD_GROUP" | "PIN_PROMOTION")}
           >
             <TabsList className="h-8">
               <TabsTrigger value="ACCOUNT" className="text-xs px-2 h-6">Account</TabsTrigger>
               <TabsTrigger value="CAMPAIGN" className="text-xs px-2 h-6">Campaign</TabsTrigger>
               <TabsTrigger value="AD_GROUP" className="text-xs px-2 h-6">Ad Group</TabsTrigger>
+              <TabsTrigger value="PIN_PROMOTION" className="text-xs px-2 h-6">Ad</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>

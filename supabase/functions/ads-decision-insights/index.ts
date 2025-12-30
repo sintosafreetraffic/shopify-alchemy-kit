@@ -9,9 +9,12 @@
  * - What is burning money
  * - What is improving/declining
  * - Data quality warnings
+ * 
+ * Insights are saved to database for persistence.
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, createErrorResponse, createSuccessResponse } from "../_shared/env.ts";
 
 // ============================================================================
@@ -117,9 +120,9 @@ Reporting Levels (current scope):
 - ACCOUNT
 - CAMPAIGN
 - AD_GROUP
+- PIN_PROMOTION (Ad-level)
 
-⚠️ Creative / Ad-level granularity is not available yet.
-All insights must respect this limitation and avoid false precision.
+Creative naming conventions may encode metadata (creative angle, product, format).
 
 ## ATTRIBUTION & DATA REALITY (CRITICAL)
 
@@ -402,6 +405,89 @@ Provide your analysis as a JSON object with "insights" array and "summary" strin
 // MAIN HANDLER
 // ============================================================================
 
+// ============================================================================
+// DATABASE PERSISTENCE
+// ============================================================================
+
+function createDataHash(data: AdsDataInput): string {
+  // Create a simple hash based on key metrics
+  const hashInput = JSON.stringify({
+    spend: data.totals.spend,
+    revenue: data.totals.revenue,
+    checkouts: data.totals.checkouts,
+    days: data.timeseries.length,
+  });
+  // Simple hash function
+  let hash = 0;
+  for (let i = 0; i < hashInput.length; i++) {
+    const char = hashInput.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash).toString(16);
+}
+
+async function saveInsightsToDb(
+  supabase: any,
+  data: AdsDataInput,
+  insights: AIInsightsResponse,
+  dataHash: string
+): Promise<void> {
+  const { error } = await supabase
+    .from("ads_decision_insights")
+    .upsert({
+      level: data.level,
+      date_range_start: data.range.start,
+      date_range_end: data.range.end,
+      granularity: data.range.granularity,
+      data_hash: dataHash,
+      insights: insights.insights,
+      summary: insights.summary,
+      eqs_score: data.eqs_score || null,
+      totals_snapshot: data.totals,
+      updated_at: new Date().toISOString(),
+    }, {
+      onConflict: "level,date_range_start,date_range_end,granularity",
+    });
+  
+  if (error) {
+    console.error("[ads-decision-insights] Failed to save insights:", error);
+  } else {
+    console.log("[ads-decision-insights] Insights saved to database");
+  }
+}
+
+async function loadInsightsFromDb(
+  supabase: any,
+  data: AdsDataInput
+): Promise<{ insights: AIInsightsResponse; dataHash: string } | null> {
+  const { data: savedInsights, error } = await supabase
+    .from("ads_decision_insights")
+    .select("*")
+    .eq("level", data.level)
+    .eq("date_range_start", data.range.start)
+    .eq("date_range_end", data.range.end)
+    .eq("granularity", data.range.granularity)
+    .maybeSingle();
+  
+  if (error || !savedInsights) {
+    return null;
+  }
+  
+  return {
+    insights: {
+      insights: savedInsights.insights as DecisionInsight[],
+      summary: savedInsights.summary || "",
+      generated_at: savedInsights.updated_at,
+    },
+    dataHash: savedInsights.data_hash,
+  };
+}
+
+// ============================================================================
+// MAIN HANDLER
+// ============================================================================
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -415,13 +501,44 @@ serve(async (req) => {
       return createErrorResponse("Missing required fields: totals, timeseries", 400);
     }
 
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error("Missing Supabase configuration");
+    }
+    
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Calculate current data hash
+    const currentDataHash = createDataHash(data);
+    
+    // Check for existing saved insights
+    const savedData = await loadInsightsFromDb(supabase, data);
+    
+    // If we have saved insights with matching data hash, return them
+    if (savedData && savedData.dataHash === currentDataHash) {
+      console.log(`[ads-decision-insights] Returning cached insights for ${data.level} level`);
+      return createSuccessResponse({
+        ...savedData.insights,
+        from_cache: true,
+      });
+    }
+
     console.log(`[ads-decision-insights] Generating insights for ${data.level} level, ${data.timeseries.length} days`);
 
     const insights = await generateInsights(data);
     
     console.log(`[ads-decision-insights] Generated ${insights.insights.length} insights`);
 
-    return createSuccessResponse(insights);
+    // Save insights to database
+    await saveInsightsToDb(supabase, data, insights, currentDataHash);
+
+    return createSuccessResponse({
+      ...insights,
+      from_cache: false,
+    });
   } catch (error) {
     console.error("[ads-decision-insights] Error:", error);
     

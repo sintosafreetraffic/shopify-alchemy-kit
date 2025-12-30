@@ -47,6 +47,7 @@ interface AIInsightsResponse {
   insights: DecisionInsight[];
   summary: string;
   generated_at: string;
+  from_cache?: boolean;
 }
 
 function getInsightIcon(type: DecisionInsight["type"]) {
@@ -97,6 +98,7 @@ export function AdsDecisionInsights({ data, eqsScore }: AdsDecisionInsightsProps
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastDataHash, setLastDataHash] = useState<string>("");
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
 
   // Create a simple hash of the data to detect changes
   const dataHash = JSON.stringify({
@@ -104,6 +106,7 @@ export function AdsDecisionInsights({ data, eqsScore }: AdsDecisionInsightsProps
     revenue: data.totals.revenue,
     checkouts: data.totals.checkouts,
     days: data.timeseries.length,
+    level: data.level,
   });
 
   const fetchInsights = useCallback(async () => {
@@ -135,6 +138,12 @@ export function AdsDecisionInsights({ data, eqsScore }: AdsDecisionInsightsProps
 
       setInsights(responseData as AIInsightsResponse);
       setLastDataHash(dataHash);
+      setInitialLoadDone(true);
+      
+      // Show toast if loaded from cache
+      if (responseData.from_cache) {
+        console.log("[AdsDecisionInsights] Loaded insights from cache");
+      }
     } catch (err) {
       console.error("Failed to fetch AI insights:", err);
       const message = err instanceof Error ? err.message : "Failed to generate insights";
@@ -149,6 +158,13 @@ export function AdsDecisionInsights({ data, eqsScore }: AdsDecisionInsightsProps
       setIsLoading(false);
     }
   }, [data, dataHash, eqsScore]);
+
+  // Auto-load saved insights on mount (when data is available)
+  useEffect(() => {
+    if (data.totals.spend > 0 && !initialLoadDone && !isLoading) {
+      fetchInsights();
+    }
+  }, [data.totals.spend, initialLoadDone, isLoading, fetchInsights]);
 
   // Track if data has changed since last generation (for showing stale indicator)
   const isStale = insights && dataHash !== lastDataHash;

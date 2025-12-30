@@ -62,6 +62,51 @@ export type Database = {
         }
         Relationships: []
       }
+      ads_decision_insights: {
+        Row: {
+          created_at: string
+          data_hash: string
+          date_range_end: string
+          date_range_start: string
+          eqs_score: number | null
+          granularity: string
+          id: string
+          insights: Json
+          level: string
+          summary: string | null
+          totals_snapshot: Json | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data_hash: string
+          date_range_end: string
+          date_range_start: string
+          eqs_score?: number | null
+          granularity: string
+          id?: string
+          insights: Json
+          level: string
+          summary?: string | null
+          totals_snapshot?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data_hash?: string
+          date_range_end?: string
+          date_range_start?: string
+          eqs_score?: number | null
+          granularity?: string
+          id?: string
+          insights?: Json
+          level?: string
+          summary?: string | null
+          totals_snapshot?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       affiliate_goals: {
         Row: {
           affiliate_id: string
