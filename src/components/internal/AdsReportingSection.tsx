@@ -1,4 +1,4 @@
-import { useAdsReporting, Granularity, DatePreset, ProcessedMetrics } from "@/hooks/useAdsReporting";
+import { useAdsReporting, Granularity, DatePreset } from "@/hooks/useAdsReporting";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +17,9 @@ import {
   AlertCircle,
   Info,
   BarChart3,
+  Percent,
+  Zap,
+  AlertTriangle,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -56,12 +59,12 @@ interface KPICardProps {
   label: string;
   value: string | number;
   icon: React.ElementType;
-  format?: "currency" | "percent" | "number";
-  trend?: "up" | "down" | "neutral";
+  format?: "currency" | "percent" | "number" | "multiplier";
   tooltip?: string;
+  highlight?: "good" | "warning" | "bad" | "neutral";
 }
 
-function KPICard({ label, value, icon: Icon, format = "number", tooltip }: KPICardProps) {
+function KPICard({ label, value, icon: Icon, format = "number", tooltip, highlight = "neutral" }: KPICardProps) {
   const formattedValue = (() => {
     if (typeof value === "string") return value;
     switch (format) {
@@ -69,10 +72,19 @@ function KPICard({ label, value, icon: Icon, format = "number", tooltip }: KPICa
         return `€${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       case "percent":
         return `${value.toFixed(2)}%`;
+      case "multiplier":
+        return `${value.toFixed(2)}x`;
       default:
         return value.toLocaleString();
     }
   })();
+
+  const highlightClasses = {
+    good: "text-green-500",
+    warning: "text-yellow-500",
+    bad: "text-red-500",
+    neutral: "text-foreground",
+  };
 
   const card = (
     <Card className="bg-card/50 border-border/50">
@@ -80,7 +92,7 @@ function KPICard({ label, value, icon: Icon, format = "number", tooltip }: KPICa
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{label}</p>
-            <p className="text-2xl font-bold text-foreground">{formattedValue}</p>
+            <p className={cn("text-2xl font-bold", highlightClasses[highlight])}>{formattedValue}</p>
           </div>
           <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
             <Icon className="h-5 w-5 text-primary" />
@@ -107,6 +119,17 @@ function KPICard({ label, value, icon: Icon, format = "number", tooltip }: KPICa
 }
 
 // ============================================================================
+// ROAS HIGHLIGHT HELPER
+// ============================================================================
+
+function getRoasHighlight(roas: number): "good" | "warning" | "bad" | "neutral" {
+  if (roas >= 2) return "good";
+  if (roas >= 1) return "warning";
+  if (roas > 0) return "bad";
+  return "neutral";
+}
+
+// ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 
@@ -116,6 +139,7 @@ export default function AdsReportingSection() {
     loading,
     error,
     refetch,
+    forceRefresh,
     selectedPreset,
     setSelectedPreset,
     granularity,
@@ -124,7 +148,12 @@ export default function AdsReportingSection() {
     setLevel,
     datePresets,
     isStale,
+    isCached,
     cachedAt,
+    hasAttributionLagEntries,
+    dataQualityPercent,
+    apiLatencyMs,
+    currency,
   } = useAdsReporting();
 
   // Format chart data
@@ -136,6 +165,7 @@ export default function AdsReportingSection() {
     ROAS: entry.roas,
     Checkouts: entry.checkouts,
     Clicks: entry.clicks,
+    hasLag: entry.has_attribution_lag,
   })) || [];
 
   return (
@@ -149,27 +179,68 @@ export default function AdsReportingSection() {
             <div>
               <CardTitle className="text-lg font-semibold">Ads Reporting</CardTitle>
               <CardDescription className="text-xs">
-                Pinterest Ads performance • 30-day click / 1-day view attribution
+                Pinterest Ads performance • 30-day click / 1-day view • {currency}
               </CardDescription>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            {cachedAt && (
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                {formatDistanceToNow(cachedAt, { addSuffix: true })}
-              </span>
+            {/* Data Quality Badge */}
+            {data && dataQualityPercent < 100 && (
+              <TooltipProvider>
+                <UITooltip>
+                  <TooltipTrigger>
+                    <Badge variant="outline" className="text-xs gap-1">
+                      <AlertTriangle className="h-3 w-3 text-yellow-500" />
+                      {dataQualityPercent}% complete
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-sm">Recent dates may have incomplete conversion data (24-48h attribution lag)</p>
+                  </TooltipContent>
+                </UITooltip>
+              </TooltipProvider>
             )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => refetch()}
-              disabled={loading}
-              className="h-8 w-8 p-0"
-            >
-              <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-            </Button>
+
+            {/* Cache/Performance Info */}
+            {cachedAt && (
+              <TooltipProvider>
+                <UITooltip>
+                  <TooltipTrigger>
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {formatDistanceToNow(cachedAt, { addSuffix: true })}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <div className="text-sm space-y-1">
+                      <p>Cached: {cachedAt.toLocaleString()}</p>
+                      {apiLatencyMs && <p>API latency: {apiLatencyMs}ms</p>}
+                    </div>
+                  </TooltipContent>
+                </UITooltip>
+              </TooltipProvider>
+            )}
+
+            {/* Refresh Button */}
+            <TooltipProvider>
+              <UITooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => forceRefresh()}
+                    disabled={loading}
+                    className="h-8 w-8 p-0"
+                  >
+                    <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-sm">Force refresh (bypass cache)</p>
+                </TooltipContent>
+              </UITooltip>
+            </TooltipProvider>
           </div>
         </div>
 
@@ -238,6 +309,17 @@ export default function AdsReportingSection() {
           </Alert>
         )}
 
+        {/* Attribution Lag Warning */}
+        {hasAttributionLagEntries && !isStale && (
+          <Alert className="bg-yellow-500/10 border-yellow-500/30">
+            <AlertTriangle className="h-4 w-4 text-yellow-500" />
+            <AlertDescription className="text-sm">
+              Conversion data for the last 2 days may be incomplete due to attribution lag. 
+              Use trends rather than recent absolutes for decisions.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Loading State */}
         {loading && !data && (
           <div className="space-y-4">
@@ -253,7 +335,7 @@ export default function AdsReportingSection() {
         {/* Data Display */}
         {data && (
           <>
-            {/* KPI Cards - Row 1: Spend & Revenue */}
+            {/* KPI Cards - Row 1: Profit Metrics */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <KPICard
                 label="Spend"
@@ -273,8 +355,9 @@ export default function AdsReportingSection() {
                 label="ROAS"
                 value={data.totals.roas}
                 icon={Target}
-                format="number"
-                tooltip="Return on Ad Spend (Revenue / Spend)"
+                format="multiplier"
+                tooltip="Return on Ad Spend (Revenue / Spend). Target: 2x+"
+                highlight={getRoasHighlight(data.totals.roas)}
               />
               <KPICard
                 label="CPA"
@@ -285,7 +368,7 @@ export default function AdsReportingSection() {
               />
             </div>
 
-            {/* KPI Cards - Row 2: Traffic */}
+            {/* KPI Cards - Row 2: Traffic & Conversion */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <KPICard
                 label="Impressions"
@@ -314,12 +397,43 @@ export default function AdsReportingSection() {
               />
             </div>
 
+            {/* KPI Cards - Row 3: Conversion Funnel (New) */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <KPICard
+                label="Add to Carts"
+                value={data.totals.add_to_carts}
+                icon={ShoppingCart}
+                tooltip="Pinterest-attributed add-to-cart events"
+              />
+              <KPICard
+                label="ATC Rate"
+                value={data.totals.add_to_cart_rate}
+                icon={Percent}
+                format="percent"
+                tooltip="Add-to-cart rate (Add to Carts / Clicks)"
+              />
+              <KPICard
+                label="Conversion Rate"
+                value={data.totals.conversion_rate}
+                icon={Zap}
+                format="percent"
+                tooltip="Checkout rate (Checkouts / Clicks)"
+              />
+              <KPICard
+                label="CPM"
+                value={data.totals.cpm}
+                icon={Eye}
+                format="currency"
+                tooltip="Cost per 1,000 impressions"
+              />
+            </div>
+
             {/* Conversion Warning */}
             {data.totals.checkouts === 0 && (
               <Alert className="bg-muted/50 border-muted">
                 <Info className="h-4 w-4 text-muted-foreground" />
                 <AlertDescription className="text-sm text-muted-foreground">
-                  Conversion data may lag 24–48h. Use trends rather than single-day spikes for insights.
+                  No checkouts in this period. Conversion data may lag 24–48h.
                 </AlertDescription>
               </Alert>
             )}
@@ -352,7 +466,14 @@ export default function AdsReportingSection() {
                             border: "1px solid hsl(var(--border))",
                             borderRadius: "8px",
                           }}
-                          formatter={(value: number) => [`€${value.toFixed(2)}`, ""]}
+                          formatter={(value: number, name: string) => [
+                            `€${value.toFixed(2)}`, 
+                            name
+                          ]}
+                          labelFormatter={(label, payload) => {
+                            const entry = payload?.[0]?.payload;
+                            return entry?.hasLag ? `${entry.fullDate} ⚠️` : entry?.fullDate || label;
+                          }}
                         />
                         <Legend />
                         <Line
@@ -400,12 +521,22 @@ export default function AdsReportingSection() {
                             borderRadius: "8px",
                           }}
                           formatter={(value: number) => [`${value.toFixed(2)}x`, "ROAS"]}
+                          labelFormatter={(label, payload) => {
+                            const entry = payload?.[0]?.payload;
+                            return entry?.hasLag ? `${entry.fullDate} ⚠️` : entry?.fullDate || label;
+                          }}
                         />
                         <ReferenceLine 
                           y={2} 
                           stroke="hsl(var(--muted-foreground))" 
                           strokeDasharray="5 5"
                           label={{ value: "2x target", position: "right", fontSize: 10 }}
+                        />
+                        <ReferenceLine 
+                          y={1} 
+                          stroke="hsl(var(--destructive))" 
+                          strokeDasharray="3 3"
+                          strokeOpacity={0.5}
                         />
                         <Line
                           type="monotone"
@@ -444,6 +575,13 @@ export default function AdsReportingSection() {
                             border: "1px solid hsl(var(--border))",
                             borderRadius: "8px",
                           }}
+                          labelFormatter={(label, payload) => {
+                            const entry = payload?.[0]?.payload;
+                            if (entry?.hasLag) {
+                              return `${entry.fullDate} (may be incomplete)`;
+                            }
+                            return entry?.fullDate || label;
+                          }}
                         />
                         <Bar
                           dataKey="Checkouts"
@@ -475,20 +613,43 @@ export default function AdsReportingSection() {
                           <TableHead className="text-xs font-medium text-right">Clicks</TableHead>
                           <TableHead className="text-xs font-medium text-right">CTR</TableHead>
                           <TableHead className="text-xs font-medium text-right">Checkouts</TableHead>
+                          <TableHead className="text-xs font-medium text-right">Conv Rate</TableHead>
                           <TableHead className="text-xs font-medium text-right">CPA</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {[...data.timeseries].reverse().map((entry) => (
-                          <TableRow key={entry.date} className="hover:bg-muted/20">
-                            <TableCell className="text-xs font-medium">{entry.date}</TableCell>
+                          <TableRow 
+                            key={entry.date} 
+                            className={cn(
+                              "hover:bg-muted/20",
+                              entry.has_attribution_lag && "bg-yellow-500/5"
+                            )}
+                          >
+                            <TableCell className="text-xs font-medium">
+                              <span className="flex items-center gap-1">
+                                {entry.date}
+                                {entry.has_attribution_lag && (
+                                  <TooltipProvider>
+                                    <UITooltip>
+                                      <TooltipTrigger>
+                                        <AlertTriangle className="h-3 w-3 text-yellow-500" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p className="text-xs">Data may be incomplete</p>
+                                      </TooltipContent>
+                                    </UITooltip>
+                                  </TooltipProvider>
+                                )}
+                              </span>
+                            </TableCell>
                             <TableCell className="text-xs text-right">€{entry.spend.toFixed(2)}</TableCell>
                             <TableCell className="text-xs text-right">€{entry.revenue.toFixed(2)}</TableCell>
                             <TableCell className="text-xs text-right">
                               <span className={cn(
                                 entry.roas >= 2 ? "text-green-500" : 
                                 entry.roas >= 1 ? "text-yellow-500" : 
-                                "text-red-500"
+                                entry.roas > 0 ? "text-red-500" : "text-muted-foreground"
                               )}>
                                 {entry.roas.toFixed(2)}x
                               </span>
@@ -496,6 +657,7 @@ export default function AdsReportingSection() {
                             <TableCell className="text-xs text-right">{entry.clicks.toLocaleString()}</TableCell>
                             <TableCell className="text-xs text-right">{entry.ctr.toFixed(2)}%</TableCell>
                             <TableCell className="text-xs text-right">{entry.checkouts}</TableCell>
+                            <TableCell className="text-xs text-right">{entry.conversion_rate.toFixed(2)}%</TableCell>
                             <TableCell className="text-xs text-right">
                               {entry.checkouts > 0 ? `€${entry.cpa.toFixed(2)}` : "-"}
                             </TableCell>

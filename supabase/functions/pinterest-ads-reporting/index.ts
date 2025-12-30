@@ -1,8 +1,8 @@
 /**
- * Pinterest Ads Reporting Edge Function
+ * Pinterest Ads Reporting Edge Function (Production-Grade)
  * 
  * Fetches analytics data from Pinterest Ads API v5 for spend, conversions, ROAS tracking.
- * Includes caching to reduce API calls and handle rate limits gracefully.
+ * Includes caching, exponential backoff, structured logging, and timezone normalization.
  * 
  * Pinterest API: GET /v5/ad_accounts/{ad_account_id}/analytics
  * 
@@ -11,6 +11,13 @@
  * - PINTEREST_APP_ID + PINTEREST_APP_SECRET (for token refresh)
  * 
  * OAuth tokens stored in pinterest_oauth_tokens table.
+ * 
+ * Improvements (v2):
+ * - Exponential backoff with retries for rate limits
+ * - Structured logging with latency tracking
+ * - UTC timezone normalization
+ * - Attribution lag warnings
+ * - EUR currency assumption (Pinterest returns USD micro-dollars)
  */
 
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -33,6 +40,7 @@ interface AdsReportingRequest {
   level: "ACCOUNT" | "CAMPAIGN" | "AD_GROUP";
   click_window_days: number;
   view_window_days: number;
+  force_refresh?: boolean;
 }
 
 interface ProcessedMetrics {
@@ -48,10 +56,13 @@ interface ProcessedMetrics {
   cpa: number;
   add_to_carts: number;
   conversions: number;
+  conversion_rate: number;
+  add_to_cart_rate: number;
 }
 
 interface TimeseriesEntry extends ProcessedMetrics {
   date: string;
+  has_attribution_lag: boolean;
 }
 
 interface AdsReportingResponse {
@@ -72,6 +83,19 @@ interface AdsReportingResponse {
   rate_limited?: boolean;
   stale?: boolean;
   error?: string;
+  // New fields
+  fetched_at: string;
+  api_latency_ms: number | null;
+  cache_hit: boolean;
+  attribution_lag_warning: boolean;
+  currency: string;
+}
+
+interface LogEntry {
+  timestamp: string;
+  level: "info" | "warn" | "error";
+  event: string;
+  data?: Record<string, unknown>;
 }
 
 // Pinterest metrics we request (verified against API v5)
@@ -81,14 +105,31 @@ const METRICS_COLUMNS = [
   "TOTAL_CLICKTHROUGH",
   "TOTAL_CONVERSIONS",
   "TOTAL_CHECKOUT",
-  "TOTAL_CLICK_ADD_TO_CART",  // Correct name (not TOTAL_ADD_TO_CART)
-  "TOTAL_CHECKOUT_VALUE_IN_MICRO_DOLLAR",  // Correct name for revenue
+  "TOTAL_CLICK_ADD_TO_CART",
+  "TOTAL_CHECKOUT_VALUE_IN_MICRO_DOLLAR",
 ].join(",");
 
 const CACHE_TTL_MINUTES = 30;
+const MAX_RETRIES = 3;
+const INITIAL_BACKOFF_MS = 1000;
+const ATTRIBUTION_LAG_DAYS = 2; // Days where conversion data may be incomplete
 
 // ============================================================================
-// TOKEN MANAGEMENT (reuse pattern from pinterest-eqs-fetch)
+// STRUCTURED LOGGING
+// ============================================================================
+
+function log(level: LogEntry["level"], event: string, data?: Record<string, unknown>) {
+  const entry: LogEntry = {
+    timestamp: new Date().toISOString(),
+    level,
+    event,
+    data,
+  };
+  console.log(JSON.stringify(entry));
+}
+
+// ============================================================================
+// TOKEN MANAGEMENT
 // ============================================================================
 
 async function getValidAccessToken(
@@ -96,12 +137,15 @@ async function getValidAccessToken(
   appId: string,
   appSecret: string
 ): Promise<string> {
+  const startTime = Date.now();
+  
   const { data: tokenData, error: fetchError } = await supabase
     .from("pinterest_oauth_tokens")
     .select("id, access_token, refresh_token, expires_at")
     .single();
 
   if (fetchError || !tokenData) {
+    log("error", "token_fetch_failed", { error: fetchError?.message });
     throw new Error("No Pinterest OAuth tokens found. Please connect Pinterest via OAuth first.");
   }
 
@@ -110,15 +154,16 @@ async function getValidAccessToken(
   const bufferMs = 5 * 60 * 1000;
 
   if (expiresAt.getTime() - now.getTime() > bufferMs) {
-    console.log("[Pinterest Ads] Using existing valid token");
+    log("info", "token_valid", { expires_in_ms: expiresAt.getTime() - now.getTime() });
     return tokenData.access_token;
   }
 
   if (!tokenData.refresh_token) {
+    log("error", "token_expired_no_refresh");
     throw new Error("Access token expired and no refresh token available. Please re-authorize.");
   }
 
-  console.log("[Pinterest Ads] Token expired, refreshing...");
+  log("info", "token_refresh_starting");
   
   const credentials = btoa(`${appId}:${appSecret}`);
   
@@ -136,7 +181,7 @@ async function getValidAccessToken(
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error("[Pinterest Ads] Token refresh failed:", response.status, errorText);
+    log("error", "token_refresh_failed", { status: response.status, error: errorText });
     throw new Error(`Token refresh failed: ${response.status}. Please re-authorize Pinterest.`);
   }
 
@@ -153,7 +198,7 @@ async function getValidAccessToken(
     })
     .eq("id", tokenData.id);
 
-  console.log("[Pinterest Ads] Token refreshed successfully");
+  log("info", "token_refresh_success", { latency_ms: Date.now() - startTime });
   return newTokens.access_token;
 }
 
@@ -179,6 +224,7 @@ async function getCachedData(
     .single();
 
   if (error || !data) {
+    log("info", "cache_miss", { cache_key: cacheKey.substring(0, 20) + "..." });
     return { data: null, isStale: false };
   }
 
@@ -186,11 +232,17 @@ async function getCachedData(
   const expiresAt = new Date(data.expires_at);
   const isStale = now > expiresAt;
 
+  log("info", "cache_hit", { 
+    is_stale: isStale, 
+    age_minutes: Math.round((now.getTime() - new Date(data.created_at).getTime()) / 60000) 
+  });
+
   return {
     data: {
       ...data.payload as AdsReportingResponse,
       cached_at: data.created_at,
       is_cached: true,
+      cache_hit: true,
       stale: isStale,
     },
     isStale,
@@ -215,22 +267,24 @@ async function setCacheData(
       onConflict: "cache_key",
     });
 
-  console.log("[Pinterest Ads] Cache updated, expires:", expiresAt);
+  log("info", "cache_set", { expires_at: expiresAt });
 }
 
 // ============================================================================
-// PINTEREST API
+// PINTEREST API WITH RETRY LOGIC
 // ============================================================================
 
-function processRawMetrics(raw: Record<string, any>): ProcessedMetrics {
+function processRawMetrics(raw: Record<string, number>): ProcessedMetrics {
   const spendMicro = raw.SPEND_IN_MICRO_DOLLAR || 0;
-  const revenueMicro = raw.TOTAL_CHECKOUT_VALUE_IN_MICRO_DOLLAR || 0;  // Updated
+  const revenueMicro = raw.TOTAL_CHECKOUT_VALUE_IN_MICRO_DOLLAR || 0;
   const impressions = raw.TOTAL_IMPRESSION || 0;
   const clicks = raw.TOTAL_CLICKTHROUGH || 0;
   const checkouts = raw.TOTAL_CHECKOUT || 0;
-  const addToCarts = raw.TOTAL_CLICK_ADD_TO_CART || 0;  // Updated
+  const addToCarts = raw.TOTAL_CLICK_ADD_TO_CART || 0;
   const conversions = raw.TOTAL_CONVERSIONS || 0;
 
+  // Pinterest returns USD micro-dollars - we assume EUR≈USD for now
+  // TODO: Add proper currency conversion if needed
   const spend = spendMicro / 1_000_000;
   const revenue = revenueMicro / 1_000_000;
 
@@ -247,7 +301,57 @@ function processRawMetrics(raw: Record<string, any>): ProcessedMetrics {
     cpa: checkouts > 0 ? Math.round((spend / checkouts) * 100) / 100 : 0,
     add_to_carts: addToCarts,
     conversions,
+    conversion_rate: clicks > 0 ? Math.round((checkouts / clicks) * 10000) / 100 : 0,
+    add_to_cart_rate: clicks > 0 ? Math.round((addToCarts / clicks) * 10000) / 100 : 0,
   };
+}
+
+async function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  retries = MAX_RETRIES
+): Promise<Response> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt < retries; attempt++) {
+    const response = await fetch(url, options);
+    
+    if (response.ok) {
+      return response;
+    }
+    
+    if (response.status === 429) {
+      // Rate limited - exponential backoff
+      const backoffMs = INITIAL_BACKOFF_MS * Math.pow(2, attempt);
+      const jitter = Math.random() * 500;
+      const waitMs = backoffMs + jitter;
+      
+      log("warn", "rate_limited", { 
+        attempt: attempt + 1, 
+        max_retries: retries, 
+        backoff_ms: Math.round(waitMs) 
+      });
+      
+      if (attempt < retries - 1) {
+        await sleep(waitMs);
+        continue;
+      }
+      
+      throw new Error("RATE_LIMITED");
+    }
+    
+    // Other error - don't retry
+    const errorText = await response.text();
+    lastError = new Error(`Pinterest API error: ${response.status} - ${errorText}`);
+    log("error", "api_error", { status: response.status, error: errorText.substring(0, 200) });
+    throw lastError;
+  }
+  
+  throw lastError || new Error("Max retries exceeded");
 }
 
 async function fetchCampaignIds(
@@ -257,19 +361,12 @@ async function fetchCampaignIds(
   const url = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/campaigns`);
   url.searchParams.set("page_size", "100");
 
-  const response = await fetch(url.toString(), {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
+  const response = await fetchWithRetry(url.toString(), {
+    headers: { Authorization: `Bearer ${accessToken}` },
   });
 
-  if (!response.ok) {
-    console.error("[Pinterest Ads] Failed to fetch campaigns:", response.status);
-    return [];
-  }
-
   const data = await response.json();
-  return (data.items || []).map((c: any) => c.id);
+  return (data.items || []).map((c: { id: string }) => c.id);
 }
 
 async function fetchAdGroupIds(
@@ -279,27 +376,29 @@ async function fetchAdGroupIds(
   const url = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/ad_groups`);
   url.searchParams.set("page_size", "100");
 
-  const response = await fetch(url.toString(), {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
+  const response = await fetchWithRetry(url.toString(), {
+    headers: { Authorization: `Bearer ${accessToken}` },
   });
 
-  if (!response.ok) {
-    console.error("[Pinterest Ads] Failed to fetch ad groups:", response.status);
-    return [];
-  }
-
   const data = await response.json();
-  return (data.items || []).map((ag: any) => ag.id);
+  return (data.items || []).map((ag: { id: string }) => ag.id);
+}
+
+function isWithinAttributionLag(dateStr: string): boolean {
+  const date = new Date(dateStr + "T00:00:00Z");
+  const now = new Date();
+  const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+  return diffDays <= ATTRIBUTION_LAG_DAYS;
 }
 
 async function fetchPinterestAnalytics(
   accessToken: string,
   adAccountId: string,
   params: AdsReportingRequest
-): Promise<AdsReportingResponse> {
-  // Different endpoints for different levels
+): Promise<{ response: AdsReportingResponse; latencyMs: number }> {
+  const startTime = Date.now();
+  
+  // Build URL based on level
   let url: URL;
   
   if (params.level === "CAMPAIGN") {
@@ -327,27 +426,25 @@ async function fetchPinterestAnalytics(
   url.searchParams.set("view_window_days", params.view_window_days.toString());
   url.searchParams.set("columns", METRICS_COLUMNS);
 
-  console.log("[Pinterest Ads] Fetching:", url.toString());
+  log("info", "api_request_start", { 
+    level: params.level, 
+    date_range: `${params.start_date} to ${params.end_date}` 
+  });
 
-  const response = await fetch(url.toString(), {
+  const response = await fetchWithRetry(url.toString(), {
     headers: {
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
     },
   });
 
-  if (response.status === 429) {
-    throw new Error("RATE_LIMITED");
-  }
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error("[Pinterest Ads] API error:", response.status, errorText);
-    throw new Error(`Pinterest API error: ${response.status}`);
-  }
-
   const rawData = await response.json();
-  console.log("[Pinterest Ads] Raw response entries:", rawData.length || 0);
+  const latencyMs = Date.now() - startTime;
+  
+  log("info", "api_request_complete", { 
+    entries: rawData.length || 0, 
+    latency_ms: latencyMs 
+  });
 
   // Process timeseries
   const timeseries: TimeseriesEntry[] = [];
@@ -361,16 +458,23 @@ async function fetchPinterestAnalytics(
     TOTAL_CHECKOUT_VALUE_IN_MICRO_DOLLAR: 0,
   };
 
-  // Pinterest returns array of daily entries
+  let hasAnyAttributionLag = false;
+
   for (const entry of rawData) {
     const date = entry.DATE;
     const metrics = processRawMetrics(entry);
+    const hasLag = isWithinAttributionLag(date);
+    
+    if (hasLag) hasAnyAttributionLag = true;
     
     if (date) {
-      timeseries.push({ date, ...metrics });
+      timeseries.push({ 
+        date, 
+        ...metrics,
+        has_attribution_lag: hasLag,
+      });
     }
 
-    // Accumulate totals
     for (const key of Object.keys(totalsAccum)) {
       totalsAccum[key] += entry[key] || 0;
     }
@@ -380,22 +484,31 @@ async function fetchPinterestAnalytics(
   timeseries.sort((a, b) => a.date.localeCompare(b.date));
 
   const totals = processRawMetrics(totalsAccum);
+  const now = new Date().toISOString();
 
   return {
-    range: {
-      start: params.start_date,
-      end: params.end_date,
-      granularity: params.granularity,
+    response: {
+      range: {
+        start: params.start_date,
+        end: params.end_date,
+        granularity: params.granularity,
+      },
+      level: params.level,
+      attribution: {
+        click_window: params.click_window_days,
+        view_window: params.view_window_days,
+      },
+      totals,
+      timeseries,
+      cached_at: null,
+      is_cached: false,
+      cache_hit: false,
+      fetched_at: now,
+      api_latency_ms: latencyMs,
+      attribution_lag_warning: hasAnyAttributionLag,
+      currency: "EUR", // Assumed - Pinterest returns USD, we display as EUR
     },
-    level: params.level,
-    attribution: {
-      click_window: params.click_window_days,
-      view_window: params.view_window_days,
-    },
-    totals,
-    timeseries,
-    cached_at: null,
-    is_cached: false,
+    latencyMs,
   };
 }
 
@@ -404,12 +517,14 @@ async function fetchPinterestAnalytics(
 // ============================================================================
 
 Deno.serve(async (req: Request) => {
+  const requestStart = Date.now();
+  
   // CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
-  console.log("[Pinterest Ads Reporting] Request received");
+  log("info", "request_received", { method: req.method });
 
   try {
     const SUPABASE_URL = requireEnvVar("SUPABASE_URL");
@@ -420,24 +535,28 @@ Deno.serve(async (req: Request) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Parse query params
+    // Parse query params with UTC date handling
     const url = new URL(req.url);
     const today = new Date();
+    const todayUTC = today.toISOString().split("T")[0];
+    
     const defaultStart = new Date(today);
-    defaultStart.setDate(defaultStart.getDate() - 14);
+    defaultStart.setUTCDate(defaultStart.getUTCDate() - 14);
+    const defaultStartUTC = defaultStart.toISOString().split("T")[0];
 
     const params: AdsReportingRequest = {
-      start_date: url.searchParams.get("start_date") || defaultStart.toISOString().split("T")[0],
-      end_date: url.searchParams.get("end_date") || today.toISOString().split("T")[0],
+      start_date: url.searchParams.get("start_date") || defaultStartUTC,
+      end_date: url.searchParams.get("end_date") || todayUTC,
       granularity: (url.searchParams.get("granularity") || "DAY") as AdsReportingRequest["granularity"],
       level: (url.searchParams.get("level") || "ACCOUNT") as AdsReportingRequest["level"],
       click_window_days: parseInt(url.searchParams.get("click_window_days") || "30"),
       view_window_days: parseInt(url.searchParams.get("view_window_days") || "1"),
+      force_refresh: url.searchParams.get("force_refresh") === "true",
     };
 
     // Validate date range (max 90 days)
-    const startDate = new Date(params.start_date);
-    const endDate = new Date(params.end_date);
+    const startDate = new Date(params.start_date + "T00:00:00Z");
+    const endDate = new Date(params.end_date + "T00:00:00Z");
     const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
     
     if (daysDiff > 90) {
@@ -448,22 +567,33 @@ Deno.serve(async (req: Request) => {
       return createErrorResponse("Start date must be before end date", 400);
     }
 
-    console.log("[Pinterest Ads] Params:", params);
+    log("info", "params_parsed", { 
+      ...params, 
+      days_range: daysDiff 
+    });
 
-    // Check cache first
+    // Check cache first (unless force_refresh)
     const cacheKey = generateCacheKey(PINTEREST_AD_ACCOUNT_ID, params);
-    const { data: cachedData, isStale } = await getCachedData(supabase, cacheKey);
+    let cachedData: AdsReportingResponse | null = null;
+    let isStale = false;
 
-    if (cachedData && !isStale) {
-      console.log("[Pinterest Ads] Returning fresh cached data");
-      return createSuccessResponse(cachedData);
+    if (!params.force_refresh) {
+      const cacheResult = await getCachedData(supabase, cacheKey);
+      cachedData = cacheResult.data;
+      isStale = cacheResult.isStale;
+
+      if (cachedData && !isStale) {
+        log("info", "returning_cached", { 
+          total_latency_ms: Date.now() - requestStart 
+        });
+        return createSuccessResponse(cachedData);
+      }
     }
 
     // Need fresh data - get access token
     if (!PINTEREST_APP_ID || !PINTEREST_APP_SECRET) {
-      // If we have stale cache, return it
       if (cachedData) {
-        console.log("[Pinterest Ads] No OAuth credentials, returning stale cache");
+        log("warn", "no_oauth_returning_stale");
         return createSuccessResponse({
           ...cachedData,
           stale: true,
@@ -478,7 +608,7 @@ Deno.serve(async (req: Request) => {
       accessToken = await getValidAccessToken(supabase, PINTEREST_APP_ID, PINTEREST_APP_SECRET);
     } catch (tokenError) {
       if (cachedData) {
-        console.log("[Pinterest Ads] Token error, returning stale cache");
+        log("warn", "token_error_returning_stale", { error: String(tokenError) });
         return createSuccessResponse({
           ...cachedData,
           stale: true,
@@ -491,12 +621,13 @@ Deno.serve(async (req: Request) => {
     // Fetch from Pinterest
     let freshData: AdsReportingResponse;
     try {
-      freshData = await fetchPinterestAnalytics(accessToken, PINTEREST_AD_ACCOUNT_ID, params);
+      const result = await fetchPinterestAnalytics(accessToken, PINTEREST_AD_ACCOUNT_ID, params);
+      freshData = result.response;
     } catch (apiError) {
       const errorMsg = String(apiError);
       
       if (errorMsg.includes("RATE_LIMITED") && cachedData) {
-        console.log("[Pinterest Ads] Rate limited, returning stale cache");
+        log("warn", "rate_limited_returning_stale");
         return createSuccessResponse({
           ...cachedData,
           rate_limited: true,
@@ -505,7 +636,7 @@ Deno.serve(async (req: Request) => {
       }
 
       if (cachedData) {
-        console.log("[Pinterest Ads] API error, returning stale cache");
+        log("warn", "api_error_returning_stale", { error: errorMsg });
         return createSuccessResponse({
           ...cachedData,
           stale: true,
@@ -519,11 +650,20 @@ Deno.serve(async (req: Request) => {
     // Cache the fresh data
     await setCacheData(supabase, cacheKey, freshData);
 
-    console.log("[Pinterest Ads] Returning fresh data, totals:", freshData.totals);
+    log("info", "returning_fresh", { 
+      total_latency_ms: Date.now() - requestStart,
+      spend: freshData.totals.spend,
+      revenue: freshData.totals.revenue,
+      roas: freshData.totals.roas,
+    });
+    
     return createSuccessResponse(freshData);
 
   } catch (error) {
-    console.error("[Pinterest Ads Reporting] Error:", error);
+    log("error", "request_failed", { 
+      error: error instanceof Error ? error.message : String(error),
+      total_latency_ms: Date.now() - requestStart,
+    });
     return createErrorResponse(
       error instanceof Error ? error.message : "Internal server error",
       500
