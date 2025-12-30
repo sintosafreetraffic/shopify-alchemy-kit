@@ -798,47 +798,66 @@ export const PinterestEQSCard = () => {
                 </span>
               </div>
 
-              {/* Coverage Summary - All Components */}
+              {/* Coverage Summary - All Components from quality_components */}
               <div className="space-y-2 mb-4">
                 {(() => {
-                  // Build all component coverage from quality_components for complete view
                   const components = snap.quality_components || {};
                   
-                  // Define display order and labels
-                  const componentOrder = [
-                    { key: "email", label: "Email", fallback: snap.coverage_email },
-                    { key: "click_id", label: "Click ID (EPIK)", fallback: snap.coverage_click_id },
-                    { key: "order_id", label: "Order ID", fallback: snap.coverage_order_id },
-                    { key: "external_id", label: "External ID", fallback: snap.coverage_external_id },
-                    { key: "ip_address", label: "IP Address", fallback: null },
-                    { key: "user_agent", label: "User Agent", fallback: null },
-                    { key: "source_url", label: "Source URL", fallback: null },
-                    { key: "order_value", label: "Order Value", fallback: null },
-                  ];
+                  // Display order for components
+                  const componentLabels: Record<string, string> = {
+                    email: "Email",
+                    click_id: "Click ID (EPIK)",
+                    order_id: "Order ID",
+                    external_id: "External ID",
+                    ip_address: "IP Address",
+                    user_agent: "User Agent",
+                    source_url: "Source URL",
+                    order_value: "Order Value",
+                    external_event_id: "External Event ID",
+                  };
                   
-                  return componentOrder.map(({ key, label, fallback }) => {
+                  // Sort by priority (high priority first)
+                  const priorityOrder: Record<string, number> = {
+                    email: 0,
+                    click_id: 1,
+                    order_id: 2,
+                    external_id: 3,
+                    order_value: 4,
+                    ip_address: 5,
+                    user_agent: 6,
+                    source_url: 7,
+                    external_event_id: 8,
+                  };
+                  
+                  const sortedKeys = Object.keys(components).sort((a, b) => 
+                    (priorityOrder[a] ?? 99) - (priorityOrder[b] ?? 99)
+                  );
+                  
+                  if (sortedKeys.length === 0) {
+                    return (
+                      <p className="text-xs text-muted-foreground italic">
+                        No component data available. Click Sync Now to fetch latest EQS.
+                      </p>
+                    );
+                  }
+                  
+                  return sortedKeys.map((key) => {
                     const compData = components[key];
-                    let avgCoverage: number | null = fallback;
-                    let eventCount = 0;
-                    let issueCount = 0;
+                    const label = componentLabels[key] || key;
                     
-                    if (compData) {
-                      const entries = Object.entries(compData);
-                      eventCount = entries.length;
-                      const coverages = entries
-                        .filter(([, data]: [string, any]) => typeof data.coverage === "number")
-                        .map(([, data]: [string, any]) => data.coverage);
-                      
-                      if (coverages.length > 0) {
-                        avgCoverage = Math.round((coverages.reduce((a, b) => a + b, 0) / coverages.length) * 100) / 100;
-                      }
-                      
-                      issueCount = entries.reduce((count, [, data]: [string, any]) => 
-                        count + ((data.issues || []).length), 0);
-                    }
+                    // Calculate coverage dynamically from event types
+                    const entries = Object.entries(compData);
+                    const eventCount = entries.length;
+                    const coverages = entries
+                      .filter(([, data]: [string, any]) => typeof data.coverage === "number")
+                      .map(([, data]: [string, any]) => data.coverage);
                     
-                    // Skip components with no data
-                    if (avgCoverage === null && !compData) return null;
+                    const avgCoverage = coverages.length > 0
+                      ? Math.round((coverages.reduce((a, b) => a + b, 0) / coverages.length) * 100) / 100
+                      : null;
+                    
+                    const issueCount = entries.reduce((count, [, data]: [string, any]) => 
+                      count + ((data.issues || []).length), 0);
                     
                     const displayValue = avgCoverage !== null ? Math.round(avgCoverage) : null;
                     const progressValue = displayValue ?? 0;
@@ -864,11 +883,9 @@ export const PinterestEQSCard = () => {
                           <span className="text-muted-foreground flex items-center gap-1.5">
                             {statusIcon}
                             {label}
-                            {eventCount > 0 && (
-                              <span className="text-muted-foreground/60">
-                                ({eventCount} event{eventCount !== 1 ? "s" : ""})
-                              </span>
-                            )}
+                            <span className="text-muted-foreground/60">
+                              ({eventCount} event{eventCount !== 1 ? "s" : ""})
+                            </span>
                             {issueCount > 0 && (
                               <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800">
                                 {issueCount} issue{issueCount !== 1 ? "s" : ""}
