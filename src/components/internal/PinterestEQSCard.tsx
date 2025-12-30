@@ -40,6 +40,7 @@ import {
   Wrench,
   Zap,
 } from "lucide-react";
+import { PinterestEQSTrends } from "./PinterestEQSTrends";
 
 // ============================================================================
 // TYPES
@@ -984,6 +985,9 @@ export const PinterestEQSCard = () => {
           );
         })}
       </Tabs>
+
+      {/* EQS Trends */}
+      <PinterestEQSTrends lookbackPeriod={lookbackPeriod} />
 
       {/* Footer */}
       <div className="border-t border-border pt-3 mt-4">

@@ -71,6 +71,40 @@ function debugLog(...args: any[]): void {
   }
 }
 
+// ============================================================================
+// PINTEREST EVENT VALIDATION LOGGING
+// Logs validation events to console for debugging EQS discrepancies
+// ============================================================================
+function logPinterestEventValidation(
+  eventType: string, 
+  status: 'sent' | 'blocked' | 'queued', 
+  details: Record<string, any>
+): void {
+  if (typeof window === 'undefined') return;
+  
+  const logEntry = {
+    timestamp: new Date().toISOString(),
+    event_type: eventType,
+    status,
+    ...details,
+  };
+  
+  // Always log validation events for debugging
+  console.log('[Pinterest Validation]', logEntry);
+  
+  // Store in sessionStorage for debugging (keep last 50 events)
+  try {
+    const key = 'pinterest_event_log';
+    const existing = JSON.parse(sessionStorage.getItem(key) || '[]');
+    existing.push(logEntry);
+    // Keep only last 50 entries
+    const trimmed = existing.slice(-50);
+    sessionStorage.setItem(key, JSON.stringify(trimmed));
+  } catch {
+    // Ignore storage errors
+  }
+}
+
 // Initialize queue if needed
 function ensureQueue(): QueuedPinterestEvent[] {
   if (typeof window === 'undefined') return [];
@@ -413,6 +447,19 @@ export async function trackAddToCart(
   currency: string = 'USD',
   quantity: number = 1
 ): Promise<void> {
+  // VALIDATION GUARD: Ensure value is always a valid positive number
+  // This prevents sending events with missing/invalid order values
+  const sanitizedValue = (typeof value === 'number' && !isNaN(value) && value > 0) 
+    ? value 
+    : null;
+  
+  if (sanitizedValue === null) {
+    console.warn('[Pinterest] AddToCart blocked - invalid value:', { value, productId, variantId });
+    // Log to help debug any issues
+    logPinterestEventValidation('addtocart', 'blocked', { reason: 'invalid_value', value, productId });
+    return; // Don't fire event without valid value
+  }
+
   const hashedExternalId = await getHashedExternalId();
   const storedEmailHash = getStoredEmailHash();
   const clickId = getEpik();
@@ -421,7 +468,7 @@ export async function trackAddToCart(
     event_id: generateEventId(),
     event_source_url: window.location.href, // Required for 100% Source URL coverage
     product_id: extractProductId(productId),
-    value: value,
+    value: sanitizedValue,
     order_quantity: quantity,
     currency: currency,
   };
@@ -447,6 +494,8 @@ export async function trackAddToCart(
       em: storedEmailHash ? '[set]' : '[not set]',
       click_id: clickId ? '[set]' : '[not set]'
     });
+    // Log successful event for monitoring
+    logPinterestEventValidation('addtocart', 'sent', { value: sanitizedValue, productId });
   } else {
     debugLog('AddToCart queued or failed', data);
   }
