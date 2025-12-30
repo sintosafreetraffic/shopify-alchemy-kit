@@ -3,7 +3,7 @@
  * Internal admin page for tracking quiz reveal + checkout + Pinterest purchase + client tracking analytics
  * Protected: Only accessible to authenticated users with admin role
  */
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -49,6 +49,7 @@ import {
   Package,
   Fingerprint,
   Target,
+  Percent,
 } from "lucide-react";
 import { 
   LineChart, 
@@ -77,6 +78,7 @@ import PhasesTab from "@/components/internal/PhasesTab";
 import ProductionMonitoringTab from "@/components/internal/ProductionMonitoringTab";
 import WeeklyReviewTab from "@/components/internal/WeeklyReviewTab";
 import PinterestSourceTruthTab from "@/components/internal/PinterestSourceTruthTab";
+import { useAdsReporting, DATE_PRESETS } from "@/hooks/useAdsReporting";
 
 interface AnalyticsStats {
   summary: {
@@ -229,6 +231,36 @@ const QuizRevealTracking = () => {
   const [authChecking, setAuthChecking] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+
+  // Ads reporting hook for ROAS calculation
+  const adsReporting = useAdsReporting({ autoFetch: false });
+  
+  // Sync ads reporting with the selected days timeframe
+  useEffect(() => {
+    if (!isAdmin) return;
+    
+    const daysNum = parseInt(days);
+    // Find the matching preset or use the closest one
+    const matchingPreset = DATE_PRESETS.find(p => p.days === daysNum) 
+      || DATE_PRESETS.find(p => p.days >= daysNum) 
+      || DATE_PRESETS[DATE_PRESETS.length - 1];
+    
+    adsReporting.setSelectedPreset(matchingPreset);
+  }, [days, isAdmin]);
+  
+  // Fetch ads data when preset changes
+  useEffect(() => {
+    if (isAdmin && adsReporting.selectedPreset) {
+      adsReporting.refetch();
+    }
+  }, [adsReporting.selectedPreset, isAdmin]);
+
+  // Calculate ROAS from ads data
+  const overviewRoas = useMemo(() => {
+    if (!adsReporting.data?.totals) return null;
+    const { spend, revenue, roas } = adsReporting.data.totals;
+    return { spend, revenue, roas };
+  }, [adsReporting.data?.totals]);
 
   // Refresh client-side provider statuses
   const refreshProviderStatuses = useCallback(() => {
@@ -831,6 +863,62 @@ const QuizRevealTracking = () => {
                   <div>
                     <p className="text-2xl font-bold">${pinterestStats?.totalValue.toFixed(0) || 0}</p>
                     <p className="text-xs text-muted-foreground">Revenue Tracked</p>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Ad Spend */}
+              <Card className="p-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-900/50 flex items-center justify-center">
+                    <Target className="w-5 h-5 text-red-600 dark:text-red-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">
+                      {adsReporting.loading ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : overviewRoas ? (
+                        `€${overviewRoas.spend.toFixed(0)}`
+                      ) : '—'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Ad Spend</p>
+                  </div>
+                </div>
+              </Card>
+
+              {/* ROAS */}
+              <Card className="p-5">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                    overviewRoas && overviewRoas.roas >= 2 
+                      ? 'bg-green-100 dark:bg-green-900/50' 
+                      : overviewRoas && overviewRoas.roas >= 1
+                        ? 'bg-yellow-100 dark:bg-yellow-900/50'
+                        : 'bg-gray-100 dark:bg-gray-900/50'
+                  }`}>
+                    <Percent className={`w-5 h-5 ${
+                      overviewRoas && overviewRoas.roas >= 2 
+                        ? 'text-green-600 dark:text-green-400' 
+                        : overviewRoas && overviewRoas.roas >= 1
+                          ? 'text-yellow-600 dark:text-yellow-400'
+                          : 'text-gray-600 dark:text-gray-400'
+                    }`} />
+                  </div>
+                  <div>
+                    <p className={`text-2xl font-bold ${
+                      overviewRoas && overviewRoas.roas >= 2 
+                        ? 'text-green-600 dark:text-green-400' 
+                        : overviewRoas && overviewRoas.roas >= 1
+                          ? 'text-yellow-600 dark:text-yellow-400'
+                          : ''
+                    }`}>
+                      {adsReporting.loading ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : overviewRoas ? (
+                        `${overviewRoas.roas.toFixed(2)}x`
+                      ) : '—'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">ROAS</p>
                   </div>
                 </div>
               </Card>
