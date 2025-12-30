@@ -180,9 +180,14 @@ export default function ReturnPolicy() {
               <p className="text-muted-foreground">
                 Email: <a href="mailto:support@risebynight.com" className="text-primary hover:underline">support@risebynight.com</a>
               </p>
-              <p className="text-muted-foreground">
-                Address: Loofdakstraat 10, 3036JN Rotterdam, Netherlands
-              </p>
+              <div className="text-muted-foreground space-y-1">
+                <p className="font-medium">Return Address:</p>
+                <p>Recipient: win-winfulfillment CHN SNG092711</p>
+                <p>No. 160 Nijiayan Road, Jiangbei District</p>
+                <p>Ningbo, Zhejiang 315000</p>
+                <p>China</p>
+                <p>Phone: +86 17758231352</p>
+              </div>
               <p className="text-sm text-muted-foreground mt-4">
                 Response time: Within 24 hours on business days
               </p>
