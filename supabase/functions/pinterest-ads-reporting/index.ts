@@ -65,6 +65,18 @@ interface TimeseriesEntry extends ProcessedMetrics {
   has_attribution_lag: boolean;
 }
 
+// Entity breakdown for individual campaigns/ad groups/ads
+interface EntityMetrics extends ProcessedMetrics {
+  id: string;
+  name: string;
+  entity_type: "campaign" | "ad_group" | "ad";
+  status?: string;
+  // Parsed from naming conventions
+  creative_category?: string; // UGC, Lifestyle, Testimonial, Before/After
+  creative_format?: string;   // Static, Video
+  product_focus?: string;
+}
+
 interface AdsReportingResponse {
   range: {
     start: string;
@@ -78,6 +90,7 @@ interface AdsReportingResponse {
   };
   totals: ProcessedMetrics;
   timeseries: TimeseriesEntry[];
+  entities?: EntityMetrics[]; // Individual entity breakdown
   cached_at: string | null;
   is_cached: boolean;
   rate_limited?: boolean;
@@ -354,10 +367,54 @@ async function fetchWithRetry(
   throw lastError || new Error("Max retries exceeded");
 }
 
-async function fetchCampaignIds(
+// ============================================================================
+// NAMING CONVENTION PARSER
+// ============================================================================
+
+interface ParsedCreativeInfo {
+  creative_category?: string;
+  creative_format?: string;
+  product_focus?: string;
+}
+
+function parseCreativeFromName(name: string): ParsedCreativeInfo {
+  const nameLower = name.toLowerCase();
+  const result: ParsedCreativeInfo = {};
+  
+  // Creative category detection
+  if (nameLower.includes('ugc')) result.creative_category = 'UGC';
+  else if (nameLower.includes('lifestyle')) result.creative_category = 'Lifestyle';
+  else if (nameLower.includes('testimonial')) result.creative_category = 'Testimonial';
+  else if (nameLower.includes('before') && nameLower.includes('after')) result.creative_category = 'Before/After';
+  else if (nameLower.includes('b/a') || nameLower.includes('b&a')) result.creative_category = 'Before/After';
+  else if (nameLower.includes('product')) result.creative_category = 'Product';
+  else if (nameLower.includes('educational') || nameLower.includes('edu')) result.creative_category = 'Educational';
+  
+  // Format detection
+  if (nameLower.includes('video') || nameLower.includes('vid')) result.creative_format = 'Video';
+  else if (nameLower.includes('static') || nameLower.includes('image') || nameLower.includes('img')) result.creative_format = 'Static';
+  else if (nameLower.includes('carousel')) result.creative_format = 'Carousel';
+  else if (nameLower.includes('gif')) result.creative_format = 'GIF';
+  
+  // Product focus detection
+  if (nameLower.includes('pillow')) result.product_focus = 'Pillow';
+  else if (nameLower.includes('mattress')) result.product_focus = 'Mattress';
+  else if (nameLower.includes('topper')) result.product_focus = 'Topper';
+  else if (nameLower.includes('bundle')) result.product_focus = 'Bundle';
+  
+  return result;
+}
+
+interface EntityInfo {
+  id: string;
+  name: string;
+  status?: string;
+}
+
+async function fetchCampaigns(
   accessToken: string,
   adAccountId: string
-): Promise<string[]> {
+): Promise<EntityInfo[]> {
   const url = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/campaigns`);
   url.searchParams.set("page_size", "100");
 
@@ -366,13 +423,17 @@ async function fetchCampaignIds(
   });
 
   const data = await response.json();
-  return (data.items || []).map((c: { id: string }) => c.id);
+  return (data.items || []).map((c: { id: string; name: string; status?: string }) => ({
+    id: c.id,
+    name: c.name || `Campaign ${c.id}`,
+    status: c.status,
+  }));
 }
 
-async function fetchAdGroupIds(
+async function fetchAdGroups(
   accessToken: string,
   adAccountId: string
-): Promise<string[]> {
+): Promise<EntityInfo[]> {
   const url = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/ad_groups`);
   url.searchParams.set("page_size", "100");
 
@@ -381,13 +442,17 @@ async function fetchAdGroupIds(
   });
 
   const data = await response.json();
-  return (data.items || []).map((ag: { id: string }) => ag.id);
+  return (data.items || []).map((ag: { id: string; name: string; status?: string }) => ({
+    id: ag.id,
+    name: ag.name || `Ad Group ${ag.id}`,
+    status: ag.status,
+  }));
 }
 
-async function fetchAdIds(
+async function fetchAds(
   accessToken: string,
   adAccountId: string
-): Promise<string[]> {
+): Promise<EntityInfo[]> {
   const url = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/ads`);
   url.searchParams.set("page_size", "100");
 
@@ -396,7 +461,36 @@ async function fetchAdIds(
   });
 
   const data = await response.json();
-  return (data.items || []).map((ad: { id: string }) => ad.id);
+  return (data.items || []).map((ad: { id: string; name: string; status?: string }) => ({
+    id: ad.id,
+    name: ad.name || `Ad ${ad.id}`,
+    status: ad.status,
+  }));
+}
+
+// Legacy functions for backwards compatibility
+async function fetchCampaignIds(
+  accessToken: string,
+  adAccountId: string
+): Promise<string[]> {
+  const campaigns = await fetchCampaigns(accessToken, adAccountId);
+  return campaigns.map(c => c.id);
+}
+
+async function fetchAdGroupIds(
+  accessToken: string,
+  adAccountId: string
+): Promise<string[]> {
+  const adGroups = await fetchAdGroups(accessToken, adAccountId);
+  return adGroups.map(ag => ag.id);
+}
+
+async function fetchAdIds(
+  accessToken: string,
+  adAccountId: string
+): Promise<string[]> {
+  const ads = await fetchAds(accessToken, adAccountId);
+  return ads.map(ad => ad.id);
 }
 
 function isWithinAttributionLag(dateStr: string): boolean {
@@ -413,30 +507,38 @@ async function fetchPinterestAnalytics(
 ): Promise<{ response: AdsReportingResponse; latencyMs: number }> {
   const startTime = Date.now();
   
-  // Build URL based on level
+  // Build URL based on level and fetch entity info if needed
   let url: URL;
+  let entityInfoMap: Map<string, EntityInfo> = new Map();
+  let entityType: "campaign" | "ad_group" | "ad" | undefined;
   
   if (params.level === "CAMPAIGN") {
-    const campaignIds = await fetchCampaignIds(accessToken, adAccountId);
-    if (campaignIds.length === 0) {
+    const campaigns = await fetchCampaigns(accessToken, adAccountId);
+    if (campaigns.length === 0) {
       throw new Error("No campaigns found in this ad account");
     }
+    campaigns.forEach(c => entityInfoMap.set(c.id, c));
+    entityType = "campaign";
     url = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/campaigns/analytics`);
-    url.searchParams.set("campaign_ids", campaignIds.join(","));
+    url.searchParams.set("campaign_ids", campaigns.map(c => c.id).join(","));
   } else if (params.level === "AD_GROUP") {
-    const adGroupIds = await fetchAdGroupIds(accessToken, adAccountId);
-    if (adGroupIds.length === 0) {
+    const adGroups = await fetchAdGroups(accessToken, adAccountId);
+    if (adGroups.length === 0) {
       throw new Error("No ad groups found in this ad account");
     }
+    adGroups.forEach(ag => entityInfoMap.set(ag.id, ag));
+    entityType = "ad_group";
     url = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/ad_groups/analytics`);
-    url.searchParams.set("ad_group_ids", adGroupIds.join(","));
+    url.searchParams.set("ad_group_ids", adGroups.map(ag => ag.id).join(","));
   } else if (params.level === "PIN_PROMOTION") {
-    const adIds = await fetchAdIds(accessToken, adAccountId);
-    if (adIds.length === 0) {
+    const ads = await fetchAds(accessToken, adAccountId);
+    if (ads.length === 0) {
       throw new Error("No ads found in this ad account");
     }
+    ads.forEach(ad => entityInfoMap.set(ad.id, ad));
+    entityType = "ad";
     url = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/ads/analytics`);
-    url.searchParams.set("ad_ids", adIds.join(","));
+    url.searchParams.set("ad_ids", ads.map(ad => ad.id).join(","));
   } else {
     url = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/analytics`);
   }
@@ -450,7 +552,8 @@ async function fetchPinterestAnalytics(
 
   log("info", "api_request_start", { 
     level: params.level, 
-    date_range: `${params.start_date} to ${params.end_date}` 
+    date_range: `${params.start_date} to ${params.end_date}`,
+    entity_count: entityInfoMap.size || 1,
   });
 
   const response = await fetchWithRetry(url.toString(), {
@@ -468,7 +571,7 @@ async function fetchPinterestAnalytics(
     latency_ms: latencyMs 
   });
 
-  // Process timeseries
+  // Process timeseries (aggregated across all entities)
   const timeseries: TimeseriesEntry[] = [];
   const totalsAccum: Record<string, number> = {
     SPEND_IN_MICRO_DOLLAR: 0,
@@ -480,33 +583,111 @@ async function fetchPinterestAnalytics(
     TOTAL_CHECKOUT_VALUE_IN_MICRO_DOLLAR: 0,
   };
 
+  // Per-entity accumulators (for breakdown by entity)
+  const entityAccum: Map<string, Record<string, number>> = new Map();
+  
   let hasAnyAttributionLag = false;
+
+  // Aggregate by date for timeseries and by entity for breakdown
+  const dateAggregates: Map<string, Record<string, number>> = new Map();
 
   for (const entry of rawData) {
     const date = entry.DATE;
-    const metrics = processRawMetrics(entry);
-    const hasLag = isWithinAttributionLag(date);
+    const hasLag = date ? isWithinAttributionLag(date) : false;
     
     if (hasLag) hasAnyAttributionLag = true;
     
+    // Get entity ID from the entry (Pinterest returns CAMPAIGN_ID, AD_GROUP_ID, or AD_ID)
+    const entityId = entry.CAMPAIGN_ID || entry.AD_GROUP_ID || entry.AD_ID;
+    
+    // Aggregate for timeseries by date
     if (date) {
-      timeseries.push({ 
-        date, 
-        ...metrics,
-        has_attribution_lag: hasLag,
-      });
+      if (!dateAggregates.has(date)) {
+        dateAggregates.set(date, {
+          SPEND_IN_MICRO_DOLLAR: 0,
+          TOTAL_IMPRESSION: 0,
+          TOTAL_CLICKTHROUGH: 0,
+          TOTAL_CONVERSIONS: 0,
+          TOTAL_CHECKOUT: 0,
+          TOTAL_CLICK_ADD_TO_CART: 0,
+          TOTAL_CHECKOUT_VALUE_IN_MICRO_DOLLAR: 0,
+        });
+      }
+      const dateEntry = dateAggregates.get(date)!;
+      for (const key of Object.keys(dateEntry)) {
+        dateEntry[key] += entry[key] || 0;
+      }
+    }
+    
+    // Aggregate per entity (for entity breakdown)
+    if (entityId && entityType) {
+      if (!entityAccum.has(entityId)) {
+        entityAccum.set(entityId, {
+          SPEND_IN_MICRO_DOLLAR: 0,
+          TOTAL_IMPRESSION: 0,
+          TOTAL_CLICKTHROUGH: 0,
+          TOTAL_CONVERSIONS: 0,
+          TOTAL_CHECKOUT: 0,
+          TOTAL_CLICK_ADD_TO_CART: 0,
+          TOTAL_CHECKOUT_VALUE_IN_MICRO_DOLLAR: 0,
+        });
+      }
+      const entityEntry = entityAccum.get(entityId)!;
+      for (const key of Object.keys(entityEntry)) {
+        entityEntry[key] += entry[key] || 0;
+      }
     }
 
+    // Aggregate totals
     for (const key of Object.keys(totalsAccum)) {
       totalsAccum[key] += entry[key] || 0;
     }
   }
 
+  // Build timeseries from date aggregates
+  for (const [date, rawMetrics] of dateAggregates.entries()) {
+    const metrics = processRawMetrics(rawMetrics);
+    timeseries.push({
+      date,
+      ...metrics,
+      has_attribution_lag: isWithinAttributionLag(date),
+    });
+  }
+
   // Sort by date ascending
   timeseries.sort((a, b) => a.date.localeCompare(b.date));
 
+  // Build entities breakdown
+  const entities: EntityMetrics[] = [];
+  if (entityType) {
+    for (const [entityId, rawMetrics] of entityAccum.entries()) {
+      const entityInfo = entityInfoMap.get(entityId);
+      const name = entityInfo?.name || `Unknown ${entityId}`;
+      const creativeInfo = parseCreativeFromName(name);
+      const metrics = processRawMetrics(rawMetrics);
+      
+      entities.push({
+        id: entityId,
+        name,
+        entity_type: entityType,
+        status: entityInfo?.status,
+        ...metrics,
+        ...creativeInfo,
+      });
+    }
+    
+    // Sort entities by spend descending (highest spenders first)
+    entities.sort((a, b) => b.spend - a.spend);
+  }
+
   const totals = processRawMetrics(totalsAccum);
   const now = new Date().toISOString();
+
+  log("info", "analytics_processed", {
+    timeseries_entries: timeseries.length,
+    entities_count: entities.length,
+    total_spend: totals.spend,
+  });
 
   return {
     response: {
@@ -522,6 +703,7 @@ async function fetchPinterestAnalytics(
       },
       totals,
       timeseries,
+      entities: entities.length > 0 ? entities : undefined,
       cached_at: null,
       is_cached: false,
       cache_hit: false,

@@ -1,4 +1,4 @@
-import { useAdsReporting, Granularity, DatePreset } from "@/hooks/useAdsReporting";
+import { useAdsReporting, Granularity, DatePreset, EntityMetrics } from "@/hooks/useAdsReporting";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -604,7 +604,105 @@ export default function AdsReportingSection() {
               </div>
             )}
 
-            {/* Daily Table */}
+            {/* Entity Breakdown Table - Shows individual campaigns/ad groups/ads */}
+            {data.entities && data.entities.length > 0 && (
+              <Card className="bg-card/30 border-border/30 overflow-hidden">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-medium">
+                      {level === "CAMPAIGN" ? "Campaign" : level === "AD_GROUP" ? "Ad Group" : "Ad"} Performance
+                    </CardTitle>
+                    <Badge variant="outline" className="text-xs">
+                      {data.entities.length} {level === "CAMPAIGN" ? "campaigns" : level === "AD_GROUP" ? "ad groups" : "ads"}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="max-h-96 overflow-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/30">
+                          <TableHead className="text-xs font-medium min-w-[200px]">Name</TableHead>
+                          <TableHead className="text-xs font-medium">Type</TableHead>
+                          <TableHead className="text-xs font-medium">Format</TableHead>
+                          <TableHead className="text-xs font-medium text-right">Spend</TableHead>
+                          <TableHead className="text-xs font-medium text-right">Revenue</TableHead>
+                          <TableHead className="text-xs font-medium text-right">ROAS</TableHead>
+                          <TableHead className="text-xs font-medium text-right">Clicks</TableHead>
+                          <TableHead className="text-xs font-medium text-right">CTR</TableHead>
+                          <TableHead className="text-xs font-medium text-right">Checkouts</TableHead>
+                          <TableHead className="text-xs font-medium text-right">CPA</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {data.entities.map((entity) => (
+                          <TableRow 
+                            key={entity.id} 
+                            className="hover:bg-muted/20"
+                          >
+                            <TableCell className="text-xs font-medium">
+                              <div className="flex flex-col gap-0.5">
+                                <span className="truncate max-w-[200px]" title={entity.name}>
+                                  {entity.name}
+                                </span>
+                                {entity.status && entity.status !== "ACTIVE" && (
+                                  <Badge variant="outline" className="text-[10px] w-fit">
+                                    {entity.status}
+                                  </Badge>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-xs">
+                              {entity.creative_category ? (
+                                <Badge variant="secondary" className="text-[10px]">
+                                  {entity.creative_category}
+                                </Badge>
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-xs">
+                              {entity.creative_format ? (
+                                <Badge 
+                                  variant="outline" 
+                                  className={cn(
+                                    "text-[10px]",
+                                    entity.creative_format === "Video" && "border-purple-500/50 text-purple-500",
+                                    entity.creative_format === "Static" && "border-blue-500/50 text-blue-500"
+                                  )}
+                                >
+                                  {entity.creative_format}
+                                </Badge>
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-xs text-right">€{entity.spend.toFixed(2)}</TableCell>
+                            <TableCell className="text-xs text-right">€{entity.revenue.toFixed(2)}</TableCell>
+                            <TableCell className="text-xs text-right">
+                              <span className={cn(
+                                entity.roas >= 2 ? "text-green-500 font-medium" : 
+                                entity.roas >= 1.54 ? "text-yellow-500" : 
+                                entity.roas > 0 ? "text-red-500" : "text-muted-foreground"
+                              )}>
+                                {entity.roas.toFixed(2)}x
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-xs text-right">{entity.clicks.toLocaleString()}</TableCell>
+                            <TableCell className="text-xs text-right">{entity.ctr.toFixed(2)}%</TableCell>
+                            <TableCell className="text-xs text-right">{entity.checkouts}</TableCell>
+                            <TableCell className="text-xs text-right">
+                              {entity.checkouts > 0 ? `€${entity.cpa.toFixed(2)}` : "—"}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {chartData.length > 0 && (
               <Card className="bg-card/30 border-border/30 overflow-hidden">
                 <CardHeader className="pb-2">
