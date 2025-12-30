@@ -50,6 +50,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { AdsDecisionInsights } from "./AdsDecisionInsights";
 
 // ============================================================================
 // KPI CARD COMPONENT
@@ -432,8 +433,11 @@ export default function AdsReportingSection() {
               />
             </div>
 
-            {/* Conversion Warning */}
-            {data.totals.checkouts === 0 && (
+            {/* Decision Insights */}
+            <AdsDecisionInsights data={data} />
+
+            {/* Conversion Warning - only if no checkouts AND no insights already cover it */}
+            {data.totals.checkouts === 0 && data.totals.add_to_carts > 0 && (
               <Alert className="bg-muted/50 border-muted">
                 <Info className="h-4 w-4 text-muted-foreground" />
                 <AlertDescription className="text-sm text-muted-foreground">
