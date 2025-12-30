@@ -41,6 +41,7 @@ import {
   Zap,
 } from "lucide-react";
 import { PinterestEQSTrends } from "./PinterestEQSTrends";
+import { RealTimeEQS } from "./RealTimeEQS";
 
 // ============================================================================
 // TYPES
@@ -988,6 +989,11 @@ export const PinterestEQSCard = () => {
 
       {/* EQS Trends */}
       <PinterestEQSTrends lookbackPeriod={lookbackPeriod} />
+      
+      {/* Real-Time EQS from Your Data */}
+      <div className="border-t border-border pt-4 mt-4">
+        <RealTimeEQS />
+      </div>
 
       {/* Footer */}
       <div className="border-t border-border pt-3 mt-4">
