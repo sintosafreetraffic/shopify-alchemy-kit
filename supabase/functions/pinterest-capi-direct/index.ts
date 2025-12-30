@@ -56,6 +56,9 @@ interface PurchaseEventData {
   is_test?: boolean;
   // Context ID for external_id (raw, will be hashed)
   context_id?: string;
+  // Match signals from pinterest_context (for IP/UA coverage)
+  client_ip_address?: string;
+  client_user_agent?: string;
 }
 
 // ============================================================================
@@ -287,6 +290,18 @@ Deno.serve(async (req: Request): Promise<Response> => {
         console.log('[Pinterest CAPI Direct] external_id added from context_id');
       }
 
+      // Add IP address if available (from pinterest_context via consent-gated storage)
+      if (eventData.client_ip_address) {
+        userData.client_ip_address = eventData.client_ip_address;
+        console.log('[Pinterest CAPI Direct] client_ip_address added');
+      }
+
+      // Add User Agent if available (from pinterest_context via consent-gated storage)
+      if (eventData.client_user_agent) {
+        userData.client_user_agent = eventData.client_user_agent;
+        console.log('[Pinterest CAPI Direct] client_user_agent added');
+      }
+
       // event_id already generated at start of function for idempotency
 
       // Build custom data
@@ -308,6 +323,19 @@ Deno.serve(async (req: Request): Promise<Response> => {
         customData.num_items = eventData.products.reduce((sum, p) => sum + p.quantity, 0);
       }
 
+      // Build event_source_url - ensure it's a valid URL format
+      // Pinterest requires a proper URL, not just a path
+      let eventSourceUrl: string | undefined;
+      if (eventData.landing_page) {
+        // If it's already a full URL, use it
+        if (eventData.landing_page.startsWith('http://') || eventData.landing_page.startsWith('https://')) {
+          eventSourceUrl = eventData.landing_page;
+        } else {
+          // If it's a path, prepend the domain
+          eventSourceUrl = `https://risebynight.com${eventData.landing_page.startsWith('/') ? '' : '/'}${eventData.landing_page}`;
+        }
+      }
+
       // Build the conversion event payload
       const conversionPayload = {
         data: [
@@ -318,7 +346,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
             event_id: eventId,
             user_data: userData,
             custom_data: customData,
-            ...(eventData.landing_page && { event_source_url: eventData.landing_page }),
+            ...(eventSourceUrl && { event_source_url: eventSourceUrl }),
           },
         ],
       };
@@ -328,6 +356,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
         event_id: eventId,
         has_click_id: !!userData.click_id,
         has_email_hash: !!userData.em,
+        has_ip: !!userData.client_ip_address,
+        has_ua: !!userData.client_user_agent,
+        has_source_url: !!eventSourceUrl,
         value: customData.value,
       });
 

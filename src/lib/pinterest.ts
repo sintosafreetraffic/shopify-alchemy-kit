@@ -379,6 +379,7 @@ export async function trackPageVisit(productId?: string): Promise<void> {
   
   const data: Record<string, any> = {
     event_id: generateEventId(),
+    event_source_url: window.location.href, // Required for 100% Source URL coverage
   };
   
   if (hashedExternalId) {
@@ -418,6 +419,7 @@ export async function trackAddToCart(
   
   const data: Record<string, any> = {
     event_id: generateEventId(),
+    event_source_url: window.location.href, // Required for 100% Source URL coverage
     product_id: extractProductId(productId),
     value: value,
     order_quantity: quantity,
@@ -505,6 +507,7 @@ export async function trackInitiateCheckout(items: Array<{ variantId: string; qu
     // Build payload - intentionally excludes value/currency to prevent revenue misattribution
     const data: Record<string, any> = {
       event_id: generateEventId(),
+      event_source_url: window.location.href, // Required for 100% Source URL coverage
       order_quantity: totalQuantity,
     };
     
@@ -568,6 +571,7 @@ export async function trackLead(leadType: string = 'Newsletter', email?: string)
   
   const data: Record<string, any> = {
     event_id: generateEventId(),
+    event_source_url: window.location.href, // Required for 100% Source URL coverage
     lead_type: leadType,
   };
   
@@ -606,6 +610,7 @@ export async function trackSignup(): Promise<void> {
   
   const data: Record<string, any> = {
     event_id: generateEventId(),
+    event_source_url: window.location.href, // Required for 100% Source URL coverage
   };
   
   if (hashedExternalId) {
