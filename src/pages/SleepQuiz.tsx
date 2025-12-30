@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { useCartStore } from "@/stores/cartStore";
 import { fetchProducts, ShopifyProduct } from "@/lib/shopify";
 import { trackQuizStarted } from "@/lib/klaviyo";
-import { setEnhancedMatch } from "@/lib/pinterest";
+import { setEnhancedMatch, trackLead } from "@/lib/pinterest";
 import { supabase } from "@/integrations/supabase/client";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import {
@@ -414,8 +414,9 @@ const SleepQuiz = () => {
         }
       }
 
-      // Set Pinterest enhanced match with user email
+      // Set Pinterest enhanced match and track lead for quiz completion
       await setEnhancedMatch(email.trim());
+      trackLead("SleepQuizCompletion").catch(() => {});
 
       if (analysisResult.profileCreated) {
         toast.success("Sleep Coach profile created!");

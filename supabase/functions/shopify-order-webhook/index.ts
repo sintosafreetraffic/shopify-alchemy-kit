@@ -748,6 +748,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         landing_page: attribution.landing_page,
         referrer: attribution.referrer,
         is_test: isChaosTest, // Pass test flag to CAPI
+        context_id: attribution.rbn_context_id, // Pass context_id for external_id
       };
       
       // Add match signals if available (from pinterest_context via joinPinterestContext)

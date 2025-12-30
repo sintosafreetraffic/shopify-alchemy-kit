@@ -12,7 +12,7 @@ import { isTrackingAllowed, onConsentChange, getConsentStatus } from './consent'
 import { captureAttribution, hasAttributionParams } from './attribution';
 import { captureContext, captureContextOnConsentChange } from './contextTracking';
 import { supabase } from '@/integrations/supabase/client';
-import { safePintrk as pinterestSafePintrk } from './pinterest';
+import { safePintrk as pinterestSafePintrk, trackPageVisit as pinterestTrackPageVisit } from './pinterest';
 
 // ============================================================================
 // TYPES - Exported for AnalyticsDiagnostics.tsx
@@ -274,20 +274,17 @@ export function trackPageView(route: string): void {
     }
     
     // Pinterest - track SPA navigation (consent-gated)
+    // Uses trackPageVisit for external_id coverage
     if (isTrackingAllowed()) {
-      try {
-        const sent = pinterestSafePintrk('track', 'pagevisit', { event_id: `pv-${Date.now()}` });
-        if (sent) {
+      pinterestTrackPageVisit()
+        .then(() => {
           providerLastRoute['Pinterest'] = route;
           providerLastEvent['Pinterest'] = timestamp;
           logAnalyticsEvent('pagevisit', 'Pinterest', { route }, true);
-        } else {
-          // queued or suppressed (never throw)
-          logAnalyticsEvent('pagevisit', 'Pinterest', { route }, false, 'Queued or not ready');
-        }
-      } catch (e) {
-        logAnalyticsEvent('pagevisit', 'Pinterest', { route }, false, String(e));
-      }
+        })
+        .catch((e) => {
+          logAnalyticsEvent('pagevisit', 'Pinterest', { route }, false, String(e));
+        });
     }
     
     // Clarity - automatically tracks page views

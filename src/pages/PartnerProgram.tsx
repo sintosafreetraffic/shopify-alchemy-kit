@@ -22,6 +22,7 @@ import {
 import { Moon, Users, Sparkles, Heart, Star, Gift, Mail, MessageSquare, ArrowRight, Check } from "lucide-react";
 import { toast } from "sonner";
 import { UGCTestimonialGrid } from "@/components/home/UGCTestimonialGrid";
+import { trackLead } from "@/lib/pinterest";
 
 // Partnership tier data
 const partnershipTiers = [
@@ -134,6 +135,9 @@ const SleepCollective = () => {
         });
 
       if (error) throw error;
+
+      // Track Pinterest Lead event for partner application
+      trackLead("PartnerApplication").catch(() => {});
 
       toast.success("Application submitted! We'll be in touch soon.");
       setFormData({

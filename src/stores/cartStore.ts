@@ -72,14 +72,14 @@ export const useCartStore = create<CartStore>()(
         const { items } = get();
         const existingItem = items.find(i => i.variantId === item.variantId);
         
-        // Track Pinterest AddToCart event
+        // Track Pinterest AddToCart event (async, fire-and-forget)
         trackAddToCart(
           item.product.node.id,
           item.variantId,
           parseFloat(item.price.amount) * item.quantity,
           item.price.currencyCode,
           item.quantity
-        );
+        ).catch(() => {});
 
         // Track Klaviyo AddToCart event
         trackKlaviyoAddToCart({
