@@ -54,6 +54,8 @@ interface PurchaseEventData {
   landing_page?: string;
   referrer?: string;
   is_test?: boolean;
+  // Context ID for external_id (raw, will be hashed)
+  context_id?: string;
 }
 
 // ============================================================================
@@ -275,6 +277,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
       // Add click ID if present (critical for attribution)
       if (attribution.epik) {
         userData.click_id = attribution.epik;
+      }
+
+      // Add external_id from context_id (for 100% coverage)
+      // context_id is raw - hash it before sending to Pinterest
+      if (eventData.context_id) {
+        const hashedContextId = await sha256Hash(eventData.context_id);
+        userData.external_id = [hashedContextId];
+        console.log('[Pinterest CAPI Direct] external_id added from context_id');
       }
 
       // event_id already generated at start of function for idempotency

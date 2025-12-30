@@ -17,6 +17,8 @@
 // This separation prevents attribution conflicts and allows Pinterest
 // to deduplicate correctly between client-side and server-side events.
 
+import { getHashedExternalId } from './pinterest-external-id';
+
 // ============================================================================
 // QUEUE SYSTEM FOR PINTEREST RACE CONDITION FIX
 // Events are queued when Pinterest isn't ready, then flushed when it loads
@@ -340,10 +342,18 @@ function generateEventId(): string {
 
 // Track page visit with product ID (for product pages)
 // Now queues event if Pinterest isn't ready (instead of dropping)
-export function trackPageVisit(productId?: string) {
+// Includes external_id for 100% coverage
+export async function trackPageVisit(productId?: string): Promise<void> {
+  const hashedExternalId = await getHashedExternalId();
+  
   const data: Record<string, any> = {
     event_id: generateEventId(),
   };
+  
+  if (hashedExternalId) {
+    data.external_id = hashedExternalId;
+  }
+  
   if (productId) {
     data.product_id = extractProductId(productId);
   }
@@ -358,20 +368,27 @@ export function trackPageVisit(productId?: string) {
 
 // Track add to cart event
 // Now queues event if Pinterest isn't ready (instead of dropping)
-export function trackAddToCart(
+// Includes external_id for 100% coverage
+export async function trackAddToCart(
   productId: string,
   variantId: string,
   value: number,
   currency: string = 'USD',
   quantity: number = 1
-) {
-  const data = {
+): Promise<void> {
+  const hashedExternalId = await getHashedExternalId();
+  
+  const data: Record<string, any> = {
     event_id: generateEventId(),
     product_id: extractProductId(productId),
     value: value,
     order_quantity: quantity,
     currency: currency,
   };
+  
+  if (hashedExternalId) {
+    data.external_id = hashedExternalId;
+  }
   
   const success = safePintrk('track', 'addtocart', data);
   if (success) {
@@ -403,7 +420,8 @@ export function generateCartFingerprint(items: Array<{ variantId: string; quanti
 // to avoid any risk of Pinterest misattributing this as revenue.
 // Completed purchases are tracked server-side via Shopify / Conversions API only.
 // Now queues event if Pinterest isn't ready (instead of dropping)
-export function trackInitiateCheckout(items: Array<{ variantId: string; quantity: number; price?: { amount: string }; currencyCode?: string }>): boolean {
+// Includes external_id for 100% coverage
+export async function trackInitiateCheckout(items: Array<{ variantId: string; quantity: number; price?: { amount: string }; currencyCode?: string }>): Promise<boolean> {
   
   try {
     const fingerprint = generateCartFingerprint(items);
@@ -420,6 +438,9 @@ export function trackInitiateCheckout(items: Array<{ variantId: string; quantity
       }
     }
     
+    // Get external_id for 100% coverage
+    const hashedExternalId = await getHashedExternalId();
+    
     // Calculate totals for logging/debugging (NOT sent to Pinterest)
     const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
     const totalValue = items.reduce((sum, item) => {
@@ -433,6 +454,10 @@ export function trackInitiateCheckout(items: Array<{ variantId: string; quantity
       event_id: generateEventId(),
       order_quantity: totalQuantity,
     };
+    
+    if (hashedExternalId) {
+      data.external_id = hashedExternalId;
+    }
     
     // Debug logging (browser-safe, gated by DEBUG_TRACKING)
     if (isDevBuild() || (typeof window !== 'undefined' && localStorage.getItem('DEBUG_TRACKING') === '1')) {
@@ -472,11 +497,18 @@ export function clearInitiateCheckoutFingerprint(): void {
 
 // Track lead event (e.g., newsletter signup)
 // Now queues event if Pinterest isn't ready (instead of dropping)
-export function trackLead(leadType: string = 'Newsletter') {
-  const data = {
+// Includes external_id for 100% coverage
+export async function trackLead(leadType: string = 'Newsletter'): Promise<void> {
+  const hashedExternalId = await getHashedExternalId();
+  
+  const data: Record<string, any> = {
     event_id: generateEventId(),
     lead_type: leadType,
   };
+  
+  if (hashedExternalId) {
+    data.external_id = hashedExternalId;
+  }
   
   const success = safePintrk('track', 'lead', data);
   if (success) {
@@ -488,10 +520,17 @@ export function trackLead(leadType: string = 'Newsletter') {
 
 // Track signup event
 // Now queues event if Pinterest isn't ready (instead of dropping)
-export function trackSignup() {
-  const data = {
+// Includes external_id for 100% coverage
+export async function trackSignup(): Promise<void> {
+  const hashedExternalId = await getHashedExternalId();
+  
+  const data: Record<string, any> = {
     event_id: generateEventId(),
   };
+  
+  if (hashedExternalId) {
+    data.external_id = hashedExternalId;
+  }
   
   const success = safePintrk('track', 'signup', data);
   if (success) {
@@ -500,6 +539,7 @@ export function trackSignup() {
     debugLog('Signup queued or failed', data);
   }
 }
+
 
 // ============================================================================
 // SERVER-SIDE PURCHASE TRACKING
