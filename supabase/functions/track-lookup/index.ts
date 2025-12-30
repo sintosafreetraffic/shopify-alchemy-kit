@@ -91,54 +91,8 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Check rate limit
-    const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();
-    
-    const { data: rateData } = await supabase
-      .from('tracking_requests')
-      .select('request_count, last_request_at')
-      .eq('ip_hash', ipHash)
-      .eq('tracking_lookup_key', lookupKey)
-      .gte('last_request_at', windowStart)
-      .single();
-
-    if (rateData && rateData.request_count >= RATE_LIMIT_MAX_REQUESTS) {
-      console.log('[track-lookup] Rate limit exceeded for IP hash:', ipHash);
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'Rate limit exceeded',
-        message: 'Too many tracking requests. Please try again later.',
-      }), {
-        status: 429,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Update rate limit counter
-    if (rateData) {
-      await supabase
-        .from('tracking_requests')
-        .update({ 
-          request_count: rateData.request_count + 1,
-          last_request_at: new Date().toISOString(),
-        })
-        .eq('ip_hash', ipHash)
-        .eq('tracking_lookup_key', lookupKey);
-    } else {
-      await supabase
-        .from('tracking_requests')
-        .upsert({
-          ip_hash: ipHash,
-          tracking_lookup_key: lookupKey,
-          request_count: 1,
-          first_request_at: new Date().toISOString(),
-          last_request_at: new Date().toISOString(),
-        }, {
-          onConflict: 'ip_hash,tracking_lookup_key',
-        });
-    }
-
-    // Check if we have existing tracking data
+    // First: check if we already have tracking cached in the database.
+    // If we do, return it immediately without rate limiting (common case for repeat checks).
     const { data: existingTracking, error: lookupError } = await supabase
       .from('order_tracking')
       .select('*')
@@ -152,23 +106,23 @@ Deno.serve(async (req) => {
 
     if (existingTracking && existingTracking.length > 0) {
       console.log('[track-lookup] Found existing tracking data');
-      
+
       // Fetch event history for each tracking number
       const trackingWithEvents = await Promise.all(
         existingTracking.map(async (tracking) => {
           if (!tracking.tracking_number) return { ...tracking, events: [] };
-          
+
           const { data: events } = await supabase
             .from('tracking_events')
             .select('*')
             .eq('tracking_number', tracking.tracking_number)
             .order('event_time', { ascending: false })
             .limit(20);
-          
+
           return { ...tracking, events: events || [] };
         })
       );
-      
+
       return new Response(JSON.stringify({
         success: true,
         found: true,
@@ -178,6 +132,88 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    // Second: allow admins (logged-in staff) to bypass rate limiting.
+    // This endpoint is public, but when called with an auth token we can detect staff.
+    let isAdmin = false;
+    const authHeader = req.headers.get('authorization');
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
+
+    if (authHeader && anonKey) {
+      try {
+        const authClient = createClient(supabaseUrl, anonKey, {
+          global: { headers: { authorization: authHeader } },
+          auth: { persistSession: false, autoRefreshToken: false },
+        });
+
+        const { data: userData, error: userError } = await authClient.auth.getUser();
+        if (!userError && userData?.user?.id) {
+          const { data: hasAdminRole, error: roleError } = await supabase.rpc('has_role', {
+            _user_id: userData.user.id,
+            _role: 'admin',
+          });
+
+          if (!roleError && hasAdminRole === true) {
+            isAdmin = true;
+          }
+        }
+      } catch (e) {
+        console.log('[track-lookup] Admin bypass check failed (continuing):', e);
+      }
+    }
+
+    // Third: rate limit ONLY for uncached lookups (to protect Shopify API / prevent abuse).
+    if (!isAdmin) {
+      const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();
+
+      const { data: rateData } = await supabase
+        .from('tracking_requests')
+        .select('request_count, last_request_at')
+        .eq('ip_hash', ipHash)
+        .eq('tracking_lookup_key', lookupKey)
+        .gte('last_request_at', windowStart)
+        .single();
+
+      if (rateData && rateData.request_count >= RATE_LIMIT_MAX_REQUESTS) {
+        console.log('[track-lookup] Rate limit exceeded for IP hash:', ipHash);
+        // Return 200 so the client can show a friendly message without throwing.
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Rate limit exceeded',
+          message: 'Too many tracking requests. Please try again later.',
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Update rate limit counter
+      if (rateData) {
+        await supabase
+          .from('tracking_requests')
+          .update({
+            request_count: rateData.request_count + 1,
+            last_request_at: new Date().toISOString(),
+          })
+          .eq('ip_hash', ipHash)
+          .eq('tracking_lookup_key', lookupKey);
+      } else {
+        await supabase
+          .from('tracking_requests')
+          .upsert({
+            ip_hash: ipHash,
+            tracking_lookup_key: lookupKey,
+            request_count: 1,
+            first_request_at: new Date().toISOString(),
+            last_request_at: new Date().toISOString(),
+          }, {
+            onConflict: 'ip_hash,tracking_lookup_key',
+          });
+      }
+    } else {
+      console.log('[track-lookup] Admin bypass: skipping rate limit');
+    }
+
 
     // No existing tracking - try to get from Shopify
     // Prefer SHOPIFY_ADMIN_API_TOKEN, fall back to SHOPIFY_ACCESS_TOKEN
