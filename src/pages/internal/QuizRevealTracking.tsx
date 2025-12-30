@@ -50,6 +50,7 @@ import {
   Fingerprint,
   Target,
   Percent,
+  Info,
 } from "lucide-react";
 import { 
   LineChart, 
@@ -932,7 +933,7 @@ const QuizRevealTracking = () => {
               </Card>
 
               {/* ROAS */}
-              <Card className="p-5">
+              <Card className="p-5 relative">
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                     overviewRoas && overviewRoas.roas >= 2 
@@ -949,7 +950,7 @@ const QuizRevealTracking = () => {
                           : 'text-gray-600 dark:text-gray-400'
                     }`} />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <p className={`text-2xl font-bold ${
                       overviewRoas && overviewRoas.roas >= 2 
                         ? 'text-green-600 dark:text-green-400' 
@@ -966,11 +967,27 @@ const QuizRevealTracking = () => {
                     <p className="text-xs text-muted-foreground">
                       ROAS {overviewRoas?.isShopifyRevenue && <span className="text-green-600">(net)</span>}
                     </p>
-                    {overviewRoas?.isShopifyRevenue && overviewRoas.refunds && overviewRoas.refunds > 0 && (
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        ${overviewRoas.grossRevenue?.toFixed(0)} - ${overviewRoas.refunds?.toFixed(0)} refunds
+                  </div>
+                  {/* Info tooltip */}
+                  <div className="group relative">
+                    <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+                    <div className="absolute right-0 top-6 z-50 hidden group-hover:block w-64 p-3 bg-popover border rounded-lg shadow-lg text-xs">
+                      <p className="font-medium mb-2">ROAS Calculation</p>
+                      <p className="text-muted-foreground mb-2">
+                        <strong>Net Revenue</strong> (from Shopify) ÷ <strong>Ad Spend</strong> (from Pinterest)
                       </p>
-                    )}
+                      {overviewRoas && (
+                        <div className="space-y-1 pt-2 border-t">
+                          <p>Gross Revenue: <strong>${overviewRoas.grossRevenue?.toFixed(2) ?? overviewRoas.revenue.toFixed(2)}</strong></p>
+                          {overviewRoas.refunds !== undefined && overviewRoas.refunds > 0 && (
+                            <p>Refunds: <strong className="text-red-500">-${overviewRoas.refunds.toFixed(2)}</strong></p>
+                          )}
+                          <p>Net Revenue: <strong className="text-green-600">${overviewRoas.revenue.toFixed(2)}</strong></p>
+                          <p>Ad Spend: <strong>€{overviewRoas.spend.toFixed(2)}</strong></p>
+                          <p className="pt-1 border-t mt-1">ROAS: <strong>{overviewRoas.roas.toFixed(2)}x</strong></p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </Card>
