@@ -406,7 +406,7 @@ export const PinterestEQSCard = () => {
   const [disconnecting, setDisconnecting] = useState(false);
   const [snapshots, setSnapshots] = useState<Record<string, EQSSnapshot>>({});
   const [activeSource, setActiveSource] = useState<string>("CONVERSIONS_API");
-  const [lookbackPeriod, setLookbackPeriod] = useState<"7d" | "14d" | "30d">("14d");
+  const [lookbackPeriod, setLookbackPeriod] = useState<"1d" | "14d">("14d");
   const [error, setError] = useState<string | null>(null);
   const [oauthStatus, setOauthStatus] = useState<OAuthStatus | null>(null);
 
@@ -431,7 +431,7 @@ export const PinterestEQSCard = () => {
     }
   };
 
-  const fetchLatestSnapshots = async (period?: "7d" | "14d" | "30d") => {
+  const fetchLatestSnapshots = async (period?: "1d" | "14d") => {
     const targetPeriod = period || lookbackPeriod;
     setLoading(true);
     setError(null);
@@ -480,7 +480,7 @@ export const PinterestEQSCard = () => {
     }
   };
 
-  const handleManualSync = async (opts?: { showToast?: boolean; period?: "7d" | "14d" | "30d" }) => {
+  const handleManualSync = async (opts?: { showToast?: boolean; period?: "1d" | "14d" }) => {
     setSyncing(true);
     const showToast = opts?.showToast ?? true;
     const targetPeriod = opts?.period || lookbackPeriod;
@@ -724,12 +724,11 @@ export const PinterestEQSCard = () => {
   };
 
   const lookbackLabels: Record<string, string> = {
-    "7d": "7 days",
+    "1d": "24 hours",
     "14d": "14 days",
-    "30d": "30 days",
   };
 
-  const handleLookbackChange = async (newPeriod: "7d" | "14d" | "30d") => {
+  const handleLookbackChange = async (newPeriod: "1d" | "14d") => {
     setLookbackPeriod(newPeriod);
     await fetchLatestSnapshots(newPeriod);
   };
@@ -747,7 +746,7 @@ export const PinterestEQSCard = () => {
         <div className="flex items-center gap-2">
           {/* Lookback Period Selector */}
           <div className="flex items-center rounded-md border border-input bg-background">
-            {(["7d", "14d", "30d"] as const).map((period) => (
+            {(["1d", "14d"] as const).map((period, idx, arr) => (
               <button
                 key={period}
                 onClick={() => handleLookbackChange(period)}
@@ -756,7 +755,7 @@ export const PinterestEQSCard = () => {
                   lookbackPeriod === period
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                } ${period === "7d" ? "rounded-l-md" : ""} ${period === "30d" ? "rounded-r-md" : ""}`}
+                } ${idx === 0 ? "rounded-l-md" : ""} ${idx === arr.length - 1 ? "rounded-r-md" : ""}`}
               >
                 {lookbackLabels[period]}
               </button>

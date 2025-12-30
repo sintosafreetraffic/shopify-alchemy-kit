@@ -410,11 +410,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     // ========================================================================
     // PARSE LOOKBACK PERIOD FROM REQUEST
-    // Supports: 7d, 14d, 30d (Pinterest API supported values)
+    // Pinterest API only supports: 1d (24 hours), 14d (14 days)
     // ========================================================================
     
     let lookbackPeriod = "14d"; // Default
-    const validLookbackPeriods = ["7d", "14d", "30d"];
+    const validLookbackPeriods = ["1d", "14d"];
     
     try {
       const body = await req.json();
