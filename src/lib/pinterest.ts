@@ -18,6 +18,7 @@
 // to deduplicate correctly between client-side and server-side events.
 
 import { getHashedExternalId } from './pinterest-external-id';
+import { getEpik } from './attribution';
 
 // ============================================================================
 // QUEUE SYSTEM FOR PINTEREST RACE CONDITION FIX
@@ -371,9 +372,10 @@ function generateEventId(): string {
 
 // Track page visit with product ID (for product pages)
 // Now queues event if Pinterest isn't ready (instead of dropping)
-// Includes external_id for 100% coverage
+// Includes external_id and click_id for 100% coverage
 export async function trackPageVisit(productId?: string): Promise<void> {
   const hashedExternalId = await getHashedExternalId();
+  const clickId = getEpik();
   
   const data: Record<string, any> = {
     event_id: generateEventId(),
@@ -383,13 +385,18 @@ export async function trackPageVisit(productId?: string): Promise<void> {
     data.external_id = hashedExternalId;
   }
   
+  // Include click_id for improved EPIK coverage
+  if (clickId) {
+    data.click_id = clickId;
+  }
+  
   if (productId) {
     data.product_id = extractProductId(productId);
   }
   
   const success = safePintrk('track', 'pagevisit', data);
   if (success) {
-    console.log('[Pinterest] PageVisit tracked', data);
+    console.log('[Pinterest] PageVisit tracked', { ...data, click_id: clickId ? '[set]' : '[not set]' });
   } else {
     debugLog('PageVisit queued or failed', data);
   }
@@ -397,8 +404,7 @@ export async function trackPageVisit(productId?: string): Promise<void> {
 
 // Track add to cart event
 // Now queues event if Pinterest isn't ready (instead of dropping)
-// Includes external_id for 100% coverage
-// Includes em (email hash) if available from earlier capture
+// Includes external_id, em, and click_id for 100% coverage
 export async function trackAddToCart(
   productId: string,
   variantId: string,
@@ -408,6 +414,7 @@ export async function trackAddToCart(
 ): Promise<void> {
   const hashedExternalId = await getHashedExternalId();
   const storedEmailHash = getStoredEmailHash();
+  const clickId = getEpik();
   
   const data: Record<string, any> = {
     event_id: generateEventId(),
@@ -426,9 +433,18 @@ export async function trackAddToCart(
     data.em = storedEmailHash;
   }
   
+  // Include click_id for improved EPIK coverage
+  if (clickId) {
+    data.click_id = clickId;
+  }
+  
   const success = safePintrk('track', 'addtocart', data);
   if (success) {
-    console.log('[Pinterest] AddToCart tracked', { ...data, em: storedEmailHash ? '[set]' : '[not set]' });
+    console.log('[Pinterest] AddToCart tracked', { 
+      ...data, 
+      em: storedEmailHash ? '[set]' : '[not set]',
+      click_id: clickId ? '[set]' : '[not set]'
+    });
   } else {
     debugLog('AddToCart queued or failed', data);
   }
@@ -474,8 +490,9 @@ export async function trackInitiateCheckout(items: Array<{ variantId: string; qu
       }
     }
     
-    // Get external_id for 100% coverage
+    // Get external_id and click_id for 100% coverage
     const hashedExternalId = await getHashedExternalId();
+    const clickId = getEpik();
     
     // Calculate totals for logging/debugging (NOT sent to Pinterest)
     const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -493,6 +510,11 @@ export async function trackInitiateCheckout(items: Array<{ variantId: string; qu
     
     if (hashedExternalId) {
       data.external_id = hashedExternalId;
+    }
+    
+    // Include click_id for improved EPIK coverage
+    if (clickId) {
+      data.click_id = clickId;
     }
     
     // Debug logging (browser-safe, gated by DEBUG_TRACKING)
@@ -533,11 +555,10 @@ export function clearInitiateCheckoutFingerprint(): void {
 
 // Track lead event (e.g., newsletter signup)
 // Now queues event if Pinterest isn't ready (instead of dropping)
-// Includes external_id for 100% coverage
-// Track lead event with email hash included
-// Email should be passed directly when capturing leads for 100% coverage
+// Includes external_id, em, and click_id for 100% coverage
 export async function trackLead(leadType: string = 'Newsletter', email?: string): Promise<void> {
   const hashedExternalId = await getHashedExternalId();
+  const clickId = getEpik();
   
   // Get email hash: prefer passed email, fallback to stored
   let emailHash = getStoredEmailHash();
@@ -559,9 +580,18 @@ export async function trackLead(leadType: string = 'Newsletter', email?: string)
     data.em = emailHash;
   }
   
+  // Include click_id for improved EPIK coverage
+  if (clickId) {
+    data.click_id = clickId;
+  }
+  
   const success = safePintrk('track', 'lead', data);
   if (success) {
-    console.log('[Pinterest] Lead tracked', { ...data, em: emailHash ? '[set]' : '[not set]' });
+    console.log('[Pinterest] Lead tracked', { 
+      ...data, 
+      em: emailHash ? '[set]' : '[not set]',
+      click_id: clickId ? '[set]' : '[not set]'
+    });
   } else {
     debugLog('Lead queued or failed', data);
   }
@@ -569,9 +599,10 @@ export async function trackLead(leadType: string = 'Newsletter', email?: string)
 
 // Track signup event
 // Now queues event if Pinterest isn't ready (instead of dropping)
-// Includes external_id for 100% coverage
+// Includes external_id and click_id for 100% coverage
 export async function trackSignup(): Promise<void> {
   const hashedExternalId = await getHashedExternalId();
+  const clickId = getEpik();
   
   const data: Record<string, any> = {
     event_id: generateEventId(),
@@ -581,9 +612,14 @@ export async function trackSignup(): Promise<void> {
     data.external_id = hashedExternalId;
   }
   
+  // Include click_id for improved EPIK coverage
+  if (clickId) {
+    data.click_id = clickId;
+  }
+  
   const success = safePintrk('track', 'signup', data);
   if (success) {
-    console.log('[Pinterest] Signup tracked', data);
+    console.log('[Pinterest] Signup tracked', { ...data, click_id: clickId ? '[set]' : '[not set]' });
   } else {
     debugLog('Signup queued or failed', data);
   }
