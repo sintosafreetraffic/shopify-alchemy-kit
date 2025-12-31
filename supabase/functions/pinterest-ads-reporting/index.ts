@@ -477,98 +477,94 @@ const KNOWN_PRODUCTS: Record<string, string> = {
   'set': 'Bundle',
 };
 
+function normalizeSegment(raw: string): string {
+  return raw
+    .toLowerCase()
+    .replace(/[’']/g, "")
+    .replace(/\s+/g, " ")
+    .replace(/\s*\/\s*/g, "/")
+    .trim();
+}
+
 function parseCreativeFromName(name: string): ParsedCreativeInfo {
   const result: ParsedCreativeInfo = {};
-  
-  // First, try pipe-delimited parsing (e.g., "2025-12-09 | LISTICLES | ERGO PILLOW | STATICS")
-  const segments = name.split('|').map(s => s.trim().toLowerCase());
-  
-  for (const segment of segments) {
-    // Skip date segments (starts with number or looks like a date)
-    if (/^\d{2,4}[-/]/.test(segment) || /^\d{4}$/.test(segment)) continue;
-    
-    // Check for category match
+
+  const segmentsRaw = name.split("|").map((s) => s.trim());
+  const segments = segmentsRaw.map(normalizeSegment);
+
+  const detectFromText = (text: string) => {
+    const t = normalizeSegment(text);
+
+    // Category (robust for pipe segments like "EXPERT/ AUTHORITY VIDEO'S")
     if (!result.creative_category) {
-      // Try exact match first
-      if (KNOWN_CATEGORIES[segment]) {
-        result.creative_category = KNOWN_CATEGORIES[segment];
-        continue;
-      }
-      // Try partial match for compound segments like "EXPERT/ AUTHORITY VIDEO'S"
-      for (const [key, value] of Object.entries(KNOWN_CATEGORIES)) {
-        if (segment.includes(key) && key.length > 3) { // Avoid short matches
-          result.creative_category = value;
-          break;
+      if (/\blisticles?\b/.test(t)) result.creative_category = "Listicle";
+      else if (/(\bexpert\b|\bauthority\b)/.test(t)) result.creative_category = "Expert/Authority";
+      else if (/(\btestimonial\b|\btestemonial\b|\breview\b)/.test(t)) result.creative_category = "Testimonial & Review";
+      else if ((/\bbefore\b/.test(t) && /\bafter\b/.test(t)) || /\bb\/a\b/.test(t) || /\bb\&a\b/.test(t)) result.creative_category = "Before/After";
+      else if (/\bugc\b/.test(t)) result.creative_category = "UGC";
+      else if (/\blifestyle\b/.test(t)) result.creative_category = "Lifestyle";
+      else if (/\beducational\b|\bedu\b/.test(t)) result.creative_category = "Educational";
+      else if (/\bpromo\b|\bsale\b|\bdiscount\b/.test(t)) result.creative_category = "Promo";
+      else if (/\bpain\b|\bpain point\b|\bproblem\b/.test(t)) result.creative_category = "Pain Point";
+      else if (/\bbenefit\b|\bbenefits\b/.test(t)) result.creative_category = "Benefit";
+      else if (KNOWN_CATEGORIES[t]) result.creative_category = KNOWN_CATEGORIES[t];
+      else {
+        for (const [key, value] of Object.entries(KNOWN_CATEGORIES)) {
+          if (t.includes(key) && key.length > 3) {
+            result.creative_category = value;
+            break;
+          }
         }
       }
     }
-    
-    // Check for format match
+
+    // Format
     if (!result.creative_format) {
-      if (KNOWN_FORMATS[segment]) {
-        result.creative_format = KNOWN_FORMATS[segment];
-        continue;
-      }
-      for (const [key, value] of Object.entries(KNOWN_FORMATS)) {
-        if (segment.includes(key)) {
-          result.creative_format = value;
-          break;
+      if (/\bvideos?\b|\bvid\b/.test(t)) result.creative_format = "Video";
+      else if (/\bstatics?\b|\bimages?\b|\bimg\b/.test(t)) result.creative_format = "Static";
+      else if (/\bcarousels?\b/.test(t)) result.creative_format = "Carousel";
+      else if (/\bgifs?\b/.test(t)) result.creative_format = "GIF";
+      else if (KNOWN_FORMATS[t]) result.creative_format = KNOWN_FORMATS[t];
+      else {
+        for (const [key, value] of Object.entries(KNOWN_FORMATS)) {
+          if (t.includes(key)) {
+            result.creative_format = value;
+            break;
+          }
         }
       }
     }
-    
-    // Check for product match
+
+    // Product
     if (!result.product_focus) {
-      if (KNOWN_PRODUCTS[segment]) {
-        result.product_focus = KNOWN_PRODUCTS[segment];
-        continue;
-      }
-      for (const [key, value] of Object.entries(KNOWN_PRODUCTS)) {
-        if (segment.includes(key)) {
-          result.product_focus = value;
-          break;
+      if (KNOWN_PRODUCTS[t]) result.product_focus = KNOWN_PRODUCTS[t];
+      else {
+        for (const [key, value] of Object.entries(KNOWN_PRODUCTS)) {
+          if (t.includes(key)) {
+            result.product_focus = value;
+            break;
+          }
         }
       }
     }
+  };
+
+  // Pipe-delimited segments first
+  for (const seg of segments) {
+    if (/^\d{2,4}[-/]/.test(seg) || /^\d{4}$/.test(seg)) continue;
+    detectFromText(seg);
   }
-  
-  // Fallback: scan full name for keywords if not found via segments
-  const nameLower = name.toLowerCase();
-  
-  if (!result.creative_category) {
-    for (const [key, value] of Object.entries(KNOWN_CATEGORIES)) {
-      if (nameLower.includes(key) && key.length > 3) {
-        result.creative_category = value;
-        break;
-      }
-    }
-  }
-  
-  if (!result.creative_format) {
-    for (const [key, value] of Object.entries(KNOWN_FORMATS)) {
-      if (nameLower.includes(key)) {
-        result.creative_format = value;
-        break;
-      }
-    }
-  }
-  
-  if (!result.product_focus) {
-    for (const [key, value] of Object.entries(KNOWN_PRODUCTS)) {
-      if (nameLower.includes(key)) {
-        result.product_focus = value;
-        break;
-      }
-    }
-  }
-  
-  // Persona detection (common personas in ad naming)
+
+  // Fallback: whole name
+  detectFromText(name);
+
+  // Persona detection
   const personaPatterns = [
     /\b(jason|mia|alex|sarah|mike|emma|chris|lisa|tom|amy|david|jessica|mark|rachel)\b/i,
-    /\[(\w+)\]/,  // [PersonaName] format
-    /persona[:\s-]+(\w+)/i,  // persona: Name format
+    /\[(\w+)\]/,
+    /persona[:\s-]+(\w+)/i,
   ];
-  
+
   for (const pattern of personaPatterns) {
     const match = name.match(pattern);
     if (match) {
@@ -576,7 +572,7 @@ function parseCreativeFromName(name: string): ParsedCreativeInfo {
       break;
     }
   }
-  
+
   return result;
 }
 
@@ -917,6 +913,10 @@ async function fetchPinterestAnalytics(
       const entityInfo = entityInfoMap.get(campaignId);
       const name = entityInfo?.name || `Campaign ${campaignId}`;
       const creativeInfo = parseCreativeFromName(name);
+      const creativeForCampaign = {
+        ...creativeInfo,
+        creative_category: creativeInfo.creative_category || "Other",
+      };
       
       const rawMetrics = {
         SPEND_IN_MICRO_DOLLAR: entry.SPEND_IN_MICRO_DOLLAR || 0,
@@ -935,7 +935,7 @@ async function fetchPinterestAnalytics(
         entity_type: "campaign",
         status: entityInfo?.status,
         ...metrics,
-        ...creativeInfo,
+        ...creativeForCampaign,
       });
     }
     entities.sort((a, b) => b.spend - a.spend);
@@ -946,6 +946,11 @@ async function fetchPinterestAnalytics(
       const name = entityInfo?.name || `Unknown ${entityId}`;
       const creativeInfo = parseCreativeFromName(name);
       const metrics = processRawMetrics(rawMetrics);
+
+      const creativeFinal =
+        entityType === "campaign"
+          ? { ...creativeInfo, creative_category: creativeInfo.creative_category || "Other" }
+          : creativeInfo;
       
       entities.push({
         id: entityId,
@@ -957,7 +962,7 @@ async function fetchPinterestAnalytics(
         ad_group_id: entityInfo?.ad_group_id,
         ad_group_name: entityInfo?.ad_group_name,
         ...metrics,
-        ...creativeInfo,
+        ...creativeFinal,
       });
     }
     
