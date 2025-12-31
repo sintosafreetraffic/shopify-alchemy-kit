@@ -204,8 +204,8 @@ export function EntityPerformanceTable({
       <CardContent className="p-0">
         <div className="max-h-96 overflow-auto">
           <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/30">
+            <TableHeader className="sticky top-0 z-10 bg-card">
+              <TableRow className="bg-muted/50 hover:bg-muted/50">
                 <SortableHeader
                   column="name"
                   currentSort={sortColumn}
