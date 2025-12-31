@@ -226,11 +226,20 @@ IMPORTANT: Distribute the deliverables across placements such that total images 
 Return ONLY valid JSON matching the schema above. No markdown, no explanation.`;
 }
 
+type WebhookResult = {
+  success: boolean;
+  error?: string;
+  status?: number;
+  status_text?: string;
+  response_headers?: Record<string, string>;
+  response_body_preview?: string;
+};
+
 async function sendToWebhook(
   webhookUrl: string,
   payload: unknown,
   headers: Record<string, string>
-): Promise<{ success: boolean; error?: string }> {
+): Promise<WebhookResult> {
   try {
     console.log("Sending creative briefs to webhook:", webhookUrl);
 
@@ -244,21 +253,27 @@ async function sendToWebhook(
       const errorText = await response.text().catch(() => "");
       const responseHeaders = Object.fromEntries(response.headers.entries());
 
+      const preview = (errorText || "").slice(0, 500);
+
       console.error("Webhook error:", {
         status: response.status,
         statusText: response.statusText,
         response_headers: responseHeaders,
-        response_body_preview: (errorText || "").slice(0, 500),
+        response_body_preview: preview,
       });
 
       return {
         success: false,
-        error: `Webhook returned ${response.status}: ${errorText}`,
+        status: response.status,
+        status_text: response.statusText,
+        response_headers: responseHeaders,
+        response_body_preview: preview,
+        error: `Webhook returned ${response.status}: ${errorText || response.statusText}`,
       };
     }
 
     console.log("Webhook response successful");
-    return { success: true };
+    return { success: true, status: response.status, status_text: response.statusText };
   } catch (error) {
     console.error("Webhook request failed:", error);
     return {
