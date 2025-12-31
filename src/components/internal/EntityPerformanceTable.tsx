@@ -28,6 +28,7 @@ import {
   ChevronUp,
   ChevronsUpDown,
   Pencil,
+  Sparkles,
   X,
 } from "lucide-react";
 import type { EntityMetrics } from "@/hooks/useAdsReporting";
@@ -53,6 +54,7 @@ interface EntityPerformanceTableProps {
   showCampaignRef?: boolean;
   showPersona?: boolean;
   title?: string;
+  onGenerateCreative?: (entity: EntityMetrics) => void;
 }
 
 const CATEGORY_OVERRIDES_STORAGE_KEY =
@@ -239,6 +241,7 @@ export function EntityPerformanceTable({
   showCampaignRef = false,
   showPersona = true,
   title,
+  onGenerateCreative,
 }: EntityPerformanceTableProps) {
   const [sortColumn, setSortColumn] = useState<SortableColumn | null>("spend");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
@@ -506,6 +509,10 @@ export function EntityPerformanceTable({
                 >
                   CPA
                 </SortableHeader>
+                {onGenerateCreative && (
+                  <TableHead className="sticky top-0 z-20 bg-card/95 backdrop-blur text-xs font-medium border-b border-border w-10">
+                  </TableHead>
+                )}
               </TableRow>
             </TableHeader>
 
@@ -649,6 +656,27 @@ export function EntityPerformanceTable({
                     <TableCell className="text-xs text-right">
                       {entity.checkouts > 0 ? `€${entity.cpa.toFixed(2)}` : "—"}
                     </TableCell>
+                    {onGenerateCreative && (
+                      <TableCell className="text-xs text-center">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => onGenerateCreative(entity)}
+                              >
+                                <Sparkles className="h-3.5 w-3.5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="text-xs">Generate creatives for this {entityType}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </TableCell>
+                    )}
                   </TableRow>
                 );
               })}
