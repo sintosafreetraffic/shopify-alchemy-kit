@@ -9,6 +9,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import type { EntityMetrics } from "@/hooks/useAdsReporting";
@@ -320,9 +326,18 @@ export function EntityPerformanceTable({
                 <TableRow key={entity.id} className="hover:bg-muted/20">
                   <TableCell className="text-xs font-medium">
                     <div className="flex flex-col gap-0.5">
-                      <span className="truncate max-w-[200px]" title={entity.name}>
-                        {entity.name}
-                      </span>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="truncate max-w-[200px] cursor-help block">
+                              {entity.name}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-md bg-popover border border-border z-50">
+                            <p className="text-sm break-words">{entity.name}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                       {entity.status && entity.status !== "ACTIVE" && (
                         <Badge variant="outline" className="text-[10px] w-fit">
                           {entity.status}
@@ -333,12 +348,18 @@ export function EntityPerformanceTable({
                   {showCampaignRef && (
                     <TableCell className="text-xs">
                       {entity.campaign_name ? (
-                        <span 
-                          className="truncate max-w-[120px] block text-muted-foreground" 
-                          title={entity.campaign_name}
-                        >
-                          {entity.campaign_name}
-                        </span>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="truncate max-w-[120px] block text-muted-foreground cursor-help">
+                                {entity.campaign_name}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-md bg-popover border border-border z-50">
+                              <p className="text-sm break-words">{entity.campaign_name}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
