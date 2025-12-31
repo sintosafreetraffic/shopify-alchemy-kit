@@ -226,29 +226,45 @@ IMPORTANT: Distribute the deliverables across placements such that total images 
 Return ONLY valid JSON matching the schema above. No markdown, no explanation.`;
 }
 
-async function sendToWebhook(webhookUrl: string, payload: any): Promise<{ success: boolean; error?: string }> {
+async function sendToWebhook(
+  webhookUrl: string,
+  payload: unknown,
+  headers: Record<string, string>
+): Promise<{ success: boolean; error?: string }> {
   try {
     console.log("Sending creative briefs to webhook:", webhookUrl);
-    
+
     const response = await fetch(webhookUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Webhook error:", response.status, errorText);
-      return { success: false, error: `Webhook returned ${response.status}: ${errorText}` };
+      const errorText = await response.text().catch(() => "");
+      const responseHeaders = Object.fromEntries(response.headers.entries());
+
+      console.error("Webhook error:", {
+        status: response.status,
+        statusText: response.statusText,
+        response_headers: responseHeaders,
+        response_body_preview: (errorText || "").slice(0, 500),
+      });
+
+      return {
+        success: false,
+        error: `Webhook returned ${response.status}: ${errorText}`,
+      };
     }
 
     console.log("Webhook response successful");
     return { success: true };
   } catch (error) {
     console.error("Webhook request failed:", error);
-    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
   }
 }
 
@@ -381,7 +397,36 @@ serve(async (req) => {
           if (!url.protocol.startsWith("http")) {
             throw new Error("URL must start with http:// or https://");
           }
-          webhookResult = await sendToWebhook(HIGGSFIELD_WEBHOOK_URL, creativeBriefs);
+
+          const webhookHeaders: Record<string, string> = {
+            "Content-Type": "application/json",
+          };
+
+          // Optional auth/header support
+          const authHeader = Deno.env.get("HIGGSFIELD_WEBHOOK_AUTHORIZATION");
+          if (authHeader) webhookHeaders["Authorization"] = authHeader;
+
+          const apiKeyHeader = Deno.env.get("HIGGSFIELD_WEBHOOK_API_KEY");
+          if (apiKeyHeader) webhookHeaders["x-api-key"] = apiKeyHeader;
+
+          // Helpful for local testing via ngrok
+          if (url.hostname.endsWith("ngrok-free.app")) {
+            webhookHeaders["ngrok-skip-browser-warning"] = "true";
+          }
+
+          const extraHeadersJson = Deno.env.get("HIGGSFIELD_WEBHOOK_EXTRA_HEADERS_JSON");
+          if (extraHeadersJson) {
+            try {
+              const parsed = JSON.parse(extraHeadersJson) as Record<string, unknown>;
+              for (const [k, v] of Object.entries(parsed)) {
+                if (typeof v === "string") webhookHeaders[k] = v;
+              }
+            } catch (e) {
+              console.warn("Failed to parse HIGGSFIELD_WEBHOOK_EXTRA_HEADERS_JSON", e);
+            }
+          }
+
+          webhookResult = await sendToWebhook(HIGGSFIELD_WEBHOOK_URL, creativeBriefs, webhookHeaders);
         } catch (urlError) {
           console.error("Invalid webhook URL:", HIGGSFIELD_WEBHOOK_URL, urlError);
           webhookResult = { 
