@@ -149,7 +149,7 @@ export function GenerateCreativesDialog({
             {mode === "single" && selectedEntity ? (
               <>Generate Higgsfield prompts based on <strong>{selectedEntity.name}</strong></>
             ) : (
-              <>Generate Higgsfield prompts for {entitiesToProcess.length} {entityType}s</>
+              <>Generate Higgsfield prompts for {entitiesToProcess.length} winning {entityType}{entitiesToProcess.length !== 1 ? "s" : ""} (ROAS ≥ 1.54)</>
             )}
           </DialogDescription>
         </DialogHeader>
