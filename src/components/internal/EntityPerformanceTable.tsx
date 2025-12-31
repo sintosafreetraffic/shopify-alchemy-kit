@@ -186,9 +186,9 @@ export function EntityPerformanceTable({
 
   const tableTitle = title || `${entityType === "campaign" ? "Campaign" : entityType === "ad_group" ? "Ad Group" : "Ad"} Performance`;
 
-  // Check if we have any personas to display
+  // Always show category column for campaigns, check for others
   const hasPersonas = showPersona && entities.some(e => e.persona);
-  const hasCategories = entities.some(e => e.creative_category);
+  const hasCategories = entityType === "campaign" || entities.some(e => e.creative_category);
   const hasFormats = entities.some(e => e.creative_format);
 
   return (
@@ -202,10 +202,10 @@ export function EntityPerformanceTable({
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="max-h-96 overflow-auto">
+        <div className="max-h-96 overflow-auto relative">
           <Table>
-            <TableHeader className="sticky top-0 z-10 bg-card">
-              <TableRow className="bg-muted/50 hover:bg-muted/50">
+            <TableHeader className="sticky top-0 z-10">
+              <TableRow className="bg-card [&>th]:bg-card hover:bg-card">
                 <SortableHeader
                   column="name"
                   currentSort={sortColumn}
@@ -372,7 +372,9 @@ export function EntityPerformanceTable({
                           {entity.creative_category}
                         </Badge>
                       ) : (
-                        <span className="text-muted-foreground">—</span>
+                        <Badge variant="outline" className="text-[10px] text-muted-foreground border-muted-foreground/30">
+                          Unknown
+                        </Badge>
                       )}
                     </TableCell>
                   )}
