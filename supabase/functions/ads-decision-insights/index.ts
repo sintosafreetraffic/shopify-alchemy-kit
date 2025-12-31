@@ -80,6 +80,7 @@ interface AdsDataInput {
     view_window: number;
   };
   eqs_score?: number; // Enhanced Quality Score if available
+  break_even_roas?: number; // Configurable break-even ROAS (default: 1.54)
 }
 
 interface DecisionInsight {
@@ -101,10 +102,11 @@ interface AIInsightsResponse {
 }
 
 // ============================================================================
-// ENHANCED SYSTEM PROMPT v4 (PRODUCTION-READY)
+// ENHANCED SYSTEM PROMPT v5 (WITH CONFIGURABLE BREAK-EVEN ROAS)
 // ============================================================================
 
-const SYSTEM_PROMPT = `You are a Decision Intelligence layer for Rise By Night — a premium, Scandinavian, science-backed sleep brand.
+function buildSystemPrompt(breakEvenRoas: number): string {
+  return `You are a Decision Intelligence layer for Rise By Night — a premium, Scandinavian, science-backed sleep brand.
 
 Your role is not to summarize metrics.
 Your role is to interpret performance and recommend financially intelligent actions.
@@ -117,8 +119,9 @@ Protecting capital, brand trust, and long-term scalability is mandatory.
 --------------------------------
 
 Primary conversion: Checkout (purchase)
-Break-even ROAS (main offer): 1.54x
+Break-even ROAS (main offer): ${breakEvenRoas.toFixed(2)}x
 Scaling ROAS target: ≥ 2.0x
+Currency: EUR
 Currency: EUR
 Attribution: 30-day click / 1-day view
 Attribution lag: Exclude last 2 days from decision logic
@@ -430,6 +433,7 @@ Final principle:
 When uncertain → Protect capital → Protect brand → Prefer learning over speed.
 
 **Hiding signal is unacceptable.**`;
+}
 
 // ============================================================================
 // AI REQUEST
@@ -441,6 +445,10 @@ async function generateInsights(data: AdsDataInput): Promise<AIInsightsResponse>
   if (!LOVABLE_API_KEY) {
     throw new Error("LOVABLE_API_KEY is not configured");
   }
+
+  // Use configurable break-even ROAS (default: 1.54)
+  const breakEvenRoas = data.break_even_roas ?? 1.54;
+  const systemPrompt = buildSystemPrompt(breakEvenRoas);
 
   // Prepare data summary for the AI
   const validEntries = data.timeseries.filter(e => !e.has_attribution_lag);
@@ -746,7 +754,7 @@ IMPORTANT: Include specific recommendations for individual ads/creatives when en
     body: JSON.stringify({
       model: "google/gemini-2.5-flash",
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
       temperature: 0.3, // Low temperature for consistent, analytical responses
@@ -782,8 +790,26 @@ IMPORTANT: Include specific recommendations for individual ads/creatives when en
 
   try {
     const parsed = JSON.parse(jsonContent.trim());
+    
+    // Normalize insight levels to expected values (fix AI variations like "Account", "Ad Group", etc.)
+    const normalizeLevel = (level: string): "account" | "campaign" | "ad_group" | "ad" => {
+      const l = (level || "").toLowerCase().trim();
+      if (l === "account" || l === "total" || l === "overall") return "account";
+      if (l === "campaign" || l === "campaigns") return "campaign";
+      if (l === "ad_group" || l === "adgroup" || l === "ad group" || l === "ad groups" || l === "ad_groups") return "ad_group";
+      if (l === "ad" || l === "ads" || l === "creative" || l === "creatives" || l === "pin" || l === "pin_promotion") return "ad";
+      // Default to campaign if truly unknown
+      console.warn(`[ads-decision-insights] Unknown level "${level}", defaulting to campaign`);
+      return "campaign";
+    };
+    
+    const normalizedInsights = (parsed.insights || []).map((insight: any) => ({
+      ...insight,
+      level: normalizeLevel(insight.level),
+    }));
+    
     return {
-      insights: parsed.insights || [],
+      insights: normalizedInsights,
       summary: parsed.summary || "",
       generated_at: new Date().toISOString(),
     };

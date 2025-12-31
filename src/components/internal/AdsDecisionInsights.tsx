@@ -12,6 +12,13 @@ import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
   TrendingUp, 
@@ -22,11 +29,31 @@ import {
   RefreshCw,
   AlertCircle,
   Sparkles,
+  Settings2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import type { AdsReportingData } from "@/hooks/useAdsReporting";
 import { toast } from "sonner";
+
+const BREAK_EVEN_ROAS_STORAGE_KEY = "risebynight:break_even_roas:v1";
+
+function getStoredBreakEvenRoas(): number {
+  try {
+    const stored = localStorage.getItem(BREAK_EVEN_ROAS_STORAGE_KEY);
+    if (stored) {
+      const val = parseFloat(stored);
+      if (!isNaN(val) && val > 0) return val;
+    }
+  } catch {}
+  return 1.54; // default
+}
+
+function setStoredBreakEvenRoas(val: number): void {
+  try {
+    localStorage.setItem(BREAK_EVEN_ROAS_STORAGE_KEY, val.toString());
+  } catch {}
+}
 
 interface AdsDecisionInsightsProps {
   data: AdsReportingData;
@@ -101,6 +128,9 @@ export function AdsDecisionInsights({ data, eqsScore }: AdsDecisionInsightsProps
   const [error, setError] = useState<string | null>(null);
   const [lastDataHash, setLastDataHash] = useState<string>("");
   const [initialLoadDone, setInitialLoadDone] = useState(false);
+  const [breakEvenRoas, setBreakEvenRoas] = useState<number>(() => getStoredBreakEvenRoas());
+  const [tempBreakEvenRoas, setTempBreakEvenRoas] = useState<string>(breakEvenRoas.toString());
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   // Create a simple hash of the data to detect changes
   const dataHash = JSON.stringify({
@@ -110,6 +140,7 @@ export function AdsDecisionInsights({ data, eqsScore }: AdsDecisionInsightsProps
     days: data.timeseries.length,
     level: data.level,
     entityCount: data.entities?.length || 0,
+    breakEvenRoas, // Include in hash so changing it triggers refresh
   });
 
   const fetchInsights = useCallback(async () => {
@@ -128,6 +159,7 @@ export function AdsDecisionInsights({ data, eqsScore }: AdsDecisionInsightsProps
             level: data.level,
             attribution: data.attribution,
             eqs_score: eqsScore,
+            break_even_roas: breakEvenRoas, // Send configurable break-even ROAS
           },
         }
       );
@@ -161,7 +193,19 @@ export function AdsDecisionInsights({ data, eqsScore }: AdsDecisionInsightsProps
     } finally {
       setIsLoading(false);
     }
-  }, [data, dataHash, eqsScore]);
+  }, [data, dataHash, eqsScore, breakEvenRoas]);
+
+  const handleSaveBreakEvenRoas = () => {
+    const val = parseFloat(tempBreakEvenRoas);
+    if (!isNaN(val) && val > 0) {
+      setBreakEvenRoas(val);
+      setStoredBreakEvenRoas(val);
+      setSettingsOpen(false);
+      toast.success(`Break-even ROAS set to ${val.toFixed(2)}x`);
+    } else {
+      toast.error("Please enter a valid positive number");
+    }
+  };
 
   // Auto-load saved insights on mount (when data is available)
   useEffect(() => {
@@ -269,9 +313,37 @@ export function AdsDecisionInsights({ data, eqsScore }: AdsDecisionInsightsProps
               </Badge>
             )}
           </CardTitle>
-          <Button variant="ghost" size="sm" onClick={fetchInsights} disabled={isLoading}>
-            <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Popover open={settingsOpen} onOpenChange={setSettingsOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <Settings2 className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-64">
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-sm font-medium">Break-even ROAS</Label>
+                    <p className="text-xs text-muted-foreground">Current: {breakEvenRoas.toFixed(2)}x</p>
+                  </div>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    value={tempBreakEvenRoas}
+                    onChange={(e) => setTempBreakEvenRoas(e.target.value)}
+                    placeholder="1.54"
+                  />
+                  <Button size="sm" onClick={handleSaveBreakEvenRoas} className="w-full">
+                    Save & Regenerate
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+            <Button variant="ghost" size="sm" onClick={fetchInsights} disabled={isLoading}>
+              <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
+            </Button>
+          </div>
         </div>
         {insights.summary && (
           <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
