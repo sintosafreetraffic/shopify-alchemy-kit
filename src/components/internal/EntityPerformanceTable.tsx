@@ -58,11 +58,15 @@ function SortableHeader({
   className?: string;
 }) {
   const isActive = currentSort === column;
-  
+
   return (
-    <TableHead 
+    <TableHead
       className={cn(
-        "text-xs font-medium cursor-pointer hover:bg-muted/50 select-none transition-colors",
+        // Sticky header support inside scroll containers (thead itself isn't sticky in many browsers)
+        "sticky top-0 z-20 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80",
+        "text-xs font-medium cursor-pointer select-none transition-colors",
+        "border-b border-border",
+        "hover:bg-muted/50",
         className
       )}
       onClick={() => onSort(column)}
@@ -204,8 +208,8 @@ export function EntityPerformanceTable({
       <CardContent className="p-0">
         <div className="max-h-96 overflow-auto relative">
           <Table>
-            <TableHeader className="sticky top-0 z-10">
-              <TableRow className="bg-card [&>th]:bg-card hover:bg-card">
+            <TableHeader>
+              <TableRow className="bg-transparent hover:bg-transparent">
                 <SortableHeader
                   column="name"
                   currentSort={sortColumn}
