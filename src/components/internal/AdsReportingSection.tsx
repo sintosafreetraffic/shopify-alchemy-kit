@@ -579,7 +579,7 @@ export default function AdsReportingSection() {
                         <YAxis 
                           tick={{ fontSize: 10 }} 
                           stroke="hsl(var(--muted-foreground))"
-                          domain={[0, (dataMax: number) => Math.max(dataMax * 1.2, 3)]}
+                          domain={[(dataMin: number) => Math.min(dataMin, 0) - 0.2, (dataMax: number) => Math.max(dataMax * 1.2, 3)]}
                           tickFormatter={(value) => `${value}x`}
                         />
                         <Tooltip
@@ -609,9 +609,9 @@ export default function AdsReportingSection() {
                         <Line
                           type="monotone"
                           dataKey="ROAS"
-                          stroke="hsl(var(--chart-1))"
+                          stroke="hsl(var(--primary))"
                           strokeWidth={2}
-                          dot={false}
+                          dot={{ r: 2 }}
                         />
                       </LineChart>
                     </ResponsiveContainer>
