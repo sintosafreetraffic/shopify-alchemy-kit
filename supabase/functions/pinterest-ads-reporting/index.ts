@@ -402,10 +402,10 @@ function parseCreativeFromName(name: string): ParsedCreativeInfo {
   const nameLower = name.toLowerCase();
   const result: ParsedCreativeInfo = {};
   
-  // Creative category detection
+  // Creative category detection (including common typos)
   if (nameLower.includes('ugc')) result.creative_category = 'UGC';
   else if (nameLower.includes('lifestyle')) result.creative_category = 'Lifestyle';
-  else if (nameLower.includes('testimonial')) result.creative_category = 'Testimonial';
+  else if (nameLower.includes('testimonial') || nameLower.includes('testemonial') || nameLower.includes('review')) result.creative_category = 'Testimonial & Review';
   else if (nameLower.includes('before') && nameLower.includes('after')) result.creative_category = 'Before/After';
   else if (nameLower.includes('b/a') || nameLower.includes('b&a')) result.creative_category = 'Before/After';
   else if (nameLower.includes('product')) result.creative_category = 'Product';
@@ -413,12 +413,15 @@ function parseCreativeFromName(name: string): ParsedCreativeInfo {
   else if (nameLower.includes('awareness')) result.creative_category = 'Awareness';
   else if (nameLower.includes('consideration')) result.creative_category = 'Consideration';
   else if (nameLower.includes('conversion')) result.creative_category = 'Conversion';
+  else if (nameLower.includes('promo') || nameLower.includes('sale') || nameLower.includes('discount')) result.creative_category = 'Promo';
+  else if (nameLower.includes('pain') || nameLower.includes('problem')) result.creative_category = 'Pain Point';
+  else if (nameLower.includes('benefit')) result.creative_category = 'Benefit';
   
-  // Format detection
+  // Format detection (including plurals and variations)
   if (nameLower.includes('video') || nameLower.includes('vid')) result.creative_format = 'Video';
-  else if (nameLower.includes('static') || nameLower.includes('image') || nameLower.includes('img')) result.creative_format = 'Static';
-  else if (nameLower.includes('carousel')) result.creative_format = 'Carousel';
-  else if (nameLower.includes('gif')) result.creative_format = 'GIF';
+  else if (nameLower.includes('static') || nameLower.includes('statics') || nameLower.includes('image') || nameLower.includes('img')) result.creative_format = 'Static';
+  else if (nameLower.includes('carousel') || nameLower.includes('carousels')) result.creative_format = 'Carousel';
+  else if (nameLower.includes('gif') || nameLower.includes('gifs')) result.creative_format = 'GIF';
   
   // Product focus detection
   if (nameLower.includes('pillow')) result.product_focus = 'Pillow';
