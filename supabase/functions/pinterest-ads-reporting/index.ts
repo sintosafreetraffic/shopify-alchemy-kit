@@ -85,6 +85,10 @@ interface EntityMetrics extends ProcessedMetrics {
   campaign_name?: string;
   ad_group_id?: string;
   ad_group_name?: string;
+  // Creative asset info (for ads)
+  pin_id?: string;
+  creative_type?: string;     // REGULAR, VIDEO, CAROUSEL
+  creative_url?: string;      // URL to the pin's media
 }
 
 interface AdsReportingResponse {
@@ -591,6 +595,9 @@ interface EntityInfo {
   campaign_name?: string;
   ad_group_id?: string;
   ad_group_name?: string;
+  // For ads: pin and creative info
+  pin_id?: string;
+  creative_type?: string;
 }
 
 async function fetchCampaigns(
@@ -651,7 +658,15 @@ async function fetchAds(
   });
 
   const data = await response.json();
-  return (data.items || []).map((ad: { id: string; name: string; status?: string; campaign_id?: string; ad_group_id?: string }) => {
+  return (data.items || []).map((ad: { 
+    id: string; 
+    name: string; 
+    status?: string; 
+    campaign_id?: string; 
+    ad_group_id?: string;
+    pin_id?: string;
+    creative_type?: string;
+  }) => {
     const campaign = campaignMap?.get(ad.campaign_id || '');
     const adGroup = adGroupMap?.get(ad.ad_group_id || '');
     return {
@@ -662,8 +677,56 @@ async function fetchAds(
       campaign_name: campaign?.name,
       ad_group_id: ad.ad_group_id,
       ad_group_name: adGroup?.name,
+      pin_id: ad.pin_id,
+      creative_type: ad.creative_type,
     };
   });
+}
+
+// Fetch pin media URLs for a list of pin IDs
+async function fetchPinMediaUrls(
+  accessToken: string,
+  pinIds: string[]
+): Promise<Map<string, string>> {
+  const mediaMap = new Map<string, string>();
+  
+  // Pinterest API allows fetching one pin at a time
+  // We'll batch these but limit to avoid rate limits
+  const uniquePinIds = [...new Set(pinIds.filter(Boolean))];
+  log("info", "fetching_pin_media", { count: uniquePinIds.length });
+  
+  for (const pinId of uniquePinIds.slice(0, 50)) { // Limit to 50 pins max
+    try {
+      const url = `https://api.pinterest.com/v5/pins/${pinId}`;
+      const response = await fetchWithRetry(url, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      
+      const pin = await response.json();
+      
+      // Extract media URL based on pin type
+      let mediaUrl: string | undefined;
+      
+      if (pin.media?.media_type === "video" && pin.media?.video_url) {
+        mediaUrl = pin.media.video_url;
+      } else if (pin.media?.images) {
+        // Get the largest available image
+        const images = pin.media.images;
+        mediaUrl = images["1200x"]?.url || images["600x"]?.url || images["400x300"]?.url || images.originals?.url;
+      } else if (pin.image?.original?.url) {
+        mediaUrl = pin.image.original.url;
+      }
+      
+      if (mediaUrl) {
+        mediaMap.set(pinId, mediaUrl);
+      }
+    } catch (error) {
+      log("warn", "pin_media_fetch_failed", { pin_id: pinId, error: String(error) });
+    }
+  }
+  
+  log("info", "pin_media_fetched", { found: mediaMap.size, requested: uniquePinIds.length });
+  return mediaMap;
 }
 
 // Legacy functions for backwards compatibility
@@ -1042,6 +1105,8 @@ async function fetchPinterestAnalytics(
         campaign_name: entityInfo?.campaign_name,
         ad_group_id: entityInfo?.ad_group_id,
         ad_group_name: entityInfo?.ad_group_name,
+        pin_id: entityInfo?.pin_id,
+        creative_type: entityInfo?.creative_type,
         ...metrics,
         ...creativeFinal,
       });
@@ -1049,6 +1114,24 @@ async function fetchPinterestAnalytics(
     
     // Sort entities by spend descending (highest spenders first)
     entities.sort((a, b) => b.spend - a.spend);
+    
+    // For ads level, fetch creative URLs for top performers
+    if (entityType === "ad" && entities.length > 0) {
+      // Get pin IDs from top 20 ads by spend (winners)
+      const topAds = entities.slice(0, 20);
+      const pinIds = topAds.map(e => e.pin_id).filter((id): id is string => Boolean(id));
+      
+      if (pinIds.length > 0) {
+        const mediaMap = await fetchPinMediaUrls(accessToken, pinIds);
+        
+        // Attach creative URLs to entities
+        for (const entity of entities) {
+          if (entity.pin_id && mediaMap.has(entity.pin_id)) {
+            entity.creative_url = mediaMap.get(entity.pin_id);
+          }
+        }
+      }
+    }
   }
 
   // For ACCOUNT level with active filters, recalculate totals from filtered campaign data

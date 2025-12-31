@@ -32,6 +32,10 @@ interface EntityInput {
   category?: string;
   frequency_7d?: number;
   product?: string;
+  // Creative asset info (for winning ads)
+  pin_id?: string;
+  creative_type?: string;
+  creative_url?: string;
 }
 
 interface CreativeBriefsInput {
@@ -99,6 +103,14 @@ priority_score = spend_eur * roas
 - medium: Spend 50-199 OR mixed timeframe support
 - low: Spend < 50 OR only short timeframe support
 
+## Source creative reference (mandatory for winners)
+For each selected winner, include the source_creative object with:
+- pin_id: The Pinterest pin ID from the input data (if available)
+- creative_url: The URL to the original winning creative asset (if available)
+- creative_type: REGULAR, VIDEO, or CAROUSEL (if available)
+
+This tells the render system what worked so it can analyze and iterate on the visual style.
+
 ## Aspect ratio & placement mapping (mandatory)
 - feed → 2:3
 - pin → 2:3
@@ -147,6 +159,11 @@ function buildOutputSchema(maxImages: number, maxVideos: number): string {
       "why_this_wins": "One sentence grounded in metrics.",
       "risk_if_wrong": "One sentence on downside.",
       "fatigue_flag": "none|fresh|saturated",
+      "source_creative": {
+        "pin_id": "string or null - ID of the winning pin",
+        "creative_url": "string or null - URL to the original winning creative asset",
+        "creative_type": "REGULAR|VIDEO|CAROUSEL or null"
+      },
       "recommended_placements": [
         {
           "placement": "feed|pin|story|carousel",
