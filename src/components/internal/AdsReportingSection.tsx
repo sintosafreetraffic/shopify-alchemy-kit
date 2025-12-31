@@ -579,7 +579,8 @@ export default function AdsReportingSection() {
                         <YAxis 
                           tick={{ fontSize: 10 }} 
                           stroke="hsl(var(--muted-foreground))"
-                          domain={[0, 'auto']}
+                          domain={[0, (dataMax: number) => Math.max(dataMax * 1.2, 3)]}
+                          tickFormatter={(value) => `${value}x`}
                         />
                         <Tooltip
                           contentStyle={{
