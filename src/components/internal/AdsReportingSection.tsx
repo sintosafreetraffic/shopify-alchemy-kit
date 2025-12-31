@@ -285,14 +285,6 @@ export default function AdsReportingSection() {
                     variant="ghost"
                     size="sm"
                     onClick={() => {
-                      // Filter for winning/good performing entities (ROAS >= 1.54 and spend >= 50)
-                      const winningEntities = data?.entities?.filter(e => 
-                        e.roas >= 1.54 && e.spend >= 50
-                      ) || [];
-                      if (winningEntities.length === 0) {
-                        toast.warning("No winning entities found (ROAS ≥ 1.54 with spend ≥ €50)");
-                        return;
-                      }
                       setGenerateMode("all");
                       setSelectedEntityForGenerate(undefined);
                       setGenerateDialogOpen(true);
@@ -893,10 +885,7 @@ export default function AdsReportingSection() {
       <GenerateCreativesDialog
         open={generateDialogOpen}
         onOpenChange={setGenerateDialogOpen}
-        entities={generateMode === "all" 
-          ? (data?.entities?.filter(e => e.roas >= 1.54 && e.spend >= 50) || [])
-          : (data?.entities || [])
-        }
+        allEntities={data?.entities || []}
         entityType={level === "PIN_PROMOTION" ? "ad" : level === "AD_GROUP" ? "ad_group" : "campaign"}
         timeframe={`last_${selectedPreset.days}d`}
         accountSummary={data?.totals ? {

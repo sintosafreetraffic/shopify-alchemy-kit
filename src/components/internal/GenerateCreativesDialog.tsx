@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Wand2, Image, Video, Send, Sparkles } from "lucide-react";
+import { Loader2, Wand2, Image, Video, Send, Sparkles, TrendingUp, DollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { EntityMetrics } from "@/hooks/useAdsReporting";
@@ -20,7 +20,7 @@ import type { EntityMetrics } from "@/hooks/useAdsReporting";
 interface GenerateCreativesDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  entities: EntityMetrics[];
+  allEntities: EntityMetrics[]; // All entities, filtering will be done in dialog
   entityType: "campaign" | "ad_group" | "ad";
   timeframe: string;
   accountSummary?: {
@@ -35,7 +35,7 @@ interface GenerateCreativesDialogProps {
 export function GenerateCreativesDialog({
   open,
   onOpenChange,
-  entities,
+  allEntities,
   entityType,
   timeframe,
   accountSummary,
@@ -47,10 +47,19 @@ export function GenerateCreativesDialog({
   const [sendToWebhook, setSendToWebhook] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<any>(null);
+  
+  // Winner thresholds (configurable)
+  const [minRoas, setMinRoas] = useState(1.54);
+  const [minSpend, setMinSpend] = useState(50);
+
+  // Filter entities based on thresholds when in "all" mode
+  const filteredEntities = mode === "all" 
+    ? allEntities.filter(e => e.roas >= minRoas && e.spend >= minSpend)
+    : allEntities;
 
   const entitiesToProcess = mode === "single" && selectedEntity 
     ? [selectedEntity] 
-    : entities;
+    : filteredEntities;
 
   const handleGenerate = async () => {
     setGenerating(true);
@@ -135,6 +144,8 @@ export function GenerateCreativesDialog({
     setMaxImages(6);
     setMaxVideos(3);
     setSendToWebhook(true);
+    setMinRoas(1.54);
+    setMinSpend(50);
   };
 
   return (
@@ -149,7 +160,7 @@ export function GenerateCreativesDialog({
             {mode === "single" && selectedEntity ? (
               <>Generate Higgsfield prompts based on <strong>{selectedEntity.name}</strong></>
             ) : (
-              <>Generate Higgsfield prompts for {entitiesToProcess.length} winning {entityType}{entitiesToProcess.length !== 1 ? "s" : ""} (ROAS ≥ 1.54)</>
+              <>Generate Higgsfield prompts for <strong>{entitiesToProcess.length}</strong> of {allEntities.length} {entityType}{allEntities.length !== 1 ? "s" : ""} matching your thresholds</>
             )}
           </DialogDescription>
         </DialogHeader>
@@ -157,6 +168,59 @@ export function GenerateCreativesDialog({
         {!result ? (
           <>
             <div className="space-y-6 py-4">
+              {/* Winner Thresholds - only show in "all" mode */}
+              {mode === "all" && (
+                <div className="p-3 rounded-lg bg-muted/50 space-y-4">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Winner Thresholds</p>
+                  
+                  {/* Min ROAS */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="flex items-center gap-2 text-sm">
+                        <TrendingUp className="h-4 w-4 text-green-500" />
+                        Min ROAS
+                      </Label>
+                      <span className="text-sm font-medium">{minRoas.toFixed(2)}x</span>
+                    </div>
+                    <Slider
+                      value={[minRoas]}
+                      onValueChange={([v]) => setMinRoas(v)}
+                      min={0.5}
+                      max={5}
+                      step={0.1}
+                      className="w-full"
+                    />
+                  </div>
+
+                  {/* Min Spend */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="flex items-center gap-2 text-sm">
+                        <DollarSign className="h-4 w-4 text-blue-500" />
+                        Min Spend
+                      </Label>
+                      <span className="text-sm font-medium">€{minSpend}</span>
+                    </div>
+                    <Slider
+                      value={[minSpend]}
+                      onValueChange={([v]) => setMinSpend(v)}
+                      min={0}
+                      max={500}
+                      step={10}
+                      className="w-full"
+                    />
+                  </div>
+                  
+                  {/* Matching count */}
+                  <p className="text-xs text-muted-foreground">
+                    {entitiesToProcess.length === 0 
+                      ? "No entities match these thresholds" 
+                      : `${entitiesToProcess.length} ${entityType}${entitiesToProcess.length !== 1 ? "s" : ""} match`
+                    }
+                  </p>
+                </div>
+              )}
+
               {/* Entity summary */}
               <div className="flex flex-wrap gap-2">
                 <Badge variant="outline" className="text-xs">
