@@ -315,23 +315,31 @@ serve(async (req) => {
   }
 
   try {
-    // Validate cron secret
+    // Validate cron secret or debug secret
     const cronSecret = req.headers.get("x-cron-secret");
+    const debugSecret = req.headers.get("x-debug-secret");
     const authHeader = req.headers.get("Authorization");
     const expectedSecret = Deno.env.get("CRON_SECRET");
+    const expectedDebugSecret = Deno.env.get("DEBUG_SECRET");
     const isInternalCron = req.headers.get("X-Supabase-Internal") === "true" ||
                            (req.headers.get("User-Agent") || "").includes("pg_net");
 
-    // Allow access if: valid cron secret header, valid bearer token, or internal cron
+    // Allow access if: valid cron secret header, valid bearer token, internal cron, or debug secret
     const hasValidCronSecret = cronSecret && cronSecret === expectedSecret;
     const hasValidBearerToken = authHeader && authHeader.replace("Bearer ", "") === expectedSecret;
+    const hasValidDebugSecret = debugSecret && expectedDebugSecret && debugSecret === expectedDebugSecret;
     
-    if (!isInternalCron && !hasValidCronSecret && !hasValidBearerToken) {
+    if (!isInternalCron && !hasValidCronSecret && !hasValidBearerToken && !hasValidDebugSecret) {
       console.error("[weekly-ads-report] Unauthorized access attempt");
       return new Response(
         JSON.stringify({ success: false, error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+    
+    const isTestRun = hasValidDebugSecret;
+    if (isTestRun) {
+      console.log("[weekly-ads-report] Test run triggered via DEBUG_SECRET");
     }
 
     console.log("[weekly-ads-report] Starting weekly report generation...");
