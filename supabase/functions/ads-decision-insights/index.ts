@@ -55,6 +55,11 @@ interface EntityMetrics extends ProcessedMetrics {
   creative_format?: string;   // Static, Video
   product_focus?: string;
   persona?: string;           // e.g., Jason, Mia
+  // Parent references (for ads / ad groups)
+  campaign_id?: string;
+  campaign_name?: string;
+  ad_group_id?: string;
+  ad_group_name?: string;
 }
 
 interface AdsDataInput {
@@ -211,20 +216,32 @@ If EQS missing → Default to Medium confidence.
 Always mention EQS impact explicitly.
 
 --------------------------------
-8. Creative Intelligence (Naming-Based, With Fallback)
+8. Creative Intelligence Analysis (MANDATORY)
 --------------------------------
 
-Attempt to parse names into:
-- Creative category: UGC, Lifestyle, Testimonial, Before/After
-- Format: Static, Video
-- Product focus
+You MUST analyze and provide insights on creative dimensions:
 
-If parsing fails → classify as Uncategorized.
+A. Category Performance:
+- Compare ROAS across categories (UGC, Lifestyle, Testimonial, Before/After, Listicle, Expert/Authority, Benefit, etc.)
+- Identify best-performing category: "UGC outperforms other categories by 45%"
+- Identify underperforming categories: "Lifestyle category has 0.8x ROAS vs 1.8x account average"
+- Recommend category focus shifts based on ROAS
 
-Use this to:
-- Detect outperforming creative patterns
-- Recommend what to make more of
-- Avoid killing strong creatives inside weak parents
+B. Format Performance (Static vs Video):
+- Compare ROAS and CTR between Static and Video formats
+- If one significantly outperforms: "Video creative has 2.1x ROAS vs 0.9x for Static"
+- Recommend format-specific actions
+
+C. Persona Performance (if personas detected):
+- Compare persona performance across creatives
+- Identify winning personas: "Jason persona drives 35% of conversions from 20% of spend"
+- Flag underperforming personas
+
+Use these dimensions for:
+- Detecting outperforming creative patterns
+- Recommending what to make MORE of (best category + format combos)
+- Avoiding killing strong creatives inside weak parents
+- Guiding creative production priorities
 
 --------------------------------
 9. Relative Performance Logic (Critical)
@@ -350,7 +367,30 @@ Examples:
 - Waiting too long → Opportunity cost
 
 --------------------------------
-18. Output Format (STRICT)
+18. Level Coverage Requirements (MANDATORY)
+--------------------------------
+
+You MUST provide at least one insight for each level that has data:
+
+A. ACCOUNT level:
+- Always include at least one account-level insight (overall health, total ROAS, budget allocation)
+
+B. CAMPAIGN level:
+- At least one insight per campaign with significant spend (≥€50)
+- Or aggregate insight: "Best performing campaign is X with 2.3x ROAS"
+
+C. AD GROUP level:
+- At least one insight about ad group performance
+- EXCEPTION: If a campaign has only ONE ad group, skip ad group insights and note: "Single ad group in campaign X - performance same as campaign level"
+
+D. AD level:
+- At least one insight about top/bottom performing individual ads
+- Compare specific ads by creative dimensions
+
+If any level has no actionable insight, provide an info-type insight explaining why (e.g., "Learning phase", "Insufficient data").
+
+--------------------------------
+19. Output Format (STRICT)
 --------------------------------
 
 Respond with valid JSON only.
@@ -372,8 +412,8 @@ Respond with valid JSON only.
   "summary": "60-second founder summary: where to add money, what to stop, what to watch"
 }
 
-Maximum 5 insights.
-Quality > quantity.
+Generate 5-8 insights to ensure level coverage.
+Quality > quantity, but coverage is required.
 
 --------------------------------
 19. Tone & Principle
@@ -546,30 +586,55 @@ async function generateInsights(data: AdsDataInput): Promise<AIInsightsResponse>
     }).join('\n\n');
 
     // Aggregate by creative category
-    const categoryPerformance: Record<string, { spend: number; revenue: number; count: number }> = {};
+    const categoryPerformance: Record<string, { spend: number; revenue: number; count: number; clicks: number; impressions: number }> = {};
     enrichedEntities.forEach(e => {
       const cat = e.creative_category;
-      if (!categoryPerformance[cat]) categoryPerformance[cat] = { spend: 0, revenue: 0, count: 0 };
+      if (!categoryPerformance[cat]) categoryPerformance[cat] = { spend: 0, revenue: 0, count: 0, clicks: 0, impressions: 0 };
       categoryPerformance[cat].spend += e.spend;
       categoryPerformance[cat].revenue += e.revenue;
       categoryPerformance[cat].count++;
+      categoryPerformance[cat].clicks += e.clicks;
+      categoryPerformance[cat].impressions += e.impressions;
     });
     
     const categoryLines = Object.entries(categoryPerformance)
       .sort(([, a], [, b]) => b.spend - a.spend)
       .map(([cat, stats]) => {
         const catROAS = stats.spend > 0 ? stats.revenue / stats.spend : 0;
-        return `- ${cat}: ${stats.count} entities, €${stats.spend.toFixed(0)} spend, ${catROAS.toFixed(2)}x ROAS`;
+        const catCTR = stats.impressions > 0 ? (stats.clicks / stats.impressions * 100) : 0;
+        return `- ${cat}: ${stats.count} entities, €${stats.spend.toFixed(0)} spend, ${catROAS.toFixed(2)}x ROAS, ${catCTR.toFixed(2)}% CTR`;
+      }).join('\n');
+
+    // Aggregate by format (Static vs Video)
+    const formatPerformance: Record<string, { spend: number; revenue: number; count: number; clicks: number; impressions: number }> = {};
+    enrichedEntities.forEach(e => {
+      const fmt = e.creative_format;
+      if (!formatPerformance[fmt]) formatPerformance[fmt] = { spend: 0, revenue: 0, count: 0, clicks: 0, impressions: 0 };
+      formatPerformance[fmt].spend += e.spend;
+      formatPerformance[fmt].revenue += e.revenue;
+      formatPerformance[fmt].count++;
+      formatPerformance[fmt].clicks += e.clicks;
+      formatPerformance[fmt].impressions += e.impressions;
+    });
+    
+    const formatLines = Object.entries(formatPerformance)
+      .sort(([, a], [, b]) => b.spend - a.spend)
+      .map(([fmt, stats]) => {
+        const fmtROAS = stats.spend > 0 ? stats.revenue / stats.spend : 0;
+        const fmtCTR = stats.impressions > 0 ? (stats.clicks / stats.impressions * 100) : 0;
+        return `- ${fmt}: ${stats.count} entities, €${stats.spend.toFixed(0)} spend, ${fmtROAS.toFixed(2)}x ROAS, ${fmtCTR.toFixed(2)}% CTR`;
       }).join('\n');
 
     // Aggregate by persona if any
-    const personaPerformance: Record<string, { spend: number; revenue: number; count: number }> = {};
+    const personaPerformance: Record<string, { spend: number; revenue: number; count: number; clicks: number; impressions: number }> = {};
     enrichedEntities.filter(e => e.persona).forEach(e => {
       const p = e.persona!;
-      if (!personaPerformance[p]) personaPerformance[p] = { spend: 0, revenue: 0, count: 0 };
+      if (!personaPerformance[p]) personaPerformance[p] = { spend: 0, revenue: 0, count: 0, clicks: 0, impressions: 0 };
       personaPerformance[p].spend += e.spend;
       personaPerformance[p].revenue += e.revenue;
       personaPerformance[p].count++;
+      personaPerformance[p].clicks += e.clicks;
+      personaPerformance[p].impressions += e.impressions;
     });
     
     const personaLines = Object.entries(personaPerformance).length > 0
@@ -577,15 +642,35 @@ async function generateInsights(data: AdsDataInput): Promise<AIInsightsResponse>
           .sort(([, a], [, b]) => b.spend - a.spend)
           .map(([persona, stats]) => {
             const pROAS = stats.spend > 0 ? stats.revenue / stats.spend : 0;
-            return `- ${persona}: ${stats.count} creatives, €${stats.spend.toFixed(0)} spend, ${pROAS.toFixed(2)}x ROAS`;
+            const pCTR = stats.impressions > 0 ? (stats.clicks / stats.impressions * 100) : 0;
+            return `- ${persona}: ${stats.count} creatives, €${stats.spend.toFixed(0)} spend, ${pROAS.toFixed(2)}x ROAS, ${pCTR.toFixed(2)}% CTR`;
           }).join('\n')
       : '';
 
-    return `## ENTITY BREAKDOWN (${enrichedEntities.length} entities)
-${concentrationWarning}
+    // Count ad groups per campaign for single-ad-group detection
+    const campaignAdGroupCounts: Record<string, Set<string>> = {};
+    enrichedEntities.forEach(e => {
+      if (e.entity_type === 'ad_group' && e.campaign_id) {
+        if (!campaignAdGroupCounts[e.campaign_id]) campaignAdGroupCounts[e.campaign_id] = new Set();
+        campaignAdGroupCounts[e.campaign_id].add(e.id);
+      }
+    });
+    const singleAdGroupCampaigns = Object.entries(campaignAdGroupCounts)
+      .filter(([, adGroups]) => adGroups.size === 1)
+      .map(([campaignId]) => campaignId);
+    
+    const singleAdGroupNote = singleAdGroupCampaigns.length > 0
+      ? `\n⚠️ NOTE: ${singleAdGroupCampaigns.length} campaign(s) have only ONE ad group - ad group insights redundant with campaign level for these.`
+      : '';
 
-### BY CREATIVE CATEGORY
+    return `## ENTITY BREAKDOWN (${enrichedEntities.length} entities)
+${concentrationWarning}${singleAdGroupNote}
+
+### BY CREATIVE CATEGORY (IMPORTANT - Analyze this!)
 ${categoryLines}
+
+### BY FORMAT (Static vs Video - IMPORTANT!)
+${formatLines}
 ${personaLines}
 
 ### INDIVIDUAL ENTITIES (top 15 by spend)
