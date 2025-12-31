@@ -2940,6 +2940,21 @@ export type Database = {
       }
     }
     Functions: {
+      get_affiliate_commissions_masked: {
+        Args: { p_affiliate_id: string }
+        Returns: {
+          affiliate_id: string
+          amount: number
+          created_at: string
+          fraud_flag: boolean
+          id: string
+          level: number
+          order_amount: number
+          order_id: string
+          referral_id: string
+          status: string
+        }[]
+      }
       get_affiliate_commissions_safe: {
         Args: { p_affiliate_id: string }
         Returns: {
