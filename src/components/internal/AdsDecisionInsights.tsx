@@ -62,25 +62,56 @@ interface AdsDecisionInsightsProps {
 
 interface DecisionInsight {
   level: "ad" | "ad_group" | "campaign" | "account";
-  type: "scale" | "burn" | "improving" | "declining" | "info";
+  // Support both old "type" and new "decision" field for backwards compatibility
+  type?: "scale" | "burn" | "improving" | "declining" | "info";
+  decision?: "scale" | "reduce" | "pause" | "test" | "maintain" | "do_nothing" | "learning_phase";
+  priority?: number;
   title: string;
   explanation: string;
   metric_reference?: string;
+  metrics?: string;
   recommended_action: string;
   confidence: "high" | "medium" | "low";
   severity: "high" | "medium" | "low";
   risk_if_wrong: string;
+  next_review?: "3d" | "7d" | "14d";
 }
 
 interface AIInsightsResponse {
+  account_health_score?: number;
   insights: DecisionInsight[];
   summary: string;
   generated_at: string;
   from_cache?: boolean;
 }
 
-function getInsightIcon(type: DecisionInsight["type"]) {
-  switch (type) {
+// Map new decision types to display types for backwards compatibility
+function getDisplayType(insight: DecisionInsight): "scale" | "burn" | "improving" | "declining" | "info" {
+  // If we have the old type field, use it
+  if (insight.type) return insight.type;
+  
+  // Map new decision types to display types
+  switch (insight.decision) {
+    case "scale":
+      return "scale";
+    case "reduce":
+    case "pause":
+      return "burn";
+    case "test":
+      return "info";
+    case "maintain":
+    case "do_nothing":
+      return "info";
+    case "learning_phase":
+      return "info";
+    default:
+      return "info";
+  }
+}
+
+function getInsightIcon(insight: DecisionInsight) {
+  const displayType = getDisplayType(insight);
+  switch (displayType) {
     case "scale":
       return Rocket;
     case "burn":
@@ -95,8 +126,9 @@ function getInsightIcon(type: DecisionInsight["type"]) {
   }
 }
 
-function getInsightColor(type: DecisionInsight["type"]) {
-  switch (type) {
+function getInsightColor(insight: DecisionInsight) {
+  const displayType = getDisplayType(insight);
+  switch (displayType) {
     case "scale":
       return "text-emerald-500 bg-emerald-500/10 border-emerald-500/30";
     case "burn":
@@ -120,6 +152,12 @@ function getConfidenceBadge(confidence: DecisionInsight["confidence"]) {
     case "low":
       return { label: "Low confidence", className: "bg-muted text-muted-foreground" };
   }
+}
+
+function getHealthScoreColor(score: number): string {
+  if (score >= 80) return "text-emerald-500";
+  if (score >= 60) return "text-amber-500";
+  return "text-red-500";
 }
 
 export function AdsDecisionInsights({ data, eqsScore }: AdsDecisionInsightsProps) {
@@ -291,11 +329,14 @@ export function AdsDecisionInsights({ data, eqsScore }: AdsDecisionInsightsProps
     );
   }
 
-  // Group insights by type
-  const scaleInsights = insights.insights.filter(i => i.type === "scale");
-  const burnInsights = insights.insights.filter(i => i.type === "burn");
-  const trendInsights = insights.insights.filter(i => i.type === "improving" || i.type === "declining");
-  const infoInsights = insights.insights.filter(i => i.type === "info");
+  // Group insights by display type (handles both old and new formats)
+  const scaleInsights = insights.insights.filter(i => getDisplayType(i) === "scale");
+  const burnInsights = insights.insights.filter(i => getDisplayType(i) === "burn");
+  const trendInsights = insights.insights.filter(i => {
+    const dt = getDisplayType(i);
+    return dt === "improving" || dt === "declining";
+  });
+  const infoInsights = insights.insights.filter(i => getDisplayType(i) === "info");
 
   return (
     <Card className="bg-card/50 border-border/50">
@@ -307,6 +348,17 @@ export function AdsDecisionInsights({ data, eqsScore }: AdsDecisionInsightsProps
             <Badge variant="outline" className="ml-2 text-xs font-normal">
               AI-powered
             </Badge>
+            {insights.account_health_score !== undefined && (
+              <Badge 
+                variant="outline" 
+                className={cn(
+                  "ml-1 text-xs font-semibold",
+                  getHealthScoreColor(insights.account_health_score)
+                )}
+              >
+                Health: {insights.account_health_score}/100
+              </Badge>
+            )}
             {isStale && (
               <Badge variant="outline" className="ml-1 text-xs font-normal bg-amber-500/10 text-amber-600 border-amber-500/30">
                 Data changed
@@ -412,10 +464,11 @@ function getLevelBadge(level: DecisionInsight["level"]) {
 }
 
 function InsightCard({ insight }: { insight: DecisionInsight }) {
-  const Icon = getInsightIcon(insight.type);
-  const colorClass = getInsightColor(insight.type);
+  const Icon = getInsightIcon(insight);
+  const colorClass = getInsightColor(insight);
   const confidenceBadge = getConfidenceBadge(insight.confidence);
   const levelBadge = insight.level ? getLevelBadge(insight.level) : null;
+  const metricsDisplay = insight.metrics || insight.metric_reference;
   
   return (
     <div className={cn(
@@ -432,21 +485,33 @@ function InsightCard({ insight }: { insight: DecisionInsight }) {
               {levelBadge.label}
             </Badge>
           )}
+          {insight.priority && (
+            <Badge variant="outline" className="text-xs bg-primary/10 text-primary">
+              P{insight.priority}
+            </Badge>
+          )}
           <span className="font-medium text-sm">{insight.title}</span>
           <Badge variant="outline" className={cn("text-xs", confidenceBadge.className)}>
             {confidenceBadge.label}
           </Badge>
         </div>
         <p className="text-xs text-muted-foreground mt-1">{insight.explanation}</p>
-        {insight.metric_reference && (
+        {metricsDisplay && (
           <Badge variant="outline" className="text-xs font-mono mt-2">
-            {insight.metric_reference}
+            {metricsDisplay}
           </Badge>
         )}
         {insight.recommended_action && (
-          <div className="mt-2 pt-2 border-t border-current/20">
-            <span className="text-xs font-medium">Action: </span>
-            <span className="text-xs">{insight.recommended_action}</span>
+          <div className="mt-2 pt-2 border-t border-current/20 flex items-center justify-between">
+            <div>
+              <span className="text-xs font-medium">Action: </span>
+              <span className="text-xs">{insight.recommended_action}</span>
+            </div>
+            {insight.next_review && (
+              <Badge variant="outline" className="text-xs">
+                Review: {insight.next_review}
+              </Badge>
+            )}
           </div>
         )}
         {insight.risk_if_wrong && (
