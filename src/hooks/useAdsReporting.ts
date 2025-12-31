@@ -36,6 +36,12 @@ export interface EntityMetrics extends ProcessedMetrics {
   creative_category?: string; // UGC, Lifestyle, Testimonial, Before/After
   creative_format?: string;   // Static, Video
   product_focus?: string;
+  persona?: string;           // e.g., Jason, Mia
+  // Parent references (for ads)
+  campaign_id?: string;
+  campaign_name?: string;
+  ad_group_id?: string;
+  ad_group_name?: string;
 }
 
 export interface AdsReportingData {

@@ -77,6 +77,12 @@ interface EntityMetrics extends ProcessedMetrics {
   creative_category?: string; // UGC, Lifestyle, Testimonial, Before/After
   creative_format?: string;   // Static, Video
   product_focus?: string;
+  persona?: string;           // e.g., Jason, Mia
+  // Parent references (for ads)
+  campaign_id?: string;
+  campaign_name?: string;
+  ad_group_id?: string;
+  ad_group_name?: string;
 }
 
 interface AdsReportingResponse {
@@ -389,6 +395,7 @@ interface ParsedCreativeInfo {
   creative_category?: string;
   creative_format?: string;
   product_focus?: string;
+  persona?: string;
 }
 
 function parseCreativeFromName(name: string): ParsedCreativeInfo {
@@ -403,6 +410,9 @@ function parseCreativeFromName(name: string): ParsedCreativeInfo {
   else if (nameLower.includes('b/a') || nameLower.includes('b&a')) result.creative_category = 'Before/After';
   else if (nameLower.includes('product')) result.creative_category = 'Product';
   else if (nameLower.includes('educational') || nameLower.includes('edu')) result.creative_category = 'Educational';
+  else if (nameLower.includes('awareness')) result.creative_category = 'Awareness';
+  else if (nameLower.includes('consideration')) result.creative_category = 'Consideration';
+  else if (nameLower.includes('conversion')) result.creative_category = 'Conversion';
   
   // Format detection
   if (nameLower.includes('video') || nameLower.includes('vid')) result.creative_format = 'Video';
@@ -416,6 +426,21 @@ function parseCreativeFromName(name: string): ParsedCreativeInfo {
   else if (nameLower.includes('topper')) result.product_focus = 'Topper';
   else if (nameLower.includes('bundle')) result.product_focus = 'Bundle';
   
+  // Persona detection (common personas in ad naming)
+  const personaPatterns = [
+    /\b(jason|mia|alex|sarah|mike|emma|chris|lisa|tom|amy|david|jessica|mark|rachel)\b/i,
+    /\[(\w+)\]/,  // [PersonaName] format
+    /persona[:\s-]+(\w+)/i,  // persona: Name format
+  ];
+  
+  for (const pattern of personaPatterns) {
+    const match = name.match(pattern);
+    if (match) {
+      result.persona = match[1].charAt(0).toUpperCase() + match[1].slice(1).toLowerCase();
+      break;
+    }
+  }
+  
   return result;
 }
 
@@ -423,6 +448,10 @@ interface EntityInfo {
   id: string;
   name: string;
   status?: string;
+  campaign_id?: string;
+  campaign_name?: string;
+  ad_group_id?: string;
+  ad_group_name?: string;
 }
 
 async function fetchCampaigns(
@@ -446,7 +475,8 @@ async function fetchCampaigns(
 
 async function fetchAdGroups(
   accessToken: string,
-  adAccountId: string
+  adAccountId: string,
+  campaignMap?: Map<string, { id: string; name: string }>
 ): Promise<EntityInfo[]> {
   const url = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/ad_groups`);
   url.searchParams.set("page_size", "100");
@@ -456,16 +486,23 @@ async function fetchAdGroups(
   });
 
   const data = await response.json();
-  return (data.items || []).map((ag: { id: string; name: string; status?: string }) => ({
-    id: ag.id,
-    name: ag.name || `Ad Group ${ag.id}`,
-    status: ag.status,
-  }));
+  return (data.items || []).map((ag: { id: string; name: string; status?: string; campaign_id?: string }) => {
+    const campaign = campaignMap?.get(ag.campaign_id || '');
+    return {
+      id: ag.id,
+      name: ag.name || `Ad Group ${ag.id}`,
+      status: ag.status,
+      campaign_id: ag.campaign_id,
+      campaign_name: campaign?.name,
+    };
+  });
 }
 
 async function fetchAds(
   accessToken: string,
-  adAccountId: string
+  adAccountId: string,
+  campaignMap?: Map<string, { id: string; name: string }>,
+  adGroupMap?: Map<string, { id: string; name: string; campaign_id?: string }>
 ): Promise<EntityInfo[]> {
   const url = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/ads`);
   url.searchParams.set("page_size", "100");
@@ -475,11 +512,19 @@ async function fetchAds(
   });
 
   const data = await response.json();
-  return (data.items || []).map((ad: { id: string; name: string; status?: string }) => ({
-    id: ad.id,
-    name: ad.name || `Ad ${ad.id}`,
-    status: ad.status,
-  }));
+  return (data.items || []).map((ad: { id: string; name: string; status?: string; campaign_id?: string; ad_group_id?: string }) => {
+    const campaign = campaignMap?.get(ad.campaign_id || '');
+    const adGroup = adGroupMap?.get(ad.ad_group_id || '');
+    return {
+      id: ad.id,
+      name: ad.name || `Ad ${ad.id}`,
+      status: ad.status,
+      campaign_id: ad.campaign_id,
+      campaign_name: campaign?.name,
+      ad_group_id: ad.ad_group_id,
+      ad_group_name: adGroup?.name,
+    };
+  });
 }
 
 // Legacy functions for backwards compatibility
@@ -526,17 +571,28 @@ async function fetchPinterestAnalytics(
   let entityInfoMap: Map<string, EntityInfo> = new Map();
   let entityType: "campaign" | "ad_group" | "ad" | undefined;
   
+  // Create lookup maps for parent references
+  let campaignMap: Map<string, { id: string; name: string }> = new Map();
+  let adGroupMap: Map<string, { id: string; name: string; campaign_id?: string }> = new Map();
+  
   if (params.level === "CAMPAIGN") {
     const campaigns = await fetchCampaigns(accessToken, adAccountId);
     if (campaigns.length === 0) {
       throw new Error("No campaigns found in this ad account");
     }
-    campaigns.forEach(c => entityInfoMap.set(c.id, c));
+    campaigns.forEach(c => {
+      entityInfoMap.set(c.id, c);
+      campaignMap.set(c.id, { id: c.id, name: c.name });
+    });
     entityType = "campaign";
     url = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/campaigns/analytics`);
     url.searchParams.set("campaign_ids", campaigns.map(c => c.id).join(","));
   } else if (params.level === "AD_GROUP") {
-    const adGroups = await fetchAdGroups(accessToken, adAccountId);
+    // Fetch campaigns first for reference
+    const campaigns = await fetchCampaigns(accessToken, adAccountId);
+    campaigns.forEach(c => campaignMap.set(c.id, { id: c.id, name: c.name }));
+    
+    const adGroups = await fetchAdGroups(accessToken, adAccountId, campaignMap);
     if (adGroups.length === 0) {
       throw new Error("No ad groups found in this ad account");
     }
@@ -545,7 +601,14 @@ async function fetchPinterestAnalytics(
     url = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/ad_groups/analytics`);
     url.searchParams.set("ad_group_ids", adGroups.map(ag => ag.id).join(","));
   } else if (params.level === "PIN_PROMOTION") {
-    const ads = await fetchAds(accessToken, adAccountId);
+    // Fetch campaigns and ad groups first for reference
+    const campaigns = await fetchCampaigns(accessToken, adAccountId);
+    campaigns.forEach(c => campaignMap.set(c.id, { id: c.id, name: c.name }));
+    
+    const adGroups = await fetchAdGroups(accessToken, adAccountId, campaignMap);
+    adGroups.forEach(ag => adGroupMap.set(ag.id, { id: ag.id, name: ag.name, campaign_id: ag.campaign_id }));
+    
+    const ads = await fetchAds(accessToken, adAccountId, campaignMap, adGroupMap);
     if (ads.length === 0) {
       throw new Error("No ads found in this ad account");
     }
@@ -685,6 +748,10 @@ async function fetchPinterestAnalytics(
         name,
         entity_type: entityType,
         status: entityInfo?.status,
+        campaign_id: entityInfo?.campaign_id,
+        campaign_name: entityInfo?.campaign_name,
+        ad_group_id: entityInfo?.ad_group_id,
+        ad_group_name: entityInfo?.ad_group_name,
         ...metrics,
         ...creativeInfo,
       });
