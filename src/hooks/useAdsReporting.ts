@@ -97,6 +97,9 @@ export function useAdsReporting(options: UseAdsReportingOptions = { autoFetch: t
   const [granularity, setGranularity] = useState<Granularity>("DAY");
   const [level, setLevel] = useState<Level>("ACCOUNT");
 
+  const [activeOnlyCampaigns, setActiveOnlyCampaigns] = useState(false);
+  const [activeOnlyAds, setActiveOnlyAds] = useState(false);
+
   const fetchData = useCallback(async (forceRefresh = false) => {
     setLoading(true);
     setError(null);
@@ -114,6 +117,8 @@ export function useAdsReporting(options: UseAdsReportingOptions = { autoFetch: t
         level,
         click_window_days: "30",
         view_window_days: "1",
+        active_only_campaigns: activeOnlyCampaigns ? "true" : "false",
+        active_only_ads: activeOnlyAds ? "true" : "false",
         ...(forceRefresh && { force_refresh: "true" }),
       });
 
@@ -157,7 +162,7 @@ export function useAdsReporting(options: UseAdsReportingOptions = { autoFetch: t
     } finally {
       setLoading(false);
     }
-  }, [selectedPreset, granularity, level]);
+  }, [selectedPreset, granularity, level, activeOnlyCampaigns, activeOnlyAds]);
 
   // Auto-fetch on mount and when params change
   useEffect(() => {
@@ -199,6 +204,11 @@ export function useAdsReporting(options: UseAdsReportingOptions = { autoFetch: t
     setGranularity,
     level,
     setLevel,
+
+    activeOnlyCampaigns,
+    setActiveOnlyCampaigns,
+    activeOnlyAds,
+    setActiveOnlyAds,
     
     // Helpers
     datePresets: DATE_PRESETS,

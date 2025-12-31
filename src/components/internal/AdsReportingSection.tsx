@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { useAdsReporting, Granularity, DatePreset, EntityMetrics, ProcessedMetrics } from "@/hooks/useAdsReporting";
+import { useMemo } from "react";
+import { useAdsReporting, Granularity } from "@/hooks/useAdsReporting";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,12 +8,12 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { 
-  TrendingUp, 
-  DollarSign, 
-  MousePointerClick, 
-  Eye, 
-  ShoppingCart, 
+import {
+  TrendingUp,
+  DollarSign,
+  MousePointerClick,
+  Eye,
+  ShoppingCart,
   Target,
   RefreshCw,
   Clock,
@@ -57,48 +57,6 @@ import { cn } from "@/lib/utils";
 import { AdsDecisionInsights } from "./AdsDecisionInsights";
 import { EntityPerformanceTable } from "./EntityPerformanceTable";
 
-// Helper to recalculate totals from filtered entities
-function calculateTotalsFromEntities(entities: EntityMetrics[]): ProcessedMetrics {
-  const totals = {
-    spend: 0,
-    revenue: 0,
-    impressions: 0,
-    clicks: 0,
-    checkouts: 0,
-    add_to_carts: 0,
-    conversions: 0,
-  };
-
-  for (const entity of entities) {
-    totals.spend += entity.spend;
-    totals.revenue += entity.revenue;
-    totals.impressions += entity.impressions;
-    totals.clicks += entity.clicks;
-    totals.checkouts += entity.checkouts;
-    totals.add_to_carts += entity.add_to_carts;
-    totals.conversions += entity.conversions;
-  }
-
-  const spend = Math.round(totals.spend * 100) / 100;
-  const revenue = Math.round(totals.revenue * 100) / 100;
-
-  return {
-    spend,
-    revenue,
-    roas: spend > 0 ? Math.round((revenue / spend) * 100) / 100 : 0,
-    impressions: totals.impressions,
-    clicks: totals.clicks,
-    ctr: totals.impressions > 0 ? Math.round((totals.clicks / totals.impressions) * 10000) / 100 : 0,
-    cpc: totals.clicks > 0 ? Math.round((spend / totals.clicks) * 100) / 100 : 0,
-    cpm: totals.impressions > 0 ? Math.round((spend / totals.impressions * 1000) * 100) / 100 : 0,
-    checkouts: totals.checkouts,
-    cpa: totals.checkouts > 0 ? Math.round((spend / totals.checkouts) * 100) / 100 : 0,
-    add_to_carts: totals.add_to_carts,
-    conversions: totals.conversions,
-    conversion_rate: totals.clicks > 0 ? Math.round((totals.checkouts / totals.clicks) * 10000) / 100 : 0,
-    add_to_cart_rate: totals.clicks > 0 ? Math.round((totals.add_to_carts / totals.clicks) * 10000) / 100 : 0,
-  };
-}
 
 // ============================================================================
 // KPI CARD COMPONENT
