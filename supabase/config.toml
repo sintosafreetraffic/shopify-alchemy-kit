@@ -321,3 +321,7 @@ verify_jwt = false
 # Ads Decision Insights - AI-powered insights for ads data (public, uses internal token)
 [functions.ads-decision-insights]
 verify_jwt = false
+
+# Generate Creative Briefs - AI-powered Higgsfield prompt generator (public, uses internal token)
+[functions.generate-creative-briefs]
+verify_jwt = false
