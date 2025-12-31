@@ -1,8 +1,14 @@
-import { useState, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
-  Table,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   TableBody,
   TableCell,
   TableHead,
@@ -16,22 +22,29 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  ChevronsUpDown,
+  Pencil,
+  X,
+} from "lucide-react";
 import type { EntityMetrics } from "@/hooks/useAdsReporting";
 
 type SortDirection = "asc" | "desc" | null;
-type SortableColumn = 
-  | "name" 
-  | "creative_category" 
-  | "creative_format" 
+type SortableColumn =
+  | "name"
+  | "creative_category"
+  | "creative_format"
   | "persona"
   | "campaign_name"
-  | "spend" 
-  | "revenue" 
-  | "roas" 
-  | "clicks" 
-  | "ctr" 
-  | "checkouts" 
+  | "spend"
+  | "revenue"
+  | "roas"
+  | "clicks"
+  | "ctr"
+  | "checkouts"
   | "cpa";
 
 interface EntityPerformanceTableProps {
@@ -40,6 +53,21 @@ interface EntityPerformanceTableProps {
   showCampaignRef?: boolean;
   showPersona?: boolean;
   title?: string;
+}
+
+const CATEGORY_OVERRIDES_STORAGE_KEY =
+  "risebynight:campaign_category_overrides:v1";
+
+function readCategoryOverrides(): Record<string, string> {
+  try {
+    const raw = localStorage.getItem(CATEGORY_OVERRIDES_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return {};
+    return parsed as Record<string, string>;
+  } catch {
+    return {};
+  }
 }
 
 function SortableHeader({
@@ -62,12 +90,13 @@ function SortableHeader({
   return (
     <TableHead
       className={cn(
-        // Sticky header support inside scroll containers (thead itself isn't sticky in many browsers)
+        // IMPORTANT: sticky works only within the SAME scroll container.
+        // The table is wrapped in a single `overflow-auto` container below.
         "sticky top-0 z-20 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80",
         "text-xs font-medium cursor-pointer select-none transition-colors",
         "border-b border-border",
         "hover:bg-muted/50",
-        className
+        className,
       )}
       onClick={() => onSort(column)}
     >
@@ -87,6 +116,123 @@ function SortableHeader({
   );
 }
 
+function CategoryCell({
+  entityId,
+  entityType,
+  baseCategory,
+  overrideCategory,
+  onSaveOverride,
+}: {
+  entityId: string;
+  entityType: EntityPerformanceTableProps["entityType"];
+  baseCategory?: string;
+  overrideCategory?: string;
+  onSaveOverride: (entityId: string, category: string | null) => void;
+}) {
+  const effectiveCategory = overrideCategory ?? baseCategory;
+  const isOther = (effectiveCategory ?? "").trim().toLowerCase() === "other";
+
+  // Only editable for campaigns (as requested).
+  const canEdit =
+    entityType === "campaign" && (isOther || !effectiveCategory || !!overrideCategory);
+
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState<string>(
+    overrideCategory ?? (!effectiveCategory || isOther ? "" : effectiveCategory),
+  );
+
+  useEffect(() => {
+    if (!open) {
+      setDraft(overrideCategory ?? (!effectiveCategory || isOther ? "" : effectiveCategory));
+    }
+  }, [open, overrideCategory, effectiveCategory, isOther]);
+
+  const display = effectiveCategory;
+
+  return (
+    <div className="flex items-center gap-2">
+      {display ? (
+        <Badge
+          variant={overrideCategory ? "secondary" : isOther ? "outline" : "secondary"}
+          className={cn(
+            "text-[10px]",
+            isOther && "text-muted-foreground border-muted-foreground/30",
+          )}
+        >
+          {overrideCategory ? overrideCategory : display}
+        </Badge>
+      ) : (
+        <Badge
+          variant="outline"
+          className="text-[10px] text-muted-foreground border-muted-foreground/30"
+        >
+          Unknown
+        </Badge>
+      )}
+
+      {canEdit && (
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              aria-label="Edit category"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-72">
+            <div className="space-y-2">
+              <div>
+                <p className="text-sm font-medium">Set category</p>
+                <p className="text-xs text-muted-foreground">
+                  Replace “Other” with your own value.
+                </p>
+              </div>
+
+              <Input
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                placeholder="e.g. Expert/Authority"
+              />
+
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => {
+                    const next = draft.trim();
+                    onSaveOverride(entityId, next.length ? next : null);
+                    setOpen(false);
+                  }}
+                >
+                  <Check className="h-4 w-4" />
+                  Save
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    onSaveOverride(entityId, null);
+                    setOpen(false);
+                  }}
+                >
+                  <X className="h-4 w-4" />
+                  Clear
+                </Button>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+      )}
+    </div>
+  );
+}
+
 export function EntityPerformanceTable({
   entities,
   entityType,
@@ -96,6 +242,36 @@ export function EntityPerformanceTable({
 }: EntityPerformanceTableProps) {
   const [sortColumn, setSortColumn] = useState<SortableColumn | null>("spend");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+
+  const [categoryOverrides, setCategoryOverrides] = useState<Record<string, string>>(
+    () => readCategoryOverrides(),
+  );
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        CATEGORY_OVERRIDES_STORAGE_KEY,
+        JSON.stringify(categoryOverrides),
+      );
+    } catch {
+      // ignore write failures (private mode, etc.)
+    }
+  }, [categoryOverrides]);
+
+  const saveCategoryOverride = useCallback(
+    (entityId: string, category: string | null) => {
+      setCategoryOverrides((prev) => {
+        const next = { ...prev };
+        if (!category) {
+          delete next[entityId];
+          return next;
+        }
+        next[entityId] = category;
+        return next;
+      });
+    },
+    [],
+  );
 
   const handleSort = (column: SortableColumn) => {
     if (sortColumn === column) {
@@ -124,10 +300,13 @@ export function EntityPerformanceTable({
           aVal = a.name.toLowerCase();
           bVal = b.name.toLowerCase();
           break;
-        case "creative_category":
-          aVal = a.creative_category?.toLowerCase() || "zzz";
-          bVal = b.creative_category?.toLowerCase() || "zzz";
+        case "creative_category": {
+          const aCat = categoryOverrides[a.id] ?? a.creative_category;
+          const bCat = categoryOverrides[b.id] ?? b.creative_category;
+          aVal = aCat?.toLowerCase() || "zzz";
+          bVal = bCat?.toLowerCase() || "zzz";
           break;
+        }
         case "creative_format":
           aVal = a.creative_format?.toLowerCase() || "zzz";
           bVal = b.creative_format?.toLowerCase() || "zzz";
@@ -171,29 +350,32 @@ export function EntityPerformanceTable({
       }
 
       if (typeof aVal === "string" && typeof bVal === "string") {
-        return sortDirection === "asc" 
+        return sortDirection === "asc"
           ? aVal.localeCompare(bVal)
           : bVal.localeCompare(aVal);
       }
 
-      return sortDirection === "asc" 
+      return sortDirection === "asc"
         ? (aVal as number) - (bVal as number)
         : (bVal as number) - (aVal as number);
     });
-  }, [entities, sortColumn, sortDirection]);
+  }, [entities, sortColumn, sortDirection, categoryOverrides]);
 
-  const entityLabel = entityType === "campaign" 
-    ? "campaigns" 
-    : entityType === "ad_group" 
-      ? "ad groups" 
-      : "ads";
+  const entityLabel =
+    entityType === "campaign"
+      ? "campaigns"
+      : entityType === "ad_group"
+        ? "ad groups"
+        : "ads";
 
-  const tableTitle = title || `${entityType === "campaign" ? "Campaign" : entityType === "ad_group" ? "Ad Group" : "Ad"} Performance`;
+  const tableTitle =
+    title ||
+    `${entityType === "campaign" ? "Campaign" : entityType === "ad_group" ? "Ad Group" : "Ad"} Performance`;
 
   // Always show category column for campaigns, check for others
-  const hasPersonas = showPersona && entities.some(e => e.persona);
-  const hasCategories = entityType === "campaign" || entities.some(e => e.creative_category);
-  const hasFormats = entities.some(e => e.creative_format);
+  const hasPersonas = showPersona && entities.some((e) => e.persona);
+  const hasCategories = entityType === "campaign" || entities.some((e) => e.creative_category);
+  const hasFormats = entities.some((e) => e.creative_format);
 
   return (
     <Card className="bg-card/30 border-border/30">
@@ -206,8 +388,9 @@ export function EntityPerformanceTable({
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="max-h-96 overflow-auto relative">
-          <Table>
+        {/* Single scroll container for sticky headers */}
+        <div className="relative max-h-96 overflow-auto">
+          <table className="w-full caption-bottom text-sm">
             <TableHeader>
               <TableRow className="bg-transparent hover:bg-transparent">
                 <SortableHeader
@@ -325,117 +508,152 @@ export function EntityPerformanceTable({
                 </SortableHeader>
               </TableRow>
             </TableHeader>
+
             <TableBody>
-              {sortedEntities.map((entity) => (
-                <TableRow key={entity.id} className="hover:bg-muted/20">
-                  <TableCell className="text-xs font-medium">
-                    <div className="flex flex-col gap-0.5">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className="truncate max-w-[200px] cursor-help block">
-                              {entity.name}
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent side="top" className="max-w-md bg-popover border border-border z-50">
-                            <p className="text-sm break-words">{entity.name}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      {entity.status && entity.status !== "ACTIVE" && (
-                        <Badge variant="outline" className="text-[10px] w-fit">
-                          {entity.status}
-                        </Badge>
-                      )}
-                    </div>
-                  </TableCell>
-                  {showCampaignRef && (
-                    <TableCell className="text-xs">
-                      {entity.campaign_name ? (
+              {sortedEntities.map((entity) => {
+                const overrideCategory = categoryOverrides[entity.id];
+
+                return (
+                  <TableRow key={entity.id} className="hover:bg-muted/20">
+                    <TableCell className="text-xs font-medium">
+                      <div className="flex flex-col gap-0.5">
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <span className="truncate max-w-[120px] block text-muted-foreground cursor-help">
-                                {entity.campaign_name}
+                              <span className="truncate max-w-[200px] cursor-help block">
+                                {entity.name}
                               </span>
                             </TooltipTrigger>
-                            <TooltipContent side="top" className="max-w-md bg-popover border border-border z-50">
-                              <p className="text-sm break-words">{entity.campaign_name}</p>
+                            <TooltipContent
+                              side="top"
+                              className="max-w-md bg-popover border border-border z-50"
+                            >
+                              <p className="text-sm break-words">{entity.name}</p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
+                        {entity.status && entity.status !== "ACTIVE" && (
+                          <Badge variant="outline" className="text-[10px] w-fit">
+                            {entity.status}
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
-                  )}
-                  {hasCategories && (
-                    <TableCell className="text-xs">
-                      {entity.creative_category ? (
-                        <Badge variant="secondary" className="text-[10px]">
-                          {entity.creative_category}
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-[10px] text-muted-foreground border-muted-foreground/30">
-                          Unknown
-                        </Badge>
-                      )}
+
+                    {showCampaignRef && (
+                      <TableCell className="text-xs">
+                        {entity.campaign_name ? (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="truncate max-w-[120px] block text-muted-foreground cursor-help">
+                                  {entity.campaign_name}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent
+                                side="top"
+                                className="max-w-md bg-popover border border-border z-50"
+                              >
+                                <p className="text-sm break-words">{entity.campaign_name}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                    )}
+
+                    {hasCategories && (
+                      <TableCell className="text-xs">
+                        <CategoryCell
+                          entityId={entity.id}
+                          entityType={entityType}
+                          baseCategory={entity.creative_category}
+                          overrideCategory={overrideCategory}
+                          onSaveOverride={saveCategoryOverride}
+                        />
+                      </TableCell>
+                    )}
+
+                    {hasFormats && (
+                      <TableCell className="text-xs">
+                        {entity.creative_format ? (
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "text-[10px]",
+                              entity.creative_format === "Video" &&
+                                "border-purple-500/50 text-purple-500",
+                              entity.creative_format === "Static" &&
+                                "border-blue-500/50 text-blue-500",
+                              entity.creative_format === "Carousel" &&
+                                "border-orange-500/50 text-orange-500",
+                              entity.creative_format === "GIF" &&
+                                "border-green-500/50 text-green-500",
+                            )}
+                          >
+                            {entity.creative_format}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                    )}
+
+                    {hasPersonas && (
+                      <TableCell className="text-xs">
+                        {entity.persona ? (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] border-amber-500/50 text-amber-600"
+                          >
+                            {entity.persona}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                    )}
+
+                    <TableCell className="text-xs text-right">
+                      €{entity.spend.toFixed(2)}
                     </TableCell>
-                  )}
-                  {hasFormats && (
-                    <TableCell className="text-xs">
-                      {entity.creative_format ? (
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "text-[10px]",
-                            entity.creative_format === "Video" && "border-purple-500/50 text-purple-500",
-                            entity.creative_format === "Static" && "border-blue-500/50 text-blue-500",
-                            entity.creative_format === "Carousel" && "border-orange-500/50 text-orange-500",
-                            entity.creative_format === "GIF" && "border-green-500/50 text-green-500"
-                          )}
-                        >
-                          {entity.creative_format}
-                        </Badge>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
+                    <TableCell className="text-xs text-right">
+                      €{entity.revenue.toFixed(2)}
                     </TableCell>
-                  )}
-                  {hasPersonas && (
-                    <TableCell className="text-xs">
-                      {entity.persona ? (
-                        <Badge variant="outline" className="text-[10px] border-amber-500/50 text-amber-600">
-                          {entity.persona}
-                        </Badge>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
+                    <TableCell className="text-xs text-right">
+                      <span
+                        className={cn(
+                          entity.roas >= 2
+                            ? "text-green-500 font-medium"
+                            : entity.roas >= 1.54
+                              ? "text-yellow-500"
+                              : entity.roas > 0
+                                ? "text-red-500"
+                                : "text-muted-foreground",
+                        )}
+                      >
+                        {entity.roas.toFixed(2)}x
+                      </span>
                     </TableCell>
-                  )}
-                  <TableCell className="text-xs text-right">€{entity.spend.toFixed(2)}</TableCell>
-                  <TableCell className="text-xs text-right">€{entity.revenue.toFixed(2)}</TableCell>
-                  <TableCell className="text-xs text-right">
-                    <span
-                      className={cn(
-                        entity.roas >= 2 ? "text-green-500 font-medium" :
-                        entity.roas >= 1.54 ? "text-yellow-500" :
-                        entity.roas > 0 ? "text-red-500" : "text-muted-foreground"
-                      )}
-                    >
-                      {entity.roas.toFixed(2)}x
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-xs text-right">{entity.clicks.toLocaleString()}</TableCell>
-                  <TableCell className="text-xs text-right">{entity.ctr.toFixed(2)}%</TableCell>
-                  <TableCell className="text-xs text-right">{entity.checkouts}</TableCell>
-                  <TableCell className="text-xs text-right">
-                    {entity.checkouts > 0 ? `€${entity.cpa.toFixed(2)}` : "—"}
-                  </TableCell>
-                </TableRow>
-              ))}
+                    <TableCell className="text-xs text-right">
+                      {entity.clicks.toLocaleString()}
+                    </TableCell>
+                    <TableCell className="text-xs text-right">
+                      {entity.ctr.toFixed(2)}%
+                    </TableCell>
+                    <TableCell className="text-xs text-right">
+                      {entity.checkouts}
+                    </TableCell>
+                    <TableCell className="text-xs text-right">
+                      {entity.checkouts > 0 ? `€${entity.cpa.toFixed(2)}` : "—"}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
-          </Table>
+          </table>
         </div>
       </CardContent>
     </Card>
