@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useAdsReporting, Granularity } from "@/hooks/useAdsReporting";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,11 @@ import {
   Zap,
   AlertTriangle,
   Filter,
+  Mail,
+  Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import {
   LineChart,
@@ -140,6 +145,8 @@ function getRoasHighlight(roas: number): "good" | "warning" | "bad" | "neutral" 
 // ============================================================================
 
 export default function AdsReportingSection() {
+  const [sendingReport, setSendingReport] = useState(false);
+  
   const {
     data,
     loading,
@@ -165,6 +172,32 @@ export default function AdsReportingSection() {
     activeOnlyAds,
     setActiveOnlyAds,
   } = useAdsReporting();
+
+  // Send weekly report email
+  const sendWeeklyReport = async () => {
+    setSendingReport(true);
+    try {
+      const { data: result, error: invokeError } = await supabase.functions.invoke(
+        "weekly-ads-report",
+        { body: {} }
+      );
+      
+      if (invokeError) {
+        throw new Error(invokeError.message);
+      }
+      
+      if (result?.error) {
+        throw new Error(result.error);
+      }
+      
+      toast.success("Weekly report sent to info.optiseek@gmail.com");
+    } catch (err) {
+      console.error("Failed to send report:", err);
+      toast.error(err instanceof Error ? err.message : "Failed to send report");
+    } finally {
+      setSendingReport(false);
+    }
+  };
 
   // Check if any filters are active
   const hasActiveFilters = activeOnlyCampaigns || activeOnlyAds;
@@ -238,6 +271,30 @@ export default function AdsReportingSection() {
                 </UITooltip>
               </TooltipProvider>
             )}
+
+            {/* Send Weekly Report Button */}
+            <TooltipProvider>
+              <UITooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={sendWeeklyReport}
+                    disabled={sendingReport}
+                    className="h-8 w-8 p-0"
+                  >
+                    {sendingReport ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Mail className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-sm">Send weekly report email</p>
+                </TooltipContent>
+              </UITooltip>
+            </TooltipProvider>
 
             {/* Refresh Button */}
             <TooltipProvider>

@@ -315,7 +315,10 @@ serve(async (req) => {
   }
 
   try {
-    // Validate cron secret or debug secret
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    
+    // Validate cron secret, debug secret, or admin user
     const cronSecret = req.headers.get("x-cron-secret");
     const debugSecret = req.headers.get("x-debug-secret");
     const authHeader = req.headers.get("Authorization");
@@ -324,12 +327,42 @@ serve(async (req) => {
     const isInternalCron = req.headers.get("X-Supabase-Internal") === "true" ||
                            (req.headers.get("User-Agent") || "").includes("pg_net");
 
-    // Allow access if: valid cron secret header, valid bearer token, internal cron, or debug secret
+    // Check for valid secrets
     const hasValidCronSecret = cronSecret && cronSecret === expectedSecret;
     const hasValidBearerToken = authHeader && authHeader.replace("Bearer ", "") === expectedSecret;
     const hasValidDebugSecret = debugSecret && expectedDebugSecret && debugSecret === expectedDebugSecret;
     
-    if (!isInternalCron && !hasValidCronSecret && !hasValidBearerToken && !hasValidDebugSecret) {
+    // Check for admin user authentication
+    let isAdminUser = false;
+    if (authHeader && authHeader.startsWith("Bearer ") && supabaseUrl && supabaseKey) {
+      const token = authHeader.replace("Bearer ", "");
+      // Only check admin if it's not a cron secret
+      if (token !== expectedSecret) {
+        try {
+          const supabase = createClient(supabaseUrl, supabaseKey);
+          const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+          
+          if (user && !userError) {
+            // Check if user has admin role
+            const { data: roleData } = await supabase
+              .from("user_roles")
+              .select("role")
+              .eq("user_id", user.id)
+              .eq("role", "admin")
+              .maybeSingle();
+            
+            isAdminUser = !!roleData;
+            if (isAdminUser) {
+              console.log(`[weekly-ads-report] Admin user ${user.email} triggered report`);
+            }
+          }
+        } catch (authErr) {
+          console.log("[weekly-ads-report] Auth check failed, trying other methods:", authErr);
+        }
+      }
+    }
+    
+    if (!isInternalCron && !hasValidCronSecret && !hasValidBearerToken && !hasValidDebugSecret && !isAdminUser) {
       console.error("[weekly-ads-report] Unauthorized access attempt");
       return new Response(
         JSON.stringify({ success: false, error: "Unauthorized" }),
@@ -337,15 +370,12 @@ serve(async (req) => {
       );
     }
     
-    const isTestRun = hasValidDebugSecret;
+    const isTestRun = hasValidDebugSecret || isAdminUser;
     if (isTestRun) {
-      console.log("[weekly-ads-report] Test run triggered via DEBUG_SECRET");
+      console.log("[weekly-ads-report] Test run triggered");
     }
 
     console.log("[weekly-ads-report] Starting weekly report generation...");
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
     if (!supabaseUrl || !supabaseKey) {
       throw new Error("Missing Supabase configuration");
