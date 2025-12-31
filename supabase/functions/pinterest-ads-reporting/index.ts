@@ -617,7 +617,42 @@ async function fetchPinterestAnalytics(
     url = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/ads/analytics`);
     url.searchParams.set("ad_ids", ads.map(ad => ad.id).join(","));
   } else {
+    // ACCOUNT level: still fetch campaigns for entity breakdown
+    const campaigns = await fetchCampaigns(accessToken, adAccountId);
+    campaigns.forEach(c => {
+      entityInfoMap.set(c.id, c);
+      campaignMap.set(c.id, { id: c.id, name: c.name });
+    });
+    if (campaigns.length > 0) {
+      entityType = "campaign";
+    }
     url = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/analytics`);
+  }
+  
+  // For ACCOUNT level, we need a separate API call to get per-campaign breakdown
+  let campaignAnalyticsData: any[] = [];
+  if (params.level === "ACCOUNT" && entityInfoMap.size > 0) {
+    const campaignUrl = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/campaigns/analytics`);
+    campaignUrl.searchParams.set("campaign_ids", Array.from(entityInfoMap.keys()).join(","));
+    campaignUrl.searchParams.set("start_date", params.start_date);
+    campaignUrl.searchParams.set("end_date", params.end_date);
+    campaignUrl.searchParams.set("granularity", "TOTAL"); // Aggregate for entity breakdown
+    campaignUrl.searchParams.set("click_window_days", params.click_window_days.toString());
+    campaignUrl.searchParams.set("view_window_days", params.view_window_days.toString());
+    campaignUrl.searchParams.set("columns", METRICS_COLUMNS);
+    
+    try {
+      const campaignResponse = await fetchWithRetry(campaignUrl.toString(), {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+      campaignAnalyticsData = await campaignResponse.json();
+      log("info", "campaign_analytics_fetched", { count: campaignAnalyticsData.length });
+    } catch (e) {
+      log("warn", "campaign_analytics_failed", { error: String(e) });
+    }
   }
 
   url.searchParams.set("start_date", params.start_date);
@@ -736,7 +771,40 @@ async function fetchPinterestAnalytics(
 
   // Build entities breakdown
   const entities: EntityMetrics[] = [];
-  if (entityType) {
+  
+  // For ACCOUNT level, use the separate campaign analytics data
+  if (params.level === "ACCOUNT" && campaignAnalyticsData.length > 0) {
+    for (const entry of campaignAnalyticsData) {
+      const campaignId = entry.CAMPAIGN_ID;
+      if (!campaignId) continue;
+      
+      const entityInfo = entityInfoMap.get(campaignId);
+      const name = entityInfo?.name || `Campaign ${campaignId}`;
+      const creativeInfo = parseCreativeFromName(name);
+      
+      const rawMetrics = {
+        SPEND_IN_MICRO_DOLLAR: entry.SPEND_IN_MICRO_DOLLAR || 0,
+        TOTAL_IMPRESSION: entry.TOTAL_IMPRESSION || 0,
+        TOTAL_CLICKTHROUGH: entry.TOTAL_CLICKTHROUGH || 0,
+        TOTAL_CONVERSIONS: entry.TOTAL_CONVERSIONS || 0,
+        TOTAL_CHECKOUT: entry.TOTAL_CHECKOUT || 0,
+        TOTAL_CLICK_ADD_TO_CART: entry.TOTAL_CLICK_ADD_TO_CART || 0,
+        TOTAL_CHECKOUT_VALUE_IN_MICRO_DOLLAR: entry.TOTAL_CHECKOUT_VALUE_IN_MICRO_DOLLAR || 0,
+      };
+      const metrics = processRawMetrics(rawMetrics);
+      
+      entities.push({
+        id: campaignId,
+        name,
+        entity_type: "campaign",
+        status: entityInfo?.status,
+        ...metrics,
+        ...creativeInfo,
+      });
+    }
+    entities.sort((a, b) => b.spend - a.spend);
+  } else if (entityType) {
+    // For other levels, use the accumulated entity data
     for (const [entityId, rawMetrics] of entityAccum.entries()) {
       const entityInfo = entityInfoMap.get(entityId);
       const name = entityInfo?.name || `Unknown ${entityId}`;

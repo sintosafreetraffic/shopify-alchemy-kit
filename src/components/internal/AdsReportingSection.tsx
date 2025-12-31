@@ -605,10 +605,10 @@ export default function AdsReportingSection() {
               </div>
             )}
 
-            {/* Entity Breakdown Tables - Always show campaigns first if available */}
+            {/* Entity Breakdown Tables */}
             {data.entities && data.entities.length > 0 && (
               <>
-                {/* Campaign Performance Table (only when viewing at account level or campaign level) */}
+                {/* Campaign Performance Table - show when at ACCOUNT or CAMPAIGN level */}
                 {(level === "ACCOUNT" || level === "CAMPAIGN") && (
                   <EntityPerformanceTable
                     entities={data.entities.filter(e => e.entity_type === "campaign")}
@@ -621,19 +621,21 @@ export default function AdsReportingSection() {
 
                 {/* Ad Group Performance Table */}
                 {level === "AD_GROUP" && (
-                  <EntityPerformanceTable
-                    entities={data.entities}
-                    entityType="ad_group"
-                    showCampaignRef={true}
-                    showPersona={true}
-                    title="Ad Group Performance"
-                  />
+                  <>
+                    <EntityPerformanceTable
+                      entities={data.entities.filter(e => e.entity_type === "ad_group")}
+                      entityType="ad_group"
+                      showCampaignRef={true}
+                      showPersona={true}
+                      title="Ad Group Performance"
+                    />
+                  </>
                 )}
 
                 {/* Ad Performance Table */}
                 {level === "PIN_PROMOTION" && (
                   <EntityPerformanceTable
-                    entities={data.entities}
+                    entities={data.entities.filter(e => e.entity_type === "ad")}
                     entityType="ad"
                     showCampaignRef={true}
                     showPersona={true}
