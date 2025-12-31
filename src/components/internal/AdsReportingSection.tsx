@@ -277,7 +277,7 @@ export default function AdsReportingSection() {
               </TooltipProvider>
             )}
 
-            {/* Generate Creatives Button */}
+            {/* Generate Creatives for Winners Button */}
             <TooltipProvider>
               <UITooltip>
                 <TooltipTrigger asChild>
@@ -285,6 +285,14 @@ export default function AdsReportingSection() {
                     variant="ghost"
                     size="sm"
                     onClick={() => {
+                      // Filter for winning/good performing entities (ROAS >= 1.54 and spend >= 50)
+                      const winningEntities = data?.entities?.filter(e => 
+                        e.roas >= 1.54 && e.spend >= 50
+                      ) || [];
+                      if (winningEntities.length === 0) {
+                        toast.warning("No winning entities found (ROAS ≥ 1.54 with spend ≥ €50)");
+                        return;
+                      }
                       setGenerateMode("all");
                       setSelectedEntityForGenerate(undefined);
                       setGenerateDialogOpen(true);
@@ -296,7 +304,7 @@ export default function AdsReportingSection() {
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p className="text-sm">Generate creative briefs for all entities</p>
+                  <p className="text-sm">Generate creative briefs for winning entities</p>
                 </TooltipContent>
               </UITooltip>
             </TooltipProvider>
@@ -885,7 +893,10 @@ export default function AdsReportingSection() {
       <GenerateCreativesDialog
         open={generateDialogOpen}
         onOpenChange={setGenerateDialogOpen}
-        entities={data?.entities || []}
+        entities={generateMode === "all" 
+          ? (data?.entities?.filter(e => e.roas >= 1.54 && e.spend >= 50) || [])
+          : (data?.entities || [])
+        }
         entityType={level === "PIN_PROMOTION" ? "ad" : level === "AD_GROUP" ? "ad_group" : "campaign"}
         timeframe={`last_${selectedPreset.days}d`}
         accountSummary={data?.totals ? {

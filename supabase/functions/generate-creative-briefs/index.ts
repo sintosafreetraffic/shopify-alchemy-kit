@@ -375,7 +375,20 @@ serve(async (req) => {
         console.warn("HIGGSFIELD_WEBHOOK_URL not configured, skipping webhook");
         webhookResult = { success: false, error: "HIGGSFIELD_WEBHOOK_URL not configured" };
       } else {
-        webhookResult = await sendToWebhook(HIGGSFIELD_WEBHOOK_URL, creativeBriefs);
+        // Validate that the URL is a proper HTTP/HTTPS URL
+        try {
+          const url = new URL(HIGGSFIELD_WEBHOOK_URL);
+          if (!url.protocol.startsWith("http")) {
+            throw new Error("URL must start with http:// or https://");
+          }
+          webhookResult = await sendToWebhook(HIGGSFIELD_WEBHOOK_URL, creativeBriefs);
+        } catch (urlError) {
+          console.error("Invalid webhook URL:", HIGGSFIELD_WEBHOOK_URL, urlError);
+          webhookResult = { 
+            success: false, 
+            error: `Invalid URL: '${HIGGSFIELD_WEBHOOK_URL}'. Must be a valid HTTP/HTTPS URL (e.g., https://example.com/webhook)` 
+          };
+        }
       }
     }
 
