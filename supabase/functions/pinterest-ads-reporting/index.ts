@@ -41,6 +41,8 @@ interface AdsReportingRequest {
   click_window_days: number;
   view_window_days: number;
   force_refresh?: boolean;
+  active_only_campaigns?: boolean;
+  active_only_ads?: boolean;
 }
 
 interface ProcessedMetrics {
@@ -235,9 +237,11 @@ function generateCacheKey(
   params: AdsReportingRequest
 ): string {
   // Bump this when parsing/response structure changes to avoid serving stale cached payloads.
-  const CACHE_VERSION = "v3";
+  const CACHE_VERSION = "v4";
 
-  return `${CACHE_VERSION}:${adAccountId}:${params.level}:${params.start_date}:${params.end_date}:${params.granularity}:${params.click_window_days}:${params.view_window_days}`;
+  // Include active filters in cache key
+  const activeFilters = `${params.active_only_campaigns ? 'ac' : ''}${params.active_only_ads ? 'aa' : ''}`;
+  return `${CACHE_VERSION}:${adAccountId}:${params.level}:${params.start_date}:${params.end_date}:${params.granularity}:${params.click_window_days}:${params.view_window_days}:${activeFilters}`;
 }
 
 async function getCachedData(
@@ -711,7 +715,12 @@ async function fetchPinterestAnalytics(
   let adGroupMap: Map<string, { id: string; name: string; campaign_id?: string }> = new Map();
   
   if (params.level === "CAMPAIGN") {
-    const campaigns = await fetchCampaigns(accessToken, adAccountId);
+    let campaigns = await fetchCampaigns(accessToken, adAccountId);
+    // Filter by active campaigns if requested
+    if (params.active_only_campaigns) {
+      campaigns = campaigns.filter(c => c.status === "ACTIVE");
+      log("info", "filtered_campaigns", { before: campaigns.length, active_only: true });
+    }
     if (campaigns.length === 0) {
       throw new Error("No campaigns found in this ad account");
     }
@@ -724,10 +733,23 @@ async function fetchPinterestAnalytics(
     url.searchParams.set("campaign_ids", campaigns.map(c => c.id).join(","));
   } else if (params.level === "AD_GROUP") {
     // Fetch campaigns first for reference
-    const campaigns = await fetchCampaigns(accessToken, adAccountId);
+    let campaigns = await fetchCampaigns(accessToken, adAccountId);
+    // Filter by active campaigns if requested
+    if (params.active_only_campaigns) {
+      campaigns = campaigns.filter(c => c.status === "ACTIVE");
+    }
     campaigns.forEach(c => campaignMap.set(c.id, { id: c.id, name: c.name }));
     
-    const adGroups = await fetchAdGroups(accessToken, adAccountId, campaignMap);
+    let adGroups = await fetchAdGroups(accessToken, adAccountId, campaignMap);
+    // Filter ad groups by parent campaign if active_only_campaigns
+    if (params.active_only_campaigns) {
+      const activeCampaignIds = new Set(campaigns.map(c => c.id));
+      adGroups = adGroups.filter(ag => ag.campaign_id && activeCampaignIds.has(ag.campaign_id));
+    }
+    // Filter by active ad groups if requested
+    if (params.active_only_ads) {
+      adGroups = adGroups.filter(ag => ag.status === "ACTIVE");
+    }
     if (adGroups.length === 0) {
       throw new Error("No ad groups found in this ad account");
     }
@@ -737,13 +759,29 @@ async function fetchPinterestAnalytics(
     url.searchParams.set("ad_group_ids", adGroups.map(ag => ag.id).join(","));
   } else if (params.level === "PIN_PROMOTION") {
     // Fetch campaigns and ad groups first for reference
-    const campaigns = await fetchCampaigns(accessToken, adAccountId);
+    let campaigns = await fetchCampaigns(accessToken, adAccountId);
+    if (params.active_only_campaigns) {
+      campaigns = campaigns.filter(c => c.status === "ACTIVE");
+    }
     campaigns.forEach(c => campaignMap.set(c.id, { id: c.id, name: c.name }));
     
-    const adGroups = await fetchAdGroups(accessToken, adAccountId, campaignMap);
+    let adGroups = await fetchAdGroups(accessToken, adAccountId, campaignMap);
+    if (params.active_only_campaigns) {
+      const activeCampaignIds = new Set(campaigns.map(c => c.id));
+      adGroups = adGroups.filter(ag => ag.campaign_id && activeCampaignIds.has(ag.campaign_id));
+    }
     adGroups.forEach(ag => adGroupMap.set(ag.id, { id: ag.id, name: ag.name, campaign_id: ag.campaign_id }));
     
-    const ads = await fetchAds(accessToken, adAccountId, campaignMap, adGroupMap);
+    let ads = await fetchAds(accessToken, adAccountId, campaignMap, adGroupMap);
+    // Filter ads by parent campaign
+    if (params.active_only_campaigns) {
+      const activeCampaignIds = new Set(campaigns.map(c => c.id));
+      ads = ads.filter(ad => ad.campaign_id && activeCampaignIds.has(ad.campaign_id));
+    }
+    // Filter by active ads if requested
+    if (params.active_only_ads) {
+      ads = ads.filter(ad => ad.status === "ACTIVE");
+    }
     if (ads.length === 0) {
       throw new Error("No ads found in this ad account");
     }
@@ -753,7 +791,10 @@ async function fetchPinterestAnalytics(
     url.searchParams.set("ad_ids", ads.map(ad => ad.id).join(","));
   } else {
     // ACCOUNT level: still fetch campaigns for entity breakdown
-    const campaigns = await fetchCampaigns(accessToken, adAccountId);
+    let campaigns = await fetchCampaigns(accessToken, adAccountId);
+    if (params.active_only_campaigns) {
+      campaigns = campaigns.filter(c => c.status === "ACTIVE");
+    }
     campaigns.forEach(c => {
       entityInfoMap.set(c.id, c);
       campaignMap.set(c.id, { id: c.id, name: c.name });
@@ -1049,6 +1090,8 @@ Deno.serve(async (req: Request) => {
       click_window_days: parseInt(url.searchParams.get("click_window_days") || "30"),
       view_window_days: parseInt(url.searchParams.get("view_window_days") || "1"),
       force_refresh: url.searchParams.get("force_refresh") === "true",
+      active_only_campaigns: url.searchParams.get("active_only_campaigns") === "true",
+      active_only_ads: url.searchParams.get("active_only_ads") === "true",
     };
 
     // Validate date range (max 90 days)
