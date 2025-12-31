@@ -114,7 +114,7 @@ interface LogEntry {
 }
 
 // Pinterest metrics we request (verified against API v5)
-// Added TOTAL_REACH for frequency calculation (impressions / reach)
+// Using TOTAL_IMPRESSION_USER for reach and TOTAL_IMPRESSION_FREQUENCY for frequency
 const METRICS_COLUMNS = [
   "SPEND_IN_MICRO_DOLLAR",
   "TOTAL_IMPRESSION",
@@ -123,7 +123,8 @@ const METRICS_COLUMNS = [
   "TOTAL_CHECKOUT",
   "TOTAL_CLICK_ADD_TO_CART",
   "TOTAL_CHECKOUT_VALUE_IN_MICRO_DOLLAR",
-  "TOTAL_REACH", // Unique users - enables frequency calculation
+  "TOTAL_IMPRESSION_USER",       // Unique users reached
+  "TOTAL_IMPRESSION_FREQUENCY",  // Average frequency from Pinterest
 ].join(",");
 
 const CACHE_TTL_MINUTES = 30;
@@ -299,16 +300,18 @@ function processRawMetrics(raw: Record<string, number>): ProcessedMetrics {
   const checkouts = raw.TOTAL_CHECKOUT || 0;
   const addToCarts = raw.TOTAL_CLICK_ADD_TO_CART || 0;
   const conversions = raw.TOTAL_CONVERSIONS || 0;
-  const reach = raw.TOTAL_REACH || 0;
+  const reach = raw.TOTAL_IMPRESSION_USER || 0;
+  const pinterestFrequency = raw.TOTAL_IMPRESSION_FREQUENCY || 0;
 
   // Pinterest returns USD micro-dollars - we assume EUR≈USD for now
   // TODO: Add proper currency conversion if needed
   const spend = spendMicro / 1_000_000;
   const revenue = revenueMicro / 1_000_000;
 
-  // Calculate frequency (average times each user saw the ad)
-  // Frequency = Impressions / Reach
-  const frequency = reach > 0 ? Math.round((impressions / reach) * 100) / 100 : 0;
+  // Use Pinterest's native frequency if available, otherwise calculate from reach
+  const frequency = pinterestFrequency > 0 
+    ? Math.round(pinterestFrequency * 100) / 100 
+    : (reach > 0 ? Math.round((impressions / reach) * 100) / 100 : 0);
 
   return {
     spend: Math.round(spend * 100) / 100,
