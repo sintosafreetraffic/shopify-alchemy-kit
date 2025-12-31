@@ -196,7 +196,7 @@ export function EntityPerformanceTable({
   const hasFormats = entities.some(e => e.creative_format);
 
   return (
-    <Card className="bg-card/30 border-border/30 overflow-hidden">
+    <Card className="bg-card/30 border-border/30">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-medium">{tableTitle}</CardTitle>

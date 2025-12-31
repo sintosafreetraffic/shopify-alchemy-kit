@@ -234,7 +234,10 @@ function generateCacheKey(
   adAccountId: string,
   params: AdsReportingRequest
 ): string {
-  return `${adAccountId}:${params.level}:${params.start_date}:${params.end_date}:${params.granularity}:${params.click_window_days}:${params.view_window_days}`;
+  // Bump this when parsing/response structure changes to avoid serving stale cached payloads.
+  const CACHE_VERSION = "v3";
+
+  return `${CACHE_VERSION}:${adAccountId}:${params.level}:${params.start_date}:${params.end_date}:${params.granularity}:${params.click_window_days}:${params.view_window_days}`;
 }
 
 async function getCachedData(
