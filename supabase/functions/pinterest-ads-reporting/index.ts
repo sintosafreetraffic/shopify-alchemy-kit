@@ -398,36 +398,169 @@ interface ParsedCreativeInfo {
   persona?: string;
 }
 
+// Known categories for pipe-delimited parsing
+const KNOWN_CATEGORIES: Record<string, string> = {
+  'ugc': 'UGC',
+  'lifestyle': 'Lifestyle',
+  'testimonial': 'Testimonial & Review',
+  'testemonial': 'Testimonial & Review',
+  'review': 'Testimonial & Review',
+  'testimonial & review': 'Testimonial & Review',
+  'testemonial & review': 'Testimonial & Review',
+  'before/after': 'Before/After',
+  'before & after': 'Before/After',
+  'b/a': 'Before/After',
+  'b&a': 'Before/After',
+  'product': 'Product',
+  'educational': 'Educational',
+  'edu': 'Educational',
+  'awareness': 'Awareness',
+  'consideration': 'Consideration',
+  'conversion': 'Conversion',
+  'promo': 'Promo',
+  'sale': 'Promo',
+  'discount': 'Promo',
+  'pain': 'Pain Point',
+  'pain point': 'Pain Point',
+  'problem': 'Pain Point',
+  'benefit': 'Benefit',
+  'benefits': 'Benefit',
+  'listicle': 'Listicle',
+  'listicles': 'Listicle',
+  'expert': 'Expert/Authority',
+  'authority': 'Expert/Authority',
+  'expert/authority': 'Expert/Authority',
+  'expert/ authority': 'Expert/Authority',
+  'expert / authority': 'Expert/Authority',
+  'how to': 'How-To',
+  'how-to': 'How-To',
+  'tutorial': 'Tutorial',
+  'comparison': 'Comparison',
+  'vs': 'Comparison',
+  'unboxing': 'Unboxing',
+  'feature': 'Feature',
+  'features': 'Feature',
+  'social proof': 'Social Proof',
+  'influencer': 'Influencer',
+  'creator': 'Creator',
+  'demo': 'Demo',
+  'demonstration': 'Demo',
+};
+
+// Known formats
+const KNOWN_FORMATS: Record<string, string> = {
+  'video': 'Video',
+  'videos': 'Video',
+  'vid': 'Video',
+  "video's": 'Video',
+  'static': 'Static',
+  'statics': 'Static',
+  'image': 'Static',
+  'images': 'Static',
+  'img': 'Static',
+  'carousel': 'Carousel',
+  'carousels': 'Carousel',
+  'gif': 'GIF',
+  'gifs': 'GIF',
+  'collection': 'Collection',
+  'collections': 'Collection',
+};
+
+// Known products
+const KNOWN_PRODUCTS: Record<string, string> = {
+  'pillow': 'Pillow',
+  'ergo pillow': 'Pillow',
+  'ergonomic pillow': 'Pillow',
+  'mattress': 'Mattress',
+  'topper': 'Topper',
+  'bundle': 'Bundle',
+  'set': 'Bundle',
+};
+
 function parseCreativeFromName(name: string): ParsedCreativeInfo {
-  const nameLower = name.toLowerCase();
   const result: ParsedCreativeInfo = {};
   
-  // Creative category detection (including common typos)
-  if (nameLower.includes('ugc')) result.creative_category = 'UGC';
-  else if (nameLower.includes('lifestyle')) result.creative_category = 'Lifestyle';
-  else if (nameLower.includes('testimonial') || nameLower.includes('testemonial') || nameLower.includes('review')) result.creative_category = 'Testimonial & Review';
-  else if (nameLower.includes('before') && nameLower.includes('after')) result.creative_category = 'Before/After';
-  else if (nameLower.includes('b/a') || nameLower.includes('b&a')) result.creative_category = 'Before/After';
-  else if (nameLower.includes('product')) result.creative_category = 'Product';
-  else if (nameLower.includes('educational') || nameLower.includes('edu')) result.creative_category = 'Educational';
-  else if (nameLower.includes('awareness')) result.creative_category = 'Awareness';
-  else if (nameLower.includes('consideration')) result.creative_category = 'Consideration';
-  else if (nameLower.includes('conversion')) result.creative_category = 'Conversion';
-  else if (nameLower.includes('promo') || nameLower.includes('sale') || nameLower.includes('discount')) result.creative_category = 'Promo';
-  else if (nameLower.includes('pain') || nameLower.includes('problem')) result.creative_category = 'Pain Point';
-  else if (nameLower.includes('benefit')) result.creative_category = 'Benefit';
+  // First, try pipe-delimited parsing (e.g., "2025-12-09 | LISTICLES | ERGO PILLOW | STATICS")
+  const segments = name.split('|').map(s => s.trim().toLowerCase());
   
-  // Format detection (including plurals and variations)
-  if (nameLower.includes('video') || nameLower.includes('vid')) result.creative_format = 'Video';
-  else if (nameLower.includes('static') || nameLower.includes('statics') || nameLower.includes('image') || nameLower.includes('img')) result.creative_format = 'Static';
-  else if (nameLower.includes('carousel') || nameLower.includes('carousels')) result.creative_format = 'Carousel';
-  else if (nameLower.includes('gif') || nameLower.includes('gifs')) result.creative_format = 'GIF';
+  for (const segment of segments) {
+    // Skip date segments (starts with number or looks like a date)
+    if (/^\d{2,4}[-/]/.test(segment) || /^\d{4}$/.test(segment)) continue;
+    
+    // Check for category match
+    if (!result.creative_category) {
+      // Try exact match first
+      if (KNOWN_CATEGORIES[segment]) {
+        result.creative_category = KNOWN_CATEGORIES[segment];
+        continue;
+      }
+      // Try partial match for compound segments like "EXPERT/ AUTHORITY VIDEO'S"
+      for (const [key, value] of Object.entries(KNOWN_CATEGORIES)) {
+        if (segment.includes(key) && key.length > 3) { // Avoid short matches
+          result.creative_category = value;
+          break;
+        }
+      }
+    }
+    
+    // Check for format match
+    if (!result.creative_format) {
+      if (KNOWN_FORMATS[segment]) {
+        result.creative_format = KNOWN_FORMATS[segment];
+        continue;
+      }
+      for (const [key, value] of Object.entries(KNOWN_FORMATS)) {
+        if (segment.includes(key)) {
+          result.creative_format = value;
+          break;
+        }
+      }
+    }
+    
+    // Check for product match
+    if (!result.product_focus) {
+      if (KNOWN_PRODUCTS[segment]) {
+        result.product_focus = KNOWN_PRODUCTS[segment];
+        continue;
+      }
+      for (const [key, value] of Object.entries(KNOWN_PRODUCTS)) {
+        if (segment.includes(key)) {
+          result.product_focus = value;
+          break;
+        }
+      }
+    }
+  }
   
-  // Product focus detection
-  if (nameLower.includes('pillow')) result.product_focus = 'Pillow';
-  else if (nameLower.includes('mattress')) result.product_focus = 'Mattress';
-  else if (nameLower.includes('topper')) result.product_focus = 'Topper';
-  else if (nameLower.includes('bundle')) result.product_focus = 'Bundle';
+  // Fallback: scan full name for keywords if not found via segments
+  const nameLower = name.toLowerCase();
+  
+  if (!result.creative_category) {
+    for (const [key, value] of Object.entries(KNOWN_CATEGORIES)) {
+      if (nameLower.includes(key) && key.length > 3) {
+        result.creative_category = value;
+        break;
+      }
+    }
+  }
+  
+  if (!result.creative_format) {
+    for (const [key, value] of Object.entries(KNOWN_FORMATS)) {
+      if (nameLower.includes(key)) {
+        result.creative_format = value;
+        break;
+      }
+    }
+  }
+  
+  if (!result.product_focus) {
+    for (const [key, value] of Object.entries(KNOWN_PRODUCTS)) {
+      if (nameLower.includes(key)) {
+        result.product_focus = value;
+        break;
+      }
+    }
+  }
   
   // Persona detection (common personas in ad naming)
   const personaPatterns = [
