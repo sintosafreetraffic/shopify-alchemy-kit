@@ -44,12 +44,26 @@ interface TimeseriesEntry extends ProcessedMetrics {
   frequency?: number; // Average frequency for the day
 }
 
+// Entity breakdown for individual campaigns/ad groups/ads
+interface EntityMetrics extends ProcessedMetrics {
+  id: string;
+  name: string;
+  entity_type: "campaign" | "ad_group" | "ad";
+  status?: string;
+  // Parsed from naming conventions
+  creative_category?: string; // UGC, Lifestyle, Testimonial, Before/After
+  creative_format?: string;   // Static, Video
+  product_focus?: string;
+  persona?: string;           // e.g., Jason, Mia
+}
+
 interface AdsDataInput {
   totals: ProcessedMetrics & {
     frequency?: number; // Rolling 7-day average frequency
     days_live?: number; // How many days the entity has been running
   };
   timeseries: TimeseriesEntry[];
+  entities?: EntityMetrics[]; // Individual entity breakdown for creative-level analysis
   range: {
     start: string;
     end: string;
@@ -457,6 +471,127 @@ async function generateInsights(data: AdsDataInput): Promise<AIInsightsResponse>
 
   const minDataStatus = meetsMinimumData();
 
+  // Parse creative intelligence from entity names
+  const parseCreativeFromName = (name: string): { category?: string; format?: string; persona?: string } => {
+    const nameLower = name.toLowerCase();
+    
+    // Creative category detection
+    let category: string | undefined;
+    if (nameLower.includes('ugc')) category = 'UGC';
+    else if (nameLower.includes('lifestyle')) category = 'Lifestyle';
+    else if (nameLower.includes('testimonial')) category = 'Testimonial';
+    else if (nameLower.includes('before') && nameLower.includes('after')) category = 'Before/After';
+    else if (nameLower.includes('product')) category = 'Product';
+    else if (nameLower.includes('educational') || nameLower.includes('edu')) category = 'Educational';
+    
+    // Format detection
+    let format: string | undefined;
+    if (nameLower.includes('video') || nameLower.includes('vid')) format = 'Video';
+    else if (nameLower.includes('static') || nameLower.includes('image') || nameLower.includes('carousel')) format = 'Static';
+    
+    // Persona detection (common personas)
+    let persona: string | undefined;
+    const personaMatches = name.match(/\b(jason|mia|alex|sarah|mike|emma|chris|lisa|tom|amy)\b/i);
+    if (personaMatches) persona = personaMatches[1];
+    
+    return { category, format, persona };
+  };
+
+  // Build entity breakdown section for the prompt
+  const buildEntitySection = (): string => {
+    if (!data.entities || data.entities.length === 0) {
+      return '## ENTITY BREAKDOWN\nNo entity-level data provided. Insights based on aggregate totals only.';
+    }
+
+    // Calculate parent average for relative comparison
+    const parentSpend = data.totals.spend;
+    const parentROAS = data.totals.roas;
+    const parentCTR = data.totals.ctr;
+    
+    // Enrich entities with parsed creative intelligence
+    const enrichedEntities = data.entities.map(e => {
+      const parsed = parseCreativeFromName(e.name);
+      return {
+        ...e,
+        creative_category: e.creative_category || parsed.category || 'Uncategorized',
+        creative_format: e.creative_format || parsed.format || 'Unknown',
+        persona: e.persona || parsed.persona,
+        roas_vs_parent: parentROAS > 0 ? ((e.roas - parentROAS) / parentROAS * 100) : 0,
+        ctr_vs_parent: parentCTR > 0 ? ((e.ctr - parentCTR) / parentCTR * 100) : 0,
+        spend_share: parentSpend > 0 ? (e.spend / parentSpend * 100) : 0,
+      };
+    });
+
+    // Sort by spend descending
+    enrichedEntities.sort((a, b) => b.spend - a.spend);
+    
+    // Check for concentration risk
+    const topEntitySpendShare = enrichedEntities[0]?.spend_share || 0;
+    const top2SpendShare = enrichedEntities.slice(0, 2).reduce((sum, e) => sum + e.spend_share, 0);
+    const concentrationWarning = topEntitySpendShare >= 80 
+      ? `⚠️ CONCENTRATION RISK: Top entity has ${topEntitySpendShare.toFixed(0)}% of spend`
+      : top2SpendShare >= 80 
+        ? `⚠️ CONCENTRATION: Top 2 entities have ${top2SpendShare.toFixed(0)}% of spend`
+        : '';
+
+    const entityLines = enrichedEntities.slice(0, 15).map((e, idx) => {
+      const roasIndicator = e.roas_vs_parent >= 40 ? '✅ OUTPERFORMER' : e.roas_vs_parent <= -40 ? '🔴 UNDERPERFORMER' : '';
+      const personaTag = e.persona ? `[${e.persona}]` : '';
+      return `${idx + 1}. "${e.name}" ${personaTag}
+   - Type: ${e.entity_type} | Category: ${e.creative_category} | Format: ${e.creative_format}
+   - Spend: €${e.spend.toFixed(2)} (${e.spend_share.toFixed(1)}% of total) | Revenue: €${e.revenue.toFixed(2)}
+   - ROAS: ${e.roas.toFixed(2)}x (${e.roas_vs_parent >= 0 ? '+' : ''}${e.roas_vs_parent.toFixed(0)}% vs parent) ${roasIndicator}
+   - CTR: ${e.ctr.toFixed(2)}% (${e.ctr_vs_parent >= 0 ? '+' : ''}${e.ctr_vs_parent.toFixed(0)}% vs parent)
+   - Checkouts: ${e.checkouts} | CPA: ${e.cpa > 0 ? '€' + e.cpa.toFixed(2) : 'N/A'}`;
+    }).join('\n\n');
+
+    // Aggregate by creative category
+    const categoryPerformance: Record<string, { spend: number; revenue: number; count: number }> = {};
+    enrichedEntities.forEach(e => {
+      const cat = e.creative_category;
+      if (!categoryPerformance[cat]) categoryPerformance[cat] = { spend: 0, revenue: 0, count: 0 };
+      categoryPerformance[cat].spend += e.spend;
+      categoryPerformance[cat].revenue += e.revenue;
+      categoryPerformance[cat].count++;
+    });
+    
+    const categoryLines = Object.entries(categoryPerformance)
+      .sort(([, a], [, b]) => b.spend - a.spend)
+      .map(([cat, stats]) => {
+        const catROAS = stats.spend > 0 ? stats.revenue / stats.spend : 0;
+        return `- ${cat}: ${stats.count} entities, €${stats.spend.toFixed(0)} spend, ${catROAS.toFixed(2)}x ROAS`;
+      }).join('\n');
+
+    // Aggregate by persona if any
+    const personaPerformance: Record<string, { spend: number; revenue: number; count: number }> = {};
+    enrichedEntities.filter(e => e.persona).forEach(e => {
+      const p = e.persona!;
+      if (!personaPerformance[p]) personaPerformance[p] = { spend: 0, revenue: 0, count: 0 };
+      personaPerformance[p].spend += e.spend;
+      personaPerformance[p].revenue += e.revenue;
+      personaPerformance[p].count++;
+    });
+    
+    const personaLines = Object.entries(personaPerformance).length > 0
+      ? '\n### BY PERSONA\n' + Object.entries(personaPerformance)
+          .sort(([, a], [, b]) => b.spend - a.spend)
+          .map(([persona, stats]) => {
+            const pROAS = stats.spend > 0 ? stats.revenue / stats.spend : 0;
+            return `- ${persona}: ${stats.count} creatives, €${stats.spend.toFixed(0)} spend, ${pROAS.toFixed(2)}x ROAS`;
+          }).join('\n')
+      : '';
+
+    return `## ENTITY BREAKDOWN (${enrichedEntities.length} entities)
+${concentrationWarning}
+
+### BY CREATIVE CATEGORY
+${categoryLines}
+${personaLines}
+
+### INDIVIDUAL ENTITIES (top 15 by spend)
+${entityLines}`;
+  };
+
   const userPrompt = `Analyze the following Pinterest Ads performance data and provide decision insights.
 
 ## REPORTING CONTEXT
@@ -507,12 +642,15 @@ ${data.totals.frequency && data.totals.frequency > 2.5 ? '- ⚠️ Above 2.5 thr
 ## SCALE SAFEGUARDS
 - CPM WoW change: ${calculateCpmWoW()}
 
+${buildEntitySection()}
+
 ## DAILY BREAKDOWN (most recent 7 days)
 ${data.timeseries.slice(-7).map(e => 
   `${e.date}: Spend €${e.spend.toFixed(2)}, Revenue €${e.revenue.toFixed(2)}, ROAS ${e.roas.toFixed(2)}x, CTR ${e.ctr.toFixed(2)}%, CPM €${e.cpm.toFixed(2)}, Checkouts ${e.checkouts}${e.frequency ? `, Freq ${e.frequency.toFixed(2)}` : ''}${e.has_attribution_lag ? ' [ATTRIBUTION LAG]' : ''}`
 ).join('\n')}
 
-Provide your analysis as a JSON object with "insights" array and "summary" string.`;
+Provide your analysis as a JSON object with "insights" array and "summary" string.
+IMPORTANT: Include specific recommendations for individual ads/creatives when entity data is provided. Identify which specific ads to kill, scale, or test based on their relative performance.`;
 
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
@@ -579,12 +717,17 @@ Provide your analysis as a JSON object with "insights" array and "summary" strin
 // ============================================================================
 
 function createDataHash(data: AdsDataInput): string {
-  // Create a simple hash based on key metrics
+  // Create a simple hash based on key metrics including entity count
+  const entitySummary = data.entities?.length 
+    ? { count: data.entities.length, topSpend: data.entities[0]?.spend || 0 }
+    : null;
+    
   const hashInput = JSON.stringify({
     spend: data.totals.spend,
     revenue: data.totals.revenue,
     checkouts: data.totals.checkouts,
     days: data.timeseries.length,
+    entities: entitySummary,
   });
   // Simple hash function
   let hash = 0;

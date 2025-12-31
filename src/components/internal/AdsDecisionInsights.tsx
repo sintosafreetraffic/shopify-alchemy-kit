@@ -109,6 +109,7 @@ export function AdsDecisionInsights({ data, eqsScore }: AdsDecisionInsightsProps
     checkouts: data.totals.checkouts,
     days: data.timeseries.length,
     level: data.level,
+    entityCount: data.entities?.length || 0,
   });
 
   const fetchInsights = useCallback(async () => {
@@ -122,6 +123,7 @@ export function AdsDecisionInsights({ data, eqsScore }: AdsDecisionInsightsProps
           body: {
             totals: data.totals,
             timeseries: data.timeseries,
+            entities: data.entities, // Include entity breakdown for creative-level analysis
             range: data.range,
             level: data.level,
             attribution: data.attribution,
