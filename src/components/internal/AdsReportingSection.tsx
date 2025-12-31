@@ -215,38 +215,35 @@ export default function AdsReportingSection() {
     
     let entities = [...data.entities];
     
+    console.log('[AdsReporting] Filter state:', { activeOnlyCampaigns, activeOnlyAds, entityCount: entities.length });
+    console.log('[AdsReporting] Entity statuses:', entities.map(e => ({ name: e.name?.slice(0, 30), type: e.entity_type, status: e.status })));
+    
     // Filter by active campaigns
     if (activeOnlyCampaigns) {
-      // Get active campaign IDs
-      const activeCampaignIds = new Set(
-        entities
-          .filter(e => e.entity_type === "campaign" && e.status === "ACTIVE")
-          .map(e => e.id)
-      );
-      
-      // For campaign level, filter campaigns directly
-      // For ad group/ad level, filter by campaign_id reference
       entities = entities.filter(e => {
+        // For campaign entities, filter by campaign status directly
         if (e.entity_type === "campaign") {
           return e.status === "ACTIVE";
         }
-        // For ad groups and ads, check if their parent campaign is active
-        return e.campaign_id ? activeCampaignIds.has(e.campaign_id) : true;
+        // For ad groups and ads - they don't have campaign status in the entity,
+        // but we can use the campaign name to infer - skip this filter for non-campaign levels
+        // since we'd need to fetch campaign statuses separately
+        return true;
       });
+      console.log('[AdsReporting] After campaign filter:', entities.length);
     }
     
-    // Filter by active ads (only applies to ad level)
+    // Filter by active ads/ad groups
     if (activeOnlyAds) {
       entities = entities.filter(e => {
-        if (e.entity_type === "ad") {
+        // Filter ads and ad groups by their own status
+        if (e.entity_type === "ad" || e.entity_type === "ad_group") {
           return e.status === "ACTIVE";
         }
-        // Also filter ad groups to only show those with active status
-        if (e.entity_type === "ad_group") {
-          return e.status === "ACTIVE";
-        }
-        return true; // Keep campaigns as-is
+        // Keep campaigns as-is
+        return true;
       });
+      console.log('[AdsReporting] After ad filter:', entities.length);
     }
     
     return entities;
