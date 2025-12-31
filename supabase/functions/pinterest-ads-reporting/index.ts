@@ -805,11 +805,16 @@ async function fetchPinterestAnalytics(
     url = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/analytics`);
   }
   
-  // For ACCOUNT level, we need a separate API call to get per-campaign breakdown
+  // For ACCOUNT level, we need separate API calls to get per-campaign breakdown
+  // We fetch with TOTAL granularity for entity breakdown AND with request granularity for timeseries
   let campaignAnalyticsData: any[] = [];
+  let campaignTimeseriesData: any[] = [];
   if (params.level === "ACCOUNT" && entityInfoMap.size > 0) {
+    const campaignIds = Array.from(entityInfoMap.keys()).join(",");
+    
+    // Fetch TOTAL granularity for entity breakdown
     const campaignUrl = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/campaigns/analytics`);
-    campaignUrl.searchParams.set("campaign_ids", Array.from(entityInfoMap.keys()).join(","));
+    campaignUrl.searchParams.set("campaign_ids", campaignIds);
     campaignUrl.searchParams.set("start_date", params.start_date);
     campaignUrl.searchParams.set("end_date", params.end_date);
     campaignUrl.searchParams.set("granularity", "TOTAL"); // Aggregate for entity breakdown
@@ -828,6 +833,31 @@ async function fetchPinterestAnalytics(
       log("info", "campaign_analytics_fetched", { count: campaignAnalyticsData.length });
     } catch (e) {
       log("warn", "campaign_analytics_failed", { error: String(e) });
+    }
+    
+    // When filtering by active campaigns, also fetch with request granularity for timeseries
+    if (params.active_only_campaigns) {
+      const timeseriesUrl = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/campaigns/analytics`);
+      timeseriesUrl.searchParams.set("campaign_ids", campaignIds);
+      timeseriesUrl.searchParams.set("start_date", params.start_date);
+      timeseriesUrl.searchParams.set("end_date", params.end_date);
+      timeseriesUrl.searchParams.set("granularity", params.granularity);
+      timeseriesUrl.searchParams.set("click_window_days", params.click_window_days.toString());
+      timeseriesUrl.searchParams.set("view_window_days", params.view_window_days.toString());
+      timeseriesUrl.searchParams.set("columns", METRICS_COLUMNS);
+      
+      try {
+        const timeseriesResponse = await fetchWithRetry(timeseriesUrl.toString(), {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+        });
+        campaignTimeseriesData = await timeseriesResponse.json();
+        log("info", "campaign_timeseries_fetched", { count: campaignTimeseriesData.length });
+      } catch (e) {
+        log("warn", "campaign_timeseries_failed", { error: String(e) });
+      }
     }
   }
 
@@ -879,7 +909,12 @@ async function fetchPinterestAnalytics(
   // Aggregate by date for timeseries and by entity for breakdown
   const dateAggregates: Map<string, Record<string, number>> = new Map();
 
-  for (const entry of rawData) {
+  // For ACCOUNT level with active filter, use filtered campaign timeseries data instead of account-level data
+  const dataToProcess = (params.level === "ACCOUNT" && params.active_only_campaigns && campaignTimeseriesData.length > 0)
+    ? campaignTimeseriesData
+    : rawData;
+
+  for (const entry of dataToProcess) {
     const date = entry.DATE;
     const hasLag = date ? isWithinAttributionLag(date) : false;
     
@@ -907,8 +942,8 @@ async function fetchPinterestAnalytics(
       }
     }
     
-    // Aggregate per entity (for entity breakdown)
-    if (entityId && entityType) {
+    // Aggregate per entity (for entity breakdown) - only for non-filtered data
+    if (entityId && entityType && dataToProcess === rawData) {
       if (!entityAccum.has(entityId)) {
         entityAccum.set(entityId, {
           SPEND_IN_MICRO_DOLLAR: 0,
@@ -926,9 +961,11 @@ async function fetchPinterestAnalytics(
       }
     }
 
-    // Aggregate totals
-    for (const key of Object.keys(totalsAccum)) {
-      totalsAccum[key] += entry[key] || 0;
+    // Aggregate totals only from unfiltered data (filtered totals calculated separately)
+    if (dataToProcess === rawData) {
+      for (const key of Object.keys(totalsAccum)) {
+        totalsAccum[key] += entry[key] || 0;
+      }
     }
   }
 
@@ -1014,7 +1051,37 @@ async function fetchPinterestAnalytics(
     entities.sort((a, b) => b.spend - a.spend);
   }
 
-  const totals = processRawMetrics(totalsAccum);
+  // For ACCOUNT level with active filters, recalculate totals from filtered campaign data
+  // instead of using account-level API totals (which ignore filters)
+  let totals: ProcessedMetrics;
+  if (params.level === "ACCOUNT" && params.active_only_campaigns && campaignAnalyticsData.length > 0) {
+    // Recalculate totals from filtered campaign analytics
+    const filteredTotalsAccum: Record<string, number> = {
+      SPEND_IN_MICRO_DOLLAR: 0,
+      TOTAL_IMPRESSION: 0,
+      TOTAL_CLICKTHROUGH: 0,
+      TOTAL_CONVERSIONS: 0,
+      TOTAL_CHECKOUT: 0,
+      TOTAL_CLICK_ADD_TO_CART: 0,
+      TOTAL_CHECKOUT_VALUE_IN_MICRO_DOLLAR: 0,
+      TOTAL_IMPRESSION_USER: 0,
+      TOTAL_IMPRESSION_FREQUENCY: 0,
+    };
+    
+    for (const entry of campaignAnalyticsData) {
+      for (const key of Object.keys(filteredTotalsAccum)) {
+        filteredTotalsAccum[key] += entry[key] || 0;
+      }
+    }
+    
+    totals = processRawMetrics(filteredTotalsAccum);
+    log("info", "totals_recalculated_from_filtered_campaigns", { 
+      campaign_count: campaignAnalyticsData.length,
+      total_spend: totals.spend 
+    });
+  } else {
+    totals = processRawMetrics(totalsAccum);
+  }
   const now = new Date().toISOString();
 
   log("info", "analytics_processed", {
