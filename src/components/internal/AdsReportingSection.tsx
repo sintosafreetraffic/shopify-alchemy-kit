@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAdsReporting, Granularity } from "@/hooks/useAdsReporting";
+import { useAdsReporting, Granularity, EntityMetrics } from "@/hooks/useAdsReporting";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +26,7 @@ import {
   Filter,
   Mail,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -60,6 +61,7 @@ import {
 import { cn } from "@/lib/utils";
 import { AdsDecisionInsights } from "./AdsDecisionInsights";
 import { EntityPerformanceTable } from "./EntityPerformanceTable";
+import { GenerateCreativesDialog } from "./GenerateCreativesDialog";
 
 
 // ============================================================================
@@ -146,6 +148,9 @@ function getRoasHighlight(roas: number): "good" | "warning" | "bad" | "neutral" 
 
 export default function AdsReportingSection() {
   const [sendingReport, setSendingReport] = useState(false);
+  const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
+  const [generateMode, setGenerateMode] = useState<"single" | "all">("all");
+  const [selectedEntityForGenerate, setSelectedEntityForGenerate] = useState<EntityMetrics | undefined>();
   
   const {
     data,
@@ -271,6 +276,30 @@ export default function AdsReportingSection() {
                 </UITooltip>
               </TooltipProvider>
             )}
+
+            {/* Generate Creatives Button */}
+            <TooltipProvider>
+              <UITooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setGenerateMode("all");
+                      setSelectedEntityForGenerate(undefined);
+                      setGenerateDialogOpen(true);
+                    }}
+                    disabled={!data?.entities?.length}
+                    className="h-8 w-8 p-0"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-sm">Generate creative briefs for all entities</p>
+                </TooltipContent>
+              </UITooltip>
+            </TooltipProvider>
 
             {/* Send Weekly Report Button */}
             <TooltipProvider>
@@ -731,6 +760,11 @@ export default function AdsReportingSection() {
                     showCampaignRef={false}
                     showPersona={true}
                     title="Campaign Performance"
+                    onGenerateCreative={(entity) => {
+                      setGenerateMode("single");
+                      setSelectedEntityForGenerate(entity);
+                      setGenerateDialogOpen(true);
+                    }}
                   />
                 )}
 
@@ -743,6 +777,11 @@ export default function AdsReportingSection() {
                       showCampaignRef={true}
                       showPersona={true}
                       title="Ad Group Performance"
+                      onGenerateCreative={(entity) => {
+                        setGenerateMode("single");
+                        setSelectedEntityForGenerate(entity);
+                        setGenerateDialogOpen(true);
+                      }}
                     />
                   </>
                 )}
@@ -755,6 +794,11 @@ export default function AdsReportingSection() {
                     showCampaignRef={true}
                     showPersona={true}
                     title="Ad Performance"
+                    onGenerateCreative={(entity) => {
+                      setGenerateMode("single");
+                      setSelectedEntityForGenerate(entity);
+                      setGenerateDialogOpen(true);
+                    }}
                   />
                 )}
               </>
@@ -836,6 +880,22 @@ export default function AdsReportingSection() {
           </>
         )}
       </CardContent>
+
+      {/* Generate Creatives Dialog */}
+      <GenerateCreativesDialog
+        open={generateDialogOpen}
+        onOpenChange={setGenerateDialogOpen}
+        entities={data?.entities || []}
+        entityType={level === "PIN_PROMOTION" ? "ad" : level === "AD_GROUP" ? "ad_group" : "campaign"}
+        timeframe={`last_${selectedPreset.days}d`}
+        accountSummary={data?.totals ? {
+          spend: data.totals.spend,
+          revenue: data.totals.revenue,
+          roas: data.totals.roas,
+        } : undefined}
+        mode={generateMode}
+        selectedEntity={selectedEntityForGenerate}
+      />
     </Card>
   );
 }

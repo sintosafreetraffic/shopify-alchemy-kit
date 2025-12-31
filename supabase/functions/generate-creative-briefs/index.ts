@@ -14,10 +14,6 @@ const BREAK_EVEN_ROAS = 1.54;
 const SCALE_ROAS = 2.0;
 const MIN_SPEND_FOR_WINNER_EUR = 50;
 const ATTRIBUTION_LAG_DAYS = 2;
-const MAX_TOTAL_IMAGES = 12;
-const MAX_TOTAL_VIDEOS = 6;
-const MAX_WINNERS = 3;
-const MAX_CONCEPTS_PER_WINNER = 2;
 
 interface EntityInput {
   level: "account" | "campaign" | "ad_group" | "ad";
@@ -49,6 +45,9 @@ interface CreativeBriefsInput {
   placements_enabled: string[];
   products: string[];
   timeframe: string;
+  max_images: number;
+  max_videos: number;
+  send_to_webhook: boolean;
 }
 
 const SYSTEM_PROMPT = `You are Rise By Night's Creative Production Intelligence layer.
@@ -126,14 +125,15 @@ Return valid JSON only. No markdown, no commentary.
 
 CRITICAL: Output ONLY the JSON object, nothing else. No text before or after.`;
 
-const OUTPUT_SCHEMA = `{
+function buildOutputSchema(maxImages: number, maxVideos: number): string {
+  return `{
   "schema_version": "${SCHEMA_VERSION}",
   "generation_plan": {
     "timeframe": "string",
     "break_even_roas": ${BREAK_EVEN_ROAS},
     "scale_roas": ${SCALE_ROAS},
-    "max_total_images": ${MAX_TOTAL_IMAGES},
-    "max_total_videos": ${MAX_TOTAL_VIDEOS},
+    "max_total_images": ${maxImages},
+    "max_total_videos": ${maxVideos},
     "notes": "Short, calm operational note."
   },
   "fallback_mode": false,
@@ -194,6 +194,7 @@ const OUTPUT_SCHEMA = `{
     }
   ]
 }`;
+}
 
 function buildUserPrompt(input: CreativeBriefsInput): string {
   const entitiesJson = JSON.stringify(input.entities, null, 2);
@@ -208,6 +209,8 @@ function buildUserPrompt(input: CreativeBriefsInput): string {
 - placements_enabled: ${JSON.stringify(input.placements_enabled)}
 - products: ${JSON.stringify(input.products)}
 - timeframe: ${input.timeframe}
+- max_total_images: ${input.max_images}
+- max_total_videos: ${input.max_videos}
 
 ## Account Summary
 ${input.account_summary ? JSON.stringify(input.account_summary, null, 2) : "Not provided"}
@@ -216,9 +219,37 @@ ${input.account_summary ? JSON.stringify(input.account_summary, null, 2) : "Not 
 ${entitiesJson}
 
 ## Required Output Schema
-${OUTPUT_SCHEMA}
+${buildOutputSchema(input.max_images, input.max_videos)}
+
+IMPORTANT: Distribute the deliverables across placements such that total images <= ${input.max_images} and total videos <= ${input.max_videos}.
 
 Return ONLY valid JSON matching the schema above. No markdown, no explanation.`;
+}
+
+async function sendToWebhook(webhookUrl: string, payload: any): Promise<{ success: boolean; error?: string }> {
+  try {
+    console.log("Sending creative briefs to webhook:", webhookUrl);
+    
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Webhook error:", response.status, errorText);
+      return { success: false, error: `Webhook returned ${response.status}: ${errorText}` };
+    }
+
+    console.log("Webhook response successful");
+    return { success: true };
+  } catch (error) {
+    console.error("Webhook request failed:", error);
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
+  }
 }
 
 serve(async (req) => {
@@ -236,6 +267,8 @@ serve(async (req) => {
 
     const body = await req.json();
     console.log("Received request with", body.entities?.length || 0, "entities");
+    console.log("Max images:", body.max_images, "Max videos:", body.max_videos);
+    console.log("Send to webhook:", body.send_to_webhook);
 
     // Validate input
     if (!body.entities || !Array.isArray(body.entities)) {
@@ -251,6 +284,9 @@ serve(async (req) => {
       placements_enabled: body.placements_enabled || ["feed", "pin", "story"],
       products: body.products || ["Ergo Pillow"],
       timeframe: body.timeframe || "last_7d",
+      max_images: body.max_images || 6,
+      max_videos: body.max_videos || 3,
+      send_to_webhook: body.send_to_webhook ?? false,
     };
 
     console.log("Calling Lovable AI to generate creative briefs...");
@@ -321,6 +357,9 @@ serve(async (req) => {
     creativeBriefs.generated_at_utc = new Date().toISOString();
     creativeBriefs.source = "risebynight_ads_reporting";
     creativeBriefs.request_type = "generate_creatives";
+    creativeBriefs.input_entity_count = input.entities.length;
+    creativeBriefs.requested_max_images = input.max_images;
+    creativeBriefs.requested_max_videos = input.max_videos;
 
     console.log("Creative briefs generated successfully:", {
       winners: creativeBriefs.selected_winners?.length || 0,
@@ -328,8 +367,23 @@ serve(async (req) => {
       fallback_mode: creativeBriefs.fallback_mode || false,
     });
 
+    // Send to webhook if requested
+    let webhookResult = null;
+    if (input.send_to_webhook) {
+      const HIGGSFIELD_WEBHOOK_URL = Deno.env.get("HIGGSFIELD_WEBHOOK_URL");
+      if (!HIGGSFIELD_WEBHOOK_URL) {
+        console.warn("HIGGSFIELD_WEBHOOK_URL not configured, skipping webhook");
+        webhookResult = { success: false, error: "HIGGSFIELD_WEBHOOK_URL not configured" };
+      } else {
+        webhookResult = await sendToWebhook(HIGGSFIELD_WEBHOOK_URL, creativeBriefs);
+      }
+    }
+
     return new Response(
-      JSON.stringify(creativeBriefs),
+      JSON.stringify({
+        ...creativeBriefs,
+        webhook_result: webhookResult,
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
