@@ -1,10 +1,13 @@
-import { useAdsReporting, Granularity, DatePreset, EntityMetrics } from "@/hooks/useAdsReporting";
+import { useState, useMemo } from "react";
+import { useAdsReporting, Granularity, DatePreset, EntityMetrics, ProcessedMetrics } from "@/hooks/useAdsReporting";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { 
   TrendingUp, 
   DollarSign, 
@@ -20,6 +23,7 @@ import {
   Percent,
   Zap,
   AlertTriangle,
+  Filter,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -52,6 +56,49 @@ import {
 import { cn } from "@/lib/utils";
 import { AdsDecisionInsights } from "./AdsDecisionInsights";
 import { EntityPerformanceTable } from "./EntityPerformanceTable";
+
+// Helper to recalculate totals from filtered entities
+function calculateTotalsFromEntities(entities: EntityMetrics[]): ProcessedMetrics {
+  const totals = {
+    spend: 0,
+    revenue: 0,
+    impressions: 0,
+    clicks: 0,
+    checkouts: 0,
+    add_to_carts: 0,
+    conversions: 0,
+  };
+
+  for (const entity of entities) {
+    totals.spend += entity.spend;
+    totals.revenue += entity.revenue;
+    totals.impressions += entity.impressions;
+    totals.clicks += entity.clicks;
+    totals.checkouts += entity.checkouts;
+    totals.add_to_carts += entity.add_to_carts;
+    totals.conversions += entity.conversions;
+  }
+
+  const spend = Math.round(totals.spend * 100) / 100;
+  const revenue = Math.round(totals.revenue * 100) / 100;
+
+  return {
+    spend,
+    revenue,
+    roas: spend > 0 ? Math.round((revenue / spend) * 100) / 100 : 0,
+    impressions: totals.impressions,
+    clicks: totals.clicks,
+    ctr: totals.impressions > 0 ? Math.round((totals.clicks / totals.impressions) * 10000) / 100 : 0,
+    cpc: totals.clicks > 0 ? Math.round((spend / totals.clicks) * 100) / 100 : 0,
+    cpm: totals.impressions > 0 ? Math.round((spend / totals.impressions * 1000) * 100) / 100 : 0,
+    checkouts: totals.checkouts,
+    cpa: totals.checkouts > 0 ? Math.round((spend / totals.checkouts) * 100) / 100 : 0,
+    add_to_carts: totals.add_to_carts,
+    conversions: totals.conversions,
+    conversion_rate: totals.clicks > 0 ? Math.round((totals.checkouts / totals.clicks) * 10000) / 100 : 0,
+    add_to_cart_rate: totals.clicks > 0 ? Math.round((totals.add_to_carts / totals.clicks) * 10000) / 100 : 0,
+  };
+}
 
 // ============================================================================
 // KPI CARD COMPONENT
@@ -158,6 +205,68 @@ export default function AdsReportingSection() {
     currency,
   } = useAdsReporting();
 
+  // Active-only filters
+  const [activeOnlyCampaigns, setActiveOnlyCampaigns] = useState(false);
+  const [activeOnlyAds, setActiveOnlyAds] = useState(false);
+
+  // Filter entities based on active-only settings
+  const filteredEntities = useMemo(() => {
+    if (!data?.entities) return [];
+    
+    let entities = [...data.entities];
+    
+    // Filter by active campaigns
+    if (activeOnlyCampaigns) {
+      // Get active campaign IDs
+      const activeCampaignIds = new Set(
+        entities
+          .filter(e => e.entity_type === "campaign" && e.status === "ACTIVE")
+          .map(e => e.id)
+      );
+      
+      // For campaign level, filter campaigns directly
+      // For ad group/ad level, filter by campaign_id reference
+      entities = entities.filter(e => {
+        if (e.entity_type === "campaign") {
+          return e.status === "ACTIVE";
+        }
+        // For ad groups and ads, check if their parent campaign is active
+        return e.campaign_id ? activeCampaignIds.has(e.campaign_id) : true;
+      });
+    }
+    
+    // Filter by active ads (only applies to ad level)
+    if (activeOnlyAds) {
+      entities = entities.filter(e => {
+        if (e.entity_type === "ad") {
+          return e.status === "ACTIVE";
+        }
+        // Also filter ad groups to only show those with active status
+        if (e.entity_type === "ad_group") {
+          return e.status === "ACTIVE";
+        }
+        return true; // Keep campaigns as-is
+      });
+    }
+    
+    return entities;
+  }, [data?.entities, activeOnlyCampaigns, activeOnlyAds]);
+
+  // Calculate totals from filtered entities (fixes spend discrepancy when filtering)
+  const displayTotals = useMemo(() => {
+    // If no filters are applied, use original totals
+    if (!activeOnlyCampaigns && !activeOnlyAds) {
+      return data?.totals;
+    }
+    
+    // Recalculate totals from filtered entities
+    if (filteredEntities.length > 0) {
+      return calculateTotalsFromEntities(filteredEntities);
+    }
+    
+    return data?.totals;
+  }, [data?.totals, filteredEntities, activeOnlyCampaigns, activeOnlyAds]);
+
   // Format chart data
   const chartData = data?.timeseries.map((entry) => ({
     date: entry.date.slice(5), // MM-DD format
@@ -169,6 +278,9 @@ export default function AdsReportingSection() {
     Clicks: entry.clicks,
     hasLag: entry.has_attribution_lag,
   })) || [];
+
+  // Check if any filters are active
+  const hasActiveFilters = activeOnlyCampaigns || activeOnlyAds;
 
   return (
     <Card className="border-border/50">
@@ -293,6 +405,41 @@ export default function AdsReportingSection() {
               <TabsTrigger value="PIN_PROMOTION" className="text-xs px-2 h-6">Ad</TabsTrigger>
             </TabsList>
           </Tabs>
+
+          {/* Separator */}
+          <div className="h-6 w-px bg-border/50" />
+
+          {/* Active-Only Filters */}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="active-campaigns"
+                checked={activeOnlyCampaigns}
+                onCheckedChange={setActiveOnlyCampaigns}
+                className="h-4 w-7"
+              />
+              <Label htmlFor="active-campaigns" className="text-xs text-muted-foreground cursor-pointer">
+                Active campaigns only
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="active-ads"
+                checked={activeOnlyAds}
+                onCheckedChange={setActiveOnlyAds}
+                className="h-4 w-7"
+              />
+              <Label htmlFor="active-ads" className="text-xs text-muted-foreground cursor-pointer">
+                Active ads only
+              </Label>
+            </div>
+            {hasActiveFilters && (
+              <Badge variant="secondary" className="text-xs gap-1">
+                <Filter className="h-3 w-3" />
+                Filtered
+              </Badge>
+            )}
+          </div>
         </div>
       </CardHeader>
 
@@ -340,35 +487,46 @@ export default function AdsReportingSection() {
         )}
 
         {/* Data Display */}
-        {data && (
+        {data && displayTotals && (
           <>
+            {/* Filter Active Badge */}
+            {hasActiveFilters && (
+              <Alert className="bg-blue-500/10 border-blue-500/30">
+                <Filter className="h-4 w-4 text-blue-500" />
+                <AlertDescription className="text-sm">
+                  Showing {activeOnlyCampaigns && "active campaigns"}{activeOnlyCampaigns && activeOnlyAds && " + "}{activeOnlyAds && "active ads"} only. 
+                  Totals are recalculated based on {filteredEntities.length} filtered entities.
+                </AlertDescription>
+              </Alert>
+            )}
+
             {/* KPI Cards - Row 1: Profit Metrics */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <KPICard
                 label="Spend"
-                value={data.totals.spend}
+                value={displayTotals.spend}
                 icon={DollarSign}
                 format="currency"
                 tooltip="Total ad spend in selected period"
               />
               <KPICard
                 label="Revenue"
-                value={data.totals.revenue}
+                value={displayTotals.revenue}
                 icon={TrendingUp}
                 format="currency"
                 tooltip="Conversion value from Pinterest-attributed purchases"
               />
               <KPICard
                 label="ROAS"
-                value={data.totals.roas}
+                value={displayTotals.roas}
                 icon={Target}
                 format="multiplier"
                 tooltip="Return on Ad Spend (Revenue / Spend). Target: 2x+"
-                highlight={getRoasHighlight(data.totals.roas)}
+                highlight={getRoasHighlight(displayTotals.roas)}
               />
               <KPICard
                 label="CPA"
-                value={data.totals.cpa}
+                value={displayTotals.cpa}
                 icon={ShoppingCart}
                 format="currency"
                 tooltip="Cost per Acquisition (Spend / Checkouts)"
@@ -379,26 +537,26 @@ export default function AdsReportingSection() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <KPICard
                 label="Impressions"
-                value={data.totals.impressions}
+                value={displayTotals.impressions}
                 icon={Eye}
                 tooltip="Total ad impressions"
               />
               <KPICard
                 label="Clicks"
-                value={data.totals.clicks}
+                value={displayTotals.clicks}
                 icon={MousePointerClick}
                 tooltip="Total link clicks"
               />
               <KPICard
                 label="CTR"
-                value={data.totals.ctr}
+                value={displayTotals.ctr}
                 icon={MousePointerClick}
                 format="percent"
                 tooltip="Click-through rate (Clicks / Impressions)"
               />
               <KPICard
                 label="Checkouts"
-                value={data.totals.checkouts}
+                value={displayTotals.checkouts}
                 icon={ShoppingCart}
                 tooltip="Pinterest-attributed checkout conversions"
               />
@@ -408,38 +566,40 @@ export default function AdsReportingSection() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <KPICard
                 label="Add to Carts"
-                value={data.totals.add_to_carts}
+                value={displayTotals.add_to_carts}
                 icon={ShoppingCart}
                 tooltip="Pinterest-attributed add-to-cart events"
               />
               <KPICard
                 label="ATC Rate"
-                value={data.totals.add_to_cart_rate}
+                value={displayTotals.add_to_cart_rate}
                 icon={Percent}
                 format="percent"
                 tooltip="Add-to-cart rate (Add to Carts / Clicks)"
               />
               <KPICard
                 label="Conversion Rate"
-                value={data.totals.conversion_rate}
+                value={displayTotals.conversion_rate}
                 icon={Zap}
                 format="percent"
                 tooltip="Checkout rate (Checkouts / Clicks)"
               />
               <KPICard
                 label="CPM"
-                value={data.totals.cpm}
+                value={displayTotals.cpm}
                 icon={Eye}
                 format="currency"
                 tooltip="Cost per 1,000 impressions"
               />
             </div>
 
-            {/* Decision Insights */}
-            <AdsDecisionInsights data={data} />
+            {/* Decision Insights - pass filtered data when filters are active */}
+            <AdsDecisionInsights 
+              data={hasActiveFilters ? { ...data, entities: filteredEntities, totals: displayTotals } : data} 
+            />
 
             {/* Conversion Warning - only if no checkouts AND no insights already cover it */}
-            {data.totals.checkouts === 0 && data.totals.add_to_carts > 0 && (
+            {displayTotals.checkouts === 0 && displayTotals.add_to_carts > 0 && (
               <Alert className="bg-muted/50 border-muted">
                 <Info className="h-4 w-4 text-muted-foreground" />
                 <AlertDescription className="text-sm text-muted-foreground">
@@ -606,12 +766,12 @@ export default function AdsReportingSection() {
             )}
 
             {/* Entity Breakdown Tables */}
-            {data.entities && data.entities.length > 0 && (
+            {filteredEntities.length > 0 && (
               <>
                 {/* Campaign Performance Table - show when at ACCOUNT or CAMPAIGN level */}
                 {(level === "ACCOUNT" || level === "CAMPAIGN") && (
                   <EntityPerformanceTable
-                    entities={data.entities.filter(e => e.entity_type === "campaign")}
+                    entities={filteredEntities.filter(e => e.entity_type === "campaign")}
                     entityType="campaign"
                     showCampaignRef={false}
                     showPersona={true}
@@ -623,7 +783,7 @@ export default function AdsReportingSection() {
                 {level === "AD_GROUP" && (
                   <>
                     <EntityPerformanceTable
-                      entities={data.entities.filter(e => e.entity_type === "ad_group")}
+                      entities={filteredEntities.filter(e => e.entity_type === "ad_group")}
                       entityType="ad_group"
                       showCampaignRef={true}
                       showPersona={true}
@@ -635,7 +795,7 @@ export default function AdsReportingSection() {
                 {/* Ad Performance Table */}
                 {level === "PIN_PROMOTION" && (
                   <EntityPerformanceTable
-                    entities={data.entities.filter(e => e.entity_type === "ad")}
+                    entities={filteredEntities.filter(e => e.entity_type === "ad")}
                     entityType="ad"
                     showCampaignRef={true}
                     showPersona={true}
