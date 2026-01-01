@@ -257,9 +257,13 @@ const QuizResultsPreReveal = memo(function QuizResultsPreReveal({
   onContinueToFullResults,
   isSubmitting,
 }: PreRevealProps) {
-  // Track partial reveal view
-  useMemo(() => {
-    trackPartialReveal(assessment.persona.cluster, 2);
+  // Track partial reveal view - use useEffect instead of useMemo for side effects
+  const hasTrackedPartialReveal = useRef(false);
+  useEffect(() => {
+    if (!hasTrackedPartialReveal.current) {
+      hasTrackedPartialReveal.current = true;
+      trackPartialReveal(assessment.persona.cluster, 2);
+    }
   }, [assessment.persona.cluster]);
 
   // Get first 1-2 insights from environment findings or risk drivers
