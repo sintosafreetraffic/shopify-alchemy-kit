@@ -176,10 +176,23 @@ function extractAttributionFromOrder(order: any): AttributionData {
   };
 }
 
+/**
+ * SHA-256 hash for email (same logic as track-context)
+ */
+async function sha256Hash(data: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const dataBuffer = encoder.encode(data.toLowerCase().trim());
+  const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 // Join attribution with pinterest_context table to get IP/UA for match signals
+// Also enriches context with email hash from checkout (50%+ coverage boost)
 async function joinPinterestContext(
   supabase: any,
-  attribution: AttributionData
+  attribution: AttributionData,
+  orderEmail?: string
 ): Promise<AttributionData> {
   const contextId = attribution.rbn_context_id;
   
@@ -211,7 +224,31 @@ async function joinPinterestContext(
       has_epik: !!context.epik,
       has_ip: !!context.client_ip_address,
       has_ua: !!context.client_user_agent,
+      has_email_hash: !!context.email_hash,
     });
+    
+    // ENRICHMENT: If context doesn't have email_hash but order has email, enrich it
+    // This captures checkout emails for pinterest_context, boosting Email Hash coverage
+    if (!context.email_hash && orderEmail) {
+      try {
+        const emailHash = await sha256Hash(orderEmail);
+        const { error: updateError } = await supabase
+          .from('pinterest_context')
+          .update({ 
+            email_hash: emailHash,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('context_id', contextId);
+        
+        if (updateError) {
+          console.warn('[Pinterest] Email hash enrichment failed:', updateError.message);
+        } else {
+          console.log('[Pinterest] ✅ Email hash enriched for context:', contextId);
+        }
+      } catch (hashError: any) {
+        console.warn('[Pinterest] Email hashing error (non-blocking):', hashError.message);
+      }
+    }
     
     // Merge rules:
     // 1) order.note_attributes has highest precedence for attribution
@@ -478,7 +515,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
     let attribution = extractAttributionFromOrder(order);
     
     // Join with pinterest_context to get IP/UA for match signals
-    attribution = await joinPinterestContext(supabase, attribution);
+    // Also enriches context with checkout email for CAPI coverage boost
+    attribution = await joinPinterestContext(supabase, attribution, email);
     
     console.log("[Shopify] Attribution data:", {
       has_epik: !!attribution.pinterest_click_id,
