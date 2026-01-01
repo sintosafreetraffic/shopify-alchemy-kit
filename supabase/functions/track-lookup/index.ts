@@ -58,8 +58,9 @@ function hashIP(ip: string): string {
   return 'ip_' + Math.abs(hash).toString(16);
 }
 
-// Fetch real-time tracking info from 17TRACK
-async function fetchRealTimeTracking(
+// Fetch tracking info from 17TRACK after registration
+// Uses /gettrackinfo which works with basic API plans
+async function fetchRegisteredTracking(
   trackingNumber: string,
   track17ApiKey: string
 ): Promise<{
@@ -71,9 +72,10 @@ async function fetchRealTimeTracking(
   destinationCountry: string | null;
   estimatedDelivery: string | null;
   deliveredAt: string | null;
+  carrierName: string | null;
 } | null> {
   try {
-    console.log(`[track-lookup] Fetching real-time tracking for ${trackingNumber}`);
+    console.log(`[track-lookup] Fetching tracking info for ${trackingNumber} via gettrackinfo`);
     
     const response = await fetch(`${TRACK17_API_URL}/gettrackinfo`, {
       method: 'POST',
@@ -90,44 +92,165 @@ async function fetchRealTimeTracking(
     }
 
     const data = await response.json();
-    console.log(`[track-lookup] 17TRACK response:`, JSON.stringify(data).substring(0, 500));
+    console.log(`[track-lookup] 17TRACK gettrackinfo response:`, JSON.stringify(data).substring(0, 1000));
 
-    if (data.code !== 0 || !data.data?.accepted?.[0]) {
-      console.log(`[track-lookup] No tracking data from 17TRACK`);
+    if (data.code !== 0) {
+      console.log(`[track-lookup] 17TRACK API error code: ${data.code}`);
       return null;
     }
 
-    const trackInfo = data.data.accepted[0];
-    const track = trackInfo.track;
-    
-    if (!track) {
+    const accepted = data.data?.accepted || [];
+    if (accepted.length === 0) {
+      console.log(`[track-lookup] No accepted tracking data`);
       return null;
     }
 
-    const statusCode = track.e ?? 0;
-    const status = STATUS_MAP[statusCode] || 'unknown';
+    const trackItem = accepted[0];
+    const trackInfo = trackItem.track_info;
+    const track = trackItem.track; // Legacy format fallback
     
-    // Extract events from z array
-    const events = (track.z || []).map((event: { a: string; b?: string; c?: string }) => ({
-      description: event.a,
-      time: event.b || null,
-      location: event.c || null,
-    }));
+    if (!trackInfo && !track) {
+      console.log(`[track-lookup] No track data in response`);
+      return null;
+    }
 
+    // V2.4 uses track_info with human-readable status
+    let status = 'unknown';
+    let lastEvent: string | null = null;
+    let lastEventTime: string | null = null;
+    let events: Array<{ description: string; time: string | null; location: string | null }> = [];
+    
+    if (trackInfo) {
+      // V2.4 format
+      const latestStatus = trackInfo.latest_status?.status?.toLowerCase().replace(/\s+/g, '_') || 'unknown';
+      status = latestStatus;
+      lastEvent = trackInfo.latest_event?.description || null;
+      lastEventTime = trackInfo.latest_event?.time_iso || null;
+    } else if (track) {
+      // Legacy format fallback
+      const statusCode = track.e ?? 0;
+      status = STATUS_MAP[statusCode] || 'unknown';
+      lastEvent = track.z0?.a || null;
+      lastEventTime = track.z0?.b || null;
+      events = (track.z || []).map((event: { a: string; b?: string; c?: string }) => ({
+        description: event.a,
+        time: event.b || null,
+        location: event.c || null,
+      }));
+    }
+    
+    const originCountry = trackInfo?.shipping_info?.shipper_address?.country || track?.z1?.a || null;
+    const destCountry = trackInfo?.shipping_info?.recipient_address?.country || track?.z2?.a || null;
+    
+    console.log(`[track-lookup] Parsed: status=${status}, lastEvent=${lastEvent}`);
+    
     return {
       status,
-      lastEvent: track.z0?.a || events[0]?.description || null,
-      lastEventTime: track.z0?.b || events[0]?.time || null,
+      lastEvent,
+      lastEventTime,
       events,
-      originCountry: track.z1?.a || null,
-      destinationCountry: track.z2?.a || null,
-      estimatedDelivery: track.ygt1 || track.ygt2 || null,
-      deliveredAt: status === 'delivered' ? (track.w1 || track.z0?.b || null) : null,
+      originCountry,
+      destinationCountry: destCountry,
+      estimatedDelivery: track?.ygt1 || track?.ygt2 || null,
+      deliveredAt: status === 'delivered' ? lastEventTime : null,
+      carrierName: null,
     };
   } catch (error) {
-    console.error(`[track-lookup] Error fetching real-time tracking:`, error);
+    console.error(`[track-lookup] Error fetching tracking:`, error);
     return null;
   }
+}
+
+// Register tracking number with 17TRACK for tracking + webhook updates
+async function registerWith17Track(
+  trackingNumber: string,
+  orderId: string,
+  track17ApiKey: string
+): Promise<{ success: boolean; alreadyRegistered: boolean }> {
+  try {
+    console.log(`[track-lookup] Registering ${trackingNumber} with 17TRACK`);
+    
+    const response = await fetch(`${TRACK17_API_URL}/register`, {
+      method: 'POST',
+      headers: {
+        '17token': track17ApiKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify([{
+        number: trackingNumber,
+        auto_detection: true,
+        tag: orderId,
+      }]),
+    });
+
+    if (!response.ok) {
+      console.error(`[track-lookup] 17TRACK register API error: ${response.status}`);
+      return { success: false, alreadyRegistered: false };
+    }
+
+    const data = await response.json();
+    console.log(`[track-lookup] 17TRACK register response:`, JSON.stringify(data).substring(0, 500));
+
+    if (data.code !== 0) {
+      console.log(`[track-lookup] 17TRACK register error code: ${data.code}`);
+      return { success: false, alreadyRegistered: false };
+    }
+
+    const accepted = data.data?.accepted || [];
+    const rejected = data.data?.rejected || [];
+    
+    if (rejected.length > 0) {
+      const rejection = rejected[0];
+      // -18019901 means already registered - that's fine!
+      if (rejection?.error?.code === -18019901) {
+        console.log(`[track-lookup] ${trackingNumber} already registered with 17TRACK`);
+        return { success: true, alreadyRegistered: true };
+      }
+      console.log(`[track-lookup] Registration rejected:`, JSON.stringify(rejection));
+      return { success: false, alreadyRegistered: false };
+    }
+
+    console.log(`[track-lookup] Successfully registered ${trackingNumber} with 17TRACK`);
+    return { success: accepted.length > 0, alreadyRegistered: false };
+  } catch (error) {
+    console.error(`[track-lookup] Error registering with 17TRACK:`, error);
+    return { success: false, alreadyRegistered: false };
+  }
+}
+
+// Combined function: register if needed, then fetch tracking info
+async function fetchRealTimeTracking(
+  trackingNumber: string,
+  track17ApiKey: string,
+  orderId: string
+): Promise<{
+  status: string;
+  lastEvent: string | null;
+  lastEventTime: string | null;
+  events: Array<{ description: string; time: string | null; location: string | null }>;
+  originCountry: string | null;
+  destinationCountry: string | null;
+  estimatedDelivery: string | null;
+  deliveredAt: string | null;
+  carrierName: string | null;
+} | null> {
+  // Step 1: Register the tracking number (if not already)
+  const registerResult = await registerWith17Track(trackingNumber, orderId, track17ApiKey);
+  
+  if (!registerResult.success) {
+    console.log(`[track-lookup] Registration failed for ${trackingNumber}`);
+    return null;
+  }
+  
+  // Step 2: If just registered, tracking info won't be available immediately
+  // Wait briefly for 17TRACK to process
+  if (!registerResult.alreadyRegistered) {
+    console.log(`[track-lookup] Just registered ${trackingNumber}, waiting 2s for 17TRACK to process...`);
+    await new Promise(resolve => setTimeout(resolve, 2000));
+  }
+  
+  // Step 3: Fetch tracking info
+  return await fetchRegisteredTracking(trackingNumber, track17ApiKey);
 }
 
 Deno.serve(async (req) => {
@@ -208,22 +331,35 @@ Deno.serve(async (req) => {
           if (isStale && track17ApiKey) {
             console.log(`[track-lookup] Data is stale, fetching fresh tracking for ${tracking.tracking_number}`);
             
-            const freshData = await fetchRealTimeTracking(tracking.tracking_number, track17ApiKey);
+            // Register and fetch tracking data from 17TRACK
+            const freshData = await fetchRealTimeTracking(tracking.tracking_number, track17ApiKey, tracking.order_number);
             
-            if (freshData && freshData.status !== 'not_found') {
+            if (freshData && freshData.status !== 'not_found' && freshData.status !== 'unknown') {
+              console.log(`[track-lookup] Got fresh data: status=${freshData.status}, lastEvent=${freshData.lastEvent}`);
+              
               // Update database with fresh data
+              const updateData: Record<string, unknown> = {
+                status: freshData.status,
+                last_event: freshData.lastEvent,
+                last_event_time: freshData.lastEventTime ? new Date(freshData.lastEventTime).toISOString() : null,
+                origin_country: freshData.originCountry,
+                destination_country: freshData.destinationCountry,
+                updated_at: new Date().toISOString(),
+              };
+              
+              if (freshData.estimatedDelivery) {
+                updateData.estimated_delivery = new Date(freshData.estimatedDelivery).toISOString();
+              }
+              if (freshData.deliveredAt) {
+                updateData.delivered_at = new Date(freshData.deliveredAt).toISOString();
+              }
+              if (freshData.carrierName) {
+                updateData.carrier_name = freshData.carrierName;
+              }
+              
               await supabase
                 .from('order_tracking')
-                .update({
-                  status: freshData.status,
-                  last_event: freshData.lastEvent,
-                  last_event_time: freshData.lastEventTime ? new Date(freshData.lastEventTime).toISOString() : null,
-                  origin_country: freshData.originCountry,
-                  destination_country: freshData.destinationCountry,
-                  estimated_delivery: freshData.estimatedDelivery ? new Date(freshData.estimatedDelivery).toISOString() : null,
-                  delivered_at: freshData.deliveredAt ? new Date(freshData.deliveredAt).toISOString() : null,
-                  updated_at: new Date().toISOString(),
-                })
+                .update(updateData)
                 .eq('id', tracking.id);
 
               // Upsert events to tracking_events table
@@ -247,6 +383,7 @@ Deno.serve(async (req) => {
               return {
                 ...tracking,
                 status: freshData.status,
+                carrier_name: freshData.carrierName || tracking.carrier_name,
                 last_event: freshData.lastEvent,
                 last_event_time: freshData.lastEventTime,
                 origin_country: freshData.originCountry,
@@ -259,6 +396,8 @@ Deno.serve(async (req) => {
                   event_time: e.time,
                 })),
               };
+            } else {
+              console.log(`[track-lookup] No fresh data available yet for ${tracking.tracking_number}`);
             }
           }
 
@@ -483,29 +622,8 @@ Deno.serve(async (req) => {
       let lastEventTime: string | null = null;
 
       if (track17ApiKey) {
-        // Register with 17TRACK
-        try {
-          const registerResponse = await fetch(`${TRACK17_API_URL}/register`, {
-            method: 'POST',
-            headers: {
-              '17token': track17ApiKey,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify([{
-              number: fulfillment.tracking_number,
-              auto_detection: true,
-              param: { order: normalizedOrderNumber },
-            }]),
-          });
-
-          const registerData = await registerResponse.json();
-          console.log('[track-lookup] 17TRACK register response:', registerData);
-        } catch (registerError) {
-          console.error('[track-lookup] 17TRACK register error:', registerError);
-        }
-
-        // Fetch real-time tracking data
-        const freshData = await fetchRealTimeTracking(fulfillment.tracking_number, track17ApiKey);
+        // Register and fetch tracking data from 17TRACK
+        const freshData = await fetchRealTimeTracking(fulfillment.tracking_number, track17ApiKey, normalizedOrderNumber);
         
         if (freshData && freshData.status !== 'not_found') {
           finalStatus = freshData.status;
