@@ -12,6 +12,7 @@ import { UrgencyBanner } from "./components/UrgencyBanner";
 // import { EmailPopup } from "./components/EmailPopup";
 // import { useEmailPopup } from "./hooks/useEmailPopup";
 import { trackPageView } from "./lib/analyticsRegistry";
+import { useKlaviyoEmailCapture } from "./hooks/useKlaviyoEmailCapture";
 
 import { FullPageLoader } from "./components/FullPageLoader";
 
@@ -203,6 +204,10 @@ const capturePinterestClickId = () => {
 
 const AppContent = () => {
   const location = useLocation();
+  
+  // Capture emails from Klaviyo native forms for Pinterest CAPI enrichment
+  useKlaviyoEmailCapture();
+  
   // Email popup disabled - using Klaviyo native forms instead
   // const { isOpen, showTeaser, closePopup, openFromTeaser } = useEmailPopup({
   //   delay: 45000,
