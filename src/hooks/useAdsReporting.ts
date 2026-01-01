@@ -106,9 +106,10 @@ export function useAdsReporting(options: UseAdsReportingOptions = { autoFetch: t
 
     try {
       // Calculate date range in UTC
+      // NOTE: "Last N days" typically includes today + previous (N-1) days.
       const endDate = new Date();
-      const startDate = new Date();
-      startDate.setUTCDate(startDate.getUTCDate() - selectedPreset.days);
+      const startDate = new Date(endDate);
+      startDate.setUTCDate(startDate.getUTCDate() - Math.max(selectedPreset.days - 1, 0));
 
       const params = new URLSearchParams({
         start_date: startDate.toISOString().split("T")[0],

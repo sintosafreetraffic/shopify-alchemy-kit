@@ -242,11 +242,10 @@ const QuizRevealTracking = () => {
 
     const daysNum = parseInt(days);
 
-    // We only have presets for 7/14/30/90; for 1/3 day views we use 7-day spend.
+    // Use exact days for the overview cards (supports 1/3/7/14/30/etc.)
     const matchingPreset =
-      DATE_PRESETS.find((p) => p.days === daysNum) ||
-      DATE_PRESETS.find((p) => p.days >= daysNum) ||
-      DATE_PRESETS[DATE_PRESETS.length - 1];
+      DATE_PRESETS.find((p) => p.days === daysNum) ??
+      ({ label: `Last ${daysNum} days`, days: daysNum } as const);
 
     if (adsReporting.selectedPreset.days !== matchingPreset.days) {
       adsReporting.setSelectedPreset(matchingPreset);
