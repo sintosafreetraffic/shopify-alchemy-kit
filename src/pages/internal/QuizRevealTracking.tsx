@@ -3,7 +3,7 @@
  * Internal admin page for tracking quiz reveal + checkout + Pinterest purchase + client tracking analytics
  * Protected: Only accessible to authenticated users with admin role
  */
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -235,33 +235,30 @@ const QuizRevealTracking = () => {
 
   // Ads reporting hook for ROAS calculation
   const adsReporting = useAdsReporting({ autoFetch: false });
-  
-  // Track the last fetched days to avoid duplicate fetches
-  const lastFetchedDaysRef = useRef<string | null>(null);
-  
-  // Sync ads reporting with the selected days timeframe and fetch data
+
+  // Sync ads reporting preset with the selected days timeframe
   useEffect(() => {
     if (!isAdmin) return;
-    
+
     const daysNum = parseInt(days);
-    
-    // Skip if we already fetched for this days value
-    if (lastFetchedDaysRef.current === days) return;
-    
-    // Find the matching preset or use the closest one
-    const matchingPreset = DATE_PRESETS.find(p => p.days === daysNum) 
-      || DATE_PRESETS.find(p => p.days >= daysNum) 
-      || DATE_PRESETS[DATE_PRESETS.length - 1];
-    
-    // Update preset and immediately fetch with correct date range
-    adsReporting.setSelectedPreset(matchingPreset);
-    lastFetchedDaysRef.current = days;
-    
-    // Use setTimeout to ensure the preset state has been updated before fetching
-    setTimeout(() => {
-      adsReporting.refetch();
-    }, 0);
-  }, [days, isAdmin]);
+
+    // We only have presets for 7/14/30/90; for 1/3 day views we use 7-day spend.
+    const matchingPreset =
+      DATE_PRESETS.find((p) => p.days === daysNum) ||
+      DATE_PRESETS.find((p) => p.days >= daysNum) ||
+      DATE_PRESETS[DATE_PRESETS.length - 1];
+
+    if (adsReporting.selectedPreset.days !== matchingPreset.days) {
+      adsReporting.setSelectedPreset(matchingPreset);
+    }
+  }, [days, isAdmin, adsReporting.selectedPreset.days]);
+
+  // Fetch ads data whenever the selected preset changes
+  useEffect(() => {
+    if (!isAdmin) return;
+    adsReporting.refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin, adsReporting.selectedPreset.days]);
 
   // Shopify revenue stats (net revenue after refunds)
   const [shopifyRevenueStats, setShopifyRevenueStats] = useState<{
