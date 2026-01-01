@@ -79,6 +79,10 @@ verify_jwt = false
 [functions.shopify-order-webhook]
 verify_jwt = false
 
+# Shopify fulfillment webhook - Verifies HMAC signature internally
+[functions.shopify-fulfillment-webhook]
+verify_jwt = false
+
 # Klaviyo event sender - Internal use only
 [functions.klaviyo-event]
 verify_jwt = false
