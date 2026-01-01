@@ -10,6 +10,7 @@
 
 import { useEffect, useRef } from 'react';
 import { captureEmail } from '@/lib/contextTracking';
+import { setEnhancedMatch } from '@/lib/pinterest';
 
 // Klaviyo form event types
 interface KlaviyoFormEvent {
@@ -55,6 +56,9 @@ export function useKlaviyoEmailCapture(): void {
               type,
               hasEmail: true,
             });
+            
+            // Set Pinterest enhanced match (stores hash for future Tag events)
+            setEnhancedMatch(email);
             
             // Send to pinterest_context for CAPI enrichment
             captureEmail(email);
