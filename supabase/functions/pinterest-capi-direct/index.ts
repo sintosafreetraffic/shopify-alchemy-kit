@@ -431,11 +431,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     // ========================================================================
     // ALWAYS LOG TO DATABASE (even when blocked)
+    // Use UPSERT since shopify-order-webhook may have already inserted a pending row
     // ========================================================================
 
-    const insertResult = await supabase
+    const upsertResult = await supabase
       .from('pinterest_purchase_events')
-      .insert({
+      .upsert({
         order_id: eventData.order_id,
         value: eventData.value,
         currency: eventData.currency || 'EUR',
@@ -460,10 +461,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
         // Phase Day 1-2: Idempotency and operational state
         event_id: eventId,
         delivery_state: deliveryState,
+      }, {
+        onConflict: 'order_id',
+        ignoreDuplicates: false, // Update existing row
       });
 
-    if (insertResult.error) {
-      console.error("[Pinterest CAPI Direct] DB insert error:", insertResult.error);
+    if (upsertResult.error) {
+      console.error("[Pinterest CAPI Direct] DB upsert error:", upsertResult.error);
     }
 
     // ========================================================================
