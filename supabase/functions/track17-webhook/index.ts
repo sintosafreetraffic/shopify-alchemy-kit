@@ -1,9 +1,17 @@
 /**
- * 17TRACK Webhook Handler
+ * 17TRACK Webhook Handler (V2.4 Compatible)
  * 
  * Receives tracking updates from 17TRACK, stores events, and enqueues email notifications.
  * Verified using the 17token header (same as API key).
  * Endpoint: POST /functions/v1/track17-webhook
+ * 
+ * V2.4 Payload Format:
+ * {
+ *   "event": "TRACKING_UPDATED",
+ *   "data": {
+ *     "accepted": [{ number, carrier, track, ... }]
+ *   }
+ * }
  * 
  * Status Mapping (17TRACK → Internal):
  * - Info received → label_created
@@ -80,7 +88,27 @@ interface TrackEvent {
   d?: string; // Time zone
 }
 
-interface Track17Event {
+interface TrackData {
+  e: number; // Main status code
+  f?: number; // Sub status code
+  z0?: {
+    a: string; // Last event description
+    b: string; // Last event time (ISO format)
+  };
+  z1?: {
+    a: string; // Origin country
+  };
+  z2?: {
+    a: string; // Destination country
+  };
+  ygt1?: string; // Estimated delivery start
+  ygt2?: string; // Estimated delivery end
+  w1?: string; // Delivery time
+  z?: TrackEvent[]; // Full event history
+}
+
+// V2.4 tracking item in accepted array
+interface Track17AcceptedItem {
   number: string;
   carrier: number;
   param?: {
@@ -88,24 +116,7 @@ interface Track17Event {
     order_id?: string;
   };
   tag?: string;
-  track?: {
-    e: number; // Main status code
-    f?: number; // Sub status code
-    z0?: {
-      a: string; // Last event description
-      b: string; // Last event time (ISO format)
-    };
-    z1?: {
-      a: string; // Origin country
-    };
-    z2?: {
-      a: string; // Destination country
-    };
-    ygt1?: string; // Estimated delivery start
-    ygt2?: string; // Estimated delivery end
-    w1?: string; // Delivery time
-    z?: TrackEvent[]; // Full event history
-  };
+  track?: TrackData;
   track_info?: {
     latest_status?: {
       status: string;
@@ -118,17 +129,17 @@ interface Track17Event {
   };
 }
 
-interface Track17Payload {
+// V2.4 Webhook Payload Format
+interface Track17PayloadV24 {
   event: string;
   data: {
-    number: string;
-    carrier: number;
-    param?: {
-      order?: string;
-      order_id?: string;
-    };
-    track?: Track17Event['track'];
-    track_info?: Track17Event['track_info'];
+    accepted?: Track17AcceptedItem[];
+    // Legacy single-item format (fallback)
+    number?: string;
+    carrier?: number;
+    param?: { order?: string; order_id?: string };
+    track?: TrackData;
+    track_info?: Track17AcceptedItem['track_info'];
   };
 }
 
@@ -282,6 +293,181 @@ async function enqueueShipmentEmail(
   return { enqueued: true };
 }
 
+// Process a single tracking item
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function processTrackingItem(
+  supabase: any,
+  item: Track17AcceptedItem,
+  settings: Awaited<ReturnType<typeof getEmailSettings>>
+): Promise<{ success: boolean; trackingNumber: string; status: string; error?: string }> {
+  const trackingNumber = item.number;
+  const trackData = item.track;
+  const trackInfo = item.track_info;
+  const carrier = item.carrier;
+
+  console.log(`[17track-webhook] Processing tracking: ${trackingNumber}, carrier: ${carrier}`);
+
+  // Extract status
+  const statusCode = trackData?.e ?? 0;
+  
+  // Ignore "Not found" status (code 0) - too noisy per spec
+  if (statusCode === 0) {
+    console.log(`[17track-webhook] Ignoring "Not found" status for ${trackingNumber}`);
+    return { success: true, trackingNumber, status: 'not_found' };
+  }
+  
+  const status = STATUS_MAP[statusCode] || 'unknown';
+  const subStatus = trackData?.f?.toString();
+  
+  // Extract event info
+  const lastEvent = trackData?.z0?.a || trackInfo?.latest_event?.description;
+  const lastEventTime = trackData?.z0?.b || trackInfo?.latest_event?.time_iso;
+  
+  // Extract location info
+  const originCountry = trackData?.z1?.a;
+  const destinationCountry = trackData?.z2?.a;
+  
+  // Extract delivery info
+  const estimatedDelivery = trackData?.ygt1 || trackData?.ygt2;
+  const deliveredAt = status === 'delivered' ? (trackData?.w1 || lastEventTime) : null;
+
+  // Generate payload hash for dedupe
+  const payloadHash = await hashPayload({
+    number: trackingNumber,
+    status: statusCode,
+    lastEvent,
+    lastEventTime,
+  });
+
+  // Try to find existing order_tracking record
+  const { data: orderTracking } = await supabase
+    .from('order_tracking')
+    .select('id, order_number, email')
+    .eq('tracking_number', trackingNumber)
+    .single();
+
+  const orderId = orderTracking?.order_number || item.param?.order || item.param?.order_id || trackingNumber;
+  const email = orderTracking?.email;
+
+  // Store in shipment_tracking_events (dedupe by payload_hash)
+  const eventDetail = {
+    description: lastEvent,
+    location: trackData?.z0 ? undefined : trackData?.z?.[0]?.c,
+    origin_country: originCountry,
+    destination_country: destinationCountry,
+    raw_status_code: statusCode,
+    sub_status: subStatus,
+  };
+
+  const { error: eventInsertError } = await supabase
+    .from('shipment_tracking_events')
+    .insert({
+      order_id: orderId,
+      tracking_number: trackingNumber,
+      status,
+      status_detail: eventDetail,
+      occurred_at: lastEventTime ? new Date(lastEventTime).toISOString() : new Date().toISOString(),
+      payload_hash: payloadHash,
+    });
+
+  if (eventInsertError) {
+    if (eventInsertError.code === '23505') { // Unique violation
+      console.log(`[17track-webhook] Duplicate event for ${trackingNumber}, skipping`);
+      return { success: true, trackingNumber, status };
+    }
+    console.error(`[17track-webhook] Event insert error for ${trackingNumber}:`, eventInsertError);
+  }
+
+  // Update or create shipment_trackings record
+  const { data: existingShipment } = await supabase
+    .from('shipment_trackings')
+    .select('id, current_status')
+    .eq('order_id', orderId)
+    .eq('tracking_number', trackingNumber)
+    .single();
+
+  const previousStatus = existingShipment?.current_status;
+
+  if (existingShipment) {
+    await supabase
+      .from('shipment_trackings')
+      .update({
+        current_status: status,
+        last_status_at: lastEventTime ? new Date(lastEventTime).toISOString() : new Date().toISOString(),
+      })
+      .eq('id', existingShipment.id);
+  } else if (email) {
+    await supabase
+      .from('shipment_trackings')
+      .insert({
+        order_id: orderId,
+        email,
+        tracking_number: trackingNumber,
+        carrier: carrier?.toString(),
+        current_status: status,
+        last_status_at: lastEventTime ? new Date(lastEventTime).toISOString() : new Date().toISOString(),
+      });
+  }
+
+  // Store event history in tracking_events table
+  const eventHistory = trackData?.z || [];
+  if (eventHistory.length > 0) {
+    console.log(`[17track-webhook] Processing ${eventHistory.length} events for ${trackingNumber}`);
+    
+    for (const event of eventHistory) {
+      const eventTime = event.b ? new Date(event.b).toISOString() : null;
+      
+      await supabase
+        .from('tracking_events')
+        .upsert({
+          tracking_number: trackingNumber,
+          status: status,
+          description: event.a,
+          location: event.c || null,
+          event_time: eventTime,
+        }, {
+          onConflict: 'tracking_number,event_time,description',
+          ignoreDuplicates: true,
+        });
+    }
+  }
+
+  // Update order_tracking table
+  if (orderTracking) {
+    await supabase
+      .from('order_tracking')
+      .update({
+        status,
+        sub_status: subStatus,
+        last_event: lastEvent,
+        last_event_time: lastEventTime ? new Date(lastEventTime).toISOString() : null,
+        origin_country: originCountry,
+        destination_country: destinationCountry,
+        estimated_delivery: estimatedDelivery ? new Date(estimatedDelivery).toISOString() : null,
+        delivered_at: deliveredAt ? new Date(deliveredAt).toISOString() : null,
+        track17_data: item,
+      })
+      .eq('tracking_number', trackingNumber);
+
+    console.log(`[17track-webhook] Updated order_tracking: ${trackingNumber}, Status: ${status}`);
+  }
+
+  // Enqueue email notification if status changed and valid
+  if (status !== previousStatus && status !== 'unknown') {
+    const enqueueResult = await enqueueShipmentEmail(
+      supabase,
+      orderId,
+      trackingNumber,
+      status,
+      previousStatus,
+      settings
+    );
+    console.log(`[17track-webhook] Enqueue result for ${trackingNumber}:`, enqueueResult);
+  }
+
+  return { success: true, trackingNumber, status };
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -316,19 +502,10 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const payload: Track17Payload = await req.json();
+    const payload: Track17PayloadV24 = await req.json();
     
     console.log('[17track-webhook] Received event:', payload.event);
-    console.log('[17track-webhook] Tracking number:', payload.data?.number);
-    
-    // Validate payload structure
-    if (!payload.data?.number) {
-      console.error('[17track-webhook] Missing tracking number in payload');
-      return new Response(JSON.stringify({ error: 'Invalid payload: missing tracking number' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    console.log('[17track-webhook] Raw payload:', JSON.stringify(payload).substring(0, 500));
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -344,191 +521,77 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const trackingNumber = payload.data.number;
-    const trackData = payload.data.track;
-    const trackInfo = payload.data.track_info;
+    // Get email settings once for all items
+    const settings = await getEmailSettings(supabase);
+
+    // V2.4 format: data.accepted is an array of tracking items
+    const acceptedItems = payload.data?.accepted;
     
-    // Extract status
-    const statusCode = trackData?.e ?? 0;
-    
-    // Ignore "Not found" status (code 0) - too noisy per spec
-    if (statusCode === 0) {
-      console.log('[17track-webhook] Ignoring "Not found" status (code 0)');
+    if (acceptedItems && Array.isArray(acceptedItems) && acceptedItems.length > 0) {
+      console.log(`[17track-webhook] Processing ${acceptedItems.length} tracking item(s) (V2.4 format)`);
+      
+      const results = [];
+      for (const item of acceptedItems) {
+        try {
+          const result = await processTrackingItem(supabase, item, settings);
+          results.push(result);
+        } catch (itemError) {
+          console.error(`[17track-webhook] Error processing item ${item.number}:`, itemError);
+          results.push({
+            success: false,
+            trackingNumber: item.number,
+            status: 'error',
+            error: itemError instanceof Error ? itemError.message : 'Unknown error',
+          });
+        }
+      }
+
       return new Response(JSON.stringify({ 
-        success: true, 
-        message: 'Status "Not found" ignored per policy',
-        tracking_number: trackingNumber,
+        success: true,
+        processed: results.length,
+        results: results.map(r => ({
+          tracking_number: r.trackingNumber,
+          status: r.status,
+          status_label: STATUS_LABELS[r.status] || r.status,
+        })),
       }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
     
-    const status = STATUS_MAP[statusCode] || 'unknown';
-    const subStatus = trackData?.f?.toString();
-    
-    // Extract event info
-    const lastEvent = trackData?.z0?.a || trackInfo?.latest_event?.description;
-    const lastEventTime = trackData?.z0?.b || trackInfo?.latest_event?.time_iso;
-    
-    // Extract location info
-    const originCountry = trackData?.z1?.a;
-    const destinationCountry = trackData?.z2?.a;
-    
-    // Extract delivery info
-    const estimatedDelivery = trackData?.ygt1 || trackData?.ygt2;
-    const deliveredAt = status === 'delivered' ? (trackData?.w1 || lastEventTime) : null;
-
-    // Generate payload hash for dedupe
-    const payloadHash = await hashPayload({
-      number: trackingNumber,
-      status: statusCode,
-      lastEvent,
-      lastEventTime,
-    });
-
-    // Try to find existing order_tracking record
-    const { data: orderTracking } = await supabase
-      .from('order_tracking')
-      .select('id, order_number, email')
-      .eq('tracking_number', trackingNumber)
-      .single();
-
-    const orderId = orderTracking?.order_number || payload.data.param?.order || payload.data.param?.order_id || trackingNumber;
-    const email = orderTracking?.email;
-
-    // Store in shipment_tracking_events (dedupe by payload_hash)
-    const eventDetail = {
-      description: lastEvent,
-      location: trackData?.z0 ? undefined : trackData?.z?.[0]?.c,
-      origin_country: originCountry,
-      destination_country: destinationCountry,
-      raw_status_code: statusCode,
-      sub_status: subStatus,
-    };
-
-    const { error: eventInsertError } = await supabase
-      .from('shipment_tracking_events')
-      .insert({
-        order_id: orderId,
-        tracking_number: trackingNumber,
-        status,
-        status_detail: eventDetail,
-        occurred_at: lastEventTime ? new Date(lastEventTime).toISOString() : new Date().toISOString(),
-        payload_hash: payloadHash,
-      });
-
-    if (eventInsertError) {
-      if (eventInsertError.code === '23505') { // Unique violation
-        console.log('[17track-webhook] Duplicate event (payload_hash), skipping');
-        return new Response(JSON.stringify({ 
-          success: true, 
-          message: 'Duplicate event, already processed',
-          tracking_number: trackingNumber,
-        }), {
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      console.error('[17track-webhook] Event insert error:', eventInsertError);
-    }
-
-    // Update or create shipment_trackings record
-    const { data: existingShipment } = await supabase
-      .from('shipment_trackings')
-      .select('id, current_status')
-      .eq('order_id', orderId)
-      .eq('tracking_number', trackingNumber)
-      .single();
-
-    const previousStatus = existingShipment?.current_status;
-
-    if (existingShipment) {
-      await supabase
-        .from('shipment_trackings')
-        .update({
-          current_status: status,
-          last_status_at: lastEventTime ? new Date(lastEventTime).toISOString() : new Date().toISOString(),
-        })
-        .eq('id', existingShipment.id);
-    } else if (email) {
-      await supabase
-        .from('shipment_trackings')
-        .insert({
-          order_id: orderId,
-          email,
-          tracking_number: trackingNumber,
-          carrier: payload.data.carrier?.toString(),
-          current_status: status,
-          last_status_at: lastEventTime ? new Date(lastEventTime).toISOString() : new Date().toISOString(),
-        });
-    }
-
-    // Store event history in tracking_events table (existing table)
-    const eventHistory = trackData?.z || [];
-    if (eventHistory.length > 0) {
-      console.log('[17track-webhook] Processing', eventHistory.length, 'events for timeline');
+    // Legacy fallback: single item format (data.number)
+    if (payload.data?.number) {
+      console.log('[17track-webhook] Processing single tracking item (legacy format)');
       
-      for (const event of eventHistory) {
-        const eventTime = event.b ? new Date(event.b).toISOString() : null;
-        
-        await supabase
-          .from('tracking_events')
-          .upsert({
-            tracking_number: trackingNumber,
-            status: status,
-            description: event.a,
-            location: event.c || null,
-            event_time: eventTime,
-          }, {
-            onConflict: 'tracking_number,event_time,description',
-            ignoreDuplicates: true,
-          });
-      }
+      const legacyItem: Track17AcceptedItem = {
+        number: payload.data.number,
+        carrier: payload.data.carrier || 0,
+        param: payload.data.param,
+        track: payload.data.track,
+        track_info: payload.data.track_info,
+      };
+
+      const result = await processTrackingItem(supabase, legacyItem, settings);
+
+      return new Response(JSON.stringify({ 
+        success: result.success, 
+        tracking_number: result.trackingNumber,
+        status: result.status,
+        status_label: STATUS_LABELS[result.status] || result.status,
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    // Update order_tracking table (existing table)
-    if (orderTracking) {
-      await supabase
-        .from('order_tracking')
-        .update({
-          status,
-          sub_status: subStatus,
-          last_event: lastEvent,
-          last_event_time: lastEventTime ? new Date(lastEventTime).toISOString() : null,
-          origin_country: originCountry,
-          destination_country: destinationCountry,
-          estimated_delivery: estimatedDelivery ? new Date(estimatedDelivery).toISOString() : null,
-          delivered_at: deliveredAt ? new Date(deliveredAt).toISOString() : null,
-          track17_data: payload.data,
-        })
-        .eq('tracking_number', trackingNumber);
-
-      console.log('[17track-webhook] Updated order_tracking:', trackingNumber, 'Status:', status);
-    }
-
-    // Enqueue email notification if status changed and valid
-    if (status !== previousStatus && status !== 'unknown') {
-      const settings = await getEmailSettings(supabase);
-      const enqueueResult = await enqueueShipmentEmail(
-        supabase,
-        orderId,
-        trackingNumber,
-        status,
-        previousStatus,
-        settings
-      );
-      console.log('[17track-webhook] Enqueue result:', enqueueResult);
-    }
-
-    // Respond quickly (17TRACK expects < 1s response)
+    // No valid tracking data found
+    console.error('[17track-webhook] No tracking data in payload');
     return new Response(JSON.stringify({ 
-      success: true, 
-      tracking_number: trackingNumber,
-      status,
-      status_label: STATUS_LABELS[status] || status,
+      error: 'Invalid payload',
+      message: 'No tracking data found in payload. Expected data.accepted[] (V2.4) or data.number (legacy)',
     }), {
-      status: 200,
+      status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
