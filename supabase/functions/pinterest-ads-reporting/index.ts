@@ -144,6 +144,11 @@ const MAX_RETRIES = 3;
 const INITIAL_BACKOFF_MS = 1000;
 const ATTRIBUTION_LAG_DAYS = 2; // Days where conversion data may be incomplete
 
+// Pagination + batching safeguards
+const ENTITY_PAGE_SIZE = 100;
+const ENTITY_MAX_PAGES = 50;
+const ANALYTICS_IDS_PER_REQUEST = 100;
+
 // ============================================================================
 // STRUCTURED LOGGING
 // ============================================================================
@@ -600,19 +605,48 @@ interface EntityInfo {
   creative_type?: string;
 }
 
+async function fetchAllPinterestItems<T>(
+  accessToken: string,
+  url: URL,
+  label: string
+): Promise<T[]> {
+  const items: T[] = [];
+  let bookmark: string | undefined;
+
+  for (let page = 0; page < ENTITY_MAX_PAGES; page++) {
+    if (bookmark) url.searchParams.set("bookmark", bookmark);
+    else url.searchParams.delete("bookmark");
+
+    const response = await fetchWithRetry(url.toString(), {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    const data = await response.json();
+    const pageItems = (data?.items || []) as T[];
+    items.push(...pageItems);
+
+    bookmark = data?.bookmark;
+    if (!bookmark) break;
+  }
+
+  log("info", "entity_list_fetched", { label, count: items.length });
+  return items;
+}
+
 async function fetchCampaigns(
   accessToken: string,
   adAccountId: string
 ): Promise<EntityInfo[]> {
   const url = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/campaigns`);
-  url.searchParams.set("page_size", "100");
+  url.searchParams.set("page_size", ENTITY_PAGE_SIZE.toString());
 
-  const response = await fetchWithRetry(url.toString(), {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
+  const items = await fetchAllPinterestItems<{ id: string; name: string; status?: string }>(
+    accessToken,
+    url,
+    "campaigns"
+  );
 
-  const data = await response.json();
-  return (data.items || []).map((c: { id: string; name: string; status?: string }) => ({
+  return items.map((c) => ({
     id: c.id,
     name: c.name || `Campaign ${c.id}`,
     status: c.status,
@@ -625,15 +659,17 @@ async function fetchAdGroups(
   campaignMap?: Map<string, { id: string; name: string }>
 ): Promise<EntityInfo[]> {
   const url = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/ad_groups`);
-  url.searchParams.set("page_size", "100");
+  url.searchParams.set("page_size", ENTITY_PAGE_SIZE.toString());
 
-  const response = await fetchWithRetry(url.toString(), {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
+  const items = await fetchAllPinterestItems<{
+    id: string;
+    name: string;
+    status?: string;
+    campaign_id?: string;
+  }>(accessToken, url, "ad_groups");
 
-  const data = await response.json();
-  return (data.items || []).map((ag: { id: string; name: string; status?: string; campaign_id?: string }) => {
-    const campaign = campaignMap?.get(ag.campaign_id || '');
+  return items.map((ag) => {
+    const campaign = campaignMap?.get(ag.campaign_id || "");
     return {
       id: ag.id,
       name: ag.name || `Ad Group ${ag.id}`,
@@ -651,24 +687,21 @@ async function fetchAds(
   adGroupMap?: Map<string, { id: string; name: string; campaign_id?: string }>
 ): Promise<EntityInfo[]> {
   const url = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/ads`);
-  url.searchParams.set("page_size", "100");
+  url.searchParams.set("page_size", ENTITY_PAGE_SIZE.toString());
 
-  const response = await fetchWithRetry(url.toString(), {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-
-  const data = await response.json();
-  return (data.items || []).map((ad: { 
-    id: string; 
-    name: string; 
-    status?: string; 
-    campaign_id?: string; 
+  const items = await fetchAllPinterestItems<{
+    id: string;
+    name: string;
+    status?: string;
+    campaign_id?: string;
     ad_group_id?: string;
     pin_id?: string;
     creative_type?: string;
-  }) => {
-    const campaign = campaignMap?.get(ad.campaign_id || '');
-    const adGroup = adGroupMap?.get(ad.ad_group_id || '');
+  }>(accessToken, url, "ads");
+
+  return items.map((ad) => {
+    const campaign = campaignMap?.get(ad.campaign_id || "");
+    const adGroup = adGroupMap?.get(ad.ad_group_id || "");
     return {
       id: ad.id,
       name: ad.name || `Ad ${ad.id}`,
@@ -937,14 +970,72 @@ async function fetchPinterestAnalytics(
     entity_count: entityInfoMap.size || 1,
   });
 
-  const response = await fetchWithRetry(url.toString(), {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-  });
+  const requestHeaders = {
+    Authorization: `Bearer ${accessToken}`,
+    "Content-Type": "application/json",
+  };
 
-  const rawData = await response.json();
+  let rawData: any[] = [];
+
+  const idsParamKey =
+    params.level === "CAMPAIGN"
+      ? "campaign_ids"
+      : params.level === "AD_GROUP"
+        ? "ad_group_ids"
+        : params.level === "PIN_PROMOTION"
+          ? "ad_ids"
+          : null;
+
+  if (idsParamKey && url.searchParams.has(idsParamKey)) {
+    const allIds = (url.searchParams.get(idsParamKey) || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    // Avoid carrying a massive query string; we set ids per chunk below.
+    url.searchParams.delete(idsParamKey);
+
+    const chunks: string[][] = [];
+    for (let i = 0; i < allIds.length; i += ANALYTICS_IDS_PER_REQUEST) {
+      chunks.push(allIds.slice(i, i + ANALYTICS_IDS_PER_REQUEST));
+    }
+
+    log("info", "analytics_fetch_chunked", {
+      level: params.level,
+      total_ids: allIds.length,
+      chunks: chunks.length,
+      chunk_size: ANALYTICS_IDS_PER_REQUEST,
+    });
+
+    for (const chunk of chunks) {
+      const chunkUrl = new URL(url.toString());
+      chunkUrl.searchParams.set(idsParamKey, chunk.join(","));
+
+      const chunkResponse = await fetchWithRetry(chunkUrl.toString(), {
+        headers: requestHeaders,
+      });
+
+      const chunkData = await chunkResponse.json();
+      if (Array.isArray(chunkData)) {
+        rawData.push(...chunkData);
+      } else {
+        log("warn", "analytics_chunk_non_array", { level: params.level });
+      }
+    }
+  } else {
+    const response = await fetchWithRetry(url.toString(), {
+      headers: requestHeaders,
+    });
+
+    const singleData = await response.json();
+    if (Array.isArray(singleData)) {
+      rawData = singleData;
+    } else {
+      rawData = [];
+      log("warn", "analytics_response_non_array", { level: params.level });
+    }
+  }
+
   const latencyMs = Date.now() - startTime;
   
   log("info", "api_request_complete", { 
