@@ -769,6 +769,19 @@ Deno.serve(async (req: Request): Promise<Response> => {
       }));
 
       // Build tracking payload with full attribution + match signals
+      // Extract customer info for enhanced matching (Pinterest CAPI user_data)
+      const billingAddress = order.billing_address || {};
+      const shippingAddress = order.shipping_address || {};
+      const customer = order.customer || {};
+      
+      // Prefer billing address, fall back to shipping
+      const firstName = billingAddress.first_name || shippingAddress.first_name || customer.first_name;
+      const lastName = billingAddress.last_name || shippingAddress.last_name || customer.last_name;
+      const city = billingAddress.city || shippingAddress.city;
+      const state = billingAddress.province_code || shippingAddress.province_code; // Shopify uses province_code
+      const zip = billingAddress.zip || shippingAddress.zip;
+      const country = billingAddress.country_code || shippingAddress.country_code;
+      
       const pinterestPayload: Record<string, any> = {
         order_id: orderId,
         event_type: 'purchase',
@@ -777,6 +790,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
         products,
         email: order.email,
         phone: order.customer?.phone || order.billing_address?.phone,
+        // Enhanced matching fields (name + address)
+        first_name: firstName,
+        last_name: lastName,
+        city: city,
+        state: state,
+        zip: zip,
+        country: country,
         pinterest_click_id: attribution.pinterest_click_id,
         utm_source: attribution.utm_source,
         utm_medium: attribution.utm_medium,
