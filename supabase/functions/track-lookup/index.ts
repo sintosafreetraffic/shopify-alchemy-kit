@@ -2,8 +2,9 @@
  * Track Lookup Edge Function
  * 
  * Looks up tracking info by order number + email.
- * Includes rate limiting (max 3 lookups per hour per IP).
+ * Includes rate limiting (max 5 lookups per 24 hours per IP).
  * If not found locally, registers with 17TRACK API.
+ * If found but stale, fetches real-time updates from 17TRACK.
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -16,6 +17,20 @@ const corsHeaders = {
 const TRACK17_API_URL = 'https://api.17track.net/track/v2.4';
 const RATE_LIMIT_MAX_REQUESTS = 5; // Max requests per window
 const RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+const STALE_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes - fetch fresh data if older
+
+// 17TRACK status code mapping
+const STATUS_MAP: Record<number, string> = {
+  0: 'not_found',
+  10: 'info_received',
+  20: 'in_transit',
+  30: 'expired',
+  35: 'delivery_failed',
+  40: 'available_for_pickup',
+  50: 'out_for_delivery',
+  60: 'delivered',
+  70: 'exception',
+};
 
 interface TrackLookupRequest {
   order_number: string;
@@ -41,6 +56,78 @@ function hashIP(ip: string): string {
     hash = hash & hash;
   }
   return 'ip_' + Math.abs(hash).toString(16);
+}
+
+// Fetch real-time tracking info from 17TRACK
+async function fetchRealTimeTracking(
+  trackingNumber: string,
+  track17ApiKey: string
+): Promise<{
+  status: string;
+  lastEvent: string | null;
+  lastEventTime: string | null;
+  events: Array<{ description: string; time: string | null; location: string | null }>;
+  originCountry: string | null;
+  destinationCountry: string | null;
+  estimatedDelivery: string | null;
+  deliveredAt: string | null;
+} | null> {
+  try {
+    console.log(`[track-lookup] Fetching real-time tracking for ${trackingNumber}`);
+    
+    const response = await fetch(`${TRACK17_API_URL}/gettrackinfo`, {
+      method: 'POST',
+      headers: {
+        '17token': track17ApiKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify([{ number: trackingNumber }]),
+    });
+
+    if (!response.ok) {
+      console.error(`[track-lookup] 17TRACK API error: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+    console.log(`[track-lookup] 17TRACK response:`, JSON.stringify(data).substring(0, 500));
+
+    if (data.code !== 0 || !data.data?.accepted?.[0]) {
+      console.log(`[track-lookup] No tracking data from 17TRACK`);
+      return null;
+    }
+
+    const trackInfo = data.data.accepted[0];
+    const track = trackInfo.track;
+    
+    if (!track) {
+      return null;
+    }
+
+    const statusCode = track.e ?? 0;
+    const status = STATUS_MAP[statusCode] || 'unknown';
+    
+    // Extract events from z array
+    const events = (track.z || []).map((event: { a: string; b?: string; c?: string }) => ({
+      description: event.a,
+      time: event.b || null,
+      location: event.c || null,
+    }));
+
+    return {
+      status,
+      lastEvent: track.z0?.a || events[0]?.description || null,
+      lastEventTime: track.z0?.b || events[0]?.time || null,
+      events,
+      originCountry: track.z1?.a || null,
+      destinationCountry: track.z2?.a || null,
+      estimatedDelivery: track.ygt1 || track.ygt2 || null,
+      deliveredAt: status === 'delivered' ? (track.w1 || track.z0?.b || null) : null,
+    };
+  } catch (error) {
+    console.error(`[track-lookup] Error fetching real-time tracking:`, error);
+    return null;
+  }
 }
 
 Deno.serve(async (req) => {
@@ -84,6 +171,7 @@ Deno.serve(async (req) => {
     // Initialize Supabase
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const track17ApiKey = Deno.env.get('TRACK17_API_KEY');
     
     if (!supabaseUrl || !supabaseKey) {
       throw new Error('Missing Supabase configuration');
@@ -91,8 +179,7 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // First: check if we already have tracking cached in the database.
-    // If we do, return it immediately without rate limiting (common case for repeat checks).
+    // Check if we have tracking cached in the database
     const { data: existingTracking, error: lookupError } = await supabase
       .from('order_tracking')
       .select('*')
@@ -104,14 +191,78 @@ Deno.serve(async (req) => {
       throw lookupError;
     }
 
+    // If we have tracking data, check if it needs refreshing
     if (existingTracking && existingTracking.length > 0) {
       console.log('[track-lookup] Found existing tracking data');
-
-      // Fetch event history for each tracking number
+      
       const trackingWithEvents = await Promise.all(
         existingTracking.map(async (tracking) => {
           if (!tracking.tracking_number) return { ...tracking, events: [] };
 
+          // Check if data is stale (no real updates, just initial state)
+          const isStale = !tracking.last_event_time || 
+            tracking.status === 'info_received' ||
+            (new Date().getTime() - new Date(tracking.updated_at).getTime() > STALE_THRESHOLD_MS);
+
+          // Fetch fresh data from 17TRACK if stale and we have API key
+          if (isStale && track17ApiKey) {
+            console.log(`[track-lookup] Data is stale, fetching fresh tracking for ${tracking.tracking_number}`);
+            
+            const freshData = await fetchRealTimeTracking(tracking.tracking_number, track17ApiKey);
+            
+            if (freshData && freshData.status !== 'not_found') {
+              // Update database with fresh data
+              await supabase
+                .from('order_tracking')
+                .update({
+                  status: freshData.status,
+                  last_event: freshData.lastEvent,
+                  last_event_time: freshData.lastEventTime ? new Date(freshData.lastEventTime).toISOString() : null,
+                  origin_country: freshData.originCountry,
+                  destination_country: freshData.destinationCountry,
+                  estimated_delivery: freshData.estimatedDelivery ? new Date(freshData.estimatedDelivery).toISOString() : null,
+                  delivered_at: freshData.deliveredAt ? new Date(freshData.deliveredAt).toISOString() : null,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq('id', tracking.id);
+
+              // Upsert events to tracking_events table
+              for (const event of freshData.events) {
+                if (event.description) {
+                  await supabase
+                    .from('tracking_events')
+                    .upsert({
+                      tracking_number: tracking.tracking_number,
+                      status: freshData.status,
+                      description: event.description,
+                      location: event.location,
+                      event_time: event.time ? new Date(event.time).toISOString() : null,
+                    }, {
+                      onConflict: 'tracking_number,event_time,description',
+                      ignoreDuplicates: true,
+                    });
+                }
+              }
+
+              return {
+                ...tracking,
+                status: freshData.status,
+                last_event: freshData.lastEvent,
+                last_event_time: freshData.lastEventTime,
+                origin_country: freshData.originCountry,
+                destination_country: freshData.destinationCountry,
+                estimated_delivery: freshData.estimatedDelivery,
+                delivered_at: freshData.deliveredAt,
+                events: freshData.events.map(e => ({
+                  description: e.description,
+                  location: e.location,
+                  event_time: e.time,
+                })),
+              };
+            }
+          }
+
+          // Fetch existing events from database
           const { data: events } = await supabase
             .from('tracking_events')
             .select('*')
@@ -133,8 +284,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Second: allow admins (logged-in staff) to bypass rate limiting.
-    // This endpoint is public, but when called with an auth token we can detect staff.
+    // No existing tracking - check rate limit before querying Shopify
     let isAdmin = false;
     const authHeader = req.headers.get('authorization');
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
@@ -162,7 +312,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Third: rate limit ONLY for uncached lookups (to protect Shopify API / prevent abuse).
+    // Rate limit for uncached lookups
     if (!isAdmin) {
       const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();
 
@@ -172,11 +322,10 @@ Deno.serve(async (req) => {
         .eq('ip_hash', ipHash)
         .eq('tracking_lookup_key', lookupKey)
         .gte('last_request_at', windowStart)
-        .single();
+        .maybeSingle();
 
       if (rateData && rateData.request_count >= RATE_LIMIT_MAX_REQUESTS) {
         console.log('[track-lookup] Rate limit exceeded for IP hash:', ipHash);
-        // Return 200 so the client can show a friendly message without throwing.
         return new Response(JSON.stringify({
           success: false,
           error: 'Rate limit exceeded',
@@ -214,11 +363,8 @@ Deno.serve(async (req) => {
       console.log('[track-lookup] Admin bypass: skipping rate limit');
     }
 
-
     // No existing tracking - try to get from Shopify
-    // Prefer SHOPIFY_ADMIN_API_TOKEN, fall back to SHOPIFY_ACCESS_TOKEN
     const shopifyToken = Deno.env.get('SHOPIFY_ADMIN_API_TOKEN') || Deno.env.get('SHOPIFY_ACCESS_TOKEN');
-    // Use the actual Shopify store domain
     const shopifyDomain = 'lovable-project-swlbs.myshopify.com';
     
     if (!shopifyToken) {
@@ -233,8 +379,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Shopify order names are prefixed with '#', so search with and without
-    // E.g., order "1006" is stored as "#1006" in Shopify
     const orderNameToSearch = normalizedOrderNumber.startsWith('#') 
       ? normalizedOrderNumber 
       : `#${normalizedOrderNumber}`;
@@ -265,7 +409,6 @@ Deno.serve(async (req) => {
     const shopifyData = await shopifyResponse.json();
     const orders = shopifyData.orders || [];
     
-    // Find order matching email
     const matchingOrder = orders.find((order: ShopifyOrder) => 
       order.email?.toLowerCase() === normalizedEmail
     );
@@ -303,14 +446,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Process fulfillments and register with 17TRACK
-    const track17ApiKey = Deno.env.get('TRACK17_API_KEY');
+    // Process fulfillments
     const trackingResults = [];
 
     for (const fulfillment of fulfillments) {
       if (!fulfillment.tracking_number) continue;
 
-      // Insert into our database
+      // Insert into database
       const trackingData = {
         order_number: normalizedOrderNumber,
         email: normalizedEmail,
@@ -331,12 +473,17 @@ Deno.serve(async (req) => {
 
       if (insertError) {
         console.error('[track-lookup] Insert error:', insertError);
-      } else {
-        trackingResults.push({ ...inserted, events: [] });
+        continue;
       }
 
-      // Register with 17TRACK if we have API key
+      // Try to fetch real-time tracking immediately
+      let events: Array<{ description: string; time: string | null; location: string | null }> = [];
+      let finalStatus = 'info_received';
+      let lastEvent = 'Tracking number received from Shopify';
+      let lastEventTime: string | null = null;
+
       if (track17ApiKey) {
+        // Register with 17TRACK
         try {
           const registerResponse = await fetch(`${TRACK17_API_URL}/register`, {
             method: 'POST',
@@ -347,9 +494,7 @@ Deno.serve(async (req) => {
             body: JSON.stringify([{
               number: fulfillment.tracking_number,
               auto_detection: true,
-              param: {
-                order: normalizedOrderNumber,
-              },
+              param: { order: normalizedOrderNumber },
             }]),
           });
 
@@ -357,9 +502,44 @@ Deno.serve(async (req) => {
           console.log('[track-lookup] 17TRACK register response:', registerData);
         } catch (registerError) {
           console.error('[track-lookup] 17TRACK register error:', registerError);
-          // Continue - we still have the Shopify data
+        }
+
+        // Fetch real-time tracking data
+        const freshData = await fetchRealTimeTracking(fulfillment.tracking_number, track17ApiKey);
+        
+        if (freshData && freshData.status !== 'not_found') {
+          finalStatus = freshData.status;
+          lastEvent = freshData.lastEvent || lastEvent;
+          lastEventTime = freshData.lastEventTime;
+          events = freshData.events;
+
+          // Update database with fresh data
+          await supabase
+            .from('order_tracking')
+            .update({
+              status: freshData.status,
+              last_event: freshData.lastEvent,
+              last_event_time: freshData.lastEventTime ? new Date(freshData.lastEventTime).toISOString() : null,
+              origin_country: freshData.originCountry,
+              destination_country: freshData.destinationCountry,
+              estimated_delivery: freshData.estimatedDelivery ? new Date(freshData.estimatedDelivery).toISOString() : null,
+              delivered_at: freshData.deliveredAt ? new Date(freshData.deliveredAt).toISOString() : null,
+            })
+            .eq('id', inserted.id);
         }
       }
+
+      trackingResults.push({
+        ...inserted,
+        status: finalStatus,
+        last_event: lastEvent,
+        last_event_time: lastEventTime,
+        events: events.map(e => ({
+          description: e.description,
+          location: e.location,
+          event_time: e.time,
+        })),
+      });
     }
 
     return new Response(JSON.stringify({
