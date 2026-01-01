@@ -1134,11 +1134,12 @@ async function fetchPinterestAnalytics(
     }
   }
 
-  // For ACCOUNT level with active filters, recalculate totals from filtered campaign data
-  // instead of using account-level API totals (which ignore filters)
+  // Calculate totals consistently: sum from entity data when we have entities,
+  // otherwise fall back to raw totalsAccum
   let totals: ProcessedMetrics;
+  
   if (params.level === "ACCOUNT" && params.active_only_campaigns && campaignAnalyticsData.length > 0) {
-    // Recalculate totals from filtered campaign analytics
+    // For ACCOUNT level with active filters, recalculate from filtered campaign analytics
     const filteredTotalsAccum: Record<string, number> = {
       SPEND_IN_MICRO_DOLLAR: 0,
       TOTAL_IMPRESSION: 0,
@@ -1160,6 +1161,31 @@ async function fetchPinterestAnalytics(
     totals = processRawMetrics(filteredTotalsAccum);
     log("info", "totals_recalculated_from_filtered_campaigns", { 
       campaign_count: campaignAnalyticsData.length,
+      total_spend: totals.spend 
+    });
+  } else if (entityAccum.size > 0 && params.level !== "ACCOUNT") {
+    // For CAMPAIGN, AD_GROUP, and PIN_PROMOTION levels, calculate totals by summing entity data
+    // This ensures totals match the sum of displayed entities
+    const entityTotalsAccum: Record<string, number> = {
+      SPEND_IN_MICRO_DOLLAR: 0,
+      TOTAL_IMPRESSION: 0,
+      TOTAL_CLICKTHROUGH: 0,
+      TOTAL_CONVERSIONS: 0,
+      TOTAL_CHECKOUT: 0,
+      TOTAL_CLICK_ADD_TO_CART: 0,
+      TOTAL_CHECKOUT_VALUE_IN_MICRO_DOLLAR: 0,
+    };
+    
+    for (const entityMetrics of entityAccum.values()) {
+      for (const key of Object.keys(entityTotalsAccum)) {
+        entityTotalsAccum[key] += entityMetrics[key] || 0;
+      }
+    }
+    
+    totals = processRawMetrics(entityTotalsAccum);
+    log("info", "totals_calculated_from_entities", { 
+      entity_count: entityAccum.size,
+      level: params.level,
       total_spend: totals.spend 
     });
   } else {
