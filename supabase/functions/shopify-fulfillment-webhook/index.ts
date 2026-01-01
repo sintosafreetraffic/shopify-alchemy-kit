@@ -147,18 +147,28 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  console.log("[Fulfillment] Received webhook");
+  console.log("[Fulfillment] Received webhook request");
+
+  // Log all headers for debugging
+  const shopifyTopic = req.headers.get("X-Shopify-Topic");
+  const shopifyShop = req.headers.get("X-Shopify-Shop-Domain");
+  console.log(`[Fulfillment] Topic: ${shopifyTopic}, Shop: ${shopifyShop}`);
 
   try {
     // Read body for HMAC verification
     const body = await req.text();
     const hmacHeader = req.headers.get("X-Shopify-Hmac-Sha256");
+    
+    console.log(`[Fulfillment] Body length: ${body.length}, HMAC present: ${!!hmacHeader}`);
 
     // Verify HMAC
     const isValid = await verifyShopifyHmac(body, hmacHeader);
     if (!isValid) {
+      console.error("[Fulfillment] HMAC verification failed - check SHOPIFY_WEBHOOK_SECRET");
       return createErrorResponse("Unauthorized", 401);
     }
+
+    console.log("[Fulfillment] HMAC verification passed");
 
     // Parse fulfillment payload
     const fulfillment = JSON.parse(body);

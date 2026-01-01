@@ -102,6 +102,9 @@ Deno.serve(async (req) => {
       actualTipType = "celebration";
     }
 
+    // Medical disclaimer to append to all messages
+    const MEDICAL_DISCLAIMER = "\n\n—\nFor educational purposes only. Not medical advice.";
+
     // Generate message using AI Brain if available
     let message: string;
     let messageType = actualTipType;
@@ -130,6 +133,9 @@ Deno.serve(async (req) => {
       messageType = result.messageType;
       console.log(`[WhatsApp Simulate] Generated fallback message for ${email}`);
     }
+
+    // Append medical disclaimer to all messages
+    message = message + MEDICAL_DISCLAIMER;
 
     // Update last nudge time
     await supabase

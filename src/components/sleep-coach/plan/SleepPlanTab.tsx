@@ -293,6 +293,22 @@ export function SleepPlanTab({
 
   return (
     <div className="space-y-12">
+      {/* Medical Disclaimer Banner */}
+      <div 
+        className="px-4 py-2.5 rounded-xl text-center"
+        style={{ 
+          backgroundColor: 'rgba(167, 180, 194, 0.08)',
+          borderLeft: '3px solid rgba(167, 180, 194, 0.3)',
+        }}
+      >
+        <p 
+          className="text-xs"
+          style={{ color: '#8E98A3' }}
+        >
+          For educational purposes only. Not medical advice.
+        </p>
+      </div>
+
       {/* Section 1: Plan Hero */}
       <PlanHero
         planHeadline={plan.planHeadline}
