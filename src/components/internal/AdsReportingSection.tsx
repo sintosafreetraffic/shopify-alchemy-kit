@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAdsReporting, Granularity, EntityMetrics } from "@/hooks/useAdsReporting";
+import { useAdsReporting, Granularity, EntityMetrics, Level } from "@/hooks/useAdsReporting";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -148,6 +148,7 @@ function getRoasHighlight(roas: number): "good" | "warning" | "bad" | "neutral" 
 
 export default function AdsReportingSection() {
   const [sendingReport, setSendingReport] = useState(false);
+  const [syncingAllLevels, setSyncingAllLevels] = useState(false);
   const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
   const [generateMode, setGenerateMode] = useState<"single" | "all">("all");
   const [selectedEntityForGenerate, setSelectedEntityForGenerate] = useState<EntityMetrics | undefined>();
@@ -206,6 +207,70 @@ export default function AdsReportingSection() {
 
   // Check if any filters are active
   const hasActiveFilters = activeOnlyCampaigns || activeOnlyAds;
+
+  const getRangeUTC = () => {
+    const endDate = new Date();
+    const startDate = new Date(endDate);
+    startDate.setUTCDate(startDate.getUTCDate() - Math.max(selectedPreset.days - 1, 0));
+    return {
+      start: startDate.toISOString().split("T")[0],
+      end: endDate.toISOString().split("T")[0],
+    };
+  };
+
+  // Force-refresh ALL levels to the same "snapshot" so tab switching doesn't compare different cached payloads.
+  // (Cache is per-level on the backend, so comparing cached values can yield small differences.)
+  const syncAllLevels = async () => {
+    if (syncingAllLevels) return;
+
+    setSyncingAllLevels(true);
+    try {
+      const { start, end } = getRangeUTC();
+      const levels: Level[] = ["ACCOUNT", "CAMPAIGN", "AD_GROUP", "PIN_PROMOTION"];
+      const otherLevels = levels.filter((l) => l !== level);
+
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+      const baseParams = {
+        start_date: start,
+        end_date: end,
+        granularity,
+        click_window_days: "30",
+        view_window_days: "1",
+        active_only_campaigns: activeOnlyCampaigns ? "true" : "false",
+        active_only_ads: activeOnlyAds ? "true" : "false",
+        force_refresh: "true",
+      } as const;
+
+      const warm = (lvl: Level) => {
+        const params = new URLSearchParams({ ...baseParams, level: lvl });
+        const url = `https://${projectId}.supabase.co/functions/v1/pinterest-ads-reporting?${params}`;
+        return fetch(url, {
+          headers: {
+            "Content-Type": "application/json",
+            apikey,
+          },
+        }).then(async (r) => {
+          if (!r.ok) {
+            const text = await r.text().catch(() => "");
+            throw new Error(`Sync failed for ${lvl}: HTTP ${r.status} ${text}`);
+          }
+        });
+      };
+
+      // 1) Refresh current level (updates UI)
+      // 2) Warm caches for the other levels in parallel (so switching tabs stays consistent)
+      await Promise.all([forceRefresh(), ...otherLevels.map(warm)]);
+
+      toast.success("Synced all levels (fresh snapshot)");
+    } catch (err) {
+      console.error("[AdsReportingSection] syncAllLevels failed", err);
+      toast.error(err instanceof Error ? err.message : "Failed to sync all levels");
+    } finally {
+      setSyncingAllLevels(false);
+    }
+  };
 
   // Format chart data
   const chartData = data?.timeseries.map((entry) => ({
@@ -321,6 +386,27 @@ export default function AdsReportingSection() {
                 </TooltipTrigger>
                 <TooltipContent>
                   <p className="text-sm">Send weekly report email</p>
+                </TooltipContent>
+              </UITooltip>
+            </TooltipProvider>
+
+            {/* Sync-all Levels Button */}
+            <TooltipProvider>
+              <UITooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={syncAllLevels}
+                    disabled={loading || syncingAllLevels}
+                    className="h-8 w-8 p-0"
+                    aria-label="Sync all levels"
+                  >
+                    <Zap className={cn("h-4 w-4", syncingAllLevels && "animate-pulse")} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-sm">Sync all levels (bypass cache) to eliminate tiny differences</p>
                 </TooltipContent>
               </UITooltip>
             </TooltipProvider>
