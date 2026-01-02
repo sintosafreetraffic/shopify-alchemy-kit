@@ -7,6 +7,16 @@
  * 
  * This is NOT a chatbot, therapist, or generic AI coach.
  * It's a structured reasoning system that shows its work.
+ * 
+ * === EPSR MODEL REQUIREMENTS (FIX #5) ===
+ * This function requires an AI model with:
+ * - HIGH instruction adherence (strict JSON output, schema compliance)
+ * - EPISTEMIC CONSISTENCY (no hallucination of evidence, calibrated confidence)
+ * - LOW creativity (evidence-bound, not generative)
+ * 
+ * DO NOT substitute with ultra-fast/creative model variants.
+ * gemini-2.5-flash is selected for its structured output reliability.
+ * =========================================
  */
 
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -174,6 +184,115 @@ function checkClinicalFlags(userQuestion?: string, notes?: string[]): { tier1: b
   }
   
   return { tier1, tier2, flags };
+}
+
+// ============================================================================
+// VALIDATION HELPERS (FIX #2 - Evidence ID Validation)
+// ============================================================================
+
+interface ValidationResult {
+  valid: boolean;
+  invalidIds: string[];
+  context: string;
+}
+
+/**
+ * Validates that ALL evidence_ids referenced in EPSR output exist in the corpus.
+ * This enforces the "evidence-bound" contract programmatically.
+ */
+function validateEvidenceIds(
+  output: EPSROutput,
+  evidenceCorpus: EvidenceItem[]
+): ValidationResult {
+  const validIds = new Set(evidenceCorpus.map(e => e.evidence_id));
+  const invalidIds: string[] = [];
+  const context: string[] = [];
+
+  // Check evidence_links
+  for (const link of output.evidence_links || []) {
+    if (!validIds.has(link.evidence_id)) {
+      invalidIds.push(link.evidence_id);
+      context.push(`evidence_links: ${link.evidence_id}`);
+    }
+  }
+
+  // Check foundation_items
+  for (const item of output.foundation_items || []) {
+    if (!validIds.has(item.evidence_id)) {
+      invalidIds.push(item.evidence_id);
+      context.push(`foundation_items: ${item.evidence_id}`);
+    }
+  }
+
+  // Check ledger_writeback.supporting_evidence
+  if (output.ledger_writeback?.supporting_evidence) {
+    for (const evId of output.ledger_writeback.supporting_evidence) {
+      if (!validIds.has(evId)) {
+        invalidIds.push(evId);
+        context.push(`ledger_writeback.supporting_evidence: ${evId}`);
+      }
+    }
+  }
+
+  return {
+    valid: invalidIds.length === 0,
+    invalidIds: [...new Set(invalidIds)],
+    context: context.join("; "),
+  };
+}
+
+// ============================================================================
+// TIER 2 HARDENING (FIX #3)
+// ============================================================================
+
+const REQUIRED_TIER2_FALSIFICATION_PHRASE = "professional evaluation may be appropriate";
+
+/**
+ * Applies Tier 2 clinical hardening to EPSR output:
+ * - Limits to max 1 pattern candidate
+ * - Forces all pattern confidence to LOW
+ * - Ensures falsification includes professional evaluation language
+ * - Removes non-observational experiments
+ */
+function applyTier2Hardening(output: EPSROutput): EPSROutput {
+  const hardened = { ...output };
+
+  // Limit to 1 pattern candidate
+  if (hardened.pattern_candidates && hardened.pattern_candidates.length > 1) {
+    console.log("[EPSR-TIER2] Limiting pattern_candidates from", hardened.pattern_candidates.length, "to 1");
+    hardened.pattern_candidates = [hardened.pattern_candidates[0]];
+  }
+
+  // Force LOW confidence and add professional evaluation to falsification
+  if (hardened.pattern_candidates) {
+    hardened.pattern_candidates = hardened.pattern_candidates.map(p => ({
+      ...p,
+      confidence: "LOW" as const,
+      falsification: p.falsification.toLowerCase().includes("professional") 
+        ? p.falsification 
+        : `${p.falsification} Note: ${REQUIRED_TIER2_FALSIFICATION_PHRASE}.`,
+    }));
+  }
+
+  // Check if experiment is observational (no interventions)
+  if (hardened.experiment) {
+    const protocol = hardened.experiment.protocol.toLowerCase();
+    const interventionKeywords = ["try", "implement", "change", "modify", "adjust", "reduce", "increase", "eliminate", "add"];
+    const isObservational = !interventionKeywords.some(kw => protocol.includes(kw));
+    
+    if (!isObservational) {
+      console.log("[EPSR-TIER2] Removing non-observational experiment:", hardened.experiment.protocol);
+      delete hardened.experiment;
+    }
+  }
+
+  // Remove ledger_writeback for Tier 2 (no new hypotheses)
+  if (hardened.ledger_writeback) {
+    console.log("[EPSR-TIER2] Removing ledger_writeback for clinical caution mode");
+    delete hardened.ledger_writeback;
+  }
+
+  return hardened;
 }
 
 // ============================================================================
@@ -485,18 +604,18 @@ Deno.serve(async (req) => {
     const logNotes = userSignals.sleep_logs?.map(l => l.notes).filter(Boolean) as string[];
     const clinicalCheck = checkClinicalFlags(userQuestion, logNotes);
 
-    // Determine mode
-    let mode: EPSROutput["mode"] = "normal";
+    // Determine mode (FIX #1 - Server is the authority)
+    let serverComputedMode: EPSROutput["mode"] = "normal";
     if (clinicalCheck.tier1) {
-      mode = "clinical_guardrail";
+      serverComputedMode = "clinical_guardrail";
     } else if (userSignals.nights_logged < 7) {
-      mode = "cold_start";
+      serverComputedMode = "cold_start";
     } else if (userSignals.nights_logged < 14 && (!userSignals.wearable_data || userSignals.wearable_data.sources?.length === 0)) {
-      mode = "foundation";
+      serverComputedMode = "foundation";
     }
 
     // For tier1 clinical flags, return immediately without AI
-    if (mode === "clinical_guardrail" && clinicalCheck.tier1) {
+    if (serverComputedMode === "clinical_guardrail" && clinicalCheck.tier1) {
       const guardrailResponse: Partial<EPSROutput> = {
         safety_scope: "This system cannot safely reason about this scenario. Please consult a healthcare professional.",
         mode: "clinical_guardrail",
@@ -528,15 +647,17 @@ Deno.serve(async (req) => {
     const userPrompt = `USER_SIGNALS:
 ${JSON.stringify(userSignals, null, 2)}
 
-MODE: ${mode}
+MODE: ${serverComputedMode}
 ${clinicalCheck.tier2 ? `\nCAUTION: Tier 2 clinical flags detected. Proceed with explicit uncertainty. Flags: ${clinicalCheck.flags.join(", ")}` : ""}
 ${userQuestion ? `\nUSER QUESTION: ${userQuestion}` : ""}
 
 Generate EPSR output following the exact JSON schema specified.`;
 
-    console.log(`EPSR reasoning for ${email}, mode: ${mode}, nights: ${userSignals.nights_logged}`);
+    console.log(`[EPSR] Reasoning for ${email}, mode: ${serverComputedMode}, nights: ${userSignals.nights_logged}`);
 
     // Call Lovable AI
+    // FIX #5: EPSR requires high instruction adherence, epistemic consistency, low creativity.
+    // gemini-2.5-flash is selected for structured output reliability. Do NOT use creative variants.
     const aiResponse = await fetch(LOVABLE_API_URL, {
       method: "POST",
       headers: {
@@ -569,7 +690,7 @@ Generate EPSR output following the exact JSON schema specified.`;
         );
       }
       const errorText = await aiResponse.text();
-      console.error("AI API error:", status, errorText);
+      console.error("[EPSR] AI API error:", status, errorText);
       return new Response(
         JSON.stringify({ error: "AI reasoning failed" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -579,32 +700,69 @@ Generate EPSR output following the exact JSON schema specified.`;
     const aiData = await aiResponse.json();
     const rawContent = aiData.choices?.[0]?.message?.content || "";
     
-    // Parse JSON from response (handle potential markdown wrapping)
+    // FIX #4: STRICT JSON PARSING - No regex salvaging
     let epsrOutput: EPSROutput;
     try {
-      const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error("No JSON found in response");
-      }
-      epsrOutput = JSON.parse(jsonMatch[0]);
+      // Trim and parse directly - no regex extraction
+      epsrOutput = JSON.parse(rawContent.trim());
     } catch (parseError) {
-      console.error("Failed to parse EPSR output:", parseError, rawContent);
+      // FIX #6: Log JSON parse failure for observability
+      console.error("[EPSR-INTEGRITY] JSON parse failure:", {
+        error: parseError instanceof Error ? parseError.message : "Unknown parse error",
+        rawContentLength: rawContent.length,
+        rawContentPreview: rawContent.substring(0, 500),
+      });
+      
       return new Response(
-        JSON.stringify({ error: "Failed to parse reasoning output", raw: rawContent }),
+        JSON.stringify({ 
+          error: "EPSR reasoning produced malformed output", 
+          code: "JSON_PARSE_FAILURE" 
+        }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Add clinical flags if tier2
+    // FIX #1: MODE ENFORCEMENT - Server overwrites AI's mode
+    if (epsrOutput.mode !== serverComputedMode) {
+      console.warn("[EPSR-INTEGRITY] Mode mismatch detected:", {
+        aiReturnedMode: epsrOutput.mode,
+        serverComputedMode,
+        email,
+      });
+    }
+    epsrOutput.mode = serverComputedMode; // Server is ALWAYS the authority
+
+    // FIX #2: EVIDENCE ID VALIDATION
+    const validationResult = validateEvidenceIds(epsrOutput, evidenceCorpus);
+    if (!validationResult.valid) {
+      console.error("[EPSR-INTEGRITY] Invalid/fabricated evidence_ids detected:", {
+        invalidIds: validationResult.invalidIds,
+        context: validationResult.context,
+        rawContentPreview: rawContent.substring(0, 500),
+      });
+      
+      return new Response(
+        JSON.stringify({ 
+          error: "EPSR output contained invalid evidence references", 
+          code: "INVALID_EVIDENCE_IDS",
+          invalidIds: validationResult.invalidIds,
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // FIX #3: TIER 2 CLINICAL HARDENING
     if (clinicalCheck.tier2) {
+      console.log("[EPSR-TIER2] Applying Tier 2 clinical hardening for:", email);
+      epsrOutput = applyTier2Hardening(epsrOutput);
       epsrOutput.clinical_flags = clinicalCheck.flags;
     }
 
-    // Log session
+    // Log session with integrity markers
     await supabase.from("epsr_sessions").insert({
       email,
       user_id: userId,
-      mode,
+      mode: serverComputedMode,
       user_signals: userSignals,
       pattern_candidates: epsrOutput.pattern_candidates,
       experiment_proposed: epsrOutput.experiment,
@@ -613,8 +771,8 @@ Generate EPSR output following the exact JSON schema specified.`;
       raw_ai_response: rawContent,
     });
 
-    // If there's a ledger writeback, save it
-    if (epsrOutput.ledger_writeback) {
+    // If there's a ledger writeback, save it (only if NOT Tier 2)
+    if (epsrOutput.ledger_writeback && !clinicalCheck.tier2) {
       const wb = epsrOutput.ledger_writeback;
       await supabase.from("epsr_epistemic_ledger").upsert({
         email,
@@ -636,7 +794,7 @@ Generate EPSR output following the exact JSON schema specified.`;
     );
 
   } catch (error) {
-    console.error("EPSR error:", error);
+    console.error("[EPSR] Unhandled error:", error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
