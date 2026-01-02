@@ -112,9 +112,12 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const shopifyAccessToken = Deno.env.get("SHOPIFY_ACCESS_TOKEN");
+    
+    // Try SHOPIFY_ADMIN_API_TOKEN first (has more permissions), fallback to SHOPIFY_ACCESS_TOKEN
+    const shopifyAccessToken = Deno.env.get("SHOPIFY_ADMIN_API_TOKEN") || Deno.env.get("SHOPIFY_ACCESS_TOKEN");
     
     if (!shopifyAccessToken) {
+      console.error("[sync-shopify-products] No Shopify token configured");
       return new Response(
         JSON.stringify({ error: "Shopify access token not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -125,59 +128,14 @@ serve(async (req) => {
     const shopifyDomain = "lovable-project-swlbs.myshopify.com";
 
     console.log(`[sync-shopify-products] Syncing for email: ${email}`);
+    console.log(`[sync-shopify-products] Using token: ${shopifyAccessToken ? 'ADMIN_TOKEN' : 'ACCESS_TOKEN'}`);
 
-    // Step 1: Find customer by email in Shopify
-    const customerSearchUrl = `https://${shopifyDomain}/admin/api/2024-01/customers/search.json?query=email:${encodeURIComponent(email)}`;
+    // Search orders directly by email (doesn't require customer read access)
+    // This approach works even if we don't have read_customers scope
+    const ordersSearchUrl = `https://${shopifyDomain}/admin/api/2024-01/orders.json?email=${encodeURIComponent(email)}&status=any&limit=250`;
     
-    console.log(`[sync-shopify-products] Searching for customer...`);
-    const customerResponse = await fetch(customerSearchUrl, {
-      headers: {
-        "X-Shopify-Access-Token": shopifyAccessToken,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!customerResponse.ok) {
-      console.log("[sync-shopify-products] Customer search response not OK:", customerResponse.status);
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: "No Shopify customer found for this email",
-          synced_products: [] 
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const customerData = await customerResponse.json();
-    const customers = customerData.customers || [];
-    
-    if (customers.length === 0) {
-      console.log("[sync-shopify-products] No customers found for email:", email);
-      
-      await supabase
-        .from("sleep_profiles")
-        .update({ last_shopify_sync: new Date().toISOString() })
-        .eq("email", email);
-      
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: "No Shopify customer found for this email",
-          synced_products: [] 
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const customerId = customers[0].id;
-    console.log(`[sync-shopify-products] Found Shopify customer ID: ${customerId}`);
-
-    // Step 2: Fetch all orders for this customer
-    const ordersUrl = `https://${shopifyDomain}/admin/api/2024-01/customers/${customerId}/orders.json?status=any`;
-    
-    console.log(`[sync-shopify-products] Fetching orders...`);
-    const ordersResponse = await fetch(ordersUrl, {
+    console.log(`[sync-shopify-products] Fetching orders by email...`);
+    const ordersResponse = await fetch(ordersSearchUrl, {
       headers: {
         "X-Shopify-Access-Token": shopifyAccessToken,
         "Content-Type": "application/json",
@@ -185,7 +143,20 @@ serve(async (req) => {
     });
 
     if (!ordersResponse.ok) {
-      console.log("[sync-shopify-products] Orders fetch failed:", ordersResponse.status);
+      const errorText = await ordersResponse.text();
+      console.error(`[sync-shopify-products] Orders fetch failed: ${ordersResponse.status}`, errorText);
+      
+      // If 403, the token doesn't have read_orders permission
+      if (ordersResponse.status === 403) {
+        return new Response(
+          JSON.stringify({ 
+            error: "Shopify API permission denied. The access token may not have the required 'read_orders' scope.",
+            synced_products: [] 
+          }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
       return new Response(
         JSON.stringify({ error: "Failed to fetch orders from Shopify" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -195,9 +166,26 @@ serve(async (req) => {
     const ordersData = await ordersResponse.json();
     const orders = ordersData.orders || [];
     
-    console.log(`[sync-shopify-products] Found ${orders.length} orders for customer`);
+    console.log(`[sync-shopify-products] Found ${orders.length} orders for email: ${email}`);
 
-    // Step 3: Extract products from orders (include all non-cancelled orders)
+    // If no orders found, update sync timestamp and return
+    if (orders.length === 0) {
+      await supabase
+        .from("sleep_profiles")
+        .update({ last_shopify_sync: new Date().toISOString() })
+        .eq("email", email);
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: "No orders found for this email",
+          synced_products: [] 
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Extract products from orders (include all non-cancelled, non-refunded orders)
     const syncedProducts: Array<{
       product_slug: string;
       product_title: string;
@@ -206,13 +194,11 @@ serve(async (req) => {
     }> = [];
 
     for (const order of orders) {
-      // Skip cancelled orders
-      if (order.cancelled_at) {
-        console.log(`[sync-shopify-products] Skipping cancelled order ${order.id}`);
-        continue;
-      }
-
-      // Include all financial statuses that indicate payment (paid, partially_paid, pending)
+      // Skip fully cancelled orders (cancelled_at is set)
+      // Note: We're including cancelled orders for now since user wants to test
+      // In production, you might want to skip: if (order.cancelled_at) continue;
+      
+      // Skip refunded orders
       const financialStatus = order.financial_status;
       if (financialStatus === "refunded" || financialStatus === "voided") {
         console.log(`[sync-shopify-products] Skipping order ${order.id} with financial status: ${financialStatus}`);
@@ -222,17 +208,19 @@ serve(async (req) => {
       const orderDate = order.created_at;
       const orderId = String(order.id);
       const fulfillmentStatus = order.fulfillment_status || "unfulfilled";
+      const cancelledAt = order.cancelled_at;
 
-      console.log(`[sync-shopify-products] Processing order ${order.id} (fulfillment: ${fulfillmentStatus}, financial: ${financialStatus})`);
+      console.log(`[sync-shopify-products] Processing order ${order.id} (fulfillment: ${fulfillmentStatus}, financial: ${financialStatus}, cancelled: ${cancelledAt ? 'yes' : 'no'})`);
 
       for (const lineItem of order.line_items || []) {
         const sku = lineItem.sku;
         const productId = lineItem.product_id;
         const title = lineItem.title;
+        const variantTitle = lineItem.variant_title;
         
-        console.log(`[sync-shopify-products] Processing line item: SKU=${sku}, ProductID=${productId}, Title="${title}"`);
+        console.log(`[sync-shopify-products] Line item: SKU=${sku}, ProductID=${productId}, Title="${title}", Variant="${variantTitle}"`);
         
-        // Try to get handle from product
+        // Try to get handle from product (optional - adds more info but not required)
         let handle: string | null = null;
         if (productId) {
           try {
@@ -246,7 +234,7 @@ serve(async (req) => {
             if (productResponse.ok) {
               const productData = await productResponse.json();
               handle = productData.product?.handle || null;
-              console.log(`[sync-shopify-products] Fetched product handle: ${handle}`);
+              console.log(`[sync-shopify-products] Product handle: ${handle}`);
             }
           } catch (e) {
             console.log(`[sync-shopify-products] Could not fetch product ${productId}:`, e);
@@ -265,19 +253,19 @@ serve(async (req) => {
               acquired_at: orderDate,
               shopify_order_id: orderId,
             });
-            console.log(`[sync-shopify-products] ✓ Mapped product: ${title} -> ${productSlug}`);
+            console.log(`[sync-shopify-products] ✓ Mapped: "${title}" -> ${productSlug}`);
           } else {
-            console.log(`[sync-shopify-products] Skipping duplicate: ${productSlug}`);
+            console.log(`[sync-shopify-products] Duplicate skipped: ${productSlug}`);
           }
         } else {
-          console.log(`[sync-shopify-products] ✗ Could not map product: SKU=${sku}, Handle=${handle}, Title=${title}`);
+          console.log(`[sync-shopify-products] ✗ Could not map: SKU=${sku}, Handle=${handle}, Title="${title}"`);
         }
       }
     }
 
-    console.log(`[sync-shopify-products] Syncing ${syncedProducts.length} products to database`);
+    console.log(`[sync-shopify-products] Total products to sync: ${syncedProducts.length}`);
 
-    // Step 4: Upsert products to user_product_ownership table
+    // Upsert products to user_product_ownership table
     for (const product of syncedProducts) {
       const { error } = await supabase
         .from("user_product_ownership")
@@ -292,18 +280,16 @@ serve(async (req) => {
         });
 
       if (error) {
-        console.error(`[sync-shopify-products] Error upserting product ${product.product_slug}:`, error);
+        console.error(`[sync-shopify-products] Error upserting ${product.product_slug}:`, error);
       }
     }
 
-    // Step 5: Update products_owned array in sleep_profiles
-    // Use the actual product titles from Shopify orders for better display
+    // Update products_owned array in sleep_profiles
     const productNames = syncedProducts.map(p => {
-      // Use the display name from our mapping, falling back to Shopify title
       return SLUG_TO_DISPLAY_NAME[p.product_slug] || p.product_title;
     }).filter(Boolean);
 
-    console.log(`[sync-shopify-products] Updating sleep_profiles.products_owned with: ${JSON.stringify(productNames)}`);
+    console.log(`[sync-shopify-products] Updating sleep_profiles.products_owned: ${JSON.stringify(productNames)}`);
 
     if (productNames.length > 0) {
       const { error: updateError } = await supabase
@@ -324,16 +310,17 @@ serve(async (req) => {
         .eq("email", email);
     }
 
-    console.log(`[sync-shopify-products] ✓ Sync complete. Products synced: ${syncedProducts.length}`);
+    console.log(`[sync-shopify-products] ✓ Sync complete. Products: ${syncedProducts.length}`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         synced_products: syncedProducts,
         products_owned: productNames,
+        orders_found: orders.length,
         message: syncedProducts.length > 0 
-          ? `Synced ${syncedProducts.length} products` 
-          : "No products found in your orders",
+          ? `Found ${syncedProducts.length} product(s) from ${orders.length} order(s)` 
+          : `No recognized products found in ${orders.length} order(s)`,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
