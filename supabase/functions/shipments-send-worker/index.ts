@@ -154,6 +154,78 @@ async function sendToKlaviyo(
   }
 }
 
+/**
+ * TASK_11: Send RBN_Order_Delivered event to Klaviyo
+ * Fires ONCE per order when delivery is confirmed
+ * Used to trigger Klaviyo flow: Delivered + 7 days → Review request
+ */
+async function sendDeliveredEvent(
+  klaviyoApiKey: string,
+  email: string,
+  orderId: string,
+  deliveredAt: string,
+  country?: string | null
+): Promise<{ success: boolean; error?: string }> {
+  const eventName = 'RBN_Order_Delivered';
+  
+  const eventData = {
+    data: {
+      type: 'event',
+      attributes: {
+        profile: {
+          data: {
+            type: 'profile',
+            attributes: {
+              email: email,
+            },
+          },
+        },
+        metric: {
+          data: {
+            type: 'metric',
+            attributes: {
+              name: eventName,
+            },
+          },
+        },
+        properties: {
+          order_id: orderId,
+          delivered_at: deliveredAt,
+          country: country || 'Unknown',
+        },
+        time: new Date().toISOString(),
+        unique_id: `${orderId}_delivered`, // Dedupe key
+      },
+    },
+  };
+
+  console.log(`[shipments-send-worker] Sending RBN_Order_Delivered for ${orderId}`);
+
+  try {
+    const response = await fetch('https://a.klaviyo.com/api/events/', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Klaviyo-API-Key ${klaviyoApiKey}`,
+        'Content-Type': 'application/json',
+        'revision': '2024-02-15',
+      },
+      body: JSON.stringify(eventData),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[shipments-send-worker] RBN_Order_Delivered error (${response.status}):`, errorText);
+      return { success: false, error: `Klaviyo API error: ${response.status}` };
+    }
+
+    console.log(`[shipments-send-worker] RBN_Order_Delivered sent for ${orderId}`);
+    return { success: true };
+  } catch (error) {
+    console.error(`[shipments-send-worker] RBN_Order_Delivered network error:`, error);
+    return { success: false, error: error instanceof Error ? error.message : 'Network error' };
+  }
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -321,6 +393,23 @@ Deno.serve(async (req) => {
           })
           .eq('id', notification.id);
         results.sent++;
+        
+        // TASK_11: If status is 'delivered', also send RBN_Order_Delivered event
+        if (notification.status === 'delivered' && klaviyoApiKey) {
+          // Get destination country from order_tracking
+          const { data: orderData } = await supabase
+            .from('order_tracking')
+            .select('destination_country, delivered_at')
+            .eq('order_number', notification.order_id)
+            .single();
+          
+          const deliveredAt = (orderData as { delivered_at?: string })?.delivered_at || new Date().toISOString();
+          const country = (orderData as { destination_country?: string })?.destination_country;
+          
+          // Send RBN_Order_Delivered (fire-and-forget, don't fail the notification on this)
+          sendDeliveredEvent(klaviyoApiKey, email, notification.order_id, deliveredAt, country)
+            .catch(err => console.error(`[shipments-send-worker] RBN_Order_Delivered failed:`, err));
+        }
       } else {
         await supabase
           .from('shipment_notifications')
