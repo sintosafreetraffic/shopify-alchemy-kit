@@ -5,13 +5,14 @@
  * Requirements:
  * - 4 steps max: What this is, daily routine, data inputs, notifications
  * - Show on first coach access only
- * - Persist completion flag (localStorage for now, DB if authed)
+ * - Persist completion flag to DB (with localStorage cache)
  * - Calm, Scandinavian minimal UI
  * - Skip option available
  * - Analytics: RBN_Coach_Onboarding_Started/Completed/Skipped
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
   DialogContent,
@@ -222,27 +223,115 @@ export const CoachOnboardingWizard = ({ onComplete }: CoachOnboardingWizardProps
 
 /**
  * Hook to check if onboarding should be shown
+ * Uses DB persistence with localStorage cache for fast UX
  */
 export const useCoachOnboarding = () => {
   const [shouldShowOnboarding, setShouldShowOnboarding] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Check both localStorage (fast) and DB (authoritative)
   useEffect(() => {
-    const completed = localStorage.getItem(STORAGE_KEY);
-    setShouldShowOnboarding(completed !== "true");
+    const checkOnboardingStatus = async () => {
+      // Fast path: check localStorage first
+      const localCompleted = localStorage.getItem(STORAGE_KEY);
+      if (localCompleted === "true") {
+        setShouldShowOnboarding(false);
+        setIsLoading(false);
+        return;
+      }
+
+      // Check DB for authoritative state
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user?.email) {
+          // Not authenticated, use localStorage only
+          setShouldShowOnboarding(localCompleted !== "true");
+          setIsLoading(false);
+          return;
+        }
+
+        const { data: engagementData } = await supabase
+          .from("engagement_meta")
+          .select("coach_onboarding_completed_at")
+          .eq("email", user.email)
+          .maybeSingle();
+
+        if (engagementData?.coach_onboarding_completed_at) {
+          // Already completed in DB, sync localStorage
+          localStorage.setItem(STORAGE_KEY, "true");
+          setShouldShowOnboarding(false);
+        } else {
+          // Not completed, show onboarding
+          setShouldShowOnboarding(true);
+        }
+      } catch (error) {
+        console.error("[CoachOnboarding] Error checking status:", error);
+        // Fallback to localStorage
+        setShouldShowOnboarding(localCompleted !== "true");
+      }
+      
+      setIsLoading(false);
+    };
+
+    checkOnboardingStatus();
   }, []);
 
-  const markComplete = () => {
+  // Mark complete in both localStorage AND database
+  const markComplete = useCallback(async () => {
+    // Immediate localStorage update for fast UX
     localStorage.setItem(STORAGE_KEY, "true");
     setShouldShowOnboarding(false);
-  };
 
-  const resetOnboarding = () => {
+    // Persist to DB
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) return;
+
+      const now = new Date().toISOString();
+      
+      // Upsert to engagement_meta
+      const { error } = await supabase
+        .from("engagement_meta")
+        .upsert({
+          email: user.email,
+          coach_onboarding_completed_at: now,
+          last_seen_at: now,
+          updated_at: now,
+        }, {
+          onConflict: "email",
+        });
+
+      if (error) {
+        console.error("[CoachOnboarding] Error saving to DB:", error);
+      } else {
+        console.log("[CoachOnboarding] Completion saved to DB");
+      }
+    } catch (error) {
+      console.error("[CoachOnboarding] Error persisting completion:", error);
+    }
+  }, []);
+
+  const resetOnboarding = useCallback(async () => {
     localStorage.removeItem(STORAGE_KEY);
     setShouldShowOnboarding(true);
-  };
+
+    // Also reset in DB
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) return;
+
+      await supabase
+        .from("engagement_meta")
+        .update({ coach_onboarding_completed_at: null })
+        .eq("email", user.email);
+    } catch (error) {
+      console.error("[CoachOnboarding] Error resetting in DB:", error);
+    }
+  }, []);
 
   return {
     shouldShowOnboarding,
+    isLoading,
     markComplete,
     resetOnboarding,
   };

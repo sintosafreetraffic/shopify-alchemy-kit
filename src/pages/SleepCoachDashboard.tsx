@@ -94,8 +94,8 @@ const SleepCoachDashboard = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   
   // Coach onboarding wizard state
-  const { shouldShowOnboarding, markComplete: markOnboardingComplete } = useCoachOnboarding();
-  
+  const { shouldShowOnboarding, isLoading: onboardingLoading, markComplete: markOnboardingComplete } = useCoachOnboarding();
+
   // Parse progressRange from URL on mount
   const initialProgressRange = useMemo((): ChartTimeRange => {
     const urlRange = searchParams.get('progressRange');
@@ -438,8 +438,8 @@ const SleepCoachDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      {/* Coach onboarding wizard - shows on first visit */}
-      {shouldShowOnboarding && (
+      {/* Coach onboarding wizard - shows on first visit, waits for DB check */}
+      {!onboardingLoading && shouldShowOnboarding && (
         <CoachOnboardingWizard onComplete={markOnboardingComplete} />
       )}
       
