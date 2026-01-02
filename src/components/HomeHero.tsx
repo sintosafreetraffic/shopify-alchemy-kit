@@ -1,16 +1,15 @@
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { getPersonaCookie, type PersonaCluster } from "@/lib/personaCookie";
 
 // Hero images
 import heroDesktop from "@/assets/hero-cloud-sleep.webp";
 import heroMobile from "@/assets/hero-cloud-sleep.webp";
 
 // ============================================================================
-// HERO HEADLINE VARIANTS (Future A/B Testing)
-// ============================================================================
-// Currently using: "science" variant as default for all users
-// Future logic will swap based on persona detection after quiz completion
+// HERO HEADLINE VARIANTS (Persona-based A/B Testing)
 // ============================================================================
 const HERO_HEADLINE_VARIANTS = {
   posture: "Wake Up Aligned. Sleep Without Morning Tension.",
@@ -18,9 +17,27 @@ const HERO_HEADLINE_VARIANTS = {
   recovery: "Sleep That Supports Your Recovery — Night After Night.",
 } as const;
 
-// Currently active variant (hardcoded for now)
-const activeVariant = "science" as keyof typeof HERO_HEADLINE_VARIANTS;
-const activeHeadline = HERO_HEADLINE_VARIANTS[activeVariant];
+type HeadlineVariant = keyof typeof HERO_HEADLINE_VARIANTS;
+
+// Map persona clusters to headline variants
+const PERSONA_TO_VARIANT: Record<NonNullable<PersonaCluster>, HeadlineVariant> = {
+  pain_sleeper: "posture",
+  recovery_sleeper: "recovery",
+  stress_insomnia: "science",
+  optimizer: "science",
+};
+
+/**
+ * Get the appropriate headline variant based on persona cookie
+ * Falls back to "science" for new/unknown users
+ */
+function getHeadlineVariant(): HeadlineVariant {
+  const persona = getPersonaCookie();
+  if (persona && persona in PERSONA_TO_VARIANT) {
+    return PERSONA_TO_VARIANT[persona];
+  }
+  return "science"; // Default for new users or unknown personas
+}
 
 // ============================================================================
 // Future persona-based headline variants (not wired yet):
@@ -36,6 +53,15 @@ const activeHeadline = HERO_HEADLINE_VARIANTS[activeVariant];
 const HomeHero = () => {
   const navigate = useNavigate();
 
+  // Determine headline variant based on persona cookie (memoized)
+  const { activeVariant, activeHeadline } = useMemo(() => {
+    const variant = getHeadlineVariant();
+    return {
+      activeVariant: variant,
+      activeHeadline: HERO_HEADLINE_VARIANTS[variant],
+    };
+  }, []);
+
   const handleStartAssessment = () => {
     navigate("/sleep-quiz");
   };
@@ -47,7 +73,7 @@ const HomeHero = () => {
   return (
     <section
       data-hero-slot="sleep-assessment-hero"
-      data-hero-default-variant={activeVariant}
+      data-hero-variant={activeVariant}
       className="relative w-full"
     >
       {/* Hero Image */}

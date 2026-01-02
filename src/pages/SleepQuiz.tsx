@@ -10,6 +10,7 @@ import { fetchProducts, ShopifyProduct } from "@/lib/shopify";
 import { trackQuizStarted, identifyUser } from "@/lib/klaviyo";
 import { setEnhancedMatch, trackLead } from "@/lib/pinterest";
 import { captureEmail } from "@/lib/contextTracking";
+import { setPersonaCookie } from "@/lib/personaCookie";
 import { supabase } from "@/integrations/supabase/client";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import {
@@ -420,6 +421,15 @@ const SleepQuiz = () => {
       
       // Identify user in Klaviyo for "Active on Site" tracking
       identifyUser({ email: trimmedEmail });
+      
+      // Set persona cookie for homepage A/B testing
+      const assessment = analysisResult.assessment as SleepAssessment | undefined;
+      const personaCluster = assessment && typeof assessment === 'object' && 'persona' in assessment 
+        ? assessment.persona?.cluster 
+        : undefined;
+      if (personaCluster) {
+        setPersonaCookie(personaCluster);
+      }
       
       await setEnhancedMatch(trimmedEmail);
       trackLead("SleepQuizCompletion", trimmedEmail).catch(() => {});
