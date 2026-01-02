@@ -206,24 +206,53 @@ export default function HeroABTestTab() {
             </Card>
           </div>
 
-          {/* Variant Mapping Info */}
+          {/* Variant Content Reference */}
           <Card className="p-5">
-            <h3 className="font-medium mb-3">Variant Mapping</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-blue-500" />
-                <span className="font-medium">Science:</span>
-                <span className="text-muted-foreground">Default / stress_insomnia / optimizer</span>
+            <h3 className="font-medium mb-4 flex items-center gap-2">
+              <TrendingUp className="w-4 h-4" />
+              Variant Content Reference
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Each variant shows different headline/subtext based on the user's persona cookie:
+            </p>
+            <div className="space-y-4">
+              {/* Science Variant */}
+              <div className="border rounded-lg p-4" style={{ borderColor: VARIANT_COLORS.science }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: VARIANT_COLORS.science }} />
+                  <span className="font-semibold text-sm">Science Variant</span>
+                  <Badge variant="outline" className="ml-auto text-xs">Default / stress_insomnia / optimizer</Badge>
+                </div>
+                <div className="bg-muted/50 rounded p-3 space-y-1">
+                  <p className="font-medium text-base">"The Science of Better Sleep"</p>
+                  <p className="text-sm text-muted-foreground">Discover how small changes to your sleep environment can transform your rest, recovery, and daily energy.</p>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-green-500" />
-                <span className="font-medium">Posture:</span>
-                <span className="text-muted-foreground">pain_sleeper</span>
+
+              {/* Posture Variant */}
+              <div className="border rounded-lg p-4" style={{ borderColor: VARIANT_COLORS.posture }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: VARIANT_COLORS.posture }} />
+                  <span className="font-semibold text-sm">Posture Variant</span>
+                  <Badge variant="outline" className="ml-auto text-xs">pain_sleeper</Badge>
+                </div>
+                <div className="bg-muted/50 rounded p-3 space-y-1">
+                  <p className="font-medium text-base">"Wake Up Without the Aches"</p>
+                  <p className="text-sm text-muted-foreground">Ergonomic sleep solutions designed to support your spine and reduce morning tension.</p>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-purple-500" />
-                <span className="font-medium">Recovery:</span>
-                <span className="text-muted-foreground">recovery_sleeper</span>
+
+              {/* Recovery Variant */}
+              <div className="border rounded-lg p-4" style={{ borderColor: VARIANT_COLORS.recovery }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: VARIANT_COLORS.recovery }} />
+                  <span className="font-semibold text-sm">Recovery Variant</span>
+                  <Badge variant="outline" className="ml-auto text-xs">recovery_sleeper</Badge>
+                </div>
+                <div className="bg-muted/50 rounded p-3 space-y-1">
+                  <p className="font-medium text-base">"Maximize Your Recovery"</p>
+                  <p className="text-sm text-muted-foreground">Sleep tools designed for athletes and active individuals seeking peak performance through better rest.</p>
+                </div>
               </div>
             </div>
           </Card>
