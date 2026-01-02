@@ -587,6 +587,7 @@ export type Database = {
       }
       engagement_meta: {
         Row: {
+          coach_onboarding_completed_at: string | null
           created_at: string
           decline_detected: boolean | null
           email: string
@@ -601,6 +602,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          coach_onboarding_completed_at?: string | null
           created_at?: string
           decline_detected?: boolean | null
           email: string
@@ -615,6 +617,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          coach_onboarding_completed_at?: string | null
           created_at?: string
           decline_detected?: boolean | null
           email?: string
