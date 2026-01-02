@@ -183,11 +183,22 @@ serve(async (req) => {
         "recent-scan"
       );
 
+      // DEBUG: Log all emails in recent orders to diagnose matching issues
+      console.log(`[sync-shopify-products] DEBUG: All emails in recent orders:`);
+      for (const o of recentOrders) {
+        const orderEmails = [o?.email, o?.contact_email, o?.customer?.email].filter(Boolean);
+        console.log(`  Order #${o.order_number || o.id}: emails=${JSON.stringify(orderEmails)}, cancelled=${o.cancelled_at ? 'yes' : 'no'}`);
+      }
+
       const matchEmail = (o: any) => {
         const candidates = [o?.email, o?.contact_email, o?.customer?.email]
           .filter(Boolean)
           .map((v: any) => String(v).trim().toLowerCase());
-        return candidates.includes(emailLookup);
+        const matched = candidates.includes(emailLookup);
+        if (!matched && candidates.length > 0) {
+          console.log(`[sync-shopify-products] No match: looking for "${emailLookup}", found ${JSON.stringify(candidates)}`);
+        }
+        return matched;
       };
 
       orders = recentOrders.filter(matchEmail);
