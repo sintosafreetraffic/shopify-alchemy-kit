@@ -16,6 +16,7 @@ const HERO_HEADLINE_VARIANTS = {
   posture: "Wake Up Aligned. Sleep Without Morning Tension.",
   science: "Short Science, Long-Term Sleep Improvement.",
   recovery: "Sleep That Supports Your Recovery — Night After Night.",
+  calm: "Create the Calm Your Mind Needs to Sleep.",
 } as const;
 
 type HeadlineVariant = keyof typeof HERO_HEADLINE_VARIANTS;
@@ -24,7 +25,7 @@ type HeadlineVariant = keyof typeof HERO_HEADLINE_VARIANTS;
 const PERSONA_TO_VARIANT: Record<NonNullable<PersonaCluster>, HeadlineVariant> = {
   pain_sleeper: "posture",
   recovery_sleeper: "recovery",
-  stress_insomnia: "science",
+  stress_insomnia: "calm",
   optimizer: "science",
 };
 
