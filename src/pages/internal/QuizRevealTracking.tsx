@@ -2,6 +2,7 @@
  * Analytics Dashboard
  * Internal admin page for tracking quiz reveal + checkout + Pinterest purchase + client tracking analytics
  * Protected: Only accessible to authenticated users with admin role
+ * v1.1.0 - Cache bust
  */
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
