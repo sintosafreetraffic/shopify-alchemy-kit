@@ -1,8 +1,9 @@
-import { useMemo } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { getPersonaCookie, type PersonaCluster } from "@/lib/personaCookie";
+import { supabase } from "@/integrations/supabase/client";
 
 // Hero images
 import heroDesktop from "@/assets/hero-cloud-sleep.webp";
@@ -31,36 +32,70 @@ const PERSONA_TO_VARIANT: Record<NonNullable<PersonaCluster>, HeadlineVariant> =
  * Get the appropriate headline variant based on persona cookie
  * Falls back to "science" for new/unknown users
  */
-function getHeadlineVariant(): HeadlineVariant {
+function getHeadlineVariant(): { variant: HeadlineVariant; persona: PersonaCluster } {
   const persona = getPersonaCookie();
   if (persona && persona in PERSONA_TO_VARIANT) {
-    return PERSONA_TO_VARIANT[persona];
+    return { variant: PERSONA_TO_VARIANT[persona], persona };
   }
-  return "science"; // Default for new users or unknown personas
+  return { variant: "science", persona: null };
 }
 
-// ============================================================================
-// Future persona-based headline variants (not wired yet):
-// - Default / no persona / no quiz done -> Variant "science":
-//   "Short Science, Long-Term Sleep Improvement."
-// - pain_sleeper persona -> Variant "posture":
-//   "Wake Up Aligned. Sleep Without Morning Tension."
-// - recovery_sleeper persona -> Variant "recovery":
-//   "Sleep That Supports Your Recovery — Night After Night."
-// - stress_insomnia / optimizer personas can continue using the "science" variant
-// ============================================================================
+/**
+ * Track hero variant exposure to persona-analytics
+ */
+async function trackHeroVariantExposure(variant: HeadlineVariant, persona: PersonaCluster): Promise<void> {
+  try {
+    await supabase.functions.invoke("persona-analytics", {
+      body: {
+        events: [{
+          event_type: "hero_variant_exposure",
+          variant,
+          persona_cluster: persona,
+          page_path: typeof window !== "undefined" ? window.location.pathname : "/",
+        }],
+        session_id: getSessionId(),
+      },
+    });
+  } catch (error) {
+    // Silent fail - analytics should never break the app
+    console.warn("[HomeHero] Variant tracking failed:", error);
+  }
+}
+
+/**
+ * Get or create a session ID for tracking
+ */
+function getSessionId(): string {
+  if (typeof window === "undefined") return "ssr";
+  
+  let sessionId = sessionStorage.getItem("rbn_session_id");
+  if (!sessionId) {
+    sessionId = crypto.randomUUID();
+    sessionStorage.setItem("rbn_session_id", sessionId);
+  }
+  return sessionId;
+}
 
 const HomeHero = () => {
   const navigate = useNavigate();
+  const hasTracked = useRef(false);
 
   // Determine headline variant based on persona cookie (memoized)
-  const { activeVariant, activeHeadline } = useMemo(() => {
-    const variant = getHeadlineVariant();
+  const { activeVariant, activeHeadline, persona } = useMemo(() => {
+    const { variant, persona } = getHeadlineVariant();
     return {
       activeVariant: variant,
       activeHeadline: HERO_HEADLINE_VARIANTS[variant],
+      persona,
     };
   }, []);
+
+  // Track variant exposure once per page load
+  useEffect(() => {
+    if (hasTracked.current) return;
+    hasTracked.current = true;
+    trackHeroVariantExposure(activeVariant, persona);
+  }, [activeVariant, persona]);
 
   const handleStartAssessment = () => {
     navigate("/sleep-quiz");

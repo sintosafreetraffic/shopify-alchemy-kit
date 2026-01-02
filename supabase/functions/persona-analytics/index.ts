@@ -120,9 +120,17 @@ const experimentViewSchema = z.object({
   persona_confidence: z.number().nullable().optional(),
   core_need: nullableString,
   coach_readiness_score: z.number().nullable().optional(),
-  source: z.enum(["quiz_results_hero", "coach_hero", "persona_lp", "custom"]),
+  source: z.enum(["quiz_results_hero", "coach_hero", "persona_lp", "home_hero", "custom"]),
   timestamp: z.string(),
   session_id: z.string().max(100),
+});
+
+// Hero variant A/B exposure event
+const heroVariantExposureSchema = z.object({
+  event_type: z.literal("hero_variant_exposure"),
+  variant: z.enum(["posture", "science", "recovery"]),
+  persona_cluster: nullableString,
+  page_path: z.string().max(200),
 });
 
 const eventSchema = z.discriminatedUnion("event_type", [
@@ -135,6 +143,7 @@ const eventSchema = z.discriminatedUnion("event_type", [
   coachPlanRefreshedSchema,
   revenueAttributionSchema,
   experimentViewSchema,
+  heroVariantExposureSchema,
 ]);
 
 const requestSchema = z.object({
