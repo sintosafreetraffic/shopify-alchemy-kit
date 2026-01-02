@@ -49,6 +49,7 @@ const VARIANT_COLORS: Record<string, string> = {
   science: "#3b82f6",   // blue
   posture: "#10b981",   // green
   recovery: "#8b5cf6",  // purple
+  calm: "#f59e0b",      // amber
 };
 
 const PERSONA_COLORS: Record<string, string> = {
@@ -221,7 +222,7 @@ export default function HeroABTestTab() {
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: VARIANT_COLORS.science }} />
                   <span className="font-semibold text-sm">Science Variant</span>
-                  <Badge variant="outline" className="ml-auto text-xs">Default / stress_insomnia / optimizer</Badge>
+                  <Badge variant="outline" className="ml-auto text-xs">Default / optimizer</Badge>
                 </div>
                 <p className="font-medium text-base bg-muted/50 rounded p-3">
                   "Short Science, Long-Term Sleep Improvement."
@@ -249,6 +250,18 @@ export default function HeroABTestTab() {
                 </div>
                 <p className="font-medium text-base bg-muted/50 rounded p-3">
                   "Sleep That Supports Your Recovery — Night After Night."
+                </p>
+              </div>
+
+              {/* Calm Variant */}
+              <div className="border rounded-lg p-4" style={{ borderColor: VARIANT_COLORS.calm }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: VARIANT_COLORS.calm }} />
+                  <span className="font-semibold text-sm">Calm Variant</span>
+                  <Badge variant="outline" className="ml-auto text-xs">stress_insomnia</Badge>
+                </div>
+                <p className="font-medium text-base bg-muted/50 rounded p-3">
+                  "Create the Calm Your Mind Needs to Sleep."
                 </p>
               </div>
             </div>
