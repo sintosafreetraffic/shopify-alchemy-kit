@@ -707,11 +707,16 @@ Generate EPSR output following the exact JSON schema specified.`;
     const aiData = await aiResponse.json();
     const rawContent = aiData.choices?.[0]?.message?.content || "";
     
-    // FIX #4: STRICT JSON PARSING - No regex salvaging
+    // FIX #4: STRICT JSON PARSING - Strip markdown code blocks if present
     let epsrOutput: EPSROutput;
     try {
-      // Trim and parse directly - no regex extraction
-      epsrOutput = JSON.parse(rawContent.trim());
+      // Strip markdown code blocks if the model wrapped the JSON
+      let jsonContent = rawContent.trim();
+      if (jsonContent.startsWith("```")) {
+        // Remove opening ```json or ``` and closing ```
+        jsonContent = jsonContent.replace(/^```(?:json)?\s*\n?/, "").replace(/\n?```\s*$/, "");
+      }
+      epsrOutput = JSON.parse(jsonContent.trim());
     } catch (parseError) {
       // FIX #6: Log JSON parse failure for observability
       console.error("[EPSR-INTEGRITY] JSON parse failure:", {
