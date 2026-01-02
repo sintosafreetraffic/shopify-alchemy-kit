@@ -112,74 +112,102 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    
+
     // Try SHOPIFY_ADMIN_API_TOKEN first (has more permissions), fallback to SHOPIFY_ACCESS_TOKEN
-    const shopifyAccessToken = Deno.env.get("SHOPIFY_ADMIN_API_TOKEN") || Deno.env.get("SHOPIFY_ACCESS_TOKEN");
-    
+    const adminToken = Deno.env.get("SHOPIFY_ADMIN_API_TOKEN");
+    const shopifyAccessToken = adminToken || Deno.env.get("SHOPIFY_ACCESS_TOKEN");
+
     if (!shopifyAccessToken) {
       console.error("[sync-shopify-products] No Shopify token configured");
       return new Response(
-        JSON.stringify({ error: "Shopify access token not configured" }),
+        JSON.stringify({ error: "Shopify access token not configured", synced_products: [] }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // NOTE: This project has a single connected Shopify store; domain is stable.
     const shopifyDomain = "lovable-project-swlbs.myshopify.com";
+    const SHOPIFY_ADMIN_API_VERSION = "2025-07";
 
-    console.log(`[sync-shopify-products] Syncing for email: ${email}`);
-    console.log(`[sync-shopify-products] Using token: ${shopifyAccessToken ? 'ADMIN_TOKEN' : 'ACCESS_TOKEN'}`);
+    const emailRaw = String(email).trim();
+    const emailLookup = emailRaw.toLowerCase();
 
-    // Search orders directly by email (doesn't require customer read access)
-    // This approach works even if we don't have read_customers scope
-    const ordersSearchUrl = `https://${shopifyDomain}/admin/api/2024-01/orders.json?email=${encodeURIComponent(email)}&status=any&limit=250`;
-    
-    console.log(`[sync-shopify-products] Fetching orders by email...`);
-    const ordersResponse = await fetch(ordersSearchUrl, {
-      headers: {
-        "X-Shopify-Access-Token": shopifyAccessToken,
-        "Content-Type": "application/json",
-      },
-    });
+    console.log(`[sync-shopify-products] Syncing for email: ${emailRaw}`);
+    console.log(`[sync-shopify-products] Using token: ${adminToken ? "ADMIN_TOKEN" : "ACCESS_TOKEN"}`);
 
-    if (!ordersResponse.ok) {
-      const errorText = await ordersResponse.text();
-      console.error(`[sync-shopify-products] Orders fetch failed: ${ordersResponse.status}`, errorText);
-      
-      // If 403, the token doesn't have read_orders permission
-      if (ordersResponse.status === 403) {
-        return new Response(
-          JSON.stringify({ 
-            error: "Shopify API permission denied. The access token may not have the required 'read_orders' scope.",
-            synced_products: [] 
-          }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+    class ShopifyFetchError extends Error {
+      status: number;
+      body: string;
+      constructor(status: number, body: string) {
+        super(`Shopify fetch failed (${status})`);
+        this.status = status;
+        this.body = body;
       }
-      
-      return new Response(
-        JSON.stringify({ error: "Failed to fetch orders from Shopify" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
     }
 
-    const ordersData = await ordersResponse.json();
-    const orders = ordersData.orders || [];
-    
-    console.log(`[sync-shopify-products] Found ${orders.length} orders for email: ${email}`);
+    const fetchOrdersFrom = async (url: string, label: string) => {
+      console.log(`[sync-shopify-products] Fetching orders (${label})...`);
+      const res = await fetch(url, {
+        headers: {
+          "X-Shopify-Access-Token": shopifyAccessToken,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error(`[sync-shopify-products] Orders fetch failed (${label}): ${res.status}`, errorText);
+        throw new ShopifyFetchError(res.status, errorText);
+      }
+
+      const json = await res.json();
+      return (json?.orders || []) as any[];
+    };
+
+    const baseOrdersUrl = `https://${shopifyDomain}/admin/api/${SHOPIFY_ADMIN_API_VERSION}/orders.json`;
+
+    // 1) Try Shopify's server-side email filter (best-effort)
+    let orders = await fetchOrdersFrom(
+      `${baseOrdersUrl}?status=any&limit=250&email=${encodeURIComponent(emailRaw)}`,
+      "email-filter"
+    );
+
+    console.log(`[sync-shopify-products] Found ${orders.length} orders via email-filter`);
+
+    // 2) Fallback: fetch recent orders and filter locally (covers stores/api versions where 'email' filter doesn't work)
+    if (orders.length === 0) {
+      const recentOrders = await fetchOrdersFrom(
+        `${baseOrdersUrl}?status=any&limit=250`,
+        "recent-scan"
+      );
+
+      const matchEmail = (o: any) => {
+        const candidates = [o?.email, o?.contact_email, o?.customer?.email]
+          .filter(Boolean)
+          .map((v: any) => String(v).trim().toLowerCase());
+        return candidates.includes(emailLookup);
+      };
+
+      orders = recentOrders.filter(matchEmail);
+      console.log(
+        `[sync-shopify-products] Fallback recent-scan matched ${orders.length} of ${recentOrders.length} orders for email.`
+      );
+    }
 
     // If no orders found, update sync timestamp and return
     if (orders.length === 0) {
       await supabase
         .from("sleep_profiles")
         .update({ last_shopify_sync: new Date().toISOString() })
-        .eq("email", email);
-      
+        .eq("email", emailRaw);
+
       return new Response(
-        JSON.stringify({ 
-          success: true, 
+        JSON.stringify({
+          success: true,
           message: "No orders found for this email",
-          synced_products: [] 
+          synced_products: [],
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -198,12 +226,7 @@ serve(async (req) => {
       // Note: We're including cancelled orders for now since user wants to test
       // In production, you might want to skip: if (order.cancelled_at) continue;
       
-      // Skip refunded orders
       const financialStatus = order.financial_status;
-      if (financialStatus === "refunded" || financialStatus === "voided") {
-        console.log(`[sync-shopify-products] Skipping order ${order.id} with financial status: ${financialStatus}`);
-        continue;
-      }
 
       const orderDate = order.created_at;
       const orderId = String(order.id);
@@ -224,7 +247,7 @@ serve(async (req) => {
         let handle: string | null = null;
         if (productId) {
           try {
-            const productUrl = `https://${shopifyDomain}/admin/api/2024-01/products/${productId}.json`;
+            const productUrl = `https://${shopifyDomain}/admin/api/${SHOPIFY_ADMIN_API_VERSION}/products/${productId}.json`;
             const productResponse = await fetch(productUrl, {
               headers: {
                 "X-Shopify-Access-Token": shopifyAccessToken,
@@ -270,7 +293,7 @@ serve(async (req) => {
       const { error } = await supabase
         .from("user_product_ownership")
         .upsert({
-          email,
+          email: emailRaw,
           product_slug: product.product_slug,
           acquired_at: product.acquired_at,
           shopify_order_id: product.shopify_order_id,
@@ -298,17 +321,17 @@ serve(async (req) => {
           products_owned: productNames,
           last_shopify_sync: new Date().toISOString(),
         })
-        .eq("email", email);
+          .eq("email", emailRaw);
       
-      if (updateError) {
-        console.error(`[sync-shopify-products] Error updating sleep_profiles:`, updateError);
+        if (updateError) {
+          console.error(`[sync-shopify-products] Error updating sleep_profiles:`, updateError);
+        }
+      } else {
+        await supabase
+          .from("sleep_profiles")
+          .update({ last_shopify_sync: new Date().toISOString() })
+          .eq("email", emailRaw);
       }
-    } else {
-      await supabase
-        .from("sleep_profiles")
-        .update({ last_shopify_sync: new Date().toISOString() })
-        .eq("email", email);
-    }
 
     console.log(`[sync-shopify-products] ✓ Sync complete. Products: ${syncedProducts.length}`);
 
