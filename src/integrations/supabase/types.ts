@@ -633,6 +633,175 @@ export type Database = {
         }
         Relationships: []
       }
+      epsr_epistemic_ledger: {
+        Row: {
+          confidence_change: string | null
+          confidence_level: string | null
+          counter_evidence: string[] | null
+          created_at: string | null
+          email: string
+          experiment_completed_at: string | null
+          experiment_protocol: string | null
+          experiment_started_at: string | null
+          hypothesis: string
+          hypothesis_id: string
+          id: string
+          metrics_tracked: string[] | null
+          outcome: string | null
+          outcome_notes: string | null
+          status: string | null
+          supporting_evidence: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          confidence_change?: string | null
+          confidence_level?: string | null
+          counter_evidence?: string[] | null
+          created_at?: string | null
+          email: string
+          experiment_completed_at?: string | null
+          experiment_protocol?: string | null
+          experiment_started_at?: string | null
+          hypothesis: string
+          hypothesis_id: string
+          id?: string
+          metrics_tracked?: string[] | null
+          outcome?: string | null
+          outcome_notes?: string | null
+          status?: string | null
+          supporting_evidence?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          confidence_change?: string | null
+          confidence_level?: string | null
+          counter_evidence?: string[] | null
+          created_at?: string | null
+          email?: string
+          experiment_completed_at?: string | null
+          experiment_protocol?: string | null
+          experiment_started_at?: string | null
+          hypothesis?: string
+          hypothesis_id?: string
+          id?: string
+          metrics_tracked?: string[] | null
+          outcome?: string | null
+          outcome_notes?: string | null
+          status?: string | null
+          supporting_evidence?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "epsr_epistemic_ledger_email_fkey"
+            columns: ["email"]
+            isOneToOne: false
+            referencedRelation: "sleep_profiles"
+            referencedColumns: ["email"]
+          },
+        ]
+      }
+      epsr_evidence_corpus: {
+        Row: {
+          citation: string | null
+          claim_summary: string
+          confidence_level: string
+          constraints: string | null
+          created_at: string | null
+          evidence_id: string
+          id: string
+          is_active: boolean | null
+          population_notes: string | null
+          source_type: string
+          title: string
+          topic_tags: string[] | null
+          updated_at: string | null
+          year_published: number | null
+        }
+        Insert: {
+          citation?: string | null
+          claim_summary: string
+          confidence_level: string
+          constraints?: string | null
+          created_at?: string | null
+          evidence_id: string
+          id?: string
+          is_active?: boolean | null
+          population_notes?: string | null
+          source_type: string
+          title: string
+          topic_tags?: string[] | null
+          updated_at?: string | null
+          year_published?: number | null
+        }
+        Update: {
+          citation?: string | null
+          claim_summary?: string
+          confidence_level?: string
+          constraints?: string | null
+          created_at?: string | null
+          evidence_id?: string
+          id?: string
+          is_active?: boolean | null
+          population_notes?: string | null
+          source_type?: string
+          title?: string
+          topic_tags?: string[] | null
+          updated_at?: string | null
+          year_published?: number | null
+        }
+        Relationships: []
+      }
+      epsr_sessions: {
+        Row: {
+          clinical_flags: string[] | null
+          created_at: string | null
+          email: string
+          experiment_proposed: Json | null
+          id: string
+          ledger_writeback: Json | null
+          mode: string
+          pattern_candidates: Json | null
+          raw_ai_response: string | null
+          user_id: string | null
+          user_signals: Json
+        }
+        Insert: {
+          clinical_flags?: string[] | null
+          created_at?: string | null
+          email: string
+          experiment_proposed?: Json | null
+          id?: string
+          ledger_writeback?: Json | null
+          mode: string
+          pattern_candidates?: Json | null
+          raw_ai_response?: string | null
+          user_id?: string | null
+          user_signals: Json
+        }
+        Update: {
+          clinical_flags?: string[] | null
+          created_at?: string | null
+          email?: string
+          experiment_proposed?: Json | null
+          id?: string
+          ledger_writeback?: Json | null
+          mode?: string
+          pattern_candidates?: Json | null
+          raw_ai_response?: string | null
+          user_id?: string | null
+          user_signals?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "epsr_sessions_email_fkey"
+            columns: ["email"]
+            isOneToOne: false
+            referencedRelation: "sleep_profiles"
+            referencedColumns: ["email"]
+          },
+        ]
+      }
       garmin_activity_details: {
         Row: {
           activity_id: string | null
