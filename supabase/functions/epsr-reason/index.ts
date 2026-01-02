@@ -27,6 +27,7 @@ import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-
 
 interface EvidenceItem {
   evidence_id: string;
+  evidence_version: number;
   title: string;
   source_type: string;
   confidence_level: "HIGH" | "MODERATE" | "EMERGING";
@@ -85,6 +86,11 @@ interface UserSignals {
   user_question?: string;
 }
 
+interface EvidenceRef {
+  evidence_id: string;
+  evidence_version: number;
+}
+
 interface LedgerWriteback {
   new_hypothesis: string;
   hypothesis_id: string;
@@ -92,7 +98,8 @@ interface LedgerWriteback {
   confidence_start: "LOW" | "MODERATE";
   expected_check_in_days: number;
   metrics: string[];
-  supporting_evidence: string[];
+  supporting_evidence: string[]; // AI returns plain IDs
+  supporting_evidence_versioned?: EvidenceRef[]; // We enrich with versions
 }
 
 interface EPSROutput {
@@ -430,7 +437,7 @@ Return ONLY valid JSON. No markdown, no code blocks, no explanation outside the 
 async function fetchEvidenceCorpus(supabase: SupabaseClient, topicTags?: string[]): Promise<EvidenceItem[]> {
   let query = supabase
     .from("epsr_evidence_corpus")
-    .select("evidence_id, title, source_type, confidence_level, claim_summary, population_notes, constraints, topic_tags")
+    .select("evidence_id, evidence_version, title, source_type, confidence_level, claim_summary, population_notes, constraints, topic_tags")
     .eq("is_active", true);
   
   // If topic tags provided, filter (but still include all for context)
@@ -774,11 +781,24 @@ Generate EPSR output following the exact JSON schema specified.`;
     // If there's a ledger writeback, save it (only if NOT Tier 2)
     if (epsrOutput.ledger_writeback && !clinicalCheck.tier2) {
       const wb = epsrOutput.ledger_writeback;
+      
+      // Enrich supporting_evidence with version numbers for temporal traceability
+      const evidenceVersionMap = new Map(
+        evidenceCorpus.map(e => [e.evidence_id, e.evidence_version])
+      );
+      const versionedEvidence: EvidenceRef[] = wb.supporting_evidence.map(id => ({
+        evidence_id: id,
+        evidence_version: evidenceVersionMap.get(id) || 1,
+      }));
+      
+      // Store versioned evidence in writeback for session log
+      wb.supporting_evidence_versioned = versionedEvidence;
+      
       await supabase.from("epsr_epistemic_ledger").upsert({
         email,
         hypothesis_id: wb.hypothesis_id,
         hypothesis: wb.new_hypothesis,
-        supporting_evidence: wb.supporting_evidence,
+        supporting_evidence: versionedEvidence, // Store as versioned array
         experiment_protocol: wb.experiment_protocol,
         confidence_level: wb.confidence_start,
         metrics_tracked: wb.metrics,

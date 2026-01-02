@@ -709,6 +709,7 @@ export type Database = {
           constraints: string | null
           created_at: string | null
           evidence_id: string
+          evidence_version: number | null
           id: string
           is_active: boolean | null
           population_notes: string | null
@@ -725,6 +726,7 @@ export type Database = {
           constraints?: string | null
           created_at?: string | null
           evidence_id: string
+          evidence_version?: number | null
           id?: string
           is_active?: boolean | null
           population_notes?: string | null
@@ -741,6 +743,7 @@ export type Database = {
           constraints?: string | null
           created_at?: string | null
           evidence_id?: string
+          evidence_version?: number | null
           id?: string
           is_active?: boolean | null
           population_notes?: string | null
