@@ -349,3 +349,7 @@ verify_jwt = false
 # EPSR Reason - Core reasoning engine, requires JWT
 [functions.epsr-reason]
 verify_jwt = true
+
+# EPSR Decay Cron - Auto-downgrades stale hypotheses (validates CRON_SECRET internally)
+[functions.epsr-decay-cron]
+verify_jwt = false

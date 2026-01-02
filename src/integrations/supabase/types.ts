@@ -3142,6 +3142,15 @@ export type Database = {
       }
     }
     Functions: {
+      decay_stale_hypotheses: {
+        Args: { stale_days?: number }
+        Returns: {
+          email: string
+          hypothesis_id: string
+          new_confidence: string
+          old_confidence: string
+        }[]
+      }
       get_affiliate_commissions_masked: {
         Args: { p_affiliate_id: string }
         Returns: {
