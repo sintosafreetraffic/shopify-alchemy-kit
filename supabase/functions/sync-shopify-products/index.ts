@@ -6,48 +6,75 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Product SKU/handle mapping to internal slugs
+// Product SKU/handle mapping to internal slugs - UPDATED with actual Shopify SKUs
 const PRODUCT_MAPPING: Record<string, string> = {
-  // SKU mappings
+  // Actual SKU mappings from Shopify
+  "RISEBYNIGHT-PILLOW-001": "ergonomic_sleep_pillow",
+  "RBN-KNEE-001": "knee_alignment_pillow",
+  "RBN-KNEE-002": "knee_alignment_pillow",
+  "RBN-MASK-1": "sleep_mask",
+  "RBN-MASK-2": "sleep_mask",
+  "RBN-BUNDLE-SINGLE": "side_sleep_bundle",
+  "RBN-BUNDLE-DOUBLE": "side_sleep_bundle",
+  // Legacy SKU mappings (keep for backwards compatibility)
   "PILLOW-ERGO-001": "ergonomic_sleep_pillow",
   "PILLOW-KNEE-001": "knee_alignment_pillow",
   "BUNDLE-SIDE-001": "side_sleep_bundle",
   "MASK-SILK-001": "sleep_mask",
-  // Handle mappings (fallback)
-  "ergonomic-sleep-pillow": "ergonomic_sleep_pillow",
-  "knee-pillow": "knee_alignment_pillow",
+  // Handle mappings (actual handles from Shopify)
   "risebynight-ergonomic-sleep-pillow": "ergonomic_sleep_pillow",
   "risebynight-ergonomic-knee-pillow": "knee_alignment_pillow",
   "risebynight-silk-sleep-mask": "sleep_mask",
+  "rise-by-night™-complete-sleep-bundle": "side_sleep_bundle",
+  // Fallback handle mappings
+  "ergonomic-sleep-pillow": "ergonomic_sleep_pillow",
+  "knee-pillow": "knee_alignment_pillow",
   "complete-sleep-bundle": "side_sleep_bundle",
   "side-sleep-bundle": "side_sleep_bundle",
   "sleep-mask": "sleep_mask",
   "silk-sleep-mask": "sleep_mask",
 };
 
-// Title-based mapping as final fallback
+// Title-based mapping as final fallback (case-insensitive)
 const TITLE_KEYWORDS: Record<string, string> = {
   "ergonomic sleep pillow": "ergonomic_sleep_pillow",
+  "sleep pillow": "ergonomic_sleep_pillow",
   "knee pillow": "knee_alignment_pillow",
+  "knee alignment": "knee_alignment_pillow",
   "sleep bundle": "side_sleep_bundle",
+  "complete bundle": "side_sleep_bundle",
+  "complete sleep bundle": "side_sleep_bundle",
   "sleep mask": "sleep_mask",
+  "deep sleep mask": "sleep_mask",
+  "silk mask": "sleep_mask",
+};
+
+// Map internal slug to display name
+const SLUG_TO_DISPLAY_NAME: Record<string, string> = {
+  "ergonomic_sleep_pillow": "Ergonomic Sleep Pillow",
+  "knee_alignment_pillow": "Knee Pillow",
+  "side_sleep_bundle": "Complete Sleep Bundle",
+  "sleep_mask": "Sleep Mask",
 };
 
 function mapProductToSlug(sku: string | null, handle: string | null, title: string | null): string | null {
-  // Try SKU first
+  // Try SKU first (exact match)
   if (sku && PRODUCT_MAPPING[sku]) {
+    console.log(`[mapProductToSlug] Matched SKU: ${sku} -> ${PRODUCT_MAPPING[sku]}`);
     return PRODUCT_MAPPING[sku];
   }
   
-  // Try handle
+  // Try handle (exact match first)
   if (handle) {
     const handleLower = handle.toLowerCase();
     if (PRODUCT_MAPPING[handleLower]) {
+      console.log(`[mapProductToSlug] Matched handle exactly: ${handleLower} -> ${PRODUCT_MAPPING[handleLower]}`);
       return PRODUCT_MAPPING[handleLower];
     }
     // Check partial handle matches
     for (const [key, slug] of Object.entries(PRODUCT_MAPPING)) {
       if (handleLower.includes(key) || key.includes(handleLower)) {
+        console.log(`[mapProductToSlug] Matched handle partial: ${handleLower} contains/in ${key} -> ${slug}`);
         return slug;
       }
     }
@@ -58,11 +85,13 @@ function mapProductToSlug(sku: string | null, handle: string | null, title: stri
     const titleLower = title.toLowerCase();
     for (const [keyword, slug] of Object.entries(TITLE_KEYWORDS)) {
       if (titleLower.includes(keyword)) {
+        console.log(`[mapProductToSlug] Matched title keyword: "${keyword}" in "${titleLower}" -> ${slug}`);
         return slug;
       }
     }
   }
   
+  console.log(`[mapProductToSlug] No match found for SKU=${sku}, Handle=${handle}, Title=${title}`);
   return null;
 }
 
@@ -95,11 +124,12 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const shopifyDomain = "lovable-project-swlbs.myshopify.com";
 
-    console.log(`Syncing Shopify products for email: ${email}`);
+    console.log(`[sync-shopify-products] Syncing for email: ${email}`);
 
     // Step 1: Find customer by email in Shopify
     const customerSearchUrl = `https://${shopifyDomain}/admin/api/2024-01/customers/search.json?query=email:${encodeURIComponent(email)}`;
     
+    console.log(`[sync-shopify-products] Searching for customer...`);
     const customerResponse = await fetch(customerSearchUrl, {
       headers: {
         "X-Shopify-Access-Token": shopifyAccessToken,
@@ -108,8 +138,7 @@ serve(async (req) => {
     });
 
     if (!customerResponse.ok) {
-      console.log("Customer search response not OK:", customerResponse.status);
-      // Customer might not exist - that's fine
+      console.log("[sync-shopify-products] Customer search response not OK:", customerResponse.status);
       return new Response(
         JSON.stringify({ 
           success: true, 
@@ -124,9 +153,8 @@ serve(async (req) => {
     const customers = customerData.customers || [];
     
     if (customers.length === 0) {
-      console.log("No customers found for email:", email);
+      console.log("[sync-shopify-products] No customers found for email:", email);
       
-      // Update last sync timestamp anyway
       await supabase
         .from("sleep_profiles")
         .update({ last_shopify_sync: new Date().toISOString() })
@@ -143,11 +171,12 @@ serve(async (req) => {
     }
 
     const customerId = customers[0].id;
-    console.log(`Found Shopify customer ID: ${customerId}`);
+    console.log(`[sync-shopify-products] Found Shopify customer ID: ${customerId}`);
 
     // Step 2: Fetch all orders for this customer
     const ordersUrl = `https://${shopifyDomain}/admin/api/2024-01/customers/${customerId}/orders.json?status=any`;
     
+    console.log(`[sync-shopify-products] Fetching orders...`);
     const ordersResponse = await fetch(ordersUrl, {
       headers: {
         "X-Shopify-Access-Token": shopifyAccessToken,
@@ -156,7 +185,7 @@ serve(async (req) => {
     });
 
     if (!ordersResponse.ok) {
-      console.log("Orders fetch failed:", ordersResponse.status);
+      console.log("[sync-shopify-products] Orders fetch failed:", ordersResponse.status);
       return new Response(
         JSON.stringify({ error: "Failed to fetch orders from Shopify" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -166,30 +195,42 @@ serve(async (req) => {
     const ordersData = await ordersResponse.json();
     const orders = ordersData.orders || [];
     
-    console.log(`Found ${orders.length} orders for customer`);
+    console.log(`[sync-shopify-products] Found ${orders.length} orders for customer`);
 
-    // Step 3: Extract products from fulfilled orders
+    // Step 3: Extract products from orders (include all non-cancelled orders)
     const syncedProducts: Array<{
       product_slug: string;
+      product_title: string;
       acquired_at: string;
       shopify_order_id: string;
     }> = [];
 
     for (const order of orders) {
-      // Only process fulfilled or partially fulfilled orders
-      const fulfillmentStatus = order.fulfillment_status;
-      if (fulfillmentStatus !== "fulfilled" && fulfillmentStatus !== "partial") {
-        console.log(`Skipping order ${order.id} with status: ${fulfillmentStatus}`);
+      // Skip cancelled orders
+      if (order.cancelled_at) {
+        console.log(`[sync-shopify-products] Skipping cancelled order ${order.id}`);
+        continue;
+      }
+
+      // Include all financial statuses that indicate payment (paid, partially_paid, pending)
+      const financialStatus = order.financial_status;
+      if (financialStatus === "refunded" || financialStatus === "voided") {
+        console.log(`[sync-shopify-products] Skipping order ${order.id} with financial status: ${financialStatus}`);
         continue;
       }
 
       const orderDate = order.created_at;
       const orderId = String(order.id);
+      const fulfillmentStatus = order.fulfillment_status || "unfulfilled";
+
+      console.log(`[sync-shopify-products] Processing order ${order.id} (fulfillment: ${fulfillmentStatus}, financial: ${financialStatus})`);
 
       for (const lineItem of order.line_items || []) {
         const sku = lineItem.sku;
         const productId = lineItem.product_id;
         const title = lineItem.title;
+        
+        console.log(`[sync-shopify-products] Processing line item: SKU=${sku}, ProductID=${productId}, Title="${title}"`);
         
         // Try to get handle from product
         let handle: string | null = null;
@@ -205,9 +246,10 @@ serve(async (req) => {
             if (productResponse.ok) {
               const productData = await productResponse.json();
               handle = productData.product?.handle || null;
+              console.log(`[sync-shopify-products] Fetched product handle: ${handle}`);
             }
           } catch (e) {
-            console.log(`Could not fetch product ${productId}:`, e);
+            console.log(`[sync-shopify-products] Could not fetch product ${productId}:`, e);
           }
         }
 
@@ -219,20 +261,23 @@ serve(async (req) => {
           if (!existing) {
             syncedProducts.push({
               product_slug: productSlug,
+              product_title: title,
               acquired_at: orderDate,
               shopify_order_id: orderId,
             });
-            console.log(`Mapped product: ${title} -> ${productSlug}`);
+            console.log(`[sync-shopify-products] ✓ Mapped product: ${title} -> ${productSlug}`);
+          } else {
+            console.log(`[sync-shopify-products] Skipping duplicate: ${productSlug}`);
           }
         } else {
-          console.log(`Could not map product: SKU=${sku}, Handle=${handle}, Title=${title}`);
+          console.log(`[sync-shopify-products] ✗ Could not map product: SKU=${sku}, Handle=${handle}, Title=${title}`);
         }
       }
     }
 
-    console.log(`Syncing ${syncedProducts.length} products to database`);
+    console.log(`[sync-shopify-products] Syncing ${syncedProducts.length} products to database`);
 
-    // Step 4: Upsert products to database
+    // Step 4: Upsert products to user_product_ownership table
     for (const product of syncedProducts) {
       const { error } = await supabase
         .from("user_product_ownership")
@@ -247,29 +292,31 @@ serve(async (req) => {
         });
 
       if (error) {
-        console.error(`Error upserting product ${product.product_slug}:`, error);
+        console.error(`[sync-shopify-products] Error upserting product ${product.product_slug}:`, error);
       }
     }
 
-    // Step 5: Update products_owned array in sleep_profiles for backward compatibility
+    // Step 5: Update products_owned array in sleep_profiles
+    // Use the actual product titles from Shopify orders for better display
     const productNames = syncedProducts.map(p => {
-      switch (p.product_slug) {
-        case "ergonomic_sleep_pillow": return "Ergonomic Sleep Pillow";
-        case "knee_alignment_pillow": return "Knee Pillow";
-        case "side_sleep_bundle": return "Complete Sleep Bundle";
-        case "sleep_mask": return "Sleep Mask";
-        default: return null;
-      }
+      // Use the display name from our mapping, falling back to Shopify title
+      return SLUG_TO_DISPLAY_NAME[p.product_slug] || p.product_title;
     }).filter(Boolean);
 
+    console.log(`[sync-shopify-products] Updating sleep_profiles.products_owned with: ${JSON.stringify(productNames)}`);
+
     if (productNames.length > 0) {
-      await supabase
+      const { error: updateError } = await supabase
         .from("sleep_profiles")
         .update({ 
           products_owned: productNames,
           last_shopify_sync: new Date().toISOString(),
         })
         .eq("email", email);
+      
+      if (updateError) {
+        console.error(`[sync-shopify-products] Error updating sleep_profiles:`, updateError);
+      }
     } else {
       await supabase
         .from("sleep_profiles")
@@ -277,17 +324,22 @@ serve(async (req) => {
         .eq("email", email);
     }
 
+    console.log(`[sync-shopify-products] ✓ Sync complete. Products synced: ${syncedProducts.length}`);
+
     return new Response(
       JSON.stringify({ 
         success: true, 
         synced_products: syncedProducts,
-        message: `Synced ${syncedProducts.length} products`,
+        products_owned: productNames,
+        message: syncedProducts.length > 0 
+          ? `Synced ${syncedProducts.length} products` 
+          : "No products found in your orders",
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
   } catch (error) {
-    console.error("Error in sync-shopify-products:", error);
+    console.error("[sync-shopify-products] Error:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
     return new Response(
       JSON.stringify({ error: errorMessage }),
