@@ -22,3 +22,6 @@ export { WhyThisPlanCard } from './WhyThisPlanCard';
 export { ProductSetupCard } from './ProductSetupCard';
 export { SpineScoreDisplay } from './SpineScoreDisplay';
 export { TodayActionsCard } from './TodayActionsCard';
+
+// EPSR - Evidence-Bound Personal Sleep Reasoner
+export { EPSRReasoningPanel } from './EPSRReasoningPanel';

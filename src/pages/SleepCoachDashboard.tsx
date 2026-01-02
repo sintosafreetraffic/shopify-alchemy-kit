@@ -25,6 +25,7 @@ import { PersonaCard } from "@/components/sleep-coach/PersonaCard";
 import { CoachReadinessCard } from "@/components/sleep-coach/CoachReadinessCard";
 import { OverviewTabMinimal } from "@/components/sleep-coach/overview";
 import { ProfileTab } from "@/components/sleep-coach/profile";
+import { EPSRReasoningPanel } from "@/components/sleep-coach/EPSRReasoningPanel";
 import { useCoachMetrics } from "@/hooks/useCoachMetrics";
 import { usePlanCompletion } from "@/hooks/usePlanCompletion";
 import { CoachOnboardingWizard, useCoachOnboarding } from "@/components/sleep-coach/CoachOnboardingWizard";
@@ -523,18 +524,22 @@ const SleepCoachDashboard = () => {
         {/* Main Content - Only render tabs when not loading and no error */}
         {!dataLoading && !dataError && !showWizard && (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="overview" className="flex items-center gap-2">
                 <LayoutDashboard className="h-4 w-4" />
                 <span className="hidden sm:inline">Overview</span>
               </TabsTrigger>
               <TabsTrigger value="logs" className="flex items-center gap-2">
                 <ListChecks className="h-4 w-4" />
-                <span className="hidden sm:inline">Sleep Logs</span>
+                <span className="hidden sm:inline">Logs</span>
               </TabsTrigger>
               <TabsTrigger value="coach" className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4" />
-                <span className="hidden sm:inline">AI Coach</span>
+                <span className="hidden sm:inline">Plan</span>
+              </TabsTrigger>
+              <TabsTrigger value="reason" className="flex items-center gap-2">
+                <Brain className="h-4 w-4" />
+                <span className="hidden sm:inline">Reason</span>
               </TabsTrigger>
               <TabsTrigger value="profile" className="flex items-center gap-2">
                 <User className="h-4 w-4" />
@@ -612,6 +617,15 @@ const SleepCoachDashboard = () => {
                     />
                   );
                 })()
+              )}
+            </TabsContent>
+
+            {/* EPSR REASONING TAB - Evidence-Bound Personal Sleep Reasoner */}
+            <TabsContent value="reason" className="space-y-6">
+              {!data.profile ? (
+                <NoProfileCTA />
+              ) : (
+                <EPSRReasoningPanel />
               )}
             </TabsContent>
 

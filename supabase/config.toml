@@ -341,3 +341,11 @@ verify_jwt = false
 # Coach Preview Create - Public for quiz flow (validates session_id internally)
 [functions.coach-preview-create]
 verify_jwt = false
+
+# ============================================================
+# EPSR (Evidence-Bound Personal Sleep Reasoner)
+# ============================================================
+
+# EPSR Reason - Core reasoning engine, requires JWT
+[functions.epsr-reason]
+verify_jwt = true
