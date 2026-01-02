@@ -210,12 +210,12 @@ export default function HeroABTestTab() {
           <Card className="p-5">
             <h3 className="font-medium mb-4 flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
-              Variant Content Reference
+              What's Being Tested
             </h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Each variant shows different headline/subtext based on the user's persona cookie:
+              <strong>Only the H1 headline changes</strong> based on the user's persona cookie. All other content (subheadline, CTA, image) remains the same.
             </p>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {/* Science Variant */}
               <div className="border rounded-lg p-4" style={{ borderColor: VARIANT_COLORS.science }}>
                 <div className="flex items-center gap-2 mb-2">
@@ -223,10 +223,9 @@ export default function HeroABTestTab() {
                   <span className="font-semibold text-sm">Science Variant</span>
                   <Badge variant="outline" className="ml-auto text-xs">Default / stress_insomnia / optimizer</Badge>
                 </div>
-                <div className="bg-muted/50 rounded p-3 space-y-1">
-                  <p className="font-medium text-base">"The Science of Better Sleep"</p>
-                  <p className="text-sm text-muted-foreground">Discover how small changes to your sleep environment can transform your rest, recovery, and daily energy.</p>
-                </div>
+                <p className="font-medium text-base bg-muted/50 rounded p-3">
+                  "Short Science, Long-Term Sleep Improvement."
+                </p>
               </div>
 
               {/* Posture Variant */}
@@ -236,10 +235,9 @@ export default function HeroABTestTab() {
                   <span className="font-semibold text-sm">Posture Variant</span>
                   <Badge variant="outline" className="ml-auto text-xs">pain_sleeper</Badge>
                 </div>
-                <div className="bg-muted/50 rounded p-3 space-y-1">
-                  <p className="font-medium text-base">"Wake Up Without the Aches"</p>
-                  <p className="text-sm text-muted-foreground">Ergonomic sleep solutions designed to support your spine and reduce morning tension.</p>
-                </div>
+                <p className="font-medium text-base bg-muted/50 rounded p-3">
+                  "Wake Up Aligned. Sleep Without Morning Tension."
+                </p>
               </div>
 
               {/* Recovery Variant */}
@@ -249,10 +247,9 @@ export default function HeroABTestTab() {
                   <span className="font-semibold text-sm">Recovery Variant</span>
                   <Badge variant="outline" className="ml-auto text-xs">recovery_sleeper</Badge>
                 </div>
-                <div className="bg-muted/50 rounded p-3 space-y-1">
-                  <p className="font-medium text-base">"Maximize Your Recovery"</p>
-                  <p className="text-sm text-muted-foreground">Sleep tools designed for athletes and active individuals seeking peak performance through better rest.</p>
-                </div>
+                <p className="font-medium text-base bg-muted/50 rounded p-3">
+                  "Sleep That Supports Your Recovery — Night After Night."
+                </p>
               </div>
             </div>
           </Card>
