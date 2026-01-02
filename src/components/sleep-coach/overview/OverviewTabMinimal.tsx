@@ -9,9 +9,11 @@
  * - Long-term progression markers
  * 
  * Design: Apple Health × Scandinavian Spa × Behavioral Science
+ * 
+ * TASK_01: For purchasers with 0 coach_plans, shows prominent CTA
  */
 
-import { type SleepProfile, type SleepLog } from "@/hooks/useSleepApi";
+import { type SleepProfile, type SleepLog, type CoachPlan } from "@/hooks/useSleepApi";
 import { type PersonaCluster } from "@/components/sleep-quiz/QuizTypes";
 
 import { SleepDirectionHero } from "./SleepDirectionHero";
@@ -22,6 +24,7 @@ import { SleepProfileMinimal } from "./SleepProfileMinimal";
 import { SleepTrendsMinimal } from "./SleepTrendsMinimal";
 import { LoggingStreakMinimal } from "./LoggingStreakMinimal";
 import { DiscoverPersonaCTA } from "./DiscoverPersonaCTA";
+import { FirstPlanCTA } from "./FirstPlanCTA";
 
 interface TrendData {
   avgSleepQuality: number;
@@ -38,6 +41,9 @@ interface OverviewTabMinimalProps {
   logs: SleepLog[];
   trends: TrendData;
   streak: number;
+  coachPlan?: CoachPlan | null;
+  onGeneratePlan?: () => void;
+  isGeneratingPlan?: boolean;
   onUpdateAssessment?: () => void;
 }
 
@@ -46,6 +52,9 @@ export function OverviewTabMinimal({
   logs,
   trends,
   streak,
+  coachPlan,
+  onGeneratePlan,
+  isGeneratingPlan,
   onUpdateAssessment,
 }: OverviewTabMinimalProps) {
   // No profile yet - show discover CTA
@@ -53,6 +62,25 @@ export function OverviewTabMinimal({
     return (
       <div className="space-y-8">
         <DiscoverPersonaCTA />
+      </div>
+    );
+  }
+
+  // TASK_01: Detect purchaser with no coach plan
+  const isPurchaser = profile.products_owned && profile.products_owned.length > 0;
+  const hasNoPlan = !coachPlan;
+  
+  // Purchaser with no plan = show prominent first plan CTA
+  if (isPurchaser && hasNoPlan && onGeneratePlan) {
+    return (
+      <div 
+        className="space-y-8 pb-10"
+        style={{ maxWidth: '720px', margin: '0 auto' }}
+      >
+        <FirstPlanCTA 
+          onGeneratePlan={onGeneratePlan} 
+          isLoading={isGeneratingPlan} 
+        />
       </div>
     );
   }
