@@ -6,12 +6,12 @@ export const PRODUCT_SLUG_TO_NAME: Record<string, string> = {
   sleep_mask: 'Sleep Mask',
 };
 
-// Product slug to image mapping
+// Product slug to image mapping - using Shopify CDN images
 export const PRODUCT_SLUG_TO_IMAGE: Record<string, string> = {
-  ergonomic_sleep_pillow: '/images/pillow-main-new.png',
+  ergonomic_sleep_pillow: 'https://cdn.shopify.com/s/files/1/0796/1595/1068/files/pillow-hero-main.webp?v=1764490731',
   knee_alignment_pillow: '/images/knee-pillow-main-new.png',
-  side_sleep_bundle: '/images/pillow-main-new.png',
-  sleep_mask: '/images/pillow-main-new.png',
+  side_sleep_bundle: 'https://cdn.shopify.com/s/files/1/0796/1595/1068/files/complete-sleep-bundle.png?v=1764437243',
+  sleep_mask: 'https://cdn.shopify.com/s/files/1/0796/1595/1068/files/eye-mask-gift-transparent-CP76Ahkm.webp?v=1764490860',
 };
 
 // Product slug to rationale mapping
