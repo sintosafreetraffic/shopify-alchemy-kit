@@ -7,7 +7,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { useCartStore } from "@/stores/cartStore";
 import { fetchProducts, ShopifyProduct } from "@/lib/shopify";
-import { trackQuizStarted } from "@/lib/klaviyo";
+import { trackQuizStarted, identifyUser } from "@/lib/klaviyo";
 import { setEnhancedMatch, trackLead } from "@/lib/pinterest";
 import { captureEmail } from "@/lib/contextTracking";
 import { supabase } from "@/integrations/supabase/client";
@@ -417,6 +417,10 @@ const SleepQuiz = () => {
 
       // Set Pinterest enhanced match and track lead for quiz completion
       const trimmedEmail = email.trim();
+      
+      // Identify user in Klaviyo for "Active on Site" tracking
+      identifyUser({ email: trimmedEmail });
+      
       await setEnhancedMatch(trimmedEmail);
       trackLead("SleepQuizCompletion", trimmedEmail).catch(() => {});
       captureEmail(trimmedEmail); // Send to CAPI context for checkout enrichment

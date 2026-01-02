@@ -11,6 +11,7 @@
 import { useEffect, useRef } from 'react';
 import { captureEmail } from '@/lib/contextTracking';
 import { setEnhancedMatch } from '@/lib/pinterest';
+import { identifyUser } from '@/lib/klaviyo';
 
 // Klaviyo form event types
 interface KlaviyoFormEvent {
@@ -56,6 +57,9 @@ export function useKlaviyoEmailCapture(): void {
               type,
               hasEmail: true,
             });
+            
+            // Identify user in Klaviyo for "Active on Site" tracking
+            identifyUser({ email });
             
             // Set Pinterest enhanced match (stores hash for future Tag events)
             setEnhancedMatch(email);
