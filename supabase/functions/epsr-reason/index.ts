@@ -595,6 +595,29 @@ Deno.serve(async (req) => {
     // Service role client for data access
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+    // Rate limiting: 1 run per day per user (except admin)
+    const ADMIN_EMAIL = "sasvanwell@hotmail.com";
+    if (email !== ADMIN_EMAIL) {
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      
+      const { count, error: countError } = await supabase
+        .from("epsr_sessions")
+        .select("*", { count: "exact", head: true })
+        .eq("email", email)
+        .gte("created_at", todayStart.toISOString());
+      
+      if (!countError && count && count >= 1) {
+        return new Response(
+          JSON.stringify({ 
+            error: "Daily limit reached. You can run one EPSR reasoning session per day.", 
+            code: "RATE_LIMIT_EXCEEDED" 
+          }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     // Fetch all data in parallel
     const [evidenceCorpus, ledgerSnapshot, userSignals] = await Promise.all([
       fetchEvidenceCorpus(supabase),
@@ -781,6 +804,7 @@ Generate EPSR output following the exact JSON schema specified.`;
       ledger_writeback: epsrOutput.ledger_writeback,
       clinical_flags: clinicalCheck.flags.length > 0 ? clinicalCheck.flags : null,
       raw_ai_response: rawContent,
+      user_question: userQuestion || null,
     });
 
     // If there's a ledger writeback, save it (only if NOT Tier 2)
