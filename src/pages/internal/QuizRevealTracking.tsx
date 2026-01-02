@@ -80,6 +80,7 @@ import PhasesTab from "@/components/internal/PhasesTab";
 import ProductionMonitoringTab from "@/components/internal/ProductionMonitoringTab";
 import WeeklyReviewTab from "@/components/internal/WeeklyReviewTab";
 import PinterestSourceTruthTab from "@/components/internal/PinterestSourceTruthTab";
+import HeroABTestTab from "@/components/internal/HeroABTestTab";
 import { useAdsReporting, DATE_PRESETS } from "@/hooks/useAdsReporting";
 
 interface AnalyticsStats {
@@ -727,7 +728,7 @@ const QuizRevealTracking = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full max-w-6xl grid-cols-9">
+          <TabsList className="grid w-full max-w-6xl grid-cols-10">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
               <span className="hidden sm:inline">Overview</span>
@@ -739,6 +740,10 @@ const QuizRevealTracking = () => {
             <TabsTrigger value="sourcetruth" className="flex items-center gap-2">
               <Target className="w-4 h-4" />
               <span className="hidden sm:inline">Source Truth</span>
+            </TabsTrigger>
+            <TabsTrigger value="heroab" className="flex items-center gap-2">
+              <Percent className="w-4 h-4" />
+              <span className="hidden sm:inline">Hero A/B</span>
             </TabsTrigger>
             <TabsTrigger value="quiz" className="flex items-center gap-2">
               <Eye className="w-4 h-4" />
@@ -765,6 +770,11 @@ const QuizRevealTracking = () => {
               <span className="hidden sm:inline">Weekly</span>
             </TabsTrigger>
           </TabsList>
+
+          {/* Hero A/B Test Tab */}
+          <TabsContent value="heroab" className="mt-6">
+            <HeroABTestTab />
+          </TabsContent>
 
           {/* Phase 4 Production Monitoring Tab */}
           <TabsContent value="phase4" className="mt-6">

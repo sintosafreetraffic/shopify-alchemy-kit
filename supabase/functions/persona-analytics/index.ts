@@ -149,7 +149,18 @@ const eventSchema = z.discriminatedUnion("event_type", [
 const requestSchema = z.object({
   events: z.array(eventSchema).min(1).max(50),
   session_id: z.string().max(100).optional(),
+  action: z.string().max(50).optional(),
 });
+
+// In-memory storage for hero variant events (for demo purposes)
+// In production, this would be stored in the database
+const heroVariantEvents: Array<{
+  variant: string;
+  persona_cluster: string | null;
+  page_path: string;
+  session_id: string;
+  timestamp: string;
+}> = [];
 
 // ============ MAIN HANDLER ============
 
@@ -165,6 +176,27 @@ Deno.serve(async (req) => {
 
   try {
     const rawBody = await req.json();
+    
+    // Handle get_hero_stats action
+    if (rawBody.action === "get_hero_stats") {
+      // Aggregate stats from stored events
+      const byVariant: Record<string, number> = {};
+      const byPersona: Record<string, number> = {};
+      
+      for (const event of heroVariantEvents) {
+        byVariant[event.variant] = (byVariant[event.variant] || 0) + 1;
+        const persona = event.persona_cluster || "null";
+        byPersona[persona] = (byPersona[persona] || 0) + 1;
+      }
+      
+      return createSuccessResponse({
+        totalExposures: heroVariantEvents.length,
+        byVariant,
+        byPersona,
+        recentEvents: heroVariantEvents.slice(-50).reverse(),
+      });
+    }
+
     const parseResult = requestSchema.safeParse(rawBody);
     
     if (!parseResult.success) {
@@ -194,8 +226,31 @@ Deno.serve(async (req) => {
       created_at: timestamp,
     }));
 
-    // Log each event for debugging (structured logging for analysis)
+    // Process and store hero_variant_exposure events
     for (const record of records) {
+      if (record.event_type === "hero_variant_exposure") {
+        // Store in memory (keep last 1000 events)
+        heroVariantEvents.push({
+          variant: record.variant,
+          persona_cluster: record.persona_cluster,
+          page_path: record.page_path,
+          session_id: session_id || "anonymous",
+          timestamp,
+        });
+        
+        // Trim to last 1000 events
+        if (heroVariantEvents.length > 1000) {
+          heroVariantEvents.shift();
+        }
+        
+        console.log(`[persona-analytics] Hero variant tracked:`, JSON.stringify({
+          variant: record.variant,
+          persona_cluster: record.persona_cluster,
+          page_path: record.page_path,
+        }));
+      }
+      
+      // Log each event for debugging (structured logging for analysis)
       console.log(`[persona-analytics] Event:`, JSON.stringify({
         event_type: record.event_type,
         persona_cluster: record.persona_cluster,
