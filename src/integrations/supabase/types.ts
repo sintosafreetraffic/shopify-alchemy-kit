@@ -767,6 +767,7 @@ export type Database = {
           pattern_candidates: Json | null
           raw_ai_response: string | null
           user_id: string | null
+          user_question: string | null
           user_signals: Json
         }
         Insert: {
@@ -780,6 +781,7 @@ export type Database = {
           pattern_candidates?: Json | null
           raw_ai_response?: string | null
           user_id?: string | null
+          user_question?: string | null
           user_signals: Json
         }
         Update: {
@@ -793,6 +795,7 @@ export type Database = {
           pattern_candidates?: Json | null
           raw_ai_response?: string | null
           user_id?: string | null
+          user_question?: string | null
           user_signals?: Json
         }
         Relationships: [

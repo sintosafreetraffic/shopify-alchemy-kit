@@ -1,12 +1,14 @@
 import { useState } from "react";
-import { Brain, AlertTriangle, Beaker, BookOpen, ChevronDown, ChevronUp, Lightbulb, HelpCircle, CheckCircle2, XCircle } from "lucide-react";
+import { Brain, AlertTriangle, Beaker, BookOpen, ChevronDown, ChevronUp, Lightbulb, HelpCircle, CheckCircle2, XCircle, History, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEPSR, EPSROutput, EPSRPatternCandidate, EPSRExperiment, EPSRFoundationItem } from "@/hooks/useEPSR";
+import { format } from "date-fns";
 
 // Mode badge colors
 const MODE_STYLES: Record<EPSROutput["mode"], { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -279,11 +281,39 @@ function EPSROutputDisplay({ output }: { output: EPSROutput }) {
 }
 
 export function EPSRReasoningPanel() {
-  const { output, isLoading, error, runReasoning, clearOutput } = useEPSR();
+  const { 
+    output, 
+    isLoading, 
+    error, 
+    runReasoning, 
+    clearOutput, 
+    history, 
+    loadingHistory, 
+    loadHistoricalRun,
+    selectedHistoryId 
+  } = useEPSR();
   const [question, setQuestion] = useState("");
 
   const handleRunReasoning = () => {
     runReasoning(question || undefined);
+  };
+
+  const handleHistorySelect = (value: string) => {
+    if (value === "new") {
+      clearOutput();
+    } else {
+      loadHistoricalRun(value);
+    }
+  };
+
+  const formatHistoryLabel = (item: { id: string; created_at: string; user_question: string | null; mode: string }) => {
+    const date = format(new Date(item.created_at), "MMM d, yyyy HH:mm");
+    const question = item.user_question 
+      ? item.user_question.length > 40 
+        ? item.user_question.substring(0, 40) + "..." 
+        : item.user_question
+      : "No question";
+    return `${date} — ${question}`;
   };
 
   return (
@@ -301,11 +331,47 @@ export function EPSRReasoningPanel() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* History Dropdown */}
+          {history.length > 0 && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <History className="h-4 w-4" />
+                Previous Sessions
+              </label>
+              <Select 
+                value={selectedHistoryId || "new"} 
+                onValueChange={handleHistorySelect}
+                disabled={loadingHistory || isLoading}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a previous run or start new" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="new">
+                    <span className="flex items-center gap-2">
+                      <Brain className="h-4 w-4" />
+                      New Reasoning Session
+                    </span>
+                  </SelectItem>
+                  {history.map((item) => (
+                    <SelectItem key={item.id} value={item.id}>
+                      <span className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        {formatHistoryLabel(item)}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <Textarea
             placeholder="Optional: Ask a specific question about your sleep patterns..."
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             className="min-h-[80px]"
+            disabled={isLoading}
           />
           <div className="flex gap-2">
             <Button onClick={handleRunReasoning} disabled={isLoading} className="flex-1">
@@ -327,6 +393,12 @@ export function EPSRReasoningPanel() {
               </Button>
             )}
           </div>
+          {selectedHistoryId && (
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <History className="h-3 w-3" />
+              Viewing historical run. Click "Run Reasoning" to create a new session.
+            </p>
+          )}
         </CardContent>
       </Card>
 
