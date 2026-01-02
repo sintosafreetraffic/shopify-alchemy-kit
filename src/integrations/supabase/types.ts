@@ -445,6 +445,30 @@ export type Database = {
           },
         ]
       }
+      coach_preview_plans: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          preview_plan: Json
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          preview_plan: Json
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          preview_plan?: Json
+          session_id?: string
+        }
+        Relationships: []
+      }
       collective_applications: {
         Row: {
           affiliate_id: string | null
@@ -2279,6 +2303,7 @@ export type Database = {
           quiz_completed: boolean | null
           quiz_completed_at: string | null
           quiz_data: Json | null
+          session_id: string | null
           sleep_assessment: Json | null
           sleep_position: Database["public"]["Enums"]["sleep_position"]
           stress_level: Database["public"]["Enums"]["stress_level"] | null
@@ -2317,6 +2342,7 @@ export type Database = {
           quiz_completed?: boolean | null
           quiz_completed_at?: string | null
           quiz_data?: Json | null
+          session_id?: string | null
           sleep_assessment?: Json | null
           sleep_position?: Database["public"]["Enums"]["sleep_position"]
           stress_level?: Database["public"]["Enums"]["stress_level"] | null
@@ -2355,6 +2381,7 @@ export type Database = {
           quiz_completed?: boolean | null
           quiz_completed_at?: string | null
           quiz_data?: Json | null
+          session_id?: string | null
           sleep_assessment?: Json | null
           sleep_position?: Database["public"]["Enums"]["sleep_position"]
           stress_level?: Database["public"]["Enums"]["stress_level"] | null
