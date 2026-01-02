@@ -210,6 +210,10 @@ Deno.serve(async (req) => {
     const activitySignals = activitySignalsResult.data;
     const coachSignals = coachSignalsResult.data || [];
     
+    // Track existing plan count BEFORE inserting (for is_first_plan detection)
+    const existingPlansCount = plansCountResult.count ?? 0;
+    const isFirstPlan = existingPlansCount === 0;
+    
     // Log wearable data availability
     console.log('[coach-generate-sleep-plan] Wearable data', {
       connectedSources: connectedSources.map((s: any) => s.source),
@@ -739,6 +743,7 @@ Deno.serve(async (req) => {
     });
 
     // TRIGGER FULL SLEEP SYNC after plan creation (handles Klaviyo events + profile update)
+    const klaviyoEvents: any[] = [];
     try {
       console.log('[Sleep Sync] Triggering fullSleepSync for plan generation:', email);
       const { attributes: syncedAttrs, event: sleepSyncEvent } = await fullSleepSync(
@@ -748,11 +753,59 @@ Deno.serve(async (req) => {
         KLAVIYO_PRIVATE_API_KEY || undefined
       );
       console.log('[Sleep Sync] Full sync completed after plan generation');
+      klaviyoEvents.push(sleepSyncEvent);
+
+      // === SEND RBN_SleepPlan_Created EVENT (with is_first_plan differentiation) ===
+      if (KLAVIYO_PRIVATE_API_KEY) {
+        const planCreatedEvent = {
+          eventName: 'RBN_SleepPlan_Created',
+          payload: {
+            email,
+            plan_id: plan.id,
+            plan_type: planType,
+            reason,
+            is_first_plan: isFirstPlan,
+            total_plans: existingPlansCount + 1,
+            spine_health_score: parsed.spineScore,
+            timestamp: new Date().toISOString(),
+          },
+        };
+        
+        console.log(`[Klaviyo] Sending RBN_SleepPlan_Created event (is_first_plan: ${isFirstPlan})`);
+        
+        const klaviyoResponse = await fetch('https://a.klaviyo.com/api/events/', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Klaviyo-API-Key ${KLAVIYO_PRIVATE_API_KEY}`,
+            'Content-Type': 'application/json',
+            'revision': '2024-02-15',
+          },
+          body: JSON.stringify({
+            data: {
+              type: 'event',
+              attributes: {
+                metric: { data: { type: 'metric', attributes: { name: 'RBN_SleepPlan_Created' } } },
+                profile: { data: { type: 'profile', attributes: { email } } },
+                properties: planCreatedEvent.payload,
+                time: new Date().toISOString(),
+              },
+            },
+          }),
+        });
+        
+        if (!klaviyoResponse.ok) {
+          const errorText = await klaviyoResponse.text();
+          console.error('[Klaviyo] RBN_SleepPlan_Created event error:', errorText);
+        } else {
+          console.log('[Klaviyo] RBN_SleepPlan_Created event sent successfully');
+          klaviyoEvents.push(planCreatedEvent);
+        }
+      }
 
       // Update plan with klaviyo_events
       await supabase
         .from('coach_plans')
-        .update({ klaviyo_events: [sleepSyncEvent] })
+        .update({ klaviyo_events: klaviyoEvents })
         .eq('id', plan.id);
     } catch (syncError) {
       console.error('[Sleep Sync] Error:', syncError);
