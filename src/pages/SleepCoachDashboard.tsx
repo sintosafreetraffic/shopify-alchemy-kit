@@ -549,6 +549,9 @@ const SleepCoachDashboard = () => {
                 logs={data.logs}
                 trends={data.trends}
                 streak={streak}
+                coachPlan={data.coachPlan}
+                onGeneratePlan={() => handleGeneratePlan('first_plan')}
+                isGeneratingPlan={isGeneratingPlan}
                 onUpdateAssessment={handleRetakeQuiz}
               />
             </TabsContent>
