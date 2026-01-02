@@ -27,6 +27,7 @@ import { OverviewTabMinimal } from "@/components/sleep-coach/overview";
 import { ProfileTab } from "@/components/sleep-coach/profile";
 import { useCoachMetrics } from "@/hooks/useCoachMetrics";
 import { usePlanCompletion } from "@/hooks/usePlanCompletion";
+import { CoachOnboardingWizard, useCoachOnboarding } from "@/components/sleep-coach/CoachOnboardingWizard";
 import { trackCoachPlanRefreshed } from "@/lib/coachAnalytics";
 // Import TimeRange type directly for type safety (not lazy-loaded)
 import type { TimeRange } from "@/components/sleep-coach/SleepProgressChart";
@@ -91,6 +92,9 @@ const SleepCoachDashboard = () => {
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Coach onboarding wizard state
+  const { shouldShowOnboarding, markComplete: markOnboardingComplete } = useCoachOnboarding();
   
   // Parse progressRange from URL on mount
   const initialProgressRange = useMemo((): ChartTimeRange => {
@@ -434,6 +438,11 @@ const SleepCoachDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+      {/* Coach onboarding wizard - shows on first visit */}
+      {shouldShowOnboarding && (
+        <CoachOnboardingWizard onComplete={markOnboardingComplete} />
+      )}
+      
       <div className="container mx-auto px-4 py-6 max-w-4xl">
         {/* Header Card */}
         <Card className="mb-6">

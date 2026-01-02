@@ -8,9 +8,8 @@ import { Header } from "./components/Header";
 import { Footer } from "./components/Footer";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { UrgencyBanner } from "./components/UrgencyBanner";
-// Email popup disabled - using Klaviyo native forms instead
-// import { EmailPopup } from "./components/EmailPopup";
-// import { useEmailPopup } from "./hooks/useEmailPopup";
+import { SocialProofNotification } from "./components/SocialProofNotification";
+import { ExitIntentPopup } from "./components/ExitIntentPopup";
 import { trackPageView } from "./lib/analyticsRegistry";
 import { useKlaviyoEmailCapture } from "./hooks/useKlaviyoEmailCapture";
 
@@ -292,7 +291,12 @@ const AppContent = () => {
         </Suspense>
       </main>
       <Footer />
-      {/* Email popup disabled - using Klaviyo native forms instead */}
+      
+      {/* Social proof toast - shows on PDP/cart pages */}
+      <SocialProofNotification />
+      
+      {/* Exit intent modal - shows when leaving with items in cart */}
+      <ExitIntentPopup />
     </div>
   );
 };
