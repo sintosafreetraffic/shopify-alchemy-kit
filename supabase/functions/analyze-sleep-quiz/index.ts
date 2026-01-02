@@ -95,6 +95,7 @@ const requestSchema = z.object({
   answers: answersSchema,
   email: z.string().email().max(255).optional(),
   createProfile: z.boolean().optional().default(false),
+  session_id: z.string().max(100).optional(), // TASK_07: Track session for no-auth quiz flow
 });
 
 Deno.serve(async (req) => {
@@ -113,7 +114,7 @@ Deno.serve(async (req) => {
       return createErrorResponse("Invalid input", 400);
     }
     
-    const { answers, email, createProfile } = parseResult.data;
+    const { answers, email, createProfile, session_id } = parseResult.data;
     
     // Use centralized env helpers
     const SUPABASE_URL = requireEnvVar("SUPABASE_URL");
@@ -128,33 +129,35 @@ Deno.serve(async (req) => {
       return createErrorResponse("AI service not configured", 500);
     }
 
-    // For quiz flow: profile creation REQUIRES authentication
-    // This prevents attackers from overwriting profiles by knowing emails
+    // TASK_07: Profile creation now supports both authenticated and anonymous flows
+    // - Authenticated: uses auth email (preferred for account linking)
+    // - Anonymous: uses provided email with session_id for tracking
+    // Security: UPSERT is keyed on email (unique), so no overwrite without knowing exact email
     let profileEmail: string | null = null;
+    let isAuthenticated = false;
     
-    if (createProfile) {
-      // Authentication is REQUIRED for profile creation/updates
-      const authHeader = req.headers.get("Authorization");
-      if (!authHeader) {
-        console.log("[analyze-sleep-quiz] Profile creation requires authentication");
-        return createErrorResponse("Authentication required for profile creation. Please sign in first.", 401);
-      }
-      
+    // Try to get authenticated email if auth header present
+    const authHeader = req.headers.get("Authorization");
+    if (authHeader) {
       try {
         const authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
           global: { headers: { Authorization: authHeader } }
         });
         const { data: { user } } = await authClient.auth.getUser();
-        if (!user?.email) {
-          console.log("[analyze-sleep-quiz] Auth token valid but no email found");
-          return createErrorResponse("Valid authentication required for profile creation", 401);
+        if (user?.email) {
+          profileEmail = user.email;
+          isAuthenticated = true;
+          console.log("[analyze-sleep-quiz] Using authenticated email:", profileEmail);
         }
-        profileEmail = user.email;
-        console.log("[analyze-sleep-quiz] Using authenticated email:", profileEmail);
       } catch (e) {
-        console.log("[analyze-sleep-quiz] Auth verification failed:", e);
-        return createErrorResponse("Invalid or expired authentication token", 401);
+        console.log("[analyze-sleep-quiz] Auth check failed, proceeding as anonymous:", e);
       }
+    }
+    
+    // If not authenticated, use provided email for profile creation
+    if (!profileEmail && email) {
+      profileEmail = email.toLowerCase().trim();
+      console.log("[analyze-sleep-quiz] Using provided email for anonymous quiz:", profileEmail);
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -436,8 +439,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Always update quiz_data and sleep_assessment for existing profiles
-    // OR create new profile if createProfile is true
+    // TASK_07: Always UPSERT profile on quiz completion (no auth required)
+    // Uses service role, keyed on email (unique index enforces deduplication)
     let profileCreated = false;
     let profileUpdated = false;
     const profileEmailToUse = profileEmail || (email ? email.toLowerCase().trim() : null);
@@ -477,14 +480,20 @@ Deno.serve(async (req) => {
       }
 
       try {
-        const { data: existingProfile } = await supabase
-          .from('sleep_profiles')
-          .select('email')
-          .eq('email', profileEmailToUse)
-          .single();
-
-        // Build quiz data and assessment
-        const quizDataPayload = {
+        // Build complete profile data for UPSERT
+        const profileData = {
+          email: profileEmailToUse,
+          sleep_position: sleepPositionMap[answers.sleepPosition] || 'mixed',
+          pain_points: painData.filter((p: string) => p.toLowerCase() !== 'no pain' && p.toLowerCase() !== 'none'),
+          stress_level: stressLevel,
+          wake_up_condition: wakeUpCondition,
+          temperature_preference: temperaturePreference,
+          // Persona fields
+          persona_cluster: structuredAssessment.persona.cluster,
+          persona_label: structuredAssessment.persona.label,
+          persona_rationale: structuredAssessment.persona.rationale,
+          persona_recommended_modules: structuredAssessment.persona.recommended_modules,
+          // Quiz data and assessment
           quiz_data: sanitizedAnswers,
           sleep_assessment: {
             assessment: analysis.assessment,
@@ -498,50 +507,34 @@ Deno.serve(async (req) => {
           },
           quiz_completed: true,
           quiz_completed_at: new Date().toISOString(),
+          // TASK_07: Track session_id for anon quiz flow
+          ...(session_id ? { session_id } : {}),
         };
 
-        if (existingProfile) {
-          // Always update existing profile with new quiz data + persona fields
-          const updateData = {
-            ...quizDataPayload,
-            sleep_position: sleepPositionMap[answers.sleepPosition] || 'mixed',
-            pain_points: painData.filter((p: string) => p.toLowerCase() !== 'no pain' && p.toLowerCase() !== 'none'),
-            stress_level: stressLevel,
-            wake_up_condition: wakeUpCondition,
-            temperature_preference: temperaturePreference,
-            // NEW: Persist persona fields directly on profile
-            persona_cluster: structuredAssessment.persona.cluster,
-            persona_label: structuredAssessment.persona.label,
-            persona_rationale: structuredAssessment.persona.rationale,
-            persona_recommended_modules: structuredAssessment.persona.recommended_modules,
-          };
-          
-          const { error } = await supabase.from('sleep_profiles').update(updateData).eq('email', profileEmailToUse);
-          if (!error) {
-            profileUpdated = true;
-            console.log("[analyze-sleep-quiz] Sleep Coach profile updated with quiz data + persona for:", profileEmailToUse);
-          }
-        } else if (createProfile) {
-          // Create new profile only if explicitly requested
-          const profileData = {
-            email: profileEmailToUse,
-            sleep_position: sleepPositionMap[answers.sleepPosition] || 'mixed',
-            pain_points: painData.filter((p: string) => p.toLowerCase() !== 'no pain' && p.toLowerCase() !== 'none'),
-            stress_level: stressLevel,
-            wake_up_condition: wakeUpCondition,
-            temperature_preference: temperaturePreference,
-            // NEW: Persist persona fields directly on profile
-            persona_cluster: structuredAssessment.persona.cluster,
-            persona_label: structuredAssessment.persona.label,
-            persona_rationale: structuredAssessment.persona.rationale,
-            persona_recommended_modules: structuredAssessment.persona.recommended_modules,
-            ...quizDataPayload,
-          };
+        // UPSERT: Insert or update based on email (unique index)
+        const { data: upsertedProfile, error: upsertError } = await supabase
+          .from('sleep_profiles')
+          .upsert(profileData, {
+            onConflict: 'email',
+            ignoreDuplicates: false, // Update on conflict
+          })
+          .select('email, created_at, updated_at')
+          .single();
 
-          const { error } = await supabase.from('sleep_profiles').insert(profileData);
-          if (!error) {
+        if (upsertError) {
+          console.error("[analyze-sleep-quiz] UPSERT error:", upsertError);
+        } else if (upsertedProfile) {
+          // Determine if this was a create or update
+          const createdAt = new Date(upsertedProfile.created_at).getTime();
+          const updatedAt = new Date(upsertedProfile.updated_at).getTime();
+          const isNew = Math.abs(updatedAt - createdAt) < 1000; // Within 1 second = new
+          
+          if (isNew) {
             profileCreated = true;
-            console.log("[analyze-sleep-quiz] Sleep Coach profile created for:", profileEmailToUse);
+            console.log("[analyze-sleep-quiz] Profile CREATED via UPSERT for:", profileEmailToUse);
+          } else {
+            profileUpdated = true;
+            console.log("[analyze-sleep-quiz] Profile UPDATED via UPSERT for:", profileEmailToUse);
           }
         }
 

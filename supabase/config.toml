@@ -329,3 +329,15 @@ verify_jwt = false
 # Generate Creative Briefs - AI-powered Higgsfield prompt generator (public, uses internal token)
 [functions.generate-creative-briefs]
 verify_jwt = false
+
+# ============================================================
+# COACH PREVIEW (Quiz Completers)
+# ============================================================
+
+# Coach Preview Get - Public for quiz flow (validates session_id internally)
+[functions.coach-preview-get]
+verify_jwt = false
+
+# Coach Preview Create - Public for quiz flow (validates session_id internally)
+[functions.coach-preview-create]
+verify_jwt = false
