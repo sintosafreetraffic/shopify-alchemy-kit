@@ -129,25 +129,48 @@ export function useEPSR(): UseEPSRReturn {
         throw new Error("Failed to load historical run");
       }
 
-      // Reconstruct EPSROutput from stored session data
-      const reconstructedOutput: EPSROutput = {
-        safety_scope: "educational",
-        mode: data.mode as EPSROutput["mode"],
-        current_signals: (data.user_signals as Record<string, unknown>)?.sleep_logs 
-          ? ((data.user_signals as Record<string, unknown>).sleep_logs as Array<{ date: string; sleep_quality: number; pain_level_morning: number }>)
-              .slice(0, 5)
-              .map((log) => `${log.date}: Quality ${log.sleep_quality}/5, Pain ${log.pain_level_morning}/5`)
-          : [],
-        pattern_candidates: (data.pattern_candidates as unknown as EPSRPatternCandidate[]) || [],
-        evidence_links: [],
-        interpretation: "Historical run loaded from saved session.",
-        uncertainty_missing: [],
-        experiment: data.experiment_proposed as unknown as EPSRExperiment | undefined,
-        ledger_writeback: data.ledger_writeback as unknown as EPSRLedgerWriteback | undefined,
-        clinical_flags: data.clinical_flags || undefined,
-      };
+      // Try to parse the full output from raw_ai_response first (contains all data)
+      let parsedOutput: EPSROutput | null = null;
+      if (data.raw_ai_response) {
+        try {
+          // raw_ai_response may be wrapped in markdown code blocks
+          let jsonStr = data.raw_ai_response as string;
+          const jsonMatch = jsonStr.match(/```json\s*([\s\S]*?)\s*```/);
+          if (jsonMatch) {
+            jsonStr = jsonMatch[1];
+          }
+          parsedOutput = JSON.parse(jsonStr) as EPSROutput;
+        } catch (parseErr) {
+          console.warn("Failed to parse raw_ai_response, falling back to partial reconstruction:", parseErr);
+        }
+      }
 
-      setOutput(reconstructedOutput);
+      // If we successfully parsed the full output, use it
+      if (parsedOutput) {
+        // Ensure mode matches the stored value
+        parsedOutput.mode = data.mode as EPSROutput["mode"];
+        setOutput(parsedOutput);
+      } else {
+        // Fallback: Reconstruct EPSROutput from stored session data (partial)
+        const reconstructedOutput: EPSROutput = {
+          safety_scope: "educational",
+          mode: data.mode as EPSROutput["mode"],
+          current_signals: (data.user_signals as Record<string, unknown>)?.sleep_logs 
+            ? ((data.user_signals as Record<string, unknown>).sleep_logs as Array<{ date: string; sleep_quality: number; pain_level_morning: number }>)
+                .slice(0, 5)
+                .map((log) => `${log.date}: Quality ${log.sleep_quality}/5, Pain ${log.pain_level_morning}/5`)
+            : [],
+          pattern_candidates: (data.pattern_candidates as unknown as EPSRPatternCandidate[]) || [],
+          evidence_links: [],
+          interpretation: "Historical run loaded from saved session (partial data).",
+          uncertainty_missing: [],
+          experiment: data.experiment_proposed as unknown as EPSRExperiment | undefined,
+          ledger_writeback: data.ledger_writeback as unknown as EPSRLedgerWriteback | undefined,
+          clinical_flags: data.clinical_flags || undefined,
+        };
+        setOutput(reconstructedOutput);
+      }
+
       setSelectedHistoryId(id);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to load run";
