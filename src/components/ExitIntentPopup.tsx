@@ -24,6 +24,9 @@ import { useCartStore } from "@/stores/cartStore";
 import { trackEvent } from "@/lib/analytics";
 import { Truck, Moon, Shield } from "lucide-react";
 
+// Get setCartOpen from store outside component for cleaner access
+const getSetCartOpen = () => useCartStore.getState().setCartOpen;
+
 const SESSION_KEY = "rbn_exit_intent_shown";
 
 // Routes where exit intent should NOT trigger
@@ -111,7 +114,7 @@ export const ExitIntentPopup = () => {
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, [isExcludedRoute, hasShownThisSession]);
 
-  // Accept handler
+  // Accept handler - opens cart drawer for immediate checkout
   const handleAccept = () => {
     setIsOpen(false);
     
@@ -120,8 +123,8 @@ export const ExitIntentPopup = () => {
       cart_item_count: items.length,
     });
 
-    // Scroll to top where cart access is
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // Open cart drawer so user can complete checkout immediately
+    getSetCartOpen()(true);
   };
 
   // Dismiss handler
