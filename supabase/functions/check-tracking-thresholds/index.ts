@@ -172,15 +172,19 @@ serve(async (req) => {
       console.error("[check-tracking-thresholds] Error fetching health data:", healthError);
     }
 
-    if (healthData) {
-      // success_rate and error_rate are stored as decimals (0-1), convert to percentages for comparison
+    // Track if yesterday had zero orders (used for consecutive zero-order check)
+    const yesterdayOrderCount = healthData?.orders_seen || 0;
+    console.log(`[check-tracking-thresholds] day=${yesterdayStr} orders_seen=${yesterdayOrderCount}`);
+
+    if (healthData && yesterdayOrderCount > 0) {
+      // Only check rates when there were actual orders (skip zero-order days)
       const successRateDecimal = Number(healthData.success_rate) || 0;
       const errorRateDecimal = Number(healthData.error_rate) || 0;
       const successRate = successRateDecimal * 100; // Convert to percentage
       const errorRate = errorRateDecimal * 100; // Convert to percentage
 
       // Check success rate threshold
-      if (successRate < THRESHOLDS.SUCCESS_RATE_MIN && healthData.orders_seen > 0) {
+      if (successRate < THRESHOLDS.SUCCESS_RATE_MIN) {
         const severity = successRate < 80 ? "critical" : "warn";
         alerts.push({
           severity,
@@ -198,7 +202,7 @@ serve(async (req) => {
       }
 
       // Check error rate threshold
-      if (errorRate > THRESHOLDS.ERROR_RATE_MAX && healthData.orders_seen > 0) {
+      if (errorRate > THRESHOLDS.ERROR_RATE_MAX) {
         alerts.push({
           severity: errorRate > 25 ? "critical" : "warn",
           type: "high_error_rate",
@@ -208,6 +212,58 @@ serve(async (req) => {
             error_count: healthData.error_count,
             orders_seen: healthData.orders_seen,
             threshold: THRESHOLDS.ERROR_RATE_MAX,
+            day: yesterdayStr,
+          },
+        });
+      }
+    } else {
+      console.log(`[check-tracking-thresholds] Skipping rate checks - zero orders on ${yesterdayStr}`);
+    }
+
+    // ========================================================================
+    // CONSECUTIVE ZERO-ORDER DAYS CHECK
+    // Alert if 3+ consecutive days have zero orders (potential webhook issue)
+    // ========================================================================
+    const CONSECUTIVE_ZERO_ORDER_THRESHOLD = 3;
+    
+    // Fetch last N days of health data to check for consecutive zero-order days
+    const checkDaysBack = CONSECUTIVE_ZERO_ORDER_THRESHOLD + 1; // Check a bit more for safety
+    const oldestCheckDate = new Date(today.getTime() - checkDaysBack * 24 * 60 * 60 * 1000);
+    const oldestCheckDateStr = oldestCheckDate.toISOString().split('T')[0];
+
+    const { data: recentHealthData, error: recentHealthError } = await supabase
+      .from("tracking_health_daily")
+      .select("day, orders_seen")
+      .gte("day", oldestCheckDateStr)
+      .lte("day", yesterdayStr)
+      .order("day", { ascending: false });
+
+    if (recentHealthError) {
+      console.error("[check-tracking-thresholds] Error fetching recent health data:", recentHealthError);
+    }
+
+    if (recentHealthData && recentHealthData.length >= CONSECUTIVE_ZERO_ORDER_THRESHOLD) {
+      // Count consecutive zero-order days starting from yesterday
+      let consecutiveZeroDays = 0;
+      for (const dayData of recentHealthData) {
+        if ((dayData.orders_seen || 0) === 0) {
+          consecutiveZeroDays++;
+        } else {
+          break; // Stop counting once we hit a day with orders
+        }
+      }
+
+      console.log(`[check-tracking-thresholds] consecutive_zero_order_days=${consecutiveZeroDays}`);
+
+      if (consecutiveZeroDays >= CONSECUTIVE_ZERO_ORDER_THRESHOLD) {
+        alerts.push({
+          severity: consecutiveZeroDays >= 5 ? "critical" : "warn",
+          type: "no_orders_extended",
+          message: `No orders recorded for ${consecutiveZeroDays} consecutive days. This may indicate a webhook or tracking issue.`,
+          context: {
+            consecutive_days: consecutiveZeroDays,
+            threshold: CONSECUTIVE_ZERO_ORDER_THRESHOLD,
+            last_order_check_date: yesterdayStr,
             day: yesterdayStr,
           },
         });
