@@ -334,10 +334,15 @@ function processRawMetrics(raw: Record<string, number>): ProcessedMetrics {
   const reach = raw.TOTAL_IMPRESSION_USER || 0;
   const pinterestFrequency = raw.TOTAL_IMPRESSION_FREQUENCY || 0;
 
-  // Pinterest returns USD micro-dollars - we assume EUR≈USD for now
-  // TODO: Add proper currency conversion if needed
-  const spend = spendMicro / 1_000_000;
-  const revenue = revenueMicro / 1_000_000;
+  // Pinterest returns USD micro-dollars - convert to EUR for accurate ROAS
+  // Using fixed rate of 0.92 (1 USD = 0.92 EUR) for consistency
+  const USD_TO_EUR_RATE = 0.92;
+  const spendUsd = spendMicro / 1_000_000;
+  const revenueUsd = revenueMicro / 1_000_000;
+  
+  // Convert both spend and revenue from USD to EUR
+  const spend = Math.round(spendUsd * USD_TO_EUR_RATE * 100) / 100;
+  const revenue = Math.round(revenueUsd * USD_TO_EUR_RATE * 100) / 100;
 
   // Use Pinterest's native frequency if available, otherwise calculate from reach
   const frequency = pinterestFrequency > 0 
