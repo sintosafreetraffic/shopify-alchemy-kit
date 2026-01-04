@@ -534,12 +534,12 @@ export const CartDrawer = () => {
                                 <span className="text-xs text-muted-foreground line-through">
                                   ${(getItemCompareAtPrice(item)! * item.quantity).toFixed(2)}
                                 </span>
-                                <span className="font-bold text-sm">
+                                <span className="font-bold text-sm text-primary">
                                   ${(getItemPrice(item) * item.quantity).toFixed(2)}
                                 </span>
                               </>
                             ) : (
-                              <span className="font-bold text-sm">
+                              <span className="font-bold text-sm text-primary">
                                 ${(getItemPrice(item) * item.quantity).toFixed(2)}
                               </span>
                             )}
@@ -738,7 +738,7 @@ export const CartDrawer = () => {
                     
                     <div className="flex justify-between items-center pt-2 border-t">
                       <span className="text-base font-bold">Total</span>
-                      <div className="text-lg font-bold">
+                      <div className="text-lg font-bold text-primary">
                         ${finalTotal.toFixed(2)}
                       </div>
                     </div>
