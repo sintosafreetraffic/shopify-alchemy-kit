@@ -194,12 +194,12 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
           : `transition-all duration-200 ${shouldHide ? "translate-y-full opacity-0 pointer-events-none" : "translate-y-0 opacity-100"}`
       }`}
     >
-      <div className="container mx-auto px-4 py-3 max-w-full overflow-x-hidden">
+      <div className="container mx-auto px-4 py-2 max-w-full overflow-x-hidden">
         {!product ? (
           <div className="text-center text-sm text-muted-foreground">Loading...</div>
         ) : (
           <>
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex flex-row items-center justify-end gap-3 w-full">
               {/* Product Info */}
               <div className="flex items-center gap-3">
                 <div className="hidden sm:block w-12 h-12 bg-secondary/30 rounded-lg overflow-hidden flex-shrink-0">
@@ -287,7 +287,32 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                   </div>
                 )}
 
-                {/* Sleep Mask Quantity & Color Selector */}
+                {/* Pillow Quantity Selector */}
+                {isPillowProduct && (
+                  <div className="flex items-center gap-1 bg-primary/10 rounded-lg p-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      disabled={quantity <= 1}
+                      aria-label="Decrease quantity"
+                    >
+                      <Minus className="w-3 h-3" />
+                    </Button>
+                    <span className="text-sm font-semibold min-w-[2rem] text-center" aria-live="polite">{quantity}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => setQuantity(quantity + 1)}
+                      aria-label="Increase quantity"
+                    >
+                      <Plus className="w-3 h-3" />
+                    </Button>
+                  </div>
+                )}
+
                 {isSleepMask && (
                   <div className="flex items-center gap-2">
                     {/* Quantity Selector */}
