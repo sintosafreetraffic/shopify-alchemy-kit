@@ -295,12 +295,17 @@ const QuizRevealTracking = () => {
   }, [days, isAdmin]);
 
   // Calculate ROAS from ads spend + Shopify net revenue (after refunds)
+  // Both Pinterest spend and Shopify revenue should be in EUR for accurate comparison
   const overviewRoas = useMemo(() => {
     if (!adsReporting.data?.totals) return null;
     const { spend } = adsReporting.data.totals;
     
     // Use Shopify net revenue if available, otherwise fall back to Pinterest revenue
+    // Shopify store uses EUR, Pinterest spend is in EUR - no conversion needed
     const revenue = shopifyRevenueStats?.netRevenue ?? adsReporting.data.totals.revenue;
+    const shopifyCurrency = shopifyRevenueStats?.currency ?? "EUR";
+    
+    // Only calculate ROAS if both values are in the same currency (EUR)
     const roas = spend > 0 ? Math.round((revenue / spend) * 100) / 100 : 0;
     
     return { 
@@ -310,6 +315,7 @@ const QuizRevealTracking = () => {
       isShopifyRevenue: !!shopifyRevenueStats?.netRevenue,
       grossRevenue: shopifyRevenueStats?.grossRevenue,
       refunds: shopifyRevenueStats?.totalRefunds,
+      currency: shopifyCurrency,
     };
   }, [adsReporting.data?.totals, shopifyRevenueStats]);
 
@@ -1009,11 +1015,11 @@ const QuizRevealTracking = () => {
                       </p>
                       {overviewRoas && (
                         <div className="space-y-1 pt-2 border-t">
-                          <p>Gross Revenue: <strong>${overviewRoas.grossRevenue?.toFixed(2) ?? overviewRoas.revenue.toFixed(2)}</strong></p>
+                          <p>Gross Revenue: <strong>€{overviewRoas.grossRevenue?.toFixed(2) ?? overviewRoas.revenue.toFixed(2)}</strong></p>
                           {overviewRoas.refunds !== undefined && overviewRoas.refunds > 0 && (
-                            <p>Refunds: <strong className="text-red-500">-${overviewRoas.refunds.toFixed(2)}</strong></p>
+                            <p>Refunds: <strong className="text-red-500">-€{overviewRoas.refunds.toFixed(2)}</strong></p>
                           )}
-                          <p>Net Revenue: <strong className="text-green-600">${overviewRoas.revenue.toFixed(2)}</strong></p>
+                          <p>Net Revenue: <strong className="text-green-600">€{overviewRoas.revenue.toFixed(2)}</strong></p>
                           <p>Ad Spend: <strong>€{overviewRoas.spend.toFixed(2)}</strong></p>
                           <p className="pt-1 border-t mt-1">ROAS: <strong>{overviewRoas.roas.toFixed(2)}x</strong></p>
                         </div>
