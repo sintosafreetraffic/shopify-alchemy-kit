@@ -191,20 +191,23 @@ export default function AdsReportingSection() {
     setActiveOnlyCampaigns,
     activeOnlyAds,
     setActiveOnlyAds,
+    campaignsList,
   } = useAdsReporting();
 
-  // Extract unique campaigns and ad groups from entities
-  const { campaigns, adGroups, ads } = useMemo(() => {
-    if (!data?.entities) return { campaigns: [], adGroups: [], ads: [] };
+  // Use campaignsList from hook, plus extract ad groups/ads from current entities
+  const campaigns = useMemo(() => {
+    return campaignsList.map(c => ({ id: c.id, name: c.name }));
+  }, [campaignsList]);
+
+  // Extract ad groups and ads from entities (only available when level is AD_GROUP or PIN_PROMOTION)
+  const { adGroups, ads } = useMemo(() => {
+    if (!data?.entities) return { adGroups: [], ads: [] };
     
-    const campaignMap = new Map<string, { id: string; name: string }>();
     const adGroupMap = new Map<string, { id: string; name: string; campaignId?: string }>();
     const adsList: { id: string; name: string; campaignId?: string; adGroupId?: string }[] = [];
     
     data.entities.forEach(entity => {
-      if (entity.entity_type === "campaign") {
-        campaignMap.set(entity.id, { id: entity.id, name: entity.name });
-      } else if (entity.entity_type === "ad_group") {
+      if (entity.entity_type === "ad_group") {
         adGroupMap.set(entity.id, { id: entity.id, name: entity.name, campaignId: entity.campaign_id });
       } else if (entity.entity_type === "ad") {
         adsList.push({ 
@@ -213,10 +216,7 @@ export default function AdsReportingSection() {
           campaignId: entity.campaign_id,
           adGroupId: entity.ad_group_id 
         });
-        // Also track parent campaign/ad group
-        if (entity.campaign_id && entity.campaign_name) {
-          campaignMap.set(entity.campaign_id, { id: entity.campaign_id, name: entity.campaign_name });
-        }
+        // Also track parent ad group
         if (entity.ad_group_id && entity.ad_group_name) {
           adGroupMap.set(entity.ad_group_id, { 
             id: entity.ad_group_id, 
@@ -228,7 +228,6 @@ export default function AdsReportingSection() {
     });
     
     return {
-      campaigns: Array.from(campaignMap.values()).sort((a, b) => a.name.localeCompare(b.name)),
       adGroups: Array.from(adGroupMap.values()).sort((a, b) => a.name.localeCompare(b.name)),
       ads: adsList.sort((a, b) => a.name.localeCompare(b.name)),
     };
@@ -656,76 +655,98 @@ export default function AdsReportingSection() {
           </div>
         </div>
 
-        {/* Campaign/Ad Filters - Only show when we have entity data */}
-        {(level === "CAMPAIGN" || level === "AD_GROUP" || level === "PIN_PROMOTION") && data?.entities && data.entities.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-border/50 mt-3">
-            <span className="text-xs text-muted-foreground font-medium">Filter by:</span>
-            
-            {/* Campaign Filter */}
-            {campaigns.length > 0 && (
-              <Select value={selectedCampaignId || "all"} onValueChange={handleCampaignChange}>
-                <SelectTrigger className="h-8 w-[180px] text-xs bg-background">
-                  <SelectValue placeholder="All Campaigns" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover z-50">
-                  <SelectItem value="all" className="text-xs">All Campaigns</SelectItem>
-                  {campaigns.map(c => (
-                    <SelectItem key={c.id} value={c.id} className="text-xs">
-                      {c.name.length > 25 ? `${c.name.slice(0, 25)}...` : c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+        {/* Campaign/Ad Filters - Always show */}
+        <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-border/50 mt-3">
+          <span className="text-xs text-muted-foreground font-medium flex items-center gap-1">
+            <Filter className="h-3 w-3" />
+            Filter by campaign:
+          </span>
+          
+          {/* Campaign Filter */}
+          <Select 
+            value={selectedCampaignId || "all"} 
+            onValueChange={handleCampaignChange}
+            disabled={campaigns.length === 0}
+          >
+            <SelectTrigger className="h-8 w-[200px] text-xs bg-background">
+              <SelectValue placeholder={campaigns.length === 0 ? "Loading campaigns..." : "All Campaigns"} />
+            </SelectTrigger>
+            <SelectContent className="bg-popover z-50">
+              <SelectItem value="all" className="text-xs">All Campaigns</SelectItem>
+              {campaigns.map(c => (
+                <SelectItem key={c.id} value={c.id} className="text-xs">
+                  {c.name.length > 30 ? `${c.name.slice(0, 30)}...` : c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-            {/* Ad Group Filter - Only show when campaign is selected or at ad group level */}
-            {(selectedCampaignId || level === "AD_GROUP") && filteredAdGroups.length > 0 && (
-              <Select value={selectedAdGroupId || "all"} onValueChange={handleAdGroupChange}>
-                <SelectTrigger className="h-8 w-[180px] text-xs bg-background">
-                  <SelectValue placeholder="All Ad Groups" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover z-50">
-                  <SelectItem value="all" className="text-xs">All Ad Groups</SelectItem>
-                  {filteredAdGroups.map(ag => (
-                    <SelectItem key={ag.id} value={ag.id} className="text-xs">
-                      {ag.name.length > 25 ? `${ag.name.slice(0, 25)}...` : ag.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+          {/* Ad Group Filter - Show when campaign is selected */}
+          {selectedCampaignId && filteredAdGroups.length > 0 && (
+            <Select value={selectedAdGroupId || "all"} onValueChange={handleAdGroupChange}>
+              <SelectTrigger className="h-8 w-[200px] text-xs bg-background">
+                <SelectValue placeholder="All Ad Groups" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover z-50">
+                <SelectItem value="all" className="text-xs">All Ad Groups</SelectItem>
+                {filteredAdGroups.map(ag => (
+                  <SelectItem key={ag.id} value={ag.id} className="text-xs">
+                    {ag.name.length > 30 ? `${ag.name.slice(0, 30)}...` : ag.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
 
-            {/* Ad Filter - Only show when ad group is selected or at ad level */}
-            {(selectedAdGroupId || level === "PIN_PROMOTION") && filteredAds.length > 0 && (
-              <Select value={selectedAdId || "all"} onValueChange={handleAdChange}>
-                <SelectTrigger className="h-8 w-[180px] text-xs bg-background">
-                  <SelectValue placeholder="All Ads" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover z-50">
-                  <SelectItem value="all" className="text-xs">All Ads</SelectItem>
-                  {filteredAds.map(a => (
-                    <SelectItem key={a.id} value={a.id} className="text-xs">
-                      {a.name.length > 25 ? `${a.name.slice(0, 25)}...` : a.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+          {/* Ad Filter - Show when ad group is selected */}
+          {selectedAdGroupId && filteredAds.length > 0 && (
+            <Select value={selectedAdId || "all"} onValueChange={handleAdChange}>
+              <SelectTrigger className="h-8 w-[200px] text-xs bg-background">
+                <SelectValue placeholder="All Ads" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover z-50">
+                <SelectItem value="all" className="text-xs">All Ads</SelectItem>
+                {filteredAds.map(a => (
+                  <SelectItem key={a.id} value={a.id} className="text-xs">
+                    {a.name.length > 30 ? `${a.name.slice(0, 30)}...` : a.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
 
-            {/* Clear Filters Button */}
-            {hasEntityFilters && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearFilters}
-                className="h-8 text-xs gap-1"
-              >
-                <X className="h-3 w-3" />
-                Clear
-              </Button>
-            )}
-          </div>
-        )}
+          {/* Clear Filters Button */}
+          {hasEntityFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearFilters}
+              className="h-8 text-xs gap-1 text-amber-600 hover:text-amber-700"
+            >
+              <X className="h-3 w-3" />
+              Clear filters
+            </Button>
+          )}
+
+          {/* Active filter indicator with note */}
+          {hasEntityFilters && (
+            <TooltipProvider>
+              <UITooltip>
+                <TooltipTrigger>
+                  <Badge variant="secondary" className="text-xs gap-1 bg-amber-500/10 text-amber-600 border-amber-500/20">
+                    <Info className="h-3 w-3" />
+                    Filter active
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p className="text-sm">
+                    Graphs show account-level data. Entity tables below are filtered by your selection.
+                  </p>
+                </TooltipContent>
+              </UITooltip>
+            </TooltipProvider>
+          )}
+        </div>
       </CardHeader>
 
       <CardContent className="space-y-6">
