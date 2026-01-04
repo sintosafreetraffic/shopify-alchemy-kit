@@ -301,6 +301,34 @@ export function GarminSettingsCard({
 
       if (error) throw error;
 
+      // Update Klaviyo with wearable disconnection
+      try {
+        // Get remaining connected wearables
+        const { data: remainingSources } = await supabase
+          .from('sleep_sources')
+          .select('source')
+          .eq('user_id', userId)
+          .eq('status', 'connected');
+        
+        const connectedWearables = remainingSources?.map(s => s.source) || [];
+        const hasGarmin = connectedWearables.includes('garmin');
+        const hasApple = connectedWearables.includes('apple_health');
+        
+        await supabase.functions.invoke('klaviyo-profile', {
+          body: {
+            properties: {
+              wearable_connected: connectedWearables.length > 0,
+              connected_wearables: connectedWearables.length > 0 ? connectedWearables.join(', ') : 'none',
+              has_garmin: hasGarmin,
+              has_apple_health: hasApple,
+            },
+          },
+        });
+      } catch (klaviyoError) {
+        // Don't fail disconnect if Klaviyo update fails
+        console.warn('Failed to update Klaviyo on disconnect:', klaviyoError);
+      }
+
       toast({
         title: "Garmin disconnected",
         description: "Your historical sleep data is preserved.",
