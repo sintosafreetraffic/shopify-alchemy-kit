@@ -73,6 +73,7 @@ export const KneePillowHero = () => {
       addItem(cartItem);
       const toastId = toast.success("Added to cart!", {
         description: `1 pillow added to your cart.`,
+        duration: 1500,
         cancel: {
           label: "✕",
           onClick: () => {
