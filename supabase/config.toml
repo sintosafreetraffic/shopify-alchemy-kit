@@ -353,3 +353,7 @@ verify_jwt = true
 # EPSR Decay Cron - Auto-downgrades stale hypotheses (validates CRON_SECRET internally)
 [functions.epsr-decay-cron]
 verify_jwt = false
+
+# Ads Metrics Overview - Diagnostic health analysis (public, uses internal token)
+[functions.ads-metrics-overview]
+verify_jwt = false

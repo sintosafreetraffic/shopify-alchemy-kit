@@ -68,6 +68,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { AdsDecisionInsights } from "./AdsDecisionInsights";
+import { AdsMetricsOverview } from "./AdsMetricsOverview";
 import { EntityPerformanceTable } from "./EntityPerformanceTable";
 import { GenerateCreativesDialog } from "./GenerateCreativesDialog";
 import CombinedMetricsChart from "./CombinedMetricsChart";
@@ -857,7 +858,10 @@ export default function AdsReportingSection() {
               />
             </div>
 
-            {/* Decision Insights */}
+            {/* Metrics Overview - Diagnostic health analysis */}
+            <AdsMetricsOverview data={data} />
+
+            {/* Decision Insights - Prescriptive recommendations */}
             <AdsDecisionInsights data={data} />
 
             {/* Conversion Warning - only if no checkouts AND no insights already cover it */}
