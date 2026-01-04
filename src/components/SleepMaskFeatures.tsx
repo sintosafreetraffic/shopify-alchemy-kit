@@ -49,11 +49,11 @@ export const SleepMaskFeatures = () => {
               }`}
             >
               <div
-                className={`${
+                className={`-mx-4 md:mx-0 ${
                   feature.imagePosition === "right" ? "md:col-start-2" : ""
                 }`}
               >
-                <div className="bg-gradient-to-b from-background to-primary/10 p-12 rounded-lg">
+                <div className="bg-gradient-to-b from-background to-primary/10 p-0 md:p-12 md:rounded-lg">
                   <OptimizedImage
                     src={feature.image}
                     alt={feature.title}
