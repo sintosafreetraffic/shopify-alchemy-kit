@@ -281,6 +281,7 @@ export default function AdsReportingSection() {
     ROAS: entry.roas,
     Checkouts: entry.checkouts,
     Clicks: entry.clicks,
+    Impressions: entry.impressions,
     CTR: entry.ctr,
     CPM: entry.cpm,
     CPC: entry.cpc,
@@ -923,6 +924,50 @@ export default function AdsReportingSection() {
                           type="monotone"
                           dataKey="CPC"
                           stroke="hsl(35, 80%, 50%)"
+                          strokeWidth={2}
+                          dot={{ r: 2 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* Impressions Trend Chart */}
+                <Card className="bg-card/30 border-border/30">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Impressions Trend</CardTitle>
+                  </CardHeader>
+                  <CardContent className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                        <XAxis 
+                          dataKey="date" 
+                          tick={{ fontSize: 10 }} 
+                          stroke="hsl(var(--muted-foreground))"
+                        />
+                        <YAxis 
+                          tick={{ fontSize: 10 }} 
+                          stroke="hsl(var(--muted-foreground))"
+                          domain={[0, 'auto']}
+                          tickFormatter={(value) => value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "hsl(var(--card))",
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: "8px",
+                          }}
+                          formatter={(value: number) => [value.toLocaleString(), "Impressions"]}
+                          labelFormatter={(label, payload) => {
+                            const entry = payload?.[0]?.payload;
+                            return entry?.hasLag ? `${entry.fullDate} ⚠️` : entry?.fullDate || label;
+                          }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="Impressions"
+                          stroke="hsl(200, 70%, 50%)"
                           strokeWidth={2}
                           dot={{ r: 2 }}
                         />
