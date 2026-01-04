@@ -1,20 +1,42 @@
 // Performance: Using WebP images with lazy loading for below-fold content
 // Carousel is lazy-loaded to reduce initial bundle size
 import { Button } from "@/components/ui/button";
-import { Check, Shield, Moon, Truck, Loader2, Star, ImageIcon } from "lucide-react";
+import { Check, Shield, Moon, Truck, Loader2, Star, ImageIcon, ChevronDown } from "lucide-react";
 import { PolicyAccordion } from "./PolicyAccordion";
-import { useState, useEffect, useRef, Suspense, lazy } from "react";
+import { useState, useEffect, useRef, Suspense, lazy, useMemo } from "react";
 import { useCartStore } from "@/stores/cartStore";
-import { useShopifyProducts } from "@/hooks/useShopifyProducts";
+import { useShopifyProducts, useFreeGiftMaskProduct } from "@/hooks/useShopifyProducts";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import { trackPageVisit } from "@/lib/pinterest";
 import { trackViewedProduct } from "@/lib/klaviyo";
 import { useHeaderHeight } from "@/hooks/useHeaderHeight";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 // Using WebP variants for better compression
 import testimonialAvatar from "@/assets/testimonial-new-updated.webp";
 import eyeMaskGift from "@/assets/eye-mask-gift-new.webp";
 import consumerChoiceBadge from "@/assets/consumer-choice-badge-transparent.png";
+// Sleep mask color images
+import sleepMaskNavy from "@/assets/sleep-mask-navy.webp";
+import sleepMaskTurquoise from "@/assets/sleep-mask-turquoise.webp";
+import sleepMaskPink from "@/assets/sleep-mask-pink.webp";
+import sleepMaskGold from "@/assets/sleep-mask-gold.webp";
+import sleepMaskSilver from "@/assets/sleep-mask-silver.webp";
+import sleepMaskBlack from "@/assets/sleep-mask-black.webp";
+
+// Image mapping for sleep mask colors
+const sleepMaskColorImages: Record<string, string> = {
+  "Navy": sleepMaskNavy,
+  "Turquoise": sleepMaskTurquoise,
+  "Pink": sleepMaskPink,
+  "Gold": sleepMaskGold,
+  "Silver": sleepMaskSilver,
+  "Black": sleepMaskBlack,
+};
 
 // Lazy load the image carousel to reduce initial bundle
 const ProductImageCarousel = lazy(() => 
@@ -30,13 +52,29 @@ const CarouselFallback = () => (
 
 export const Hero = () => {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const { addItem, setCartOpen } = useCartStore();
+  const [selectedMaskColor, setSelectedMaskColor] = useState("Navy");
+  const { addItem, setCartOpen, setFreeMaskSelections } = useCartStore();
   const hasTrackedView = useRef(false);
   const headerHeight = useHeaderHeight();
 
   // Use centralized cached product data
   const { data: products, isLoading: productsLoading } = useShopifyProducts(10);
   const product = products?.[0] || null;
+  
+  // Get free gift mask product for variant IDs
+  const { data: freeGiftMaskProduct } = useFreeGiftMaskProduct();
+  
+  // Get mask variants for color selection
+  const maskVariants = useMemo(() => {
+    if (!freeGiftMaskProduct) return [];
+    return freeGiftMaskProduct.node.variants.edges.map(edge => ({
+      id: edge.node.id,
+      color: edge.node.selectedOptions.find(opt => opt.name === 'Color')?.value || edge.node.title,
+    }));
+  }, [freeGiftMaskProduct]);
+  
+  // Get selected mask image
+  const selectedMaskImage = sleepMaskColorImages[selectedMaskColor] || sleepMaskNavy;
 
   // Track product view once when product is loaded
   useEffect(() => {
@@ -64,6 +102,12 @@ export const Hero = () => {
       const variant = product.node.variants.edges[0].node;
       const quantity = 1;
       
+      // Set the free mask selection before adding to cart
+      const selectedMaskVariant = maskVariants.find(v => v.color === selectedMaskColor);
+      if (selectedMaskVariant) {
+        setFreeMaskSelections([{ variantId: selectedMaskVariant.id, color: selectedMaskColor }]);
+      }
+      
       const cartItem = {
         product,
         variantId: variant.id,
@@ -76,7 +120,7 @@ export const Hero = () => {
       
       addItem(cartItem);
       const toastId = toast.success("Added to cart!", {
-        description: `${quantity} ${quantity === 1 ? 'pillow' : 'pillows'} added to your cart.`,
+        description: `${quantity} ${quantity === 1 ? 'pillow' : 'pillows'} added with ${selectedMaskColor} sleep mask.`,
         cancel: {
           label: "✕",
           onClick: () => {
@@ -216,13 +260,60 @@ export const Hero = () => {
               </div>
             </div>
 
-            {/* Included Free Gift */}
+            {/* Included Free Gift with Color Selector */}
             <div className="flex items-center gap-3 bg-green-50 dark:bg-green-900/20 rounded-xl py-3 px-4 mb-4 border border-green-200 dark:border-green-800">
-              <img src={eyeMaskGift} alt="Included sleep mask" className="w-12 h-12 object-contain" loading="lazy" decoding="async" />
-              <div className="text-left">
+              <img 
+                src={selectedMaskImage} 
+                alt={`${selectedMaskColor} sleep mask`} 
+                className="w-12 h-12 object-contain rounded" 
+                loading="lazy" 
+                decoding="async" 
+              />
+              <div className="flex-1 text-left">
                 <p className="text-sm font-semibold text-green-700 dark:text-green-300">Sleep Mask Included</p>
-                <p className="text-xs text-green-600 dark:text-green-400">$29.99 value • Choose color at checkout</p>
+                <p className="text-xs text-green-600 dark:text-green-400">$29.99 value</p>
               </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button 
+                    type="button"
+                    className="flex items-center gap-1.5 text-sm font-medium text-green-700 dark:text-green-300 hover:text-green-800 dark:hover:text-green-200 transition-colors px-3 py-1.5 rounded-lg bg-green-100 dark:bg-green-800/50 hover:bg-green-200 dark:hover:bg-green-800"
+                  >
+                    <span className="capitalize">{selectedMaskColor}</span>
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent 
+                  className="w-44 p-2 z-[200] bg-background border border-border shadow-lg" 
+                  align="end"
+                  sideOffset={4}
+                >
+                  <div className="space-y-0.5">
+                    {maskVariants.map((variant) => (
+                      <button
+                        key={variant.id}
+                        type="button"
+                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors ${
+                          selectedMaskColor === variant.color
+                            ? 'bg-primary/10 text-primary font-medium'
+                            : 'hover:bg-secondary text-foreground'
+                        }`}
+                        onClick={() => setSelectedMaskColor(variant.color)}
+                      >
+                        <img 
+                          src={sleepMaskColorImages[variant.color] || sleepMaskNavy} 
+                          alt={variant.color}
+                          className="w-6 h-6 object-contain rounded"
+                        />
+                        <span className="capitalize">{variant.color}</span>
+                        {selectedMaskColor === variant.color && (
+                          <Check className="w-4 h-4 ml-auto text-primary" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <Button 
