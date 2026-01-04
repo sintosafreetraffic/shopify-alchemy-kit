@@ -249,7 +249,7 @@ function generateCacheKey(
   params: AdsReportingRequest
 ): string {
   // Bump this when parsing/response structure changes to avoid serving stale cached payloads.
-  const CACHE_VERSION = "v5";
+  const CACHE_VERSION = "v6";
 
   // Include active filters in cache key
   const activeFilters = `${params.active_only_campaigns ? 'ac' : ''}${params.active_only_ads ? 'aa' : ''}`;
@@ -866,34 +866,62 @@ async function fetchPinterestAnalytics(
     // Fetch campaigns and ad groups first for reference
     let campaigns = await fetchCampaigns(accessToken, adAccountId);
     if (params.active_only_campaigns) {
-      campaigns = campaigns.filter(c => c.status === "ACTIVE");
+      campaigns = campaigns.filter((c) => c.status === "ACTIVE");
     }
-    campaigns.forEach(c => campaignMap.set(c.id, { id: c.id, name: c.name }));
-    
+
+    // If a specific campaign is selected, only include ads under that campaign
+    const hasSelectedCampaigns =
+      params.selected_campaign_ids && params.selected_campaign_ids.length > 0;
+    if (hasSelectedCampaigns) {
+      const selectedSet = new Set(params.selected_campaign_ids);
+      campaigns = campaigns.filter((c) => selectedSet.has(c.id));
+      log("info", "filtered_by_selected_campaigns", {
+        level: "PIN_PROMOTION",
+        count: campaigns.length,
+        selected: params.selected_campaign_ids,
+      });
+    }
+
+    const allowedCampaignIds = new Set(campaigns.map((c) => c.id));
+    campaigns.forEach((c) => campaignMap.set(c.id, { id: c.id, name: c.name }));
+
     let adGroups = await fetchAdGroups(accessToken, adAccountId, campaignMap);
-    if (params.active_only_campaigns) {
-      const activeCampaignIds = new Set(campaigns.map(c => c.id));
-      adGroups = adGroups.filter(ag => ag.campaign_id && activeCampaignIds.has(ag.campaign_id));
+
+    // If active_only_campaigns OR a campaign is selected, restrict ad groups to those campaigns
+    if (params.active_only_campaigns || hasSelectedCampaigns) {
+      adGroups = adGroups.filter(
+        (ag) => ag.campaign_id && allowedCampaignIds.has(ag.campaign_id)
+      );
     }
-    adGroups.forEach(ag => adGroupMap.set(ag.id, { id: ag.id, name: ag.name, campaign_id: ag.campaign_id }));
-    
+
+    adGroups.forEach((ag) =>
+      adGroupMap.set(ag.id, { id: ag.id, name: ag.name, campaign_id: ag.campaign_id })
+    );
+
     let ads = await fetchAds(accessToken, adAccountId, campaignMap, adGroupMap);
-    // Filter ads by parent campaign
-    if (params.active_only_campaigns) {
-      const activeCampaignIds = new Set(campaigns.map(c => c.id));
-      ads = ads.filter(ad => ad.campaign_id && activeCampaignIds.has(ad.campaign_id));
+
+    // Restrict ads to selected/active campaigns
+    if (params.active_only_campaigns || hasSelectedCampaigns) {
+      ads = ads.filter((ad) => ad.campaign_id && allowedCampaignIds.has(ad.campaign_id));
     }
+
     // Filter by active ads if requested
     if (params.active_only_ads) {
-      ads = ads.filter(ad => ad.status === "ACTIVE");
+      ads = ads.filter((ad) => ad.status === "ACTIVE");
     }
+
     if (ads.length === 0) {
-      throw new Error("No ads found in this ad account");
+      throw new Error(
+        hasSelectedCampaigns
+          ? "No ads found for the selected campaign"
+          : "No ads found in this ad account"
+      );
     }
-    ads.forEach(ad => entityInfoMap.set(ad.id, ad));
+
+    ads.forEach((ad) => entityInfoMap.set(ad.id, ad));
     entityType = "ad";
     url = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/ads/analytics`);
-    url.searchParams.set("ad_ids", ads.map(ad => ad.id).join(","));
+    url.searchParams.set("ad_ids", ads.map((ad) => ad.id).join(","));
   } else {
     // ACCOUNT level: still fetch campaigns for entity breakdown
     let campaigns = await fetchCampaigns(accessToken, adAccountId);
