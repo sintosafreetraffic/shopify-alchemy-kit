@@ -42,6 +42,7 @@ const colorImages: Record<string, string> = {
 export const SleepMaskHero = () => {
   const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState<string>("");
+  const [isColorPickerVisible, setIsColorPickerVisible] = useState(true);
   const [product, setProduct] = useState<ShopifyProduct | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { addItem } = useCartStore();
@@ -247,43 +248,66 @@ export const SleepMaskHero = () => {
 
             {/* Color Selection */}
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-              <h3 className="font-bold text-lg mb-1">Choose Color</h3>
-              <p className="text-sm text-muted-foreground mb-3">Selected: <span className="font-semibold text-foreground">{selectedColor}</span></p>
-              
-              <div className="grid grid-cols-6 gap-3">
-                {availableColors.map((colorName) => (
-                  <div key={colorName} className="flex flex-col items-center gap-1">
-                    <button
-                      onClick={() => setSelectedColor(colorName)}
-                      className={`relative w-full aspect-square rounded-lg border-2 transition-all overflow-hidden bg-background ${
-                        selectedColor === colorName
-                          ? "border-primary ring-2 ring-primary ring-offset-2"
-                          : "border-border hover:border-primary/50"
-                      }`}
-                    >
-                      {colorImages[colorName] ? (
+              {isColorPickerVisible ? (
+                <>
+                  <h3 className="font-bold text-lg mb-1">Choose Color</h3>
+                  <p className="text-sm text-muted-foreground mb-3">Select your preferred color</p>
+                  
+                  <div className="grid grid-cols-6 gap-3">
+                    {availableColors.map((colorName) => (
+                      <div key={colorName} className="flex flex-col items-center gap-1">
+                        <button
+                          onClick={() => {
+                            setSelectedColor(colorName);
+                            setIsColorPickerVisible(false);
+                          }}
+                          className={`relative w-full aspect-square rounded-lg border-2 transition-all overflow-hidden bg-background ${
+                            selectedColor === colorName
+                              ? "border-primary ring-2 ring-primary ring-offset-2"
+                              : "border-border hover:border-primary/50"
+                          }`}
+                        >
+                          {colorImages[colorName] ? (
+                            <img 
+                              src={colorImages[colorName]} 
+                              alt={colorName}
+                              className="w-full h-full object-contain p-1"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <span className="text-xs font-medium text-center px-1">{colorName}</span>
+                            </div>
+                          )}
+                        </button>
+                        <span className={`text-[10px] font-medium text-center ${selectedColor === colorName ? 'text-primary' : 'text-muted-foreground'}`}>
+                          {colorName}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-lg border-2 border-primary overflow-hidden bg-background">
+                      {colorImages[selectedColor] && (
                         <img 
-                          src={colorImages[colorName]} 
-                          alt={colorName}
+                          src={colorImages[selectedColor]} 
+                          alt={selectedColor}
                           className="w-full h-full object-contain p-1"
                         />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <span className="text-xs font-medium text-center px-1">{colorName}</span>
-                        </div>
                       )}
-                      {selectedColor === colorName && (
-                        <div className="absolute inset-0 bg-primary/10 flex items-center justify-center">
-                          <Check className="w-6 h-6 text-primary drop-shadow-md" />
-                        </div>
-                      )}
-                    </button>
-                    <span className={`text-[10px] font-medium text-center ${selectedColor === colorName ? 'text-primary' : 'text-muted-foreground'}`}>
-                      {colorName}
-                    </span>
+                    </div>
+                    <div>
+                      <p className="font-bold text-lg">Color: {selectedColor}</p>
+                      <p className="text-sm text-muted-foreground flex items-center gap-1">
+                        <Check className="w-4 h-4 text-primary" />
+                        Selected
+                      </p>
+                    </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
             </div>
 
             {/* Quantity Selection */}

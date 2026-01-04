@@ -48,6 +48,7 @@ export const CartDrawer = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [shouldBounce, setShouldBounce] = useState(false);
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
+  const [openColorPickerIndex, setOpenColorPickerIndex] = useState<number | null>(null);
   
   const { 
     items, 
@@ -584,55 +585,76 @@ export const CartDrawer = () => {
                                   Silk Sleep Mask
                                 </p>
                               </div>
-                              <Popover modal={true}>
-                                <PopoverTrigger asChild>
-                                  <button 
-                                    type="button"
-                                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded hover:bg-secondary/50"
-                                    aria-label={`Change color for mask ${index + 1}`}
+                              {openColorPickerIndex === index ? (
+                                <Popover modal={true} open={true} onOpenChange={(open) => !open && setOpenColorPickerIndex(null)}>
+                                  <PopoverTrigger asChild>
+                                    <button 
+                                      type="button"
+                                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded hover:bg-secondary/50"
+                                      aria-label={`Change color for mask ${index + 1}`}
+                                    >
+                                      <span className="capitalize">{selectedColor}</span>
+                                      <ChevronDown className="w-3 h-3" />
+                                    </button>
+                                  </PopoverTrigger>
+                                  <PopoverContent 
+                                    className="w-40 p-2 z-[200] bg-background border border-border shadow-lg" 
+                                    align="end"
+                                    sideOffset={4}
+                                    onOpenAutoFocus={(e) => e.preventDefault()}
                                   >
-                                    <span className="capitalize">{selectedColor}</span>
-                                    <ChevronDown className="w-3 h-3" />
-                                  </button>
-                                </PopoverTrigger>
-                                <PopoverContent 
-                                  className="w-40 p-2 z-[200] bg-background border border-border shadow-lg" 
-                                  align="end"
-                                  sideOffset={4}
-                                  onOpenAutoFocus={(e) => e.preventDefault()}
-                                >
-                                  <div className="space-y-0.5">
-                                    {maskVariants.map((variant) => (
-                                      <button
-                                        key={variant.id}
-                                        type="button"
-                                        onClick={() => updateFreeMaskColor(index, variant.id, variant.color)}
-                                        className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors ${
-                                          selection?.variantId === variant.id 
-                                            ? 'bg-secondary text-foreground' 
-                                            : 'hover:bg-secondary/50 text-muted-foreground'
-                                        }`}
-                                      >
-                                        <div 
-                                          className="w-4 h-4 rounded-full border border-border flex-shrink-0"
-                                          style={{ 
-                                            backgroundColor: variant.color === 'Navy' ? '#1e3a8a' :
-                                                            variant.color === 'Turquoise' ? '#06b6d4' :
-                                                            variant.color === 'Pink' ? '#ec4899' :
-                                                            variant.color === 'Gold' ? '#fbbf24' :
-                                                            variant.color === 'Silver' ? '#94a3b8' :
-                                                            variant.color === 'Black' ? '#000000' : '#1e3a8a'
+                                    <div className="space-y-0.5">
+                                      {maskVariants.map((variant) => (
+                                        <button
+                                          key={variant.id}
+                                          type="button"
+                                          onClick={() => {
+                                            updateFreeMaskColor(index, variant.id, variant.color);
+                                            setOpenColorPickerIndex(null);
                                           }}
-                                        />
-                                        <span className="flex-1 text-left capitalize">{variant.color}</span>
-                                        {selection?.variantId === variant.id && (
-                                          <Check className="w-3 h-3 text-foreground" />
-                                        )}
-                                      </button>
-                                    ))}
-                                  </div>
-                                </PopoverContent>
-                              </Popover>
+                                          className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors ${
+                                            selection?.variantId === variant.id 
+                                              ? 'bg-secondary text-foreground' 
+                                              : 'hover:bg-secondary/50 text-muted-foreground'
+                                          }`}
+                                        >
+                                          <div 
+                                            className="w-4 h-4 rounded-full border border-border flex-shrink-0"
+                                            style={{ 
+                                              backgroundColor: variant.color === 'Navy' ? '#1e3a8a' :
+                                                              variant.color === 'Turquoise' ? '#06b6d4' :
+                                                              variant.color === 'Pink' ? '#ec4899' :
+                                                              variant.color === 'Gold' ? '#fbbf24' :
+                                                              variant.color === 'Silver' ? '#94a3b8' :
+                                                              variant.color === 'Black' ? '#000000' : '#1e3a8a'
+                                            }}
+                                          />
+                                          <span className="flex-1 text-left capitalize">{variant.color}</span>
+                                          {selection?.variantId === variant.id && (
+                                            <Check className="w-3 h-3 text-foreground" />
+                                          )}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
+                              ) : (
+                                <div className="flex items-center gap-1 text-xs text-foreground px-2 py-1">
+                                  <div 
+                                    className="w-4 h-4 rounded-full border border-border flex-shrink-0"
+                                    style={{ 
+                                      backgroundColor: selectedColor === 'Navy' ? '#1e3a8a' :
+                                                      selectedColor === 'Turquoise' ? '#06b6d4' :
+                                                      selectedColor === 'Pink' ? '#ec4899' :
+                                                      selectedColor === 'Gold' ? '#fbbf24' :
+                                                      selectedColor === 'Silver' ? '#94a3b8' :
+                                                      selectedColor === 'Black' ? '#000000' : '#1e3a8a'
+                                    }}
+                                  />
+                                  <span className="capitalize">{selectedColor}</span>
+                                  <Check className="w-3 h-3 text-primary" />
+                                </div>
+                              )}
                             </div>
                           );
                         })}
