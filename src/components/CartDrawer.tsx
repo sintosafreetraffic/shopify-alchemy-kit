@@ -49,6 +49,8 @@ export const CartDrawer = () => {
   const [shouldBounce, setShouldBounce] = useState(false);
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
   const [openColorPickerIndex, setOpenColorPickerIndex] = useState<number | null>(null);
+  // Track selected colors for sleep mask recommendations (keyed by product ID)
+  const [recommendationColors, setRecommendationColors] = useState<Record<string, string>>({});
   
   const { 
     items, 
@@ -203,8 +205,20 @@ export const CartDrawer = () => {
   // Products are now fetched via useRecommendedProducts and useProductPrices hooks
   // which use centralized caching - no need for manual fetch on cart open
 
-  const handleAddRecommendation = (product: ShopifyProduct) => {
-    const variant = product.node.variants.edges[0]?.node;
+  const handleAddRecommendation = (product: ShopifyProduct, selectedColor?: string) => {
+    // For sleep masks, use the selected color variant
+    let variant = product.node.variants.edges[0]?.node;
+    
+    if (selectedColor && product.node.title.toLowerCase().includes('silk deep sleep mask')) {
+      const colorVariant = product.node.variants.edges.find(v => 
+        v.node.selectedOptions.some(opt => opt.name === 'Color' && opt.value === selectedColor) &&
+        v.node.selectedOptions.some(opt => opt.name === 'Quantity' && opt.value === '1 Mask')
+      )?.node;
+      if (colorVariant) {
+        variant = colorVariant;
+      }
+    }
+    
     if (!variant) return;
 
     const cartItem = {
@@ -306,19 +320,27 @@ export const CartDrawer = () => {
             {recommendedProducts.map((product) => {
               const variant = product.node.variants.edges[0]?.node;
               const image = product.node.images.edges[0]?.node;
+              const isSleepMask = product.node.title.toLowerCase().includes('silk deep sleep mask');
+              const selectedColor = recommendationColors[product.node.id] || 'Navy';
+              const displayImage = isSleepMask ? (sleepMaskColorImages[selectedColor] || sleepMaskNavy) :
+                                   product.node.title.toLowerCase().includes('complete sleep bundle') ? completeSleepBundle : 
+                                   image?.url;
+              
+              // Get available colors for sleep mask
+              const colorOption = isSleepMask ? product.node.options?.find(opt => opt.name === 'Color') : null;
+              const availableColors = colorOption?.values || [];
               
               return (
                 <div
                   key={product.node.id}
                   className="border border-border rounded-lg p-3 bg-background hover:shadow-md transition-all"
                 >
-                   {image && (
+                   {displayImage && (
                     <div 
                       className="w-full aspect-square bg-secondary/20 rounded-md overflow-hidden mb-3 relative"
                     >
                       <img
-                        src={product.node.title.toLowerCase().includes('complete sleep bundle') ? completeSleepBundle : 
-                             product.node.title.toLowerCase().includes('silk deep sleep mask') ? sleepMaskNavy : image.url}
+                        src={displayImage}
                         alt={product.node.title}
                         className="w-full h-full object-cover"
                         loading="lazy"
@@ -326,9 +348,37 @@ export const CartDrawer = () => {
                       />
                     </div>
                   )}
-                  <h4 className="font-semibold text-sm leading-tight mb-3">
+                  <h4 className="font-semibold text-sm leading-tight mb-2">
                     {product.node.title.replace('RiseByNight', 'Rise By Night™')}
                   </h4>
+                  
+                  {/* Color selector for sleep masks */}
+                  {isSleepMask && availableColors.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-xs text-muted-foreground mb-1.5">Select color:</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {availableColors.map((color) => (
+                          <button
+                            key={color}
+                            onClick={() => setRecommendationColors(prev => ({ ...prev, [product.node.id]: color }))}
+                            className={`w-8 h-8 rounded-md border-2 overflow-hidden transition-all ${
+                              selectedColor === color 
+                                ? 'border-primary ring-1 ring-primary ring-offset-1' 
+                                : 'border-border hover:border-primary/50'
+                            }`}
+                            title={color}
+                          >
+                            <img 
+                              src={sleepMaskColorImages[color] || sleepMaskNavy}
+                              alt={color}
+                              className="w-full h-full object-contain"
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
                   <div className="flex items-center justify-between gap-2">
                     {variant && (
                       <p className="text-lg font-bold text-primary">
@@ -338,7 +388,7 @@ export const CartDrawer = () => {
                     <Button
                       size="sm"
                       className="relative overflow-hidden group hover:bg-black transition-all"
-                      onClick={() => handleAddRecommendation(product)}
+                      onClick={() => handleAddRecommendation(product, isSleepMask ? selectedColor : undefined)}
                     >
                       <span className="inline-block transition-all duration-300 group-hover:-translate-y-8 group-hover:opacity-0">
                         ADD TO CART
@@ -666,45 +716,82 @@ export const CartDrawer = () => {
                   {recommendedProducts.length > 0 && (
                     <div className="pt-2 border-t mt-2 lg:hidden">
                       <h3 className="text-xs font-semibold mb-1.5 text-muted-foreground">You may also like</h3>
-                      <div className="flex flex-col gap-1.5">
+                      <div className="flex flex-col gap-2">
                         {recommendedProducts.map((product) => {
                           const variant = product.node.variants.edges[0]?.node;
                           const image = product.node.images.edges[0]?.node;
+                          const isSleepMask = product.node.title.toLowerCase().includes('silk deep sleep mask');
+                          const selectedColor = recommendationColors[product.node.id] || 'Navy';
+                          const displayImage = isSleepMask ? (sleepMaskColorImages[selectedColor] || sleepMaskNavy) :
+                                               product.node.title.toLowerCase().includes('complete sleep bundle') ? completeSleepBundle : 
+                                               image?.url;
+                          
+                          // Get available colors for sleep mask
+                          const colorOption = isSleepMask ? product.node.options?.find(opt => opt.name === 'Color') : null;
+                          const availableColors = colorOption?.values || [];
                           
                           return (
                             <div 
                               key={product.node.id} 
-                              className="border rounded p-1.5 flex items-center gap-2 bg-secondary/30"
+                              className="border rounded p-2 bg-secondary/30"
                             >
-                              {image && (
-                                <div className="w-10 h-10 flex-shrink-0 bg-background rounded overflow-hidden relative">
-                                  <img
-                                    src={product.node.title.toLowerCase().includes('mask') ? sleepMaskNavy : 
-                                         product.node.title.toLowerCase().includes('complete sleep bundle') ? completeSleepBundle : image.url}
-                                    alt={product.node.title}
-                                    className="w-full h-full object-cover"
-                                    loading="lazy"
-                                    decoding="async"
-                                  />
+                              <div className="flex items-center gap-2">
+                                {displayImage && (
+                                  <div className="w-12 h-12 flex-shrink-0 bg-background rounded overflow-hidden relative">
+                                    <img
+                                      src={displayImage}
+                                      alt={product.node.title}
+                                      className="w-full h-full object-cover"
+                                      loading="lazy"
+                                      decoding="async"
+                                    />
+                                  </div>
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-medium text-xs leading-tight line-clamp-1">
+                                    {product.node.title.replace('RiseByNight', 'Rise By Night™')}
+                                  </h4>
+                                  {variant && (
+                                    <p className="text-xs font-semibold text-primary">
+                                      ${parseFloat(variant.price.amount).toFixed(2)}
+                                    </p>
+                                  )}
+                                </div>
+                                <Button
+                                  size="sm"
+                                  className="h-7 px-3 text-xs bg-black text-white hover:bg-black/90"
+                                  onClick={() => handleAddRecommendation(product, isSleepMask ? selectedColor : undefined)}
+                                >
+                                  ADD
+                                </Button>
+                              </div>
+                              
+                              {/* Color selector for sleep masks on mobile */}
+                              {isSleepMask && availableColors.length > 0 && (
+                                <div className="mt-2 pt-2 border-t border-border/50">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="text-[10px] text-muted-foreground">Color:</span>
+                                    {availableColors.map((color) => (
+                                      <button
+                                        key={color}
+                                        onClick={() => setRecommendationColors(prev => ({ ...prev, [product.node.id]: color }))}
+                                        className={`w-6 h-6 rounded border-2 overflow-hidden transition-all ${
+                                          selectedColor === color 
+                                            ? 'border-primary ring-1 ring-primary' 
+                                            : 'border-border hover:border-primary/50'
+                                        }`}
+                                        title={color}
+                                      >
+                                        <img 
+                                          src={sleepMaskColorImages[color] || sleepMaskNavy}
+                                          alt={color}
+                                          className="w-full h-full object-contain"
+                                        />
+                                      </button>
+                                    ))}
+                                  </div>
                                 </div>
                               )}
-                              <div className="flex-1 min-w-0">
-                                <h4 className="font-medium text-[10px] leading-tight line-clamp-1">
-                                  {product.node.title.replace('RiseByNight', 'Rise By Night™')}
-                                </h4>
-                                {variant && (
-                                  <p className="text-[10px] font-semibold">
-                                    ${parseFloat(variant.price.amount).toFixed(2)}
-                                  </p>
-                                )}
-                              </div>
-                              <Button
-                                size="sm"
-                                className="h-6 px-2 text-[10px] bg-black text-white hover:bg-black/90"
-                                onClick={() => handleAddRecommendation(product)}
-                              >
-                                ADD
-                              </Button>
                             </div>
                           );
                         })}
