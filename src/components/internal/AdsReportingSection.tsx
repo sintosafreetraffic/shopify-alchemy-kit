@@ -62,6 +62,7 @@ import { cn } from "@/lib/utils";
 import { AdsDecisionInsights } from "./AdsDecisionInsights";
 import { EntityPerformanceTable } from "./EntityPerformanceTable";
 import { GenerateCreativesDialog } from "./GenerateCreativesDialog";
+import CombinedMetricsChart from "./CombinedMetricsChart";
 
 
 // ============================================================================
@@ -683,7 +684,11 @@ export default function AdsReportingSection() {
 
             {/* Charts */}
             {chartData.length > 0 && (
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-4">
+                {/* Combined Metrics Overview Chart */}
+                <CombinedMetricsChart chartData={chartData} />
+
+                <div className="grid md:grid-cols-2 gap-4">
                 {/* Spend vs Revenue Chart */}
                 <Card className="bg-card/30 border-border/30">
                   <CardHeader className="pb-2">
@@ -1018,6 +1023,7 @@ export default function AdsReportingSection() {
                     </ResponsiveContainer>
                   </CardContent>
                 </Card>
+              </div>
               </div>
             )}
 
