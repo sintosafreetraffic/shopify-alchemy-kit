@@ -528,7 +528,7 @@ export const CartDrawer = () => {
                         
                         {/* Price + Quantity row */}
                         <div className="flex items-center justify-between gap-2 mt-2">
-                          <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
+                          <div className="flex flex-col min-w-0 flex-shrink">
                             {/* Simple price display - no more BOGO discounts */}
                             {getItemCompareAtPrice(item) ? (
                               <>
