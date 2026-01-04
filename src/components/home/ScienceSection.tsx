@@ -70,10 +70,12 @@ export function ScienceSection() {
                   transitionDelay: isInView ? `${150 + index * 75}ms` : "0ms" 
                 }}
               >
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 mb-5">
-                  <pillar.icon className="w-6 h-6 text-primary" />
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 flex-shrink-0">
+                    <pillar.icon className="w-5 h-5 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold">{pillar.title}</h3>
                 </div>
-                <h3 className="text-lg font-semibold mb-3">{pillar.title}</h3>
                 <p className="text-muted-foreground text-sm leading-relaxed">
                   {pillar.description}
                 </p>
