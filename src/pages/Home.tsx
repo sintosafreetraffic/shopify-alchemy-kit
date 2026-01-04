@@ -64,8 +64,10 @@ export default function Home() {
 
             <div className="grid md:grid-cols-2 gap-6">
               <div className="bg-background p-6 rounded-lg border">
-                <Users className="w-12 h-12 text-primary mb-4" />
-                <h3 className="text-2xl font-bold mb-3">Thousands of Happy Sleepers</h3>
+                <div className="flex items-center gap-3 mb-3">
+                  <Users className="w-10 h-10 text-primary flex-shrink-0" />
+                  <h3 className="text-xl md:text-2xl font-bold">Thousands of Happy Sleepers</h3>
+                </div>
                 <p className="text-muted-foreground text-lg">
                   Our community of satisfied customers wakes up refreshed every morning, free from neck pain and
                   discomfort.
@@ -73,8 +75,10 @@ export default function Home() {
               </div>
 
               <div className="bg-background p-6 rounded-lg border">
-                <Award className="w-12 h-12 text-primary mb-4" />
-                <h3 className="text-2xl font-bold mb-3">#1 Rated Products</h3>
+                <div className="flex items-center gap-3 mb-3">
+                  <Award className="w-10 h-10 text-primary flex-shrink-0" />
+                  <h3 className="text-xl md:text-2xl font-bold">#1 Rated Products</h3>
+                </div>
                 <p className="text-muted-foreground text-lg">
                   Scientifically tested and customer approved. Our products consistently receive top ratings for quality
                   and effectiveness.
@@ -82,8 +86,10 @@ export default function Home() {
               </div>
 
               <div className="bg-background p-6 rounded-lg border">
-                <img src={moonIcon} alt="" className="w-12 h-12 object-contain mb-4" />
-                <h3 className="text-2xl font-bold mb-3">100-Night Trial</h3>
+                <div className="flex items-center gap-3 mb-3">
+                  <img src={moonIcon} alt="" className="w-10 h-10 object-contain flex-shrink-0" />
+                  <h3 className="text-xl md:text-2xl font-bold">100-Night Trial</h3>
+                </div>
                 <p className="text-muted-foreground text-lg">
                   Try our products risk-free for 100 nights. If you're not sleeping better, we'll refund you—no
                   questions asked.
@@ -91,8 +97,10 @@ export default function Home() {
               </div>
 
               <div className="bg-background p-6 rounded-lg border">
-                <Shield className="w-12 h-12 text-primary mb-4" />
-                <h3 className="text-2xl font-bold mb-3">Guaranteed sleep improvement</h3>
+                <div className="flex items-center gap-3 mb-3">
+                  <Shield className="w-10 h-10 text-primary flex-shrink-0" />
+                  <h3 className="text-xl md:text-2xl font-bold">Guaranteed sleep improvement</h3>
+                </div>
                 <p className="text-muted-foreground text-lg">
                   Experience better sleep quality from night one, or your money back—no questions asked.
                 </p>
