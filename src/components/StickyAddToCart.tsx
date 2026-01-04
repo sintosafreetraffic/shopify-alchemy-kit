@@ -194,7 +194,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
           : `transition-all duration-200 ${shouldHide ? "translate-y-full opacity-0 pointer-events-none" : "translate-y-0 opacity-100"}`
       }`}
     >
-      <div className="container mx-auto px-4 py-3">
+      <div className="container mx-auto px-4 py-3 max-w-full overflow-x-hidden">
         {!product ? (
           <div className="text-center text-sm text-muted-foreground">Loading...</div>
         ) : (
@@ -228,7 +228,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
               </div>
 
               {/* Bundle Selection & Add to Cart */}
-              <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap justify-center sm:justify-end">
                 {/* Bundle Selector - Only show for sleep bundle, NOT pillows */}
                 {isSleepBundle && (
                   <div className="flex gap-2">
