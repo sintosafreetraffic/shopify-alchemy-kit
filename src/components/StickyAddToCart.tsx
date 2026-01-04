@@ -401,7 +401,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                 <Button 
                   onClick={handleAddToCart}
                   disabled={isCheckingOut}
-                  className="min-w-[140px] sm:flex-initial bg-black text-white hover:bg-primary transition-all relative overflow-hidden group"
+                  className="min-w-[140px] sm:flex-initial bg-primary text-primary-foreground hover:bg-black hover:text-white transition-all relative overflow-hidden group"
                 >
                   {isCheckingOut ? (
                     <>

@@ -213,7 +213,7 @@ export const KneePillowHero = () => {
             {/* Add to Cart Button */}
             <Button
               size="lg"
-              className="w-full text-lg md:text-xl py-6 font-bold shadow-lg hover:shadow-xl transition-all touch-manipulation animate-subtle-bounce bg-black text-white hover:bg-primary relative overflow-hidden group"
+              className="w-full text-lg md:text-xl py-6 font-bold shadow-lg hover:shadow-xl transition-all touch-manipulation animate-subtle-bounce bg-primary text-primary-foreground hover:bg-black hover:text-white relative overflow-hidden group"
               onClick={handleAddToCart}
               disabled={isCheckingOut || !product}
             >
