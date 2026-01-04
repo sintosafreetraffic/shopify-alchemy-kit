@@ -790,7 +790,7 @@ export default function AdsReportingSection() {
                         <Line
                           type="monotone"
                           dataKey="ROAS"
-                          stroke="hsl(var(--primary))"
+                          stroke="#eab308"
                           strokeWidth={2}
                           dot={{ r: 2 }}
                         />
