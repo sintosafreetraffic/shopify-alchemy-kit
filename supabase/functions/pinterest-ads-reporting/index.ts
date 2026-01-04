@@ -249,11 +249,17 @@ function generateCacheKey(
   params: AdsReportingRequest
 ): string {
   // Bump this when parsing/response structure changes to avoid serving stale cached payloads.
-  const CACHE_VERSION = "v4";
+  const CACHE_VERSION = "v5";
 
   // Include active filters in cache key
   const activeFilters = `${params.active_only_campaigns ? 'ac' : ''}${params.active_only_ads ? 'aa' : ''}`;
-  return `${CACHE_VERSION}:${adAccountId}:${params.level}:${params.start_date}:${params.end_date}:${params.granularity}:${params.click_window_days}:${params.view_window_days}:${activeFilters}`;
+  
+  // Include selected entity filters in cache key
+  const selectedCampaigns = params.selected_campaign_ids?.sort().join('_') || '';
+  const selectedAds = params.selected_ad_ids?.sort().join('_') || '';
+  const entityFilters = selectedCampaigns || selectedAds ? `:c${selectedCampaigns}:a${selectedAds}` : '';
+  
+  return `${CACHE_VERSION}:${adAccountId}:${params.level}:${params.start_date}:${params.end_date}:${params.granularity}:${params.click_window_days}:${params.view_window_days}:${activeFilters}${entityFilters}`;
 }
 
 async function getCachedData(
