@@ -282,6 +282,8 @@ export default function AdsReportingSection() {
     Checkouts: entry.checkouts,
     Clicks: entry.clicks,
     CTR: entry.ctr,
+    CPM: entry.cpm,
+    CPC: entry.cpc,
     hasLag: entry.has_attribution_lag,
   })) || [];
 
@@ -833,6 +835,94 @@ export default function AdsReportingSection() {
                           type="monotone"
                           dataKey="CTR"
                           stroke="hsl(142, 60%, 45%)"
+                          strokeWidth={2}
+                          dot={{ r: 2 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* CPM Trend Chart */}
+                <Card className="bg-card/30 border-border/30">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">CPM Trend</CardTitle>
+                  </CardHeader>
+                  <CardContent className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                        <XAxis 
+                          dataKey="date" 
+                          tick={{ fontSize: 10 }} 
+                          stroke="hsl(var(--muted-foreground))"
+                        />
+                        <YAxis 
+                          tick={{ fontSize: 10 }} 
+                          stroke="hsl(var(--muted-foreground))"
+                          domain={[0, 'auto']}
+                          tickFormatter={(value) => `€${value}`}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "hsl(var(--card))",
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: "8px",
+                          }}
+                          formatter={(value: number) => [`€${value.toFixed(2)}`, "CPM"]}
+                          labelFormatter={(label, payload) => {
+                            const entry = payload?.[0]?.payload;
+                            return entry?.hasLag ? `${entry.fullDate} ⚠️` : entry?.fullDate || label;
+                          }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="CPM"
+                          stroke="hsl(280, 60%, 55%)"
+                          strokeWidth={2}
+                          dot={{ r: 2 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* CPC Trend Chart */}
+                <Card className="bg-card/30 border-border/30">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">CPC Trend</CardTitle>
+                  </CardHeader>
+                  <CardContent className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                        <XAxis 
+                          dataKey="date" 
+                          tick={{ fontSize: 10 }} 
+                          stroke="hsl(var(--muted-foreground))"
+                        />
+                        <YAxis 
+                          tick={{ fontSize: 10 }} 
+                          stroke="hsl(var(--muted-foreground))"
+                          domain={[0, 'auto']}
+                          tickFormatter={(value) => `€${value}`}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "hsl(var(--card))",
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: "8px",
+                          }}
+                          formatter={(value: number) => [`€${value.toFixed(2)}`, "CPC"]}
+                          labelFormatter={(label, payload) => {
+                            const entry = payload?.[0]?.payload;
+                            return entry?.hasLag ? `${entry.fullDate} ⚠️` : entry?.fullDate || label;
+                          }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="CPC"
+                          stroke="hsl(35, 80%, 50%)"
                           strokeWidth={2}
                           dot={{ r: 2 }}
                         />

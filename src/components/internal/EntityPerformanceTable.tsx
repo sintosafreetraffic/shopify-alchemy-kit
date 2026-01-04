@@ -45,6 +45,8 @@ type SortableColumn =
   | "roas"
   | "clicks"
   | "ctr"
+  | "cpm"
+  | "cpc"
   | "checkouts"
   | "cpa";
 
@@ -492,6 +494,24 @@ export function EntityPerformanceTable({
                   CTR
                 </SortableHeader>
                 <SortableHeader
+                  column="cpm"
+                  currentSort={sortColumn}
+                  currentDirection={sortDirection}
+                  onSort={handleSort}
+                  className="text-right"
+                >
+                  CPM
+                </SortableHeader>
+                <SortableHeader
+                  column="cpc"
+                  currentSort={sortColumn}
+                  currentDirection={sortDirection}
+                  onSort={handleSort}
+                  className="text-right"
+                >
+                  CPC
+                </SortableHeader>
+                <SortableHeader
                   column="checkouts"
                   currentSort={sortColumn}
                   currentDirection={sortDirection}
@@ -649,6 +669,12 @@ export function EntityPerformanceTable({
                     </TableCell>
                     <TableCell className="text-xs text-right">
                       {entity.ctr.toFixed(2)}%
+                    </TableCell>
+                    <TableCell className="text-xs text-right">
+                      €{entity.cpm.toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-xs text-right">
+                      {entity.clicks > 0 ? `€${entity.cpc.toFixed(2)}` : "—"}
                     </TableCell>
                     <TableCell className="text-xs text-right">
                       {entity.checkouts}
