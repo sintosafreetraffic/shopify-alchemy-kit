@@ -6,7 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, Sparkles, Loader2, Moon, Bed, Thermometer, Brain, Sun } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sparkles, Loader2, Moon, Bed, Thermometer, Brain, Sun, Heart } from "lucide-react";
 
 interface ProfileWizardProps {
   email: string;
@@ -15,6 +15,7 @@ interface ProfileWizardProps {
 }
 
 const STEPS = [
+  { id: 'welcome', title: 'Your Personal Sleep Coach', icon: Heart, description: 'A few questions to personalize your experience' },
   { id: 'position', title: 'Sleep Position', icon: Bed, description: 'How do you typically sleep?' },
   { id: 'pain', title: 'Pain Points', icon: Moon, description: 'Where do you experience discomfort?' },
   { id: 'temperature', title: 'Temperature', icon: Thermometer, description: 'What\'s your ideal sleep temperature?' },
@@ -71,11 +72,12 @@ export const ProfileWizard = ({ email, onComplete, loading }: ProfileWizardProps
 
   const canProceed = () => {
     switch (currentStep) {
-      case 0: return !!sleepPosition;
-      case 1: return true; // Pain points optional
-      case 2: return !!temperature;
-      case 3: return !!stressLevel;
-      case 4: return !!wakeupCondition;
+      case 0: return true; // Welcome step - always can proceed
+      case 1: return !!sleepPosition;
+      case 2: return true; // Pain points optional
+      case 3: return !!temperature;
+      case 4: return !!stressLevel;
+      case 5: return !!wakeupCondition;
       default: return false;
     }
   };
@@ -198,6 +200,37 @@ export const ProfileWizard = ({ email, onComplete, loading }: ProfileWizardProps
         {/* Step Content */}
         <div className="min-h-[280px]">
           {currentStep === 0 && (
+            <div className="space-y-6 text-center py-4">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 text-left p-4 rounded-xl bg-primary/5 border border-primary/10">
+                  <div className="text-2xl">🎯</div>
+                  <div>
+                    <div className="font-medium text-sm">Personalized recommendations</div>
+                    <div className="text-xs text-muted-foreground">Based on your unique sleep patterns and preferences</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 text-left p-4 rounded-xl bg-primary/5 border border-primary/10">
+                  <div className="text-2xl">📊</div>
+                  <div>
+                    <div className="font-medium text-sm">Track your progress</div>
+                    <div className="text-xs text-muted-foreground">Quick daily check-ins to see what's working</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 text-left p-4 rounded-xl bg-primary/5 border border-primary/10">
+                  <div className="text-2xl">⌚</div>
+                  <div>
+                    <div className="font-medium text-sm">Connect your wearable (optional)</div>
+                    <div className="text-xs text-muted-foreground">Automatic sleep tracking from Garmin and more</div>
+                  </div>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground pt-2 border-t">
+                For educational purposes only. Not medical advice.
+              </p>
+            </div>
+          )}
+
+          {currentStep === 1 && (
             <div className="space-y-3">
               {SLEEP_POSITIONS.map(option => (
                 <OptionCard
@@ -212,7 +245,7 @@ export const ProfileWizard = ({ email, onComplete, loading }: ProfileWizardProps
             </div>
           )}
 
-          {currentStep === 1 && (
+          {currentStep === 2 && (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground text-center">
                 Select any areas where you experience pain or discomfort (optional)
@@ -231,7 +264,7 @@ export const ProfileWizard = ({ email, onComplete, loading }: ProfileWizardProps
             </div>
           )}
 
-          {currentStep === 2 && (
+          {currentStep === 3 && (
             <div className="space-y-3">
               {TEMPERATURE_OPTIONS.map(option => (
                 <OptionCard
@@ -246,7 +279,7 @@ export const ProfileWizard = ({ email, onComplete, loading }: ProfileWizardProps
             </div>
           )}
 
-          {currentStep === 3 && (
+          {currentStep === 4 && (
             <div className="space-y-3">
               {STRESS_LEVELS.map(option => (
                 <OptionCard
@@ -261,7 +294,7 @@ export const ProfileWizard = ({ email, onComplete, loading }: ProfileWizardProps
             </div>
           )}
 
-          {currentStep === 4 && (
+          {currentStep === 5 && (
             <div className="space-y-3">
               {WAKEUP_CONDITIONS.map(option => (
                 <OptionCard
