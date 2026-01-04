@@ -147,7 +147,7 @@ export const SleepMaskHero = () => {
   const totalPrice = pricePerMask * quantity;
 
   return (
-    <section className="pt-16 md:pt-20 pb-3 md:pb-6 bg-background overflow-visible">
+    <section className="pt-14 md:pt-16 pb-3 md:pb-6 bg-background overflow-visible">
       <div className="container mx-auto px-4 max-w-7xl overflow-visible">
         {/* Mobile Layout: Carousel at top, then title */}
         <div className="md:hidden space-y-3 md:space-y-4 mb-4 md:mb-6">
