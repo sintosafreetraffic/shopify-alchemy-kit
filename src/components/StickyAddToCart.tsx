@@ -228,7 +228,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
               </div>
 
               {/* Bundle Selection & Add to Cart */}
-              <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap justify-center sm:justify-end">
+              <div className="flex items-center gap-2 w-full sm:w-auto flex-nowrap justify-center sm:justify-end">
                 {/* Bundle Selector - Only show for sleep bundle, NOT pillows */}
                 {isSleepBundle && (
                   <div className="flex gap-2">
