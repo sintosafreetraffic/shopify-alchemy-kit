@@ -48,13 +48,13 @@ export const KneePillowImageCarousel = () => {
   return (
     <>
       {/* Mobile Carousel */}
-      <div className="md:hidden">
+      <div className="md:hidden -mx-4">
         <Carousel className="w-full" setApi={setApi}>
-          <CarouselContent>
+          <CarouselContent className="-ml-0">
             {images.map((item, index) => (
-              <CarouselItem key={index}>
+              <CarouselItem key={index} className="pl-0">
                 <div 
-                  className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 relative cursor-pointer hover:opacity-90 transition-opacity"
+                  className="overflow-hidden relative cursor-pointer hover:opacity-90 transition-opacity"
                   onClick={() => setExpandedImage(item.url)}
                 >
                   <img
@@ -75,17 +75,28 @@ export const KneePillowImageCarousel = () => {
           <CarouselNext className="right-2" />
         </Carousel>
         
-        {/* Carousel Indicators */}
-        <div className="flex justify-center gap-2 mt-4">
-          {images.map((_, index) => (
+        {/* Carousel Thumbnail Indicators */}
+        <div className="flex justify-center gap-2 mt-3 px-4">
+          {images.map((item, index) => (
             <button
               key={index}
               onClick={() => api?.scrollTo(index)}
-              className={`h-2 rounded-full transition-all ${
-                current === index ? 'w-8 bg-primary' : 'w-2 bg-gray-300'
+              className={`relative w-12 h-12 rounded-lg overflow-hidden transition-all ${
+                current === index 
+                  ? 'ring-2 ring-primary ring-offset-1' 
+                  : 'opacity-60 hover:opacity-100'
               }`}
               aria-label={`Go to slide ${index + 1}`}
-            />
+            >
+              <img
+                src={item.url}
+                alt={`Thumbnail ${index + 1}`}
+                className="w-full h-full object-cover"
+                loading="lazy"
+                width={48}
+                height={48}
+              />
+            </button>
           ))}
         </div>
       </div>
