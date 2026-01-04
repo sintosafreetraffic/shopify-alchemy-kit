@@ -368,7 +368,7 @@ export const CartDrawer = () => {
       </SheetTrigger>
       
       <SheetContent 
-        className="w-full sm:max-w-lg flex flex-col h-full"
+        className="w-full sm:max-w-lg flex flex-col h-full overflow-x-hidden"
         onInteractOutside={(e) => {
           const target = e.target as HTMLElement;
           // Prevent closing when clicking on recommendations panel or toast notifications
@@ -436,7 +436,7 @@ export const CartDrawer = () => {
           ) : (
             <>
               {/* Scrollable Cart Items + Trust Badges + Pricing */}
-              <div className="flex-1 overflow-y-auto pr-2 min-h-0 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
+              <div className="flex-1 overflow-y-auto overflow-x-hidden pr-2 min-h-0 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
                 <div className="space-y-2">
                 {/* Cart Items */}
                 {items.map((item) => {
@@ -527,27 +527,27 @@ export const CartDrawer = () => {
                         </div>
                         
                         {/* Price + Quantity row */}
-                        <div className="flex items-center justify-between mt-2">
-                          <div className="flex items-center gap-1.5">
+                        <div className="flex items-center justify-between gap-2 mt-2">
+                          <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
                             {/* Simple price display - no more BOGO discounts */}
                             {getItemCompareAtPrice(item) ? (
                               <>
-                                <span className="text-xs text-muted-foreground line-through">
+                                <span className="text-xs text-muted-foreground line-through whitespace-nowrap">
                                   ${(getItemCompareAtPrice(item)! * item.quantity).toFixed(2)}
                                 </span>
-                                <span className="font-bold text-sm text-primary">
+                                <span className="font-bold text-sm text-primary whitespace-nowrap">
                                   ${(getItemPrice(item) * item.quantity).toFixed(2)}
                                 </span>
                               </>
                             ) : (
-                              <span className="font-bold text-sm text-primary">
+                              <span className="font-bold text-sm text-primary whitespace-nowrap">
                                 ${(getItemPrice(item) * item.quantity).toFixed(2)}
                               </span>
                             )}
                           </div>
                           
                           {/* Compact quantity controls */}
-                          <div className="flex items-center border rounded-md h-7">
+                          <div className="flex items-center border rounded-md h-7 flex-shrink-0">
                             <button
                               className="h-full px-2 hover:bg-secondary/50 transition-colors"
                               onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
