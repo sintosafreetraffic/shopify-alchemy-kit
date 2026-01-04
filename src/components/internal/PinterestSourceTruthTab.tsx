@@ -667,8 +667,8 @@ export const PinterestSourceTruthTab = () => {
                 <YAxis type="category" dataKey="name" width={80} />
                 <Tooltip
                   formatter={(value: number, name: string) => [
-                    name === 'count' ? `${value} orders` : `€${value.toFixed(2)}`,
-                    name === 'count' ? 'Orders' : 'Value'
+                    name === 'Orders' ? `${value} orders` : `€${value.toFixed(2)}`,
+                    name === 'Orders' ? 'Orders' : 'Value'
                   ]}
                 />
                 <Legend />
