@@ -331,6 +331,120 @@ Deno.serve(async (req) => {
       expiresIn: expires_in,
     });
     
+    // ============================================================
+    // KLAVIYO TRACKING: Send wearable connected event
+    // ============================================================
+    try {
+      const klaviyoApiKey = Deno.env.get('KLAVIYO_PRIVATE_API_KEY');
+      
+      if (klaviyoApiKey) {
+        // Get user email from auth.users
+        const { data: userData } = await supabaseAdmin
+          .from('sleep_profiles')
+          .select('email')
+          .eq('id', userId)
+          .maybeSingle();
+        
+        // Also try auth.users if no sleep_profile
+        let userEmail = userData?.email;
+        if (!userEmail) {
+          const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(userId);
+          userEmail = authUser?.user?.email;
+        }
+        
+        if (userEmail) {
+          // Get all connected wearables for this user
+          const { data: allSources } = await supabaseAdmin
+            .from('sleep_sources')
+            .select('source')
+            .eq('user_id', userId)
+            .eq('status', 'connected');
+          
+          const connectedWearables = allSources?.map(s => s.source) || ['garmin'];
+          const hasGarmin = connectedWearables.includes('garmin');
+          const hasApple = connectedWearables.includes('apple_health');
+          
+          log('info', 'Sending Klaviyo wearable connected event', { userId, userEmail, connectedWearables });
+          
+          // Update Klaviyo profile with wearable properties
+          const profileSearchResponse = await fetch(
+            `https://a.klaviyo.com/api/profiles/?filter=equals(email,"${encodeURIComponent(userEmail)}")`,
+            {
+              headers: {
+                'Authorization': `Klaviyo-API-Key ${klaviyoApiKey}`,
+                'revision': '2024-02-15',
+              },
+            }
+          );
+          
+          const profileSearchData = await profileSearchResponse.json();
+          const profileId = profileSearchData.data?.[0]?.id;
+          
+          const wearableProperties = {
+            wearable_connected: true,
+            connected_wearables: connectedWearables.join(', '),
+            has_garmin: hasGarmin,
+            has_apple_health: hasApple,
+            wearable_connected_at: now.toISOString(),
+          };
+          
+          if (profileId) {
+            // Update existing profile
+            await fetch(`https://a.klaviyo.com/api/profiles/${profileId}/`, {
+              method: 'PATCH',
+              headers: {
+                'Authorization': `Klaviyo-API-Key ${klaviyoApiKey}`,
+                'Content-Type': 'application/json',
+                'revision': '2024-02-15',
+              },
+              body: JSON.stringify({
+                data: {
+                  type: 'profile',
+                  id: profileId,
+                  attributes: {
+                    properties: wearableProperties,
+                  },
+                },
+              }),
+            });
+          }
+          
+          // Send event
+          await fetch('https://a.klaviyo.com/api/events/', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Klaviyo-API-Key ${klaviyoApiKey}`,
+              'Content-Type': 'application/json',
+              'revision': '2024-02-15',
+            },
+            body: JSON.stringify({
+              data: {
+                type: 'event',
+                attributes: {
+                  metric: { data: { type: 'metric', attributes: { name: 'RBN_Wearable_Connected' } } },
+                  profile: { data: { type: 'profile', attributes: { email: userEmail } } },
+                  properties: {
+                    device_type: 'garmin',
+                    connected_wearables: connectedWearables.join(', '),
+                    has_garmin: hasGarmin,
+                    has_apple_health: hasApple,
+                  },
+                  time: now.toISOString(),
+                },
+              },
+            }),
+          });
+          
+          log('info', 'Klaviyo wearable tracking sent successfully');
+        }
+      }
+    } catch (klaviyoError) {
+      // Don't fail the OAuth flow if Klaviyo tracking fails
+      log('warn', 'Failed to send Klaviyo wearable tracking', { 
+        error: klaviyoError instanceof Error ? klaviyoError.message : String(klaviyoError) 
+      });
+    }
+    
     // Redirect to success page
     return Response.redirect(buildSuccessRedirect(redirectOrigin), 302);
     
