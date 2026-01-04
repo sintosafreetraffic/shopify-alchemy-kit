@@ -281,6 +281,7 @@ export default function AdsReportingSection() {
     ROAS: entry.roas,
     Checkouts: entry.checkouts,
     Clicks: entry.clicks,
+    CTR: entry.ctr,
     hasLag: entry.has_attribution_lag,
   })) || [];
 
@@ -782,6 +783,56 @@ export default function AdsReportingSection() {
                           type="monotone"
                           dataKey="ROAS"
                           stroke="hsl(var(--primary))"
+                          strokeWidth={2}
+                          dot={{ r: 2 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* CTR Trend Chart */}
+                <Card className="bg-card/30 border-border/30">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">CTR Trend</CardTitle>
+                  </CardHeader>
+                  <CardContent className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                        <XAxis 
+                          dataKey="date" 
+                          tick={{ fontSize: 10 }} 
+                          stroke="hsl(var(--muted-foreground))"
+                        />
+                        <YAxis 
+                          tick={{ fontSize: 10 }} 
+                          stroke="hsl(var(--muted-foreground))"
+                          domain={[0, (dataMax: number) => Math.max(dataMax * 1.2, 1)]}
+                          tickFormatter={(value) => `${value.toFixed(1)}%`}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "hsl(var(--card))",
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: "8px",
+                          }}
+                          formatter={(value: number) => [`${value.toFixed(2)}%`, "CTR"]}
+                          labelFormatter={(label, payload) => {
+                            const entry = payload?.[0]?.payload;
+                            return entry?.hasLag ? `${entry.fullDate} ⚠️` : entry?.fullDate || label;
+                          }}
+                        />
+                        <ReferenceLine 
+                          y={1} 
+                          stroke="hsl(var(--muted-foreground))" 
+                          strokeDasharray="5 5"
+                          label={{ value: "1% target", position: "right", fontSize: 10 }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="CTR"
+                          stroke="hsl(142, 60%, 45%)"
                           strokeWidth={2}
                           dot={{ r: 2 }}
                         />
