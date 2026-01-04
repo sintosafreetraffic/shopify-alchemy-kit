@@ -504,16 +504,6 @@ export const CartDrawer = () => {
                                 </div>
                               );
                             })()}
-                            {/* Other variant options (non-sleep mask or non-color options) */}
-                            {!item.product.node.title.toLowerCase().includes('silk deep sleep mask') && 
-                             item.selectedOptions.filter(option => option.value.toLowerCase() !== 'default title').length > 0 && (
-                              <p className="text-xs text-muted-foreground mt-0.5">
-                                {item.selectedOptions
-                                  .filter(option => option.value.toLowerCase() !== 'default title')
-                                  .map(option => option.value)
-                                  .join(' • ')}
-                              </p>
-                            )}
                           </div>
                           <Button
                             variant="ghost"
