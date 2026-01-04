@@ -33,6 +33,19 @@ export function ProductRecommendationCard({ profile, recommendations, ownedProdu
     ...ownedProducts.map(p => PRODUCT_SLUG_TO_NAME[p.product_slug] || p.product_slug),
   ]);
   
+  // Create a normalized set for better matching (handles "Rise By Night™ Ergonomic Sleep Pillow" vs "Ergonomic Sleep Pillow")
+  const normalizeProductName = (name: string): string => {
+    return name
+      .toLowerCase()
+      .replace(/rise by night[™]?\s*/gi, '')
+      .replace(/[™®]/g, '')
+      .trim();
+  };
+  
+  const normalizedOwnedNames = new Set(
+    Array.from(allOwnedNames).map(normalizeProductName)
+  );
+  
   if ((!recommendations || recommendations.length === 0) && allOwnedNames.size === 0) {
     return null;
   }
@@ -73,11 +86,27 @@ export function ProductRecommendationCard({ profile, recommendations, ownedProdu
 
   // Filter recommendations to exclude owned products
   const recommendedItems = (recommendations || [])
-    .filter(rec => !allOwnedNames.has(rec.product))
     .filter(rec => {
+      // Check exact match
+      if (allOwnedNames.has(rec.product)) return false;
+      
+      // Check normalized match (handles brand name variations)
+      if (normalizedOwnedNames.has(normalizeProductName(rec.product))) return false;
+      
       // Also check by slug
       const recLower = rec.product.toLowerCase().replace(/\s+/g, '_');
-      return !ownedSlugs.has(recLower);
+      if (ownedSlugs.has(recLower)) return false;
+      
+      // Check if any owned product name is contained in the recommendation
+      for (const ownedName of allOwnedNames) {
+        const normalizedOwned = normalizeProductName(ownedName);
+        const normalizedRec = normalizeProductName(rec.product);
+        if (normalizedOwned.includes(normalizedRec) || normalizedRec.includes(normalizedOwned)) {
+          return false;
+        }
+      }
+      
+      return true;
     })
     .map(rec => ({
       product: rec.product,
