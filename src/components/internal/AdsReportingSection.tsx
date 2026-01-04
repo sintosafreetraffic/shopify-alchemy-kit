@@ -858,11 +858,11 @@ export default function AdsReportingSection() {
               />
             </div>
 
-            {/* Metrics Overview - Diagnostic health analysis */}
-            <AdsMetricsOverview data={data} />
-
             {/* Decision Insights - Prescriptive recommendations */}
             <AdsDecisionInsights data={data} />
+
+            {/* Metrics Overview - Diagnostic health analysis with cross-metric insights */}
+            <AdsMetricsOverview data={data} />
 
             {/* Conversion Warning - only if no checkouts AND no insights already cover it */}
             {data.totals.checkouts === 0 && data.totals.add_to_carts > 0 && (
