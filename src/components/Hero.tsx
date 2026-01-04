@@ -191,8 +191,8 @@ export const Hero = () => {
               The #1 Rated Ergonomic Pillow in the U.S.
             </p>
 
-            {/* Price Display - Above USPs like reference */}
-            <div className="flex items-center gap-3 mt-2 mb-3">
+            {/* Price Display - Desktop Only (mobile price is above) */}
+            <div className="hidden md:flex items-center gap-3 mt-2 mb-3">
               <p className="text-xl md:text-2xl font-bold">${productPrice.toFixed(2)}</p>
             </div>
 
