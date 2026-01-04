@@ -337,7 +337,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
 
                       {/* Color Picker Dropdown */}
                       {showColorPicker && (
-                        <div className="absolute bottom-full mb-2 right-0 bg-background border border-border rounded-lg shadow-lg p-3 z-[110] min-w-[280px]">
+                        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-background border border-border rounded-lg shadow-lg p-3 z-[110] w-[280px] max-w-[calc(100vw-2rem)]">
                           <div className="grid grid-cols-3 gap-3">
                             {colors.map((color) => (
                               <button
