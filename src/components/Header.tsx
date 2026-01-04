@@ -1,6 +1,7 @@
 import { CartDrawer } from "./CartDrawer";
 import { NavLink } from "./NavLink";
 import { Link } from "react-router-dom";
+import { Mail, MapPin } from "lucide-react";
 import logo from "@/assets/risebynight-logo-official.png";
 import { Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -44,7 +45,7 @@ export const Header = () => {
                 <SheetTitle className="text-xl font-semibold">Menu</SheetTitle>
               </SheetHeader>
               
-              {/* Main Navigation */}
+              {/* Quick Links */}
               <nav className="flex flex-col gap-1">
                 <NavLink 
                   to="/" 
@@ -61,6 +62,27 @@ export const Header = () => {
                   About Us
                 </NavLink>
                 <NavLink 
+                  to="/sleep-quiz" 
+                  className="text-base font-medium text-foreground hover:text-primary hover:bg-muted/50 transition-colors py-3 px-2 rounded-md"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Sleep Assessment
+                </NavLink>
+                <NavLink 
+                  to="/benefits" 
+                  className="text-base font-medium text-foreground hover:text-primary hover:bg-muted/50 transition-colors py-3 px-2 rounded-md"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Benefits
+                </NavLink>
+                <NavLink 
+                  to="/reviews" 
+                  className="text-base font-medium text-foreground hover:text-primary hover:bg-muted/50 transition-colors py-3 px-2 rounded-md"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Reviews
+                </NavLink>
+                <NavLink 
                   to="/sleep-guides" 
                   className="text-base font-medium text-foreground hover:text-primary hover:bg-muted/50 transition-colors py-3 px-2 rounded-md"
                   onClick={() => setMobileMenuOpen(false)}
@@ -68,17 +90,31 @@ export const Header = () => {
                   Sleep Guides
                 </NavLink>
                 <NavLink 
+                  to="/guarantee" 
+                  className="text-base font-medium text-foreground hover:text-primary hover:bg-muted/50 transition-colors py-3 px-2 rounded-md"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Guarantee
+                </NavLink>
+                <NavLink 
+                  to="/collective" 
+                  className="text-base font-medium text-foreground hover:text-primary hover:bg-muted/50 transition-colors py-3 px-2 rounded-md"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Sleep Collective
+                </NavLink>
+                <NavLink 
                   to="/track" 
                   className="text-base font-medium text-foreground hover:text-primary hover:bg-muted/50 transition-colors py-3 px-2 rounded-md"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Track Your Order
+                  Track Order
                 </NavLink>
               </nav>
 
-              {/* Support Links */}
+              {/* Customer Service */}
               <div className="mt-8 pt-6 border-t border-border/50">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-2">Support</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-2">Customer Service</p>
                 <nav className="flex flex-col gap-1">
                   <NavLink 
                     to="/shipping" 
@@ -101,18 +137,39 @@ export const Header = () => {
                   >
                     FAQ
                   </NavLink>
+                  <NavLink 
+                    to="/terms" 
+                    className="text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors py-2.5 px-2 rounded-md"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Terms & Conditions
+                  </NavLink>
+                  <NavLink 
+                    to="/privacy-policy" 
+                    className="text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors py-2.5 px-2 rounded-md"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Privacy Policy
+                  </NavLink>
                 </nav>
               </div>
 
               {/* Contact */}
               <div className="mt-8 pt-6 border-t border-border/50">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-2">Contact</p>
-                <a 
-                  href="mailto:support@risebynight.com" 
-                  className="text-sm text-primary hover:underline block px-2"
-                >
-                  support@risebynight.com
-                </a>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-2">Contact Us</p>
+                <div className="space-y-3 px-2">
+                  <a 
+                    href="mailto:support@risebynight.com" 
+                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <Mail className="w-4 h-4 shrink-0" />
+                    support@risebynight.com
+                  </a>
+                  <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <MapPin className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>Loofdakstraat 10, 3036JN, ROTTERDAM</span>
+                  </div>
+                </div>
               </div>
             </SheetContent>
           </Sheet>
