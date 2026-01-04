@@ -13,9 +13,6 @@ import { SleepMaskFAQ } from "@/components/SleepMaskFAQ";
 const ReviewsSection = lazy(() => 
   import("@/components/ReviewsSection").then(mod => ({ default: mod.ReviewsSection }))
 );
-const SleepMaskVideoSection = lazy(() => 
-  import("@/components/SleepMaskVideoSection").then(mod => ({ default: mod.SleepMaskVideoSection }))
-);
 
 // Fallback for lazy-loaded sections
 const SectionFallback = () => (
@@ -34,9 +31,6 @@ const SleepMaskProduct = () => {
       <SleepMaskLookInside />
       <Suspense fallback={<SectionFallback />}>
         <ReviewsSection />
-      </Suspense>
-      <Suspense fallback={<SectionFallback />}>
-        <SleepMaskVideoSection />
       </Suspense>
       <SleepMaskFAQ />
       <GuaranteeSection />
