@@ -44,6 +44,7 @@ import {
   Legend,
 } from "recharts";
 import { TrackingThresholdSettings } from "./TrackingThresholdSettings";
+import { ExchangeRateSettings } from "./ExchangeRateSettings";
 import { AlertHistorySection } from "./AlertHistorySection";
 
 // Types
@@ -980,8 +981,11 @@ export default function WeeklyReviewTab() {
         )}
       </Card>
 
-      {/* Threshold Settings */}
-      <TrackingThresholdSettings />
+      {/* Settings Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <TrackingThresholdSettings />
+        <ExchangeRateSettings />
+      </div>
 
       {/* Section C & D: Alerts and Recovery side by side */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

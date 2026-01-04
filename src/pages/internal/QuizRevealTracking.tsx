@@ -294,10 +294,29 @@ const QuizRevealTracking = () => {
     fetchShopifyRevenue();
   }, [days, isAdmin]);
 
-  // Calculate ROAS from tracked revenue (purchase events) ÷ ad spend
-  // Note: tracked revenue is currently summed from our purchase events (USD), so we convert to EUR.
-  // If you want exact FX, we can fetch daily rates; for now this is a stable approximation.
-  const USD_TO_EUR_RATE = 0.92;
+  // Fetch exchange rate from app_settings
+  const [exchangeRate, setExchangeRate] = useState(0.92);
+  useEffect(() => {
+    const fetchRate = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("app_settings")
+          .select("value")
+          .eq("key", "usd_to_eur_rate")
+          .single();
+
+        if (!error && data?.value && typeof data.value === "object") {
+          const values = data.value as Record<string, unknown>;
+          if (typeof values.rate === "number") {
+            setExchangeRate(values.rate);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching exchange rate:", err);
+      }
+    };
+    fetchRate();
+  }, []);
 
   const overviewRoas = useMemo(() => {
     if (!adsReporting.data?.totals) return null;
@@ -305,7 +324,7 @@ const QuizRevealTracking = () => {
     const { spend } = adsReporting.data.totals;
 
     const trackedRevenueUsd = pinterestStats?.totalValue ?? 0;
-    const trackedRevenueEur = Math.round(trackedRevenueUsd * USD_TO_EUR_RATE * 100) / 100;
+    const trackedRevenueEur = Math.round(trackedRevenueUsd * exchangeRate * 100) / 100;
 
     const roas =
       spend > 0 && trackedRevenueEur > 0
@@ -318,9 +337,9 @@ const QuizRevealTracking = () => {
       trackedRevenueEur,
       roas,
       currency: "EUR" as const,
-      conversionRate: USD_TO_EUR_RATE,
+      conversionRate: exchangeRate,
     };
-  }, [adsReporting.data?.totals, pinterestStats?.totalValue]);
+  }, [adsReporting.data?.totals, pinterestStats?.totalValue, exchangeRate]);
 
   // Refresh client-side provider statuses
   const refreshProviderStatuses = useCallback(() => {

@@ -323,7 +323,7 @@ async function setCacheData(
 // PINTEREST API WITH RETRY LOGIC
 // ============================================================================
 
-function processRawMetrics(raw: Record<string, number>): ProcessedMetrics {
+function processRawMetrics(raw: Record<string, number>, usdToEurRate: number): ProcessedMetrics {
   const spendMicro = raw.SPEND_IN_MICRO_DOLLAR || 0;
   const revenueMicro = raw.TOTAL_CHECKOUT_VALUE_IN_MICRO_DOLLAR || 0;
   const impressions = raw.TOTAL_IMPRESSION || 0;
@@ -334,15 +334,13 @@ function processRawMetrics(raw: Record<string, number>): ProcessedMetrics {
   const reach = raw.TOTAL_IMPRESSION_USER || 0;
   const pinterestFrequency = raw.TOTAL_IMPRESSION_FREQUENCY || 0;
 
-  // Pinterest returns USD micro-dollars - convert to EUR for accurate ROAS
-  // Using fixed rate of 0.92 (1 USD = 0.92 EUR) for consistency
-  const USD_TO_EUR_RATE = 0.92;
+  // Pinterest returns USD micro-dollars - convert to EUR using configurable rate
   const spendUsd = spendMicro / 1_000_000;
   const revenueUsd = revenueMicro / 1_000_000;
   
   // Convert both spend and revenue from USD to EUR
-  const spend = Math.round(spendUsd * USD_TO_EUR_RATE * 100) / 100;
-  const revenue = Math.round(revenueUsd * USD_TO_EUR_RATE * 100) / 100;
+  const spend = Math.round(spendUsd * usdToEurRate * 100) / 100;
+  const revenue = Math.round(revenueUsd * usdToEurRate * 100) / 100;
 
   // Use Pinterest's native frequency if available, otherwise calculate from reach
   const frequency = pinterestFrequency > 0 
@@ -808,10 +806,37 @@ function isWithinAttributionLag(dateStr: string): boolean {
   return diffDays <= ATTRIBUTION_LAG_DAYS;
 }
 
+// Default exchange rate if not configured
+const DEFAULT_USD_TO_EUR_RATE = 0.92;
+
+async function getExchangeRate(supabase: SupabaseClient): Promise<number> {
+  try {
+    const { data, error } = await supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "usd_to_eur_rate")
+      .single();
+
+    if (error || !data?.value) {
+      log("info", "exchange_rate_using_default", { rate: DEFAULT_USD_TO_EUR_RATE });
+      return DEFAULT_USD_TO_EUR_RATE;
+    }
+
+    const value = data.value as Record<string, unknown>;
+    const rate = typeof value.rate === "number" ? value.rate : DEFAULT_USD_TO_EUR_RATE;
+    log("info", "exchange_rate_loaded", { rate });
+    return rate;
+  } catch (e) {
+    log("warn", "exchange_rate_fetch_failed", { error: String(e) });
+    return DEFAULT_USD_TO_EUR_RATE;
+  }
+}
+
 async function fetchPinterestAnalytics(
   accessToken: string,
   adAccountId: string,
-  params: AdsReportingRequest
+  params: AdsReportingRequest,
+  usdToEurRate: number
 ): Promise<{ response: AdsReportingResponse; latencyMs: number }> {
   const startTime = Date.now();
   
@@ -1222,7 +1247,7 @@ async function fetchPinterestAnalytics(
 
   // Build timeseries from date aggregates
   for (const [date, rawMetrics] of dateAggregates.entries()) {
-    const metrics = processRawMetrics(rawMetrics);
+    const metrics = processRawMetrics(rawMetrics, usdToEurRate);
     timeseries.push({
       date,
       ...metrics,
@@ -1259,7 +1284,7 @@ async function fetchPinterestAnalytics(
         TOTAL_CLICK_ADD_TO_CART: entry.TOTAL_CLICK_ADD_TO_CART || 0,
         TOTAL_CHECKOUT_VALUE_IN_MICRO_DOLLAR: entry.TOTAL_CHECKOUT_VALUE_IN_MICRO_DOLLAR || 0,
       };
-      const metrics = processRawMetrics(rawMetrics);
+      const metrics = processRawMetrics(rawMetrics, usdToEurRate);
       
       entities.push({
         id: campaignId,
@@ -1277,7 +1302,7 @@ async function fetchPinterestAnalytics(
       const entityInfo = entityInfoMap.get(entityId);
       const name = entityInfo?.name || `Unknown ${entityId}`;
       const creativeInfo = parseCreativeFromName(name);
-      const metrics = processRawMetrics(rawMetrics);
+      const metrics = processRawMetrics(rawMetrics, usdToEurRate);
 
       const creativeFinal =
         entityType === "campaign"
@@ -1357,7 +1382,7 @@ async function fetchPinterestAnalytics(
       }
     }
     
-    totals = processRawMetrics(filteredTotalsAccum);
+    totals = processRawMetrics(filteredTotalsAccum, usdToEurRate);
     log("info", "totals_recalculated_from_filtered_data", { 
       source: hasSelectedAds ? "ad_timeseries" : campaignAnalyticsData.length > 0 ? "campaign_analytics" : "campaign_timeseries",
       entry_count: dataForTotals.length,
@@ -1382,14 +1407,14 @@ async function fetchPinterestAnalytics(
       }
     }
     
-    totals = processRawMetrics(entityTotalsAccum);
+    totals = processRawMetrics(entityTotalsAccum, usdToEurRate);
     log("info", "totals_calculated_from_entities", { 
       entity_count: entityAccum.size,
       level: params.level,
       total_spend: totals.spend 
     });
   } else {
-    totals = processRawMetrics(totalsAccum);
+    totals = processRawMetrics(totalsAccum, usdToEurRate);
   }
   const now = new Date().toISOString();
 
@@ -1537,10 +1562,13 @@ Deno.serve(async (req: Request) => {
       throw tokenError;
     }
 
+    // Fetch exchange rate from app_settings
+    const usdToEurRate = await getExchangeRate(supabase);
+
     // Fetch from Pinterest
     let freshData: AdsReportingResponse;
     try {
-      const result = await fetchPinterestAnalytics(accessToken, PINTEREST_AD_ACCOUNT_ID, params);
+      const result = await fetchPinterestAnalytics(accessToken, PINTEREST_AD_ACCOUNT_ID, params, usdToEurRate);
       freshData = result.response;
     } catch (apiError) {
       const errorMsg = String(apiError);
