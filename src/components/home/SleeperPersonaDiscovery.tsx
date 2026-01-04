@@ -63,8 +63,8 @@ const personas = [
 
 export function SleeperPersonaDiscovery() {
   return (
-    <section className="py-10 md:py-12 bg-gradient-to-b from-background via-muted/10 to-background">
-      <div className="container mx-auto px-4">
+    <section className="py-10 md:py-12 bg-gradient-to-b from-background via-muted/10 to-background overflow-x-hidden">
+      <div className="container mx-auto px-4 max-w-full overflow-hidden">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="text-center mb-10 md:mb-12">
