@@ -76,7 +76,7 @@ export const SleepMaskImageCarousel = () => {
             <button
               key={index}
               onClick={() => api?.scrollTo(index)}
-              className={`w-12 h-12 rounded-full overflow-hidden transition-all flex-shrink-0 ${
+              className={`w-14 h-14 rounded-lg overflow-hidden transition-all flex-shrink-0 ${
                 current === index 
                   ? 'ring-2 ring-primary ring-offset-2' 
                   : 'opacity-60 hover:opacity-100'
