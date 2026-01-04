@@ -294,43 +294,33 @@ const QuizRevealTracking = () => {
     fetchShopifyRevenue();
   }, [days, isAdmin]);
 
-  // Calculate ROAS from ads spend + Shopify net revenue (after refunds)
-  // Pinterest spend is in EUR, Shopify revenue is in USD - need conversion
-  // Approximate USD to EUR rate (can be updated or fetched dynamically later)
+  // Calculate ROAS from tracked revenue (purchase events) ÷ ad spend
+  // Note: tracked revenue is currently summed from our purchase events (USD), so we convert to EUR.
+  // If you want exact FX, we can fetch daily rates; for now this is a stable approximation.
   const USD_TO_EUR_RATE = 0.92;
-  
+
   const overviewRoas = useMemo(() => {
     if (!adsReporting.data?.totals) return null;
-    const { spend } = adsReporting.data.totals; // EUR from Pinterest
-    
-    // Only use Shopify revenue - do NOT fall back to Pinterest revenue
-    // Pinterest revenue has attribution lag and shouldn't be used for real-time ROAS
-    const shopifyRevenueUsd = shopifyRevenueStats?.netRevenue ?? 0;
-    const shopifyGrossUsd = shopifyRevenueStats?.grossRevenue ?? 0;
-    const shopifyRefundsUsd = shopifyRevenueStats?.totalRefunds ?? 0;
-    
-    // Convert USD to EUR for accurate ROAS calculation
-    const revenueEur = Math.round(shopifyRevenueUsd * USD_TO_EUR_RATE * 100) / 100;
-    const grossRevenueEur = Math.round(shopifyGrossUsd * USD_TO_EUR_RATE * 100) / 100;
-    const refundsEur = Math.round(shopifyRefundsUsd * USD_TO_EUR_RATE * 100) / 100;
-    
-    // Calculate ROAS only if we have actual revenue AND spend
-    const roas = (spend > 0 && revenueEur > 0) ? Math.round((revenueEur / spend) * 100) / 100 : 0;
-    
-    return { 
-      spend, 
-      revenue: revenueEur,
-      revenueUsd: shopifyRevenueUsd,
+
+    const { spend } = adsReporting.data.totals;
+
+    const trackedRevenueUsd = pinterestStats?.totalValue ?? 0;
+    const trackedRevenueEur = Math.round(trackedRevenueUsd * USD_TO_EUR_RATE * 100) / 100;
+
+    const roas =
+      spend > 0 && trackedRevenueEur > 0
+        ? Math.round((trackedRevenueEur / spend) * 100) / 100
+        : 0;
+
+    return {
+      spend,
+      trackedRevenueUsd,
+      trackedRevenueEur,
       roas,
-      isShopifyRevenue: shopifyRevenueStats !== null,
-      grossRevenue: grossRevenueEur,
-      grossRevenueUsd: shopifyGrossUsd,
-      refunds: refundsEur,
-      refundsUsd: shopifyRefundsUsd,
-      currency: "EUR",
+      currency: "EUR" as const,
       conversionRate: USD_TO_EUR_RATE,
     };
-  }, [adsReporting.data?.totals, shopifyRevenueStats]);
+  }, [adsReporting.data?.totals, pinterestStats?.totalValue]);
 
   // Refresh client-side provider statuses
   const refreshProviderStatuses = useCallback(() => {
@@ -1008,15 +998,13 @@ const QuizRevealTracking = () => {
                           ? 'text-yellow-600 dark:text-yellow-400'
                           : ''
                     }`}>
-                      {adsReporting.loading || shopifyRevenueLoading ? (
+                      {adsReporting.loading ? (
                         <Loader2 className="w-5 h-5 animate-spin" />
                       ) : overviewRoas && overviewRoas.roas > 0 ? (
                         `${overviewRoas.roas.toFixed(2)}x`
-                      ) : '—'}
+                      ) : '-'}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      ROAS {overviewRoas?.isShopifyRevenue && <span className="text-green-600">(net)</span>}
-                    </p>
+                    <p className="text-xs text-muted-foreground">ROAS</p>
                   </div>
                   {/* Info tooltip */}
                   <div className="group relative">
@@ -1024,18 +1012,21 @@ const QuizRevealTracking = () => {
                     <div className="absolute right-0 top-6 z-50 hidden group-hover:block w-72 p-3 bg-popover border rounded-lg shadow-lg text-xs">
                       <p className="font-medium mb-2">ROAS Calculation</p>
                       <p className="text-muted-foreground mb-2">
-                        <strong>Net Revenue</strong> (from Shopify, converted to EUR) ÷ <strong>Ad Spend</strong> (from Pinterest)
+                        <strong>Tracked Revenue</strong> (purchase events, converted to EUR) ÷ <strong>Ad Spend</strong>
                       </p>
                       {overviewRoas && (
                         <div className="space-y-1 pt-2 border-t">
-                          <p>Gross Revenue: <strong>${overviewRoas.grossRevenueUsd?.toFixed(2) ?? '0.00'}</strong> → <strong className="text-blue-600">€{overviewRoas.grossRevenue?.toFixed(2) ?? '0.00'}</strong></p>
-                          {overviewRoas.refunds !== undefined && overviewRoas.refunds > 0 && (
-                            <p>Refunds: <strong className="text-red-500">-${overviewRoas.refundsUsd?.toFixed(2)}</strong> → <strong className="text-red-500">-€{overviewRoas.refunds.toFixed(2)}</strong></p>
-                          )}
-                          <p>Net Revenue: <strong>${overviewRoas.revenueUsd?.toFixed(2) ?? '0.00'}</strong> → <strong className="text-green-600">€{overviewRoas.revenue.toFixed(2)}</strong></p>
+                          <p>
+                            Tracked Revenue: <strong>${overviewRoas.trackedRevenueUsd.toFixed(2)}</strong> →{" "}
+                            <strong className="text-green-600">€{overviewRoas.trackedRevenueEur.toFixed(2)}</strong>
+                          </p>
                           <p>Ad Spend: <strong>€{overviewRoas.spend.toFixed(2)}</strong></p>
-                          <p className="text-muted-foreground text-[10px] mt-1">USD→EUR rate: {overviewRoas.conversionRate}</p>
-                          <p className="pt-1 border-t mt-1">ROAS: <strong>{overviewRoas.roas > 0 ? `${overviewRoas.roas.toFixed(2)}x` : '—'}</strong></p>
+                          <p className="text-muted-foreground text-[10px] mt-1">
+                            USD→EUR rate: {overviewRoas.conversionRate}
+                          </p>
+                          <p className="pt-1 border-t mt-1">
+                            ROAS: <strong>{overviewRoas.roas > 0 ? `${overviewRoas.roas.toFixed(2)}x` : '-'}</strong>
+                          </p>
                         </div>
                       )}
                     </div>
