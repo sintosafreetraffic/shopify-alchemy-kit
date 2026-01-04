@@ -30,7 +30,7 @@ export const Header = () => {
       <div className="container mx-auto px-4 py-2 relative flex md:grid md:grid-cols-3 items-center">
         {/* Mobile Menu Button - Absolute Left on Mobile */}
         <div className="absolute left-4 md:static flex items-center md:hidden">
-          <Sheet open={isMobileMenuOpen} onOpenChange={setMobileMenuOpen} modal={false}>
+          <Sheet open={isMobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="mr-2" aria-label="Open menu">
                 <Menu className="h-5 w-5" />
@@ -38,128 +38,81 @@ export const Header = () => {
             </SheetTrigger>
             <SheetContent 
               side="left" 
-              className="w-[280px] z-[45] top-[77px] h-[calc(100vh-77px)] overflow-y-auto pb-6"
+              className="w-[300px] z-[100] pt-12 overflow-y-auto"
             >
-              <SheetHeader>
-                <SheetTitle>Menu</SheetTitle>
+              <SheetHeader className="text-left mb-6">
+                <SheetTitle className="text-xl font-semibold">Menu</SheetTitle>
               </SheetHeader>
               
               {/* Main Navigation */}
-              <nav className="flex flex-col gap-4 mt-6">
+              <nav className="flex flex-col gap-1">
                 <NavLink 
                   to="/" 
-                  className="text-lg text-foreground hover:text-primary transition-colors py-2"
+                  className="text-base font-medium text-foreground hover:text-primary hover:bg-muted/50 transition-colors py-3 px-2 rounded-md"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Home
                 </NavLink>
                 <NavLink 
                   to="/about" 
-                  className="text-lg text-foreground hover:text-primary transition-colors py-2"
+                  className="text-base font-medium text-foreground hover:text-primary hover:bg-muted/50 transition-colors py-3 px-2 rounded-md"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   About Us
                 </NavLink>
                 <NavLink 
                   to="/sleep-guides" 
-                  className="text-lg text-foreground hover:text-primary transition-colors py-2"
+                  className="text-base font-medium text-foreground hover:text-primary hover:bg-muted/50 transition-colors py-3 px-2 rounded-md"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Sleep Guides
                 </NavLink>
                 <NavLink 
                   to="/track" 
-                  className="text-lg text-foreground hover:text-primary transition-colors py-2"
+                  className="text-base font-medium text-foreground hover:text-primary hover:bg-muted/50 transition-colors py-3 px-2 rounded-md"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Track Your Order
                 </NavLink>
               </nav>
 
-              {/* Customer Service Section */}
-              <div className="mt-6 pt-6 border-t">
-                <h3 className="text-sm font-semibold text-foreground mb-3">Customer Service</h3>
-                <nav className="flex flex-col gap-3">
+              {/* Support Links */}
+              <div className="mt-8 pt-6 border-t border-border/50">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-2">Support</p>
+                <nav className="flex flex-col gap-1">
                   <NavLink 
                     to="/shipping" 
-                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                    className="text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors py-2.5 px-2 rounded-md"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Shipping Information
                   </NavLink>
                   <NavLink 
                     to="/return-policy" 
-                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                    className="text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors py-2.5 px-2 rounded-md"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Return Policy
                   </NavLink>
                   <NavLink 
-                    to="/terms" 
-                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Terms & Conditions
-                  </NavLink>
-                  <NavLink 
-                    to="/privacy-policy" 
-                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Privacy Policy
-                  </NavLink>
-                </nav>
-              </div>
-
-              {/* Quick Links Section */}
-              <div className="mt-6 pt-6 border-t">
-                <h3 className="text-sm font-semibold text-foreground mb-3">Quick Links</h3>
-                <nav className="flex flex-col gap-3">
-                  <NavLink 
-                    to="/benefits" 
-                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Benefits
-                  </NavLink>
-                  <NavLink 
-                    to="/reviews" 
-                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Reviews
-                  </NavLink>
-                  <NavLink 
                     to="/faq" 
-                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                    className="text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors py-2.5 px-2 rounded-md"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     FAQ
                   </NavLink>
-                  <NavLink 
-                    to="/guarantee" 
-                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Guarantee
-                  </NavLink>
                 </nav>
               </div>
 
-              {/* Contact Information */}
-              <div className="mt-6 pt-6 border-t">
-                <h3 className="text-sm font-semibold text-foreground mb-3">Contact Us</h3>
-                <div className="text-sm text-muted-foreground space-y-2">
-                  <a 
-                    href="mailto:support@risebynight.com" 
-                    className="block hover:text-primary transition-colors"
-                  >
-                    support@risebynight.com
-                  </a>
-                  <p className="text-xs leading-relaxed">
-                    Loofdakstraat 10, 3036JN, ROTTERDAM
-                  </p>
-                </div>
+              {/* Contact */}
+              <div className="mt-8 pt-6 border-t border-border/50">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-2">Contact</p>
+                <a 
+                  href="mailto:support@risebynight.com" 
+                  className="text-sm text-primary hover:underline block px-2"
+                >
+                  support@risebynight.com
+                </a>
               </div>
             </SheetContent>
           </Sheet>
