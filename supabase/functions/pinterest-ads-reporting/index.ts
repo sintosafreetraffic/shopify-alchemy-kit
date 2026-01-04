@@ -1321,8 +1321,12 @@ async function fetchPinterestAnalytics(
   // otherwise fall back to raw totalsAccum
   let totals: ProcessedMetrics;
   
-  if (params.level === "ACCOUNT" && params.active_only_campaigns && campaignAnalyticsData.length > 0) {
-    // For ACCOUNT level with active filters, recalculate from filtered campaign analytics
+  // For ACCOUNT level with filters (selected campaigns/ads or active only), recalculate from filtered data
+  const needsFilteredTotals = params.level === "ACCOUNT" && 
+    (params.active_only_campaigns || hasSelectedCampaigns || hasSelectedAds);
+  
+  if (needsFilteredTotals && (adTimeseriesData.length > 0 || campaignTimeseriesData.length > 0 || campaignAnalyticsData.length > 0)) {
+    // Recalculate totals from the filtered timeseries data
     const filteredTotalsAccum: Record<string, number> = {
       SPEND_IN_MICRO_DOLLAR: 0,
       TOTAL_IMPRESSION: 0,
@@ -1335,15 +1339,23 @@ async function fetchPinterestAnalytics(
       TOTAL_IMPRESSION_FREQUENCY: 0,
     };
     
-    for (const entry of campaignAnalyticsData) {
+    // Use ad-level data if selected ads, otherwise use campaign data
+    const dataForTotals = hasSelectedAds && adTimeseriesData.length > 0 
+      ? adTimeseriesData 
+      : campaignAnalyticsData.length > 0 
+        ? campaignAnalyticsData 
+        : campaignTimeseriesData;
+    
+    for (const entry of dataForTotals) {
       for (const key of Object.keys(filteredTotalsAccum)) {
         filteredTotalsAccum[key] += entry[key] || 0;
       }
     }
     
     totals = processRawMetrics(filteredTotalsAccum);
-    log("info", "totals_recalculated_from_filtered_campaigns", { 
-      campaign_count: campaignAnalyticsData.length,
+    log("info", "totals_recalculated_from_filtered_data", { 
+      source: hasSelectedAds ? "ad_timeseries" : campaignAnalyticsData.length > 0 ? "campaign_analytics" : "campaign_timeseries",
+      entry_count: dataForTotals.length,
       total_spend: totals.spend 
     });
   } else if (entityAccum.size > 0 && params.level !== "ACCOUNT") {
