@@ -43,13 +43,13 @@ export const SleepMaskImageCarousel = () => {
   return (
     <>
       {/* Mobile Carousel */}
-      <div className="md:hidden">
+      <div className="md:hidden -mx-4">
         <Carousel className="w-full" setApi={setApi}>
-          <CarouselContent>
+          <CarouselContent className="-ml-0">
             {images.map((item, index) => (
-              <CarouselItem key={index}>
+              <CarouselItem key={index} className="pl-0">
                 <div 
-                  className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8 relative cursor-pointer hover:opacity-90 transition-opacity"
+                  className="overflow-hidden bg-secondary/10 relative cursor-pointer hover:opacity-90 transition-opacity"
                   onClick={() => setExpandedImage(item.url)}
                 >
                   <img
@@ -66,8 +66,8 @@ export const SleepMaskImageCarousel = () => {
               </CarouselItem>
             ))}
           </CarouselContent>
-          <CarouselPrevious className="left-2" />
-          <CarouselNext className="right-2" />
+          <CarouselPrevious className="left-3" />
+          <CarouselNext className="right-3" />
         </Carousel>
         
         {/* Carousel Indicators */}
