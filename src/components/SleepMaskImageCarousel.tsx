@@ -71,7 +71,7 @@ export const SleepMaskImageCarousel = () => {
         </Carousel>
         
         {/* Carousel Thumbnail Indicators */}
-        <div className="flex justify-center gap-2 mt-4 px-4">
+        <div className="flex justify-start gap-2 mt-4 px-4 overflow-x-auto scrollbar-hide">
           {images.map((img, index) => (
             <button
               key={index}
