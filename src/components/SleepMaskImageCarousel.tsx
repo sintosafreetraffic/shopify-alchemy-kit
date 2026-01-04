@@ -70,17 +70,26 @@ export const SleepMaskImageCarousel = () => {
           <CarouselNext className="right-3" />
         </Carousel>
         
-        {/* Carousel Indicators */}
-        <div className="flex justify-center gap-2 mt-4">
-          {images.map((_, index) => (
+        {/* Carousel Thumbnail Indicators */}
+        <div className="flex justify-center gap-2 mt-4 px-4">
+          {images.map((img, index) => (
             <button
               key={index}
               onClick={() => api?.scrollTo(index)}
-              className={`h-2 rounded-full transition-all ${
-                current === index ? 'w-8 bg-primary' : 'w-2 bg-gray-300'
+              className={`w-12 h-12 rounded-full overflow-hidden transition-all flex-shrink-0 ${
+                current === index 
+                  ? 'ring-2 ring-primary ring-offset-2' 
+                  : 'opacity-60 hover:opacity-100'
               }`}
               aria-label={`Go to slide ${index + 1}`}
-            />
+            >
+              <img 
+                src={img.url} 
+                alt={`Thumbnail ${index + 1}`}
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            </button>
           ))}
         </div>
       </div>
