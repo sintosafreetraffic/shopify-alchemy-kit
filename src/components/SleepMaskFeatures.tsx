@@ -2,6 +2,7 @@
 import { Check } from "lucide-react";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
 import sleepMaskBenefits from "@/assets/sleep-mask-benefits-new.webp";
+import sleepMaskHeroBenefits from "@/assets/sleep-mask-hero-benefits.webp";
 import OptimizedImage from "@/components/OptimizedImage";
 
 const features: Array<{
@@ -23,7 +24,7 @@ const features: Array<{
     imagePosition: "left"
   },
   {
-    image: eyeMaskGift,
+    image: sleepMaskHeroBenefits,
     title: "Complete Light Blocking Design",
     description: "The contoured design creates a perfect seal around your eyes while allowing natural blinking. Experience total darkness that triggers your body's natural melatonin production for deeper, more restorative sleep.",
     benefits: [
