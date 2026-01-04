@@ -917,14 +917,45 @@ async function fetchPinterestAnalytics(
     }
   }
   
-  // For ACCOUNT level, we need separate API calls to get per-campaign breakdown
+  // For ACCOUNT level, we need separate API calls to get per-campaign/ad breakdown
   // We fetch with TOTAL granularity for entity breakdown AND with request granularity for timeseries
   let campaignAnalyticsData: any[] = [];
   let campaignTimeseriesData: any[] = [];
-  const hasSelectedFilters = (params.selected_campaign_ids && params.selected_campaign_ids.length > 0) || 
-                             (params.selected_ad_ids && params.selected_ad_ids.length > 0);
+  let adTimeseriesData: any[] = [];
+  const hasSelectedCampaigns = params.selected_campaign_ids && params.selected_campaign_ids.length > 0;
+  const hasSelectedAds = params.selected_ad_ids && params.selected_ad_ids.length > 0;
+  const hasSelectedFilters = hasSelectedCampaigns || hasSelectedAds;
   
-  if (params.level === "ACCOUNT" && entityInfoMap.size > 0) {
+  // If specific ads are selected, fetch ad-level analytics for those ads
+  if (params.level === "ACCOUNT" && hasSelectedAds) {
+    const adIds = params.selected_ad_ids!.join(",");
+    log("info", "fetching_ad_level_analytics", { ad_ids: params.selected_ad_ids });
+    
+    // Fetch ad-level timeseries data
+    const adTimeseriesUrl = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/ads/analytics`);
+    adTimeseriesUrl.searchParams.set("ad_ids", adIds);
+    adTimeseriesUrl.searchParams.set("start_date", params.start_date);
+    adTimeseriesUrl.searchParams.set("end_date", params.end_date);
+    adTimeseriesUrl.searchParams.set("granularity", params.granularity);
+    adTimeseriesUrl.searchParams.set("click_window_days", params.click_window_days.toString());
+    adTimeseriesUrl.searchParams.set("view_window_days", params.view_window_days.toString());
+    adTimeseriesUrl.searchParams.set("columns", METRICS_COLUMNS);
+    
+    try {
+      const adResponse = await fetchWithRetry(adTimeseriesUrl.toString(), {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+      adTimeseriesData = await adResponse.json();
+      log("info", "ad_timeseries_fetched", { count: adTimeseriesData.length });
+    } catch (e) {
+      log("warn", "ad_timeseries_failed", { error: String(e) });
+    }
+  }
+  
+  if (params.level === "ACCOUNT" && entityInfoMap.size > 0 && !hasSelectedAds) {
     const campaignIds = Array.from(entityInfoMap.keys()).join(",");
     
     // Fetch TOTAL granularity for entity breakdown
@@ -951,7 +982,7 @@ async function fetchPinterestAnalytics(
     }
     
     // When filtering by active campaigns OR selected campaigns, also fetch with request granularity for timeseries
-    if (params.active_only_campaigns || hasSelectedFilters) {
+    if (params.active_only_campaigns || hasSelectedCampaigns) {
       const timeseriesUrl = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/campaigns/analytics`);
       timeseriesUrl.searchParams.set("campaign_ids", campaignIds);
       timeseriesUrl.searchParams.set("start_date", params.start_date);
@@ -1082,10 +1113,18 @@ async function fetchPinterestAnalytics(
   // Aggregate by date for timeseries and by entity for breakdown
   const dateAggregates: Map<string, Record<string, number>> = new Map();
 
-  // For ACCOUNT level with active filter, use filtered campaign timeseries data instead of account-level data
-  const dataToProcess = (params.level === "ACCOUNT" && params.active_only_campaigns && campaignTimeseriesData.length > 0)
-    ? campaignTimeseriesData
-    : rawData;
+  // For ACCOUNT level with filters, use filtered data instead of account-level data
+  // Priority: ad-level data > campaign-level data > raw account data
+  let dataToProcess: any[];
+  if (params.level === "ACCOUNT" && hasSelectedAds && adTimeseriesData.length > 0) {
+    dataToProcess = adTimeseriesData;
+    log("info", "using_ad_timeseries_data", { count: adTimeseriesData.length });
+  } else if (params.level === "ACCOUNT" && (params.active_only_campaigns || hasSelectedCampaigns) && campaignTimeseriesData.length > 0) {
+    dataToProcess = campaignTimeseriesData;
+    log("info", "using_campaign_timeseries_data", { count: campaignTimeseriesData.length });
+  } else {
+    dataToProcess = rawData;
+  }
 
   for (const entry of dataToProcess) {
     const date = entry.DATE;
