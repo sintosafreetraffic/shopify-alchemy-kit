@@ -64,7 +64,7 @@ export function SleepCoachTeaser() {
                 })}
               </div>
 
-              <div className="space-y-5">
+              <div className="space-y-8">
                 <p className="text-sm text-muted-foreground">Start by understanding how you sleep.</p>
                 <Link to="/sleep-quiz">
                   <Button size="lg" className="text-lg px-8">
