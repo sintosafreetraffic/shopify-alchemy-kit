@@ -165,11 +165,6 @@ export const KneePillowVideoSection = () => {
   const [modalHasStarted, setModalHasStarted] = useState(false);
   const { ref: sectionRef, isInView: sectionInView } = useInView<HTMLElement>({ threshold: 0.1 });
   const isMobile = useIsMobile();
-
-  // Hide entire section on mobile to avoid video glitching
-  if (isMobile) {
-    return null;
-  }
   
   // Reset modal state when closing
   useEffect(() => {
@@ -178,6 +173,11 @@ export const KneePillowVideoSection = () => {
       setModalHasStarted(false);
     }
   }, [selectedVideo]);
+
+  // Hide entire section on mobile to avoid video glitching
+  if (isMobile) {
+    return null;
+  }
 
   const videos: VideoItem[] = [
     {
