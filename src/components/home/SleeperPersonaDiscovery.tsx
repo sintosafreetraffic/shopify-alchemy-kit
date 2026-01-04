@@ -80,17 +80,17 @@ export function SleeperPersonaDiscovery() {
           </div>
 
           {/* Persona Grid */}
-          <div className="grid md:grid-cols-2 gap-5 lg:gap-6 mb-10">
+          <div className="grid md:grid-cols-2 gap-4 md:gap-5 lg:gap-6 mb-10">
             {personas.map((persona, index) => {
               const Icon = persona.icon;
               return (
                 <div
                   key={persona.id}
-                  className="group relative bg-background rounded-2xl border border-border/40 p-6 md:p-8 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 animate-fade-in"
+                  className="group relative bg-background rounded-2xl border border-border/40 p-4 sm:p-6 md:p-8 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 animate-fade-in w-full box-border"
                   style={{ animationDelay: `${index * 80}ms` }}
                 >
                   {/* Subtle accent line */}
-                  <div className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="absolute top-0 left-4 right-4 sm:left-8 sm:right-8 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
                   <div className="flex items-start gap-4">
                     <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:scale-105 transition-transform">
