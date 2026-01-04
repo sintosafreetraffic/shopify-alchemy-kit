@@ -53,6 +53,7 @@ const CarouselFallback = () => (
 export const Hero = () => {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [selectedMaskColor, setSelectedMaskColor] = useState("Navy");
+  const [isMaskColorPickerOpen, setIsMaskColorPickerOpen] = useState(true);
   const { addItem, setCartOpen, setFreeMaskSelections } = useCartStore();
   const hasTrackedView = useRef(false);
   const headerHeight = useHeaderHeight();
@@ -274,47 +275,62 @@ export const Hero = () => {
                 <p className="text-sm font-semibold text-green-700 dark:text-green-300">Sleep Mask Included</p>
                 <p className="text-xs text-green-600 dark:text-green-400">$29.99 value</p>
               </div>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button 
-                    type="button"
-                    className="flex items-center gap-1.5 text-sm font-medium text-green-700 dark:text-green-300 hover:text-green-800 dark:hover:text-green-200 transition-colors px-3 py-1.5 rounded-lg bg-green-100 dark:bg-green-800/50 hover:bg-green-200 dark:hover:bg-green-800"
+              {isMaskColorPickerOpen ? (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button 
+                      type="button"
+                      className="flex items-center gap-1.5 text-sm font-medium text-green-700 dark:text-green-300 hover:text-green-800 dark:hover:text-green-200 transition-colors px-3 py-1.5 rounded-lg bg-green-100 dark:bg-green-800/50 hover:bg-green-200 dark:hover:bg-green-800"
+                    >
+                      <span className="capitalize">{selectedMaskColor}</span>
+                      <ChevronDown className="w-4 h-4" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent 
+                    className="w-44 p-2 z-[200] bg-background border border-border shadow-lg" 
+                    align="end"
+                    sideOffset={4}
                   >
-                    <span className="capitalize">{selectedMaskColor}</span>
-                    <ChevronDown className="w-4 h-4" />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent 
-                  className="w-44 p-2 z-[200] bg-background border border-border shadow-lg" 
-                  align="end"
-                  sideOffset={4}
-                >
-                  <div className="space-y-0.5">
-                    {maskVariants.map((variant) => (
-                      <button
-                        key={variant.id}
-                        type="button"
-                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors ${
-                          selectedMaskColor === variant.color
-                            ? 'bg-primary/10 text-primary font-medium'
-                            : 'hover:bg-secondary text-foreground'
-                        }`}
-                        onClick={() => setSelectedMaskColor(variant.color)}
-                      >
-                        <img 
-                          src={sleepMaskColorImages[variant.color] || sleepMaskNavy} 
-                          alt={variant.color}
-                          className="w-6 h-6 object-contain rounded"
-                        />
-                        <span className="capitalize">{variant.color}</span>
-                        {selectedMaskColor === variant.color && (
-                          <Check className="w-4 h-4 ml-auto text-primary" />
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
+                    <div className="space-y-0.5">
+                      {maskVariants.map((variant) => (
+                        <button
+                          key={variant.id}
+                          type="button"
+                          className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors ${
+                            selectedMaskColor === variant.color
+                              ? 'bg-primary/10 text-primary font-medium'
+                              : 'hover:bg-secondary text-foreground'
+                          }`}
+                          onClick={() => {
+                            setSelectedMaskColor(variant.color);
+                            setIsMaskColorPickerOpen(false);
+                          }}
+                        >
+                          <img 
+                            src={sleepMaskColorImages[variant.color] || sleepMaskNavy} 
+                            alt={variant.color}
+                            className="w-6 h-6 object-contain rounded"
+                          />
+                          <span className="capitalize">{variant.color}</span>
+                          {selectedMaskColor === variant.color && (
+                            <Check className="w-4 h-4 ml-auto text-primary" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              ) : (
+                <div className="flex items-center gap-1.5 text-sm font-medium text-green-700 dark:text-green-300 px-3 py-1.5">
+                  <img 
+                    src={sleepMaskColorImages[selectedMaskColor] || sleepMaskNavy} 
+                    alt={selectedMaskColor}
+                    className="w-5 h-5 object-contain rounded"
+                  />
+                  <span className="capitalize">{selectedMaskColor}</span>
+                  <Check className="w-4 h-4 text-green-600" />
+                </div>
+              )}
             </div>
 
             <Button 
