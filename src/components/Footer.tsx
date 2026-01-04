@@ -1,15 +1,13 @@
 // Performance: Using OptimizedImage for lazy loading
 import { useState } from "react";
 import { Mail, MapPin, ArrowRight, Sparkles } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import moonIcon from "@/assets/moon-icon-blue.png";
 
 export const Footer = () => {
-  const location = useLocation();
-  const isHomePage = location.pathname === "/";
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -69,27 +67,6 @@ export const Footer = () => {
           </div>
         </div>
       </div>
-
-      {/* Quiz CTA Banner - Only show on home page */}
-      {isHomePage && (
-        <div className="bg-muted/30 border-b border-border/50">
-          <div className="container mx-auto px-4 py-8">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4 max-w-4xl mx-auto">
-              <div className="text-center md:text-left">
-                <p className="font-semibold text-foreground mb-1">Discover Your Sleeper Type</p>
-                <p className="text-sm text-muted-foreground">
-                  Take our short science-backed assessment and get personalized sleep recommendations.
-                </p>
-              </div>
-              <Link to="/sleep-quiz">
-                <Button size="sm" className="rounded-full px-6">
-                  Take the Assessment <ArrowRight className="w-4 h-4 ml-1.5" />
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
