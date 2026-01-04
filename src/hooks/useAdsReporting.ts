@@ -100,6 +100,52 @@ export function useAdsReporting(options: UseAdsReportingOptions = { autoFetch: t
   const [activeOnlyCampaigns, setActiveOnlyCampaigns] = useState(false);
   const [activeOnlyAds, setActiveOnlyAds] = useState(false);
 
+  // Campaigns list for filtering (fetched separately at CAMPAIGN level)
+  const [campaignsList, setCampaignsList] = useState<EntityMetrics[]>([]);
+  const [loadingCampaigns, setLoadingCampaigns] = useState(false);
+
+  // Fetch campaigns list for the filter dropdown (fetches at CAMPAIGN level)
+  const fetchCampaignsList = useCallback(async () => {
+    setLoadingCampaigns(true);
+    try {
+      const endDate = new Date();
+      const startDate = new Date(endDate);
+      startDate.setUTCDate(startDate.getUTCDate() - Math.max(selectedPreset.days - 1, 0));
+
+      const params = new URLSearchParams({
+        start_date: startDate.toISOString().split("T")[0],
+        end_date: endDate.toISOString().split("T")[0],
+        granularity: "DAY",
+        level: "CAMPAIGN",
+        click_window_days: "30",
+        view_window_days: "1",
+        active_only_campaigns: activeOnlyCampaigns ? "true" : "false",
+        active_only_ads: "false",
+      });
+
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const url = `https://${projectId}.supabase.co/functions/v1/pinterest-ads-reporting?${params}`;
+      
+      const fetchResponse = await fetch(url, {
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+      });
+
+      if (fetchResponse.ok) {
+        const result: AdsReportingData = await fetchResponse.json();
+        if (result.entities) {
+          setCampaignsList(result.entities.filter(e => e.entity_type === "campaign"));
+        }
+      }
+    } catch (err) {
+      console.error("[useAdsReporting] Error fetching campaigns list:", err);
+    } finally {
+      setLoadingCampaigns(false);
+    }
+  }, [selectedPreset, activeOnlyCampaigns]);
+
   const fetchData = useCallback(async (forceRefresh = false) => {
     setLoading(true);
     setError(null);
@@ -172,6 +218,13 @@ export function useAdsReporting(options: UseAdsReportingOptions = { autoFetch: t
     }
   }, [fetchData, options.autoFetch]);
 
+  // Fetch campaigns list on mount and when preset changes
+  useEffect(() => {
+    if (options.autoFetch) {
+      fetchCampaignsList();
+    }
+  }, [fetchCampaignsList, options.autoFetch]);
+
   // Computed values
   const hasAttributionLagEntries = useMemo(() => {
     if (!data?.timeseries) return false;
@@ -227,5 +280,10 @@ export function useAdsReporting(options: UseAdsReportingOptions = { autoFetch: t
     // New: Performance metrics
     apiLatencyMs: data?.api_latency_ms ?? null,
     currency: data?.currency ?? "EUR",
+    
+    // Campaigns list for filtering
+    campaignsList,
+    loadingCampaigns,
+    refetchCampaigns: fetchCampaignsList,
   };
 }
