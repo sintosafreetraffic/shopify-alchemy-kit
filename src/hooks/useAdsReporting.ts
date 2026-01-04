@@ -100,9 +100,17 @@ export function useAdsReporting(options: UseAdsReportingOptions = { autoFetch: t
   const [activeOnlyCampaigns, setActiveOnlyCampaigns] = useState(false);
   const [activeOnlyAds, setActiveOnlyAds] = useState(false);
 
+  // Entity filters for campaign/ad selection
+  const [selectedCampaignIds, setSelectedCampaignIds] = useState<string[]>([]);
+  const [selectedAdIds, setSelectedAdIds] = useState<string[]>([]);
+
   // Campaigns list for filtering (fetched separately at CAMPAIGN level)
   const [campaignsList, setCampaignsList] = useState<EntityMetrics[]>([]);
   const [loadingCampaigns, setLoadingCampaigns] = useState(false);
+
+  // Ads list for the selected campaign (fetched when campaign is selected)
+  const [adsList, setAdsList] = useState<EntityMetrics[]>([]);
+  const [loadingAds, setLoadingAds] = useState(false);
 
   // Fetch campaigns list for the filter dropdown (fetches at CAMPAIGN level)
   const fetchCampaignsList = useCallback(async () => {
@@ -146,6 +154,49 @@ export function useAdsReporting(options: UseAdsReportingOptions = { autoFetch: t
     }
   }, [selectedPreset, activeOnlyCampaigns]);
 
+  // Fetch ads for a specific campaign
+  const fetchAdsForCampaign = useCallback(async (campaignId: string) => {
+    setLoadingAds(true);
+    try {
+      const endDate = new Date();
+      const startDate = new Date(endDate);
+      startDate.setUTCDate(startDate.getUTCDate() - Math.max(selectedPreset.days - 1, 0));
+
+      const params = new URLSearchParams({
+        start_date: startDate.toISOString().split("T")[0],
+        end_date: endDate.toISOString().split("T")[0],
+        granularity: "DAY",
+        level: "PIN_PROMOTION",
+        click_window_days: "30",
+        view_window_days: "1",
+        active_only_campaigns: "false",
+        active_only_ads: activeOnlyAds ? "true" : "false",
+        selected_campaign_ids: campaignId,
+      });
+
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const url = `https://${projectId}.supabase.co/functions/v1/pinterest-ads-reporting?${params}`;
+      
+      const fetchResponse = await fetch(url, {
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+      });
+
+      if (fetchResponse.ok) {
+        const result: AdsReportingData = await fetchResponse.json();
+        if (result.entities) {
+          setAdsList(result.entities.filter(e => e.entity_type === "ad"));
+        }
+      }
+    } catch (err) {
+      console.error("[useAdsReporting] Error fetching ads for campaign:", err);
+    } finally {
+      setLoadingAds(false);
+    }
+  }, [selectedPreset, activeOnlyAds]);
+
   const fetchData = useCallback(async (forceRefresh = false) => {
     setLoading(true);
     setError(null);
@@ -168,6 +219,14 @@ export function useAdsReporting(options: UseAdsReportingOptions = { autoFetch: t
         active_only_ads: activeOnlyAds ? "true" : "false",
         ...(forceRefresh && { force_refresh: "true" }),
       });
+
+      // Add entity filters if selected
+      if (selectedCampaignIds.length > 0) {
+        params.set("selected_campaign_ids", selectedCampaignIds.join(","));
+      }
+      if (selectedAdIds.length > 0) {
+        params.set("selected_ad_ids", selectedAdIds.join(","));
+      }
 
       // Use environment variables for the edge function URL
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
@@ -209,7 +268,7 @@ export function useAdsReporting(options: UseAdsReportingOptions = { autoFetch: t
     } finally {
       setLoading(false);
     }
-  }, [selectedPreset, granularity, level, activeOnlyCampaigns, activeOnlyAds]);
+  }, [selectedPreset, granularity, level, activeOnlyCampaigns, activeOnlyAds, selectedCampaignIds, selectedAdIds]);
 
   // Auto-fetch on mount and when params change
   useEffect(() => {
@@ -224,6 +283,15 @@ export function useAdsReporting(options: UseAdsReportingOptions = { autoFetch: t
       fetchCampaignsList();
     }
   }, [fetchCampaignsList, options.autoFetch]);
+
+  // Fetch ads when campaign selection changes
+  useEffect(() => {
+    if (selectedCampaignIds.length === 1) {
+      fetchAdsForCampaign(selectedCampaignIds[0]);
+    } else {
+      setAdsList([]);
+    }
+  }, [selectedCampaignIds, fetchAdsForCampaign]);
 
   // Computed values
   const hasAttributionLagEntries = useMemo(() => {
@@ -263,6 +331,12 @@ export function useAdsReporting(options: UseAdsReportingOptions = { autoFetch: t
     setActiveOnlyCampaigns,
     activeOnlyAds,
     setActiveOnlyAds,
+
+    // Entity filters
+    selectedCampaignIds,
+    setSelectedCampaignIds,
+    selectedAdIds,
+    setSelectedAdIds,
     
     // Helpers
     datePresets: DATE_PRESETS,
@@ -281,9 +355,11 @@ export function useAdsReporting(options: UseAdsReportingOptions = { autoFetch: t
     apiLatencyMs: data?.api_latency_ms ?? null,
     currency: data?.currency ?? "EUR",
     
-    // Campaigns list for filtering
+    // Campaigns and ads list for filtering
     campaignsList,
     loadingCampaigns,
     refetchCampaigns: fetchCampaignsList,
+    adsList,
+    loadingAds,
   };
 }

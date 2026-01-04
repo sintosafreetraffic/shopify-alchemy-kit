@@ -43,6 +43,9 @@ interface AdsReportingRequest {
   force_refresh?: boolean;
   active_only_campaigns?: boolean;
   active_only_ads?: boolean;
+  // Optional filters for specific entities
+  selected_campaign_ids?: string[];
+  selected_ad_ids?: string[];
 }
 
 interface ProcessedMetrics {
@@ -891,6 +894,12 @@ async function fetchPinterestAnalytics(
     if (params.active_only_campaigns) {
       campaigns = campaigns.filter(c => c.status === "ACTIVE");
     }
+    // Apply selected_campaign_ids filter if provided
+    if (params.selected_campaign_ids && params.selected_campaign_ids.length > 0) {
+      const selectedSet = new Set(params.selected_campaign_ids);
+      campaigns = campaigns.filter(c => selectedSet.has(c.id));
+      log("info", "filtered_by_selected_campaigns", { count: campaigns.length, selected: params.selected_campaign_ids });
+    }
     campaigns.forEach(c => {
       entityInfoMap.set(c.id, c);
       campaignMap.set(c.id, { id: c.id, name: c.name });
@@ -898,13 +907,23 @@ async function fetchPinterestAnalytics(
     if (campaigns.length > 0) {
       entityType = "campaign";
     }
-    url = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/analytics`);
+    
+    // If filtering by specific campaigns, use campaign-level analytics instead of account
+    if (params.selected_campaign_ids && params.selected_campaign_ids.length > 0 && campaigns.length > 0) {
+      url = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/campaigns/analytics`);
+      url.searchParams.set("campaign_ids", campaigns.map(c => c.id).join(","));
+    } else {
+      url = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/analytics`);
+    }
   }
   
   // For ACCOUNT level, we need separate API calls to get per-campaign breakdown
   // We fetch with TOTAL granularity for entity breakdown AND with request granularity for timeseries
   let campaignAnalyticsData: any[] = [];
   let campaignTimeseriesData: any[] = [];
+  const hasSelectedFilters = (params.selected_campaign_ids && params.selected_campaign_ids.length > 0) || 
+                             (params.selected_ad_ids && params.selected_ad_ids.length > 0);
+  
   if (params.level === "ACCOUNT" && entityInfoMap.size > 0) {
     const campaignIds = Array.from(entityInfoMap.keys()).join(",");
     
@@ -931,8 +950,8 @@ async function fetchPinterestAnalytics(
       log("warn", "campaign_analytics_failed", { error: String(e) });
     }
     
-    // When filtering by active campaigns, also fetch with request granularity for timeseries
-    if (params.active_only_campaigns) {
+    // When filtering by active campaigns OR selected campaigns, also fetch with request granularity for timeseries
+    if (params.active_only_campaigns || hasSelectedFilters) {
       const timeseriesUrl = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/campaigns/analytics`);
       timeseriesUrl.searchParams.set("campaign_ids", campaignIds);
       timeseriesUrl.searchParams.set("start_date", params.start_date);
@@ -1359,6 +1378,9 @@ Deno.serve(async (req: Request) => {
       force_refresh: url.searchParams.get("force_refresh") === "true",
       active_only_campaigns: url.searchParams.get("active_only_campaigns") === "true",
       active_only_ads: url.searchParams.get("active_only_ads") === "true",
+      // Parse comma-separated entity IDs for filtering
+      selected_campaign_ids: url.searchParams.get("selected_campaign_ids")?.split(",").filter(Boolean) || undefined,
+      selected_ad_ids: url.searchParams.get("selected_ad_ids")?.split(",").filter(Boolean) || undefined,
     };
 
     // Validate date range (max 90 days)

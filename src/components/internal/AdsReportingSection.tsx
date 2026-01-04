@@ -162,11 +162,6 @@ export default function AdsReportingSection() {
   const [generateMode, setGenerateMode] = useState<"single" | "all">("all");
   const [selectedEntityForGenerate, setSelectedEntityForGenerate] = useState<EntityMetrics | undefined>();
   
-  // Campaign/Ad filtering
-  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
-  const [selectedAdGroupId, setSelectedAdGroupId] = useState<string | null>(null);
-  const [selectedAdId, setSelectedAdId] = useState<string | null>(null);
-  
   const {
     data,
     loading,
@@ -192,130 +187,60 @@ export default function AdsReportingSection() {
     activeOnlyAds,
     setActiveOnlyAds,
     campaignsList,
+    adsList,
+    selectedCampaignIds,
+    setSelectedCampaignIds,
+    selectedAdIds,
+    setSelectedAdIds,
+    loadingAds,
   } = useAdsReporting();
 
-  // Use campaignsList from hook, plus extract ad groups/ads from current entities
+  // Use campaignsList from hook
   const campaigns = useMemo(() => {
     return campaignsList.map(c => ({ id: c.id, name: c.name }));
   }, [campaignsList]);
 
-  // Extract ad groups and ads from entities (only available when level is AD_GROUP or PIN_PROMOTION)
-  const { adGroups, ads } = useMemo(() => {
-    if (!data?.entities) return { adGroups: [], ads: [] };
-    
-    const adGroupMap = new Map<string, { id: string; name: string; campaignId?: string }>();
-    const adsList: { id: string; name: string; campaignId?: string; adGroupId?: string }[] = [];
-    
-    data.entities.forEach(entity => {
-      if (entity.entity_type === "ad_group") {
-        adGroupMap.set(entity.id, { id: entity.id, name: entity.name, campaignId: entity.campaign_id });
-      } else if (entity.entity_type === "ad") {
-        adsList.push({ 
-          id: entity.id, 
-          name: entity.name, 
-          campaignId: entity.campaign_id,
-          adGroupId: entity.ad_group_id 
-        });
-        // Also track parent ad group
-        if (entity.ad_group_id && entity.ad_group_name) {
-          adGroupMap.set(entity.ad_group_id, { 
-            id: entity.ad_group_id, 
-            name: entity.ad_group_name,
-            campaignId: entity.campaign_id 
-          });
-        }
-      }
-    });
-    
-    return {
-      adGroups: Array.from(adGroupMap.values()).sort((a, b) => a.name.localeCompare(b.name)),
-      ads: adsList.sort((a, b) => a.name.localeCompare(b.name)),
-    };
-  }, [data?.entities]);
+  // Use adsList from hook (populated when a single campaign is selected)
+  const ads = useMemo(() => {
+    return adsList.map(a => ({ id: a.id, name: a.name }));
+  }, [adsList]);
 
-  // Filter entities based on selection
-  const filteredEntities = useMemo(() => {
-    if (!data?.entities) return [];
-    
-    let filtered = data.entities;
-    
-    if (selectedCampaignId) {
-      filtered = filtered.filter(e => 
-        e.id === selectedCampaignId || 
-        e.campaign_id === selectedCampaignId
-      );
-    }
-    
-    if (selectedAdGroupId) {
-      filtered = filtered.filter(e => 
-        e.id === selectedAdGroupId || 
-        e.ad_group_id === selectedAdGroupId
-      );
-    }
-    
-    if (selectedAdId) {
-      filtered = filtered.filter(e => e.id === selectedAdId);
-    }
-    
-    return filtered;
-  }, [data?.entities, selectedCampaignId, selectedAdGroupId, selectedAdId]);
-
-  // Filtered ad groups based on selected campaign
-  const filteredAdGroups = useMemo(() => {
-    if (!selectedCampaignId) return adGroups;
-    return adGroups.filter(ag => ag.campaignId === selectedCampaignId);
-  }, [adGroups, selectedCampaignId]);
-
-  // Filtered ads based on selected campaign/ad group
-  const filteredAds = useMemo(() => {
-    let result = ads;
-    if (selectedCampaignId) {
-      result = result.filter(a => a.campaignId === selectedCampaignId);
-    }
-    if (selectedAdGroupId) {
-      result = result.filter(a => a.adGroupId === selectedAdGroupId);
-    }
-    return result;
-  }, [ads, selectedCampaignId, selectedAdGroupId]);
-
-  // Clear child selections when parent changes
+  // Handler for campaign selection
   const handleCampaignChange = (value: string) => {
     if (value === "all") {
-      setSelectedCampaignId(null);
-      setSelectedAdGroupId(null);
-      setSelectedAdId(null);
+      setSelectedCampaignIds([]);
+      setSelectedAdIds([]);
     } else {
-      setSelectedCampaignId(value);
-      setSelectedAdGroupId(null);
-      setSelectedAdId(null);
+      setSelectedCampaignIds([value]);
+      setSelectedAdIds([]); // Clear ads when campaign changes
     }
   };
 
-  const handleAdGroupChange = (value: string) => {
-    if (value === "all") {
-      setSelectedAdGroupId(null);
-      setSelectedAdId(null);
+  // Handler for ad selection (multi-select)
+  const handleAdChange = (adId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedAdIds(prev => [...prev, adId]);
     } else {
-      setSelectedAdGroupId(value);
-      setSelectedAdId(null);
+      setSelectedAdIds(prev => prev.filter(id => id !== adId));
     }
   };
 
-  const handleAdChange = (value: string) => {
-    if (value === "all") {
-      setSelectedAdId(null);
-    } else {
-      setSelectedAdId(value);
-    }
+  // Select all ads
+  const selectAllAds = () => {
+    setSelectedAdIds(ads.map(a => a.id));
+  };
+
+  // Clear all ad selections
+  const clearAdSelection = () => {
+    setSelectedAdIds([]);
   };
 
   const clearFilters = () => {
-    setSelectedCampaignId(null);
-    setSelectedAdGroupId(null);
-    setSelectedAdId(null);
+    setSelectedCampaignIds([]);
+    setSelectedAdIds([]);
   };
 
-  const hasEntityFilters = selectedCampaignId || selectedAdGroupId || selectedAdId;
+  const hasEntityFilters = selectedCampaignIds.length > 0 || selectedAdIds.length > 0;
 
   // Send weekly report email
   const sendWeeklyReport = async () => {
@@ -664,7 +589,7 @@ export default function AdsReportingSection() {
           
           {/* Campaign Filter */}
           <Select 
-            value={selectedCampaignId || "all"} 
+            value={selectedCampaignIds[0] || "all"} 
             onValueChange={handleCampaignChange}
             disabled={campaigns.length === 0}
           >
@@ -681,38 +606,54 @@ export default function AdsReportingSection() {
             </SelectContent>
           </Select>
 
-          {/* Ad Group Filter - Show when campaign is selected */}
-          {selectedCampaignId && filteredAdGroups.length > 0 && (
-            <Select value={selectedAdGroupId || "all"} onValueChange={handleAdGroupChange}>
-              <SelectTrigger className="h-8 w-[200px] text-xs bg-background">
-                <SelectValue placeholder="All Ad Groups" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover z-50">
-                <SelectItem value="all" className="text-xs">All Ad Groups</SelectItem>
-                {filteredAdGroups.map(ag => (
-                  <SelectItem key={ag.id} value={ag.id} className="text-xs">
-                    {ag.name.length > 30 ? `${ag.name.slice(0, 30)}...` : ag.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-
-          {/* Ad Filter - Show when ad group is selected */}
-          {selectedAdGroupId && filteredAds.length > 0 && (
-            <Select value={selectedAdId || "all"} onValueChange={handleAdChange}>
-              <SelectTrigger className="h-8 w-[200px] text-xs bg-background">
-                <SelectValue placeholder="All Ads" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover z-50">
-                <SelectItem value="all" className="text-xs">All Ads</SelectItem>
-                {filteredAds.map(a => (
-                  <SelectItem key={a.id} value={a.id} className="text-xs">
-                    {a.name.length > 30 ? `${a.name.slice(0, 30)}...` : a.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Ads Filter - Show when campaign is selected */}
+          {selectedCampaignIds.length > 0 && (
+            <div className="flex items-center gap-2">
+              {loadingAds ? (
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Loading ads...
+                </span>
+              ) : ads.length > 0 ? (
+                <>
+                  <Select 
+                    value={selectedAdIds.length === 1 ? selectedAdIds[0] : selectedAdIds.length > 0 ? "multiple" : "all"} 
+                    onValueChange={(value) => {
+                      if (value === "all") {
+                        clearAdSelection();
+                      } else if (value !== "multiple") {
+                        setSelectedAdIds([value]);
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="h-8 w-[200px] text-xs bg-background">
+                      <SelectValue placeholder="All Ads">
+                        {selectedAdIds.length === 0 
+                          ? "All Ads" 
+                          : selectedAdIds.length === 1 
+                            ? ads.find(a => a.id === selectedAdIds[0])?.name?.slice(0, 25) || "1 ad selected"
+                            : `${selectedAdIds.length} ads selected`}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover z-50">
+                      <SelectItem value="all" className="text-xs">All Ads</SelectItem>
+                      {ads.map(a => (
+                        <SelectItem key={a.id} value={a.id} className="text-xs">
+                          {a.name.length > 30 ? `${a.name.slice(0, 30)}...` : a.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {selectedAdIds.length > 0 && selectedAdIds.length < ads.length && (
+                    <Button variant="ghost" size="sm" onClick={selectAllAds} className="h-7 text-xs">
+                      Select all
+                    </Button>
+                  )}
+                </>
+              ) : (
+                <span className="text-xs text-muted-foreground">No ads found</span>
+              )}
+            </div>
           )}
 
           {/* Clear Filters Button */}
@@ -1263,11 +1204,11 @@ export default function AdsReportingSection() {
                 {/* Campaign Performance Table - show when at ACCOUNT or CAMPAIGN level */}
                 {(level === "ACCOUNT" || level === "CAMPAIGN") && (
                   <EntityPerformanceTable
-                    entities={filteredEntities.filter(e => e.entity_type === "campaign")}
+                    entities={data.entities.filter(e => e.entity_type === "campaign")}
                     entityType="campaign"
                     showCampaignRef={false}
                     showPersona={true}
-                    title={selectedCampaignId ? "Selected Campaign Performance" : "Campaign Performance"}
+                    title={selectedCampaignIds.length > 0 ? "Selected Campaign Performance" : "Campaign Performance"}
                     onGenerateCreative={(entity) => {
                       setGenerateMode("single");
                       setSelectedEntityForGenerate(entity);
@@ -1280,11 +1221,11 @@ export default function AdsReportingSection() {
                 {level === "AD_GROUP" && (
                   <>
                     <EntityPerformanceTable
-                      entities={filteredEntities.filter(e => e.entity_type === "ad_group")}
+                      entities={data.entities.filter(e => e.entity_type === "ad_group")}
                       entityType="ad_group"
                       showCampaignRef={true}
                       showPersona={true}
-                      title={selectedCampaignId ? "Filtered Ad Group Performance" : "Ad Group Performance"}
+                      title={selectedCampaignIds.length > 0 ? "Filtered Ad Group Performance" : "Ad Group Performance"}
                       onGenerateCreative={(entity) => {
                         setGenerateMode("single");
                         setSelectedEntityForGenerate(entity);
@@ -1297,11 +1238,11 @@ export default function AdsReportingSection() {
                 {/* Ad Performance Table */}
                 {level === "PIN_PROMOTION" && (
                   <EntityPerformanceTable
-                    entities={filteredEntities.filter(e => e.entity_type === "ad")}
+                    entities={data.entities.filter(e => e.entity_type === "ad")}
                     entityType="ad"
                     showCampaignRef={true}
                     showPersona={true}
-                    title={selectedCampaignId || selectedAdGroupId ? "Filtered Ad Performance" : "Ad Performance"}
+                    title={selectedCampaignIds.length > 0 || selectedAdIds.length > 0 ? "Filtered Ad Performance" : "Ad Performance"}
                     onGenerateCreative={(entity) => {
                       setGenerateMode("single");
                       setSelectedEntityForGenerate(entity);
