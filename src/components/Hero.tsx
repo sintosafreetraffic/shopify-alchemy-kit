@@ -121,6 +121,7 @@ export const Hero = () => {
       addItem(cartItem);
       const toastId = toast.success("Added to cart!", {
         description: `${quantity} ${quantity === 1 ? 'pillow' : 'pillows'} added with ${selectedMaskColor} sleep mask.`,
+        duration: 1500,
         cancel: {
           label: "✕",
           onClick: () => {

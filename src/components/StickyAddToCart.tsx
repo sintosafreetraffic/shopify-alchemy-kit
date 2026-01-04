@@ -138,6 +138,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
           : `${itemQuantity} ${product.node.title}${itemQuantity > 1 ? 's' : ''}`;
       const toastId = toast.success("Added to cart!", {
         description: `${itemName} added to your cart.`,
+        duration: 1500,
         cancel: {
           label: "✕",
           onClick: () => {

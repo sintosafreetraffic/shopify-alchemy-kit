@@ -32,6 +32,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
     addItem(cartItem);
     const toastId = toast.success("Added to cart!", {
       description: `${product.node.title} has been added to your cart.`,
+      duration: 1500,
       cancel: {
         label: "✕",
         onClick: () => {
