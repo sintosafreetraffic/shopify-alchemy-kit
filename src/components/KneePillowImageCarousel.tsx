@@ -76,7 +76,7 @@ export const KneePillowImageCarousel = () => {
         </Carousel>
         
         {/* Carousel Thumbnail Indicators */}
-        <div className="flex justify-center gap-2 mt-3 px-4">
+        <div className="flex justify-start gap-2 mt-3 px-4 overflow-x-auto scrollbar-hide">
           {images.map((item, index) => (
             <button
               key={index}
