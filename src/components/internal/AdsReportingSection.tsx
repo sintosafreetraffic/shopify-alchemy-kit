@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAdsReporting, Granularity, EntityMetrics, Level } from "@/hooks/useAdsReporting";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   TrendingUp,
   DollarSign,
@@ -27,6 +34,7 @@ import {
   Mail,
   Loader2,
   Sparkles,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -154,6 +162,11 @@ export default function AdsReportingSection() {
   const [generateMode, setGenerateMode] = useState<"single" | "all">("all");
   const [selectedEntityForGenerate, setSelectedEntityForGenerate] = useState<EntityMetrics | undefined>();
   
+  // Campaign/Ad filtering
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
+  const [selectedAdGroupId, setSelectedAdGroupId] = useState<string | null>(null);
+  const [selectedAdId, setSelectedAdId] = useState<string | null>(null);
+  
   const {
     data,
     loading,
@@ -179,6 +192,131 @@ export default function AdsReportingSection() {
     activeOnlyAds,
     setActiveOnlyAds,
   } = useAdsReporting();
+
+  // Extract unique campaigns and ad groups from entities
+  const { campaigns, adGroups, ads } = useMemo(() => {
+    if (!data?.entities) return { campaigns: [], adGroups: [], ads: [] };
+    
+    const campaignMap = new Map<string, { id: string; name: string }>();
+    const adGroupMap = new Map<string, { id: string; name: string; campaignId?: string }>();
+    const adsList: { id: string; name: string; campaignId?: string; adGroupId?: string }[] = [];
+    
+    data.entities.forEach(entity => {
+      if (entity.entity_type === "campaign") {
+        campaignMap.set(entity.id, { id: entity.id, name: entity.name });
+      } else if (entity.entity_type === "ad_group") {
+        adGroupMap.set(entity.id, { id: entity.id, name: entity.name, campaignId: entity.campaign_id });
+      } else if (entity.entity_type === "ad") {
+        adsList.push({ 
+          id: entity.id, 
+          name: entity.name, 
+          campaignId: entity.campaign_id,
+          adGroupId: entity.ad_group_id 
+        });
+        // Also track parent campaign/ad group
+        if (entity.campaign_id && entity.campaign_name) {
+          campaignMap.set(entity.campaign_id, { id: entity.campaign_id, name: entity.campaign_name });
+        }
+        if (entity.ad_group_id && entity.ad_group_name) {
+          adGroupMap.set(entity.ad_group_id, { 
+            id: entity.ad_group_id, 
+            name: entity.ad_group_name,
+            campaignId: entity.campaign_id 
+          });
+        }
+      }
+    });
+    
+    return {
+      campaigns: Array.from(campaignMap.values()).sort((a, b) => a.name.localeCompare(b.name)),
+      adGroups: Array.from(adGroupMap.values()).sort((a, b) => a.name.localeCompare(b.name)),
+      ads: adsList.sort((a, b) => a.name.localeCompare(b.name)),
+    };
+  }, [data?.entities]);
+
+  // Filter entities based on selection
+  const filteredEntities = useMemo(() => {
+    if (!data?.entities) return [];
+    
+    let filtered = data.entities;
+    
+    if (selectedCampaignId) {
+      filtered = filtered.filter(e => 
+        e.id === selectedCampaignId || 
+        e.campaign_id === selectedCampaignId
+      );
+    }
+    
+    if (selectedAdGroupId) {
+      filtered = filtered.filter(e => 
+        e.id === selectedAdGroupId || 
+        e.ad_group_id === selectedAdGroupId
+      );
+    }
+    
+    if (selectedAdId) {
+      filtered = filtered.filter(e => e.id === selectedAdId);
+    }
+    
+    return filtered;
+  }, [data?.entities, selectedCampaignId, selectedAdGroupId, selectedAdId]);
+
+  // Filtered ad groups based on selected campaign
+  const filteredAdGroups = useMemo(() => {
+    if (!selectedCampaignId) return adGroups;
+    return adGroups.filter(ag => ag.campaignId === selectedCampaignId);
+  }, [adGroups, selectedCampaignId]);
+
+  // Filtered ads based on selected campaign/ad group
+  const filteredAds = useMemo(() => {
+    let result = ads;
+    if (selectedCampaignId) {
+      result = result.filter(a => a.campaignId === selectedCampaignId);
+    }
+    if (selectedAdGroupId) {
+      result = result.filter(a => a.adGroupId === selectedAdGroupId);
+    }
+    return result;
+  }, [ads, selectedCampaignId, selectedAdGroupId]);
+
+  // Clear child selections when parent changes
+  const handleCampaignChange = (value: string) => {
+    if (value === "all") {
+      setSelectedCampaignId(null);
+      setSelectedAdGroupId(null);
+      setSelectedAdId(null);
+    } else {
+      setSelectedCampaignId(value);
+      setSelectedAdGroupId(null);
+      setSelectedAdId(null);
+    }
+  };
+
+  const handleAdGroupChange = (value: string) => {
+    if (value === "all") {
+      setSelectedAdGroupId(null);
+      setSelectedAdId(null);
+    } else {
+      setSelectedAdGroupId(value);
+      setSelectedAdId(null);
+    }
+  };
+
+  const handleAdChange = (value: string) => {
+    if (value === "all") {
+      setSelectedAdId(null);
+    } else {
+      setSelectedAdId(value);
+    }
+  };
+
+  const clearFilters = () => {
+    setSelectedCampaignId(null);
+    setSelectedAdGroupId(null);
+    setSelectedAdId(null);
+  };
+
+  const hasEntityFilters = selectedCampaignId || selectedAdGroupId || selectedAdId;
 
   // Send weekly report email
   const sendWeeklyReport = async () => {
@@ -517,6 +655,77 @@ export default function AdsReportingSection() {
             )}
           </div>
         </div>
+
+        {/* Campaign/Ad Filters - Only show when we have entity data */}
+        {(level === "CAMPAIGN" || level === "AD_GROUP" || level === "PIN_PROMOTION") && data?.entities && data.entities.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-border/50 mt-3">
+            <span className="text-xs text-muted-foreground font-medium">Filter by:</span>
+            
+            {/* Campaign Filter */}
+            {campaigns.length > 0 && (
+              <Select value={selectedCampaignId || "all"} onValueChange={handleCampaignChange}>
+                <SelectTrigger className="h-8 w-[180px] text-xs bg-background">
+                  <SelectValue placeholder="All Campaigns" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="all" className="text-xs">All Campaigns</SelectItem>
+                  {campaigns.map(c => (
+                    <SelectItem key={c.id} value={c.id} className="text-xs">
+                      {c.name.length > 25 ? `${c.name.slice(0, 25)}...` : c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            {/* Ad Group Filter - Only show when campaign is selected or at ad group level */}
+            {(selectedCampaignId || level === "AD_GROUP") && filteredAdGroups.length > 0 && (
+              <Select value={selectedAdGroupId || "all"} onValueChange={handleAdGroupChange}>
+                <SelectTrigger className="h-8 w-[180px] text-xs bg-background">
+                  <SelectValue placeholder="All Ad Groups" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="all" className="text-xs">All Ad Groups</SelectItem>
+                  {filteredAdGroups.map(ag => (
+                    <SelectItem key={ag.id} value={ag.id} className="text-xs">
+                      {ag.name.length > 25 ? `${ag.name.slice(0, 25)}...` : ag.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            {/* Ad Filter - Only show when ad group is selected or at ad level */}
+            {(selectedAdGroupId || level === "PIN_PROMOTION") && filteredAds.length > 0 && (
+              <Select value={selectedAdId || "all"} onValueChange={handleAdChange}>
+                <SelectTrigger className="h-8 w-[180px] text-xs bg-background">
+                  <SelectValue placeholder="All Ads" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="all" className="text-xs">All Ads</SelectItem>
+                  {filteredAds.map(a => (
+                    <SelectItem key={a.id} value={a.id} className="text-xs">
+                      {a.name.length > 25 ? `${a.name.slice(0, 25)}...` : a.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            {/* Clear Filters Button */}
+            {hasEntityFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="h-8 text-xs gap-1"
+              >
+                <X className="h-3 w-3" />
+                Clear
+              </Button>
+            )}
+          </div>
+        )}
       </CardHeader>
 
       <CardContent className="space-y-6">
@@ -1033,11 +1242,11 @@ export default function AdsReportingSection() {
                 {/* Campaign Performance Table - show when at ACCOUNT or CAMPAIGN level */}
                 {(level === "ACCOUNT" || level === "CAMPAIGN") && (
                   <EntityPerformanceTable
-                    entities={data.entities.filter(e => e.entity_type === "campaign")}
+                    entities={filteredEntities.filter(e => e.entity_type === "campaign")}
                     entityType="campaign"
                     showCampaignRef={false}
                     showPersona={true}
-                    title="Campaign Performance"
+                    title={selectedCampaignId ? "Selected Campaign Performance" : "Campaign Performance"}
                     onGenerateCreative={(entity) => {
                       setGenerateMode("single");
                       setSelectedEntityForGenerate(entity);
@@ -1050,11 +1259,11 @@ export default function AdsReportingSection() {
                 {level === "AD_GROUP" && (
                   <>
                     <EntityPerformanceTable
-                      entities={data.entities.filter(e => e.entity_type === "ad_group")}
+                      entities={filteredEntities.filter(e => e.entity_type === "ad_group")}
                       entityType="ad_group"
                       showCampaignRef={true}
                       showPersona={true}
-                      title="Ad Group Performance"
+                      title={selectedCampaignId ? "Filtered Ad Group Performance" : "Ad Group Performance"}
                       onGenerateCreative={(entity) => {
                         setGenerateMode("single");
                         setSelectedEntityForGenerate(entity);
@@ -1067,11 +1276,11 @@ export default function AdsReportingSection() {
                 {/* Ad Performance Table */}
                 {level === "PIN_PROMOTION" && (
                   <EntityPerformanceTable
-                    entities={data.entities.filter(e => e.entity_type === "ad")}
+                    entities={filteredEntities.filter(e => e.entity_type === "ad")}
                     entityType="ad"
                     showCampaignRef={true}
                     showPersona={true}
-                    title="Ad Performance"
+                    title={selectedCampaignId || selectedAdGroupId ? "Filtered Ad Performance" : "Ad Performance"}
                     onGenerateCreative={(entity) => {
                       setGenerateMode("single");
                       setSelectedEntityForGenerate(entity);
@@ -1085,7 +1294,14 @@ export default function AdsReportingSection() {
             {chartData.length > 0 && (
               <Card className="bg-card/30 border-border/30 overflow-hidden">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium">Daily Breakdown</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-medium">Daily Breakdown</CardTitle>
+                    {hasEntityFilters && (
+                      <Badge variant="outline" className="text-xs text-muted-foreground">
+                        Showing account-level data
+                      </Badge>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="max-h-64 overflow-auto">
