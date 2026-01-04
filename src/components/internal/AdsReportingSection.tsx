@@ -621,8 +621,15 @@ export default function AdsReportingSection() {
                     onValueChange={(value) => {
                       if (value === "all") {
                         clearAdSelection();
+                      } else if (value === "select-all") {
+                        selectAllAds();
                       } else if (value !== "multiple") {
-                        setSelectedAdIds([value]);
+                        // Toggle: if already selected, deselect; otherwise add to selection
+                        if (selectedAdIds.includes(value)) {
+                          setSelectedAdIds(prev => prev.filter(id => id !== value));
+                        } else {
+                          setSelectedAdIds(prev => [...prev, value]);
+                        }
                       }
                     }}
                   >
@@ -635,18 +642,28 @@ export default function AdsReportingSection() {
                             : `${selectedAdIds.length} ads selected`}
                       </SelectValue>
                     </SelectTrigger>
-                    <SelectContent className="bg-popover z-50">
-                      <SelectItem value="all" className="text-xs">All Ads</SelectItem>
+                    <SelectContent className="bg-popover z-50 max-h-[300px]">
+                      <SelectItem value="all" className="text-xs font-medium">All Ads</SelectItem>
+                      <SelectItem value="select-all" className="text-xs text-primary">Select All ({ads.length})</SelectItem>
+                      <div className="h-px bg-border my-1" />
                       {ads.map(a => (
-                        <SelectItem key={a.id} value={a.id} className="text-xs">
-                          {a.name.length > 30 ? `${a.name.slice(0, 30)}...` : a.name}
+                        <SelectItem 
+                          key={a.id} 
+                          value={a.id} 
+                          className={cn("text-xs", selectedAdIds.includes(a.id) && "bg-primary/10")}
+                        >
+                          <span className="flex items-center gap-2">
+                            {selectedAdIds.includes(a.id) && <span className="text-primary">✓</span>}
+                            {a.name.length > 30 ? `${a.name.slice(0, 30)}...` : a.name}
+                          </span>
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  {selectedAdIds.length > 0 && selectedAdIds.length < ads.length && (
-                    <Button variant="ghost" size="sm" onClick={selectAllAds} className="h-7 text-xs">
-                      Select all
+                  {selectedAdIds.length > 0 && (
+                    <Button variant="ghost" size="sm" onClick={clearAdSelection} className="h-7 text-xs gap-1">
+                      <X className="h-3 w-3" />
+                      Clear
                     </Button>
                   )}
                 </>
