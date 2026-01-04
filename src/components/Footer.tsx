@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import moonIcon from "@/assets/moon-icon-blue.png";
 
 export const Footer = () => {
@@ -26,11 +27,25 @@ export const Footer = () => {
     }
 
     setIsSubmitting(true);
-    // Simulate subscription (replace with actual API call)
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    toast.success("Thanks for subscribing! Check your inbox for sleep tips.");
-    setEmail("");
-    setIsSubmitting(false);
+    
+    try {
+      const { error } = await supabase.functions.invoke("klaviyo-subscribe", {
+        body: { 
+          email, 
+          source: "footer_newsletter" 
+        },
+      });
+
+      if (error) throw error;
+      
+      toast.success("Thanks for subscribing! Check your inbox for sleep tips.");
+      setEmail("");
+    } catch (error) {
+      console.error("Newsletter subscription error:", error);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
