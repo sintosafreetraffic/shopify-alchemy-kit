@@ -1096,8 +1096,11 @@ export default function AdsReportingSection() {
                           <TableHead className="text-xs font-medium text-right">Spend</TableHead>
                           <TableHead className="text-xs font-medium text-right">Revenue</TableHead>
                           <TableHead className="text-xs font-medium text-right">ROAS</TableHead>
+                          <TableHead className="text-xs font-medium text-right">Impr.</TableHead>
                           <TableHead className="text-xs font-medium text-right">Clicks</TableHead>
                           <TableHead className="text-xs font-medium text-right">CTR</TableHead>
+                          <TableHead className="text-xs font-medium text-right">CPM</TableHead>
+                          <TableHead className="text-xs font-medium text-right">CPC</TableHead>
                           <TableHead className="text-xs font-medium text-right">Checkouts</TableHead>
                           <TableHead className="text-xs font-medium text-right">Conv Rate</TableHead>
                           <TableHead className="text-xs font-medium text-right">CPA</TableHead>
@@ -1140,8 +1143,11 @@ export default function AdsReportingSection() {
                                 {entry.roas.toFixed(2)}x
                               </span>
                             </TableCell>
+                            <TableCell className="text-xs text-right">{entry.impressions?.toLocaleString() ?? "-"}</TableCell>
                             <TableCell className="text-xs text-right">{entry.clicks.toLocaleString()}</TableCell>
                             <TableCell className="text-xs text-right">{entry.ctr.toFixed(2)}%</TableCell>
+                            <TableCell className="text-xs text-right">€{entry.cpm?.toFixed(2) ?? "-"}</TableCell>
+                            <TableCell className="text-xs text-right">€{entry.cpc?.toFixed(2) ?? "-"}</TableCell>
                             <TableCell className="text-xs text-right">{entry.checkouts}</TableCell>
                             <TableCell className="text-xs text-right">{entry.conversion_rate.toFixed(2)}%</TableCell>
                             <TableCell className="text-xs text-right">
