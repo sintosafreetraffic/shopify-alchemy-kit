@@ -124,7 +124,7 @@ export function SleeperPersonaDiscovery() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-primary p-0 h-auto group/btn hover:bg-transparent"
+                          className="text-primary p-0 h-auto group/btn hover:bg-transparent hover:text-primary/80"
                         >
                           Take the assessment to confirm
                           <ArrowRight className="w-4 h-4 ml-1.5 group-hover/btn:translate-x-1 transition-transform" />
