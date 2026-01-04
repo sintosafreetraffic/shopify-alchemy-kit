@@ -1,6 +1,7 @@
 // Performance: Using OptimizedImage for lazy loading
 import { Check } from "lucide-react";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
+import sleepMaskBenefits from "@/assets/sleep-mask-benefits-new.webp";
 import OptimizedImage from "@/components/OptimizedImage";
 
 const features: Array<{
@@ -11,7 +12,7 @@ const features: Array<{
   imagePosition: "left" | "right";
 }> = [
   {
-    image: eyeMaskGift,
+    image: sleepMaskBenefits,
     title: "Luxury Silk for Ultimate Comfort",
     description: "Made from 100% pure mulberry silk, our deep sleep mask is incredibly soft and gentle on your skin. Unlike synthetic materials, silk is naturally hypoallergenic and won't absorb your skin's moisture or beauty products.",
     benefits: [
