@@ -326,8 +326,8 @@ export function AdsMetricsOverview({ data }: AdsMetricsOverviewProps) {
           </Alert>
         ))}
 
-        {/* Metrics Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+        {/* Metrics Grid - 2 columns for better readability */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {overview.metrics.map((metric) => {
             const TrendIcon = getTrendIcon(metric.trend);
             const StatusIcon = getStatusIcon(metric.status);
@@ -339,31 +339,30 @@ export function AdsMetricsOverview({ data }: AdsMetricsOverviewProps) {
               <div
                 key={metric.metric}
                 className={cn(
-                  "p-3 rounded-lg border transition-colors",
+                  "p-4 rounded-lg border transition-colors",
                   statusColor
                 )}
               >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium uppercase tracking-wide opacity-70">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold uppercase tracking-wide opacity-80">
                     {metric.metric}
                   </span>
-                  <StatusIcon className="h-3 w-3" />
+                  <div className="flex items-center gap-1.5">
+                    <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0.5", confidenceBadge.className)}>
+                      {confidenceBadge.label}
+                    </Badge>
+                    <StatusIcon className="h-3.5 w-3.5" />
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-1 mb-1">
-                  <span className="text-lg font-bold">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-2xl font-bold">
                     {formatValue(metric.metric, metric.value)}
                   </span>
-                  <TrendIcon className={cn("h-4 w-4", trendColor)} />
+                  <TrendIcon className={cn("h-5 w-5", trendColor)} />
                 </div>
 
-                <div className="flex items-center gap-1 mb-2">
-                  <Badge variant="outline" className={cn("text-[10px] px-1 py-0", confidenceBadge.className)}>
-                    {confidenceBadge.label}
-                  </Badge>
-                </div>
-
-                <p className="text-[10px] text-muted-foreground leading-tight line-clamp-2">
+                <p className="text-xs text-muted-foreground leading-relaxed">
                   {metric.explanation}
                 </p>
               </div>

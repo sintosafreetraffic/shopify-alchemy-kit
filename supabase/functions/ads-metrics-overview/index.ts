@@ -238,104 +238,36 @@ function computeConfidence(
   return "high";
 }
 
-function generateExplanation(
-  metricKey: string,
-  displayName: string,
-  value: number | string,
-  trend: "up" | "down" | "flat",
-  status: "healthy" | "watch" | "critical",
-  confidence: "high" | "medium" | "low",
-  isConversionMetric: boolean,
-  breakEvenRoas: number
-): string {
-  const trendWord = trend === "up" ? "rising" : trend === "down" ? "declining" : "stable";
-  const confidenceNote = confidence === "low" ? " (low data volume)" : "";
-  const lagNote = isConversionMetric && confidence !== "high" ? " Attribution lag may affect recent data." : "";
-  
-  switch (metricKey) {
-    case "roas":
-      if (status === "healthy") {
-        return `ROAS ${trendWord} above break-even (${breakEvenRoas.toFixed(2)}x).${confidenceNote}`;
-      } else if (status === "watch") {
-        return `ROAS ${trendWord} near break-even threshold.${lagNote}${confidenceNote}`;
-      } else {
-        return `ROAS below break-even (${breakEvenRoas.toFixed(2)}x). ${trendWord}.${lagNote}${confidenceNote}`;
-      }
-      
-    case "cpa":
-      if (status === "healthy") {
-        return `CPA ${trendWord}, within target range.${confidenceNote}`;
-      } else if (status === "watch") {
-        return `CPA ${trendWord}, approaching efficiency threshold.${lagNote}${confidenceNote}`;
-      } else {
-        return `CPA elevated, exceeds target threshold.${lagNote}${confidenceNote}`;
-      }
-      
-    case "ctr":
-      if (status === "healthy") {
-        return `CTR ${trendWord} at ${typeof value === "number" ? value.toFixed(2) : value}%, above benchmark.${confidenceNote}`;
-      } else if (status === "watch") {
-        return `CTR ${trendWord}, slightly below platform average.${confidenceNote}`;
-      } else {
-        return `CTR needs attention at ${typeof value === "number" ? value.toFixed(2) : value}%, below benchmark.${confidenceNote}`;
-      }
-      
-    case "cpm":
-      if (status === "healthy") {
-        return `CPM efficient at €${typeof value === "number" ? value.toFixed(2) : value}, ${trendWord}.${confidenceNote}`;
-      } else if (status === "watch") {
-        return `CPM ${trendWord}, approaching threshold.${confidenceNote}`;
-      } else {
-        return `CPM elevated, may impact efficiency.${confidenceNote}`;
-      }
-      
-    case "cpc":
-      if (status === "healthy") {
-        return `CPC efficient at €${typeof value === "number" ? value.toFixed(2) : value}, ${trendWord}.${confidenceNote}`;
-      } else if (status === "watch") {
-        return `CPC ${trendWord}, near threshold.${confidenceNote}`;
-      } else {
-        return `CPC elevated, affecting efficiency.${confidenceNote}`;
-      }
-      
-    case "frequency":
-      if (status === "healthy") {
-        return `Frequency healthy at ${typeof value === "number" ? value.toFixed(1) : value}, no fatigue risk.${confidenceNote}`;
-      } else if (status === "watch") {
-        return `Frequency ${trendWord}, monitor for ad fatigue.${confidenceNote}`;
-      } else {
-        return `High frequency may cause ad fatigue.${confidenceNote}`;
-      }
-      
-    case "conversionRate":
-      if (status === "healthy") {
-        return `Conversion rate ${trendWord} at ${typeof value === "number" ? value.toFixed(2) : value}%.${confidenceNote}`;
-      } else if (status === "watch") {
-        return `Conversion rate ${trendWord}, slightly below target.${lagNote}${confidenceNote}`;
-      } else {
-        return `Conversion rate needs improvement.${lagNote}${confidenceNote}`;
-      }
-      
-    case "atcRate":
-      if (status === "healthy") {
-        return `Add-to-cart rate ${trendWord} at ${typeof value === "number" ? value.toFixed(2) : value}%.${confidenceNote}`;
-      } else if (status === "watch") {
-        return `Add-to-cart rate ${trendWord}, approaching threshold.${lagNote}${confidenceNote}`;
-      } else {
-        return `Add-to-cart rate below benchmark.${lagNote}${confidenceNote}`;
-      }
-      
-    default:
-      return `${displayName} ${trendWord}.${confidenceNote}`;
-  }
+// Old generateExplanation removed - now using generateEnhancedExplanationWithAI
+
+interface MetricContext {
+  key: string;
+  displayName: string;
+  value: number;
+  trend: "up" | "down" | "flat";
+  status: "healthy" | "watch" | "critical";
 }
 
-async function polishExplanationWithAI(explanation: string, metricName: string): Promise<string> {
+async function generateEnhancedExplanationWithAI(
+  metric: MetricContext,
+  allMetrics: MetricContext[],
+  breakEvenRoas: number,
+  isLearningPhase: boolean,
+  confidence: "high" | "medium" | "low"
+): Promise<string> {
   try {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
-      return explanation; // Fallback to original
+      return generateFallbackExplanation(metric, allMetrics, breakEvenRoas, confidence);
     }
+    
+    // Build context about all metrics for cross-comparison
+    const metricsContext = allMetrics.map(m => 
+      `${m.displayName}: ${m.value.toFixed(2)} (${m.status}, ${m.trend})`
+    ).join("; ");
+    
+    // Identify related metrics for comparison
+    const relatedInsights = getRelatedMetricInsights(metric, allMetrics);
     
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -348,30 +280,180 @@ async function polishExplanationWithAI(explanation: string, metricName: string):
         messages: [
           {
             role: "system",
-            content: "You are a concise ads metrics analyst. Rewrite the explanation to be clearer and more natural. Keep it under 20 words. Do not recommend actions. Output only the rewritten explanation, nothing else."
+            content: `You are a Pinterest Ads performance analyst. Generate a helpful, actionable insight for the given metric.
+
+RULES:
+- Write 2-3 sentences (40-60 words)
+- First sentence: describe the current state and trend
+- Second sentence: compare with related metrics if relevant
+- Third sentence: give ONE specific suggestion for improvement (if status is watch/critical)
+- Be direct and actionable
+- Reference break-even ROAS of ${breakEvenRoas.toFixed(2)}x when relevant
+- If confidence is low, mention data is still accumulating
+${isLearningPhase ? "- Account is in learning phase, be cautious with conclusions" : ""}
+
+Output only the insight text, nothing else.`
           },
           {
             role: "user",
-            content: `Metric: ${metricName}\nOriginal: ${explanation}`
+            content: `Metric: ${metric.displayName}
+Value: ${metric.value.toFixed(2)}
+Status: ${metric.status}
+Trend: ${metric.trend}
+Confidence: ${confidence}
+
+All metrics context: ${metricsContext}
+
+Related observations: ${relatedInsights}`
           }
         ],
-        max_tokens: 60,
+        max_tokens: 150,
       }),
     });
     
     if (!response.ok) {
-      log("warn", "AI polish failed", { status: response.status });
-      return explanation;
+      log("warn", "AI enhanced explanation failed", { status: response.status });
+      return generateFallbackExplanation(metric, allMetrics, breakEvenRoas, confidence);
     }
     
     const data = await response.json();
-    const polished = data.choices?.[0]?.message?.content?.trim();
+    const enhanced = data.choices?.[0]?.message?.content?.trim();
     
-    return polished && polished.length > 0 && polished.length < 150 ? polished : explanation;
+    return enhanced && enhanced.length > 20 && enhanced.length < 300 
+      ? enhanced 
+      : generateFallbackExplanation(metric, allMetrics, breakEvenRoas, confidence);
   } catch (err) {
-    log("warn", "AI polish error", { error: err instanceof Error ? err.message : String(err) });
-    return explanation;
+    log("warn", "AI enhanced explanation error", { error: err instanceof Error ? err.message : String(err) });
+    return generateFallbackExplanation(metric, allMetrics, breakEvenRoas, confidence);
   }
+}
+
+function getRelatedMetricInsights(metric: MetricContext, allMetrics: MetricContext[]): string {
+  const insights: string[] = [];
+  const metricsMap = Object.fromEntries(allMetrics.map(m => [m.key, m]));
+  
+  // Cross-metric comparisons
+  switch (metric.key) {
+    case "roas":
+      if (metricsMap.cpa?.status === "critical") {
+        insights.push("CPA is high which may explain ROAS pressure");
+      }
+      if (metricsMap.conversionRate?.status === "critical") {
+        insights.push("Low conversion rate is impacting ROAS");
+      }
+      if (metricsMap.ctr?.status === "healthy" && metricsMap.conversionRate?.status !== "healthy") {
+        insights.push("Good CTR but conversion drop-off suggests landing page issues");
+      }
+      break;
+      
+    case "cpa":
+      if (metricsMap.cpc?.trend === "up") {
+        insights.push("Rising CPC is pushing up CPA");
+      }
+      if (metricsMap.conversionRate?.trend === "down") {
+        insights.push("Declining conversion rate is inflating CPA");
+      }
+      break;
+      
+    case "ctr":
+      if (metricsMap.cpm?.status === "healthy" && metric.status !== "healthy") {
+        insights.push("Good CPM but low CTR suggests creative fatigue");
+      }
+      if (metricsMap.frequency?.value > 3) {
+        insights.push("High frequency may be causing CTR decline");
+      }
+      break;
+      
+    case "cpm":
+      if (metricsMap.ctr?.status === "healthy") {
+        insights.push("Strong CTR justifies current CPM");
+      }
+      break;
+      
+    case "cpc":
+      if (metricsMap.ctr?.trend === "down") {
+        insights.push("Declining CTR is driving CPC higher");
+      }
+      if (metricsMap.cpm?.trend === "up" && metricsMap.ctr?.trend === "flat") {
+        insights.push("Rising CPM with flat CTR is increasing CPC");
+      }
+      break;
+      
+    case "conversionRate":
+      if (metricsMap.atcRate?.status === "healthy" && metric.status !== "healthy") {
+        insights.push("Good ATC rate but checkout drop-off suggests cart abandonment");
+      }
+      if (metricsMap.ctr?.status === "healthy") {
+        insights.push("Good CTR indicates audience match, conversion issue is post-click");
+      }
+      break;
+      
+    case "atcRate":
+      if (metricsMap.ctr?.status === "healthy" && metric.status !== "healthy") {
+        insights.push("Good CTR but low ATC suggests product page optimization needed");
+      }
+      if (metricsMap.conversionRate?.status === "critical") {
+        insights.push("Both ATC and conversion are weak, review full funnel");
+      }
+      break;
+  }
+  
+  return insights.length > 0 ? insights.join(". ") : "No specific cross-metric patterns detected";
+}
+
+function generateFallbackExplanation(
+  metric: MetricContext,
+  allMetrics: MetricContext[],
+  breakEvenRoas: number,
+  confidence: "high" | "medium" | "low"
+): string {
+  const trendWord = metric.trend === "up" ? "trending up" : metric.trend === "down" ? "trending down" : "stable";
+  const confidenceNote = confidence === "low" ? " Data is still accumulating." : "";
+  const relatedInsight = getRelatedMetricInsights(metric, allMetrics).split(".")[0];
+  
+  let base = "";
+  let suggestion = "";
+  
+  switch (metric.key) {
+    case "roas":
+      base = metric.status === "healthy" 
+        ? `ROAS at ${metric.value.toFixed(2)}x is ${trendWord} and above break-even (${breakEvenRoas.toFixed(2)}x).`
+        : `ROAS at ${metric.value.toFixed(2)}x is ${trendWord}, ${metric.status === "critical" ? "below" : "near"} break-even (${breakEvenRoas.toFixed(2)}x).`;
+      suggestion = metric.status !== "healthy" ? " Consider reviewing underperforming ads or adjusting targeting." : "";
+      break;
+    case "cpa":
+      base = `CPA at €${metric.value.toFixed(2)} is ${trendWord}.`;
+      suggestion = metric.status === "critical" ? " Try pausing high-CPA ads or narrowing audience." : "";
+      break;
+    case "ctr":
+      base = `CTR at ${metric.value.toFixed(2)}% is ${trendWord}.`;
+      suggestion = metric.status === "critical" ? " Test new creative variations or refine audience targeting." : "";
+      break;
+    case "cpm":
+      base = `CPM at €${metric.value.toFixed(2)} is ${trendWord}.`;
+      suggestion = metric.status === "critical" ? " Broaden targeting or review ad relevance." : "";
+      break;
+    case "cpc":
+      base = `CPC at €${metric.value.toFixed(2)} is ${trendWord}.`;
+      suggestion = metric.status === "critical" ? " Improve CTR with better creatives to lower CPC." : "";
+      break;
+    case "conversionRate":
+      base = `Conversion rate at ${metric.value.toFixed(2)}% is ${trendWord}.`;
+      suggestion = metric.status === "critical" ? " Review landing page experience and checkout flow." : "";
+      break;
+    case "atcRate":
+      base = `Add-to-cart rate at ${metric.value.toFixed(2)}% is ${trendWord}.`;
+      suggestion = metric.status === "critical" ? " Optimize product pages and pricing visibility." : "";
+      break;
+    default:
+      base = `${metric.displayName} at ${metric.value.toFixed(2)} is ${trendWord}.`;
+  }
+  
+  const crossMetricNote = relatedInsight && relatedInsight !== "No specific cross-metric patterns detected" 
+    ? ` ${relatedInsight}.` 
+    : "";
+  
+  return `${base}${crossMetricNote}${suggestion}${confidenceNote}`;
 }
 
 serve(async (req) => {
@@ -452,8 +534,17 @@ serve(async (req) => {
       { key: "atcRate", displayName: "Add-to-Cart Rate", value: totals.add_to_cart_rate, timeseriesKey: "add_to_cart_rate", format: "percent" },
     ];
     
-    // Process each metric
-    const metricsResults: MetricResult[] = [];
+    // First pass: compute all metrics with trends and status
+    interface ProcessedMetric {
+      config: typeof metricsConfig[0];
+      trend: "up" | "down" | "flat";
+      status: "healthy" | "watch" | "critical";
+      confidence: "high" | "medium" | "low";
+      value: number;
+      isNA: boolean;
+    }
+    
+    const processedMetrics: ProcessedMetric[] = [];
     
     for (const config of metricsConfig) {
       const isConversionMetric = CONVERSION_METRICS.includes(config.key);
@@ -468,13 +559,13 @@ serve(async (req) => {
       
       // Handle N/A case
       if (config.value === undefined || config.value === null || (config.value === 0 && config.key !== "cpa")) {
-        metricsResults.push({
-          metric: config.displayName,
-          value: "N/A",
+        processedMetrics.push({
+          config,
           trend: "flat",
           status: "watch",
           confidence: "low",
-          explanation: `${config.displayName} data not available or zero.`,
+          value: 0,
+          isNA: true,
         });
         continue;
       }
@@ -494,44 +585,69 @@ serve(async (req) => {
         ? "medium"
         : confidence;
       
-      const explanation = generateExplanation(
-        config.key,
-        config.displayName,
-        config.value,
-        trend,
-        status,
-        finalConfidence,
-        isConversionMetric,
-        breakEvenRoas
-      );
-      
-      // Format value for display
-      let displayValue: number | string = config.value;
-      if (config.format === "currency") {
-        displayValue = config.value;
-      } else if (config.format === "percent") {
-        displayValue = config.value;
-      } else if (config.format === "multiplier") {
-        displayValue = config.value;
-      }
-      
-      metricsResults.push({
-        metric: config.displayName,
-        value: displayValue,
+      processedMetrics.push({
+        config,
         trend,
         status,
         confidence: finalConfidence,
-        explanation,
+        value: config.value,
+        isNA: false,
       });
     }
     
-    // Polish explanations with AI (batch for efficiency, limit to avoid rate limits)
-    const polishPromises = metricsResults.slice(0, 4).map(async (result, idx) => {
-      const polished = await polishExplanationWithAI(result.explanation, result.metric);
-      metricsResults[idx].explanation = polished;
-    });
+    // Build context for cross-metric comparisons
+    const allMetricsContext: MetricContext[] = processedMetrics
+      .filter(p => !p.isNA)
+      .map(p => ({
+        key: p.config.key,
+        displayName: p.config.displayName,
+        value: p.value,
+        trend: p.trend,
+        status: p.status,
+      }));
     
-    await Promise.all(polishPromises);
+    // Second pass: generate enhanced explanations with cross-metric insights
+    const metricsResults: MetricResult[] = [];
+    
+    for (const processed of processedMetrics) {
+      if (processed.isNA) {
+        metricsResults.push({
+          metric: processed.config.displayName,
+          value: "N/A",
+          trend: "flat",
+          status: "watch",
+          confidence: "low",
+          explanation: `${processed.config.displayName} data not available or zero.`,
+        });
+        continue;
+      }
+      
+      const metricContext: MetricContext = {
+        key: processed.config.key,
+        displayName: processed.config.displayName,
+        value: processed.value,
+        trend: processed.trend,
+        status: processed.status,
+      };
+      
+      // Generate enhanced explanation with AI (includes cross-metric insights and suggestions)
+      const explanation = await generateEnhancedExplanationWithAI(
+        metricContext,
+        allMetricsContext,
+        breakEvenRoas,
+        isLearningPhase,
+        processed.confidence
+      );
+      
+      metricsResults.push({
+        metric: processed.config.displayName,
+        value: processed.value,
+        trend: processed.trend,
+        status: processed.status,
+        confidence: processed.confidence,
+        explanation,
+      });
+    }
     
     const response: OverviewResponse = {
       isLearningPhase,
