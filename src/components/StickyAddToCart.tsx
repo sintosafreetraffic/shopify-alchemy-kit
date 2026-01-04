@@ -395,7 +395,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                         </div>
                         <div className="flex flex-col items-start">
                           <span className="text-xs leading-none whitespace-nowrap">Add to Cart</span>
-                          <span className="font-bold leading-none whitespace-nowrap">${addToCartValue.toFixed(2)}</span>
+                          <span className="font-bold leading-none whitespace-nowrap text-primary">${addToCartValue.toFixed(2)}</span>
                         </div>
                       </span>
                       <span className="absolute inset-0 flex items-center justify-center gap-2 translate-y-12 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
@@ -409,7 +409,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                         </div>
                         <div className="flex flex-col items-start">
                           <span className="text-xs leading-none whitespace-nowrap">Add to Cart</span>
-                          <span className="font-bold leading-none whitespace-nowrap">${addToCartValue.toFixed(2)}</span>
+                          <span className="font-bold leading-none whitespace-nowrap text-primary">${addToCartValue.toFixed(2)}</span>
                         </div>
                       </span>
                     </>

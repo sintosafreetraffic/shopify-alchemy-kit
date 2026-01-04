@@ -186,7 +186,7 @@ export const KneePillowHero = () => {
 
             {/* Price Display - Above USPs */}
             <div className="flex items-center gap-3 mt-2 mb-3">
-              <p className="text-xl md:text-2xl font-bold">${productPrice.toFixed(2)}</p>
+              <p className="text-xl md:text-2xl font-bold text-primary">${productPrice.toFixed(2)}</p>
             </div>
 
             {/* Benefit-Focused USPs Section */}

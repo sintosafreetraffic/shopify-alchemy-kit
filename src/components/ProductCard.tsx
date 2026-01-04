@@ -67,7 +67,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             {product.node.description}
           </p>
           <div className="flex items-baseline gap-2 mb-3">
-            <span className="text-2xl font-bold">
+            <span className="text-2xl font-bold text-primary">
               ${price.toFixed(2)}
             </span>
             {compareAtPrice && (
