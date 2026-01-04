@@ -45,7 +45,7 @@ export const Header = () => {
                 <SheetTitle className="text-xl font-semibold">Menu</SheetTitle>
               </SheetHeader>
               
-              {/* Quick Links */}
+              {/* Main Navigation */}
               <nav className="flex flex-col gap-1">
                 <NavLink 
                   to="/" 
@@ -69,32 +69,11 @@ export const Header = () => {
                   Sleep Assessment
                 </NavLink>
                 <NavLink 
-                  to="/benefits" 
-                  className="text-base font-medium text-foreground hover:text-primary hover:bg-muted/50 transition-colors py-3 px-2 rounded-md"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Benefits
-                </NavLink>
-                <NavLink 
-                  to="/reviews" 
-                  className="text-base font-medium text-foreground hover:text-primary hover:bg-muted/50 transition-colors py-3 px-2 rounded-md"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Reviews
-                </NavLink>
-                <NavLink 
                   to="/sleep-guides" 
                   className="text-base font-medium text-foreground hover:text-primary hover:bg-muted/50 transition-colors py-3 px-2 rounded-md"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Sleep Guides
-                </NavLink>
-                <NavLink 
-                  to="/guarantee" 
-                  className="text-base font-medium text-foreground hover:text-primary hover:bg-muted/50 transition-colors py-3 px-2 rounded-md"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Guarantee
                 </NavLink>
                 <NavLink 
                   to="/collective" 
