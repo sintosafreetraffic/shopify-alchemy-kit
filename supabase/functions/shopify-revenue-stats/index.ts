@@ -88,10 +88,11 @@ serve(async (req) => {
     console.log(`[ShopifyRevenue] Found ${allOrders.length} orders in ${pageCount} pages`);
 
     // Calculate revenue stats
+    // Shopify store uses EUR - this will be confirmed from API response
     let grossRevenue = 0;
     let totalRefunds = 0;
     let refundedOrderCount = 0;
-    let currency = "USD";
+    let currency = "EUR"; // Default to EUR (store currency), will be overwritten by actual order currency
 
     for (const order of allOrders) {
       const orderTotal = parseFloat(order.total_price) || 0;
