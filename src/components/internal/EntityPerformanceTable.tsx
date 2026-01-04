@@ -43,6 +43,7 @@ type SortableColumn =
   | "spend"
   | "revenue"
   | "roas"
+  | "impressions"
   | "clicks"
   | "ctr"
   | "cpm"
@@ -476,6 +477,15 @@ export function EntityPerformanceTable({
                   ROAS
                 </SortableHeader>
                 <SortableHeader
+                  column="impressions"
+                  currentSort={sortColumn}
+                  currentDirection={sortDirection}
+                  onSort={handleSort}
+                  className="text-right"
+                >
+                  Impr.
+                </SortableHeader>
+                <SortableHeader
                   column="clicks"
                   currentSort={sortColumn}
                   currentDirection={sortDirection}
@@ -663,6 +673,9 @@ export function EntityPerformanceTable({
                       >
                         {entity.roas.toFixed(2)}x
                       </span>
+                    </TableCell>
+                    <TableCell className="text-xs text-right">
+                      {entity.impressions.toLocaleString()}
                     </TableCell>
                     <TableCell className="text-xs text-right">
                       {entity.clicks.toLocaleString()}
