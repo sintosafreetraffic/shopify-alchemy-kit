@@ -27,6 +27,7 @@ import sleepMaskPink from "@/assets/sleep-mask-pink.webp";
 import sleepMaskGold from "@/assets/sleep-mask-gold.webp";
 import sleepMaskSilver from "@/assets/sleep-mask-silver.webp";
 import sleepMaskBlack from "@/assets/sleep-mask-black.webp";
+import pillowCoverImage from "@/assets/pillow-cover-included.webp";
 
 // Image mapping for sleep mask colors
 const sleepMaskColorImages: Record<string, string> = {
@@ -264,8 +265,8 @@ export const Hero = () => {
 
             {/* Pillow Cover Included */}
             <div className="flex items-center gap-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl py-3 px-4 mb-2 border border-blue-200 dark:border-blue-800">
-              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-800/50 rounded flex items-center justify-center">
-                <span className="text-2xl">🛏️</span>
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-800/50 rounded flex items-center justify-center overflow-hidden">
+                <img src={pillowCoverImage} alt="Pillow cover included" className="w-full h-full object-cover" />
               </div>
               <div className="flex-1 text-left">
                 <p className="text-sm font-semibold text-blue-700 dark:text-blue-300">Pillow Cover Included</p>
