@@ -262,6 +262,18 @@ export const Hero = () => {
               </div>
             </div>
 
+            {/* Pillow Cover Included */}
+            <div className="flex items-center gap-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl py-3 px-4 mb-2 border border-blue-200 dark:border-blue-800">
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-800/50 rounded flex items-center justify-center">
+                <span className="text-2xl">🛏️</span>
+              </div>
+              <div className="flex-1 text-left">
+                <p className="text-sm font-semibold text-blue-700 dark:text-blue-300">Pillow Cover Included</p>
+                <p className="text-xs text-blue-600 dark:text-blue-400">Premium breathable cover</p>
+              </div>
+              <Check className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            </div>
+
             {/* Included Free Gift with Color Selector */}
             <div className="flex items-center gap-3 bg-green-50 dark:bg-green-900/20 rounded-xl py-3 px-4 mb-4 border border-green-200 dark:border-green-800">
               <img 
