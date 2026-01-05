@@ -1,7 +1,7 @@
 // Performance: Using OptimizedImage for lazy loading
 import { Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import testimonial from "@/assets/ergonomic-pillow-review.png";
+import testimonial from "@/assets/happy-sleepers-pillow.webp";
 import offerBundle from "@/assets/offer-bundle.png";
 import comparisonChart from "@/assets/comparison-new-pillow.webp";
 import OptimizedImage from "@/components/OptimizedImage";
