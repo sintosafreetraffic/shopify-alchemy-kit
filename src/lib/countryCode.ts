@@ -1,34 +1,91 @@
 /**
- * Shopify CountryCode enum subset
+ * Shopify CountryCode types and currency mapping
  * 
- * Only includes countries we support in Shopify Markets
- * Add new countries here as markets are configured
+ * Supports all Eurozone countries + key markets
  */
-export type CountryCode = 
-  | 'US'  // United States (default)
-  | 'IE'  // Ireland (EUR)
-  | 'GB'  // United Kingdom (GBP)
-  | 'CA'  // Canada (CAD)
-  | 'AU'; // Australia (AUD)
+
+// All Eurozone country codes
+export const EUROZONE_COUNTRIES = [
+  'AT', // Austria
+  'BE', // Belgium
+  'HR', // Croatia
+  'CY', // Cyprus
+  'EE', // Estonia
+  'FI', // Finland
+  'FR', // France
+  'DE', // Germany
+  'GR', // Greece
+  'IE', // Ireland
+  'IT', // Italy
+  'LV', // Latvia
+  'LT', // Lithuania
+  'LU', // Luxembourg
+  'MT', // Malta
+  'NL', // Netherlands
+  'PT', // Portugal
+  'SK', // Slovakia
+  'SI', // Slovenia
+  'ES', // Spain
+] as const;
+
+export type EurozoneCountryCode = typeof EUROZONE_COUNTRIES[number];
+
+// Non-Euro markets we explicitly support
+export type OtherCountryCode = 'US' | 'GB' | 'CA' | 'AU';
+
+// All supported country codes
+export type CountryCode = EurozoneCountryCode | OtherCountryCode;
 
 /**
- * Map country codes to currency codes for display
+ * Get currency code for a country
  */
-export const COUNTRY_CURRENCY_MAP: Record<CountryCode, string> = {
-  US: 'USD',
-  IE: 'EUR',
-  GB: 'GBP',
-  CA: 'CAD',
-  AU: 'AUD',
-};
+export function getCurrencyForCountry(country: string): string {
+  if (EUROZONE_COUNTRIES.includes(country as EurozoneCountryCode)) {
+    return 'EUR';
+  }
+  
+  switch (country) {
+    case 'GB': return 'GBP';
+    case 'CA': return 'CAD';
+    case 'AU': return 'AUD';
+    case 'US':
+    default: return 'USD';
+  }
+}
+
+/**
+ * Check if a country uses EUR
+ */
+export function isEurozoneCountry(country: string): boolean {
+  return EUROZONE_COUNTRIES.includes(country as EurozoneCountryCode);
+}
 
 /**
  * Map country codes to display names
  */
-export const COUNTRY_NAMES: Record<CountryCode, string> = {
+export const COUNTRY_NAMES: Record<string, string> = {
   US: 'United States',
-  IE: 'Ireland',
   GB: 'United Kingdom',
   CA: 'Canada',
   AU: 'Australia',
+  AT: 'Austria',
+  BE: 'Belgium',
+  HR: 'Croatia',
+  CY: 'Cyprus',
+  EE: 'Estonia',
+  FI: 'Finland',
+  FR: 'France',
+  DE: 'Germany',
+  GR: 'Greece',
+  IE: 'Ireland',
+  IT: 'Italy',
+  LV: 'Latvia',
+  LT: 'Lithuania',
+  LU: 'Luxembourg',
+  MT: 'Malta',
+  NL: 'Netherlands',
+  PT: 'Portugal',
+  SK: 'Slovakia',
+  SI: 'Slovenia',
+  ES: 'Spain',
 };

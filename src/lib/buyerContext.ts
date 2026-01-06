@@ -8,9 +8,10 @@
  * - Caches country detection in sessionStorage (fast subsequent loads)
  * - Falls back gracefully to US if detection fails
  * - Supports manual country override via localStorage
+ * - All Eurozone countries → EUR pricing
  */
 
-import { CountryCode } from './countryCode';
+import { CountryCode, EUROZONE_COUNTRIES } from './countryCode';
 
 const COUNTRY_CACHE_KEY = 'buyer_country_code';
 const COUNTRY_OVERRIDE_KEY = 'buyer_country_override';
@@ -22,10 +23,13 @@ interface CachedCountry {
 }
 
 /**
- * Supported countries for localization
- * Maps to Shopify Markets configuration
+ * All supported countries for localization
+ * Includes all Eurozone + key non-Euro markets
  */
-const SUPPORTED_COUNTRIES: CountryCode[] = ['US', 'IE', 'GB', 'CA', 'AU'];
+const SUPPORTED_COUNTRIES: readonly string[] = [
+  ...EUROZONE_COUNTRIES,
+  'US', 'GB', 'CA', 'AU'
+];
 
 /**
  * Get manually set country override (for testing or user preference)
