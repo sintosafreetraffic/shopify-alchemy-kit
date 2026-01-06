@@ -43,6 +43,7 @@ import { ImageModal } from "./ImageModal";
 import { CheckoutLoadingOverlay } from "./CheckoutLoadingOverlay";
 import { useCheckoutStatus } from "@/hooks/useCheckoutStatus";
 import { createCheckoutWithResilience, openCheckoutUrl, isMobileDevice } from "@/lib/checkoutUtils";
+import { formatPrice, getCurrencySymbol } from "@/lib/formatPrice";
 
 export const CartDrawer = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -116,7 +117,7 @@ export const CartDrawer = () => {
   }, [isOpen]);
   
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  
+  const cartCurrency = items[0]?.price.currencyCode || 'USD';
   // Use current prices from Shopify if available, fallback to stored prices
   const getItemPrice = (item: typeof items[0]) => {
     const currentPrice = currentPrices[item.variantId];
@@ -382,7 +383,7 @@ export const CartDrawer = () => {
                   <div className="flex items-center justify-between gap-2">
                     {variant && (
                       <p className="text-lg font-bold text-primary">
-                        ${parseFloat(variant.price.amount).toFixed(2)}
+                        {formatPrice(variant.price.amount, variant.price.currencyCode)}
                       </p>
                     )}
                     <Button
@@ -461,7 +462,7 @@ export const CartDrawer = () => {
                   <>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">
-                        Add ${(FREE_SHIPPING_THRESHOLD - totalPrice).toFixed(2)} more for free shipping
+                        Add {formatPrice(FREE_SHIPPING_THRESHOLD - totalPrice, cartCurrency)} more for free shipping
                       </span>
                       <Truck className="w-4 h-4 text-muted-foreground" />
                     </div>
@@ -753,7 +754,7 @@ export const CartDrawer = () => {
                                   </h4>
                                   {variant && (
                                     <p className="text-xs font-semibold text-primary">
-                                      ${parseFloat(variant.price.amount).toFixed(2)}
+                                      {formatPrice(variant.price.amount, variant.price.currencyCode)}
                                     </p>
                                   )}
                                 </div>

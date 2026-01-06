@@ -10,6 +10,7 @@ import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import { trackPageVisit } from "@/lib/pinterest";
 import { trackViewedProduct } from "@/lib/klaviyo";
+import { formatPrice } from "@/lib/formatPrice";
 import sleepMaskNavy from "@/assets/sleep-mask-navy.webp";
 import sleepMaskTurquoise from "@/assets/sleep-mask-turquoise.webp";
 import sleepMaskPink from "@/assets/sleep-mask-pink.webp";
@@ -144,6 +145,7 @@ export const SleepMaskHero = () => {
   })?.node;
 
   const pricePerMask = basePriceVariant ? parseFloat(basePriceVariant.price.amount) : 29.99;
+  const currencyCode = basePriceVariant?.price.currencyCode || 'USD';
   const totalPrice = pricePerMask * quantity;
 
   return (
@@ -337,10 +339,10 @@ export const SleepMaskHero = () => {
               </div>
               <div className="flex items-center justify-between mt-4 pt-4 border-t">
                 <span className="text-lg font-semibold">Total Price:</span>
-                <span className="text-2xl font-bold text-primary">${totalPrice.toFixed(2)}</span>
+                <span className="text-2xl font-bold text-primary">{formatPrice(totalPrice, currencyCode)}</span>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                {quantity} mask{quantity > 1 ? 's' : ''} × ${pricePerMask.toFixed(2)} each
+                {quantity} mask{quantity > 1 ? 's' : ''} × {formatPrice(pricePerMask, currencyCode)} each
               </p>
             </div>
 
