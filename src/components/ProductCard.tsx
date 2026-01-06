@@ -5,7 +5,7 @@ import { ShoppingCart, Star, Package, Clock } from "lucide-react";
 import { useCartStore } from "@/stores/cartStore";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
-
+import { formatPrice } from "@/lib/formatPrice";
 interface ProductCardProps {
   product: ShopifyProduct;
 }
@@ -69,15 +69,15 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           </p>
           <div className="flex items-baseline gap-2 mb-3">
             <span className="text-2xl font-bold text-primary">
-              ${price.toFixed(2)}
+              {formatPrice(price, variant.price.currencyCode)}
             </span>
             {compareAtPrice && (
               <>
                 <span className="text-sm text-muted-foreground line-through">
-                  ${compareAtPrice.toFixed(2)}
+                  {formatPrice(compareAtPrice, variant.compareAtPrice!.currencyCode)}
                 </span>
                 <Badge variant="destructive" className="ml-auto">
-                  SAVE ${savings!.toFixed(2)}
+                  SAVE {formatPrice(savings!, variant.price.currencyCode)}
                 </Badge>
               </>
             )}

@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { ShoppingCart, Loader2, Plus, Minus, Check } from "lucide-react";
 import eyeMaskGift from "@/assets/eye-mask-gift-new.webp";
 import { Badge } from "@/components/ui/badge";
+import { formatPrice } from "@/lib/formatPrice";
 import sleepMaskNavy from "@/assets/sleep-mask-navy.webp";
 import sleepMaskTurquoise from "@/assets/sleep-mask-turquoise.webp";
 import sleepMaskPink from "@/assets/sleep-mask-pink.webp";
@@ -155,8 +156,10 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
     }
   };
 
-  // Fixed prices: ergonomic pillow $79.99, knee pillow $39.99
-  const productPrice = isErgonomicPillow ? 79.99 : isKneePillow ? 39.99 : (product ? parseFloat(product.node.variants.edges[0].node.price.amount) : 129.99);
+  // Get price and currency from product data
+  const productVariant = product?.node.variants.edges[0]?.node;
+  const currencyCode = productVariant?.price.currencyCode || 'USD';
+  const productPrice = isErgonomicPillow ? parseFloat(productVariant?.price.amount || "79.99") : isKneePillow ? parseFloat(productVariant?.price.amount || "39.99") : (product ? parseFloat(product.node.variants.edges[0].node.price.amount) : 129.99);
   
   // Calculate the value being added to cart (not current cart total)
   const addToCartValue = isSleepBundle
@@ -429,7 +432,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                         </div>
                         <div className="flex flex-col items-start">
                           <span className="text-xs leading-none whitespace-nowrap">Add to Cart</span>
-                          <span className="font-bold leading-none whitespace-nowrap text-primary-foreground">${addToCartValue.toFixed(2)}</span>
+                          <span className="font-bold leading-none whitespace-nowrap text-primary-foreground">{formatPrice(addToCartValue, currencyCode)}</span>
                         </div>
                       </span>
                       <span className="absolute inset-0 flex items-center justify-center gap-2 translate-y-12 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
@@ -443,7 +446,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                         </div>
                         <div className="flex flex-col items-start">
                           <span className="text-xs leading-none whitespace-nowrap">Add to Cart</span>
-                          <span className="font-bold leading-none whitespace-nowrap text-primary-foreground">${addToCartValue.toFixed(2)}</span>
+                          <span className="font-bold leading-none whitespace-nowrap text-primary-foreground">{formatPrice(addToCartValue, currencyCode)}</span>
                         </div>
                       </span>
                     </>

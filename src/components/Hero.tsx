@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { trackPageVisit } from "@/lib/pinterest";
 import { trackViewedProduct } from "@/lib/klaviyo";
 import { useHeaderHeight } from "@/hooks/useHeaderHeight";
+import { formatPrice } from "@/lib/formatPrice";
 import {
   Popover,
   PopoverContent,
@@ -140,8 +141,10 @@ export const Hero = () => {
     }
   };
 
-  // Fixed price for ergonomic pillow
-  const productPrice = 79.99;
+  // Get product price from Shopify data
+  const variant = product?.node.variants.edges[0]?.node;
+  const productPrice = variant ? parseFloat(variant.price.amount) : 79.99;
+  const currencyCode = variant?.price.currencyCode || 'USD';
 
   return (
     <section className="pb-3 md:pb-6 bg-background overflow-visible" style={{ paddingTop: Math.max(headerHeight - 80, 0) }}>
@@ -187,7 +190,7 @@ export const Hero = () => {
             </p>
             
             {/* Mobile Price - Above USPs */}
-            <p className="text-xl font-bold mt-2 text-primary">${productPrice.toFixed(2)}</p>
+            <p className="text-xl font-bold mt-2 text-primary">{formatPrice(productPrice, currencyCode)}</p>
           </div>
         </div>
 
@@ -240,7 +243,7 @@ export const Hero = () => {
 
             {/* Price Display - Desktop Only (mobile price is above) */}
             <div className="hidden md:flex items-center gap-3 mt-2 mb-3">
-              <p className="text-xl md:text-2xl font-bold text-primary">${productPrice.toFixed(2)}</p>
+              <p className="text-xl md:text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
             </div>
 
             {/* Benefit-Focused USPs Section */}
