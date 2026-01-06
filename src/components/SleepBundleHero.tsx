@@ -9,6 +9,7 @@ import { fetchProducts, type ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import { trackViewedProduct } from "@/lib/klaviyo";
 import OptimizedImage from "@/components/OptimizedImage";
+import { formatPrice } from "@/lib/formatPrice";
 
 export const SleepBundleHero = () => {
   const [selectedBundle, setSelectedBundle] = useState<"single" | "double">("single");
@@ -163,11 +164,11 @@ export const SleepBundleHero = () => {
                   </div>
                   <div className="space-y-1">
                     <p className="text-xl md:text-2xl font-bold text-primary">
-                      ${parseFloat(product?.node.variants.edges[0]?.node.price.amount || "149.99").toFixed(2)}
+                      {formatPrice(product?.node.variants.edges[0]?.node.price.amount || "149.99", product?.node.variants.edges[0]?.node.price.currencyCode || 'USD')}
                     </p>
                     {product?.node.variants.edges[0]?.node.compareAtPrice && (
                       <p className="text-xs text-muted-foreground line-through">
-                        ${parseFloat(product.node.variants.edges[0].node.compareAtPrice.amount).toFixed(2)}
+                        {formatPrice(product.node.variants.edges[0].node.compareAtPrice.amount, product.node.variants.edges[0].node.compareAtPrice.currencyCode)}
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground">1 of each product</p>
@@ -193,11 +194,11 @@ export const SleepBundleHero = () => {
                   </div>
                   <div className="space-y-1">
                     <p className="text-xl md:text-2xl font-bold text-primary">
-                      ${parseFloat(product?.node.variants.edges[1]?.node.price.amount || "249.99").toFixed(2)}
+                      {formatPrice(product?.node.variants.edges[1]?.node.price.amount || "249.99", product?.node.variants.edges[1]?.node.price.currencyCode || 'USD')}
                     </p>
                     {product?.node.variants.edges[1]?.node.compareAtPrice && (
                       <p className="text-xs text-muted-foreground line-through">
-                        ${parseFloat(product.node.variants.edges[1].node.compareAtPrice.amount).toFixed(2)}
+                        {formatPrice(product.node.variants.edges[1].node.compareAtPrice.amount, product.node.variants.edges[1].node.compareAtPrice.currencyCode)}
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground">2 of each product</p>
@@ -215,8 +216,8 @@ export const SleepBundleHero = () => {
             >
               <ShoppingCart className="w-5 h-5 mr-2" />
               Add to Cart - {selectedBundle === "single" 
-                ? `$${parseFloat(product?.node.variants.edges[0]?.node.price.amount || "149.99").toFixed(2)}`
-                : `$${parseFloat(product?.node.variants.edges[1]?.node.price.amount || "249.99").toFixed(2)}`
+                ? formatPrice(product?.node.variants.edges[0]?.node.price.amount || "149.99", product?.node.variants.edges[0]?.node.price.currencyCode || 'USD')
+                : formatPrice(product?.node.variants.edges[1]?.node.price.amount || "249.99", product?.node.variants.edges[1]?.node.price.currencyCode || 'USD')
               }
             </Button>
 

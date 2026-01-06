@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { fetchProducts, type ShopifyProduct } from "@/lib/shopify";
 import OptimizedImage from "@/components/OptimizedImage";
+import { formatPrice } from "@/lib/formatPrice";
 // Using WebP variants where available for better performance
 import ergonomicPillowProduct from "@/assets/ergonomic-pillow-product.webp";
 import kneePillowMain from "@/assets/knee-pillow-main-new.webp";
@@ -142,11 +143,11 @@ export const ProductGallery = () => {
 
                     <div className="flex items-center gap-3 mb-6">
                       <span className="text-3xl md:text-4xl font-bold text-primary">
-                        ${parseFloat(bundleProduct.node.variants.edges[0]?.node.price.amount || "0").toFixed(2)}
+                        {formatPrice(bundleProduct.node.variants.edges[0]?.node.price.amount || "0", bundleProduct.node.variants.edges[0]?.node.price.currencyCode || 'USD')}
                       </span>
                       {bundleProduct.node.variants.edges[0]?.node.compareAtPrice?.amount && (
                         <span className="text-xl text-muted-foreground line-through">
-                          ${parseFloat(bundleProduct.node.variants.edges[0].node.compareAtPrice.amount).toFixed(2)}
+                          {formatPrice(bundleProduct.node.variants.edges[0].node.compareAtPrice.amount, bundleProduct.node.variants.edges[0].node.compareAtPrice.currencyCode)}
                         </span>
                       )}
                     </div>

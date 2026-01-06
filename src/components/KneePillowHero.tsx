@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { trackPageVisit } from "@/lib/pinterest";
 import { trackViewedProduct } from "@/lib/klaviyo";
 import { CountdownTimerDisplay } from "./CountdownTimer";
+import { formatPrice } from "@/lib/formatPrice";
 
 
 // Lazy load the image carousel to reduce initial bundle
@@ -90,8 +91,10 @@ export const KneePillowHero = () => {
     }
   };
 
-  // Fixed price for knee pillow
-  const productPrice = 39.99;
+  // Get price and currency from product data
+  const variant = product?.node.variants.edges[0]?.node;
+  const productPrice = variant ? parseFloat(variant.price.amount) : 39.99;
+  const currencyCode = variant?.price.currencyCode || 'USD';
 
   return (
     <section className="pt-0 pb-3 md:pb-6 bg-background overflow-visible">
@@ -187,7 +190,7 @@ export const KneePillowHero = () => {
 
             {/* Price Display - Above USPs */}
             <div className="flex items-center gap-3 mt-2 mb-3">
-              <p className="text-xl md:text-2xl font-bold text-primary">${productPrice.toFixed(2)}</p>
+              <p className="text-xl md:text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
             </div>
 
             {/* Benefit-Focused USPs Section */}
