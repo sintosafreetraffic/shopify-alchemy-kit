@@ -68,7 +68,7 @@ export function getPinterestAttributionData(): { key: string; value: string }[] 
 // Re-export buyer context utilities for external use
 export { getBuyerCountry, getBuyerCountrySync, initializeBuyerContext, setCountryOverride, getCountryOverride } from './buyerContext';
 export type { CountryCode } from './countryCode';
-export { COUNTRY_CURRENCY_MAP, COUNTRY_NAMES } from './countryCode';
+export { getCurrencyForCountry, isEurozoneCountry, COUNTRY_NAMES, EUROZONE_COUNTRIES } from './countryCode';
 
 // Shopify Storefront API configuration
 const SHOPIFY_API_VERSION = '2025-07';
