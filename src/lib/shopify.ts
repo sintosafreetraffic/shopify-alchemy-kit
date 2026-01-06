@@ -5,10 +5,13 @@
  * - Attribution pass-through via getAttributionForCheckout()
  * - Never throws on attribution failures
  * - Checkout always succeeds even if tracking fails
+ * - Multi-currency support via @inContext directive
  */
 
 import { toast } from 'sonner';
 import { getAttributionForCheckout, getEpik, captureAttribution } from './attribution';
+import { getBuyerCountry, getBuyerCountrySync } from './buyerContext';
+import type { CountryCode } from './countryCode';
 
 // Storage keys (kept for backward compatibility)
 const PINTEREST_EPIK_KEY = 'pinterest_epik';
@@ -61,6 +64,11 @@ export function getPinterestAttributionData(): { key: string; value: string }[] 
     return [];
   }
 }
+
+// Re-export buyer context utilities for external use
+export { getBuyerCountry, getBuyerCountrySync, initializeBuyerContext, setCountryOverride, getCountryOverride } from './buyerContext';
+export type { CountryCode } from './countryCode';
+export { COUNTRY_CURRENCY_MAP, COUNTRY_NAMES } from './countryCode';
 
 // Shopify Storefront API configuration
 const SHOPIFY_API_VERSION = '2025-07';
@@ -131,9 +139,9 @@ interface ShopifyPage {
   bodySummary: string;
 }
 
-// GraphQL queries
+// GraphQL queries with @inContext for multi-currency localization
 const STOREFRONT_QUERY = `
-  query GetProducts($first: Int!, $query: String) {
+  query GetProducts($first: Int!, $query: String, $country: CountryCode!) @inContext(country: $country) {
     products(first: $first, query: $query) {
       edges {
         node {
@@ -205,7 +213,7 @@ const PAGE_QUERY = `
 `;
 
 const CART_CREATE_MUTATION = `
-  mutation cartCreate($input: CartInput!) {
+  mutation cartCreate($input: CartInput!, $country: CountryCode!) @inContext(country: $country) {
     cartCreate(input: $input) {
       cart {
         id
@@ -230,15 +238,23 @@ const CART_CREATE_MUTATION = `
   }
 `;
 
-// Storefront API request helper
-async function storefrontApiRequest(query: string, variables: any = {}) {
+// Storefront API request helper with buyer context
+async function storefrontApiRequest(
+  query: string, 
+  variables: any = {},
+  options: { country?: CountryCode } = {}
+) {
+  // Always include buyer country for localized pricing
+  const country = options.country || getBuyerCountrySync() || 'US';
+  const enrichedVariables = { ...variables, country };
+
   const response = await fetch(SHOPIFY_STOREFRONT_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'X-Shopify-Storefront-Access-Token': SHOPIFY_STOREFRONT_TOKEN,
     },
-    body: JSON.stringify({ query, variables }),
+    body: JSON.stringify({ query, variables: enrichedVariables }),
   });
 
   if (response.status === 402) {
@@ -261,10 +277,12 @@ async function storefrontApiRequest(query: string, variables: any = {}) {
   return data;
 }
 
-// Fetch products
+// Fetch products with localized pricing
 export async function fetchProducts(limit = 50, query?: string): Promise<ShopifyProduct[]> {
   try {
-    const data = await storefrontApiRequest(STOREFRONT_QUERY, { first: limit, query });
+    // Ensure buyer context is available
+    const country = await getBuyerCountry();
+    const data = await storefrontApiRequest(STOREFRONT_QUERY, { first: limit, query }, { country });
     return data.data.products.edges;
   } catch (error) {
     console.error('Error fetching products:', error);
@@ -341,8 +359,9 @@ export async function createStorefrontCheckout(
     console.warn('[Shopify] Attribution capture failed (non-blocking):', attrError);
   }
 
-  // Create cart with discount codes in single API call
-  const cartData = await storefrontApiRequest(CART_CREATE_MUTATION, { input: cartInput });
+  // Create cart with discount codes in single API call (with buyer context for localized pricing)
+  const country = await getBuyerCountry();
+  const cartData = await storefrontApiRequest(CART_CREATE_MUTATION, { input: cartInput }, { country });
 
   if (cartData.data.cartCreate.userErrors.length > 0) {
     throw new Error(`Cart creation failed: ${cartData.data.cartCreate.userErrors.map((e: any) => e.message).join(', ')}`);
