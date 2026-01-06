@@ -64,8 +64,16 @@ export const Hero = () => {
   const { data: products, isLoading: productsLoading } = useShopifyProducts(10);
   const product = products?.[0] || null;
   
-  // Get free gift mask product for variant IDs
+  // Get free gift mask product for variant IDs and price
   const { data: freeGiftMaskProduct } = useFreeGiftMaskProduct();
+  
+  // Get sleep mask product for actual price display
+  const sleepMaskProduct = products?.find(
+    (p: ShopifyProduct) => p.node.handle === "risebynight-silk-deep-sleep-mask"
+  );
+  const sleepMaskVariant = sleepMaskProduct?.node.variants.edges[0]?.node;
+  const sleepMaskPrice = sleepMaskVariant ? parseFloat(sleepMaskVariant.price.amount) : 29.99;
+  const sleepMaskCurrency = sleepMaskVariant?.price.currencyCode || 'USD';
   
   // Get mask variants for color selection
   const maskVariants = useMemo(() => {
@@ -289,7 +297,7 @@ export const Hero = () => {
               />
               <div className="flex-1 text-left">
                 <p className="text-sm font-semibold text-green-700 dark:text-green-300">Sleep Mask Included</p>
-                <p className="text-xs text-green-600 dark:text-green-400">$29.99 value</p>
+                <p className="text-xs text-green-600 dark:text-green-400">{formatPrice(sleepMaskPrice, sleepMaskCurrency)} value</p>
               </div>
               {isMaskColorPickerOpen ? (
                 <Popover>

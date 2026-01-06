@@ -14,42 +14,56 @@ import eyeMaskGift from "@/assets/eye-mask-gift-new.webp";
 import completeSleepBundle from "@/assets/complete-sleep-bundle-updated.webp";
 
 export const ProductGallery = () => {
-  const [bundleProduct, setBundleProduct] = useState<ShopifyProduct | null>(null);
-  const [kneePillowProduct, setKneePillowProduct] = useState<ShopifyProduct | null>(null);
+  const [shopifyProducts, setShopifyProducts] = useState<ShopifyProduct[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const loadProducts = async () => {
       try {
         const products = await fetchProducts();
-        const bundle = products.find(
-          (p: ShopifyProduct) => p.node.handle === "rise-by-night™-complete-sleep-bundle"
-        );
-        if (bundle) {
-          setBundleProduct(bundle);
-        }
-        
-        const kneePillow = products.find(
-          (p: ShopifyProduct) => p.node.handle === "risebynight-ergonomic-knee-pillow"
-        );
-        if (kneePillow) {
-          setKneePillowProduct(kneePillow);
-        }
+        setShopifyProducts(products);
       } catch (error) {
         console.error("Failed to load products:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
     loadProducts();
   }, []);
 
-  // Knee pillow fixed pricing - no more dynamic 1+1 deal
-  const kneePricing = { price: "$39.99", originalPrice: undefined };
+  // Find Shopify products by handle
+  const bundleProduct = shopifyProducts.find(
+    (p: ShopifyProduct) => p.node.handle === "rise-by-night™-complete-sleep-bundle"
+  );
+  const ergonomicPillowShopify = shopifyProducts.find(
+    (p: ShopifyProduct) => p.node.handle === "risebynight-ergonomic-sleep-pillow"
+  );
+  const kneePillowShopify = shopifyProducts.find(
+    (p: ShopifyProduct) => p.node.handle === "risebynight-ergonomic-knee-pillow"
+  );
+  const sleepMaskShopify = shopifyProducts.find(
+    (p: ShopifyProduct) => p.node.handle === "risebynight-silk-deep-sleep-mask"
+  );
+
+  // Get currency from first available product
+  const currencyCode = ergonomicPillowShopify?.node.variants.edges[0]?.node.price.currencyCode || 
+                       bundleProduct?.node.variants.edges[0]?.node.price.currencyCode || 'USD';
+
+  // Helper to get formatted price from Shopify product
+  const getProductPrice = (product: ShopifyProduct | undefined, fallback: string) => {
+    const variant = product?.node.variants.edges[0]?.node;
+    if (variant) {
+      return formatPrice(variant.price.amount, variant.price.currencyCode);
+    }
+    return fallback;
+  };
 
   const products = [
     {
       id: 2,
       name: "Rise By Night™ Ergonomic Pillow",
       tagline: "The #1 Rated Orthopedic Pillow",
-      price: "$79.99",
+      price: getProductPrice(ergonomicPillowShopify, formatPrice("79.99", currencyCode)),
       originalPrice: undefined,
       rating: 4.8,
       reviews: "6,247",
@@ -62,8 +76,8 @@ export const ProductGallery = () => {
       id: 3,
       name: "Rise By Night™ Ergonomic Knee Pillow",
       tagline: "Perfect Support for Side Sleepers",
-      price: kneePricing.price,
-      originalPrice: kneePricing.originalPrice,
+      price: getProductPrice(kneePillowShopify, formatPrice("39.99", currencyCode)),
+      originalPrice: undefined,
       rating: 4.7,
       reviews: "5,100+",
       image: kneePillowMain,
@@ -80,8 +94,8 @@ export const ProductGallery = () => {
       id: 4,
       name: "Rise By Night™ Silk Deep Sleep Mask",
       tagline: "100% Pure Mulberry Silk",
-      price: "$29.99",
-      originalPrice: "",
+      price: getProductPrice(sleepMaskShopify, formatPrice("29.99", currencyCode)),
+      originalPrice: undefined,
       rating: 4.9,
       reviews: "3,200+",
       image: eyeMaskGift,
