@@ -156,8 +156,15 @@ export const CartDrawer = () => {
   // No more BOGO discounts for any pillows
   const totalDiscount = 0;
   
+  // Get sleep mask price from Shopify data for free gift value calculation
+  const sleepMaskPrice = useMemo(() => {
+    if (!freeGiftMaskProduct) return 29.99;
+    const variant = freeGiftMaskProduct.node.variants.edges[0]?.node;
+    return variant ? parseFloat(variant.price.amount) : 29.99;
+  }, [freeGiftMaskProduct]);
+  
   // FREEMASKSFORYOU discount: 100% off free gift masks (already calculated)
-  const freeGiftValue = freeGifts * 29.99;
+  const freeGiftValue = freeGifts * sleepMaskPrice;
   
   const totalPrice = subtotal - totalDiscount;
   
@@ -824,7 +831,7 @@ export const CartDrawer = () => {
                     {totalDiscount > 0 && (
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-green-600 dark:text-green-400">Savings</span>
-                        <span className="text-green-600 dark:text-green-400 font-semibold">-${totalDiscount.toFixed(2)}</span>
+                        <span className="text-green-600 dark:text-green-400 font-semibold">-{formatPrice(totalDiscount, cartCurrency)}</span>
                       </div>
                     )}
                     
@@ -833,14 +840,14 @@ export const CartDrawer = () => {
                       {shippingCost === 0 ? (
                         <span className="text-primary font-semibold">FREE</span>
                       ) : (
-                        <span className="font-semibold">${shippingCost.toFixed(2)}</span>
+                        <span className="font-semibold">{formatPrice(shippingCost, cartCurrency)}</span>
                       )}
                     </div>
                     
                     <div className="flex justify-between items-center pt-2 border-t">
                       <span className="text-base font-bold">Total</span>
                       <div className="text-lg font-bold text-primary">
-                        ${finalTotal.toFixed(2)}
+                        {formatPrice(finalTotal, cartCurrency)}
                       </div>
                     </div>
                   </div>
