@@ -9,6 +9,7 @@ import { ShoppingCart, Loader2, Plus, Minus, Check } from "lucide-react";
 import eyeMaskGift from "@/assets/eye-mask-gift-new.webp";
 import { Badge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/formatPrice";
+import { useIsEU } from "@/hooks/useCurrencySymbol";
 import sleepMaskNavy from "@/assets/sleep-mask-navy.webp";
 import sleepMaskTurquoise from "@/assets/sleep-mask-turquoise.webp";
 import sleepMaskPink from "@/assets/sleep-mask-pink.webp";
@@ -46,6 +47,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
   const { addItem, setCartOpen, isCartOpen, items } = useCartStore();
   const { isMobileMenuOpen } = useUIStore();
   const isMobile = useIsMobile();
+  const isEU = useIsEU();
   
   // Calculate cart totals
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -158,7 +160,9 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
 
   // Get price and currency from product data
   const productVariant = product?.node.variants.edges[0]?.node;
-  const currencyCode = productVariant?.price.currencyCode || 'USD';
+  const shopifyCurrency = productVariant?.price.currencyCode || 'USD';
+  // Override to EUR for EU countries if Shopify returns USD
+  const currencyCode = (isEU && shopifyCurrency === 'USD') ? 'EUR' : shopifyCurrency;
   const productPrice = isErgonomicPillow ? parseFloat(productVariant?.price.amount || "79.99") : isKneePillow ? parseFloat(productVariant?.price.amount || "39.99") : (product ? parseFloat(product.node.variants.edges[0].node.price.amount) : 129.99);
   
   // Calculate the value being added to cart (not current cart total)

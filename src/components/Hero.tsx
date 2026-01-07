@@ -12,6 +12,7 @@ import { trackPageVisit } from "@/lib/pinterest";
 import { trackViewedProduct } from "@/lib/klaviyo";
 import { useHeaderHeight } from "@/hooks/useHeaderHeight";
 import { formatPrice } from "@/lib/formatPrice";
+import { useIsEU } from "@/hooks/useCurrencySymbol";
 import {
   Popover,
   PopoverContent,
@@ -59,6 +60,7 @@ export const Hero = () => {
   const { addItem, setCartOpen, setFreeMaskSelections } = useCartStore();
   const hasTrackedView = useRef(false);
   const headerHeight = useHeaderHeight();
+  const isEU = useIsEU();
 
   // Use centralized cached product data
   const { data: products, isLoading: productsLoading } = useShopifyProducts(10);
@@ -75,7 +77,9 @@ export const Hero = () => {
   const sleepMaskPrice = sleepMaskVariant ? parseFloat(sleepMaskVariant.price.amount) : 29.99;
   // Use currency from main product variant since they share the same localized context
   const mainVariant = product?.node.variants.edges[0]?.node;
-  const sleepMaskCurrency = sleepMaskVariant?.price.currencyCode || mainVariant?.price.currencyCode || 'USD';
+  const shopifySleepMaskCurrency = sleepMaskVariant?.price.currencyCode || mainVariant?.price.currencyCode || 'USD';
+  // Override to EUR for EU countries if Shopify returns USD
+  const sleepMaskCurrency = (isEU && shopifySleepMaskCurrency === 'USD') ? 'EUR' : shopifySleepMaskCurrency;
   
   // Get mask variants for color selection
   const maskVariants = useMemo(() => {
@@ -154,7 +158,9 @@ export const Hero = () => {
   // Get product price from Shopify data
   const variant = product?.node.variants.edges[0]?.node;
   const productPrice = variant ? parseFloat(variant.price.amount) : 79.99;
-  const currencyCode = variant?.price.currencyCode || 'USD';
+  const shopifyCurrency = variant?.price.currencyCode || 'USD';
+  // Override to EUR for EU countries if Shopify returns USD
+  const currencyCode = (isEU && shopifyCurrency === 'USD') ? 'EUR' : shopifyCurrency;
 
   return (
     <section className="pb-3 md:pb-6 bg-background overflow-visible" style={{ paddingTop: Math.max(headerHeight - 80, 0) }}>

@@ -26,9 +26,7 @@ import sleepMaskPink from "@/assets/sleep-mask-pink.webp";
 import sleepMaskGold from "@/assets/sleep-mask-gold.webp";
 import sleepMaskSilver from "@/assets/sleep-mask-silver.webp";
 import sleepMaskBlack from "@/assets/sleep-mask-black.webp";
-import { getBuyerCountry } from "@/lib/buyerContext";
-
-const EU_COUNTRIES = ['AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE'];
+import { useIsEU } from "@/hooks/useCurrencySymbol";
 
 // Image mapping for sleep mask colors
 const sleepMaskColorImages: Record<string, string> = {
@@ -55,14 +53,7 @@ export const CartDrawer = () => {
   const [openColorPickerIndex, setOpenColorPickerIndex] = useState<number | null>(null);
   // Track selected colors for sleep mask recommendations (keyed by product ID)
   const [recommendationColors, setRecommendationColors] = useState<Record<string, string>>({});
-  const [isEU, setIsEU] = useState(false);
-  
-  // Detect EU country on mount
-  useEffect(() => {
-    getBuyerCountry().then((country) => {
-      setIsEU(EU_COUNTRIES.includes(country));
-    });
-  }, []);
+  const isEU = useIsEU();
   
   const { 
     items, 

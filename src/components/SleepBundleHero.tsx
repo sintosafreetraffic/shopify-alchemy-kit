@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { trackViewedProduct } from "@/lib/klaviyo";
 import OptimizedImage from "@/components/OptimizedImage";
 import { formatPrice } from "@/lib/formatPrice";
+import { useIsEU } from "@/hooks/useCurrencySymbol";
 
 export const SleepBundleHero = () => {
   const [selectedBundle, setSelectedBundle] = useState<"single" | "double">("single");
@@ -17,6 +18,7 @@ export const SleepBundleHero = () => {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { addItem, setCartOpen } = useCartStore();
   const hasTrackedView = useRef(false);
+  const isEU = useIsEU();
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -46,6 +48,12 @@ export const SleepBundleHero = () => {
     };
     loadProduct();
   }, []);
+
+  // Helper to get currency with EU override
+  const getCurrency = (shopifyCurrency: string | undefined) => {
+    const currency = shopifyCurrency || 'USD';
+    return (isEU && currency === 'USD') ? 'EUR' : currency;
+  };
 
   const handleAddToCart = async () => {
     if (!product) {
@@ -164,11 +172,11 @@ export const SleepBundleHero = () => {
                   </div>
                   <div className="space-y-1">
                     <p className="text-xl md:text-2xl font-bold text-primary">
-                      {formatPrice(product?.node.variants.edges[0]?.node.price.amount || "149.99", product?.node.variants.edges[0]?.node.price.currencyCode || 'USD')}
+                      {formatPrice(product?.node.variants.edges[0]?.node.price.amount || "149.99", getCurrency(product?.node.variants.edges[0]?.node.price.currencyCode))}
                     </p>
                     {product?.node.variants.edges[0]?.node.compareAtPrice && (
                       <p className="text-xs text-muted-foreground line-through">
-                        {formatPrice(product.node.variants.edges[0].node.compareAtPrice.amount, product.node.variants.edges[0].node.compareAtPrice.currencyCode)}
+                        {formatPrice(product.node.variants.edges[0].node.compareAtPrice.amount, getCurrency(product.node.variants.edges[0].node.compareAtPrice.currencyCode))}
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground">1 of each product</p>
@@ -194,11 +202,11 @@ export const SleepBundleHero = () => {
                   </div>
                   <div className="space-y-1">
                     <p className="text-xl md:text-2xl font-bold text-primary">
-                      {formatPrice(product?.node.variants.edges[1]?.node.price.amount || "249.99", product?.node.variants.edges[1]?.node.price.currencyCode || 'USD')}
+                      {formatPrice(product?.node.variants.edges[1]?.node.price.amount || "249.99", getCurrency(product?.node.variants.edges[1]?.node.price.currencyCode))}
                     </p>
                     {product?.node.variants.edges[1]?.node.compareAtPrice && (
                       <p className="text-xs text-muted-foreground line-through">
-                        {formatPrice(product.node.variants.edges[1].node.compareAtPrice.amount, product.node.variants.edges[1].node.compareAtPrice.currencyCode)}
+                        {formatPrice(product.node.variants.edges[1].node.compareAtPrice.amount, getCurrency(product.node.variants.edges[1].node.compareAtPrice.currencyCode))}
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground">2 of each product</p>
@@ -216,8 +224,8 @@ export const SleepBundleHero = () => {
             >
               <ShoppingCart className="w-5 h-5 mr-2" />
               Add to Cart - {selectedBundle === "single" 
-                ? formatPrice(product?.node.variants.edges[0]?.node.price.amount || "149.99", product?.node.variants.edges[0]?.node.price.currencyCode || 'USD')
-                : formatPrice(product?.node.variants.edges[1]?.node.price.amount || "249.99", product?.node.variants.edges[1]?.node.price.currencyCode || 'USD')
+                ? formatPrice(product?.node.variants.edges[0]?.node.price.amount || "149.99", getCurrency(product?.node.variants.edges[0]?.node.price.currencyCode))
+                : formatPrice(product?.node.variants.edges[1]?.node.price.amount || "249.99", getCurrency(product?.node.variants.edges[1]?.node.price.currencyCode))
               }
             </Button>
 
