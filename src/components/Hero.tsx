@@ -67,7 +67,7 @@ export const Hero = () => {
   // Get free gift mask product for variant IDs and price
   const { data: freeGiftMaskProduct } = useFreeGiftMaskProduct();
   
-  // Get sleep mask product for actual price display (use localized price from contextualPricing)
+  // Get sleep mask product for actual price display (localized via @inContext in fetchProducts)
   const sleepMaskProduct = products?.find(
     (p: ShopifyProduct) => p.node.handle === "risebynight-silk-deep-sleep-mask"
   );
