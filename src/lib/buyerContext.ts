@@ -104,31 +104,45 @@ function cacheCountry(code: CountryCode): void {
 }
 
 /**
- * Infer buyer country from browser settings (timezone, then language/locale)
+ * Infer buyer country from browser settings (timezone only)
  * Used as a fallback when IP detection is blocked (ad blockers, privacy tools).
+ * 
+ * IMPORTANT: We only use timezone-based detection for EU countries.
+ * Language/locale is unreliable (many US users have en-NL, de-DE etc in their browser).
+ * If we can't definitively determine EU from timezone, default to US.
  */
 function inferCountryFromBrowser(): CountryCode | null {
   try {
-    // Timezone first: often more reliable than language (many EU users browse in en-US/en-GB)
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const tzMap: Record<string, CountryCode> = {
+    
+    // Only detect EU countries from timezone - be conservative
+    // Map European timezones to their countries (only Eurozone supported)
+    const euTimezoneMap: Record<string, CountryCode> = {
+      // Eurozone countries
       'Europe/Amsterdam': 'NL',
+      'Europe/Berlin': 'DE',
+      'Europe/Paris': 'FR',
+      'Europe/Rome': 'IT',
+      'Europe/Madrid': 'ES',
+      'Europe/Lisbon': 'PT',
+      'Europe/Vienna': 'AT',
+      'Europe/Brussels': 'BE',
+      'Europe/Dublin': 'IE',
+      'Europe/Helsinki': 'FI',
+      'Europe/Athens': 'GR',
+      'Europe/Luxembourg': 'LU',
     };
-    if (tzMap[tz]) return tzMap[tz];
-
-    if (typeof navigator === 'undefined') return null;
-
-    const candidates: string[] = Array.isArray(navigator.languages) && navigator.languages.length > 0
-      ? navigator.languages
-      : [navigator.language];
-
-    for (const l of candidates) {
-      const region = (l || '').split('-')[1]?.toUpperCase();
-      if (region && SUPPORTED_COUNTRIES.includes(region as CountryCode)) {
-        return region as CountryCode;
-      }
+    
+    if (euTimezoneMap[tz]) {
+      return euTimezoneMap[tz];
     }
-
+    
+    // For US timezones, explicitly return US
+    if (tz.startsWith('America/') || tz === 'US/Eastern' || tz === 'US/Central' || tz === 'US/Mountain' || tz === 'US/Pacific') {
+      return 'US';
+    }
+    
+    // Default to null - let the caller decide (will default to US)
     return null;
   } catch {
     return null;
