@@ -1,8 +1,21 @@
+import { useEffect, useState } from "react";
 import pillowMain from "@/assets/optisleep-pillow-main.png";
 import kneePillowMain from "@/assets/knee-pillow-new.png";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
+import { getBuyerCountry } from "@/lib/buyerContext";
+
+const EU_COUNTRIES = ['AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE'];
 
 export const SleepBundleBenefits = () => {
+  const [currencySymbol, setCurrencySymbol] = useState("$");
+
+  useEffect(() => {
+    getBuyerCountry().then((country) => {
+      if (EU_COUNTRIES.includes(country)) {
+        setCurrencySymbol("€");
+      }
+    });
+  }, []);
   const products = [
     {
       image: pillowMain,
@@ -80,12 +93,12 @@ export const SleepBundleBenefits = () => {
           </div>
 
           <div className="mt-12 bg-primary/5 border-2 border-primary rounded-lg p-8 text-center">
-            <h3 className="text-2xl md:text-3xl font-bold mb-3">Save $30 with the Bundle</h3>
+            <h3 className="text-2xl md:text-3xl font-bold mb-3">Save {currencySymbol}30 with the Bundle</h3>
             <p className="text-lg text-muted-foreground mb-2">
-              Regular price: <span className="line-through">$229.97</span>
+              Regular price: <span className="line-through">{currencySymbol}229.97</span>
             </p>
             <p className="text-3xl md:text-4xl font-bold text-primary">
-              Bundle price: $199.99
+              Bundle price: {currencySymbol}199.99
             </p>
           </div>
         </div>
