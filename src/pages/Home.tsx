@@ -198,7 +198,7 @@ export default function Home() {
 
             <div className="mt-8 pt-6 border-t border-primary-foreground/20">
               <p className="text-sm font-medium opacity-80 tracking-wide">
-                Free Shipping on $50+ • 100-Night Trial • 2-Year Warranty
+                Free Shipping on €50+ • 100-Night Trial • 2-Year Warranty
               </p>
             </div>
           </div>

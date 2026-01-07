@@ -17,6 +17,9 @@ const COUNTRY_CACHE_KEY = 'buyer_country_code';
 const COUNTRY_OVERRIDE_KEY = 'buyer_country_override';
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
+// Force one re-validation per page load so users don’t get stuck on an old cached country.
+let hasValidatedCachedCountryThisSession = false;
+
 interface CachedCountry {
   code: CountryCode;
   timestamp: number;
@@ -101,36 +104,46 @@ function cacheCountry(code: CountryCode): void {
 }
 
 /**
- * Infer buyer country from browser settings (language/locale)
+ * Infer buyer country from browser settings (timezone, then language/locale)
  * Used as a fallback when IP detection is blocked (ad blockers, privacy tools).
  */
 function inferCountryFromBrowser(): CountryCode | null {
   try {
+    // Timezone first: often more reliable than language (many EU users browse in en-US/en-GB)
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const tzMap: Record<string, CountryCode> = {
+      'Europe/Amsterdam': 'NL',
+    };
+    if (tzMap[tz]) return tzMap[tz];
+
     if (typeof navigator === 'undefined') return null;
 
-    // Examples: "nl-NL", "en-US", "de-DE"
-    const lang = (navigator.language || '').trim();
-    const region = lang.split('-')[1]?.toUpperCase();
+    const candidates: string[] = Array.isArray(navigator.languages) && navigator.languages.length > 0
+      ? navigator.languages
+      : [navigator.language];
 
-    if (region && SUPPORTED_COUNTRIES.includes(region as CountryCode)) {
-      return region as CountryCode;
+    for (const l of candidates) {
+      const region = (l || '').split('-')[1]?.toUpperCase();
+      if (region && SUPPORTED_COUNTRIES.includes(region as CountryCode)) {
+        return region as CountryCode;
+      }
     }
-  } catch {
-    // Silent fail
-  }
 
-  return null;
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 /**
- * Detect buyer country from IP using free geolocation API
- * Falls back to browser locale, then US if detection fails
+ * Detect buyer country from IP using free geolocation APIs
+ * Falls back to browser locale/timezone, then US if detection fails
  */
 async function detectCountryFromIP(): Promise<CountryCode> {
+  // 1) ipapi.co (text)
   try {
-    // Use ipapi.co - reliable, free tier available, no API key needed
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3000); // 3s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
 
     const response = await fetch('https://ipapi.co/country_code/', {
       signal: controller.signal,
@@ -139,27 +152,45 @@ async function detectCountryFromIP(): Promise<CountryCode> {
 
     clearTimeout(timeoutId);
 
-    if (!response.ok) {
-      throw new Error(`Geolocation failed: ${response.status}`);
+    if (response.ok) {
+      const countryCode = (await response.text()).trim().toUpperCase();
+      if (SUPPORTED_COUNTRIES.includes(countryCode as CountryCode)) {
+        return countryCode as CountryCode;
+      }
     }
-
-    const countryCode = (await response.text()).trim().toUpperCase();
-
-    // Validate it's a supported country, otherwise fall back
-    if (SUPPORTED_COUNTRIES.includes(countryCode as CountryCode)) {
-      return countryCode as CountryCode;
-    }
-
-    return inferCountryFromBrowser() ?? 'US';
   } catch (error) {
-    console.warn('[BuyerContext] Country detection failed, falling back to browser locale:', error);
-    return inferCountryFromBrowser() ?? 'US';
+    console.warn('[BuyerContext] ipapi.co failed:', error);
   }
+
+  // 2) ipwho.is (json)
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+    const response = await fetch('https://ipwho.is/', {
+      signal: controller.signal,
+      headers: { Accept: 'application/json' },
+    });
+
+    clearTimeout(timeoutId);
+
+    if (response.ok) {
+      const json = await response.json();
+      const countryCode = String(json?.country_code || '').trim().toUpperCase();
+      if (SUPPORTED_COUNTRIES.includes(countryCode as CountryCode)) {
+        return countryCode as CountryCode;
+      }
+    }
+  } catch (error) {
+    console.warn('[BuyerContext] ipwho.is failed:', error);
+  }
+
+  return inferCountryFromBrowser() ?? 'US';
 }
 
 /**
  * Get buyer country code for Shopify @inContext
- * Priority: Override > Cache (validated) > IP Detection > Default (US)
+ * Priority: Override > Cache (validated once per page load) > IP Detection > Default (US)
  */
 export async function getBuyerCountry(): Promise<CountryCode> {
   // Check for manual override first
@@ -175,7 +206,18 @@ export async function getBuyerCountry(): Promise<CountryCode> {
     const inferred = inferCountryFromBrowser();
     if (inferred && inferred !== cached) {
       cacheCountry(inferred);
+      hasValidatedCachedCountryThisSession = true;
       return inferred;
+    }
+
+    // Validate cached once per page load using IP-based detection.
+    if (!hasValidatedCachedCountryThisSession) {
+      hasValidatedCachedCountryThisSession = true;
+      const detected = await detectCountryFromIP();
+      if (detected && detected !== cached) {
+        cacheCountry(detected);
+        return detected;
+      }
     }
 
     return cached;
@@ -184,6 +226,7 @@ export async function getBuyerCountry(): Promise<CountryCode> {
   // Detect from IP
   const detected = await detectCountryFromIP();
   cacheCountry(detected);
+  hasValidatedCachedCountryThisSession = true;
 
   return detected;
 }
