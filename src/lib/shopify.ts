@@ -116,6 +116,21 @@ export interface ShopifyProduct {
             amount: string;
             currencyCode: string;
           } | null;
+          /**
+           * Localized pricing returned by Shopify Markets.
+           * Note: some base fields (price/compareAtPrice) can still reflect shop currency,
+           * so we request contextualPricing and normalize in fetchProducts().
+           */
+          contextualPricing?: {
+            price: {
+              amount: string;
+              currencyCode: string;
+            };
+            compareAtPrice?: {
+              amount: string;
+              currencyCode: string;
+            } | null;
+          } | null;
           availableForSale: boolean;
           selectedOptions: Array<{
             name: string;
@@ -181,6 +196,16 @@ const STOREFRONT_QUERY = `
                 compareAtPrice {
                   amount
                   currencyCode
+                }
+                contextualPricing(context: { country: $country }) {
+                  price {
+                    amount
+                    currencyCode
+                  }
+                  compareAtPrice {
+                    amount
+                    currencyCode
+                  }
                 }
                 availableForSale
                 selectedOptions {
@@ -283,7 +308,39 @@ export async function fetchProducts(limit = 50, query?: string): Promise<Shopify
     // Ensure buyer context is available
     const country = await getBuyerCountry();
     const data = await storefrontApiRequest(STOREFRONT_QUERY, { first: limit, query }, { country });
-    return data.data.products.edges;
+
+    const edges: ShopifyProduct[] = data.data.products.edges;
+
+    // Normalize variant.price to the localized (contextual) price when available.
+    // This keeps the rest of the app (cards, PDPs, cart drawer) consistent.
+    return edges.map((edge) => {
+      const variants = edge.node.variants.edges.map((variantEdge) => {
+        const v = variantEdge.node;
+        const cp = v.contextualPricing;
+        if (cp?.price) {
+          return {
+            ...variantEdge,
+            node: {
+              ...v,
+              price: cp.price,
+              compareAtPrice: cp.compareAtPrice ?? v.compareAtPrice ?? null,
+            },
+          };
+        }
+        return variantEdge;
+      });
+
+      return {
+        ...edge,
+        node: {
+          ...edge.node,
+          variants: {
+            ...edge.node.variants,
+            edges: variants,
+          },
+        },
+      };
+    });
   } catch (error) {
     console.error('Error fetching products:', error);
     return [];
