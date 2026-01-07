@@ -26,6 +26,9 @@ import sleepMaskPink from "@/assets/sleep-mask-pink.webp";
 import sleepMaskGold from "@/assets/sleep-mask-gold.webp";
 import sleepMaskSilver from "@/assets/sleep-mask-silver.webp";
 import sleepMaskBlack from "@/assets/sleep-mask-black.webp";
+import { getBuyerCountry } from "@/lib/buyerContext";
+
+const EU_COUNTRIES = ['AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE'];
 
 // Image mapping for sleep mask colors
 const sleepMaskColorImages: Record<string, string> = {
@@ -52,6 +55,14 @@ export const CartDrawer = () => {
   const [openColorPickerIndex, setOpenColorPickerIndex] = useState<number | null>(null);
   // Track selected colors for sleep mask recommendations (keyed by product ID)
   const [recommendationColors, setRecommendationColors] = useState<Record<string, string>>({});
+  const [isEU, setIsEU] = useState(false);
+  
+  // Detect EU country on mount
+  useEffect(() => {
+    getBuyerCountry().then((country) => {
+      setIsEU(EU_COUNTRIES.includes(country));
+    });
+  }, []);
   
   const { 
     items, 
@@ -119,10 +130,12 @@ export const CartDrawer = () => {
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
   // Prefer fresh currency from Shopify (currentPrices) in case cart items were persisted from a previous region.
-  const cartCurrency =
+  // If in EU and Shopify returns USD, override to EUR for display
+  const shopifyCurrency =
     (items[0] ? currentPrices[items[0].variantId]?.currencyCode : undefined) ||
     items[0]?.price.currencyCode ||
     'USD';
+  const cartCurrency = isEU && shopifyCurrency === 'USD' ? 'EUR' : shopifyCurrency;
 
   // Use current prices from Shopify if available, fallback to stored prices
   const getItemPrice = (item: typeof items[0]) => {
@@ -584,19 +597,19 @@ export const CartDrawer = () => {
                         {/* Price + Quantity row */}
                         <div className="flex items-center justify-between gap-2 mt-2">
                           <div className="flex flex-col min-w-0 flex-shrink">
-                            {/* Simple price display - no more BOGO discounts */}
+                          {/* Simple price display - no more BOGO discounts */}
                             {getItemCompareAtPrice(item) ? (
                               <>
                                 <span className="text-xs text-muted-foreground line-through whitespace-nowrap">
-                                  ${(getItemCompareAtPrice(item)! * item.quantity).toFixed(2)}
+                                  {formatPrice(getItemCompareAtPrice(item)! * item.quantity, cartCurrency)}
                                 </span>
                                 <span className="font-bold text-sm text-primary whitespace-nowrap">
-                                  ${(getItemPrice(item) * item.quantity).toFixed(2)}
+                                  {formatPrice(getItemPrice(item) * item.quantity, cartCurrency)}
                                 </span>
                               </>
                             ) : (
                               <span className="font-bold text-sm text-primary whitespace-nowrap">
-                                ${(getItemPrice(item) * item.quantity).toFixed(2)}
+                                {formatPrice(getItemPrice(item) * item.quantity, cartCurrency)}
                               </span>
                             )}
                           </div>
