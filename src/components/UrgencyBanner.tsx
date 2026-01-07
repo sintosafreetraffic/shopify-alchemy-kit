@@ -6,16 +6,17 @@ const EU_COUNTRIES = ['AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR'
 
 export const UrgencyBanner = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isEU, setIsEU] = useState(false);
+  const [currencySymbol, setCurrencySymbol] = useState("$");
   const isCartOpen = useCartStore((state) => state.isCartOpen);
 
   useEffect(() => {
     getBuyerCountry().then((country) => {
-      setIsEU(EU_COUNTRIES.includes(country));
+      if (EU_COUNTRIES.includes(country)) {
+        setCurrencySymbol("€");
+      }
     });
   }, []);
 
-  const currencySymbol = isEU ? "€" : "$";
   const messages = [`Free Shipping from ${currencySymbol}50`, "100 Day Risk-Free Trial"];
 
   useEffect(() => {
