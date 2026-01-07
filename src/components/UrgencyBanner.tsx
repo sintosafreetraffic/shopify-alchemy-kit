@@ -1,11 +1,22 @@
 import { useEffect, useState } from "react";
 import { useCartStore } from "@/stores/cartStore";
+import { getBuyerCountry } from "@/lib/buyerContext";
 
-const messages = ["Free Shipping from €50", "100 Day Risk-Free Trial"];
+const EU_COUNTRIES = ['AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE'];
 
 export const UrgencyBanner = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isEU, setIsEU] = useState(false);
   const isCartOpen = useCartStore((state) => state.isCartOpen);
+
+  useEffect(() => {
+    getBuyerCountry().then((country) => {
+      setIsEU(EU_COUNTRIES.includes(country));
+    });
+  }, []);
+
+  const currencySymbol = isEU ? "€" : "$";
+  const messages = [`Free Shipping from ${currencySymbol}50`, "100 Day Risk-Free Trial"];
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -13,10 +24,8 @@ export const UrgencyBanner = () => {
     }, 3000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [messages.length]);
 
-  // Keep mounted but hide visually to prevent CLS when cart opens
-  // Uses opacity + pointer-events instead of unmounting
   return (
     <div
       data-header-banner
