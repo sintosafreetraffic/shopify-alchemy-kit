@@ -117,7 +117,13 @@ export const CartDrawer = () => {
   }, [isOpen]);
   
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  const cartCurrency = items[0]?.price.currencyCode || 'USD';
+
+  // Prefer fresh currency from Shopify (currentPrices) in case cart items were persisted from a previous region.
+  const cartCurrency =
+    (items[0] ? currentPrices[items[0].variantId]?.currencyCode : undefined) ||
+    items[0]?.price.currencyCode ||
+    'USD';
+
   // Use current prices from Shopify if available, fallback to stored prices
   const getItemPrice = (item: typeof items[0]) => {
     const currentPrice = currentPrices[item.variantId];
@@ -871,11 +877,11 @@ export const CartDrawer = () => {
                     <>
                       <span className="inline-flex items-center transition-all duration-300 group-hover:-translate-y-8 group-hover:opacity-0">
                         <Lock className="w-4 h-4 mr-2" />
-                        CHECKOUT - ${finalTotal.toFixed(2)}
+                        CHECKOUT - {formatPrice(finalTotal, cartCurrency)}
                       </span>
                       <span className="absolute inset-0 flex items-center justify-center translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
                         <Lock className="w-4 h-4 mr-2" />
-                        CHECKOUT - ${finalTotal.toFixed(2)}
+                        CHECKOUT - {formatPrice(finalTotal, cartCurrency)}
                       </span>
                     </>
                   )}

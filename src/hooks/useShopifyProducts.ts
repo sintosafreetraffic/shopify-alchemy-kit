@@ -70,16 +70,26 @@ export function useFreeGiftMaskProduct() {
  */
 export function useProductPrices() {
   const { data: products, ...rest } = useShopifyProducts();
-  
-  const priceMap: Record<string, { price: string; compareAtPrice?: string }> = {};
-  
+
+  const priceMap: Record<
+    string,
+    {
+      price: string;
+      currencyCode: string;
+      compareAtPrice?: string;
+      compareAtCurrencyCode?: string;
+    }
+  > = {};
+
   if (products) {
     products.forEach((product: ShopifyProduct) => {
-      product.node.variants.edges.forEach(variantEdge => {
+      product.node.variants.edges.forEach((variantEdge) => {
         const variant = variantEdge.node;
         priceMap[variant.id] = {
           price: variant.price.amount,
-          compareAtPrice: variant.compareAtPrice?.amount
+          currencyCode: variant.price.currencyCode,
+          compareAtPrice: variant.compareAtPrice?.amount,
+          compareAtCurrencyCode: variant.compareAtPrice?.currencyCode,
         };
       });
     });
