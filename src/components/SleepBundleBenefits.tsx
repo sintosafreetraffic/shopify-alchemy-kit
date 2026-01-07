@@ -1,21 +1,10 @@
-import { useEffect, useState } from "react";
 import pillowMain from "@/assets/optisleep-pillow-main.png";
 import kneePillowMain from "@/assets/knee-pillow-new.png";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
-import { getBuyerCountry } from "@/lib/buyerContext";
-
-const EU_COUNTRIES = ['AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE'];
+import { useCurrencySymbol } from "@/hooks/useCurrencySymbol";
 
 export const SleepBundleBenefits = () => {
-  const [currencySymbol, setCurrencySymbol] = useState("$");
-
-  useEffect(() => {
-    getBuyerCountry().then((country) => {
-      if (EU_COUNTRIES.includes(country)) {
-        setCurrencySymbol("€");
-      }
-    });
-  }, []);
+  const currencySymbol = useCurrencySymbol();
   const products = [
     {
       image: pillowMain,

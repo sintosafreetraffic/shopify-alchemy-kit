@@ -11,9 +11,7 @@ import { toast } from "sonner";
 import { trackPageVisit } from "@/lib/pinterest";
 import { trackViewedProduct } from "@/lib/klaviyo";
 import { formatPrice } from "@/lib/formatPrice";
-import { getBuyerCountry } from "@/lib/buyerContext";
-
-const EU_COUNTRIES = ['AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE'];
+import { useIsEU } from "@/hooks/useCurrencySymbol";
 import sleepMaskNavy from "@/assets/sleep-mask-navy.webp";
 import sleepMaskTurquoise from "@/assets/sleep-mask-turquoise.webp";
 import sleepMaskPink from "@/assets/sleep-mask-pink.webp";
@@ -49,15 +47,9 @@ export const SleepMaskHero = () => {
   const [isColorPickerVisible, setIsColorPickerVisible] = useState(true);
   const [product, setProduct] = useState<ShopifyProduct | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const [isEU, setIsEU] = useState(false);
+  const isEU = useIsEU();
   const { addItem } = useCartStore();
   const hasTrackedView = useRef(false);
-
-  useEffect(() => {
-    getBuyerCountry().then((country) => {
-      setIsEU(EU_COUNTRIES.includes(country));
-    });
-  }, []);
 
   useEffect(() => {
     const loadProduct = async () => {

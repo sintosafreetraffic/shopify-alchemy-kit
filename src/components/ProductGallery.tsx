@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { fetchProducts, type ShopifyProduct } from "@/lib/shopify";
 import OptimizedImage from "@/components/OptimizedImage";
 import { formatPrice } from "@/lib/formatPrice";
+import { useIsEU } from "@/hooks/useCurrencySymbol";
 // Using WebP variants where available for better performance
 import ergonomicPillowProduct from "@/assets/ergonomic-pillow-product.webp";
 import kneePillowMain from "@/assets/knee-pillow-main-new.webp";
@@ -16,6 +17,7 @@ import completeSleepBundle from "@/assets/complete-sleep-bundle-updated.webp";
 export const ProductGallery = () => {
   const [shopifyProducts, setShopifyProducts] = useState<ShopifyProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const isEU = useIsEU();
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -46,8 +48,10 @@ export const ProductGallery = () => {
   );
 
   // Get currency from first available product
-  const currencyCode = ergonomicPillowShopify?.node.variants.edges[0]?.node.price.currencyCode || 
+  const shopifyCurrency = ergonomicPillowShopify?.node.variants.edges[0]?.node.price.currencyCode || 
                        bundleProduct?.node.variants.edges[0]?.node.price.currencyCode || 'USD';
+  // Override to EUR for EU countries if Shopify returns USD
+  const currencyCode = (isEU && shopifyCurrency === 'USD') ? 'EUR' : shopifyCurrency;
 
   // Helper to get formatted price from Shopify product
   const getProductPrice = (product: ShopifyProduct | undefined, fallback: string) => {
@@ -157,7 +161,7 @@ export const ProductGallery = () => {
 
                     <div className="flex items-center gap-3 mb-6">
                       <span className="text-3xl md:text-4xl font-bold text-primary">
-                        {formatPrice(bundleProduct.node.variants.edges[0]?.node.price.amount || "0", bundleProduct.node.variants.edges[0]?.node.price.currencyCode || 'USD')}
+                        {formatPrice(bundleProduct.node.variants.edges[0]?.node.price.amount || "0", currencyCode)}
                       </span>
                       {bundleProduct.node.variants.edges[0]?.node.compareAtPrice?.amount && (
                         <span className="text-xl text-muted-foreground line-through">

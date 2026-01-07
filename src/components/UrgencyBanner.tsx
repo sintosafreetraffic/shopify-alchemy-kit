@@ -1,21 +1,11 @@
 import { useEffect, useState } from "react";
 import { useCartStore } from "@/stores/cartStore";
-import { getBuyerCountry } from "@/lib/buyerContext";
-
-const EU_COUNTRIES = ['AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE'];
+import { useCurrencySymbol } from "@/hooks/useCurrencySymbol";
 
 export const UrgencyBanner = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [currencySymbol, setCurrencySymbol] = useState("$");
+  const currencySymbol = useCurrencySymbol();
   const isCartOpen = useCartStore((state) => state.isCartOpen);
-
-  useEffect(() => {
-    getBuyerCountry().then((country) => {
-      if (EU_COUNTRIES.includes(country)) {
-        setCurrencySymbol("€");
-      }
-    });
-  }, []);
 
   const messages = [`Free Shipping from ${currencySymbol}50`, "100 Day Risk-Free Trial"];
 

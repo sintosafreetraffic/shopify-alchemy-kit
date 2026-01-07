@@ -13,6 +13,7 @@ import { trackPageVisit } from "@/lib/pinterest";
 import { trackViewedProduct } from "@/lib/klaviyo";
 import { CountdownTimerDisplay } from "./CountdownTimer";
 import { formatPrice } from "@/lib/formatPrice";
+import { useIsEU } from "@/hooks/useCurrencySymbol";
 
 
 // Lazy load the image carousel to reduce initial bundle
@@ -31,6 +32,7 @@ export const KneePillowHero = () => {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { addItem, setCartOpen } = useCartStore();
   const hasTrackedView = useRef(false);
+  const isEU = useIsEU();
 
   // Use centralized cached product data
   const { data: products, isLoading: productsLoading } = useShopifyProducts(10);
@@ -94,7 +96,9 @@ export const KneePillowHero = () => {
   // Get price and currency from product data
   const variant = product?.node.variants.edges[0]?.node;
   const productPrice = variant ? parseFloat(variant.price.amount) : 39.99;
-  const currencyCode = variant?.price.currencyCode || 'USD';
+  const shopifyCurrency = variant?.price.currencyCode || 'USD';
+  // Override to EUR for EU countries if Shopify returns USD
+  const currencyCode = (isEU && shopifyCurrency === 'USD') ? 'EUR' : shopifyCurrency;
 
   return (
     <section className="pt-0 pb-3 md:pb-6 bg-background overflow-visible">
