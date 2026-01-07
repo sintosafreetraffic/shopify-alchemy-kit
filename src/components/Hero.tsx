@@ -67,13 +67,15 @@ export const Hero = () => {
   // Get free gift mask product for variant IDs and price
   const { data: freeGiftMaskProduct } = useFreeGiftMaskProduct();
   
-  // Get sleep mask product for actual price display
+  // Get sleep mask product for actual price display (use localized price from contextualPricing)
   const sleepMaskProduct = products?.find(
     (p: ShopifyProduct) => p.node.handle === "risebynight-silk-deep-sleep-mask"
   );
   const sleepMaskVariant = sleepMaskProduct?.node.variants.edges[0]?.node;
   const sleepMaskPrice = sleepMaskVariant ? parseFloat(sleepMaskVariant.price.amount) : 29.99;
-  const sleepMaskCurrency = sleepMaskVariant?.price.currencyCode || 'USD';
+  // Use currency from main product variant since they share the same localized context
+  const mainVariant = product?.node.variants.edges[0]?.node;
+  const sleepMaskCurrency = sleepMaskVariant?.price.currencyCode || mainVariant?.price.currencyCode || 'USD';
   
   // Get mask variants for color selection
   const maskVariants = useMemo(() => {
