@@ -638,7 +638,7 @@ const SleepQuiz = () => {
                   onForgotPassword={handleForgotPassword}
                   onGoToSleepCoach={() => navigate(isRetake || shouldNotifyQuizUpdated ? '/sleep-coach?quizUpdated=true' : '/sleep-coach')}
                   onBackToHome={() => navigate("/")}
-                  onViewProducts={() => navigate("/product/ergonomic-pillow")}
+                  onViewProducts={() => navigate("/products")}
                   onCancelAccountForm={() => { setShowAccountForm(false); setPassword(""); setAccountExists(null); }}
                   onEmailChange={setEmail}
                   onEmailSubmit={analyzeQuiz}

@@ -55,17 +55,17 @@ import {
 const PRODUCT_DISPLAY: Record<string, { name: string; route: string; description: string }> = {
   ergonomic_pillow: {
     name: "Rise By Night™ Ergonomic Sleep Pillow",
-    route: "/product/ergonomic-pillow",
+    route: "/products/ergonomic-pillow",
     description: "Contoured memory foam designed for cervical support",
   },
   knee_pillow: {
     name: "Rise By Night™ Ergonomic Knee Pillow",
-    route: "/product/knee-pillow",
+    route: "/products/knee-pillow",
     description: "Hip alignment and lower back comfort for side sleepers",
   },
   silk_mask: {
     name: "Rise By Night™ Silk Sleep Mask",
-    route: "/product/sleep-mask",
+    route: "/products/sleep-mask",
     description: "Complete light blocking for uninterrupted deep sleep",
   },
 };
@@ -263,7 +263,7 @@ export default function PersonaLandingPage() {
             {/* Primary Product */}
             <Card 
               className="p-5 border-primary/20 bg-primary/[0.03] hover:bg-primary/[0.06] cursor-pointer transition-colors group"
-              onClick={() => navigate(PRODUCT_DISPLAY[assessment.productRecommendations.primary_product]?.route || "/product/ergonomic-pillow")}
+              onClick={() => navigate(PRODUCT_DISPLAY[assessment.productRecommendations.primary_product]?.route || "/products/ergonomic-pillow")}
             >
               <div className="flex items-center justify-between">
                 <div className="space-y-1">

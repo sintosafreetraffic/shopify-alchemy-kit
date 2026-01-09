@@ -74,7 +74,7 @@ export const ProductGallery = () => {
       image: ergonomicPillowProduct,
       features: ["Ergonomic contour design", "Cooling gel technology", "High-density memory foam", "3-5 year lifespan"],
       badge: "Sleep Mask Included",
-      link: "/product/ergonomic-pillow",
+      link: "/products/ergonomic-pillow",
     },
     {
       id: 3,
@@ -92,7 +92,7 @@ export const ProductGallery = () => {
         "Adjustable strap included",
       ],
       badge: "",
-      link: "/product/knee-pillow",
+      link: "/products/knee-pillow",
     },
     {
       id: 4,
@@ -105,7 +105,7 @@ export const ProductGallery = () => {
       image: eyeMaskGift,
       features: ["Blocks 100% of light", "Gentle on skin & eyelashes", "Contoured eye design", "Hypoallergenic silk"],
       badge: "",
-      link: "/product/sleep-mask",
+      link: "/products/sleep-mask",
     },
   ];
 
@@ -189,7 +189,7 @@ export const ProductGallery = () => {
                       </li>
                     </ul>
 
-                    <Link to="/product/sleep-bundle">
+                    <Link to="/products/sleep-bundle">
                       <Button className="w-full" size="lg">
                         Get the Bundle <ArrowRight className="ml-2 w-5 h-5" />
                       </Button>
