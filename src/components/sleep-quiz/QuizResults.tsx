@@ -203,19 +203,19 @@ const ScoreBar = ({ label, score, inverted = false, description }: ScoreBarProps
 const PRODUCT_DISPLAY: Record<string, { name: string; route: string; description: string; image?: string }> = {
   ergonomic_pillow: {
     name: "Rise By Night™ Ergonomic Sleep Pillow",
-    route: "/product/ergonomic-pillow",
+    route: "/products/ergonomic-pillow",
     description: "Contoured memory foam designed for cervical support",
     image: "/images/pillow-main-new.png",
   },
   knee_pillow: {
     name: "Rise By Night™ Ergonomic Knee Pillow",
-    route: "/product/knee-pillow",
+    route: "/products/knee-pillow",
     description: "Hip alignment and lower back comfort for side sleepers",
     image: "/images/knee-pillow-main-new.png",
   },
   silk_mask: {
     name: "Rise By Night™ Silk Sleep Mask",
-    route: "/product/sleep-mask",
+    route: "/products/sleep-mask",
     description: "Complete light blocking for uninterrupted deep sleep",
   },
 };

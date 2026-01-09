@@ -323,7 +323,7 @@ const SleepGuides = () => {
               Experience the complete RiseByNight sleep transformation.
             </p>
             <Button asChild size="lg">
-              <a href="/product/ergonomic-pillow">
+              <a href="/products/ergonomic-pillow">
                 Explore Our Pillows
               </a>
             </Button>

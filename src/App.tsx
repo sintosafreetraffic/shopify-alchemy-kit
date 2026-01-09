@@ -141,6 +141,8 @@ import Imprint from "./pages/Imprint";
 import PartnerProgram from "./pages/PartnerProgram";
 import NotFound from "./pages/NotFound";
 import SleepGuides from "./pages/SleepGuides";
+import Products from "./pages/Products";
+import { ProductRedirect, ProductIndexRedirect } from "./components/ProductRedirect";
 
 // Lazily loaded pages (heavy dashboards & features)
 const SleepQuiz = React.lazy(() => import("./pages/SleepQuiz"));
@@ -243,11 +245,17 @@ const AppContent = () => {
           <Routes>
             {/* Core shopping pages - eagerly loaded */}
             <Route path="/" element={<Home />} />
-            <Route path="/product/ergonomic-pillow" element={<ErgonomicPillowProduct />} />
-            <Route path="/product/knee-pillow" element={<KneePillowProduct />} />
-            <Route path="/product/sleep-mask" element={<SleepMaskProduct />} />
-            <Route path="/product/sleep-bundle" element={<SleepBundleProduct />} />
-            <Route path="/product" element={<ErgonomicPillowProduct />} />
+            
+            {/* Product pages - /products/ is the industry standard (Shopify, Klaviyo compatible) */}
+            <Route path="/products" element={<Products />} />
+            <Route path="/products/ergonomic-pillow" element={<ErgonomicPillowProduct />} />
+            <Route path="/products/knee-pillow" element={<KneePillowProduct />} />
+            <Route path="/products/sleep-mask" element={<SleepMaskProduct />} />
+            <Route path="/products/sleep-bundle" element={<SleepBundleProduct />} />
+            
+            {/* Redirects: old /product/ routes → new /products/ (preserves SEO & fixes integrations) */}
+            <Route path="/product/:handle" element={<ProductRedirect />} />
+            <Route path="/product" element={<ProductIndexRedirect />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth/garmin/callback" element={<GarminCallback />} />
             <Route path="/benefits" element={<Benefits />} />

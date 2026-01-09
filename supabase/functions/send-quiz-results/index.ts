@@ -89,17 +89,17 @@ const CLUSTER_LABEL: Record<string, string> = {
 const PRODUCT_DISPLAY: Record<string, { name: string; route: string; imagePath?: string }> = {
   ergonomic_pillow: {
     name: "Rise By Night™ Ergonomic Sleep Pillow",
-    route: "/product/ergonomic-pillow",
+    route: "/products/ergonomic-pillow",
     imagePath: "/images/pillow-main-new.png",
   },
   knee_pillow: {
     name: "Rise By Night™ Ergonomic Knee Pillow",
-    route: "/product/knee-pillow",
+    route: "/products/knee-pillow",
     imagePath: "/images/knee-pillow-main-new.png",
   },
   silk_mask: {
     name: "Rise By Night™ Silk Sleep Mask",
-    route: "/product/sleep-mask",
+    route: "/products/sleep-mask",
   },
 };
 
