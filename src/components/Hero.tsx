@@ -283,22 +283,22 @@ export const Hero = () => {
             </div>
 
             {/* Included Items - Combined Section */}
-            <div className="bg-green-50 dark:bg-green-900/20 rounded-xl py-3 px-4 mb-4 border border-green-200 dark:border-green-800">
-              <p className="text-xs font-semibold text-green-700 dark:text-green-300 mb-2">Included with your pillow</p>
+            <div className="rounded-xl py-3 px-4 mb-4 border" style={{ backgroundColor: 'rgba(59, 126, 237, 0.1)', borderColor: 'rgba(59, 126, 237, 0.3)' }}>
+              <p className="text-xs font-semibold mb-2" style={{ color: '#3b7eed' }}>Included with your pillow</p>
               <div className="flex items-center gap-3">
                 {/* Pillow Cover */}
                 <div className="flex items-center gap-2 flex-1">
-                  <div className="w-10 h-10 bg-green-100 dark:bg-green-800/50 rounded flex items-center justify-center overflow-hidden flex-shrink-0">
+                  <div className="w-10 h-10 rounded flex items-center justify-center overflow-hidden flex-shrink-0" style={{ backgroundColor: 'rgba(59, 126, 237, 0.15)' }}>
                     <img src={pillowCoverImage} alt="Pillow cover" className="w-full h-full object-cover" />
                   </div>
                   <div className="text-left min-w-0">
-                    <p className="text-xs font-medium text-green-700 dark:text-green-300 truncate">Pillow Cover</p>
-                    <p className="text-[10px] text-green-600 dark:text-green-400">Breathable</p>
+                    <p className="text-xs font-medium truncate" style={{ color: '#3b7eed' }}>Pillow Cover</p>
+                    <p className="text-[10px]" style={{ color: 'rgba(59, 126, 237, 0.8)' }}>Breathable</p>
                   </div>
                 </div>
                 
                 {/* Divider */}
-                <div className="w-px h-8 bg-green-200 dark:bg-green-700" />
+                <div className="w-px h-8" style={{ backgroundColor: 'rgba(59, 126, 237, 0.3)' }} />
                 
                 {/* Sleep Mask with Color Selector */}
                 <div className="flex items-center gap-2 flex-1">
@@ -310,73 +310,62 @@ export const Hero = () => {
                     decoding="async" 
                   />
                   <div className="text-left min-w-0">
-                    <p className="text-xs font-medium text-green-700 dark:text-green-300 truncate">Sleep Mask</p>
-                    <p className="text-[10px] text-green-600 dark:text-green-400">{formatPrice(sleepMaskPrice, sleepMaskCurrency)} value</p>
+                    <p className="text-xs font-medium truncate" style={{ color: '#3b7eed' }}>Sleep Mask</p>
+                    <p className="text-[10px]" style={{ color: 'rgba(59, 126, 237, 0.8)' }}>{formatPrice(sleepMaskPrice, sleepMaskCurrency)} value</p>
                   </div>
                 </div>
                 
-                {/* Color Picker */}
-                {isMaskColorPickerOpen ? (
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button 
-                        type="button"
-                        className="flex items-center gap-1 text-xs font-medium text-green-700 dark:text-green-300 hover:text-green-800 dark:hover:text-green-200 transition-colors px-2 py-1 rounded-lg bg-green-100 dark:bg-green-800/50 hover:bg-green-200 dark:hover:bg-green-800"
-                      >
-                        <span className="capitalize hidden sm:inline">{selectedMaskColor}</span>
-                        <ChevronDown className="w-3 h-3" />
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent 
-                      className="w-44 p-2 z-[200] bg-background border border-border shadow-lg" 
-                      align="end"
-                      sideOffset={4}
+                {/* Color Picker - Always show Popover directly */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button 
+                      type="button"
+                      className="flex items-center gap-1 text-xs font-medium transition-colors px-2 py-1 rounded-lg cursor-pointer"
+                      style={{ color: '#3b7eed', backgroundColor: 'rgba(59, 126, 237, 0.15)' }}
+                      aria-label={`Change mask color, currently ${selectedMaskColor}`}
                     >
-                      <div className="space-y-0.5">
-                        {maskVariants.map((variant) => (
-                          <button
-                            key={variant.id}
-                            type="button"
-                            className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors ${
-                              selectedMaskColor === variant.color
-                                ? 'bg-primary/10 text-primary font-medium'
-                                : 'hover:bg-secondary text-foreground'
-                            }`}
-                            onClick={() => {
-                              setSelectedMaskColor(variant.color);
-                              setIsMaskColorPickerOpen(false);
-                            }}
-                          >
-                            <img 
-                              src={sleepMaskColorImages[variant.color] || sleepMaskNavy} 
-                              alt={variant.color}
-                              className="w-6 h-6 object-contain rounded"
-                            />
-                            <span className="capitalize">{variant.color}</span>
-                            {selectedMaskColor === variant.color && (
-                              <Check className="w-4 h-4 ml-auto text-primary" />
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setIsMaskColorPickerOpen(true)}
-                    className="flex items-center gap-1 text-xs font-medium text-green-700 dark:text-green-300 px-2 py-1 rounded-lg hover:bg-green-100 dark:hover:bg-green-800/50 transition-colors cursor-pointer"
-                    aria-label={`Change mask color, currently ${selectedMaskColor}`}
+                      <img 
+                        src={sleepMaskColorImages[selectedMaskColor] || sleepMaskNavy} 
+                        alt={selectedMaskColor}
+                        className="w-5 h-5 object-contain rounded"
+                      />
+                      <span className="capitalize hidden sm:inline">{selectedMaskColor}</span>
+                      <ChevronDown className="w-3 h-3" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent 
+                    className="w-44 p-2 z-[200] bg-background border border-border shadow-lg" 
+                    align="end"
+                    sideOffset={4}
                   >
-                    <img 
-                      src={sleepMaskColorImages[selectedMaskColor] || sleepMaskNavy} 
-                      alt={selectedMaskColor}
-                      className="w-5 h-5 object-contain rounded"
-                    />
-                    <span className="capitalize hidden sm:inline">{selectedMaskColor}</span>
-                    <ChevronDown className="w-3 h-3" />
-                  </button>
-                )}
+                    <div className="space-y-0.5">
+                      {maskVariants.map((variant) => (
+                        <button
+                          key={variant.id}
+                          type="button"
+                          className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors ${
+                            selectedMaskColor === variant.color
+                              ? 'bg-primary/10 text-primary font-medium'
+                              : 'hover:bg-secondary text-foreground'
+                          }`}
+                          onClick={() => {
+                            setSelectedMaskColor(variant.color);
+                          }}
+                        >
+                          <img 
+                            src={sleepMaskColorImages[variant.color] || sleepMaskNavy} 
+                            alt={variant.color}
+                            className="w-6 h-6 object-contain rounded"
+                          />
+                          <span className="capitalize">{variant.color}</span>
+                          {selectedMaskColor === variant.color && (
+                            <Check className="w-4 h-4 ml-auto text-primary" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
 
