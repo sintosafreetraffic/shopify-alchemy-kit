@@ -225,10 +225,10 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
               {/* Product Info */}
               <div className="flex items-center gap-3">
                 <div className="hidden sm:block w-12 h-12 bg-secondary/30 rounded-lg overflow-hidden flex-shrink-0">
-                  {isSleepMask ? (
+                {isSleepMask ? (
                     <img
-                      src={colors.find(c => c.value === selectedColor)?.image}
-                      alt={`${product.node.title} - ${colors.find(c => c.value === selectedColor)?.name}`}
+                      src={colors.find(c => c.name === selectedColor || c.value === selectedColor)?.image || colors[0].image}
+                      alt={`${product.node.title} - ${selectedColor}`}
                       className="w-full h-full object-contain p-1"
                       loading="lazy"
                       decoding="async"
