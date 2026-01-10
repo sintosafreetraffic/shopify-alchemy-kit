@@ -55,6 +55,13 @@ export const Header = () => {
                   Home
                 </NavLink>
                 <NavLink 
+                  to="/products" 
+                  className="text-base font-medium text-foreground hover:text-primary hover:bg-muted/50 transition-colors py-3 px-2 rounded-md"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Shop
+                </NavLink>
+                <NavLink 
                   to="/about" 
                   className="text-base font-medium text-foreground hover:text-primary hover:bg-muted/50 transition-colors py-3 px-2 rounded-md"
                   onClick={() => setMobileMenuOpen(false)}
@@ -172,6 +179,7 @@ export const Header = () => {
         {/* Desktop Navigation */}
         <nav className="hidden md:flex flex-nowrap items-center justify-center mt-5 space-x-8 lg:space-x-10 whitespace-nowrap">
           <NavLink to="/" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors">Home</NavLink>
+          <NavLink to="/products" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors">Shop</NavLink>
           <NavLink to="/about" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors">About Us</NavLink>
           <NavLink to="/track" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors">Track Your Order</NavLink>
         </nav>
