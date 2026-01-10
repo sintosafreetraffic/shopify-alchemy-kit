@@ -707,7 +707,12 @@ export const CartDrawer = () => {
                                   </PopoverContent>
                                 </Popover>
                               ) : (
-                                <div className="flex items-center gap-1 text-xs text-foreground px-2 py-1">
+                                <button
+                                  type="button"
+                                  onClick={() => setOpenColorPickerIndex(index)}
+                                  className="flex items-center gap-1 text-xs text-foreground px-2 py-1 rounded hover:bg-secondary/50 transition-colors cursor-pointer"
+                                  aria-label={`Change color for mask ${index + 1}, currently ${selectedColor}`}
+                                >
                                   <div 
                                     className="w-4 h-4 rounded-full border border-border flex-shrink-0"
                                     style={{ 
@@ -720,8 +725,8 @@ export const CartDrawer = () => {
                                     }}
                                   />
                                   <span className="capitalize">{selectedColor}</span>
-                                  <Check className="w-3 h-3 text-primary" />
-                                </div>
+                                  <ChevronDown className="w-3 h-3" />
+                                </button>
                               )}
                             </div>
                           );
