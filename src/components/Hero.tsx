@@ -353,15 +353,20 @@ export const Hero = () => {
                   </PopoverContent>
                 </Popover>
               ) : (
-                <div className="flex items-center gap-1.5 text-sm font-medium text-green-700 dark:text-green-300 px-3 py-1.5">
+                <button
+                  type="button"
+                  onClick={() => setIsMaskColorPickerOpen(true)}
+                  className="flex items-center gap-1.5 text-sm font-medium text-green-700 dark:text-green-300 px-3 py-1.5 rounded-lg hover:bg-green-100 dark:hover:bg-green-800/50 transition-colors cursor-pointer"
+                  aria-label={`Change mask color, currently ${selectedMaskColor}`}
+                >
                   <img 
                     src={sleepMaskColorImages[selectedMaskColor] || sleepMaskNavy} 
                     alt={selectedMaskColor}
                     className="w-5 h-5 object-contain rounded"
                   />
                   <span className="capitalize">{selectedMaskColor}</span>
-                  <Check className="w-4 h-4 text-green-600" />
-                </div>
+                  <ChevronDown className="w-4 h-4" />
+                </button>
               )}
             </div>
 
