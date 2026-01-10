@@ -1,11 +1,14 @@
 // Performance: Below-fold components are lazy loaded to reduce initial bundle
-import { Suspense, lazy } from "react";
+// Products are prefetched for faster /products page navigation
+import { Suspense, lazy, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ArrowRight, Users, Award, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 import moonIcon from "@/assets/moon-icon-blue.png";
 import HomeHero from "@/components/HomeHero";
+import { fetchProducts, getBuyerCountrySync } from "@/lib/shopify";
 
 // New homepage sections
 import {
@@ -31,6 +34,18 @@ const SectionFallback = () => (
 );
 
 export default function Home() {
+  const queryClient = useQueryClient();
+
+  // Prefetch products for faster /products page navigation
+  useEffect(() => {
+    const country = getBuyerCountrySync() ?? "unknown";
+    queryClient.prefetchQuery({
+      queryKey: ["shopify-products", country, 10, undefined],
+      queryFn: () => fetchProducts(10),
+      staleTime: 60 * 1000, // 1 minute
+    });
+  }, [queryClient]);
+
   return (
     <div className="min-h-screen">
       {/* Evergreen Quiz-First Hero */}

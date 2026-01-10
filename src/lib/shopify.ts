@@ -280,8 +280,8 @@ async function storefrontApiRequest(
 // Fetch products with localized pricing
 export async function fetchProducts(limit = 50, query?: string): Promise<ShopifyProduct[]> {
   try {
-    // Ensure buyer context is available
-    const country = await getBuyerCountry();
+    // Use sync country detection for faster initial load (falls back to 'US' if not yet determined)
+    const country = getBuyerCountrySync() || 'US';
     const data = await storefrontApiRequest(STOREFRONT_QUERY, { first: limit, query }, { country });
 
     const edges: ShopifyProduct[] = data.data.products.edges;
