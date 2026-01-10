@@ -221,20 +221,13 @@ export const useCartStore = create<CartStore>()(
           const ergonomicPillowItems = items.filter(item => 
             item.product.node.title.toLowerCase().includes('ergonomic sleep pillow')
           );
-          const kneePillowItems = items.filter(item => 
-            item.product.node.title.toLowerCase().includes('knee pillow') &&
-            !item.product.node.title.toLowerCase().includes('free gift')
-          );
           
           const totalErgonomicPillows = ergonomicPillowItems.reduce((sum, item) => sum + item.quantity, 0);
-          const totalKneePillows = kneePillowItems.reduce((sum, item) => sum + item.quantity, 0);
           
           // Calculate free masks:
           // - Ergonomic pillow: 1 mask per pillow (included with each)
-          // - Knee pillow: 1 mask per pillow (included with each, no more 1+1 deal)
-          const ergonomicMasks = totalErgonomicPillows;
-          const kneeMasks = totalKneePillows;
-          const freeMaskCount = ergonomicMasks + kneeMasks;
+          // - Knee pillow: NO free masks included
+          const freeMaskCount = totalErgonomicPillows;
           
           // Get the selected mask variants from state
           const { freeMaskSelections } = get();
@@ -250,10 +243,7 @@ export const useCartStore = create<CartStore>()(
             discountCodes.push('FREEMASKSERGONOMIC');
           }
           
-          // Add mask discount for knee pillows (no more FREEKNEEPILLOW 1+1 deal)
-          if (totalKneePillows > 0) {
-            discountCodes.push('FREEMASKSKNEE');
-          }
+          // Knee pillows no longer include free masks
           
           // Add free mask discount if applicable
           if (freeMaskCount > 0) {
