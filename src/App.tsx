@@ -143,6 +143,7 @@ import NotFound from "./pages/NotFound";
 import SleepGuides from "./pages/SleepGuides";
 import Products from "./pages/Products";
 import { ProductRedirect, ProductIndexRedirect } from "./components/ProductRedirect";
+import { DynamicProductRoute } from "./components/DynamicProductRoute";
 
 // Lazily loaded pages (heavy dashboards & features)
 const SleepQuiz = React.lazy(() => import("./pages/SleepQuiz"));
@@ -252,6 +253,9 @@ const AppContent = () => {
             <Route path="/products/knee-pillow" element={<KneePillowProduct />} />
             <Route path="/products/sleep-mask" element={<SleepMaskProduct />} />
             <Route path="/products/sleep-bundle" element={<SleepBundleProduct />} />
+            
+            {/* Dynamic catch-all: maps Shopify handles (Klaviyo, emails) → internal routes */}
+            <Route path="/products/:handle" element={<DynamicProductRoute />} />
             
             {/* Redirects: old /product/ routes → new /products/ (preserves SEO & fixes integrations) */}
             <Route path="/product/:handle" element={<ProductRedirect />} />
