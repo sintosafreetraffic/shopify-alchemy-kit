@@ -177,11 +177,11 @@ export const Header = () => {
         </Link>
         
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex flex-nowrap items-center justify-center mt-5 gap-10 lg:gap-14 whitespace-nowrap">
-          <NavLink to="/" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors">Home</NavLink>
-          <NavLink to="/products" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors">Products</NavLink>
-          <NavLink to="/about" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors">About Us</NavLink>
-          <NavLink to="/track" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors">Track Your Order</NavLink>
+        <nav className="hidden md:flex flex-nowrap items-center justify-center mt-5 whitespace-nowrap">
+          <NavLink to="/" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors px-5 lg:px-6">Home</NavLink>
+          <NavLink to="/products" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors px-5 lg:px-6">Products</NavLink>
+          <NavLink to="/about" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors px-5 lg:px-6">About Us</NavLink>
+          <NavLink to="/track" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors px-5 lg:px-6">Track Your Order</NavLink>
         </nav>
         
         {/* Cart - Absolute Right on Mobile, Right on Desktop */}
