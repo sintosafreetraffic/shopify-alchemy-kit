@@ -15,13 +15,13 @@ const PRODUCT_ROUTES: Record<string, string> = {
   "rise-by-night™-complete-sleep-bundle": "sleep-bundle",
 };
 
-// Static data for reviews (not in Shopify)
+// Static data for reviews (aligned with product pages)
 const PRODUCT_REVIEWS: Record<string, { rating: number; reviews: string; badge?: string }> = {
-  "risebynight-ergonomic-sleep-pillow": { rating: 4.8, reviews: "12,400+", badge: "Best Seller" },
+  "risebynight-ergonomic-sleep-pillow": { rating: 4.8, reviews: "6,247", badge: "Best Seller" },
   "risebynight-ergonomic-knee-pillow": { rating: 4.7, reviews: "5,100+" },
   "risebynight-silk-sleep-mask": { rating: 4.9, reviews: "3,200+" },
   "risebynight-silk-deep-sleep-mask": { rating: 4.9, reviews: "3,200+" },
-  "rise-by-night™-complete-sleep-bundle": { rating: 4.9, reviews: "2,800+", badge: "Save 20%" },
+  "rise-by-night™-complete-sleep-bundle": { rating: 4.9, reviews: "2,100+", badge: "Save 20%" },
 };
 
 // Taglines for products
