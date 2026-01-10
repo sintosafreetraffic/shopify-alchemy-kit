@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { useCartStore } from "@/stores/cartStore";
 import { useUIStore } from "@/stores/uiStore";
+import { useSleepMaskColorStore } from "@/stores/sleepMaskColorStore";
 import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
@@ -40,7 +41,11 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
   // For ergonomic and knee pillow, always use single quantity; no more bundle selection
   const [selectedBundle, setSelectedBundle] = useState<"1" | "2">("1");
   const [quantity, setQuantity] = useState(1);
-  const [selectedColor, setSelectedColor] = useState("navy");
+  // Use shared color store for sleep mask, local state for others
+  const { selectedColor: sharedColor, setSelectedColor: setSharedColor } = useSleepMaskColorStore();
+  const [localColor, setLocalColor] = useState("navy");
+  const selectedColor = isSleepMask ? (sharedColor || "Navy") : localColor;
+  const setSelectedColor = isSleepMask ? setSharedColor : setLocalColor;
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [product, setProduct] = useState<ShopifyProduct | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -98,6 +103,21 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
         variant = product.node.variants.edges.find(
           v => v.node.title === (selectedBundle === "1" ? "Single Bundle" : "Double Bundle")
         )?.node;
+      } else if (isSleepMask) {
+        // Sleep mask: match by color - selectedColor is now the actual color name (e.g., "Navy")
+        variant = product.node.variants.edges.find(v => {
+          const colorOpt = v.node.selectedOptions.find(opt => opt.name === "Color");
+          const colorMatch = colorOpt?.value === selectedColor;
+          
+          // Try to match quantity option if it exists
+          const quantityOpt = v.node.selectedOptions.find(opt => opt.name === "Quantity");
+          if (quantityOpt) {
+            const isSingleQty = quantityOpt.value === "1 Mask" || quantityOpt.value === "1" || quantityOpt.value.toLowerCase().includes("single");
+            return colorMatch && isSingleQty;
+          }
+          return colorMatch;
+        })?.node;
+        itemQuantity = quantity;
       } else if (isErgonomicPillow) {
         // Ergonomic pillow: always single quantity
         variant = product.node.variants.edges[0].node;
@@ -120,17 +140,12 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
         product,
         variantId: variant.id,
         variantTitle: isSleepMask 
-          ? `${variant.title} - ${colors.find(c => c.value === selectedColor)?.name}`
+          ? `${selectedColor} / 1 Mask`
           : variant.title,
         price: variant.price,
         compareAtPrice: variant.compareAtPrice,
         quantity: isSleepBundle ? 1 : itemQuantity,
-        selectedOptions: isSleepMask 
-          ? [
-              ...variant.selectedOptions || [],
-              { name: "Color", value: colors.find(c => c.value === selectedColor)?.name || "Black" }
-            ]
-          : variant.selectedOptions || []
+        selectedOptions: variant.selectedOptions || []
       };
       
       addItem(cartItem);
@@ -358,20 +373,20 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                     <div className="relative">
                       <button
                         onClick={() => setShowColorPicker(!showColorPicker)}
-                        aria-label={`Select color, currently ${colors.find(c => c.value === selectedColor)?.name}`}
+                        aria-label={`Select color, currently ${selectedColor}`}
                         aria-expanded={showColorPicker}
                         aria-haspopup="listbox"
                         className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors"
                       >
                         <div className="w-8 h-8 rounded-lg border-2 border-border overflow-hidden bg-background flex items-center justify-center">
                           <img 
-                            src={colors.find(c => c.value === selectedColor)?.image} 
-                            alt={colors.find(c => c.value === selectedColor)?.name}
+                            src={colors.find(c => c.name === selectedColor)?.image || colors[0].image} 
+                            alt={selectedColor}
                             className="w-full h-full object-contain p-0.5"
                           />
                         </div>
                         <span className="text-xs font-medium hidden sm:inline">
-                          {colors.find(c => c.value === selectedColor)?.name}
+                          {selectedColor}
                         </span>
                       </button>
 
@@ -383,11 +398,11 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                               <button
                                 key={color.value}
                                 onClick={() => {
-                                  setSelectedColor(color.value);
+                                  setSelectedColor(color.name);
                                   setShowColorPicker(false);
                                 }}
                                 className={`flex flex-col items-center gap-1.5 p-2 rounded-lg hover:bg-primary/10 transition-colors ${
-                                  selectedColor === color.value ? "bg-primary/20 ring-2 ring-primary" : ""
+                                  selectedColor === color.name ? "bg-primary/20 ring-2 ring-primary" : ""
                                 }`}
                               >
                                 <div className="w-14 h-14 rounded-lg border-2 border-border overflow-hidden bg-background flex items-center justify-center relative">
@@ -396,7 +411,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                                     alt={color.name}
                                     className="w-full h-full object-contain p-1"
                                   />
-                                  {selectedColor === color.value && (
+                                  {selectedColor === color.name && (
                                     <div className="absolute inset-0 bg-primary/10 flex items-center justify-center">
                                       <Check className="w-5 h-5 text-primary" />
                                     </div>
