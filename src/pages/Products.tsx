@@ -93,7 +93,7 @@ const Products = () => {
             </div>
             <div className="flex items-center gap-2">
               <Star className="w-5 h-5 text-primary" />
-              <span>30-Night Trial</span>
+              <span>100-Night Trial</span>
             </div>
           </div>
         </div>
@@ -156,19 +156,27 @@ const Products = () => {
 
                       {/* Content */}
                       <div className="p-6">
-                        {/* Rating - Yellow Stars */}
+                        {/* Rating - Yellow Stars with partial fill support */}
                         <div className="flex items-center gap-2 mb-3">
                           <div className="flex items-center">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`w-4 h-4 ${
-                                  i < Math.floor(reviewData.rating)
-                                    ? "fill-yellow-400 text-yellow-400"
-                                    : "fill-muted text-muted"
-                                }`}
-                              />
-                            ))}
+                            {[...Array(5)].map((_, i) => {
+                              const fillPercentage = Math.min(1, Math.max(0, reviewData.rating - i));
+                              return (
+                                <div key={i} className="relative w-4 h-4">
+                                  {/* Background star (empty) */}
+                                  <Star className="absolute w-4 h-4 fill-muted text-muted" />
+                                  {/* Foreground star (filled) with clip */}
+                                  {fillPercentage > 0 && (
+                                    <div 
+                                      className="absolute overflow-hidden" 
+                                      style={{ width: `${fillPercentage * 100}%` }}
+                                    >
+                                      <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                           <span className="text-sm text-muted-foreground">
                             {reviewData.rating} ({reviewData.reviews} reviews)
