@@ -205,7 +205,7 @@ const Products = () => {
                             size="sm" 
                             className="bg-primary text-primary-foreground hover:bg-black transition-colors"
                           >
-                            View Details <ArrowRight className="w-4 h-4 ml-1" />
+                            {handle.includes('bundle') ? 'Get the Bundle' : 'Improve your sleep'} <ArrowRight className="w-4 h-4 ml-1" />
                           </Button>
                         </div>
                       </div>
