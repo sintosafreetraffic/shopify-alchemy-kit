@@ -217,7 +217,7 @@ const Products = () => {
             Not sure which product is right for you?
           </h2>
           <p className="text-muted-foreground mb-6">
-            Take our 2-minute sleep assessment to get personalized recommendations based on your sleep position and pain points.
+            Take our sleep assessment to get personalized recommendations based on your sleep position and pain points.
           </p>
           <Link to="/sleep-quiz">
             <Button size="lg" className="rounded-full px-8 bg-primary hover:bg-black transition-colors">
