@@ -26,11 +26,14 @@ const policies = [
     icon: Star,
     title: "Material Composition",
     content: (
-      <ul className="list-disc list-inside space-y-2">
-        <li><strong>High-density, slow-rebound viscoelastic memory foam</strong> — adapts precisely to the natural curve of your neck and shoulders</li>
-        <li><strong>Breathable, moisture-wicking CoolingTech™ micro-knit cover</strong> — stays soft, fresh, and comfortable throughout the night</li>
-        <li><strong>Ventilated 3D AirMesh side panels</strong> — enhance airflow and prevent heat buildup for a cool, supportive sleep experience</li>
-      </ul>
+      <div className="space-y-3">
+        <p>Our premium ergonomic pillow is crafted with carefully selected materials for optimal comfort and support:</p>
+        <ul className="list-disc list-inside space-y-2">
+          <li><strong>High-density, slow-rebound viscoelastic memory foam</strong> — adapts precisely to the natural curve of your neck and shoulders</li>
+          <li><strong>Breathable, moisture-wicking CoolingTech™ micro-knit cover</strong> — stays soft, fresh, and comfortable throughout the night</li>
+          <li><strong>Ventilated 3D AirMesh side panels</strong> — enhance airflow and prevent heat buildup for a cool, supportive sleep experience</li>
+        </ul>
+      </div>
     )
   }
 ];
