@@ -129,24 +129,54 @@ function isInIframe(): boolean {
   try {
     return window.self !== window.top;
   } catch {
-    return true; // If we can't access top, we're likely in an iframe
+    return true;
   }
 }
 
 /**
- * Safely opens checkout URL with popup fallback
+ * Safely opens checkout URL.
+ *
+ * Note: In embedded/preview contexts, many checkout providers block being loaded in an iframe.
+ * When possible, pass a pre-opened window (opened synchronously from the click handler)
+ * to avoid popup blockers and iframe restrictions.
  */
-export function openCheckoutUrl(checkoutUrl: string, isMobile: boolean): void {
-  // Always use same-tab redirect for mobile, or when inside iframe (preview context)
-  if (isMobile || isInIframe()) {
+export function openCheckoutUrl(
+  checkoutUrl: string,
+  isMobile: boolean,
+  preopenedWindow?: Window | null
+): void {
+  // If we already have a user-gesture-opened window, prefer navigating it.
+  if (preopenedWindow && !preopenedWindow.closed) {
+    try {
+      preopenedWindow.location.href = checkoutUrl;
+      preopenedWindow.focus();
+      return;
+    } catch {
+      // Fall through to other strategies
+    }
+  }
+
+  // Mobile: always same-tab redirect
+  if (isMobile) {
     window.location.href = checkoutUrl;
     return;
   }
-  
+
+  // Desktop: if we're inside an iframe, prefer a new tab so checkout isn't embedded.
+  if (isInIframe()) {
+    const popup = window.open(checkoutUrl, '_blank');
+    if (popup) {
+      popup.focus();
+      return;
+    }
+    // If blocked, last resort: same tab
+    trackCheckoutPopupBlocked();
+    window.location.href = checkoutUrl;
+    return;
+  }
+
   // Desktop (not in iframe): try popup first, fallback to same tab
   const popup = window.open(checkoutUrl, '_blank');
-  
-  // If popup was blocked, fallback to same-tab redirect
   if (!popup || popup.closed || typeof popup.closed === 'undefined') {
     console.log('Popup blocked, falling back to same-tab redirect');
     trackCheckoutPopupBlocked();

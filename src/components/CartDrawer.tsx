@@ -267,37 +267,42 @@ export const CartDrawer = () => {
     if (!startCheckout()) {
       return;
     }
-    
+
     // Prevent checkout with empty cart
     if (items.length === 0) {
       endCheckout();
       return;
     }
-    
+
+    // Desktop: pre-open a blank tab synchronously from the click event.
+    // This avoids popup blockers and prevents checkout from trying to load inside the preview iframe.
+    const isMobile = isMobileDevice();
+    const preopenedWindow = !isMobile ? window.open('about:blank', '_blank') : null;
+
     try {
       // Prepare checkout data (discount codes, free masks, etc.)
       const checkoutData = await createCheckout();
-      
+
       if (!checkoutData) {
+        if (preopenedWindow && !preopenedWindow.closed) preopenedWindow.close();
         endCheckout("Failed to prepare checkout");
         toast.error("Checkout Failed", {
           description: "Unable to prepare checkout. Please try again.",
         });
         return;
       }
-      
+
       // Create checkout with timeout and retry logic
       const result = await createCheckoutWithResilience(
         checkoutData.items,
         checkoutData.freeMaskVariants,
         checkoutData.discountCodes
       );
-      
+
       if (result.success && result.checkoutUrl) {
-        // Open checkout URL with popup fallback
-        const isMobile = isMobileDevice();
-        openCheckoutUrl(result.checkoutUrl, isMobile);
-        
+        // Open checkout URL (prefer the pre-opened window if available)
+        openCheckoutUrl(result.checkoutUrl, isMobile, preopenedWindow);
+
         // Only end checkout and close drawer for desktop
         // Mobile will redirect, so keep loading state visible until page navigates away
         if (!isMobile) {
@@ -306,12 +311,14 @@ export const CartDrawer = () => {
         }
         // On mobile: intentionally don't call endCheckout() - loading stays visible until redirect completes
       } else {
+        if (preopenedWindow && !preopenedWindow.closed) preopenedWindow.close();
         endCheckout(result.error);
         toast.error("We couldn't start checkout", {
           description: "Please try again — your cart is safe.",
         });
       }
     } catch (error) {
+      if (preopenedWindow && !preopenedWindow.closed) preopenedWindow.close();
       console.error('Checkout failed:', error);
       endCheckout(error instanceof Error ? error.message : "Unknown error");
       toast.error("We couldn't start checkout", {
