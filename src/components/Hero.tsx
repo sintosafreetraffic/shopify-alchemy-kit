@@ -23,24 +23,18 @@ import {
 import testimonialAvatar from "@/assets/testimonial-new-updated.webp";
 import eyeMaskGift from "@/assets/eye-mask-gift-new.webp";
 import consumerChoiceBadge from "@/assets/consumer-choice-badge-transparent.png";
-// Sleep mask color images
-import sleepMaskNavy from "@/assets/sleep-mask-navy.webp";
-import sleepMaskTurquoise from "@/assets/sleep-mask-turquoise.webp";
-import sleepMaskPink from "@/assets/sleep-mask-pink.webp";
-import sleepMaskGold from "@/assets/sleep-mask-gold.webp";
-import sleepMaskSilver from "@/assets/sleep-mask-silver.webp";
-import sleepMaskBlack from "@/assets/sleep-mask-black.webp";
 import pillowCoverImage from "@/assets/pillow-cover-included.webp";
 
-// Image mapping for sleep mask colors
+// Sleep mask color images from Shopify CDN (transparent backgrounds)
 const sleepMaskColorImages: Record<string, string> = {
-  "Navy": sleepMaskNavy,
-  "Turquoise": sleepMaskTurquoise,
-  "Pink": sleepMaskPink,
-  "Gold": sleepMaskGold,
-  "Silver": sleepMaskSilver,
-  "Black": sleepMaskBlack,
+  "Navy": "https://cdn.shopify.com/s/files/1/0796/1595/1068/files/S49c23029579045cd9f6bcaa8e25c2a77W.jpg_960x960q75.jpg_-removebg-preview_01bcb148-bf70-4a87-b615-082583768bb7.webp?v=1767524632",
+  "Turquoise": "https://cdn.shopify.com/s/files/1/0796/1595/1068/files/Sc454d234910c4a5c90707dc614beafa7g_jpg_960x960q75_jpg-removebg-preview.png?v=1768121444",
+  "Pink": "https://cdn.shopify.com/s/files/1/0796/1595/1068/files/S119f40412e2749f995e462802ae7c8edI_jpg_960x960q75_jpg-removebg-preview.png?v=1768121444",
+  "Gold": "https://cdn.shopify.com/s/files/1/0796/1595/1068/files/Sd762462a530248b885c92fe66780627dN.jpg_960x960q75.jpg_-removebg-preview.webp?v=1767524632",
+  "Silver": "https://cdn.shopify.com/s/files/1/0796/1595/1068/files/S47f9fd96fa874cd7ad47cd25e894c01aI.jpg_960x960q75.jpg___1_-removebg-preview.webp?v=1764580767",
+  "Black": "https://cdn.shopify.com/s/files/1/0796/1595/1068/files/eye-mask-gift-transparent-CP76Ahkm.webp?v=1764490860",
 };
+const defaultMaskImage = sleepMaskColorImages["Navy"];
 
 // Lazy load the image carousel to reduce initial bundle
 const ProductImageCarousel = lazy(() => 
@@ -57,7 +51,7 @@ const CarouselFallback = () => (
 export const Hero = () => {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [selectedMaskColor, setSelectedMaskColor] = useState("Navy");
-  const [isMaskColorPickerOpen, setIsMaskColorPickerOpen] = useState(true);
+  const [isMaskColorPickerOpen, setIsMaskColorPickerOpen] = useState(false);
   const { addItem, setCartOpen, setFreeMaskSelections } = useCartStore();
   const hasTrackedView = useRef(false);
   const headerHeight = useHeaderHeight();
@@ -92,7 +86,7 @@ export const Hero = () => {
   }, [freeGiftMaskProduct]);
   
   // Get selected mask image
-  const selectedMaskImage = sleepMaskColorImages[selectedMaskColor] || sleepMaskNavy;
+  const selectedMaskImage = sleepMaskColorImages[selectedMaskColor] || defaultMaskImage;
 
   // Track product view once when product is loaded
   useEffect(() => {
@@ -316,8 +310,8 @@ export const Hero = () => {
                   </div>
                 </div>
                 
-                {/* Color Picker - Always show Popover directly */}
-                <Popover>
+                {/* Color Picker - Controlled Popover that closes after selection */}
+                <Popover open={isMaskColorPickerOpen} onOpenChange={setIsMaskColorPickerOpen}>
                   <PopoverTrigger asChild>
                     <button 
                       type="button"
@@ -326,7 +320,7 @@ export const Hero = () => {
                       aria-label={`Change mask color, currently ${selectedMaskColor}`}
                     >
                       <img 
-                        src={sleepMaskColorImages[selectedMaskColor] || sleepMaskNavy} 
+                        src={sleepMaskColorImages[selectedMaskColor] || defaultMaskImage} 
                         alt={selectedMaskColor}
                         className="w-5 h-5 object-contain rounded"
                       />
@@ -351,10 +345,11 @@ export const Hero = () => {
                           }`}
                           onClick={() => {
                             setSelectedMaskColor(variant.color);
+                            setIsMaskColorPickerOpen(false);
                           }}
                         >
                           <img 
-                            src={sleepMaskColorImages[variant.color] || sleepMaskNavy} 
+                            src={sleepMaskColorImages[variant.color] || defaultMaskImage} 
                             alt={variant.color}
                             className="w-6 h-6 object-contain rounded"
                           />
