@@ -264,41 +264,70 @@ export const SleepMaskHero = () => {
               </div>
             </div>
 
-            {/* Color Selection - Premium styling */}
-            <div className="bg-gradient-to-br from-secondary/40 to-secondary/20 border border-border rounded-xl p-4 shadow-sm">
-              <h3 className="font-bold text-lg mb-1">Choose Color</h3>
-              <p className="text-sm text-muted-foreground mb-3">Select your preferred color</p>
-              
-              <div className="grid grid-cols-6 gap-3">
-                {availableColors.map((colorName) => (
-                  <div key={colorName} className="flex flex-col items-center gap-1">
-                    <button
-                      onClick={() => setSelectedColor(colorName)}
-                      className={`relative w-full aspect-square rounded-xl border-2 transition-all overflow-hidden bg-background shadow-sm ${
-                        selectedColor === colorName
-                          ? "border-primary ring-2 ring-primary ring-offset-2"
-                          : "border-border hover:border-primary/50 hover:shadow-md"
-                      }`}
-                    >
-                      {colorImages[colorName] ? (
-                        <img 
-                          src={colorImages[colorName]} 
-                          alt={colorName}
-                          className="w-full h-full object-contain p-1"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <span className="text-xs font-medium text-center px-1">{colorName}</span>
-                        </div>
-                      )}
-                    </button>
-                    <span className={`text-[10px] font-medium text-center ${selectedColor === colorName ? 'text-primary' : 'text-muted-foreground'}`}>
-                      {colorName}
-                    </span>
-                  </div>
-                ))}
+            {/* Color Selection - Only show if no color selected yet */}
+            {!selectedColor && (
+              <div className="bg-gradient-to-br from-secondary/40 to-secondary/20 border border-border rounded-xl p-4 shadow-sm">
+                <h3 className="font-bold text-lg mb-1">Choose Color</h3>
+                <p className="text-sm text-muted-foreground mb-3">Select your preferred color</p>
+                
+                <div className="grid grid-cols-6 gap-3">
+                  {availableColors.map((colorName) => (
+                    <div key={colorName} className="flex flex-col items-center gap-1">
+                      <button
+                        onClick={() => setSelectedColor(colorName)}
+                        className={`relative w-full aspect-square rounded-xl border-2 transition-all overflow-hidden bg-background shadow-sm ${
+                          selectedColor === colorName
+                            ? "border-primary ring-2 ring-primary ring-offset-2"
+                            : "border-border hover:border-primary/50 hover:shadow-md"
+                        }`}
+                      >
+                        {colorImages[colorName] ? (
+                          <img 
+                            src={colorImages[colorName]} 
+                            alt={colorName}
+                            className="w-full h-full object-contain p-1"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <span className="text-xs font-medium text-center px-1">{colorName}</span>
+                          </div>
+                        )}
+                      </button>
+                      <span className={`text-[10px] font-medium text-center ${selectedColor === colorName ? 'text-primary' : 'text-muted-foreground'}`}>
+                        {colorName}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Selected color display - shown after selection */}
+            {selectedColor && (
+              <div className="bg-gradient-to-br from-secondary/40 to-secondary/20 border border-border rounded-xl p-4 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <img 
+                      src={colorImages[selectedColor]} 
+                      alt={selectedColor}
+                      className="w-12 h-12 object-contain rounded-lg"
+                    />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Selected Color</p>
+                      <p className="font-bold text-lg capitalize">{selectedColor}</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedColor("")}
+                    className="text-xs"
+                  >
+                    Change
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {/* Quantity Selection */}
             <div className="bg-gradient-to-br from-secondary/40 to-secondary/20 border border-border rounded-xl p-4 shadow-sm">
