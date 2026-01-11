@@ -57,9 +57,8 @@ async function trackHeroVariantExposure(variant: HeadlineVariant, persona: Perso
         session_id: getSessionId(),
       },
     });
-  } catch (error) {
+  } catch {
     // Silent fail - analytics should never break the app
-    console.warn("[HomeHero] Variant tracking failed:", error);
   }
 }
 

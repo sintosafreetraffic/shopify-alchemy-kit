@@ -14,6 +14,7 @@ import { trackPageView } from "./lib/analyticsRegistry";
 import { useKlaviyoEmailCapture } from "./hooks/useKlaviyoEmailCapture";
 
 import { FullPageLoader } from "./components/FullPageLoader";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 // =============================================================================
 // PINTEREST DEBUG WRAPPER
@@ -312,16 +313,18 @@ const AppContent = () => {
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <ScrollToTop />
-        <AppContent />
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <ScrollToTop />
+          <AppContent />
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
