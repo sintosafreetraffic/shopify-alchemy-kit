@@ -49,11 +49,11 @@ const stories = [
 
 export function TransformationStories() {
   return (
-    <section className="py-10 md:py-12 bg-background">
+    <section className="py-8 md:py-12 bg-background">
       <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
-          <div className="text-center mb-10 md:mb-12">
+          <div className="text-center mb-6 md:mb-10">
             <p className="text-xs md:text-sm uppercase tracking-widest text-primary/70 font-medium mb-3">
               Real Experiences
             </p>
@@ -66,7 +66,7 @@ export function TransformationStories() {
           </div>
 
           {/* Stories Grid */}
-          <div className="grid lg:grid-cols-2 gap-6 md:gap-8">
+          <div className="grid lg:grid-cols-2 gap-4 md:gap-6">
             {stories.map((story) => (
               <article
                 key={story.id}
@@ -151,7 +151,7 @@ export function TransformationStories() {
           </div>
 
           {/* Quiz CTA */}
-          <div className="mt-10 text-center">
+          <div className="mt-6 md:mt-10 text-center">
             <p className="text-sm text-muted-foreground mb-4">
               Find out which sleeper type you are
             </p>
@@ -164,7 +164,7 @@ export function TransformationStories() {
           </div>
 
           {/* Disclaimer */}
-          <p className="text-center text-[11px] text-muted-foreground/50 mt-8 max-w-xl mx-auto">
+          <p className="text-center text-[11px] text-muted-foreground/50 mt-6 md:mt-8 max-w-xl mx-auto">
             Individual experiences may vary. These accounts reflect personal journeys and are not intended as medical advice or guaranteed outcomes.
           </p>
         </div>

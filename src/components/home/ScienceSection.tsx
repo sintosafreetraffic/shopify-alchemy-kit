@@ -29,14 +29,14 @@ export function ScienceSection() {
     <section
       ref={ref}
       id="science"
-      className="py-16 md:py-20 bg-muted/40 scroll-mt-20"
+      className="py-8 md:py-16 bg-muted/40 scroll-mt-20"
       data-section="science-methodology"
     >
       <div className="container mx-auto px-4">
         <div className="max-w-5xl mx-auto">
           {/* Eyebrow + Headline */}
           <div 
-            className={`text-center mb-10 md:mb-12 transition-all duration-500 ease-out motion-reduce:transition-none ${
+            className={`text-center mb-6 md:mb-10 transition-all duration-500 ease-out motion-reduce:transition-none ${
               isInView 
                 ? "opacity-100 translate-y-0" 
                 : "opacity-0 translate-y-4 motion-reduce:opacity-100 motion-reduce:translate-y-0"
@@ -57,7 +57,7 @@ export function ScienceSection() {
           </div>
 
           {/* Three Pillars Grid */}
-          <div className="grid md:grid-cols-3 gap-6 mb-10">
+          <div className="grid md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-10">
             {PILLARS.map((pillar, index) => (
               <div
                 key={pillar.title}

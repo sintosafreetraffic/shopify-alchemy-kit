@@ -99,13 +99,13 @@ const Reviews = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="py-16 md:py-24 bg-gradient-to-b from-primary/5 to-background">
+      <section className="py-8 md:py-16 bg-gradient-to-b from-primary/5 to-background">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
+            <h1 className="text-3xl md:text-5xl font-bold mb-4 md:mb-6">
               Customer Reviews
             </h1>
-            <p className="text-xl text-muted-foreground mb-8">
+            <p className="text-lg md:text-xl text-muted-foreground mb-6 md:mb-8">
               Real reviews from real customers who transformed their sleep with RiseByNight™
             </p>
             <div className="flex items-center justify-center gap-4 flex-wrap">
@@ -124,7 +124,7 @@ const Reviews = () => {
       </section>
 
       {/* Trust Badges */}
-      <section className="py-8 border-b">
+      <section className="py-4 md:py-8 border-b">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-center gap-8 flex-wrap">
             <div className="flex items-center gap-2">
@@ -144,9 +144,9 @@ const Reviews = () => {
       </section>
 
       {/* Reviews Grid */}
-      <section className="py-16 md:py-24">
+      <section className="py-8 md:py-16">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 max-w-7xl mx-auto">
             {reviews.map((review, index) => (
               <Card key={index} className="p-6 hover:shadow-lg transition-shadow flex flex-col">
                 <div className="flex items-start justify-between mb-4">
@@ -189,13 +189,13 @@ const Reviews = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 md:py-24 bg-primary/5">
+      <section className="py-8 md:py-16 bg-primary/5">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl md:text-5xl font-bold mb-6">
+            <h2 className="text-2xl md:text-4xl font-bold mb-4 md:mb-6">
               Join Our Happy Customers
             </h2>
-            <p className="text-xl text-muted-foreground mb-8">
+            <p className="text-lg md:text-xl text-muted-foreground mb-6 md:mb-8">
               Experience the RiseByNight™ difference with our 100-night risk-free trial
             </p>
             <a 

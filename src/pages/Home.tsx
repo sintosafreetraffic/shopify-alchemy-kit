@@ -69,15 +69,15 @@ export default function Home() {
       <SleepCoachTeaser />
 
       {/* Why Choose Us */}
-      <section className="py-10 md:py-12 bg-primary/5">
+      <section className="py-8 md:py-12 bg-primary/5">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-8">
+            <div className="text-center mb-6 md:mb-8">
               <h2 className="text-3xl md:text-4xl font-bold mb-3">Why Rise By Night?</h2>
               <p className="text-xl text-muted-foreground">Join thousands who've transformed their sleep experience</p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-2 gap-4 md:gap-6">
               <div className="bg-background p-6 rounded-lg border">
                 <div className="flex items-center gap-3 mb-3">
                   <Users className="w-10 h-10 text-primary flex-shrink-0" />
@@ -126,16 +126,16 @@ export default function Home() {
       </section>
 
       {/* Customer Experience Statistics */}
-      <section className="py-10 md:py-12 bg-background">
+      <section className="py-8 md:py-12 bg-background">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-8">
+            <div className="text-center mb-6 md:mb-8">
               <h2 className="text-3xl md:text-4xl font-bold mb-3">What Our Customers Have Experienced</h2>
               <p className="text-base text-muted-foreground">Based on our survey of 1,750 people, both men and women.</p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-3">
+            <div className="grid md:grid-cols-2 gap-4 md:gap-6">
+              <div className="space-y-2 md:space-y-3">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-xl font-bold">Reduced Snoring & Disruptions</h3>
                   <span className="text-2xl font-bold text-primary">86%</span>
@@ -146,9 +146,9 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className="space-y-3">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-xl font-bold">Improved Sleep Quality</h3>
+              <div className="space-y-2 md:space-y-3">
+                <div className="flex items-center justify-between mb-1 md:mb-2">
+                  <h3 className="text-lg md:text-xl font-bold">Improved Sleep Quality</h3>
                   <span className="text-2xl font-bold text-primary">93%</span>
                 </div>
                 <Progress value={93} className="h-3" aria-label="93% improved sleep quality" />
@@ -157,9 +157,9 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className="space-y-3">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-xl font-bold">Relieved Chronic Neck Pain</h3>
+              <div className="space-y-2 md:space-y-3">
+                <div className="flex items-center justify-between mb-1 md:mb-2">
+                  <h3 className="text-lg md:text-xl font-bold">Relieved Chronic Neck Pain</h3>
                   <span className="text-2xl font-bold text-primary">96%</span>
                 </div>
                 <Progress value={96} className="h-3" aria-label="96% relieved chronic neck pain" />
@@ -168,9 +168,9 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className="space-y-3">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-xl font-bold">Enhanced Daily Focus</h3>
+              <div className="space-y-2 md:space-y-3">
+                <div className="flex items-center justify-between mb-1 md:mb-2">
+                  <h3 className="text-lg md:text-xl font-bold">Enhanced Daily Focus</h3>
                   <span className="text-2xl font-bold text-primary">89%</span>
                 </div>
                 <Progress value={89} className="h-3" aria-label="89% enhanced daily focus" />
@@ -211,7 +211,7 @@ export default function Home() {
               </Button>
             </Link>
 
-            <div className="mt-8 pt-6 border-t border-primary-foreground/20">
+            <div className="mt-6 md:mt-8 pt-4 md:pt-6 border-t border-primary-foreground/20">
               <p className="text-sm font-medium opacity-80 tracking-wide">
                 Free Shipping on €50+ • 100-Night Trial • 2-Year Warranty
               </p>
