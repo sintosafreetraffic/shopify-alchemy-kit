@@ -146,6 +146,10 @@ verify_jwt = true
 [functions.checkout-analytics]
 verify_jwt = false
 
+# Checkout URL Resolver - Public (prefers branded checkout host with safe fallback)
+[functions.checkout-url-resolver]
+verify_jwt = false
+
 # Affiliate Provision - Admin only, requires JWT and validates admin role internally
 [functions.affiliate-provision]
 verify_jwt = true
