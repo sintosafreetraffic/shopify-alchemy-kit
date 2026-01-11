@@ -158,10 +158,9 @@ export const CartDrawer = () => {
   
   // Free gifts logic: 
   // - Ergonomic pillow: 1 mask per pillow (included with each pillow)
-  // - Knee pillow: 1 mask per pillow (included with each pillow, no more 1+1 deal)
+  // - Knee pillow: NO free masks included (removed)
   const ergonomicMasks = totalErgonomicPillows;
-  const kneeMasks = totalKneePillows;
-  const freeGifts = ergonomicMasks + kneeMasks;
+  const freeGifts = ergonomicMasks;
   
   // No more BOGO discounts for any pillows
   const totalDiscount = 0;
@@ -377,26 +376,26 @@ export const CartDrawer = () => {
                     {product.node.title.replace('RiseByNight', 'Rise By Night™')}
                   </h4>
                   
-                  {/* Color selector for sleep masks */}
+                  {/* Color selector for sleep masks - improved styling */}
                   {isSleepMask && availableColors.length > 0 && (
-                    <div className="mb-3">
-                      <p className="text-xs text-muted-foreground mb-1.5">Select color:</p>
-                      <div className="flex flex-wrap gap-1.5">
+                    <div className="mb-3 p-2 bg-secondary/30 rounded-lg">
+                      <p className="text-xs text-muted-foreground mb-2">Select color:</p>
+                      <div className="flex flex-wrap gap-2">
                         {availableColors.map((color) => (
                           <button
                             key={color}
                             onClick={() => setRecommendationColors(prev => ({ ...prev, [product.node.id]: color }))}
-                            className={`w-8 h-8 rounded-md border-2 overflow-hidden transition-all ${
+                            className={`w-10 h-10 rounded-lg border-2 overflow-hidden transition-all shadow-sm ${
                               selectedColor === color 
-                                ? 'border-primary ring-1 ring-primary ring-offset-1' 
-                                : 'border-border hover:border-primary/50'
+                                ? 'border-primary ring-2 ring-primary ring-offset-1 scale-105' 
+                                : 'border-border hover:border-primary/50 hover:scale-105'
                             }`}
                             title={color}
                           >
                             <img 
                               src={sleepMaskColorImages[color] || sleepMaskNavy}
                               alt={color}
-                              className="w-full h-full object-contain"
+                              className="w-full h-full object-contain p-0.5"
                             />
                           </button>
                         ))}
