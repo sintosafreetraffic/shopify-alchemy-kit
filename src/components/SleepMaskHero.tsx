@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { trackPageVisit } from "@/lib/pinterest";
 import { trackViewedProduct } from "@/lib/klaviyo";
 import { formatPrice } from "@/lib/formatPrice";
+import { PaymentIcons } from "./PaymentIcons";
 import { useIsEU } from "@/hooks/useCurrencySymbol";
 import sleepMaskNavy from "@/assets/sleep-mask-navy.webp";
 import sleepMaskTurquoise from "@/assets/sleep-mask-turquoise.webp";
@@ -263,8 +264,8 @@ export const SleepMaskHero = () => {
               </div>
             </div>
 
-            {/* Color Selection - Always visible, allows switching */}
-            <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+            {/* Color Selection - Premium styling */}
+            <div className="bg-gradient-to-br from-secondary/40 to-secondary/20 border border-border rounded-xl p-4 shadow-sm">
               <h3 className="font-bold text-lg mb-1">Choose Color</h3>
               <p className="text-sm text-muted-foreground mb-3">Select your preferred color</p>
               
@@ -273,10 +274,10 @@ export const SleepMaskHero = () => {
                   <div key={colorName} className="flex flex-col items-center gap-1">
                     <button
                       onClick={() => setSelectedColor(colorName)}
-                      className={`relative w-full aspect-square rounded-lg border-2 transition-all overflow-hidden bg-background ${
+                      className={`relative w-full aspect-square rounded-xl border-2 transition-all overflow-hidden bg-background shadow-sm ${
                         selectedColor === colorName
                           ? "border-primary ring-2 ring-primary ring-offset-2"
-                          : "border-border hover:border-primary/50"
+                          : "border-border hover:border-primary/50 hover:shadow-md"
                       }`}
                     >
                       {colorImages[colorName] ? (
@@ -300,7 +301,7 @@ export const SleepMaskHero = () => {
             </div>
 
             {/* Quantity Selection */}
-            <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+            <div className="bg-gradient-to-br from-secondary/40 to-secondary/20 border border-border rounded-xl p-4 shadow-sm">
               <div className="flex items-center justify-between">
                 <h3 className="font-bold text-lg">Quantity</h3>
                 <div className="flex items-center gap-4">
@@ -324,7 +325,7 @@ export const SleepMaskHero = () => {
                   </Button>
                 </div>
               </div>
-              <div className="flex items-center justify-between mt-4 pt-4 border-t">
+              <div className="flex items-center justify-between mt-4 pt-4 border-t border-border/50">
                 <span className="text-lg font-semibold">Total Price:</span>
                 <span className="text-2xl font-bold text-primary">{formatPrice(totalPrice, currencyCode)}</span>
               </div>
@@ -356,6 +357,11 @@ export const SleepMaskHero = () => {
                 </>
               )}
             </Button>
+
+            {/* Payment Icons */}
+            <div className="pt-4">
+              <PaymentIcons />
+            </div>
 
             {/* Trust Badges */}
             <div className="grid grid-cols-3 gap-4 pt-4 border-t">
