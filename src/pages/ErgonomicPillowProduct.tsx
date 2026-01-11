@@ -27,17 +27,17 @@ const SectionFallback = () => (
 // Quiz CTA Component
 const QuizCTA = ({ variant = "default" }: { variant?: "default" | "subtle" }) => (
   <div
-    className={`py-10 md:py-14 ${variant === "subtle" ? "bg-muted/20" : "bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5"}`}
+    className={`py-4 md:py-6 lg:py-10 ${variant === "subtle" ? "bg-muted/20" : "bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5"}`}
   >
     <div className="container mx-auto px-4 text-center">
-      <p className="text-sm text-muted-foreground mb-2">Not sure if this pillow is right for you?</p>
-      <h3 className="text-xl md:text-2xl font-semibold mb-4">Take the Short Science-Backed Assessment</h3>
-      <p className="text-muted-foreground mb-6 max-w-md mx-auto text-sm">
-        Discover your sleeper type and get personalized product recommendations.
+      <p className="text-xs md:text-sm text-muted-foreground mb-1">Not sure if this pillow is right for you?</p>
+      <h3 className="text-base md:text-lg lg:text-xl font-semibold mb-2">Take the Science-Backed Assessment</h3>
+      <p className="text-xs md:text-sm text-muted-foreground mb-3 max-w-md mx-auto">
+        Discover your sleeper type and get personalized recommendations.
       </p>
       <Link to="/sleep-quiz">
-        <Button size="lg" className="rounded-full px-8">
-          Start the Assessment <ArrowRight className="w-4 h-4 ml-2" />
+        <Button size="default" className="rounded-full px-6 h-9 md:h-10 text-sm">
+          Start the Assessment <ArrowRight className="w-3 h-3 md:w-4 md:h-4 ml-1.5" />
         </Button>
       </Link>
     </div>

@@ -65,20 +65,19 @@ const reviews = [
 
 export const ReviewsSection = () => {
   return (
-    <section id="reviews" className="py-6 md:py-8 bg-background">
+    <section id="reviews" className="py-4 md:py-6 lg:py-8 bg-background">
       <div className="container mx-auto px-4 max-w-6xl">
-        <div className="text-center mb-6 md:mb-8">
-          <div className="inline-flex items-center gap-2 mb-3 md:mb-4">
+        <div className="text-center mb-3 md:mb-5">
+          <div className="inline-flex items-center gap-2 mb-2">
             <div className="flex">
               {[1, 2, 3, 4, 5].map((star) => (
-                <Star key={star} className="w-5 h-5 md:w-6 md:h-6 fill-yellow-500 text-yellow-500" />
+                <Star key={star} className="w-4 h-4 md:w-5 md:h-5 fill-yellow-500 text-yellow-500" />
               ))}
             </div>
-            <span className="text-xl md:text-2xl font-bold">4.8/5</span>
+            <span className="text-lg md:text-xl font-bold">4.8/5</span>
           </div>
-          <h2 className="text-2xl md:text-4xl font-bold mb-2 md:mb-3">Customer Reviews</h2>
-          <p className="text-base md:text-lg text-muted-foreground mb-1.5 md:mb-2">What do our customers say?</p>
-          <p className="text-sm md:text-base text-muted-foreground">Read the reviews and see what others think of their experience with us.</p>
+          <h2 className="text-xl md:text-2xl lg:text-3xl font-bold mb-1">Customer Reviews</h2>
+          <p className="text-sm md:text-base text-muted-foreground">What do our customers say?</p>
         </div>
 
         <Carousel
@@ -90,15 +89,15 @@ export const ReviewsSection = () => {
         >
           <CarouselContent className="-ml-2 md:-ml-4">
             {reviews.map((review, index) => (
-              <CarouselItem key={index} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/3">
-                <div className="bg-secondary/20 rounded-xl p-6 border h-full">
-                  <div className="flex flex-col items-center text-center mb-4">
+              <CarouselItem key={index} className="pl-2 md:pl-3 basis-[85%] md:basis-1/2 lg:basis-1/3">
+                <div className="bg-secondary/20 rounded-xl p-3 md:p-4 lg:p-5 border h-full">
+                  <div className="flex flex-col items-center text-center mb-2 md:mb-3">
                     <OptimizedImage 
                       src={review.avatar} 
                       alt={review.name}
-                      width={112}
-                      height={112}
-                      className="w-28 h-28 rounded-full object-cover mb-3 ring-4 ring-primary/10"
+                      width={80}
+                      height={80}
+                      className="w-16 h-16 md:w-20 md:h-20 rounded-full object-cover mb-2 ring-2 ring-primary/10"
                     />
                     <div>
                       <div className="flex items-center justify-center gap-2 mb-1">
@@ -111,12 +110,12 @@ export const ReviewsSection = () => {
                       <p className="text-xs text-muted-foreground mt-0.5">{review.date}</p>
                     </div>
                   </div>
-                  <div className="flex justify-center mb-3">
+                  <div className="flex justify-center mb-2">
                     {[...Array(review.rating)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-yellow-500 text-yellow-500" />
+                      <Star key={i} className="w-3 h-3 md:w-4 md:h-4 fill-yellow-500 text-yellow-500" />
                     ))}
                   </div>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{review.review}</p>
+                  <p className="text-xs md:text-sm text-muted-foreground leading-relaxed line-clamp-4 md:line-clamp-none">{review.review}</p>
                 </div>
               </CarouselItem>
             ))}

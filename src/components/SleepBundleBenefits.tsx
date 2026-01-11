@@ -39,40 +39,40 @@ export const SleepBundleBenefits = () => {
   ];
 
   return (
-    <section className="py-16 md:py-24 bg-background">
+    <section className="py-6 md:py-10 lg:py-16 bg-background">
       <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">What's Included in Your Bundle</h2>
-            <p className="text-lg md:text-xl text-muted-foreground">
+          <div className="text-center mb-4 md:mb-8">
+            <h2 className="text-xl md:text-3xl lg:text-4xl font-bold mb-2">What's Included in Your Bundle</h2>
+            <p className="text-sm md:text-base lg:text-lg text-muted-foreground">
               Three premium products working together to transform your sleep
             </p>
           </div>
 
-          <div className="space-y-12">
+          <div className="space-y-4 md:space-y-6 lg:space-y-8">
             {products.map((product, index) => (
               <div
                 key={index}
                 className={`flex flex-col ${
                   index % 2 === 0 ? "md:flex-row" : "md:flex-row-reverse"
-                } gap-8 items-center bg-muted/30 p-8 rounded-lg`}
+                } gap-4 md:gap-6 items-center bg-muted/30 p-4 md:p-6 rounded-lg`}
               >
                 <div className="flex-1">
                   <img
                     src={product.image}
                     alt={product.name}
-                    className="w-full max-w-md mx-auto h-64 object-contain"
+                    className="w-full max-w-xs md:max-w-md mx-auto h-40 md:h-52 object-contain"
                     loading="lazy"
                     decoding="async"
                   />
                 </div>
-                <div className="flex-1 space-y-4">
-                  <h3 className="text-2xl md:text-3xl font-bold">{product.name}</h3>
-                  <ul className="space-y-3">
+                <div className="flex-1 space-y-2 md:space-y-3">
+                  <h3 className="text-lg md:text-xl lg:text-2xl font-bold">{product.name}</h3>
+                  <ul className="space-y-1 md:space-y-2">
                     {product.benefits.map((benefit, benefitIndex) => (
-                      <li key={benefitIndex} className="flex items-start gap-3">
-                        <span className="text-primary text-xl mt-0.5">✓</span>
-                        <span className="text-muted-foreground">{benefit}</span>
+                      <li key={benefitIndex} className="flex items-start gap-2">
+                        <span className="text-primary text-base md:text-lg mt-0.5">✓</span>
+                        <span className="text-xs md:text-sm text-muted-foreground">{benefit}</span>
                       </li>
                     ))}
                   </ul>
@@ -81,12 +81,12 @@ export const SleepBundleBenefits = () => {
             ))}
           </div>
 
-          <div className="mt-12 bg-primary/5 border-2 border-primary rounded-lg p-8 text-center">
-            <h3 className="text-2xl md:text-3xl font-bold mb-3">Save {currencySymbol}30 with the Bundle</h3>
-            <p className="text-lg text-muted-foreground mb-2">
+          <div className="mt-6 md:mt-8 bg-primary/5 border-2 border-primary rounded-lg p-4 md:p-6 text-center">
+            <h3 className="text-lg md:text-xl lg:text-2xl font-bold mb-1 md:mb-2">Save {currencySymbol}30 with the Bundle</h3>
+            <p className="text-sm md:text-base text-muted-foreground mb-1">
               Regular price: <span className="line-through">{currencySymbol}229.97</span>
             </p>
-            <p className="text-3xl md:text-4xl font-bold text-primary">
+            <p className="text-xl md:text-2xl lg:text-3xl font-bold text-primary">
               Bundle price: {currencySymbol}199.99
             </p>
           </div>

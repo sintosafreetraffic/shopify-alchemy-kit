@@ -25,27 +25,27 @@ export const SleepBundleFeatures = () => {
   ];
 
   return (
-    <section className="py-16 md:py-24 bg-muted/30">
+    <section className="py-6 md:py-10 lg:py-16 bg-muted/30">
       <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">Why Choose the Complete Bundle?</h2>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
-              Get all three premium sleep products at a discounted price and experience the ultimate sleep transformation
+          <div className="text-center mb-4 md:mb-8">
+            <h2 className="text-xl md:text-3xl lg:text-4xl font-bold mb-2">Why Choose the Complete Bundle?</h2>
+            <p className="text-sm md:text-base lg:text-lg text-muted-foreground max-w-3xl mx-auto">
+              Get all three premium sleep products at a discounted price
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-4 lg:gap-6">
             {features.map((feature, index) => (
               <div
                 key={index}
-                className="bg-background p-8 rounded-lg border hover:shadow-lg transition-shadow"
+                className="bg-background p-3 md:p-5 lg:p-6 rounded-lg border hover:shadow-lg transition-shadow"
               >
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10 mb-4">
-                  <feature.icon className="w-7 h-7 text-primary" />
+                <div className="inline-flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary/10 mb-2 md:mb-3">
+                  <feature.icon className="w-5 h-5 md:w-6 md:h-6 text-primary" />
                 </div>
-                <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
-                <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
+                <h3 className="text-sm md:text-base lg:text-lg font-bold mb-1 md:mb-2">{feature.title}</h3>
+                <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
               </div>
             ))}
           </div>

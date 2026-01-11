@@ -41,40 +41,40 @@ const painTypes = [
 
 export const PainReliefSection = () => {
   return (
-    <section className="py-6 md:py-16 px-4 bg-primary/5">
+    <section className="py-4 md:py-8 lg:py-12 px-4 bg-primary/5">
       <div className="container mx-auto max-w-6xl">
-        <div className="text-center mb-6 md:mb-12">
-          <h2 className="text-2xl md:text-4xl font-bold mb-2 md:mb-4">
-            Relief for Every Type of Pain That – <span className="italic">Disrupts Your Sleep</span>
+        <div className="text-center mb-3 md:mb-6">
+          <h2 className="text-lg md:text-2xl lg:text-3xl font-bold mb-1">
+            Relief for Every Type of Pain
           </h2>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3">
           {painTypes.map((pain, index) => (
             <Accordion key={index} type="single" collapsible>
               <AccordionItem 
                 value={`pain-${index}`}
-                className="bg-secondary/10 rounded-xl border border-border/50 px-4"
+                className="bg-secondary/10 rounded-lg border border-border/50 px-3"
               >
-                <AccordionTrigger className="hover:no-underline py-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <Check className="w-3 h-3 text-primary" />
+                <AccordionTrigger className="hover:no-underline py-2 md:py-3">
+                  <div className="flex items-center gap-1.5 md:gap-2">
+                    <div className="w-4 h-4 md:w-5 md:h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Check className="w-2.5 h-2.5 md:w-3 md:h-3 text-primary" />
                     </div>
-                    <span className="font-bold text-base text-left">{pain.title}</span>
+                    <span className="font-bold text-xs md:text-sm text-left">{pain.title}</span>
                   </div>
                 </AccordionTrigger>
                 
-                <AccordionContent className="pt-2 pb-4">
-                  <div className="space-y-3 ml-7">
+                <AccordionContent className="pt-1 pb-2 md:pb-3">
+                  <div className="space-y-2 ml-5 md:ml-7">
                     <div>
-                      <p className="font-semibold text-xs mb-1">What Causes It:</p>
-                      <p className="text-xs text-muted-foreground leading-relaxed">{pain.cause}</p>
+                      <p className="font-semibold text-[10px] md:text-xs mb-0.5">What Causes It:</p>
+                      <p className="text-[10px] md:text-xs text-muted-foreground leading-relaxed">{pain.cause}</p>
                     </div>
                     
                     <div>
-                      <p className="font-semibold text-xs mb-1">How Rise By Night Helps:</p>
-                      <p className="text-xs text-muted-foreground leading-relaxed">{pain.solution}</p>
+                      <p className="font-semibold text-[10px] md:text-xs mb-0.5">How Rise By Night Helps:</p>
+                      <p className="text-[10px] md:text-xs text-muted-foreground leading-relaxed">{pain.solution}</p>
                     </div>
                   </div>
                 </AccordionContent>
