@@ -192,7 +192,7 @@ const Products = () => {
                         </p>
 
                         {/* Price (Blue) & CTA */}
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col gap-4">
                           <div className="flex items-baseline gap-2">
                             <span className="text-2xl font-bold text-primary">{price}</span>
                             {compareAtPrice && (
@@ -202,10 +202,9 @@ const Products = () => {
                             )}
                           </div>
                           <Button 
-                            size="sm" 
-                            className="bg-primary text-primary-foreground hover:bg-black transition-colors"
+                            className="w-full bg-primary text-primary-foreground hover:bg-black transition-colors px-6 py-2.5"
                           >
-                            {handle.includes('bundle') ? 'Get the Bundle' : 'Improve your sleep'} <ArrowRight className="w-4 h-4 ml-1" />
+                            {handle.includes('bundle') ? 'Get the Bundle' : 'Improve your sleep'} <ArrowRight className="w-4 h-4 ml-2" />
                           </Button>
                         </div>
                       </div>
