@@ -5,11 +5,11 @@ const Guarantee = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="py-16 md:py-24 bg-gradient-to-b from-primary/5 to-background">
+      <section className="py-8 md:py-16 bg-gradient-to-b from-primary/5 to-background">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <Shield className="w-20 h-20 text-primary mx-auto mb-6" />
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
+            <Shield className="w-16 h-16 md:w-20 md:h-20 text-primary mx-auto mb-4 md:mb-6" />
+            <h1 className="text-3xl md:text-5xl font-bold mb-4 md:mb-6">
               Our Guarantee to You
             </h1>
             <p className="text-xl text-muted-foreground">
@@ -20,10 +20,10 @@ const Guarantee = () => {
       </section>
 
       {/* Main Guarantees */}
-      <section className="py-16 md:py-24">
+      <section className="py-8 md:py-16">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-16">
-            <Card className="p-8 text-center hover:shadow-lg transition-shadow">
+          <div className="grid md:grid-cols-3 gap-4 md:gap-8 max-w-6xl mx-auto mb-8 md:mb-16">
+            <Card className="p-6 md:p-8 text-center hover:shadow-lg transition-shadow">
               <Moon className="w-16 h-16 text-primary mx-auto mb-4" />
               <h3 className="text-2xl font-bold mb-4">100-Night Trial</h3>
               <p className="text-muted-foreground mb-4">
@@ -186,13 +186,13 @@ const Guarantee = () => {
       </section>
 
       {/* Why We Offer This */}
-      <section className="py-16 md:py-24 bg-primary/5">
+      <section className="py-8 md:py-16 bg-primary/5">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">
+            <h2 className="text-2xl md:text-4xl font-bold mb-4 md:mb-6">
               Why We Stand Behind Our Products
             </h2>
-            <p className="text-xl text-muted-foreground mb-8">
+            <p className="text-lg md:text-xl text-muted-foreground mb-6 md:mb-8">
               We're confident in the quality and effectiveness of our products because we've seen the results. With thousands of satisfied customers and a 96% satisfaction rate, we know RiseByNight™ delivers on its promises. Our generous guarantees ensure you can shop with complete confidence.
             </p>
             <a 

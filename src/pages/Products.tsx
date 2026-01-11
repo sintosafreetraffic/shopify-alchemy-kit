@@ -72,9 +72,9 @@ const Products = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="py-12 md:py-16 px-4 bg-gradient-to-b from-primary/5 to-background">
+      <section className="py-8 md:py-12 px-4 bg-gradient-to-b from-primary/5 to-background">
         <div className="container mx-auto max-w-6xl text-center">
-          <h1 className="text-3xl md:text-5xl font-bold mb-4">
+          <h1 className="text-3xl md:text-5xl font-bold mb-3 md:mb-4">
             Our Sleep Products
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
@@ -100,10 +100,10 @@ const Products = () => {
       </section>
 
       {/* Products Grid */}
-      <section className="py-12 md:py-16 px-4">
+      <section className="py-8 md:py-12 px-4">
         <div className="container mx-auto max-w-6xl">
           {isLoading ? (
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="grid md:grid-cols-2 gap-4 md:gap-8">
               {[1, 2, 3, 4].map((i) => (
                 <div key={i} className="bg-card rounded-2xl overflow-hidden border border-border animate-pulse">
                   <div className="aspect-[4/3] bg-muted" />
@@ -116,7 +116,7 @@ const Products = () => {
               ))}
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="grid md:grid-cols-2 gap-4 md:gap-8">
               {sortedProducts.map((product) => {
                 if (!product) return null;
                 
@@ -219,9 +219,9 @@ const Products = () => {
       </section>
 
       {/* Quiz CTA */}
-      <section className="py-12 md:py-16 px-4 bg-muted/30">
+      <section className="py-8 md:py-12 px-4 bg-muted/30">
         <div className="container mx-auto max-w-2xl text-center">
-          <h2 className="text-2xl md:text-3xl font-semibold mb-4">
+          <h2 className="text-2xl md:text-3xl font-semibold mb-3 md:mb-4">
             Not sure which product is right for you?
           </h2>
           <p className="text-muted-foreground mb-6">

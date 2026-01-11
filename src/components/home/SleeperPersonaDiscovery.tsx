@@ -63,11 +63,11 @@ const personas = [
 
 export function SleeperPersonaDiscovery() {
   return (
-    <section className="py-10 md:py-12 bg-gradient-to-b from-background via-muted/10 to-background overflow-x-hidden">
+    <section className="py-8 md:py-12 bg-gradient-to-b from-background via-muted/10 to-background overflow-x-hidden">
       <div className="container mx-auto px-4 max-w-full overflow-hidden">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
-          <div className="text-center mb-10 md:mb-12">
+          <div className="text-center mb-6 md:mb-10">
             <p className="text-xs md:text-sm uppercase tracking-widest text-primary/70 font-medium mb-3">
               Research-Based Profiles
             </p>
@@ -80,7 +80,7 @@ export function SleeperPersonaDiscovery() {
           </div>
 
           {/* Persona Grid */}
-          <div className="grid md:grid-cols-2 gap-4 md:gap-5 lg:gap-6 mb-10">
+          <div className="grid md:grid-cols-2 gap-3 md:gap-5 lg:gap-6 mb-6 md:mb-10">
             {personas.map((persona, index) => {
               const Icon = persona.icon;
               return (

@@ -10,11 +10,11 @@ const ambassadorTypes = [
 
 export function AmbassadorWall() {
   return (
-    <section className="py-10 md:py-12 bg-gradient-to-b from-muted/5 via-muted/20 to-muted/5">
+    <section className="py-8 md:py-12 bg-gradient-to-b from-muted/5 via-muted/20 to-muted/5">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
           {/* Section Header */}
-          <div className="text-center mb-8">
+          <div className="text-center mb-6 md:mb-8">
             <p className="text-xs md:text-sm uppercase tracking-widest text-primary/70 font-medium mb-3">
               Community
             </p>
@@ -28,7 +28,7 @@ export function AmbassadorWall() {
           </div>
 
           {/* Ambassador types */}
-          <div className="flex flex-wrap justify-center gap-3 mb-8">
+          <div className="flex flex-wrap justify-center gap-2 md:gap-3 mb-6 md:mb-8">
             {ambassadorTypes.map((type) => (
               <div 
                 key={type.label}

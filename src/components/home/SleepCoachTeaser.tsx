@@ -22,10 +22,10 @@ const pillars = [
 
 export function SleepCoachTeaser() {
   return (
-    <section className="py-10 md:py-12 bg-primary/5">
+    <section className="py-8 md:py-12 bg-primary/5">
       <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-10 items-center">
+          <div className="grid lg:grid-cols-2 gap-6 md:gap-10 items-center">
             {/* Content */}
             <div>
               <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium mb-6">

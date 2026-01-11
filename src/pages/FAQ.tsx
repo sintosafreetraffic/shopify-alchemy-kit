@@ -112,10 +112,10 @@ const FAQ = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="py-16 md:py-24 bg-gradient-to-b from-primary/5 to-background">
+      <section className="py-8 md:py-16 bg-gradient-to-b from-primary/5 to-background">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
+            <h1 className="text-3xl md:text-5xl font-bold mb-4 md:mb-6">
               Frequently Asked Questions
             </h1>
             <p className="text-xl text-muted-foreground">
@@ -126,9 +126,9 @@ const FAQ = () => {
       </section>
 
       {/* FAQ Sections */}
-      <section className="py-16 md:py-24">
+      <section className="py-8 md:py-16">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto space-y-12">
+          <div className="max-w-4xl mx-auto space-y-8 md:space-y-12">
             {faqCategories.map((category, categoryIndex) => (
               <div key={categoryIndex}>
                 <h2 className="text-2xl md:text-3xl font-bold mb-6">{category.category}</h2>
@@ -155,13 +155,13 @@ const FAQ = () => {
       </section>
 
       {/* Still Have Questions */}
-      <section className="py-16 md:py-24 bg-primary/5">
+      <section className="py-8 md:py-16 bg-primary/5">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">
+            <h2 className="text-2xl md:text-4xl font-bold mb-4 md:mb-6">
               Still Have Questions?
             </h2>
-            <p className="text-xl text-muted-foreground mb-8">
+            <p className="text-lg md:text-xl text-muted-foreground mb-6 md:mb-8">
               Our customer service team is here to help! Reach out and we'll get back to you within 24 hours.
             </p>
             <a 
