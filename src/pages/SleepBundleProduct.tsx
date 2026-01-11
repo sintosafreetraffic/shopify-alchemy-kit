@@ -6,16 +6,10 @@ import { SleepBundleFAQ } from "@/components/SleepBundleFAQ";
 import { GuaranteeSection } from "@/components/GuaranteeSection";
 import { StickyAddToCart } from "@/components/StickyAddToCart";
 import { ChiropractorEndorsement } from "@/components/ChiropractorEndorsement";
-import { ReviewsWall } from "@/components/reviews";
+import { ReviewsWall, ReviewSubmissionForm } from "@/components/reviews";
 
 const SleepBundleProduct = () => {
   const [showReviewForm, setShowReviewForm] = useState(false);
-
-  const handleWriteReview = () => {
-    // TODO: Phase 3 - Open review submission modal
-    setShowReviewForm(true);
-    console.log("Open review form - to be implemented in Phase 3");
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -25,11 +19,18 @@ const SleepBundleProduct = () => {
       <ChiropractorEndorsement />
       <ReviewsWall 
         productHandle="sleep-bundle" 
-        onWriteReview={handleWriteReview} 
+        onWriteReview={() => setShowReviewForm(true)} 
       />
       <SleepBundleFAQ />
       <GuaranteeSection />
       <StickyAddToCart productType="sleep-bundle" />
+
+      {/* Review Submission Modal */}
+      <ReviewSubmissionForm
+        open={showReviewForm}
+        onOpenChange={setShowReviewForm}
+        productHandle="sleep-bundle"
+      />
     </div>
   );
 };
