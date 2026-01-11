@@ -123,16 +123,27 @@ async function createCheckoutWithTimeout(
 }
 
 /**
+ * Detects if running inside an iframe (preview/embedded context)
+ */
+function isInIframe(): boolean {
+  try {
+    return window.self !== window.top;
+  } catch {
+    return true; // If we can't access top, we're likely in an iframe
+  }
+}
+
+/**
  * Safely opens checkout URL with popup fallback
  */
 export function openCheckoutUrl(checkoutUrl: string, isMobile: boolean): void {
-  if (isMobile) {
-    // Immediate redirect for mobile - no delay
+  // Always use same-tab redirect for mobile, or when inside iframe (preview context)
+  if (isMobile || isInIframe()) {
     window.location.href = checkoutUrl;
     return;
   }
   
-  // Desktop: try popup first, fallback to same tab
+  // Desktop (not in iframe): try popup first, fallback to same tab
   const popup = window.open(checkoutUrl, '_blank');
   
   // If popup was blocked, fallback to same-tab redirect
