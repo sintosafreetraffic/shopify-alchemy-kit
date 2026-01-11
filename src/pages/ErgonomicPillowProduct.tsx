@@ -1,5 +1,5 @@
 // Performance: Heavy sections with carousels are lazy-loaded
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useState } from "react";
 import { Link } from "react-router-dom";
 import { Hero } from "@/components/Hero";
 import { ProductBenefitsSection } from "@/components/ProductBenefitsSection";
@@ -12,11 +12,9 @@ import { ChiropractorEndorsement } from "@/components/ChiropractorEndorsement";
 import { StickyAddToCart } from "@/components/StickyAddToCart";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { ReviewsWall } from "@/components/reviews";
 
 // Lazy load sections with carousels to reduce initial bundle
-const ReviewsSection = lazy(() =>
-  import("@/components/ReviewsSection").then((mod) => ({ default: mod.ReviewsSection })),
-);
 const VideoSection = lazy(() => import("@/components/VideoSection").then((mod) => ({ default: mod.VideoSection })));
 
 // Fallback for lazy-loaded sections
@@ -45,6 +43,14 @@ const QuizCTA = ({ variant = "default" }: { variant?: "default" | "subtle" }) =>
 );
 
 const ErgonomicPillowProduct = () => {
+  const [showReviewForm, setShowReviewForm] = useState(false);
+
+  const handleWriteReview = () => {
+    // TODO: Phase 3 - Open review submission modal
+    setShowReviewForm(true);
+    console.log("Open review form - to be implemented in Phase 3");
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Hero />
@@ -57,9 +63,12 @@ const ErgonomicPillowProduct = () => {
       {/* Quiz CTA before reviews */}
       <QuizCTA />
 
-      <Suspense fallback={<SectionFallback />}>
-        <ReviewsSection />
-      </Suspense>
+      {/* Customer Reviews Wall */}
+      <ReviewsWall 
+        productHandle="ergonomic-pillow" 
+        onWriteReview={handleWriteReview} 
+      />
+
       <Suspense fallback={<SectionFallback />}>
         <VideoSection />
       </Suspense>
