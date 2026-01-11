@@ -382,6 +382,19 @@ export async function createStorefrontCheckout(
   // Build final checkout URL
   const url = new URL(cart.checkoutUrl);
 
+  // TEMPORARY: Force checkout to use the permanent Shopify domain until www.risebynight.com 
+  // is fully connected in Shopify with a valid SSL certificate.
+  // Once Shopify dashboard shows the domain as "Connected", this can be removed.
+  try {
+    const permanentHost = SHOPIFY_STORE_PERMANENT_DOMAIN;
+    if (permanentHost && url.hostname !== permanentHost) {
+      url.hostname = permanentHost;
+      url.protocol = 'https:';
+    }
+  } catch {
+    // Non-blocking: keep original URL
+  }
+
   url.searchParams.set('channel', 'online_store');
 
   // Append epik for attribution (non-blocking)
@@ -394,28 +407,5 @@ export async function createStorefrontCheckout(
     // Silent fail
   }
 
-  const originalUrl = url.toString();
-
-  // Prefer a branded checkout host if it's reachable; otherwise fall back to the connected permanent domain.
-  // This avoids 404/SSL issues during DNS transitions while still showing the brand domain when ready.
-  try {
-    const preferredHosts = ['www.risebynight.com', 'risebynight.com'];
-
-    const { data, error } = await supabase.functions.invoke('checkout-url-resolver', {
-      body: {
-        checkout_url: originalUrl,
-        preferred_hosts: preferredHosts,
-        fallback_host: SHOPIFY_STORE_PERMANENT_DOMAIN,
-      },
-    });
-
-    const resolvedUrl = (data as any)?.resolved_url;
-    if (!error && typeof resolvedUrl === 'string' && resolvedUrl.length > 0) {
-      return resolvedUrl;
-    }
-  } catch {
-    // Non-blocking: fall back to original URL
-  }
-
-  return originalUrl;
+  return url.toString();
 }
