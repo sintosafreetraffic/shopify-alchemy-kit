@@ -25,7 +25,13 @@ const policies = [
   {
     icon: Star,
     title: "Material Composition",
-    content: "Our ergonomic pillow is made from high-density, slow-rebound viscoelastic memory foam that adapts precisely to the natural curve of your neck and shoulders. The core is surrounded by a breathable, moisture-wicking CoolingTech™ micro-knit cover, designed to stay soft, fresh, and comfortable throughout the night. Ventilated 3D AirMesh side panels enhance airflow and prevent heat buildup, ensuring a cool and supportive sleep experience."
+    content: (
+      <ul className="list-disc list-inside space-y-2">
+        <li><strong>High-density, slow-rebound viscoelastic memory foam</strong> — adapts precisely to the natural curve of your neck and shoulders</li>
+        <li><strong>Breathable, moisture-wicking CoolingTech™ micro-knit cover</strong> — stays soft, fresh, and comfortable throughout the night</li>
+        <li><strong>Ventilated 3D AirMesh side panels</strong> — enhance airflow and prevent heat buildup for a cool, supportive sleep experience</li>
+      </ul>
+    )
   }
 ];
 
