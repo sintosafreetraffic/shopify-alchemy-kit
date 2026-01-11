@@ -1,26 +1,49 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { ProductReview, ReviewStats, ReviewMedia } from "@/types/reviews";
+import type { ProductReview, ReviewStats } from "@/types/reviews";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
-export function useProductReviews(productHandle: string, limit = 20) {
+export type ReviewSortOption = "newest" | "highest" | "lowest" | "helpful";
+
+export function useProductReviews(
+  productHandle: string,
+  limit = 20,
+  sortBy: ReviewSortOption = "newest"
+) {
   return useQuery({
-    queryKey: ["product-reviews", productHandle, limit],
+    queryKey: ["product-reviews", productHandle, limit, sortBy],
     queryFn: async (): Promise<ProductReview[]> => {
-      const { data: reviews, error } = await supabase
+      let query = supabase
         .from("product_reviews")
         .select("*")
         .eq("product_handle", productHandle)
-        .eq("status", "approved")
-        .order("created_at", { ascending: false })
-        .limit(limit);
+        .eq("status", "approved");
+
+      // Apply sorting
+      switch (sortBy) {
+        case "highest":
+          query = query.order("rating", { ascending: false }).order("created_at", { ascending: false });
+          break;
+        case "lowest":
+          query = query.order("rating", { ascending: true }).order("created_at", { ascending: false });
+          break;
+        case "helpful":
+          query = query.order("helpful_count", { ascending: false }).order("created_at", { ascending: false });
+          break;
+        case "newest":
+        default:
+          query = query.order("created_at", { ascending: false });
+          break;
+      }
+
+      const { data: reviews, error } = await query.limit(limit);
 
       if (error) throw error;
 
       // Fetch media for each review
       const reviewIds = reviews?.map((r) => r.id) || [];
-      
+
       if (reviewIds.length === 0) return [];
 
       const { data: mediaData, error: mediaError } = await supabase
@@ -54,7 +77,7 @@ export function useReviewStats(productHandle: string) {
       if (error) throw error;
 
       const totalReviews = reviews?.length || 0;
-      
+
       if (totalReviews === 0) {
         return {
           totalReviews: 0,

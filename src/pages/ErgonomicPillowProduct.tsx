@@ -59,7 +59,8 @@ const ErgonomicPillowProduct = () => {
 
       {/* Customer Reviews Wall */}
       <ReviewsWall 
-        productHandle="ergonomic-pillow" 
+        productHandle="ergonomic-pillow"
+        productName="Ergonomic Cervical Pillow"
         onWriteReview={() => setShowReviewForm(true)} 
       />
 

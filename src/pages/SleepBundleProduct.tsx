@@ -18,7 +18,8 @@ const SleepBundleProduct = () => {
       <SleepBundleBenefits />
       <ChiropractorEndorsement />
       <ReviewsWall 
-        productHandle="sleep-bundle" 
+        productHandle="sleep-bundle"
+        productName="Complete Sleep Bundle"
         onWriteReview={() => setShowReviewForm(true)} 
       />
       <SleepBundleFAQ />
