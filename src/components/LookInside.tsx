@@ -39,39 +39,38 @@ export const LookInside = () => {
   const [expandedMobile, setExpandedMobile] = useState<number | null>(null);
 
   return (
-    <section className="py-6 md:py-16 bg-primary/5">
+    <section className="py-4 md:py-8 lg:py-12 bg-primary/5">
       <div className="container mx-auto px-4 max-w-7xl">
-        <div className="text-center mb-6 md:mb-12">
-          <h2 className="text-2xl md:text-4xl font-bold mb-2 md:mb-4">Let's take a look inside the pillow</h2>
-          <p className="text-base md:text-lg text-muted-foreground max-w-3xl mx-auto">
-            The Rise By Night pillow is made up of several components that work together to help you wake up happy and
-            refreshed every day.
+        <div className="text-center mb-3 md:mb-6">
+          <h2 className="text-lg md:text-2xl lg:text-3xl font-bold mb-1 md:mb-2">Let's take a look inside the pillow</h2>
+          <p className="text-xs md:text-sm lg:text-base text-muted-foreground max-w-3xl mx-auto">
+            The Rise By Night pillow is made up of several components that work together for optimal sleep.
           </p>
         </div>
         <div className="relative max-w-6xl mx-auto">
           {/* Desktop Layout with Text Cards and Numbered Buttons */}
-          <div className="hidden lg:grid lg:grid-cols-[1fr_2fr_1fr] gap-8 items-center">
+          <div className="hidden lg:grid lg:grid-cols-[1fr_2fr_1fr] gap-4 lg:gap-6 items-center">
             {/* Left Column - Text Cards */}
-            <div className="space-y-12">
+            <div className="space-y-6 lg:space-y-8">
               {components
                 .filter((c) => c.position.startsWith("left"))
                 .map((component, idx) => (
                   <div key={idx} className="relative">
-                    <div className="bg-background border-2 border-primary/20 rounded-xl p-6 shadow-lg hover:border-primary/40 transition-colors">
-                      <div className="flex items-start gap-3 mb-2">
-                        <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold text-sm">
+                    <div className="bg-background border-2 border-primary/20 rounded-lg p-3 lg:p-4 shadow-lg hover:border-primary/40 transition-colors">
+                      <div className="flex items-start gap-2 mb-1">
+                        <div className="flex-shrink-0 w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white font-bold text-xs">
                           {idx + 1}
                         </div>
-                        <h3 className="font-bold text-lg flex-1">{component.title}</h3>
+                        <h3 className="font-bold text-sm lg:text-base flex-1">{component.title}</h3>
                       </div>
-                      <p className="text-sm text-muted-foreground ml-11">{component.description}</p>
+                      <p className="text-xs text-muted-foreground ml-8">{component.description}</p>
                     </div>
                   </div>
                 ))}
             </div>
 
             {/* Center Column - Image with Numbered Buttons */}
-            <div className="relative flex items-center justify-center py-8">
+            <div className="relative flex items-center justify-center py-4">
               <div className="max-w-md mx-auto relative">
               <OptimizedImage
                 src={pillowLayers}
@@ -179,19 +178,19 @@ export const LookInside = () => {
             </div>
 
             {/* Right Column - Text Cards */}
-            <div className="space-y-20">
+            <div className="space-y-10 lg:space-y-12">
               {components
                 .filter((c) => c.position.startsWith("right"))
                 .map((component, idx) => (
                   <div key={idx} className="relative">
-                    <div className="bg-background border-2 border-primary/20 rounded-xl p-6 shadow-lg hover:border-primary/40 transition-colors">
-                      <div className="flex items-start gap-3 mb-2">
-                        <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold text-sm">
+                    <div className="bg-background border-2 border-primary/20 rounded-lg p-3 lg:p-4 shadow-lg hover:border-primary/40 transition-colors">
+                      <div className="flex items-start gap-2 mb-1">
+                        <div className="flex-shrink-0 w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white font-bold text-xs">
                           {idx + 4}
                         </div>
-                        <h3 className="font-bold text-lg flex-1">{component.title}</h3>
+                        <h3 className="font-bold text-sm lg:text-base flex-1">{component.title}</h3>
                       </div>
-                      <p className="text-sm text-muted-foreground ml-11">{component.description}</p>
+                      <p className="text-xs text-muted-foreground ml-8">{component.description}</p>
                     </div>
                   </div>
                 ))}
@@ -199,8 +198,8 @@ export const LookInside = () => {
           </div>
 
           {/* Mobile Layout with Interactive Buttons */}
-          <div className="lg:hidden space-y-8">
-            <div className="max-w-md mx-auto mb-8 relative">
+          <div className="lg:hidden space-y-4">
+            <div className="max-w-sm mx-auto mb-4 relative">
               <OptimizedImage
                 src={pillowLayers}
                 alt="Rise By Night pillow exploded view showing all internal layers and materials"
@@ -361,12 +360,10 @@ export const LookInside = () => {
             </p>
           </div>
         </div>
-        <div className="mt-16 bg-primary/5 border border-primary/20 rounded-xl p-8 text-center">
-          <h3 className="text-2xl font-bold mb-3">Medical-Grade Materials</h3>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Every component of the Rise By Night pillow is crafted from certified medical-grade materials, ensuring
-            safety, durability, and optimal performance for years to come. Our pillows are rigorously tested to meet the
-            highest quality standards.
+        <div className="mt-6 md:mt-10 bg-primary/5 border border-primary/20 rounded-lg p-4 md:p-6 text-center">
+          <h3 className="text-base md:text-lg lg:text-xl font-bold mb-1 md:mb-2">Medical-Grade Materials</h3>
+          <p className="text-xs md:text-sm text-muted-foreground max-w-2xl mx-auto">
+            Every component is crafted from certified medical-grade materials, ensuring safety, durability, and optimal performance.
           </p>
         </div>
       </div>

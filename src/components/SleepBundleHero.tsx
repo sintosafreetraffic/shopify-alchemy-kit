@@ -103,9 +103,9 @@ export const SleepBundleHero = () => {
   ];
 
   return (
-    <section className="py-8 md:py-12 bg-background">
+    <section className="py-4 md:py-8 lg:py-12 bg-background">
       <div className="container mx-auto px-4">
-        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 max-w-7xl mx-auto">
+        <div className="grid lg:grid-cols-2 gap-4 md:gap-6 lg:gap-10 max-w-7xl mx-auto">
           {/* Left Column - Product Images */}
           <div className="lg:sticky lg:top-24 lg:self-start">
             <div className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8">
@@ -121,13 +121,13 @@ export const SleepBundleHero = () => {
           </div>
 
           {/* Right Column - Product Details */}
-          <div className="space-y-6">
+          <div className="space-y-3 md:space-y-4 lg:space-y-6">
             {/* Product Title */}
             <div>
-              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2 leading-tight">
+              <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-1 md:mb-2 leading-tight">
                 Rise By Night™ Complete Sleep Bundle
               </h1>
-              <p className="text-lg md:text-xl text-muted-foreground">
+              <p className="text-base md:text-lg text-muted-foreground">
                 Everything You Need for Perfect Sleep
               </p>
             </div>
@@ -153,9 +153,9 @@ export const SleepBundleHero = () => {
             </div>
 
             {/* Bundle Selection */}
-            <div className="space-y-3">
-              <h3 className="font-semibold text-base md:text-lg">Choose Your Bundle:</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-2 md:space-y-3">
+              <h3 className="font-semibold text-sm md:text-base">Choose Your Bundle:</h3>
+              <div className="grid grid-cols-2 gap-2 md:gap-3">
                 <button
                   onClick={() => setSelectedBundle("single")}
                   className={`p-4 rounded-lg border-2 transition-all text-left ${
@@ -230,21 +230,21 @@ export const SleepBundleHero = () => {
             </Button>
 
             {/* Trust Badges */}
-            <div className="grid grid-cols-3 gap-3 pt-4 border-t">
+            <div className="grid grid-cols-3 gap-2 pt-3 border-t">
               <div className="flex flex-col items-center text-center">
-                <Shield className="w-5 h-5 mb-1.5 text-primary" />
-                <p className="font-semibold text-xs md:text-sm">2-Year</p>
-                <p className="text-xs text-muted-foreground">Warranty</p>
+                <Shield className="w-4 h-4 md:w-5 md:h-5 mb-1 text-primary" />
+                <p className="font-semibold text-[10px] md:text-xs">2-Year</p>
+                <p className="text-[10px] text-muted-foreground">Warranty</p>
               </div>
               <div className="flex flex-col items-center text-center">
-                <Moon className="w-5 h-5 mb-1.5 text-primary" />
-                <p className="font-semibold text-xs md:text-sm">100 nights</p>
-                <p className="text-xs text-muted-foreground">risk free</p>
+                <Moon className="w-4 h-4 md:w-5 md:h-5 mb-1 text-primary" />
+                <p className="font-semibold text-[10px] md:text-xs">100 nights</p>
+                <p className="text-[10px] text-muted-foreground">risk free</p>
               </div>
               <div className="flex flex-col items-center text-center">
-                <Truck className="w-5 h-5 mb-1.5 text-primary" />
-                <p className="font-semibold text-xs md:text-sm">Easy</p>
-                <p className="text-xs text-muted-foreground">Returns</p>
+                <Truck className="w-4 h-4 md:w-5 md:h-5 mb-1 text-primary" />
+                <p className="font-semibold text-[10px] md:text-xs">Easy</p>
+                <p className="text-[10px] text-muted-foreground">Returns</p>
               </div>
             </div>
           </div>

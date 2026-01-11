@@ -221,11 +221,11 @@ export const VideoSection = () => {
 
   return (
     <>
-      <section ref={sectionRef} className="py-6 md:py-8 px-4 bg-background">
+      <section ref={sectionRef} className="py-4 md:py-6 lg:py-8 px-4 bg-background">
         <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-6 md:mb-12">
-            <h2 className="text-2xl md:text-4xl font-bold mb-2 md:mb-4">See It In Action</h2>
-            <p className="text-base md:text-xl text-muted-foreground">
+          <div className="text-center mb-4 md:mb-6">
+            <h2 className="text-lg md:text-2xl lg:text-3xl font-bold mb-1">See It In Action</h2>
+            <p className="text-sm md:text-base text-muted-foreground">
               Watch real customers experience the Rise By Night difference
             </p>
           </div>
@@ -252,8 +252,8 @@ export const VideoSection = () => {
             <VideoSkeleton />
           )}
 
-          <div className="text-center mt-8">
-            <p className="text-muted-foreground">
+          <div className="text-center mt-4 md:mt-6">
+            <p className="text-xs md:text-sm text-muted-foreground">
               Join the many happy customers who transformed their sleep
             </p>
           </div>

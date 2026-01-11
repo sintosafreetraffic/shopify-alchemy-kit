@@ -98,12 +98,12 @@ export const Features = () => {
   };
 
   return (
-    <section className="py-6 md:py-10 px-4 bg-primary/5">
-      <div className="container mx-auto max-w-6xl space-y-8 md:space-y-16">
+    <section className="py-4 md:py-6 lg:py-10 px-4 bg-primary/5">
+      <div className="container mx-auto max-w-6xl space-y-4 md:space-y-8 lg:space-y-12">
         {features.map((feature, index) => (
           <div
             key={index}
-            className={`grid md:grid-cols-2 gap-6 md:gap-12 items-center ${
+            className={`grid md:grid-cols-2 gap-4 md:gap-8 items-center ${
               feature.imagePosition === "right" ? "md:grid-flow-dense" : ""
             }`}
           >
@@ -122,25 +122,25 @@ export const Features = () => {
             </div>
 
             <div
-              className={`space-y-4 md:space-y-6 ${
+              className={`space-y-2 md:space-y-4 ${
                 feature.imagePosition === "right" ? "md:col-start-1 md:row-start-1" : ""
               }`}
             >
-              <h2 className="text-2xl md:text-4xl font-bold leading-tight">
+              <h2 className="text-lg md:text-2xl lg:text-3xl font-bold leading-tight">
                 {feature.title}
               </h2>
               
-              <p className="text-base md:text-lg text-muted-foreground">
+              <p className="text-sm md:text-base text-muted-foreground">
                 {feature.description}
               </p>
 
-              <div className="space-y-2 md:space-y-3">
+              <div className="space-y-1.5 md:space-y-2">
                 {feature.benefits.map((benefit) => (
-                  <div key={benefit} className="flex items-start gap-3">
-                    <div className="bg-primary/10 rounded-full p-1 flex-shrink-0 mt-0.5">
-                      <Check className="w-5 h-5 text-primary" />
+                  <div key={benefit} className="flex items-start gap-2">
+                    <div className="bg-primary/10 rounded-full p-0.5 md:p-1 flex-shrink-0 mt-0.5">
+                      <Check className="w-3 h-3 md:w-4 md:h-4 text-primary" />
                     </div>
-                    <span className="text-base">{benefit}</span>
+                    <span className="text-xs md:text-sm">{benefit}</span>
                   </div>
                 ))}
               </div>
