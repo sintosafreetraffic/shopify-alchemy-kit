@@ -1767,6 +1767,63 @@ export type Database = {
         }
         Relationships: []
       }
+      product_reviews: {
+        Row: {
+          admin_notes: string | null
+          admin_reply: string | null
+          body: string
+          created_at: string
+          customer_email: string
+          customer_name: string
+          helpful_count: number | null
+          id: string
+          is_verified_purchase: boolean | null
+          product_handle: string
+          rating: number
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          title: string | null
+          variant_title: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          admin_reply?: string | null
+          body: string
+          created_at?: string
+          customer_email: string
+          customer_name: string
+          helpful_count?: number | null
+          id?: string
+          is_verified_purchase?: boolean | null
+          product_handle: string
+          rating: number
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          title?: string | null
+          variant_title?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          admin_reply?: string | null
+          body?: string
+          created_at?: string
+          customer_email?: string
+          customer_name?: string
+          helpful_count?: number | null
+          id?: string
+          is_verified_purchase?: boolean | null
+          product_handle?: string
+          rating?: number
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          title?: string | null
+          variant_title?: string | null
+        }
+        Relationships: []
+      }
       quiz_reveal_analytics: {
         Row: {
           created_at: string
@@ -1912,6 +1969,73 @@ export type Database = {
             columns: ["affiliate_id"]
             isOneToOne: false
             referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      review_helpful_votes: {
+        Row: {
+          created_at: string
+          id: string
+          review_id: string
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          review_id: string
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          review_id?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_helpful_votes_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "product_reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      review_media: {
+        Row: {
+          created_at: string
+          duration_seconds: number | null
+          file_size_bytes: number | null
+          id: string
+          media_type: string
+          review_id: string
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string
+          duration_seconds?: number | null
+          file_size_bytes?: number | null
+          id?: string
+          media_type: string
+          review_id: string
+          storage_path: string
+        }
+        Update: {
+          created_at?: string
+          duration_seconds?: number | null
+          file_size_bytes?: number | null
+          id?: string
+          media_type?: string
+          review_id?: string
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_media_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "product_reviews"
             referencedColumns: ["id"]
           },
         ]
