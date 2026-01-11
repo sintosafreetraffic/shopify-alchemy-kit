@@ -91,8 +91,35 @@ export const ReviewsHeader = ({
         </div>
       </div>
 
-      {/* Right: Filter Badge + Write a Review Button */}
-      <div className="flex items-center gap-2">
+      {/* Right: Mobile Rating Filter + Filter Badge + Write a Review Button */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {/* Mobile Rating Filter */}
+        <div className="flex md:hidden items-center gap-0.5">
+          {[5, 4, 3, 2, 1].map((rating) => {
+            const count = ratingDistribution[rating as keyof typeof ratingDistribution];
+            const isActive = ratingFilter === rating;
+            const isDisabled = count === 0;
+            
+            return (
+              <button
+                key={rating}
+                onClick={() => !isDisabled && handleRatingClick(rating)}
+                disabled={isDisabled}
+                className={`flex items-center justify-center w-7 h-7 rounded text-xs transition-colors ${
+                  isActive
+                    ? "bg-primary/10 ring-1 ring-primary"
+                    : isDisabled
+                    ? "opacity-40 cursor-not-allowed"
+                    : "hover:bg-muted cursor-pointer"
+                }`}
+              >
+                <span>{rating}</span>
+                <Star className="w-2.5 h-2.5 fill-yellow-500 text-yellow-500" />
+              </button>
+            );
+          })}
+        </div>
+        
         {ratingFilter !== null && (
           <Badge
             variant="secondary"
