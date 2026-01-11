@@ -172,8 +172,8 @@ async function detectCountryFromIP(): Promise<CountryCode> {
         return countryCode as CountryCode;
       }
     }
-  } catch (error) {
-    console.warn('[BuyerContext] ipapi.co failed:', error);
+  } catch {
+    // Silent fail - IP detection failure is expected with ad blockers
   }
 
   // 2) ipwho.is (json)
@@ -195,8 +195,8 @@ async function detectCountryFromIP(): Promise<CountryCode> {
         return countryCode as CountryCode;
       }
     }
-  } catch (error) {
-    console.warn('[BuyerContext] ipwho.is failed:', error);
+  } catch {
+    // Silent fail - IP detection failure is expected with ad blockers
   }
 
   return inferCountryFromBrowser() ?? 'US';
@@ -259,6 +259,5 @@ export function getBuyerCountrySync(): CountryCode | null {
  */
 export async function initializeBuyerContext(): Promise<CountryCode> {
   const country = await getBuyerCountry();
-  console.log('[BuyerContext] Initialized with country:', country);
   return country;
 }
