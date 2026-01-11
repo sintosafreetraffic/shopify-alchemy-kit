@@ -34,13 +34,15 @@ export const ReviewsWall = ({
 }: ReviewsWallProps) => {
   const [limit, setLimit] = useState(12);
   const [sortBy, setSortBy] = useState<ReviewSortOption>("newest");
+  const [ratingFilter, setRatingFilter] = useState<number | null>(null);
   const [sessionId, setSessionId] = useState("");
   const [votedReviewIds, setVotedReviewIds] = useState<Set<string>>(new Set());
 
   const { data: reviews, isLoading: reviewsLoading } = useProductReviews(
     productHandle,
     limit,
-    sortBy
+    sortBy,
+    ratingFilter
   );
   const { data: stats, isLoading: statsLoading } = useReviewStats(productHandle);
 
@@ -102,6 +104,8 @@ export const ReviewsWall = ({
           stats={stats || defaultStats}
           onWriteReview={onWriteReview}
           isLoading={statsLoading}
+          ratingFilter={ratingFilter}
+          onRatingFilterChange={setRatingFilter}
         />
 
         {/* Sort Dropdown */}
