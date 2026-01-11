@@ -379,18 +379,15 @@ export async function createStorefrontCheckout(
     throw new Error('No checkout URL returned from Shopify');
   }
 
-  // Build final checkout URL - FORCE to .myshopify.com domain
-  // TEMPORARY: www.risebynight.com has SSL issues (ERR_CERT_COMMON_NAME_INVALID)
-  // Using string replacement to ensure we always use the working domain
+  // Build final checkout URL - use branded www.risebynight.com domain for checkout
+  // This domain is connected to Shopify with SSL active
+  const BRANDED_CHECKOUT_DOMAIN = 'www.risebynight.com';
+  
   let checkoutUrl = cart.checkoutUrl;
   
-  // Replace any branded domains with the permanent Shopify domain
-  const domainsToReplace = ['www.risebynight.com', 'risebynight.com'];
-  for (const domain of domainsToReplace) {
-    if (checkoutUrl.includes(domain)) {
-      checkoutUrl = checkoutUrl.replace(domain, SHOPIFY_STORE_PERMANENT_DOMAIN);
-      break;
-    }
+  // Replace the .myshopify.com domain with the branded checkout domain
+  if (checkoutUrl.includes(SHOPIFY_STORE_PERMANENT_DOMAIN)) {
+    checkoutUrl = checkoutUrl.replace(SHOPIFY_STORE_PERMANENT_DOMAIN, BRANDED_CHECKOUT_DOMAIN);
   }
 
   const url = new URL(checkoutUrl);
