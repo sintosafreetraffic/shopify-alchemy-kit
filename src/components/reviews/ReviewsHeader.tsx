@@ -39,16 +39,16 @@ export const ReviewsHeader = ({
   };
 
   return (
-    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8">
-      {/* Left: Rating Summary */}
-      <div className="flex items-center gap-6">
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+      {/* Left: Compact Rating Summary */}
+      <div className="flex items-center gap-4">
         {/* Average Rating */}
-        <div className="text-center">
-          <div className="flex items-center gap-1 mb-1">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-0.5">
             {[...Array(5)].map((_, i) => (
               <Star
                 key={i}
-                className={`w-5 h-5 ${
+                className={`w-4 h-4 ${
                   i < Math.round(averageRating)
                     ? "fill-yellow-500 text-yellow-500"
                     : "fill-muted text-muted"
@@ -56,17 +56,16 @@ export const ReviewsHeader = ({
               />
             ))}
           </div>
-          <p className="text-2xl font-bold">{averageRating || "–"}</p>
-          <p className="text-sm text-muted-foreground">
-            {totalReviews.toLocaleString()} Reviews
-          </p>
+          <span className="text-lg font-semibold">{averageRating || "–"}</span>
+          <span className="text-sm text-muted-foreground">
+            ({totalReviews.toLocaleString()})
+          </span>
         </div>
 
-        {/* Rating Distribution - Clickable */}
-        <div className="hidden md:block space-y-1 min-w-[200px]">
+        {/* Rating Distribution - Compact */}
+        <div className="hidden md:flex items-center gap-1">
           {[5, 4, 3, 2, 1].map((rating) => {
             const count = ratingDistribution[rating as keyof typeof ratingDistribution];
-            const percentage = totalReviews > 0 ? (count / totalReviews) * 100 : 0;
             const isActive = ratingFilter === rating;
             const isDisabled = count === 0;
             
@@ -75,20 +74,17 @@ export const ReviewsHeader = ({
                 key={rating}
                 onClick={() => !isDisabled && handleRatingClick(rating)}
                 disabled={isDisabled}
-                className={`flex items-center gap-2 w-full rounded px-1 py-0.5 transition-colors ${
+                className={`flex items-center gap-0.5 px-2 py-1 rounded text-xs transition-colors ${
                   isActive
                     ? "bg-primary/10 ring-1 ring-primary"
                     : isDisabled
-                    ? "opacity-50 cursor-not-allowed"
+                    ? "opacity-40 cursor-not-allowed"
                     : "hover:bg-muted cursor-pointer"
                 }`}
               >
-                <span className="text-xs w-3">{rating}</span>
+                <span>{rating}</span>
                 <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
-                <Progress value={percentage} className="h-2 flex-1" />
-                <span className="text-xs text-muted-foreground w-8">
-                  {count}
-                </span>
+                <span className="text-muted-foreground">({count})</span>
               </button>
             );
           })}
@@ -96,19 +92,19 @@ export const ReviewsHeader = ({
       </div>
 
       {/* Right: Filter Badge + Write a Review Button */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         {ratingFilter !== null && (
           <Badge
             variant="secondary"
-            className="gap-1 cursor-pointer hover:bg-secondary/80"
+            className="gap-1 cursor-pointer hover:bg-secondary/80 text-xs"
             onClick={() => onRatingFilterChange(null)}
           >
-            {ratingFilter} Star Reviews
+            {ratingFilter}★
             <X className="w-3 h-3" />
           </Badge>
         )}
-        <Button onClick={onWriteReview} className="gap-2">
-          <Edit3 className="w-4 h-4" />
+        <Button onClick={onWriteReview} size="sm" className="gap-1.5">
+          <Edit3 className="w-3.5 h-3.5" />
           Write a Review
         </Button>
       </div>
