@@ -13,6 +13,7 @@ import { StickyAddToCart } from "@/components/StickyAddToCart";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { ReviewsWall, ReviewSubmissionForm } from "@/components/reviews";
+import { FeaturedTestimonials } from "@/components/FeaturedTestimonials";
 
 // Lazy load sections with carousels to reduce initial bundle
 const VideoSection = lazy(() => import("@/components/VideoSection").then((mod) => ({ default: mod.VideoSection })));
@@ -64,6 +65,9 @@ const ErgonomicPillowProduct = () => {
       <Suspense fallback={<SectionFallback />}>
         <VideoSection />
       </Suspense>
+
+      {/* Featured Testimonials */}
+      <FeaturedTestimonials />
 
       <ProductFAQSection />
 
