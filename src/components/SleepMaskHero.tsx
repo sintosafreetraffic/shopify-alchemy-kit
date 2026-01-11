@@ -388,7 +388,7 @@ export const SleepMaskHero = () => {
             </Button>
 
             {/* Payment Icons */}
-            <div className="pt-4">
+            <div className="pt-2">
               <PaymentIcons />
             </div>
 
