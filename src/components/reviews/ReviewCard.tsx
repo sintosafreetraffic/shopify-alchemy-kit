@@ -10,11 +10,18 @@ import { formatDistanceToNow } from "date-fns";
 interface ReviewCardProps {
   review: ProductReview;
   sessionId: string;
+  hasVoted?: boolean;
+  onVoteSuccess?: (reviewId: string) => void;
 }
 
-export const ReviewCard = ({ review, sessionId }: ReviewCardProps) => {
+export const ReviewCard = ({
+  review,
+  sessionId,
+  hasVoted: initialHasVoted = false,
+  onVoteSuccess,
+}: ReviewCardProps) => {
   const [helpfulCount, setHelpfulCount] = useState(review.helpful_count);
-  const [hasVoted, setHasVoted] = useState(false);
+  const [hasVoted, setHasVoted] = useState(initialHasVoted);
   const [showVideo, setShowVideo] = useState(false);
 
   const primaryMedia = review.review_media?.[0];
@@ -22,7 +29,7 @@ export const ReviewCard = ({ review, sessionId }: ReviewCardProps) => {
   const isVideo = primaryMedia?.media_type === "video";
 
   const handleHelpfulClick = async () => {
-    if (hasVoted) return;
+    if (hasVoted || !sessionId) return;
 
     try {
       const { error } = await supabase.from("review_helpful_votes").insert({
@@ -41,6 +48,7 @@ export const ReviewCard = ({ review, sessionId }: ReviewCardProps) => {
 
       setHelpfulCount((prev) => prev + 1);
       setHasVoted(true);
+      onVoteSuccess?.(review.id);
     } catch (err) {
       console.error("Error voting helpful:", err);
     }
@@ -99,7 +107,7 @@ export const ReviewCard = ({ review, sessionId }: ReviewCardProps) => {
                   className="text-xs flex items-center gap-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
                 >
                   <CheckCircle className="w-3 h-3" />
-                  Verified
+                  Verified Buyer
                 </Badge>
               )}
             </div>
@@ -157,7 +165,7 @@ export const ReviewCard = ({ review, sessionId }: ReviewCardProps) => {
             onClick={handleHelpfulClick}
             disabled={hasVoted}
           >
-            <ThumbsUp className="w-3 h-3" />
+            <ThumbsUp className={`w-3 h-3 ${hasVoted ? "fill-primary" : ""}`} />
             Helpful ({helpfulCount})
           </Button>
         </div>
