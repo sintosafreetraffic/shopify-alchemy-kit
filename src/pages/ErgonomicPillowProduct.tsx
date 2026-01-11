@@ -12,7 +12,7 @@ import { ChiropractorEndorsement } from "@/components/ChiropractorEndorsement";
 import { StickyAddToCart } from "@/components/StickyAddToCart";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
-import { ReviewsWall } from "@/components/reviews";
+import { ReviewsWall, ReviewSubmissionForm } from "@/components/reviews";
 
 // Lazy load sections with carousels to reduce initial bundle
 const VideoSection = lazy(() => import("@/components/VideoSection").then((mod) => ({ default: mod.VideoSection })));
@@ -45,12 +45,6 @@ const QuizCTA = ({ variant = "default" }: { variant?: "default" | "subtle" }) =>
 const ErgonomicPillowProduct = () => {
   const [showReviewForm, setShowReviewForm] = useState(false);
 
-  const handleWriteReview = () => {
-    // TODO: Phase 3 - Open review submission modal
-    setShowReviewForm(true);
-    console.log("Open review form - to be implemented in Phase 3");
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <Hero />
@@ -66,7 +60,7 @@ const ErgonomicPillowProduct = () => {
       {/* Customer Reviews Wall */}
       <ReviewsWall 
         productHandle="ergonomic-pillow" 
-        onWriteReview={handleWriteReview} 
+        onWriteReview={() => setShowReviewForm(true)} 
       />
 
       <Suspense fallback={<SectionFallback />}>
@@ -79,6 +73,13 @@ const ErgonomicPillowProduct = () => {
       <ProductFAQSection />
       <GuaranteeSection />
       <StickyAddToCart productType="ergonomic-pillow" />
+
+      {/* Review Submission Modal */}
+      <ReviewSubmissionForm
+        open={showReviewForm}
+        onOpenChange={setShowReviewForm}
+        productHandle="ergonomic-pillow"
+      />
     </div>
   );
 };
