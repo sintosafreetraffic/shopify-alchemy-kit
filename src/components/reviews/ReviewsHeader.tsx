@@ -1,8 +1,9 @@
 import { Star, Edit3, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { ReviewSortDropdown } from "./ReviewSortDropdown";
 import type { ReviewStats } from "@/types/reviews";
+import type { ReviewSortOption } from "@/hooks/useProductReviews";
 
 interface ReviewsHeaderProps {
   stats: ReviewStats;
@@ -10,6 +11,8 @@ interface ReviewsHeaderProps {
   isLoading?: boolean;
   ratingFilter: number | null;
   onRatingFilterChange: (rating: number | null) => void;
+  sortBy: ReviewSortOption;
+  onSortChange: (sort: ReviewSortOption) => void;
 }
 
 export const ReviewsHeader = ({
@@ -18,12 +21,14 @@ export const ReviewsHeader = ({
   isLoading,
   ratingFilter,
   onRatingFilterChange,
+  sortBy,
+  onSortChange,
 }: ReviewsHeaderProps) => {
   const { totalReviews, averageRating, ratingDistribution } = stats;
 
   if (isLoading) {
     return (
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 animate-pulse">
+      <div className="flex flex-col gap-4 mb-6 animate-pulse">
         <div className="h-8 w-48 bg-muted rounded" />
         <div className="h-10 w-36 bg-muted rounded" />
       </div>
@@ -32,16 +37,16 @@ export const ReviewsHeader = ({
 
   const handleRatingClick = (rating: number) => {
     if (ratingFilter === rating) {
-      onRatingFilterChange(null); // Clear filter if clicking same rating
+      onRatingFilterChange(null);
     } else {
       onRatingFilterChange(rating);
     }
   };
 
   return (
-    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-      {/* Left: Compact Rating Summary */}
-      <div className="flex items-center gap-4">
+    <div className="flex flex-col gap-4 mb-6">
+      {/* Row 1: Rating + Star Filters */}
+      <div className="flex flex-wrap items-center gap-3">
         {/* Average Rating */}
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-0.5">
@@ -62,8 +67,8 @@ export const ReviewsHeader = ({
           </span>
         </div>
 
-        {/* Rating Distribution - Compact */}
-        <div className="hidden md:flex items-center gap-1">
+        {/* Star Filter Buttons */}
+        <div className="flex items-center gap-1">
           {[5, 4, 3, 2, 1].map((rating) => {
             const count = ratingDistribution[rating as keyof typeof ratingDistribution];
             const isActive = ratingFilter === rating;
@@ -74,7 +79,7 @@ export const ReviewsHeader = ({
                 key={rating}
                 onClick={() => !isDisabled && handleRatingClick(rating)}
                 disabled={isDisabled}
-                className={`flex items-center gap-0.5 px-2 py-1 rounded text-xs transition-colors ${
+                className={`flex items-center justify-center gap-0.5 px-2 py-1 rounded text-xs transition-colors ${
                   isActive
                     ? "bg-primary/10 ring-1 ring-primary"
                     : isDisabled
@@ -84,56 +89,31 @@ export const ReviewsHeader = ({
               >
                 <span>{rating}</span>
                 <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
-                <span className="text-muted-foreground">({count})</span>
               </button>
             );
           })}
         </div>
-      </div>
 
-      {/* Right: Mobile Rating Filter + Filter Badge + Write a Review Button */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {/* Mobile Rating Filter */}
-        <div className="flex md:hidden items-center gap-0.5">
-          {[5, 4, 3, 2, 1].map((rating) => {
-            const count = ratingDistribution[rating as keyof typeof ratingDistribution];
-            const isActive = ratingFilter === rating;
-            const isDisabled = count === 0;
-            
-            return (
-              <button
-                key={rating}
-                onClick={() => !isDisabled && handleRatingClick(rating)}
-                disabled={isDisabled}
-                className={`flex items-center justify-center w-7 h-7 rounded text-xs transition-colors ${
-                  isActive
-                    ? "bg-primary/10 ring-1 ring-primary"
-                    : isDisabled
-                    ? "opacity-40 cursor-not-allowed"
-                    : "hover:bg-muted cursor-pointer"
-                }`}
-              >
-                <span>{rating}</span>
-                <Star className="w-2.5 h-2.5 fill-yellow-500 text-yellow-500" />
-              </button>
-            );
-          })}
-        </div>
-        
+        {/* Active Filter Badge */}
         {ratingFilter !== null && (
           <Badge
             variant="secondary"
             className="gap-1 cursor-pointer hover:bg-secondary/80 text-xs"
             onClick={() => onRatingFilterChange(null)}
           >
-            {ratingFilter}★
+            {ratingFilter}★ only
             <X className="w-3 h-3" />
           </Badge>
         )}
+      </div>
+
+      {/* Row 2: Write Review + Sort Dropdown */}
+      <div className="flex items-center gap-3">
         <Button onClick={onWriteReview} size="sm" className="gap-1.5">
           <Edit3 className="w-3.5 h-3.5" />
           Write a Review
         </Button>
+        <ReviewSortDropdown value={sortBy} onChange={onSortChange} />
       </div>
     </div>
   );
