@@ -9,16 +9,22 @@ export type ReviewSortOption = "newest" | "highest" | "lowest" | "helpful";
 export function useProductReviews(
   productHandle: string,
   limit = 20,
-  sortBy: ReviewSortOption = "newest"
+  sortBy: ReviewSortOption = "newest",
+  ratingFilter: number | null = null
 ) {
   return useQuery({
-    queryKey: ["product-reviews", productHandle, limit, sortBy],
+    queryKey: ["product-reviews", productHandle, limit, sortBy, ratingFilter],
     queryFn: async (): Promise<ProductReview[]> => {
       let query = supabase
         .from("product_reviews")
         .select("*")
         .eq("product_handle", productHandle)
         .eq("status", "approved");
+
+      // Apply rating filter
+      if (ratingFilter !== null) {
+        query = query.eq("rating", ratingFilter);
+      }
 
       // Apply sorting
       switch (sortBy) {

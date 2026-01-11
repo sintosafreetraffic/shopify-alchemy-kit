@@ -1,18 +1,23 @@
-import { Star, Edit3 } from "lucide-react";
+import { Star, Edit3, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import type { ReviewStats } from "@/types/reviews";
 
 interface ReviewsHeaderProps {
   stats: ReviewStats;
   onWriteReview: () => void;
   isLoading?: boolean;
+  ratingFilter: number | null;
+  onRatingFilterChange: (rating: number | null) => void;
 }
 
 export const ReviewsHeader = ({
   stats,
   onWriteReview,
   isLoading,
+  ratingFilter,
+  onRatingFilterChange,
 }: ReviewsHeaderProps) => {
   const { totalReviews, averageRating, ratingDistribution } = stats;
 
@@ -24,6 +29,14 @@ export const ReviewsHeader = ({
       </div>
     );
   }
+
+  const handleRatingClick = (rating: number) => {
+    if (ratingFilter === rating) {
+      onRatingFilterChange(null); // Clear filter if clicking same rating
+    } else {
+      onRatingFilterChange(rating);
+    }
+  };
 
   return (
     <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8">
@@ -49,31 +62,56 @@ export const ReviewsHeader = ({
           </p>
         </div>
 
-        {/* Rating Distribution */}
+        {/* Rating Distribution - Clickable */}
         <div className="hidden md:block space-y-1 min-w-[200px]">
           {[5, 4, 3, 2, 1].map((rating) => {
             const count = ratingDistribution[rating as keyof typeof ratingDistribution];
             const percentage = totalReviews > 0 ? (count / totalReviews) * 100 : 0;
+            const isActive = ratingFilter === rating;
+            const isDisabled = count === 0;
             
             return (
-              <div key={rating} className="flex items-center gap-2">
+              <button
+                key={rating}
+                onClick={() => !isDisabled && handleRatingClick(rating)}
+                disabled={isDisabled}
+                className={`flex items-center gap-2 w-full rounded px-1 py-0.5 transition-colors ${
+                  isActive
+                    ? "bg-primary/10 ring-1 ring-primary"
+                    : isDisabled
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:bg-muted cursor-pointer"
+                }`}
+              >
                 <span className="text-xs w-3">{rating}</span>
                 <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
                 <Progress value={percentage} className="h-2 flex-1" />
                 <span className="text-xs text-muted-foreground w-8">
                   {count}
                 </span>
-              </div>
+              </button>
             );
           })}
         </div>
       </div>
 
-      {/* Right: Write a Review Button */}
-      <Button onClick={onWriteReview} className="gap-2">
-        <Edit3 className="w-4 h-4" />
-        Write a Review
-      </Button>
+      {/* Right: Filter Badge + Write a Review Button */}
+      <div className="flex items-center gap-3">
+        {ratingFilter !== null && (
+          <Badge
+            variant="secondary"
+            className="gap-1 cursor-pointer hover:bg-secondary/80"
+            onClick={() => onRatingFilterChange(null)}
+          >
+            {ratingFilter} Star Reviews
+            <X className="w-3 h-3" />
+          </Badge>
+        )}
+        <Button onClick={onWriteReview} className="gap-2">
+          <Edit3 className="w-4 h-4" />
+          Write a Review
+        </Button>
+      </div>
     </div>
   );
 };
