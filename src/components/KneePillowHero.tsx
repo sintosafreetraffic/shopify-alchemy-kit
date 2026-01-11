@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, Shield, Moon, Truck, Loader2, Star, ImageIcon } from "lucide-react";
+import { PaymentIcons } from "./PaymentIcons";
 import { PolicyAccordion } from "./PolicyAccordion";
 import { useState, useEffect, useRef, Suspense, lazy } from "react";
 import { useCartStore } from "@/stores/cartStore";
@@ -240,6 +241,11 @@ export const KneePillowHero = () => {
                 </>
               )}
             </Button>
+
+            {/* Payment Icons */}
+            <div className="pt-4">
+              <PaymentIcons />
+            </div>
 
             <div className="grid grid-cols-3 gap-3 py-3 border-t text-center">
               <div className="flex flex-col items-center">
