@@ -4,7 +4,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Moon, Truck, RotateCcw } from "lucide-react";
+import { Moon, Truck, RotateCcw, Star } from "lucide-react";
 
 const policies = [
   {
@@ -21,6 +21,11 @@ const policies = [
     icon: RotateCcw,
     title: "Easy Returns",
     content: "Changed your mind? No problem. Returns are easy and hassle-free. Simply contact our customer service team. Your refund will be processed within 5 business days of receiving the returned item."
+  },
+  {
+    icon: Star,
+    title: "Material Composition",
+    content: "Our ergonomic pillow is made from high-density, slow-rebound viscoelastic memory foam that adapts precisely to the natural curve of your neck and shoulders. The core is surrounded by a breathable, moisture-wicking CoolingTech™ micro-knit cover, designed to stay soft, fresh, and comfortable throughout the night. Ventilated 3D AirMesh side panels enhance airflow and prevent heat buildup, ensuring a cool and supportive sleep experience."
   }
 ];
 
