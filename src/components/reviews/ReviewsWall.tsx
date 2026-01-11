@@ -106,12 +106,9 @@ export const ReviewsWall = ({
           isLoading={statsLoading}
           ratingFilter={ratingFilter}
           onRatingFilterChange={setRatingFilter}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
         />
-
-        {/* Sort Dropdown */}
-        <div className="flex justify-end mb-4">
-          <ReviewSortDropdown value={sortBy} onChange={setSortBy} />
-        </div>
 
         {reviewsLoading ? (
           <div className="flex justify-center py-12">
