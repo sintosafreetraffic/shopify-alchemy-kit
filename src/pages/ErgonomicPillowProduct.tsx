@@ -54,9 +54,6 @@ const ErgonomicPillowProduct = () => {
       <ChiropractorEndorsement />
       <LookInside />
 
-      {/* Quiz CTA before reviews */}
-      <QuizCTA />
-
       {/* Customer Reviews Wall */}
       <ReviewsWall 
         productHandle="ergonomic-pillow"
@@ -68,10 +65,11 @@ const ErgonomicPillowProduct = () => {
         <VideoSection />
       </Suspense>
 
-      {/* Quiz CTA after reviews */}
-      <QuizCTA variant="subtle" />
-
       <ProductFAQSection />
+
+      {/* Quiz CTA after FAQ */}
+      <QuizCTA />
+
       <GuaranteeSection />
       <StickyAddToCart productType="ergonomic-pillow" />
 
