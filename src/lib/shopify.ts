@@ -380,6 +380,21 @@ export async function createStorefrontCheckout(
 
   // Build final checkout URL
   const url = new URL(cart.checkoutUrl);
+
+  // IMPORTANT:
+  // Shopify may return a checkout URL on the store's primary/custom domain (e.g. www.risebynight.com).
+  // If that domain isn't connected/active, the checkout link 404s.
+  // Force the checkout host to the permanent connected domain.
+  try {
+    const permanentHost = SHOPIFY_STORE_PERMANENT_DOMAIN;
+    if (permanentHost && url.hostname !== permanentHost) {
+      url.hostname = permanentHost;
+      url.protocol = 'https:';
+    }
+  } catch {
+    // Non-blocking: keep original URL
+  }
+
   url.searchParams.set('channel', 'online_store');
 
   // Append epik for attribution (non-blocking)
