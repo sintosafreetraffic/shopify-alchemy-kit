@@ -199,7 +199,7 @@ const Reviews = () => {
               Experience the RiseByNight™ difference with our 100-night risk-free trial
             </p>
             <a 
-              href="/"
+              href="/products"
               className="inline-block bg-foreground text-background px-8 py-4 rounded-lg font-semibold hover:opacity-90 transition-opacity"
             >
               Shop Now

@@ -196,7 +196,7 @@ const Guarantee = () => {
               We're confident in the quality and effectiveness of our products because we've seen the results. With thousands of satisfied customers and a 96% satisfaction rate, we know RiseByNight™ delivers on its promises. Our generous guarantees ensure you can shop with complete confidence.
             </p>
             <a 
-              href="/"
+              href="/products"
               className="inline-block bg-foreground text-background px-8 py-4 rounded-lg font-semibold hover:opacity-90 transition-opacity"
             >
               Shop Risk-Free Now
