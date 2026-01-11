@@ -3,7 +3,7 @@ import { Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import testimonial from "@/assets/happy-sleepers-pillow.webp";
 import offerBundle from "@/assets/offer-bundle.png";
-import comparisonChart from "@/assets/comparison-new-pillow.webp";
+import comparisonChart from "@/assets/pillow-comparison.webp";
 import OptimizedImage from "@/components/OptimizedImage";
 import { useState, useEffect } from "react";
 import { useCartStore } from "@/stores/cartStore";
