@@ -160,6 +160,7 @@ const AdminAffiliateResources = React.lazy(() => import("./pages/AdminAffiliateR
 const AdminCollectiveApplications = React.lazy(() => import("./pages/AdminCollectiveApplications"));
 const AdminUGCSubmissions = React.lazy(() => import("./pages/AdminUGCSubmissions"));
 const AdminShipmentTracking = React.lazy(() => import("./pages/AdminShipmentTracking"));
+const AdminReviews = React.lazy(() => import("./pages/AdminReviews"));
 const SleepQuizDiagnostics = React.lazy(() => import("./pages/internal/SleepQuizDiagnostics"));
 const QuizRevealTracking = React.lazy(() => import("./pages/internal/QuizRevealTracking"));
 const AnalyticsDiagnostics = React.lazy(() => import("./pages/internal/AnalyticsDiagnostics"));
@@ -292,6 +293,7 @@ const AppContent = () => {
             <Route path="/admin/collective-applications" element={<AdminCollectiveApplications />} />
             <Route path="/admin/ugc-submissions" element={<AdminUGCSubmissions />} />
             <Route path="/admin/shipment-tracking" element={<AdminShipmentTracking />} />
+            <Route path="/admin/reviews" element={<AdminReviews />} />
             <Route path="/internal/sleep-quiz-diagnostics" element={<SleepQuizDiagnostics />} />
             <Route path="/risebynight/tracking" element={<QuizRevealTracking />} />
             <Route path="/debug/analytics" element={<AnalyticsDiagnostics />} />
