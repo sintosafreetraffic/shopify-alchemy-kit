@@ -107,6 +107,57 @@ export type Database = {
         }
         Relationships: []
       }
+      affiliate_campaigns: {
+        Row: {
+          bg_color: string | null
+          bonus_rate: number
+          campaign_key: string
+          created_at: string
+          description: string | null
+          eligible_tiers: string[] | null
+          end_date: string
+          icon_color: string | null
+          icon_name: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          bg_color?: string | null
+          bonus_rate?: number
+          campaign_key: string
+          created_at?: string
+          description?: string | null
+          eligible_tiers?: string[] | null
+          end_date: string
+          icon_color?: string | null
+          icon_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          bg_color?: string | null
+          bonus_rate?: number
+          campaign_key?: string
+          created_at?: string
+          description?: string | null
+          eligible_tiers?: string[] | null
+          end_date?: string
+          icon_color?: string | null
+          icon_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       affiliate_discount_codes: {
         Row: {
           affiliate_id: string
@@ -292,10 +343,13 @@ export type Database = {
       }
       affiliates: {
         Row: {
+          best_streak_days: number | null
           created_at: string | null
+          current_streak_days: number | null
           first_sale_at: string | null
           id: string
           last_payout_at: string | null
+          last_sale_date: string | null
           level: number | null
           monthly_revenue_generated: number | null
           monthly_sales_count: number | null
@@ -313,10 +367,13 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          best_streak_days?: number | null
           created_at?: string | null
+          current_streak_days?: number | null
           first_sale_at?: string | null
           id?: string
           last_payout_at?: string | null
+          last_sale_date?: string | null
           level?: number | null
           monthly_revenue_generated?: number | null
           monthly_sales_count?: number | null
@@ -334,10 +391,13 @@ export type Database = {
           user_id: string
         }
         Update: {
+          best_streak_days?: number | null
           created_at?: string | null
+          current_streak_days?: number | null
           first_sale_at?: string | null
           id?: string
           last_payout_at?: string | null
+          last_sale_date?: string | null
           level?: number | null
           monthly_revenue_generated?: number | null
           monthly_sales_count?: number | null

@@ -702,10 +702,10 @@ Deno.serve(async (req) => {
           });
         }
 
-        // Get top 10 affiliates by monthly_revenue_generated
+        // Get top 10 affiliates by monthly_revenue_generated (include streak data)
         const { data: topAffiliates, error: leaderboardError } = await supabaseAdmin
           .from('affiliates')
-          .select('id, referral_code, tier, monthly_sales_count, monthly_revenue_generated, total_commissions')
+          .select('id, referral_code, tier, monthly_sales_count, monthly_revenue_generated, total_commissions, current_streak_days, best_streak_days')
           .eq('status', 'active')
           .order('monthly_revenue_generated', { ascending: false })
           .limit(10);
@@ -715,7 +715,7 @@ Deno.serve(async (req) => {
           throw leaderboardError;
         }
 
-        // Build privacy-safe leaderboard
+        // Build privacy-safe leaderboard with streak data
         const leaderboard = (topAffiliates || []).map((affiliate, index) => {
           const isCurrentUser = affiliate.id === currentAffiliate.id;
           // Create anonymized display label using last 4 chars of referral code
@@ -728,7 +728,9 @@ Deno.serve(async (req) => {
             monthly_sales_count: affiliate.monthly_sales_count || 0,
             monthly_revenue_generated: affiliate.monthly_revenue_generated || 0,
             total_commissions: affiliate.total_commissions || 0,
-            is_current_user: isCurrentUser
+            is_current_user: isCurrentUser,
+            streak_days: affiliate.current_streak_days || 0,
+            best_streak: affiliate.best_streak_days || 0,
           };
         });
 

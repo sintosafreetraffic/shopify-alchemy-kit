@@ -1,8 +1,9 @@
 /**
  * SeasonalCampaignBadges Component
  * 
- * Displays limited-time campaign badges and boosted commission periods.
+ * Database-driven display of seasonal campaigns with boosted commissions.
  * Features:
+ * - Fetches campaigns from affiliate_campaigns table
  * - Active campaign indicators
  * - Countdown timers
  * - Boosted commission rates
@@ -12,91 +13,48 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Gift, Snowflake, Sun, Leaf, Heart, Zap, Clock, Sparkles, Star } from "lucide-react";
-import { differenceInDays, differenceInHours, format, isPast, parseISO } from "date-fns";
+import { 
+  Gift, Snowflake, Sun, Leaf, Heart, Zap, Clock, Sparkles, Star, 
+  Loader2, PartyPopper, Flame, Moon, CloudSun 
+} from "lucide-react";
+import { differenceInDays, differenceInHours, isPast, parseISO } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+
+// Icon mapping from database icon_name to component
+const ICON_MAP: Record<string, React.ElementType> = {
+  Gift,
+  Snowflake,
+  Sun,
+  Leaf,
+  Heart,
+  Zap,
+  Sparkles,
+  Star,
+  PartyPopper,
+  Flame,
+  Moon,
+  CloudSun,
+};
 
 interface Campaign {
   id: string;
+  campaign_key: string;
   name: string;
-  description: string;
-  Icon: React.ElementType;
-  iconColor: string;
-  bgColor: string;
-  startDate: string;
-  endDate: string;
-  bonusRate: number; // Additional % on top of tier rate
-  isActive: boolean;
+  description: string | null;
+  icon_name: string | null;
+  icon_color: string | null;
+  bg_color: string | null;
+  start_date: string;
+  end_date: string;
+  bonus_rate: number;
+  eligible_tiers: string[] | null;
 }
 
 interface SeasonalCampaignBadgesProps {
   currentTierRate: number;
+  currentTier?: string;
   className?: string;
 }
-
-// Define active campaigns (in production, these would come from database)
-const CAMPAIGNS: Campaign[] = [
-  {
-    id: 'new_year_2026',
-    name: 'New Year Boost',
-    description: 'Celebrate the new year with boosted commissions',
-    Icon: Sparkles,
-    iconColor: 'text-purple-500',
-    bgColor: 'bg-purple-50',
-    startDate: '2026-01-01T00:00:00Z',
-    endDate: '2026-01-31T23:59:59Z',
-    bonusRate: 5,
-    isActive: true,
-  },
-  {
-    id: 'valentines_2026',
-    name: "Valentine's Special",
-    description: 'Share the love of better sleep',
-    Icon: Heart,
-    iconColor: 'text-rose-500',
-    bgColor: 'bg-rose-50',
-    startDate: '2026-02-01T00:00:00Z',
-    endDate: '2026-02-14T23:59:59Z',
-    bonusRate: 10,
-    isActive: false,
-  },
-  {
-    id: 'spring_sleep',
-    name: 'Spring Renewal',
-    description: 'Fresh season, fresh sleep habits',
-    Icon: Leaf,
-    iconColor: 'text-green-500',
-    bgColor: 'bg-green-50',
-    startDate: '2026-03-20T00:00:00Z',
-    endDate: '2026-04-20T23:59:59Z',
-    bonusRate: 5,
-    isActive: false,
-  },
-  {
-    id: 'summer_nights',
-    name: 'Summer Nights',
-    description: 'Cool sleep during hot nights',
-    Icon: Sun,
-    iconColor: 'text-amber-500',
-    bgColor: 'bg-amber-50',
-    startDate: '2026-06-01T00:00:00Z',
-    endDate: '2026-08-31T23:59:59Z',
-    bonusRate: 5,
-    isActive: false,
-  },
-  {
-    id: 'holiday_2026',
-    name: 'Holiday Season',
-    description: 'Give the gift of better sleep',
-    Icon: Gift,
-    iconColor: 'text-red-500',
-    bgColor: 'bg-red-50',
-    startDate: '2026-11-15T00:00:00Z',
-    endDate: '2026-12-31T23:59:59Z',
-    bonusRate: 15,
-    isActive: false,
-  },
-];
 
 function CampaignCountdown({ endDate }: { endDate: string }) {
   const [timeLeft, setTimeLeft] = useState('');
@@ -124,7 +82,7 @@ function CampaignCountdown({ endDate }: { endDate: string }) {
     }
 
     updateCountdown();
-    const interval = setInterval(updateCountdown, 60000); // Update every minute
+    const interval = setInterval(updateCountdown, 60000);
 
     return () => clearInterval(interval);
   }, [endDate]);
@@ -137,20 +95,62 @@ function CampaignCountdown({ endDate }: { endDate: string }) {
   );
 }
 
-export function SeasonalCampaignBadges({ currentTierRate, className }: SeasonalCampaignBadgesProps) {
-  // Filter to only active campaigns (based on current date)
+export function SeasonalCampaignBadges({ 
+  currentTierRate, 
+  currentTier = 'bronze',
+  className 
+}: SeasonalCampaignBadgesProps) {
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchCampaigns() {
+      try {
+        const { data, error } = await supabase
+          .from('affiliate_campaigns')
+          .select('*')
+          .eq('is_active', true)
+          .order('start_date', { ascending: true });
+
+        if (error) throw error;
+        setCampaigns(data || []);
+      } catch (err) {
+        console.error('[SeasonalCampaigns] Error fetching:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchCampaigns();
+  }, []);
+
+  if (loading) {
+    return (
+      <Card className={`border border-border/50 ${className}`}>
+        <CardContent className="py-8 flex items-center justify-center">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    );
+  }
+
   const now = new Date();
-  const activeCampaigns = CAMPAIGNS.filter(campaign => {
-    const start = parseISO(campaign.startDate);
-    const end = parseISO(campaign.endDate);
-    return now >= start && now <= end;
+  
+  // Filter campaigns based on date and tier eligibility
+  const activeCampaigns = campaigns.filter(campaign => {
+    const start = parseISO(campaign.start_date);
+    const end = parseISO(campaign.end_date);
+    const isInDateRange = now >= start && now <= end;
+    const isEligible = !campaign.eligible_tiers || campaign.eligible_tiers.includes(currentTier);
+    return isInDateRange && isEligible;
   });
 
   // Get upcoming campaigns (next 30 days)
-  const upcomingCampaigns = CAMPAIGNS.filter(campaign => {
-    const start = parseISO(campaign.startDate);
+  const upcomingCampaigns = campaigns.filter(campaign => {
+    const start = parseISO(campaign.start_date);
     const daysUntilStart = differenceInDays(start, now);
-    return daysUntilStart > 0 && daysUntilStart <= 30;
+    const isEligible = !campaign.eligible_tiers || campaign.eligible_tiers.includes(currentTier);
+    return daysUntilStart > 0 && daysUntilStart <= 30 && isEligible;
   }).slice(0, 2);
 
   if (activeCampaigns.length === 0 && upcomingCampaigns.length === 0) {
@@ -168,17 +168,19 @@ export function SeasonalCampaignBadges({ currentTierRate, className }: SeasonalC
       <CardContent className="space-y-4">
         {/* Active Campaigns */}
         {activeCampaigns.map(campaign => {
-          const CampaignIcon = campaign.Icon;
-          const boostedRate = currentTierRate + campaign.bonusRate;
+          const CampaignIcon = ICON_MAP[campaign.icon_name || 'Sparkles'] || Sparkles;
+          const iconColor = campaign.icon_color || 'text-purple-500';
+          const bgColor = campaign.bg_color || 'bg-purple-50';
+          const boostedRate = currentTierRate + Number(campaign.bonus_rate);
           
           return (
             <div 
               key={campaign.id}
-              className={`p-4 rounded-xl ${campaign.bgColor} border border-border/30`}
+              className={`p-4 rounded-xl ${bgColor} border border-border/30`}
             >
               <div className="flex items-start gap-3">
-                <div className={`w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm`}>
-                  <CampaignIcon className={`h-5 w-5 ${campaign.iconColor}`} />
+                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
+                  <CampaignIcon className={`h-5 w-5 ${iconColor}`} />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
@@ -187,17 +189,19 @@ export function SeasonalCampaignBadges({ currentTierRate, className }: SeasonalC
                       ACTIVE
                     </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    {campaign.description}
-                  </p>
+                  {campaign.description && (
+                    <p className="text-sm text-muted-foreground mb-2">
+                      {campaign.description}
+                    </p>
+                  )}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1">
                       <Star className="h-3.5 w-3.5 text-amber-500" />
                       <span className="text-sm font-medium text-amber-700">
-                        +{campaign.bonusRate}% bonus = {boostedRate}% total
+                        +{campaign.bonus_rate}% bonus = {boostedRate}% total
                       </span>
                     </div>
-                    <CampaignCountdown endDate={campaign.endDate} />
+                    <CampaignCountdown endDate={campaign.end_date} />
                   </div>
                 </div>
               </div>
@@ -213,21 +217,23 @@ export function SeasonalCampaignBadges({ currentTierRate, className }: SeasonalC
             </p>
             <div className="space-y-2">
               {upcomingCampaigns.map(campaign => {
-                const CampaignIcon = campaign.Icon;
-                const daysUntil = differenceInDays(parseISO(campaign.startDate), now);
+                const CampaignIcon = ICON_MAP[campaign.icon_name || 'Sparkles'] || Sparkles;
+                const iconColor = campaign.icon_color || 'text-purple-500';
+                const bgColor = campaign.bg_color || 'bg-purple-50';
+                const daysUntil = differenceInDays(parseISO(campaign.start_date), now);
                 
                 return (
                   <div 
                     key={campaign.id}
                     className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border border-border/30"
                   >
-                    <div className={`w-8 h-8 rounded-full ${campaign.bgColor} flex items-center justify-center`}>
-                      <CampaignIcon className={`h-4 w-4 ${campaign.iconColor}`} />
+                    <div className={`w-8 h-8 rounded-full ${bgColor} flex items-center justify-center`}>
+                      <CampaignIcon className={`h-4 w-4 ${iconColor}`} />
                     </div>
                     <div className="flex-1">
                       <span className="text-sm font-medium">{campaign.name}</span>
                       <p className="text-xs text-muted-foreground">
-                        +{campaign.bonusRate}% bonus • Starts in {daysUntil} days
+                        +{campaign.bonus_rate}% bonus • Starts in {daysUntil} days
                       </p>
                     </div>
                   </div>

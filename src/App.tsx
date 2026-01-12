@@ -159,6 +159,7 @@ const PersonaLandingPage = React.lazy(() => import("./pages/PersonaLandingPage")
 const AdminAffiliateFraud = React.lazy(() => import("./pages/AdminAffiliateFraud"));
 const AdminAffiliatePayouts = React.lazy(() => import("./pages/AdminAffiliatePayouts"));
 const AdminAffiliateResources = React.lazy(() => import("./pages/AdminAffiliateResources"));
+const AdminAffiliateCampaigns = React.lazy(() => import("./pages/AdminAffiliateCampaigns"));
 const AdminCollectiveApplications = React.lazy(() => import("./pages/AdminCollectiveApplications"));
 const AdminUGCSubmissions = React.lazy(() => import("./pages/AdminUGCSubmissions"));
 const AdminShipmentTracking = React.lazy(() => import("./pages/AdminShipmentTracking"));
@@ -294,6 +295,7 @@ const AppContent = () => {
             <Route path="/admin/affiliate-fraud" element={<AdminAffiliateFraud />} />
             <Route path="/admin/affiliate-payouts" element={<AdminAffiliatePayouts />} />
             <Route path="/admin/affiliate-resources" element={<AdminAffiliateResources />} />
+            <Route path="/admin/affiliate-campaigns" element={<AdminAffiliateCampaigns />} />
             <Route path="/admin/collective-applications" element={<AdminCollectiveApplications />} />
             <Route path="/admin/ugc-submissions" element={<AdminUGCSubmissions />} />
             <Route path="/admin/shipment-tracking" element={<AdminShipmentTracking />} />
