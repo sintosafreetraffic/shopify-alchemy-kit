@@ -2,7 +2,7 @@ import { Moon, Truck, RotateCcw } from "lucide-react";
 
 export const GuaranteeSection = () => {
   return (
-    <section className="py-4 md:py-8 lg:py-12 px-4 bg-primary/5">
+    <section className="py-4 md:py-8 lg:py-12 px-4 bg-white">
       <div className="container mx-auto max-w-6xl">
         <div className="grid grid-cols-3 gap-3 md:gap-6 text-center">
           <div className="space-y-1">

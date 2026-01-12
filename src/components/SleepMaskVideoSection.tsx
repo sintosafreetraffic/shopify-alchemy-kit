@@ -212,7 +212,7 @@ export const SleepMaskVideoSection = () => {
 
   return (
     <>
-      <section ref={sectionRef} className="py-6 md:py-8 px-4 bg-background">
+      <section ref={sectionRef} className="py-6 md:py-8 px-4 bg-primary/5">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-6 md:mb-12">
             <h2 className="text-2xl md:text-4xl font-bold mb-2 md:mb-4">See It In Action</h2>
