@@ -5,10 +5,12 @@
  * Discount codes are the #1 affiliate conversion driver (40-60% of sales).
  * 
  * Features:
- * - Create codes with custom names
- * - Deactivate/reactivate codes
+ * - Create codes with custom names (synced to Shopify)
+ * - Deactivate/reactivate codes (synced to Shopify)
  * - View usage analytics
  * - Guardrails: max 5 active codes, optional expiry
+ * 
+ * IMPORTANT: All codes are synced to Shopify to ensure they work at checkout.
  */
 
 import { useState, useEffect } from "react";
@@ -18,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Copy, Check, Tag, Plus, Loader2, TrendingUp, AlertCircle } from "lucide-react";
+import { Copy, Check, Tag, Plus, Loader2, TrendingUp, AlertCircle, ShoppingBag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import {
@@ -98,7 +100,7 @@ export function AffiliateDiscountCodes({ affiliateId }: AffiliateDiscountCodesPr
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
-  const toggleCodeStatus = async (codeId: string, currentActive: boolean) => {
+  const toggleCodeStatus = async (codeId: string, code: string, currentActive: boolean) => {
     // Check if activating would exceed limit
     if (!currentActive && activeCount >= MAX_ACTIVE_CODES) {
       toast({
@@ -111,12 +113,17 @@ export function AffiliateDiscountCodes({ affiliateId }: AffiliateDiscountCodesPr
 
     setToggling(codeId);
     try {
-      const { error } = await supabase
-        .from("affiliate_discount_codes")
-        .update({ is_active: !currentActive })
-        .eq("id", codeId);
+      // Use edge function to sync with Shopify
+      const { data, error } = await supabase.functions.invoke('affiliate-discount-sync', {
+        body: {
+          action: currentActive ? 'deactivate' : 'activate',
+          code: code,
+          codeId: codeId,
+        },
+      });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       toast({
         title: currentActive ? "Deactivated" : "Activated",
@@ -129,7 +136,7 @@ export function AffiliateDiscountCodes({ affiliateId }: AffiliateDiscountCodesPr
       console.error("Error toggling code:", error);
       toast({
         title: "Error",
-        description: "Failed to update code status",
+        description: error.message || "Failed to update code status",
         variant: "destructive",
       });
     } finally {
@@ -173,28 +180,36 @@ export function AffiliateDiscountCodes({ affiliateId }: AffiliateDiscountCodesPr
         return;
       }
 
-      const { error } = await supabase.from("affiliate_discount_codes").insert({
-        affiliate_id: affiliateId,
-        code: formattedCode,
-        discount_type: "percentage",
-        discount_value: 10, // Default 10% discount
-        is_active: true,
+      // Use edge function to create in Shopify first, then DB
+      const { data, error } = await supabase.functions.invoke('affiliate-discount-sync', {
+        body: {
+          action: 'create',
+          code: formattedCode,
+          discountValue: 10, // Default 10% discount
+          affiliateId: affiliateId,
+        },
       });
 
-      if (error) {
-        if (error.code === "23505") {
+      if (error) throw error;
+      
+      if (data?.error) {
+        // Handle specific errors
+        if (data.error.includes('already exists')) {
           toast({
-            title: "Code exists",
-            description: "This discount code is already in use by you or another affiliate",
+            title: "Code unavailable",
+            description: data.error,
             variant: "destructive",
           });
         } else {
-          throw error;
+          throw new Error(data.error);
         }
         return;
       }
 
-      toast({ title: "Success!", description: `Code "${formattedCode}" created and ready to share` });
+      toast({ 
+        title: "Success!", 
+        description: `Code "${formattedCode}" created and synced to Shopify`,
+      });
       setNewCode("");
       setIsDialogOpen(false);
       loadCodes();
@@ -365,7 +380,7 @@ export function AffiliateDiscountCodes({ affiliateId }: AffiliateDiscountCodesPr
                           <div className="flex items-center">
                             <Switch
                               checked={code.is_active}
-                              onCheckedChange={() => toggleCodeStatus(code.id, code.is_active)}
+                              onCheckedChange={() => toggleCodeStatus(code.id, code.code, code.is_active)}
                               disabled={toggling === code.id || isExpired || isMaxed}
                               aria-label={code.is_active ? "Deactivate code" : "Activate code"}
                             />

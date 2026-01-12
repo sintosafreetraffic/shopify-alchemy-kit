@@ -361,3 +361,7 @@ verify_jwt = false
 # Ads Metrics Overview - Diagnostic health analysis (public, uses internal token)
 [functions.ads-metrics-overview]
 verify_jwt = false
+
+# Affiliate Discount Sync - Syncs codes with Shopify (requires JWT for auth)
+[functions.affiliate-discount-sync]
+verify_jwt = true
