@@ -21,6 +21,10 @@ import { PerformanceNudges } from "@/components/affiliate/PerformanceNudges";
 import { RealtimeSaleNotifications } from "@/components/affiliate/RealtimeSaleNotifications";
 import { AffiliateStatsCards } from "@/components/affiliate/AffiliateStatsCards";
 import { QuickActions } from "@/components/affiliate/QuickActions";
+import { StreakTracker } from "@/components/affiliate/StreakTracker";
+import { EnhancedLeaderboard } from "@/components/affiliate/EnhancedLeaderboard";
+import { SeasonalBoostBanner } from "@/components/affiliate/SeasonalBoostBanner";
+import { MonthlyDigestPreview } from "@/components/affiliate/MonthlyDigestPreview";
 
 // Lazy load the chart component to reduce initial bundle size
 const AffiliateAnalyticsChart = lazy(() => import("@/components/affiliate/AffiliateAnalyticsChart"));
@@ -732,6 +736,15 @@ const AffiliateDashboard = () => {
               pendingCommissions={commissionBreakdown.pending.total}
             />
 
+            {/* Seasonal Boost Banner (if active campaign) */}
+            <SeasonalBoostBanner
+              affiliateTier={tierInfo.tier}
+              baseCommissionRate={tierInfo.commissionRate}
+            />
+
+            {/* Streak Tracker */}
+            <StreakTracker commissions={commissions} />
+
             {/* Milestone Badges */}
             <MilestoneBadges
               totalSales={affiliateData.total_referrals || 0}
@@ -1065,71 +1078,24 @@ const AffiliateDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Leaderboard */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Trophy className="h-5 w-5 text-yellow-600" />
-              Leaderboard
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">Top partners by 30-day revenue</p>
-          </CardHeader>
-          <CardContent>
-            {leaderboardLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : leaderboard.length === 0 ? (
-              <div className="text-center py-8">
-                <Trophy className="h-8 w-8 mx-auto mb-2 text-muted-foreground/40" />
-                <p className="text-muted-foreground">No leaderboard data available yet.</p>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-16">Rank</TableHead>
-                    <TableHead>Partner</TableHead>
-                    <TableHead>Tier</TableHead>
-                    <TableHead className="text-right">30-Day Revenue</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {leaderboard.map((entry) => (
-                    <TableRow key={entry.rank} className={entry.is_current_user ? 'bg-primary/5' : ''}>
-                      <TableCell className="font-medium">
-                        {entry.rank <= 3 ? (
-                          <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${
-                            entry.rank === 1 ? 'bg-yellow-100 text-yellow-700' :
-                            entry.rank === 2 ? 'bg-slate-100 text-slate-600' :
-                            'bg-amber-100 text-amber-700'
-                          }`}>{entry.rank}</span>
-                        ) : `#${entry.rank}`}
-                      </TableCell>
-                      <TableCell className={entry.is_current_user ? 'font-semibold' : ''}>
-                        {entry.display_label}
-                        {entry.is_current_user && <span className="ml-2 text-xs text-primary">(You)</span>}
-                      </TableCell>
-                      <TableCell>
-                        {(() => {
-                          const EntryTierIcon = tierConfig[entry.tier]?.Icon || Shield;
-                          return (
-                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${tierConfig[entry.tier]?.bgColor || 'bg-secondary'}`}>
-                              <EntryTierIcon className="h-3 w-3" /> {formatTierName(entry.tier)}
-                            </span>
-                          );
-                        })()}
-                      </TableCell>
-                      <TableCell className="text-right font-medium">
-                        ${entry.monthly_revenue_generated.toFixed(2)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+        {/* Enhanced Leaderboard */}
+        <EnhancedLeaderboard 
+          leaderboard={leaderboard}
+          loading={leaderboardLoading}
+          className="mb-8"
+        />
+
+        {/* Monthly Digest Preview */}
+        <MonthlyDigestPreview
+          currentMonthEarnings={commissionBreakdown.level1.total + commissionBreakdown.level2.total}
+          lastMonthEarnings={0}
+          currentMonthSales={monthlyStats.sales}
+          lastMonthSales={0}
+          subAffiliateCount={subAffiliates.length}
+          tier={tierInfo.tier}
+          commissionRate={tierInfo.commissionRate}
+          className="mb-8"
+        />
 
         {/* Recent Commissions */}
         <Card>
