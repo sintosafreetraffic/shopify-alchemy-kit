@@ -7,6 +7,7 @@ import { useProductReviews, useReviewStats, type ReviewSortOption } from "@/hook
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ReviewsWallProps {
   productHandle: string;
@@ -32,11 +33,20 @@ export const ReviewsWall = ({
   productImage,
   onWriteReview,
 }: ReviewsWallProps) => {
-  const [limit, setLimit] = useState(12);
+  const isMobile = useIsMobile();
+  const initialLimit = isMobile ? 3 : 12;
+  const loadMoreCount = isMobile ? 3 : 12;
+  
+  const [limit, setLimit] = useState(initialLimit);
   const [sortBy, setSortBy] = useState<ReviewSortOption>("newest");
   const [ratingFilter, setRatingFilter] = useState<number | null>(null);
   const [sessionId, setSessionId] = useState("");
   const [votedReviewIds, setVotedReviewIds] = useState<Set<string>>(new Set());
+  
+  // Update limit when screen size changes
+  useEffect(() => {
+    setLimit(isMobile ? 3 : 12);
+  }, [isMobile]);
 
   const { data: reviews, isLoading: reviewsLoading } = useProductReviews(
     productHandle,
@@ -67,7 +77,7 @@ export const ReviewsWall = ({
   const hasMoreReviews = reviews?.length === limit;
 
   const handleLoadMore = () => {
-    setLimit((prev) => prev + 12);
+    setLimit((prev) => prev + loadMoreCount);
   };
 
   const handleVoteSuccess = (reviewId: string) => {
