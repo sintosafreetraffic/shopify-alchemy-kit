@@ -104,11 +104,11 @@ export const SleepBundleHero = () => {
 
   return (
     <section className="py-4 md:py-8 lg:py-12 bg-background">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-0 md:px-4">
         <div className="grid lg:grid-cols-2 gap-4 md:gap-6 lg:gap-10 max-w-7xl mx-auto">
           {/* Left Column - Product Images */}
           <div className="lg:sticky lg:top-24 lg:self-start">
-            <div className="rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-8">
+            <div className="md:rounded-xl overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 p-4 md:p-8">
               <OptimizedImage
                 src={bundleImage}
                 alt="Rise By Night Complete Sleep Bundle"
