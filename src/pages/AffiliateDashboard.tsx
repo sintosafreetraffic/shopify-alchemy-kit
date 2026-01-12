@@ -14,6 +14,7 @@ import { format, parseISO } from "date-fns";
 import { TierProgressCard } from "@/components/affiliate/TierProgressCard";
 import { UGCSubmissionForm } from "@/components/affiliate/UGCSubmissionForm";
 import { UGCSubmissionsList } from "@/components/affiliate/UGCSubmissionsList";
+import { AffiliateDiscountCodes } from "@/components/affiliate/AffiliateDiscountCodes";
 
 // Lazy load the chart component to reduce initial bundle size
 const AffiliateAnalyticsChart = lazy(() => import("@/components/affiliate/AffiliateAnalyticsChart"));
@@ -762,6 +763,11 @@ const AffiliateDashboard = () => {
               <p className="text-xs text-muted-foreground mt-2">Earn 5% on sales from affiliates you recruit</p>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Discount Codes - #1 affiliate conversion driver */}
+        <div className="mb-8">
+          <AffiliateDiscountCodes affiliateId={affiliateData.id} />
         </div>
 
         {/* Tier Progress */}
