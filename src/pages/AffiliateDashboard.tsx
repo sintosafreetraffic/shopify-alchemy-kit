@@ -15,6 +15,12 @@ import { TierProgressCard } from "@/components/affiliate/TierProgressCard";
 import { UGCSubmissionForm } from "@/components/affiliate/UGCSubmissionForm";
 import { UGCSubmissionsList } from "@/components/affiliate/UGCSubmissionsList";
 import { AffiliateDiscountCodes } from "@/components/affiliate/AffiliateDiscountCodes";
+import { OnboardingChecklist } from "@/components/affiliate/OnboardingChecklist";
+import { MilestoneBadges } from "@/components/affiliate/MilestoneBadges";
+import { PerformanceNudges } from "@/components/affiliate/PerformanceNudges";
+import { RealtimeSaleNotifications } from "@/components/affiliate/RealtimeSaleNotifications";
+import { AffiliateStatsCards } from "@/components/affiliate/AffiliateStatsCards";
+import { QuickActions } from "@/components/affiliate/QuickActions";
 
 // Lazy load the chart component to reduce initial bundle size
 const AffiliateAnalyticsChart = lazy(() => import("@/components/affiliate/AffiliateAnalyticsChart"));
@@ -210,6 +216,9 @@ const AffiliateDashboard = () => {
   const [activeGoalTab, setActiveGoalTab] = useState<"commission" | "revenue">("commission");
   const [activeMainTab, setActiveMainTab] = useState("overview");
   const [ugcRefreshTrigger, setUgcRefreshTrigger] = useState(0);
+  const [discountDialogOpen, setDiscountDialogOpen] = useState(false);
+  const [lastSaleDate, setLastSaleDate] = useState<string | null>(null);
+  const [hasUGCSubmission, setHasUGCSubmission] = useState(false);
 
   // ============ Data Fetching ============
   
@@ -316,6 +325,18 @@ const AffiliateDashboard = () => {
       // If affiliate exists, fetch secondary data in parallel
       if (affiliate?.id) {
         fetchSecondaryData(affiliate.id);
+        
+        // Track last sale date for nudges
+        if (commissionsData && commissionsData.length > 0) {
+          setLastSaleDate(commissionsData[0].created_at);
+        }
+        
+        // Check for UGC submissions
+        const { count } = await supabase
+          .from('partner_ugc_submissions')
+          .select('id', { count: 'exact', head: true })
+          .eq('affiliate_id', affiliate.id);
+        setHasUGCSubmission((count || 0) > 0);
       } else {
         // No affiliate, clear secondary loading states
         setLeaderboardLoading(false);
@@ -621,9 +642,20 @@ const AffiliateDashboard = () => {
   // ============ Main Dashboard ============
 
   const currentTierConfig = tierConfig[tierInfo.tier] || tierConfig['bronze'];
+  
+  // Calculate derived state for components
+  const hasFirstSale = (affiliateData.total_referrals || 0) > 0;
+  const hasLevel2Sale = commissions.some(c => c.level === 2);
+  const hasApprovedUGC = false; // Would be set from UGC data
 
    return (
     <div className="min-h-screen bg-secondary/30">
+      {/* Real-time sale notifications */}
+      <RealtimeSaleNotifications 
+        affiliateId={affiliateData.id} 
+        onNewSale={() => fetchAffiliateData()}
+      />
+      
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
@@ -662,65 +694,58 @@ const AffiliateDashboard = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="mt-0">
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-green-100 rounded-full">
-                      <DollarSign className="h-5 w-5 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Total Earnings</p>
-                      <p className="text-2xl font-bold">${(affiliateData.total_commissions || 0).toFixed(2)}</p>
-                    </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-full">
-                  <Package className="h-5 w-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Referrals</p>
-                  <p className="text-2xl font-bold">{affiliateData.total_referrals || 0}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 rounded-full">
-                  <TrendingUp className="h-5 w-5 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">30-Day Sales</p>
-                  <p className="text-2xl font-bold">{monthlyStats.sales}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-amber-100 rounded-full">
-                  <Users className="h-5 w-5 text-amber-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Sub-Affiliates</p>
-                  <p className="text-2xl font-bold">{subAffiliates.length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+          <TabsContent value="overview" className="mt-0 space-y-6">
+            {/* Onboarding Checklist - shows only if incomplete */}
+            <OnboardingChecklist
+              referralCode={affiliateData.referral_code}
+              hasDiscountCodes={false} // Will be updated when codes load
+              hasFirstSale={hasFirstSale}
+              hasUGCSubmission={hasUGCSubmission}
+              onCopyLink={copyReferralLink}
+              onCreateCode={() => setDiscountDialogOpen(true)}
+            />
 
-        {/* Referral Links */}
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
+            {/* Performance Nudges */}
+            <PerformanceNudges
+              tier={tierInfo.tier}
+              nextTier={tierInfo.nextTier}
+              salesNeeded={tierInfo.salesNeeded}
+              directSalesLast30={directSalesLast30}
+              hasFirstSale={hasFirstSale}
+              lastSaleDate={lastSaleDate}
+              onCopyLink={copyReferralLink}
+            />
+
+            {/* Quick Actions */}
+            <QuickActions
+              referralCode={affiliateData.referral_code}
+              siteUrl={SITE_URL}
+              onCreateDiscount={() => setActiveMainTab("overview")}
+            />
+
+            {/* Stats Cards */}
+            <AffiliateStatsCards
+              totalEarnings={affiliateData.total_commissions || 0}
+              totalReferrals={affiliateData.total_referrals || 0}
+              monthlySales={monthlyStats.sales}
+              subAffiliatesCount={subAffiliates.length}
+              pendingCommissions={commissionBreakdown.pending.total}
+            />
+
+            {/* Milestone Badges */}
+            <MilestoneBadges
+              totalSales={affiliateData.total_referrals || 0}
+              hasFirstSale={hasFirstSale}
+              hasUGCApproved={hasApprovedUGC}
+              hasSubAffiliateSale={hasLevel2Sale}
+              tier={tierInfo.tier}
+              tierProgress={getProgressToNextTier()}
+              nextTier={tierInfo.nextTier}
+              salesNeededForNextTier={tierInfo.salesNeeded}
+            />
+
+            {/* Referral Links */}
+            <div className="grid md:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
