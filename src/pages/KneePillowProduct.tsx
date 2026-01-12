@@ -1,5 +1,5 @@
 // Performance: Heavy sections with carousels are lazy-loaded
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useState } from "react";
 import { GuaranteeSection } from "@/components/GuaranteeSection";
 import { StickyAddToCart } from "@/components/StickyAddToCart";
 import { KneePillowHero } from "@/components/KneePillowHero";
@@ -9,11 +9,9 @@ import { KneePillowPainRelief } from "@/components/KneePillowPainRelief";
 import { KneePillowChiropractorEndorsement } from "@/components/KneePillowChiropractorEndorsement";
 import { KneePillowLookInside } from "@/components/KneePillowLookInside";
 import { KneePillowFAQ } from "@/components/KneePillowFAQ";
+import { ReviewsWall, ReviewSubmissionForm } from "@/components/reviews";
 
 // Lazy load sections with carousels to reduce initial bundle
-const ReviewsSection = lazy(() => 
-  import("@/components/ReviewsSection").then(mod => ({ default: mod.ReviewsSection }))
-);
 const KneePillowVideoSection = lazy(() => 
   import("@/components/KneePillowVideoSection").then(mod => ({ default: mod.KneePillowVideoSection }))
 );
@@ -26,6 +24,8 @@ const SectionFallback = () => (
 );
 
 const KneePillowProduct = () => {
+  const [showReviewForm, setShowReviewForm] = useState(false);
+
   return (
     <div className="min-h-screen bg-background">
       <KneePillowHero />
@@ -34,15 +34,27 @@ const KneePillowProduct = () => {
       <KneePillowPainRelief />
       <KneePillowChiropractorEndorsement />
       <KneePillowLookInside />
-      <Suspense fallback={<SectionFallback />}>
-        <ReviewsSection />
-      </Suspense>
+      
+      {/* Customer Reviews Wall - fetches knee-pillow specific reviews */}
+      <ReviewsWall 
+        productHandle="knee-pillow"
+        productName="Knee Pillow"
+        onWriteReview={() => setShowReviewForm(true)} 
+      />
+      
       <Suspense fallback={<SectionFallback />}>
         <KneePillowVideoSection />
       </Suspense>
       <KneePillowFAQ />
       <GuaranteeSection />
       <StickyAddToCart productType="knee-pillow" />
+
+      {/* Review Submission Modal */}
+      <ReviewSubmissionForm
+        open={showReviewForm}
+        onOpenChange={setShowReviewForm}
+        productHandle="knee-pillow"
+      />
     </div>
   );
 };
