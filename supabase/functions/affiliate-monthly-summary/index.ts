@@ -137,6 +137,23 @@ Deno.serve(async (req) => {
       const earningsChange = lastMonthEarnings > 0 
         ? Math.round(((monthlyEarnings - lastMonthEarnings) / lastMonthEarnings) * 100) 
         : 100;
+      
+      // Calculate performance insights
+      const isTopPerformer = (affiliate.monthly_revenue_generated || 0) >= 5000;
+      const isOnFire = (affiliate.current_streak_days || 0) >= 7;
+      const needsNudge = directSales === 0 && lastMonthEarnings > 0;
+      
+      // Determine highlight message based on performance
+      let highlightMessage = '';
+      if (isOnFire) {
+        highlightMessage = `🔥 ${affiliate.current_streak_days}-day streak! You're on fire!`;
+      } else if (isTopPerformer) {
+        highlightMessage = '⭐ Top performer this month!';
+      } else if (needsNudge) {
+        highlightMessage = '💡 Share your link to get back on track!';
+      } else if (directSales >= 10) {
+        highlightMessage = `🎯 ${directSales} sales this month - great progress!`;
+      }
 
       // Send monthly summary via Klaviyo
       const summaryResponse = await fetch('https://a.klaviyo.com/api/events/', {
@@ -157,6 +174,7 @@ Deno.serve(async (req) => {
                 monthly_earnings: monthlyEarnings.toFixed(2),
                 last_month_earnings: lastMonthEarnings.toFixed(2),
                 earnings_change_percent: earningsChange,
+                earnings_trend: earningsChange >= 0 ? 'up' : 'down',
                 direct_sales_count: directSales,
                 sub_affiliate_sales_count: subAffiliateSales,
                 total_sales_count: directSales + subAffiliateSales,
@@ -168,6 +186,15 @@ Deno.serve(async (req) => {
                 referral_code: affiliate.referral_code,
                 referral_link: `https://www.risebynight.com?ref=${affiliate.referral_code}`,
                 invite_link: `https://www.risebynight.com/affiliate-dashboard?invite=${affiliate.referral_code}`,
+                // Enhanced streak & engagement data
+                current_streak_days: affiliate.current_streak_days || 0,
+                best_streak_days: affiliate.best_streak_days || 0,
+                is_on_fire: isOnFire,
+                is_top_performer: isTopPerformer,
+                needs_nudge: needsNudge,
+                highlight_message: highlightMessage,
+                pending_payout_amount: affiliate.pending_payout_amount || 0,
+                payout_threshold: affiliate.payout_threshold || 50,
                 generated_at: now.toISOString(),
               },
               time: now.toISOString(),

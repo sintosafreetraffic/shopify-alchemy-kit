@@ -148,6 +148,8 @@ Deno.serve(async (req) => {
     const now = new Date();
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const sixtyDaysAgo = new Date();
+    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
 
     let updatedCount = 0;
     let tierChanges: { email: string; oldTier: string; newTier: string }[] = [];
@@ -168,6 +170,55 @@ Deno.serve(async (req) => {
       const directSalesLast30Days = directSalesData?.length || 0;
       const monthlyRevenue = directSalesData?.reduce((sum, c) => sum + (Number(c.order_amount) || 0), 0) || 0;
 
+      // =====================================================
+      // STREAK CALCULATION: Consecutive days with sales
+      // =====================================================
+      const { data: streakCommissions } = await supabaseAdmin
+        .from('commissions')
+        .select('created_at')
+        .eq('affiliate_id', affiliate.id)
+        .eq('level', 1)
+        .eq('fraud_flag', false)
+        .gte('created_at', sixtyDaysAgo.toISOString())
+        .order('created_at', { ascending: false });
+
+      // Get unique sale dates
+      const saleDates = new Set<string>();
+      streakCommissions?.forEach((c: any) => {
+        const dateStr = new Date(c.created_at).toISOString().split('T')[0];
+        saleDates.add(dateStr);
+      });
+
+      // Calculate current streak (consecutive days ending today or yesterday)
+      let currentStreak = 0;
+      const todayStr = now.toISOString().split('T')[0];
+      const checkDate = new Date(now);
+      
+      // Start from today; if no sale today, start from yesterday
+      if (!saleDates.has(todayStr)) {
+        checkDate.setDate(checkDate.getDate() - 1);
+      }
+      
+      // Count consecutive days
+      while (true) {
+        const dateStr = checkDate.toISOString().split('T')[0];
+        if (saleDates.has(dateStr)) {
+          currentStreak++;
+          checkDate.setDate(checkDate.getDate() - 1);
+        } else {
+          break;
+        }
+      }
+
+      // Track best streak
+      const previousBest = affiliate.best_streak_days || 0;
+      const newBestStreak = Math.max(previousBest, currentStreak);
+
+      // Last sale date
+      const lastSaleDateStr = streakCommissions && streakCommissions.length > 0
+        ? streakCommissions[0].created_at.split('T')[0]
+        : null;
+
       // Calculate new tier (preserve diamond status if manually set)
       const isDiamond = affiliate.tier === 'diamond';
       const newTierInfo = calculateTier(directSalesLast30Days, isDiamond);
@@ -177,14 +228,17 @@ Deno.serve(async (req) => {
       const tierExpiresAt = new Date();
       tierExpiresAt.setDate(tierExpiresAt.getDate() + 30);
 
-      // Update affiliate record
+      // Update affiliate record (including streak data)
       const { error: updateError } = await supabaseAdmin
         .from('affiliates')
         .update({
           tier: newTierInfo.tier,
           tier_expires_at: tierExpiresAt.toISOString(),
           monthly_sales_count: directSalesLast30Days,
-          monthly_revenue_generated: monthlyRevenue
+          monthly_revenue_generated: monthlyRevenue,
+          current_streak_days: currentStreak,
+          best_streak_days: newBestStreak,
+          last_sale_date: lastSaleDateStr,
         })
         .eq('id', affiliate.id);
 
