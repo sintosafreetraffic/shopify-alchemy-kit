@@ -140,6 +140,7 @@ interface AttributionData {
   utm_term: string | null;
   referrer: string | null;
   rbn_context_id: string | null;
+  rbn_ref_code: string | null; // Affiliate referral code
   // Match signals from context table (populated via joinPinterestContext)
   client_ip_address: string | null;
   client_user_agent: string | null;
@@ -170,6 +171,7 @@ function extractAttributionFromOrder(order: any): AttributionData {
     utm_term: findAttr('utm_term', '_utm_term'),
     referrer: findAttr('referrer', '_referrer') || order.referring_site,
     rbn_context_id: findAttr('rbn_context_id'),
+    rbn_ref_code: findAttr('rbn_ref_code', 'ref_code', 'affiliate_code'), // Affiliate referral code
     // These will be populated by joinPinterestContext
     client_ip_address: null,
     client_user_agent: null,
@@ -435,6 +437,330 @@ async function logPinterestPurchaseEvent(
   }
 }
 
+// ============================================================================
+// AFFILIATE COMMISSION TRACKING FUNCTIONS (P0 CRITICAL)
+// These functions connect Shopify orders to affiliate commissions
+// ============================================================================
+
+interface CommissionTierInfo {
+  tier: string;
+  commissionRate: number;
+}
+
+function getTierCommissionRate(tier: string): CommissionTierInfo {
+  const rates: Record<string, number> = {
+    diamond: 0.25,
+    platinum: 0.20,
+    gold: 0.15,
+    silver: 0.12,
+    bronze: 0.10,
+  };
+  return {
+    tier,
+    commissionRate: rates[tier?.toLowerCase()] || 0.10,
+  };
+}
+
+/**
+ * Lookup affiliate by discount code
+ * Used when no rbn_ref_code is present but a discount code matches an affiliate
+ */
+async function lookupAffiliateByDiscountCode(
+  supabase: any,
+  discountCode: string
+): Promise<{ id: string; referral_code: string; tier: string } | null> {
+  try {
+    const { data, error } = await supabase
+      .from('affiliate_discount_codes')
+      .select('affiliate_id, affiliates!inner(id, referral_code, tier)')
+      .eq('code', discountCode.toUpperCase())
+      .eq('is_active', true)
+      .maybeSingle();
+    
+    if (error || !data) {
+      return null;
+    }
+    
+    // Update usage count
+    await supabase
+      .from('affiliate_discount_codes')
+      .update({ usage_count: (data.usage_count || 0) + 1 })
+      .eq('code', discountCode.toUpperCase());
+    
+    return {
+      id: data.affiliates.id,
+      referral_code: data.affiliates.referral_code,
+      tier: data.affiliates.tier || 'bronze',
+    };
+  } catch (e) {
+    console.error("[Affiliate] Error looking up discount code:", e);
+    return null;
+  }
+}
+
+/**
+ * Process affiliate commission for an order
+ * This is the critical function that creates commission records
+ */
+async function processAffiliateCommission(
+  supabase: any,
+  referralCode: string,
+  order: any,
+  customerEmail: string,
+  klaviyoApiKey: string,
+  discountCode?: string
+): Promise<void> {
+  const orderId = String(order.id);
+  const orderTotal = parseFloat(order.total_price);
+  const customerIp = order.client_details?.browser_ip || null;
+  
+  console.log("[Affiliate] Processing commission for order:", orderId, "ref_code:", referralCode);
+  
+  try {
+    // 1. Look up affiliate by referral code
+    const { data: affiliate, error: affError } = await supabase
+      .from('affiliates')
+      .select('id, user_id, referral_code, tier, total_commissions, first_sale_at')
+      .eq('referral_code', referralCode)
+      .eq('status', 'active')
+      .maybeSingle();
+    
+    if (affError || !affiliate) {
+      console.log("[Affiliate] No active affiliate found for code:", referralCode);
+      return;
+    }
+    
+    // 2. Get affiliate's email for fraud check
+    const { data: userData } = await supabase.auth.admin.getUserById(affiliate.user_id);
+    const affiliateEmail = userData?.user?.email?.toLowerCase();
+    
+    // 3. FRAUD DETECTION
+    let fraudFlag = false;
+    let fraudReason: string | null = null;
+    
+    // Check self-referral (affiliate buying with own code)
+    if (affiliateEmail && customerEmail.toLowerCase() === affiliateEmail) {
+      fraudFlag = true;
+      fraudReason = 'self_referral_email';
+      console.warn("[Affiliate] FRAUD: Self-referral detected for:", customerEmail);
+    }
+    
+    // Check for repeat purchase within 6 hours
+    if (!fraudFlag) {
+      const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+      const { data: recentCommissions } = await supabase
+        .from('commissions')
+        .select('id')
+        .eq('affiliate_id', affiliate.id)
+        .eq('customer_email', customerEmail.toLowerCase())
+        .gte('created_at', sixHoursAgo)
+        .limit(1);
+      
+      if (recentCommissions && recentCommissions.length > 0) {
+        fraudFlag = true;
+        fraudReason = 'repeated_purchase_same_email_6h';
+        console.warn("[Affiliate] FRAUD: Repeated purchase within 6h:", customerEmail);
+      }
+    }
+    
+    // 4. Calculate commission amount based on tier
+    const tierInfo = getTierCommissionRate(affiliate.tier || 'bronze');
+    const commissionAmount = orderTotal * tierInfo.commissionRate;
+    
+    console.log("[Affiliate] Commission calculation:", {
+      orderId,
+      orderTotal,
+      tier: tierInfo.tier,
+      rate: tierInfo.commissionRate,
+      commission: commissionAmount,
+      fraudFlag,
+    });
+    
+    // 5. Check for duplicate commission (idempotency)
+    const { data: existingCommission } = await supabase
+      .from('commissions')
+      .select('id')
+      .eq('order_id', orderId)
+      .eq('affiliate_id', affiliate.id)
+      .maybeSingle();
+    
+    if (existingCommission) {
+      console.log("[Affiliate] Duplicate commission detected, skipping:", orderId);
+      return;
+    }
+    
+    // 6. Insert commission record
+    const { error: insertError } = await supabase
+      .from('commissions')
+      .insert({
+        affiliate_id: affiliate.id,
+        order_id: orderId,
+        order_amount: orderTotal,
+        amount: commissionAmount,
+        level: 1, // Direct sale
+        status: fraudFlag ? 'flagged' : 'pending',
+        fraud_flag: fraudFlag,
+        fraud_reason: fraudReason,
+        customer_email: customerEmail.toLowerCase(),
+        customer_ip: customerIp,
+        discount_code: discountCode || null,
+      });
+    
+    if (insertError) {
+      console.error("[Affiliate] Failed to insert commission:", insertError);
+      return;
+    }
+    
+    console.log("[Affiliate] ✅ Commission created:", {
+      affiliateId: affiliate.id,
+      orderId,
+      amount: commissionAmount,
+      status: fraudFlag ? 'flagged' : 'pending',
+    });
+    
+    // 7. Update affiliate totals if not fraud
+    if (!fraudFlag) {
+      const newTotalCommissions = (Number(affiliate.total_commissions) || 0) + commissionAmount;
+      const updateData: Record<string, any> = {
+        total_commissions: newTotalCommissions,
+        monthly_sales_count: (affiliate.monthly_sales_count || 0) + 1,
+        monthly_revenue_generated: (Number(affiliate.monthly_revenue_generated) || 0) + orderTotal,
+        total_referrals: (affiliate.total_referrals || 0) + 1,
+      };
+      
+      // Track first sale (for onboarding metrics)
+      if (!affiliate.first_sale_at) {
+        updateData.first_sale_at = new Date().toISOString();
+        
+        // Send Klaviyo event for first sale
+        if (klaviyoApiKey && affiliateEmail) {
+          try {
+            await fetch("https://a.klaviyo.com/api/events/", {
+              method: "POST",
+              headers: {
+                "Authorization": `Klaviyo-API-Key ${klaviyoApiKey}`,
+                "Content-Type": "application/json",
+                "revision": "2024-02-15",
+              },
+              body: JSON.stringify({
+                data: {
+                  type: "event",
+                  attributes: {
+                    profile: { $email: affiliateEmail },
+                    metric: { name: "RBN_Affiliate_First_Sale" },
+                    properties: {
+                      affiliate_code: affiliate.referral_code,
+                      tier: tierInfo.tier,
+                      commission_amount: commissionAmount,
+                      order_total: orderTotal,
+                    },
+                  },
+                },
+              }),
+            });
+            console.log("[Affiliate] Sent RBN_Affiliate_First_Sale event");
+          } catch {
+            // Non-blocking
+          }
+        }
+      }
+      
+      await supabase
+        .from('affiliates')
+        .update(updateData)
+        .eq('id', affiliate.id);
+      
+      // 8. Send real-time sale notification to Klaviyo
+      if (klaviyoApiKey && affiliateEmail) {
+        try {
+          await fetch("https://a.klaviyo.com/api/events/", {
+            method: "POST",
+            headers: {
+              "Authorization": `Klaviyo-API-Key ${klaviyoApiKey}`,
+              "Content-Type": "application/json",
+              "revision": "2024-02-15",
+            },
+            body: JSON.stringify({
+              data: {
+                type: "event",
+                attributes: {
+                  profile: { $email: affiliateEmail },
+                  metric: { name: "RBN_Affiliate_Sale" },
+                  properties: {
+                    affiliate_code: affiliate.referral_code,
+                    tier: tierInfo.tier,
+                    commission_amount: commissionAmount,
+                    order_total: orderTotal,
+                    order_id: orderId,
+                    total_earnings: newTotalCommissions,
+                  },
+                },
+              },
+            }),
+          });
+          console.log("[Affiliate] Sent RBN_Affiliate_Sale event");
+        } catch {
+          // Non-blocking
+        }
+      }
+    }
+    
+    // 9. Process Level 2 commission (sub-affiliate)
+    // Check if this affiliate has a parent
+    const { data: parentCheck } = await supabase
+      .from('affiliates')
+      .select('parent_affiliate_id')
+      .eq('id', affiliate.id)
+      .maybeSingle();
+    
+    if (parentCheck?.parent_affiliate_id && !fraudFlag) {
+      // Get parent affiliate
+      const { data: parentAffiliate } = await supabase
+        .from('affiliates')
+        .select('id, user_id, referral_code, tier, total_commissions')
+        .eq('id', parentCheck.parent_affiliate_id)
+        .eq('status', 'active')
+        .maybeSingle();
+      
+      if (parentAffiliate) {
+        // Level 2 commission is 5% of order total (fixed)
+        const level2Commission = orderTotal * 0.05;
+        
+        await supabase
+          .from('commissions')
+          .insert({
+            affiliate_id: parentAffiliate.id,
+            order_id: orderId,
+            order_amount: orderTotal,
+            amount: level2Commission,
+            level: 2, // Sub-affiliate sale
+            status: 'pending',
+            fraud_flag: false,
+            customer_email: customerEmail.toLowerCase(),
+            customer_ip: customerIp,
+          });
+        
+        console.log("[Affiliate] ✅ Level 2 commission created for parent:", parentAffiliate.referral_code);
+        
+        // Update parent totals
+        await supabase
+          .from('affiliates')
+          .update({
+            total_commissions: (Number(parentAffiliate.total_commissions) || 0) + level2Commission,
+          })
+          .eq('id', parentAffiliate.id);
+      }
+    }
+  } catch (e) {
+    console.error("[Affiliate] Error processing commission:", e);
+    // Non-blocking - don't fail the webhook
+  }
+}
+
+// ============================================================================
+// END AFFILIATE COMMISSION TRACKING FUNCTIONS
+// ============================================================================
+
 Deno.serve(async (req: Request): Promise<Response> => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -523,9 +849,44 @@ Deno.serve(async (req: Request): Promise<Response> => {
       has_utm_source: !!attribution.utm_source,
       has_landing_page: !!attribution.landing_page,
       has_context_id: !!attribution.rbn_context_id,
+      has_ref_code: !!attribution.rbn_ref_code,
       has_ip: !!attribution.client_ip_address,
       has_ua: !!attribution.client_user_agent,
     });
+
+    // ============================================================
+    // AFFILIATE COMMISSION TRACKING - P0 CRITICAL
+    // Process affiliate referral code and create commission records
+    // ============================================================
+    if (attribution.rbn_ref_code && shouldTrackPurchase) {
+      await processAffiliateCommission(
+        supabase,
+        attribution.rbn_ref_code,
+        order,
+        email,
+        KLAVIYO_PRIVATE_API_KEY
+      );
+    } else if (shouldTrackPurchase) {
+      // Also check for discount codes that might be affiliate codes
+      const discountCodes = order.discount_codes || [];
+      for (const discount of discountCodes) {
+        if (discount.code) {
+          const affiliateFromDiscount = await lookupAffiliateByDiscountCode(supabase, discount.code);
+          if (affiliateFromDiscount) {
+            console.log("[Affiliate] Found affiliate via discount code:", discount.code);
+            await processAffiliateCommission(
+              supabase,
+              affiliateFromDiscount.referral_code,
+              order,
+              email,
+              KLAVIYO_PRIVATE_API_KEY,
+              discount.code
+            );
+            break; // Only attribute to first matching affiliate code
+          }
+        }
+      }
+    }
 
     // Extract product names from line items and map to our product categories
     const extractProductsOwned = (lineItems: any[]): string[] => {

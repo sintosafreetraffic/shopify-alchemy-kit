@@ -107,6 +107,59 @@ export type Database = {
         }
         Relationships: []
       }
+      affiliate_discount_codes: {
+        Row: {
+          affiliate_id: string
+          code: string
+          created_at: string
+          discount_type: string
+          discount_value: number
+          ends_at: string | null
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          starts_at: string | null
+          updated_at: string
+          usage_count: number
+        }
+        Insert: {
+          affiliate_id: string
+          code: string
+          created_at?: string
+          discount_type?: string
+          discount_value?: number
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          starts_at?: string | null
+          updated_at?: string
+          usage_count?: number
+        }
+        Update: {
+          affiliate_id?: string
+          code?: string
+          created_at?: string
+          discount_type?: string
+          discount_value?: number
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          starts_at?: string | null
+          updated_at?: string
+          usage_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_discount_codes_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       affiliate_goals: {
         Row: {
           affiliate_id: string
@@ -240,6 +293,7 @@ export type Database = {
       affiliates: {
         Row: {
           created_at: string | null
+          first_sale_at: string | null
           id: string
           last_payout_at: string | null
           level: number | null
@@ -260,6 +314,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          first_sale_at?: string | null
           id?: string
           last_payout_at?: string | null
           level?: number | null
@@ -280,6 +335,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          first_sale_at?: string | null
           id?: string
           last_payout_at?: string | null
           level?: number | null
@@ -529,6 +585,7 @@ export type Database = {
           created_at: string | null
           customer_email: string | null
           customer_ip: string | null
+          discount_code: string | null
           fraud_flag: boolean | null
           fraud_reason: string | null
           id: string
@@ -544,6 +601,7 @@ export type Database = {
           created_at?: string | null
           customer_email?: string | null
           customer_ip?: string | null
+          discount_code?: string | null
           fraud_flag?: boolean | null
           fraud_reason?: string | null
           id?: string
@@ -559,6 +617,7 @@ export type Database = {
           created_at?: string | null
           customer_email?: string | null
           customer_ip?: string | null
+          discount_code?: string | null
           fraud_flag?: boolean | null
           fraud_reason?: string | null
           id?: string
@@ -3317,6 +3376,7 @@ export type Database = {
           unique_sessions: number
         }[]
       }
+      get_tier_commission_rate: { Args: { tier_name: string }; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

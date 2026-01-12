@@ -14,6 +14,7 @@ import { getContextId } from '@/lib/contextTracking';
 const EPIK_COOKIE_NAME = '_epik';
 const EPIK_STORAGE_KEY = 'pinterest_epik';
 const LANDING_PAGE_KEY = 'pinterest_landing_page';
+const REFERRAL_CODE_KEY = 'rbn_ref_code';
 const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'] as const;
 
 // Cookie expiry: 30 days
@@ -27,6 +28,7 @@ export interface Attribution {
   utm_campaign: string | null;
   utm_content: string | null;
   utm_term: string | null;
+  ref_code: string | null;
 }
 
 /**
@@ -118,6 +120,18 @@ export function captureAttribution(): void {
       console.log('[Attribution] Pinterest click ID captured:', epik);
     }
     
+    // Capture affiliate referral code (first-touch: don't overwrite)
+    // This is CRITICAL for affiliate commission tracking
+    const refCode = urlParams.get('ref');
+    if (refCode) {
+      setStorageIfEmpty(REFERRAL_CODE_KEY, refCode);
+      // Also store in sessionStorage for auth flow compatibility
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem('referral_code', refCode);
+      }
+      console.log('[Attribution] Affiliate referral code captured:', refCode);
+    }
+    
     // Capture landing page (first-touch only)
     const existingLanding = getStorage(LANDING_PAGE_KEY);
     if (!existingLanding) {
@@ -160,6 +174,12 @@ export function getAttribution(): Attribution {
     // epik: prefer cookie, fallback to localStorage
     const epik = getCookie(EPIK_COOKIE_NAME) || getStorage(EPIK_STORAGE_KEY);
     
+    // ref_code: prefer localStorage, fallback to sessionStorage
+    let refCode = getStorage(REFERRAL_CODE_KEY);
+    if (!refCode && typeof sessionStorage !== 'undefined') {
+      refCode = sessionStorage.getItem('referral_code');
+    }
+    
     return {
       epik,
       landing_page: getStorage(LANDING_PAGE_KEY),
@@ -168,6 +188,7 @@ export function getAttribution(): Attribution {
       utm_campaign: getStorage('utm_campaign'),
       utm_content: getStorage('utm_content'),
       utm_term: getStorage('utm_term'),
+      ref_code: refCode,
     };
   } catch {
     // Return empty attribution on any error
@@ -179,6 +200,7 @@ export function getAttribution(): Attribution {
       utm_campaign: null,
       utm_content: null,
       utm_term: null,
+      ref_code: null,
     };
   }
 }
@@ -214,6 +236,13 @@ export function getAttributionForCheckout(): Array<{ key: string; value: string 
       }
     } catch {
       // Never block checkout if context_id fails
+    }
+    
+    // CRITICAL: Add affiliate referral code for commission tracking
+    // This enables 40-60% of affiliate-attributable sales
+    if (attribution.ref_code) {
+      attributes.push({ key: 'rbn_ref_code', value: attribution.ref_code });
+      console.log('[Attribution] Affiliate ref_code added to checkout:', attribution.ref_code);
     }
     
     if (attribution.epik) {
@@ -258,5 +287,17 @@ export function getAttributionForCheckout(): Array<{ key: string; value: string 
   } catch {
     // Return empty array on any error - never block checkout
     return [];
+  }
+}
+
+/**
+ * Get affiliate referral code only (for dashboard displays)
+ */
+export function getRefCode(): string | null {
+  try {
+    return getStorage(REFERRAL_CODE_KEY) || 
+      (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('referral_code') : null);
+  } catch {
+    return null;
   }
 }
