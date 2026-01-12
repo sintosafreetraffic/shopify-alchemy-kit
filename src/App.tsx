@@ -150,6 +150,7 @@ import { DynamicProductRoute } from "./components/DynamicProductRoute";
 const SleepQuiz = React.lazy(() => import("./pages/SleepQuiz"));
 const RefLandingPage = React.lazy(() => import("./pages/RefLandingPage"));
 const AmbassadorProfilePage = React.lazy(() => import("./pages/AmbassadorProfilePage"));
+const CreatorStorefrontPage = React.lazy(() => import("./pages/CreatorStorefrontPage"));
 const AffiliateDashboard = React.lazy(() => import("./pages/AffiliateDashboard"));
 const SleepCoachDashboard = React.lazy(() => import("./pages/SleepCoachDashboard"));
 const SleepCoachDebug = React.lazy(() => import("./pages/SleepCoachDebug"));
@@ -292,6 +293,7 @@ const AppContent = () => {
             <Route path="/persona/:cluster" element={<PersonaLandingPage />} />
             <Route path="/ref/:code" element={<RefLandingPage />} />
             <Route path="/ambassador/:code" element={<AmbassadorProfilePage />} />
+            <Route path="/creator/:slug" element={<CreatorStorefrontPage />} />
             <Route path="/admin/affiliate-fraud" element={<AdminAffiliateFraud />} />
             <Route path="/admin/affiliate-payouts" element={<AdminAffiliatePayouts />} />
             <Route path="/admin/affiliate-resources" element={<AdminAffiliateResources />} />

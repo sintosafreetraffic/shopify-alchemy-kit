@@ -219,10 +219,24 @@ Deno.serve(async (req) => {
         ? streakCommissions[0].created_at.split('T')[0]
         : null;
 
-      // Calculate new tier (preserve diamond status if manually set)
+      // =====================================================
+      // TIER REACTIVATION LOGIC
+      // Check if expired tier should be reactivated based on performance
+      // =====================================================
       const isDiamond = affiliate.tier === 'diamond';
+      const tierExpired = affiliate.tier_expires_at && new Date(affiliate.tier_expires_at) < now;
+      
+      // Calculate what tier affiliate SHOULD be based on current performance
       const newTierInfo = calculateTier(directSalesLast30Days, isDiamond);
       const oldTier = affiliate.tier || 'bronze';
+      
+      // Reactivation: If tier expired but performance warrants higher tier, reactivate
+      let reactivated = false;
+      if (tierExpired && newTierInfo.tier !== 'bronze') {
+        // Affiliate has earned their way back - reactivation!
+        reactivated = true;
+        console.log(`[affiliate-tier-recalc] Reactivating ${affiliate.referral_code}: ${oldTier} -> ${newTierInfo.tier} (reactivation after expiry)`);
+      }
 
       // Calculate tier expiration (30 days from now if maintaining/upgrading)
       const tierExpiresAt = new Date();
