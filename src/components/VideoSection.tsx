@@ -221,7 +221,7 @@ export const VideoSection = () => {
 
   return (
     <>
-      <section ref={sectionRef} className="py-4 md:py-6 lg:py-8 px-4 bg-background">
+      <section ref={sectionRef} className="py-4 md:py-6 lg:py-8 px-4 bg-primary/5">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-4 md:mb-6">
             <h2 className="text-lg md:text-2xl lg:text-3xl font-bold mb-1">See It In Action</h2>
