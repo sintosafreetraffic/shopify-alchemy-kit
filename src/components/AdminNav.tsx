@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { Shield, Wallet, BookOpen, AlertTriangle, Package, MessageSquareText } from "lucide-react";
+import { Shield, Wallet, BookOpen, AlertTriangle, Package, MessageSquareText, Megaphone } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AdminNavItem {
@@ -23,6 +23,11 @@ const adminNavItems: AdminNavItem[] = [
     label: "Payouts",
     path: "/admin/affiliate-payouts",
     icon: <Wallet className="h-4 w-4" />,
+  },
+  {
+    label: "Campaigns",
+    path: "/admin/affiliate-campaigns",
+    icon: <Megaphone className="h-4 w-4" />,
   },
   {
     label: "Resources",
