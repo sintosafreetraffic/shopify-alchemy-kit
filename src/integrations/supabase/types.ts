@@ -107,8 +107,58 @@ export type Database = {
         }
         Relationships: []
       }
+      affiliate_campaign_variants: {
+        Row: {
+          affiliate_id: string
+          assigned_at: string
+          campaign_id: string
+          conversion_value: number | null
+          converted: boolean | null
+          converted_at: string | null
+          id: string
+          variant_key: string
+        }
+        Insert: {
+          affiliate_id: string
+          assigned_at?: string
+          campaign_id: string
+          conversion_value?: number | null
+          converted?: boolean | null
+          converted_at?: string | null
+          id?: string
+          variant_key: string
+        }
+        Update: {
+          affiliate_id?: string
+          assigned_at?: string
+          campaign_id?: string
+          conversion_value?: number | null
+          converted?: boolean | null
+          converted_at?: string | null
+          id?: string
+          variant_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_campaign_variants_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_campaign_variants_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       affiliate_campaigns: {
         Row: {
+          ab_test_enabled: boolean | null
+          ab_variants: Json | null
           bg_color: string | null
           bonus_rate: number
           campaign_key: string
@@ -125,6 +175,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          ab_test_enabled?: boolean | null
+          ab_variants?: Json | null
           bg_color?: string | null
           bonus_rate?: number
           campaign_key: string
@@ -141,6 +193,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          ab_test_enabled?: boolean | null
+          ab_variants?: Json | null
           bg_color?: string | null
           bonus_rate?: number
           campaign_key?: string
@@ -340,6 +394,74 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      affiliate_storefronts: {
+        Row: {
+          accent_color: string | null
+          affiliate_id: string
+          avatar_url: string | null
+          banner_url: string | null
+          bio: string | null
+          click_count: number | null
+          created_at: string
+          custom_slug: string | null
+          display_name: string | null
+          featured_products: string[] | null
+          id: string
+          is_published: boolean | null
+          social_links: Json | null
+          testimonial: string | null
+          theme_color: string | null
+          updated_at: string
+          view_count: number | null
+        }
+        Insert: {
+          accent_color?: string | null
+          affiliate_id: string
+          avatar_url?: string | null
+          banner_url?: string | null
+          bio?: string | null
+          click_count?: number | null
+          created_at?: string
+          custom_slug?: string | null
+          display_name?: string | null
+          featured_products?: string[] | null
+          id?: string
+          is_published?: boolean | null
+          social_links?: Json | null
+          testimonial?: string | null
+          theme_color?: string | null
+          updated_at?: string
+          view_count?: number | null
+        }
+        Update: {
+          accent_color?: string | null
+          affiliate_id?: string
+          avatar_url?: string | null
+          banner_url?: string | null
+          bio?: string | null
+          click_count?: number | null
+          created_at?: string
+          custom_slug?: string | null
+          display_name?: string | null
+          featured_products?: string[] | null
+          id?: string
+          is_published?: boolean | null
+          social_links?: Json | null
+          testimonial?: string | null
+          theme_color?: string | null
+          updated_at?: string
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_storefronts_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: true
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       affiliates: {
         Row: {
