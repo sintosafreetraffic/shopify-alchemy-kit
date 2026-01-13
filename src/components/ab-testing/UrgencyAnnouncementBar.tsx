@@ -32,7 +32,10 @@ export function UrgencyAnnouncementBar({ className }: UrgencyAnnouncementBarProp
     return () => clearInterval(interval);
   }, [messages.length]);
   
-  if (dismissed) return null;
+  // When dismissed, still render a placeholder to maintain layout
+  if (dismissed) {
+    return <div data-header-banner className="fixed top-0 left-0 right-0 h-9 z-[80]" />;
+  }
   
   const CurrentIcon = messages[currentMessage].icon;
   
