@@ -1,6 +1,6 @@
 import { CartDrawer } from "./CartDrawer";
 import { NavLink } from "./NavLink";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Mail, MapPin } from "lucide-react";
 import logo from "@/assets/risebynight-logo-official.png";
 import { Menu } from "lucide-react";
@@ -9,36 +9,26 @@ import { Button } from "@/components/ui/button";
 import { useUIStore } from "@/stores/uiStore";
 import { useThrottledScroll } from "@/hooks/useThrottledScroll";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { getOrAssignVariant } from "@/lib/abTesting";
+
 
 export const Header = () => {
   const { isVisible } = useThrottledScroll();
   const isMobile = useIsMobile();
   const { isMobileMenuOpen, setMobileMenuOpen } = useUIStore();
-  const location = useLocation();
 
-  // Check if we're on Variant B product page (uses UrgencyAnnouncementBar instead of UrgencyBanner)
-  // Both banners are ~40px tall, so header position stays at top-[36px]
-  const isVariantBProductPage = 
-    location.pathname === "/products/ergonomic-pillow" && 
-    getOrAssignVariant() === "B";
-  
-  // Header always at top-[36px] since both variants have a banner
+
+  // Header always sits below the 36px announcement bar (Variant A or B)
   const headerTop = "top-[36px]";
-  const translateOffset = isVariantBProductPage ? "100%" : "calc(100%+36px)";
 
-  // Mobile: always visible (no transform animations to prevent GPU glitches)
-  // Desktop: hide/show on scroll
-  const shouldHide = !isMobile && !isVisible;
+  // Hide header when scrolling down; keep announcement bar visible
+  const shouldHide = !isVisible;
+  const hiddenTransform = "translateY(calc(-100% - 36px))";
 
   return (
-    <header 
+    <header
       data-header-main
-      className={`fixed ${headerTop} left-0 right-0 z-[75] border-b bg-background ${
-        isMobile 
-          ? '' // Mobile: no transitions, always visible
-          : `transition-transform duration-300 ease-out ${shouldHide ? `-translate-y-[${translateOffset}]` : "translate-y-0"}`
-      }`}
+      className={`fixed ${headerTop} left-0 right-0 z-[75] border-b bg-background transition-transform duration-300 ease-out will-change-transform`}
+      style={{ transform: shouldHide ? hiddenTransform : "translateY(0)" }}
     >
       <div className="container mx-auto px-4 py-2 relative flex md:grid md:grid-cols-3 items-center">
         {/* Mobile Menu Button - Absolute Left on Mobile */}
