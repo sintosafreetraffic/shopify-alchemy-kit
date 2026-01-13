@@ -17,13 +17,14 @@ export const Header = () => {
   const { isMobileMenuOpen, setMobileMenuOpen } = useUIStore();
   const location = useLocation();
 
-  // Check if we're on Variant B product page (no UrgencyBanner shown)
+  // Check if we're on Variant B product page (uses UrgencyAnnouncementBar instead of UrgencyBanner)
+  // Both banners are ~40px tall, so header position stays at top-[36px]
   const isVariantBProductPage = 
     location.pathname === "/products/ergonomic-pillow" && 
     getOrAssignVariant() === "B";
   
-  // Header position: top-0 when no banner (Variant B), top-[36px] otherwise
-  const headerTop = isVariantBProductPage ? "top-0" : "top-[36px]";
+  // Header always at top-[36px] since both variants have a banner
+  const headerTop = "top-[36px]";
   const translateOffset = isVariantBProductPage ? "100%" : "calc(100%+36px)";
 
   // Mobile: always visible (no transform animations to prevent GPU glitches)

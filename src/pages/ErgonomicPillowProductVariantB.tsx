@@ -138,13 +138,9 @@ const ErgonomicPillowProductVariantB = () => {
   const { setCartOpen } = useCartStore();
   const headerHeight = useHeaderHeight();
 
-  // Variant B doesn't have the global UrgencyBanner, so header is at top-0
-  // Only account for the main header height (no banner)
-  const mainHeaderHeight = headerHeight > 36 ? headerHeight - 36 : headerHeight;
-  
   return (
-    <div className="min-h-screen bg-background" style={{ paddingTop: mainHeaderHeight }}>
-      {/* Urgency Announcement Bar - directly under header */}
+    <div className="min-h-screen bg-background" style={{ paddingTop: headerHeight }}>
+      {/* Urgency Announcement Bar - fixed at top like Variant A banner */}
       <UrgencyAnnouncementBar />
       
       {/* Variant B Hero with urgency elements - reduced top padding */}
