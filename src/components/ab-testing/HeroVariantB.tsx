@@ -346,19 +346,19 @@ export const HeroVariantB = () => {
               )}
             </Button>
 
-            {/* Trust Badges */}
-            <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <Shield className="h-4 w-4" />
-                <span>60-Night Trial</span>
+            {/* Trust Badges - Must match Variant A exactly */}
+            <div className="grid grid-cols-3 gap-3 py-3 border-t text-center">
+              <div className="flex flex-col items-center">
+                <Shield className="w-5 h-5 mb-1.5 text-primary" />
+                <p className="text-xs font-medium leading-tight">2-Year Warranty</p>
               </div>
-              <div className="flex items-center gap-1">
-                <Truck className="h-4 w-4" />
-                <span>Free Shipping</span>
+              <div className="flex flex-col items-center">
+                <Moon className="w-5 h-5 mb-1.5 text-primary" />
+                <p className="text-xs font-medium leading-tight">100 nights risk free trial</p>
               </div>
-              <div className="flex items-center gap-1">
-                <Moon className="h-4 w-4" />
-                <span>Sleep Better Guarantee</span>
+              <div className="flex flex-col items-center">
+                <Truck className="w-5 h-5 mb-1.5 text-primary" />
+                <p className="text-xs font-medium leading-tight">Easy Returns</p>
               </div>
             </div>
 
