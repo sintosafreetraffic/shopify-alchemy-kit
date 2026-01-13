@@ -38,7 +38,7 @@ export function UrgencyAnnouncementBar({ className }: UrgencyAnnouncementBarProp
   
   return (
     <div className={cn(
-      "bg-gradient-to-r from-red-600 via-red-500 to-orange-500 text-white py-2 px-4 relative",
+      "bg-primary text-primary-foreground py-2.5 px-4 relative",
       "animate-in slide-in-from-top duration-300",
       className
     )}>

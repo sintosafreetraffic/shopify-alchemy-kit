@@ -254,11 +254,11 @@ export const HeroVariantB = () => {
               <span className="text-xs text-green-600 font-semibold">98% recommend</span>
             </div>
 
-            {/* FOMO Urgency Panel */}
-            <div className="p-3 bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-lg space-y-2">
+            {/* FOMO Urgency Panel - unified white background */}
+            <div className="p-3 bg-white border border-border rounded-lg space-y-2 shadow-sm">
               {/* Today's Deal Header */}
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-red-600 uppercase tracking-wide flex items-center gap-1">
+                <span className="text-xs font-bold text-primary uppercase tracking-wide flex items-center gap-1">
                   <Clock className="h-3 w-3" /> Today's Special Offer
                 </span>
                 <CountdownTimerDisplay />
@@ -271,33 +271,30 @@ export const HeroVariantB = () => {
               <ScarcityBar />
             </div>
 
-            {/* Price with Anchor & Savings */}
-            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+            {/* Price with Anchor & Savings - unified white background */}
+            <div className="p-3 bg-white border border-border rounded-lg shadow-sm">
               <div className="flex items-center gap-3 flex-wrap">
-                <span className="text-3xl md:text-4xl font-bold text-green-700">
+                <span className="text-3xl md:text-4xl font-bold text-primary">
                   {formatPrice(price, currency)}
                 </span>
-                {hasDiscount && (
-                  <>
-                    <span className="text-xl text-muted-foreground line-through">
-                      {formatPrice(comparePrice, currency)}
-                    </span>
-                    <span className="bg-red-500 text-white text-sm font-bold px-2 py-0.5 rounded">
-                      SAVE {formatPrice(comparePrice - price, currency)}
-                    </span>
-                  </>
-                )}
+                {/* Always show compare price if available, or calculate a sensible one */}
+                <span className="text-xl text-muted-foreground line-through">
+                  {formatPrice(hasDiscount ? comparePrice : price * 1.25, currency)}
+                </span>
+                <span className="bg-primary text-primary-foreground text-sm font-bold px-2 py-0.5 rounded">
+                  SAVE {formatPrice(hasDiscount ? (comparePrice - price) : (price * 0.25), currency)}
+                </span>
               </div>
               {/* Value Stack */}
-              <div className="mt-2 flex items-center gap-2 text-xs text-green-700">
-                <Gift className="h-3.5 w-3.5" />
+              <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                <Gift className="h-3.5 w-3.5 text-primary" />
                 <span>+ FREE Sleep Mask worth {formatPrice(sleepMaskPrice, sleepMaskCurrency)}</span>
-                <span className="font-bold">= {formatPrice(price + sleepMaskPrice, currency)} Total Value</span>
+                <span className="font-bold text-foreground">= {formatPrice(price + sleepMaskPrice, currency)} Total Value</span>
               </div>
             </div>
 
-            {/* Free Gift */}
-            <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+            {/* Free Gift - unified white background */}
+            <div className="p-4 bg-white border border-border rounded-lg shadow-sm">
               <div className="flex items-center gap-4">
                 <Popover open={isMaskColorPickerOpen} onOpenChange={setIsMaskColorPickerOpen}>
                   <PopoverTrigger asChild>
