@@ -37,11 +37,15 @@ export function UrgencyAnnouncementBar({ className }: UrgencyAnnouncementBarProp
   const CurrentIcon = messages[currentMessage].icon;
   
   return (
-    <div className={cn(
-      "bg-primary text-primary-foreground py-2.5 px-4 relative",
-      "animate-in slide-in-from-top duration-300",
-      className
-    )}>
+    <div 
+      data-header-banner
+      className={cn(
+        "fixed top-0 left-0 right-0 h-9 z-[80]",
+        "bg-primary text-primary-foreground px-4 relative",
+        "flex items-center justify-center",
+        className
+      )}
+    >
       <div className="container mx-auto flex items-center justify-center gap-2 text-sm font-medium">
         <CurrentIcon className="h-4 w-4 animate-bounce" />
         <span className="animate-in fade-in duration-500" key={currentMessage}>
