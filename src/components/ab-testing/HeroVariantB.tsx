@@ -38,12 +38,11 @@ import {
   SellingFastBanner,
   ScarcityBar,
 } from "@/components/ab-testing/UrgencyElements";
+import { CountdownTimerDisplay } from "@/components/CountdownTimer";
 
-// Import assets
-import testimonialAvatar from "@/assets/testimonial-new-updated.webp";
-import eyeMaskGift from "@/assets/eye-mask-gift-new.webp";
+// Import assets - using a real person avatar for testimonial
+import testimonialAvatar from "@/assets/reviewer-sofie.webp";
 import consumerChoiceBadge from "@/assets/consumer-choice-badge-transparent.png";
-import pillowCoverImage from "@/assets/pillow-cover-included.webp";
 
 // Sleep mask color images from Shopify CDN
 const sleepMaskColorImages: Record<string, string> = {
@@ -238,11 +237,17 @@ export const HeroVariantB = () => {
               <span className="text-sm text-muted-foreground">4.8 (2,847 reviews)</span>
             </div>
 
-            {/* Urgency Elements - Variant B specific */}
-            <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg space-y-3">
-              <StockIndicator />
-              <ViewerCount />
+            {/* Urgency Elements with Time-Limited Offer - Variant B specific */}
+            <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <StockIndicator />
+                <ViewerCount />
+              </div>
               <ScarcityBar />
+              {/* Time-limited offer countdown */}
+              <div className="pt-2 border-t border-orange-200/50">
+                <CountdownTimerDisplay />
+              </div>
             </div>
 
             {/* Price */}
@@ -313,16 +318,26 @@ export const HeroVariantB = () => {
               </div>
             </div>
 
-            {/* Pillow Cover Included */}
-            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+            {/* Compact Testimonial with Person Image - ABOVE fold for social proof */}
+            <div className="flex items-center gap-3 p-2.5 bg-green-50/50 border border-green-100 rounded-lg">
               <img
-                src={pillowCoverImage}
-                alt="Pillow Cover Included"
-                className="w-12 h-12 object-contain"
+                src={testimonialAvatar}
+                alt="Sophie - Verified Buyer"
+                className="w-11 h-11 rounded-full object-cover flex-shrink-0 ring-2 ring-green-200"
               />
-              <div>
-                <p className="text-sm font-medium">Pillow Cover Included</p>
-                <p className="text-xs text-muted-foreground">Machine washable, breathable fabric</p>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <div className="flex">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                    ))}
+                  </div>
+                  <span className="text-[10px] text-green-600 font-medium">Verified</span>
+                </div>
+                <p className="text-xs text-muted-foreground italic leading-tight line-clamp-2">
+                  "Finally sleeping through the night without neck pain!"
+                </p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">— Sophie K.</p>
               </div>
             </div>
 
@@ -346,49 +361,27 @@ export const HeroVariantB = () => {
               )}
             </Button>
 
-            {/* Trust Badges - Must match Variant A exactly */}
-            <div className="grid grid-cols-3 gap-3 py-3 border-t text-center">
+            {/* Trust Badges - Compact row */}
+            <div className="grid grid-cols-3 gap-2 py-2 border-t text-center">
               <div className="flex flex-col items-center">
-                <Shield className="w-5 h-5 mb-1.5 text-primary" />
-                <p className="text-xs font-medium leading-tight">2-Year Warranty</p>
+                <Shield className="w-4 h-4 mb-1 text-primary" />
+                <p className="text-[10px] font-medium leading-tight">2-Year Warranty</p>
               </div>
               <div className="flex flex-col items-center">
-                <Moon className="w-5 h-5 mb-1.5 text-primary" />
-                <p className="text-xs font-medium leading-tight">100 nights risk free trial</p>
+                <Moon className="w-4 h-4 mb-1 text-primary" />
+                <p className="text-[10px] font-medium leading-tight">100 nights trial</p>
               </div>
               <div className="flex flex-col items-center">
-                <Truck className="w-5 h-5 mb-1.5 text-primary" />
-                <p className="text-xs font-medium leading-tight">Easy Returns</p>
+                <Truck className="w-4 h-4 mb-1 text-primary" />
+                <p className="text-[10px] font-medium leading-tight">Easy Returns</p>
               </div>
             </div>
 
             {/* Payment Icons */}
             <PaymentIcons />
 
-            {/* Policy Accordion */}
+            {/* Policy Accordion - Below fold */}
             <PolicyAccordion />
-
-            {/* Testimonial */}
-            <div className="p-4 bg-muted/30 rounded-lg">
-              <div className="flex items-start gap-3">
-                <img
-                  src={testimonialAvatar}
-                  alt="Customer"
-                  className="w-10 h-10 rounded-full object-cover"
-                />
-                <div>
-                  <div className="flex mb-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                    ))}
-                  </div>
-                  <p className="text-sm text-muted-foreground italic">
-                    "Finally sleeping through the night without neck pain. Best purchase I've made this year!"
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">— Sarah M., Verified Buyer</p>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
