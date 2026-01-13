@@ -139,8 +139,14 @@ const ErgonomicPillowProductVariantB = () => {
   const headerHeight = useHeaderHeight();
 
   return (
-    <div className="min-h-screen bg-background" style={{ paddingTop: headerHeight }}>
-      {/* Urgency Announcement Bar - immediately after header */}
+    <div 
+      className="min-h-screen bg-background" 
+      style={{ 
+        paddingTop: headerHeight,
+        '--header-height': `${headerHeight}px` 
+      } as React.CSSProperties}
+    >
+      {/* Urgency Announcement Bar - sticky under header */}
       <UrgencyAnnouncementBar />
       
       {/* Variant B Hero with urgency elements - reduced top padding */}
