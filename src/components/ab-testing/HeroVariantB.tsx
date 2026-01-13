@@ -79,7 +79,8 @@ const RecentPurchaseBadge = () => {
 export const HeroVariantB = () => {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [selectedMaskColor, setSelectedMaskColor] = useState("Navy");
-  const [isMaskColorPickerOpen, setIsMaskColorPickerOpen] = useState(false);
+  const [isMobileMaskPickerOpen, setIsMobileMaskPickerOpen] = useState(false);
+  const [isDesktopMaskPickerOpen, setIsDesktopMaskPickerOpen] = useState(false);
   const { addItem, setCartOpen, setFreeMaskSelections } = useCartStore();
   const hasTrackedView = useRef(false);
   const headerHeight = useHeaderHeight();
@@ -302,9 +303,9 @@ export const HeroVariantB = () => {
             {/* Free Gift - Mobile */}
             <div className="p-3 bg-white border border-border rounded-lg shadow-sm w-full">
               <div className="flex items-center gap-3">
-                <Popover open={isMaskColorPickerOpen} onOpenChange={setIsMaskColorPickerOpen}>
+                <Popover open={isMobileMaskPickerOpen} onOpenChange={setIsMobileMaskPickerOpen}>
                   <PopoverTrigger asChild>
-                    <button className="relative flex-shrink-0">
+                    <button type="button" className="relative flex-shrink-0">
                       <img
                         src={sleepMaskColorImages[selectedMaskColor] || defaultMaskImage}
                         alt={`${selectedMaskColor} Sleep Mask`}
@@ -315,15 +316,16 @@ export const HeroVariantB = () => {
                       </div>
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-56 p-2" align="start">
+                  <PopoverContent className="w-56 p-2 z-[100]" align="start">
                     <p className="text-xs font-medium mb-2">Choose mask color:</p>
                     <div className="grid grid-cols-3 gap-1.5">
                       {maskVariants.map((variant) => (
                         <button
                           key={variant.id}
+                          type="button"
                           onClick={() => {
                             setSelectedMaskColor(variant.color);
-                            setIsMaskColorPickerOpen(false);
+                            setIsMobileMaskPickerOpen(false);
                           }}
                           className={`p-1.5 rounded-lg border-2 transition-all ${
                             selectedMaskColor === variant.color
@@ -511,9 +513,9 @@ export const HeroVariantB = () => {
             {/* Free Gift - unified white background */}
             <div className="p-4 bg-white border border-border rounded-lg shadow-sm">
               <div className="flex items-center gap-4">
-                <Popover open={isMaskColorPickerOpen} onOpenChange={setIsMaskColorPickerOpen}>
+                <Popover open={isDesktopMaskPickerOpen} onOpenChange={setIsDesktopMaskPickerOpen}>
                   <PopoverTrigger asChild>
-                    <button className="relative flex-shrink-0 group">
+                    <button type="button" className="relative flex-shrink-0 group">
                       <img
                         src={sleepMaskColorImages[selectedMaskColor] || defaultMaskImage}
                         alt={`${selectedMaskColor} Sleep Mask`}
@@ -524,15 +526,16 @@ export const HeroVariantB = () => {
                       </div>
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-64 p-3" align="start">
+                  <PopoverContent className="w-64 p-3 z-[100]" align="start">
                     <p className="text-sm font-medium mb-2">Choose your free mask color:</p>
                     <div className="grid grid-cols-3 gap-2">
                       {maskVariants.map((variant) => (
                         <button
                           key={variant.id}
+                          type="button"
                           onClick={() => {
                             setSelectedMaskColor(variant.color);
-                            setIsMaskColorPickerOpen(false);
+                            setIsDesktopMaskPickerOpen(false);
                           }}
                           className={`p-2 rounded-lg border-2 transition-all ${
                             selectedMaskColor === variant.color
