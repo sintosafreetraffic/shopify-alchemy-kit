@@ -1,44 +1,44 @@
 {
-  "version": "1.0.0",
-  "testName": "urgency_test_v1",
-  "description": "Variant B urgency configuration for A/B testing",
+  "version": "2.0.0",
+  "testName": "urgency_test_max_conversion",
+  "description": "Maximum conversion variant with aggressive urgency signals",
   
   "stockIndicator": {
     "enabled": true,
     "mode": "static_decrement",
-    "initialStock": 18,
-    "minStock": 3,
-    "decrementPerDay": 2,
-    "text": "Only {count} left in stock",
-    "lowStockThreshold": 10,
-    "lowStockText": "Low stock - selling fast!"
+    "initialStock": 12,
+    "minStock": 2,
+    "decrementPerDay": 3,
+    "text": "Only {count} left!",
+    "lowStockThreshold": 8,
+    "lowStockText": "⚠️ Almost sold out!"
   },
   
   "viewerCount": {
     "enabled": true,
     "mode": "static",
-    "staticValue": 9,
-    "text": "{count} people viewing this now"
+    "staticValue": 14,
+    "text": "{count} viewing now"
   },
   
   "sellingFast": {
     "enabled": true,
-    "text": "🔥 Selling out fast today",
-    "showAfterSeconds": 3
+    "text": "🔥 47+ sold in last hour",
+    "showAfterSeconds": 0
   },
   
   "demandIndicator": {
     "enabled": true,
-    "text": "High demand today",
+    "text": "Trending #1",
     "showPercentage": true,
-    "percentage": 87
+    "percentage": 94
   },
   
   "scarcityBar": {
     "enabled": true,
-    "percentage": 23,
-    "text": "{percentage}% of today's stock remaining",
-    "color": "#D9534F"
+    "percentage": 18,
+    "text": "Only {percentage}% left today",
+    "color": "#DC2626"
   },
   
   "morningPuffiness": {
@@ -49,27 +49,32 @@
   
   "ctaEnhancements": {
     "enabled": true,
-    "primaryText": "Claim Your Pillow Now",
-    "urgencySubtext": "Free sleep mask included with today's order",
+    "primaryText": "Claim Your Pillow + FREE Gift",
+    "urgencySubtext": "⚡ Offer expires at midnight",
     "pulseAnimation": true
   },
   
   "socialProof": {
     "enabled": true,
     "showRecentPurchases": true,
-    "recentPurchaseText": "Someone in {city} just ordered",
-    "cities": ["New York", "Los Angeles", "London", "Sydney", "Toronto", "Berlin"],
-    "intervalSeconds": 45
+    "recentPurchaseText": "🎉 Someone in {city} just ordered!",
+    "cities": ["New York", "Los Angeles", "London", "Sydney", "Toronto", "Berlin", "Chicago", "Miami", "Seattle", "Austin"],
+    "intervalSeconds": 25
+  },
+  
+  "deliveryPromise": {
+    "enabled": true,
+    "text": "Order now → Ships today, arrives in 2-4 days"
   },
   
   "mobile": {
-    "collapseSecondaryElements": true,
+    "collapseSecondaryElements": false,
     "collapseThresholdPx": 640,
-    "hideViewerCount": true,
+    "hideViewerCount": false,
     "hideMicroBanners": false,
     "keepCtaAboveFold": true
   },
   
-  "urgencyColor": "#D9534F",
-  "accentColor": "#E67E22"
+  "urgencyColor": "#DC2626",
+  "accentColor": "#EA580C"
 }
