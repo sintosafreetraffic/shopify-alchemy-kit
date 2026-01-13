@@ -13,8 +13,10 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
+import { Slider } from '@/components/ui/slider';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { supabase } from '@/integrations/supabase/client';
-import { AB_TEST_CONFIG, setTestEnabled, forceVariant, clearVariant, getABDebugInfo, type ABVariant } from '@/lib/abTesting';
+import { AB_TEST_CONFIG, setTestEnabled, setTrafficSplit, getTrafficSplit, forceVariant, clearVariant, getABDebugInfo, type ABVariant } from '@/lib/abTesting';
 import { 
   Beaker, 
   TrendingUp, 
@@ -26,6 +28,8 @@ import {
   CheckCircle,
   Bug,
   Trash2,
+  SlidersHorizontal,
+  Percent,
 } from 'lucide-react';
 
 interface FunnelData {
@@ -55,6 +59,8 @@ export default function UrgencyABTestTab() {
   const [loading, setLoading] = useState(true);
   const [testEnabled, setTestEnabledState] = useState(AB_TEST_CONFIG.enabled);
   const [debugInfo, setDebugInfo] = useState(getABDebugInfo());
+  const [trafficSplit, setTrafficSplitState] = useState(getTrafficSplit());
+  const [splitDrawerOpen, setSplitDrawerOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -103,8 +109,26 @@ export default function UrgencyABTestTab() {
 
   const refreshDebugInfo = () => {
     setDebugInfo(getABDebugInfo());
+    setTrafficSplitState(getTrafficSplit());
   };
 
+  const handleSplitChange = (value: number[]) => {
+    const percentB = value[0];
+    setTrafficSplit(percentB);
+    setTrafficSplitState(percentB);
+    setDebugInfo(getABDebugInfo());
+  };
+
+  // Preset split options
+  const splitPresets = [
+    { label: '100/0', percentB: 0 },
+    { label: '90/10', percentB: 10 },
+    { label: '70/30', percentB: 30 },
+    { label: '50/50', percentB: 50 },
+    { label: '30/70', percentB: 70 },
+    { label: '10/90', percentB: 90 },
+    { label: '0/100', percentB: 100 },
+  ];
   // Get variant data
   const variantA = funnelData.find(d => d.ab_variant === 'A');
   const variantB = funnelData.find(d => d.ab_variant === 'B');
@@ -160,12 +184,120 @@ export default function UrgencyABTestTab() {
             <div>
               <CardTitle className="text-lg">{AB_TEST_CONFIG.testName}</CardTitle>
               <CardDescription>
-                {testEnabled ? 'Running' : 'Paused'} • 50/50 split
+                {testEnabled ? 'Running' : 'Paused'} • {100 - trafficSplit}/{trafficSplit} split (A/B)
               </CardDescription>
             </div>
-            <Badge variant={testEnabled ? 'default' : 'secondary'}>
-              {testEnabled ? 'Active' : 'Paused'}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Sheet open={splitDrawerOpen} onOpenChange={setSplitDrawerOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <SlidersHorizontal className="h-4 w-4 mr-2" />
+                    Traffic Split
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[400px] sm:w-[540px]">
+                  <SheetHeader>
+                    <SheetTitle className="flex items-center gap-2">
+                      <Percent className="h-5 w-5" />
+                      Traffic Diversion
+                    </SheetTitle>
+                    <SheetDescription>
+                      Adjust the percentage of traffic directed to each variant. 
+                      Changes apply to NEW visitors only (existing assignments are preserved).
+                    </SheetDescription>
+                  </SheetHeader>
+                  
+                  <div className="mt-8 space-y-8">
+                    {/* Current Split Display */}
+                    <div className="text-center">
+                      <div className="flex items-center justify-center gap-4 mb-4">
+                        <div className="text-center">
+                          <p className="text-3xl font-bold">{100 - trafficSplit}%</p>
+                          <p className="text-sm text-muted-foreground">Variant A</p>
+                        </div>
+                        <div className="text-2xl text-muted-foreground">/</div>
+                        <div className="text-center">
+                          <p className="text-3xl font-bold text-primary">{trafficSplit}%</p>
+                          <p className="text-sm text-muted-foreground">Variant B</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Slider */}
+                    <div className="px-2">
+                      <Label className="text-sm text-muted-foreground mb-4 block">
+                        Drag to adjust traffic split
+                      </Label>
+                      <Slider
+                        value={[trafficSplit]}
+                        onValueChange={handleSplitChange}
+                        min={0}
+                        max={100}
+                        step={5}
+                        className="w-full"
+                      />
+                      <div className="flex justify-between text-xs text-muted-foreground mt-2">
+                        <span>100% A</span>
+                        <span>50/50</span>
+                        <span>100% B</span>
+                      </div>
+                    </div>
+                    
+                    {/* Preset Buttons */}
+                    <div>
+                      <Label className="text-sm text-muted-foreground mb-3 block">
+                        Quick presets (A/B)
+                      </Label>
+                      <div className="grid grid-cols-4 gap-2">
+                        {splitPresets.map((preset) => (
+                          <Button
+                            key={preset.label}
+                            variant={trafficSplit === preset.percentB ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => handleSplitChange([preset.percentB])}
+                          >
+                            {preset.label}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* Visual Progress Bar */}
+                    <div className="space-y-2">
+                      <Label className="text-sm text-muted-foreground">Traffic distribution</Label>
+                      <div className="h-8 w-full rounded-lg overflow-hidden flex">
+                        <div 
+                          className="bg-muted flex items-center justify-center text-xs font-medium transition-all duration-300"
+                          style={{ width: `${100 - trafficSplit}%` }}
+                        >
+                          {100 - trafficSplit > 10 && `A: ${100 - trafficSplit}%`}
+                        </div>
+                        <div 
+                          className="bg-primary text-primary-foreground flex items-center justify-center text-xs font-medium transition-all duration-300"
+                          style={{ width: `${trafficSplit}%` }}
+                        >
+                          {trafficSplit > 10 && `B: ${trafficSplit}%`}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <Separator />
+                    
+                    <div className="text-sm text-muted-foreground space-y-2">
+                      <p><strong>Note:</strong></p>
+                      <ul className="list-disc list-inside space-y-1 text-xs">
+                        <li>Changes apply immediately to new visitors</li>
+                        <li>Existing visitors keep their assigned variant</li>
+                        <li>Use "Clear" in Debug Controls to reset your own assignment</li>
+                      </ul>
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
+              <Badge variant={testEnabled ? 'default' : 'secondary'}>
+                {testEnabled ? 'Active' : 'Paused'}
+              </Badge>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
