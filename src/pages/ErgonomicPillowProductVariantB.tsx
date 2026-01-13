@@ -139,11 +139,11 @@ const ErgonomicPillowProductVariantB = () => {
   const headerHeight = useHeaderHeight();
 
   return (
-    <div className="min-h-screen bg-background" style={{ paddingTop: Math.max(headerHeight - 40, 0) }}>
-      {/* Urgency Announcement Bar - Top of page with proper spacing */}
+    <div className="min-h-screen bg-background" style={{ paddingTop: headerHeight }}>
+      {/* Urgency Announcement Bar - immediately after header */}
       <UrgencyAnnouncementBar />
       
-      {/* Variant B Hero with urgency elements */}
+      {/* Variant B Hero with urgency elements - reduced top padding */}
       <HeroVariantB />
       
       <Features />

@@ -209,7 +209,7 @@ export const HeroVariantB = () => {
   const hasDiscount = comparePrice > price;
 
   return (
-    <section className="py-6 md:py-10 lg:py-14">
+    <section className="pt-3 pb-6 md:pt-4 md:pb-10 lg:pt-6 lg:pb-14">
       <div className="container mx-auto px-4">
         <div className="grid md:grid-cols-2 gap-6 lg:gap-10 items-start">
           {/* Product Images */}
