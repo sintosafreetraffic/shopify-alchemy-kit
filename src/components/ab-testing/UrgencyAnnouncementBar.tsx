@@ -39,6 +39,7 @@ export function UrgencyAnnouncementBar({ className }: UrgencyAnnouncementBarProp
   return (
     <div className={cn(
       "bg-primary text-primary-foreground py-2.5 px-4 relative",
+      "sticky top-[var(--header-height,64px)] z-40",
       "animate-in slide-in-from-top duration-300",
       className
     )}>
