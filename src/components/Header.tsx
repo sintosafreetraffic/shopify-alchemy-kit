@@ -1,6 +1,6 @@
 import { CartDrawer } from "./CartDrawer";
 import { NavLink } from "./NavLink";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Mail, MapPin } from "lucide-react";
 import logo from "@/assets/risebynight-logo-official.png";
 import { Menu } from "lucide-react";
@@ -9,11 +9,22 @@ import { Button } from "@/components/ui/button";
 import { useUIStore } from "@/stores/uiStore";
 import { useThrottledScroll } from "@/hooks/useThrottledScroll";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { getOrAssignVariant } from "@/lib/abTesting";
 
 export const Header = () => {
   const { isVisible } = useThrottledScroll();
   const isMobile = useIsMobile();
   const { isMobileMenuOpen, setMobileMenuOpen } = useUIStore();
+  const location = useLocation();
+
+  // Check if we're on Variant B product page (no UrgencyBanner shown)
+  const isVariantBProductPage = 
+    location.pathname === "/products/ergonomic-pillow" && 
+    getOrAssignVariant() === "B";
+  
+  // Header position: top-0 when no banner (Variant B), top-[36px] otherwise
+  const headerTop = isVariantBProductPage ? "top-0" : "top-[36px]";
+  const translateOffset = isVariantBProductPage ? "100%" : "calc(100%+36px)";
 
   // Mobile: always visible (no transform animations to prevent GPU glitches)
   // Desktop: hide/show on scroll
@@ -22,10 +33,10 @@ export const Header = () => {
   return (
     <header 
       data-header-main
-      className={`fixed top-[36px] left-0 right-0 z-[75] border-b bg-background ${
+      className={`fixed ${headerTop} left-0 right-0 z-[75] border-b bg-background ${
         isMobile 
           ? '' // Mobile: no transitions, always visible
-          : `transition-transform duration-300 ease-out ${shouldHide ? "-translate-y-[calc(100%+36px)]" : "translate-y-0"}`
+          : `transition-transform duration-300 ease-out ${shouldHide ? `-translate-y-[${translateOffset}]` : "translate-y-0"}`
       }`}
     >
       <div className="container mx-auto px-4 py-2 relative flex md:grid md:grid-cols-3 items-center">
