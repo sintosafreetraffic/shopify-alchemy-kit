@@ -40,8 +40,8 @@ import {
 } from "@/components/ab-testing/UrgencyElements";
 import { CountdownTimerDisplay } from "@/components/CountdownTimer";
 
-// Import assets - using a real person avatar for testimonial
-import testimonialAvatar from "@/assets/reviewer-sofie.webp";
+// Import assets - unique testimonial avatar for Variant B
+import testimonialAvatar from "@/assets/testimonial-sophie-variantb.webp";
 import consumerChoiceBadge from "@/assets/consumer-choice-badge-transparent.png";
 
 // Sleep mask color images from Shopify CDN
