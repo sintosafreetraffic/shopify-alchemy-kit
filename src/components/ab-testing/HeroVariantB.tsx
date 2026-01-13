@@ -1,0 +1,389 @@
+/**
+ * Hero Section - Variant B (Urgency Enhanced)
+ * 
+ * This is a modified version of the Hero component that includes
+ * urgency and scarcity elements for A/B testing.
+ * 
+ * Key differences from Variant A:
+ * - Stock indicator
+ * - Viewer count
+ * - Selling fast banner
+ * - Scarcity bar
+ * - Enhanced CTA styling
+ */
+
+import { Button } from "@/components/ui/button";
+import { Check, Shield, Moon, Truck, Loader2, Star, ImageIcon, ChevronDown } from "lucide-react";
+import { PaymentIcons } from "@/components/PaymentIcons";
+import { PolicyAccordion } from "@/components/PolicyAccordion";
+import { useState, useEffect, useRef, Suspense, lazy, useMemo } from "react";
+import { useCartStore } from "@/stores/cartStore";
+import { useShopifyProducts, useFreeGiftMaskProduct } from "@/hooks/useShopifyProducts";
+import type { ShopifyProduct } from "@/lib/shopify";
+import { toast } from "sonner";
+import { trackPageVisit } from "@/lib/pinterest";
+import { trackViewedProduct } from "@/lib/klaviyo";
+import { useHeaderHeight } from "@/hooks/useHeaderHeight";
+import { formatPrice } from "@/lib/formatPrice";
+import { useIsEU } from "@/hooks/useCurrencySymbol";
+import { useABVariant } from "@/hooks/useABVariant";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  StockIndicator,
+  ViewerCount,
+  SellingFastBanner,
+  ScarcityBar,
+} from "@/components/ab-testing/UrgencyElements";
+
+// Import assets
+import testimonialAvatar from "@/assets/testimonial-new-updated.webp";
+import eyeMaskGift from "@/assets/eye-mask-gift-new.webp";
+import consumerChoiceBadge from "@/assets/consumer-choice-badge-transparent.png";
+import pillowCoverImage from "@/assets/pillow-cover-included.webp";
+
+// Sleep mask color images from Shopify CDN
+const sleepMaskColorImages: Record<string, string> = {
+  "Navy": "https://cdn.shopify.com/s/files/1/0796/1595/1068/files/S49c23029579045cd9f6bcaa8e25c2a77W.jpg_960x960q75.jpg_-removebg-preview_01bcb148-bf70-4a87-b615-082583768bb7.webp?v=1767524632",
+  "Turquoise": "https://cdn.shopify.com/s/files/1/0796/1595/1068/files/Sc454d234910c4a5c90707dc614beafa7g_jpg_960x960q75_jpg-removebg-preview.png?v=1768121444",
+  "Pink": "https://cdn.shopify.com/s/files/1/0796/1595/1068/files/S119f40412e2749f995e462802ae7c8edI_jpg_960x960q75_jpg-removebg-preview.png?v=1768121444",
+  "Gold": "https://cdn.shopify.com/s/files/1/0796/1595/1068/files/Sd762462a530248b885c92fe66780627dN.jpg_960x960q75.jpg_-removebg-preview.webp?v=1767524632",
+  "Silver": "https://cdn.shopify.com/s/files/1/0796/1595/1068/files/S47f9fd96fa874cd7ad47cd25e894c01aI.jpg_960x960q75.jpg___1_-removebg-preview.webp?v=1764580767",
+  "Black": "https://cdn.shopify.com/s/files/1/0796/1595/1068/files/eye-mask-gift-transparent-CP76Ahkm.webp?v=1764490860",
+};
+const defaultMaskImage = sleepMaskColorImages["Navy"];
+
+// Lazy load the image carousel
+const ProductImageCarousel = lazy(() => 
+  import("@/components/ProductImageCarousel").then(mod => ({ default: mod.ProductImageCarousel }))
+);
+
+// Carousel loading fallback
+const CarouselFallback = () => (
+  <div className="w-full aspect-square bg-muted/30 rounded-xl flex items-center justify-center animate-pulse">
+    <ImageIcon className="h-12 w-12 text-muted-foreground/40" />
+  </div>
+);
+
+export const HeroVariantB = () => {
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [selectedMaskColor, setSelectedMaskColor] = useState("Navy");
+  const [isMaskColorPickerOpen, setIsMaskColorPickerOpen] = useState(false);
+  const { addItem, setCartOpen, setFreeMaskSelections } = useCartStore();
+  const hasTrackedView = useRef(false);
+  const headerHeight = useHeaderHeight();
+  const isEU = useIsEU();
+  const { trackEvent } = useABVariant();
+
+  // Use centralized cached product data
+  const { data: products, isLoading: productsLoading } = useShopifyProducts(10);
+  const product = products?.[0] || null;
+  
+  // Get free gift mask product for variant IDs and price
+  const { data: freeGiftMaskProduct } = useFreeGiftMaskProduct();
+  
+  // Get sleep mask product for actual price display
+  const sleepMaskProduct = products?.find(
+    (p: ShopifyProduct) => p.node.handle === "risebynight-silk-deep-sleep-mask"
+  );
+  const sleepMaskVariant = sleepMaskProduct?.node.variants.edges[0]?.node;
+  const sleepMaskPrice = sleepMaskVariant ? parseFloat(sleepMaskVariant.price.amount) : 29.99;
+  const mainVariant = product?.node.variants.edges[0]?.node;
+  const shopifySleepMaskCurrency = sleepMaskVariant?.price.currencyCode || mainVariant?.price.currencyCode || 'USD';
+  const sleepMaskCurrency = (isEU && shopifySleepMaskCurrency === 'USD') ? 'EUR' : shopifySleepMaskCurrency;
+  
+  // Get mask variants for color selection
+  const maskVariants = useMemo(() => {
+    if (!freeGiftMaskProduct?.node.variants.edges) return [];
+    return freeGiftMaskProduct.node.variants.edges.map((edge: any) => ({
+      id: edge.node.id,
+      title: edge.node.title,
+      color: edge.node.title,
+      image: sleepMaskColorImages[edge.node.title] || defaultMaskImage,
+    }));
+  }, [freeGiftMaskProduct]);
+  
+  // Get selected mask variant ID
+  const selectedMaskVariantId = useMemo(() => {
+    const variant = maskVariants.find(v => v.color === selectedMaskColor);
+    return variant?.id || maskVariants[0]?.id;
+  }, [maskVariants, selectedMaskColor]);
+
+  // Track page view once
+  useEffect(() => {
+    if (!hasTrackedView.current && product) {
+      trackPageVisit();
+      trackViewedProduct({
+        ProductName: product.node.title,
+        ProductID: product.node.id,
+        ImageURL: product.node.images.edges[0]?.node.url || "",
+        URL: window.location.href,
+        Price: parseFloat(mainVariant?.price.amount || "0"),
+      });
+      hasTrackedView.current = true;
+    }
+  }, [product, mainVariant?.price.amount]);
+
+  const handleAddToCart = async () => {
+    if (!product || !mainVariant) return;
+    
+    setIsCheckingOut(true);
+    
+    try {
+      // Track A/B event
+      trackEvent('add_to_cart', parseFloat(mainVariant.price.amount), {
+        productId: product.node.id,
+        productTitle: product.node.title,
+        variantId: mainVariant.id,
+      });
+
+      // Set free mask color selection
+      if (selectedMaskVariantId) {
+        setFreeMaskSelections([{
+          productId: product.node.id,
+          maskVariantId: selectedMaskVariantId,
+          color: selectedMaskColor,
+        }]);
+      }
+
+      // Add to cart
+      addItem({
+        id: mainVariant.id,
+        title: product.node.title,
+        price: parseFloat(mainVariant.price.amount),
+        quantity: 1,
+        image: product.node.images.edges[0]?.node.url || "",
+        handle: product.node.handle,
+        variantTitle: mainVariant.title !== "Default Title" ? mainVariant.title : undefined,
+      });
+
+      setCartOpen(true);
+      toast.success("Added to cart!");
+    } catch (error) {
+      console.error("Add to cart error:", error);
+      toast.error("Failed to add to cart");
+    } finally {
+      setIsCheckingOut(false);
+    }
+  };
+
+  if (productsLoading || !product) {
+    return (
+      <section className="py-8 md:py-12 lg:py-16">
+        <div className="container mx-auto px-4">
+          <div className="grid md:grid-cols-2 gap-8 lg:gap-12 items-start">
+            <CarouselFallback />
+            <div className="space-y-6 animate-pulse">
+              <div className="h-8 bg-muted rounded w-3/4" />
+              <div className="h-4 bg-muted rounded w-full" />
+              <div className="h-4 bg-muted rounded w-2/3" />
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const price = parseFloat(mainVariant?.price.amount || "0");
+  const comparePrice = parseFloat(mainVariant?.compareAtPrice?.amount || "0");
+  const currency = mainVariant?.price.currencyCode || "USD";
+  const hasDiscount = comparePrice > price;
+
+  return (
+    <section className="py-6 md:py-10 lg:py-14">
+      <div className="container mx-auto px-4">
+        <div className="grid md:grid-cols-2 gap-6 lg:gap-10 items-start">
+          {/* Product Images */}
+          <div className="relative">
+            <Suspense fallback={<CarouselFallback />}>
+              <ProductImageCarousel images={product.node.images.edges} />
+            </Suspense>
+            
+            {/* Consumer Choice Badge */}
+            <img
+              src={consumerChoiceBadge}
+              alt="Consumer Choice Award"
+              className="absolute top-2 right-2 w-16 h-16 md:w-20 md:h-20"
+            />
+          </div>
+
+          {/* Product Info */}
+          <div className="space-y-4 md:space-y-5">
+            {/* Urgency Banner - Variant B specific */}
+            <SellingFastBanner />
+            
+            {/* Title */}
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground">
+              {product.node.title}
+            </h1>
+
+            {/* Rating */}
+            <div className="flex items-center gap-2">
+              <div className="flex">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                ))}
+              </div>
+              <span className="text-sm text-muted-foreground">4.8 (2,847 reviews)</span>
+            </div>
+
+            {/* Urgency Elements - Variant B specific */}
+            <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg space-y-3">
+              <StockIndicator />
+              <ViewerCount />
+              <ScarcityBar />
+            </div>
+
+            {/* Price */}
+            <div className="flex items-baseline gap-3">
+              <span className="text-2xl md:text-3xl font-bold text-foreground">
+                {formatPrice(price, currency)}
+              </span>
+              {hasDiscount && (
+                <span className="text-lg text-muted-foreground line-through">
+                  {formatPrice(comparePrice, currency)}
+                </span>
+              )}
+            </div>
+
+            {/* Free Gift */}
+            <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+              <div className="flex items-center gap-4">
+                <Popover open={isMaskColorPickerOpen} onOpenChange={setIsMaskColorPickerOpen}>
+                  <PopoverTrigger asChild>
+                    <button className="relative flex-shrink-0 group">
+                      <img
+                        src={sleepMaskColorImages[selectedMaskColor] || defaultMaskImage}
+                        alt={`${selectedMaskColor} Sleep Mask`}
+                        className="w-16 h-16 object-contain"
+                      />
+                      <div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 rounded-full font-medium flex items-center gap-0.5">
+                        {selectedMaskColor} <ChevronDown className="h-2.5 w-2.5" />
+                      </div>
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 p-3" align="start">
+                    <p className="text-sm font-medium mb-2">Choose your free mask color:</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {maskVariants.map((variant) => (
+                        <button
+                          key={variant.id}
+                          onClick={() => {
+                            setSelectedMaskColor(variant.color);
+                            setIsMaskColorPickerOpen(false);
+                          }}
+                          className={`p-2 rounded-lg border-2 transition-all ${
+                            selectedMaskColor === variant.color
+                              ? "border-primary bg-primary/5"
+                              : "border-transparent hover:border-muted"
+                          }`}
+                        >
+                          <img
+                            src={variant.image}
+                            alt={variant.color}
+                            className="w-full aspect-square object-contain"
+                          />
+                          <p className="text-[10px] text-center mt-1 font-medium truncate">
+                            {variant.color}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-foreground">
+                    🎁 FREE Silk Sleep Mask
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Worth {formatPrice(sleepMaskPrice, sleepMaskCurrency)} • Tap to choose color
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Pillow Cover Included */}
+            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+              <img
+                src={pillowCoverImage}
+                alt="Pillow Cover Included"
+                className="w-12 h-12 object-contain"
+              />
+              <div>
+                <p className="text-sm font-medium">Pillow Cover Included</p>
+                <p className="text-xs text-muted-foreground">Machine washable, breathable fabric</p>
+              </div>
+            </div>
+
+            {/* CTA - Enhanced for Variant B */}
+            <Button
+              size="lg"
+              className="w-full h-14 text-lg font-semibold relative overflow-hidden group"
+              onClick={handleAddToCart}
+              disabled={isCheckingOut}
+            >
+              {isCheckingOut ? (
+                <>
+                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                <>
+                  <span className="relative z-10">Claim Your Pillow Now</span>
+                  <span className="absolute inset-0 bg-gradient-to-r from-primary via-primary/80 to-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                </>
+              )}
+            </Button>
+
+            {/* Trust Badges */}
+            <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <Shield className="h-4 w-4" />
+                <span>60-Night Trial</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Truck className="h-4 w-4" />
+                <span>Free Shipping</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Moon className="h-4 w-4" />
+                <span>Sleep Better Guarantee</span>
+              </div>
+            </div>
+
+            {/* Payment Icons */}
+            <PaymentIcons />
+
+            {/* Policy Accordion */}
+            <PolicyAccordion />
+
+            {/* Testimonial */}
+            <div className="p-4 bg-muted/30 rounded-lg">
+              <div className="flex items-start gap-3">
+                <img
+                  src={testimonialAvatar}
+                  alt="Customer"
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+                <div>
+                  <div className="flex mb-1">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                    ))}
+                  </div>
+                  <p className="text-sm text-muted-foreground italic">
+                    "Finally sleeping through the night without neck pain. Best purchase I've made this year!"
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">— Sarah M., Verified Buyer</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
