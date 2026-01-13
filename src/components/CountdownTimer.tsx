@@ -81,18 +81,18 @@ export const CountdownTimerDisplay = () => {
   const { timeLeft } = useCountdownTimer();
   
   return (
-    <div className="flex items-center justify-center gap-2 text-sm font-medium">
+    <div className="flex items-center justify-center gap-1.5 text-sm font-medium whitespace-nowrap">
       <span className="text-red-600 dark:text-red-400">⏰ Ends in:</span>
-      <div className="flex items-center gap-1">
-        <div className="bg-black dark:bg-white text-white dark:text-black px-2 py-1 rounded font-bold min-w-[32px] text-center">
+      <div className="flex items-center gap-0.5">
+        <div className="bg-black dark:bg-white text-white dark:text-black px-1.5 py-0.5 rounded font-bold min-w-[28px] text-center text-xs">
           {String(timeLeft.hours).padStart(2, '0')}
         </div>
         <span>:</span>
-        <div className="bg-black dark:bg-white text-white dark:text-black px-2 py-1 rounded font-bold min-w-[32px] text-center">
+        <div className="bg-black dark:bg-white text-white dark:text-black px-1.5 py-0.5 rounded font-bold min-w-[28px] text-center text-xs">
           {String(timeLeft.minutes).padStart(2, '0')}
         </div>
         <span>:</span>
-        <div className="bg-black dark:bg-white text-white dark:text-black px-2 py-1 rounded font-bold min-w-[32px] text-center">
+        <div className="bg-black dark:bg-white text-white dark:text-black px-1.5 py-0.5 rounded font-bold min-w-[28px] text-center text-xs">
           {String(timeLeft.seconds).padStart(2, '0')}
         </div>
       </div>
