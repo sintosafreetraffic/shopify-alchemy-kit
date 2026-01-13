@@ -43,7 +43,7 @@ export function UrgencyAnnouncementBar({ className }: UrgencyAnnouncementBarProp
     <div 
       data-header-banner
       className={cn(
-        "fixed top-0 left-0 right-0 h-9 z-[80]",
+        "fixed top-0 left-0 right-0 h-9 z-[85]",
         "bg-primary text-primary-foreground px-4 relative",
         "flex items-center justify-center",
         className

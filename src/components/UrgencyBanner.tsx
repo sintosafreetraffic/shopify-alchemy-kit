@@ -34,7 +34,7 @@ export const UrgencyBanner = () => {
   return (
     <div
       data-header-banner
-      className={`fixed top-0 left-0 right-0 h-9 bg-black text-white text-center text-sm font-medium z-[80] flex items-center justify-center will-change-[opacity] transition-opacity duration-200 ${
+      className={`fixed top-0 left-0 right-0 h-9 bg-black text-white text-center text-sm font-medium z-[80] flex items-center justify-center ${
         isCartOpen ? "opacity-0 pointer-events-none" : "opacity-100"
       }`}
     >
