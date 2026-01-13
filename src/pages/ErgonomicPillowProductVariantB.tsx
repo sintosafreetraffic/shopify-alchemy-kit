@@ -13,7 +13,6 @@ import { Link } from "react-router-dom";
 import { HeroVariantB } from "@/components/ab-testing/HeroVariantB";
 import { ProductBenefitsSection } from "@/components/ProductBenefitsSection";
 import { GuaranteeSection } from "@/components/GuaranteeSection";
-import { useHeaderHeight } from "@/hooks/useHeaderHeight";
 import { Features } from "@/components/Features";
 import { ProductFAQSection } from "@/components/ProductFAQSection";
 import { LookInside } from "@/components/LookInside";
@@ -25,7 +24,6 @@ import { ArrowRight, Gift, ShoppingCart } from "lucide-react";
 import { ReviewsWall, ReviewSubmissionForm } from "@/components/reviews";
 import { ReviewsSection } from "@/components/ReviewsSection";
 import { SocialProofToast, MorningPuffinessSection } from "@/components/ab-testing/UrgencyElements";
-import { UrgencyAnnouncementBar } from "@/components/ab-testing/UrgencyAnnouncementBar";
 import { ExitIntentPopup } from "@/components/ab-testing/ExitIntentPopup";
 import { CountdownTimerDisplay } from "@/components/CountdownTimer";
 import { useCartStore } from "@/stores/cartStore";
@@ -136,14 +134,10 @@ const FinalCTA = () => {
 const ErgonomicPillowProductVariantB = () => {
   const [showReviewForm, setShowReviewForm] = useState(false);
   const { setCartOpen } = useCartStore();
-  const headerHeight = useHeaderHeight();
 
   return (
-    <div className="min-h-screen bg-background" style={{ paddingTop: headerHeight }}>
-      {/* Urgency Announcement Bar - fixed at top like Variant A banner */}
-      <UrgencyAnnouncementBar />
-      
-      {/* Variant B Hero with urgency elements - reduced top padding */}
+    <div className="min-h-screen bg-background">
+      {/* Variant B Hero with urgency elements */}
       <HeroVariantB />
       
       <Features />

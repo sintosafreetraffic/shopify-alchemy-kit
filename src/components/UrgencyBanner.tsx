@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { useCartStore } from "@/stores/cartStore";
 import { useCurrencySymbol } from "@/hooks/useCurrencySymbol";
 import { getOrAssignVariant } from "@/lib/abTesting";
+import { UrgencyAnnouncementBar } from "@/components/ab-testing/UrgencyAnnouncementBar";
 
 export const UrgencyBanner = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -12,7 +13,7 @@ export const UrgencyBanner = () => {
 
   const messages = [`Free Shipping from ${currencySymbol}50`, "100 Day Risk-Free Trial"];
 
-  // Hide banner on Variant B product pages (they have their own UrgencyAnnouncementBar)
+  // Check if on Variant B product page
   const isVariantBProductPage = 
     location.pathname === "/products/ergonomic-pillow" && 
     getOrAssignVariant() === "B";
@@ -25,9 +26,9 @@ export const UrgencyBanner = () => {
     return () => clearInterval(interval);
   }, [messages.length]);
 
-  // Don't render on Variant B pages
+  // Render Variant B announcement bar instead on Variant B pages
   if (isVariantBProductPage) {
-    return null;
+    return <UrgencyAnnouncementBar />;
   }
 
   return (
