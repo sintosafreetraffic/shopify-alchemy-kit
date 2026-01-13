@@ -17,12 +17,14 @@ import { supabase } from '@/integrations/supabase/client';
 const AB_COOKIE_NAME = 'rbn_ab_variant';
 const AB_COOKIE_DAYS = 7;
 const AB_STORAGE_KEY = 'rbn_ab_variant';
+const AB_SPLIT_KEY = 'rbn_ab_split'; // Traffic split percentage for Variant B (0-100)
 
 export type ABVariant = 'A' | 'B';
 
 export interface ABConfig {
   enabled: boolean;
   testName: string;
+  splitPercentB: number; // Percentage of traffic to Variant B (0-100)
   variants: {
     A: { name: string; description: string };
     B: { name: string; description: string };
@@ -33,6 +35,7 @@ export interface ABConfig {
 export let AB_TEST_CONFIG: ABConfig = {
   enabled: true, // Set to false to disable all A/B testing
   testName: 'urgency_test_v1',
+  splitPercentB: 50, // Default 50% to B (50/50 split)
   variants: {
     A: { name: 'Control', description: 'Current product page' },
     B: { name: 'Urgency', description: 'High-urgency elements enabled' },
@@ -52,12 +55,41 @@ export function setTestEnabled(enabled: boolean): void {
   }
 }
 
-// Initialize enabled state from localStorage on load
+/**
+ * Set the traffic split percentage for Variant B (0-100)
+ * E.g., 70 means 70% to B, 30% to A
+ */
+export function setTrafficSplit(percentB: number): void {
+  const clampedPercent = Math.max(0, Math.min(100, percentB));
+  AB_TEST_CONFIG = { ...AB_TEST_CONFIG, splitPercentB: clampedPercent };
+  try {
+    localStorage.setItem(AB_SPLIT_KEY, String(clampedPercent));
+  } catch {
+    // Ignore storage errors
+  }
+  console.log(`[ABTesting] Traffic split set to: ${100 - clampedPercent}% A / ${clampedPercent}% B`);
+}
+
+/**
+ * Get the current traffic split percentage for Variant B
+ */
+export function getTrafficSplit(): number {
+  return AB_TEST_CONFIG.splitPercentB;
+}
+
+// Initialize enabled state and split from localStorage on load
 if (typeof window !== 'undefined') {
   try {
-    const stored = localStorage.getItem('rbn_ab_test_enabled');
-    if (stored !== null) {
-      AB_TEST_CONFIG = { ...AB_TEST_CONFIG, enabled: stored === 'true' };
+    const storedEnabled = localStorage.getItem('rbn_ab_test_enabled');
+    if (storedEnabled !== null) {
+      AB_TEST_CONFIG = { ...AB_TEST_CONFIG, enabled: storedEnabled === 'true' };
+    }
+    const storedSplit = localStorage.getItem(AB_SPLIT_KEY);
+    if (storedSplit !== null) {
+      const parsed = parseInt(storedSplit, 10);
+      if (!isNaN(parsed) && parsed >= 0 && parsed <= 100) {
+        AB_TEST_CONFIG = { ...AB_TEST_CONFIG, splitPercentB: parsed };
+      }
     }
   } catch {
     // Ignore
@@ -123,9 +155,10 @@ export function getOrAssignVariant(): ABVariant {
     }
   }
   
-  // 3. If no existing assignment, randomly assign 50/50
+  // 3. If no existing assignment, randomly assign based on split percentage
   if (!variant || (variant !== 'A' && variant !== 'B')) {
-    variant = Math.random() < 0.5 ? 'A' : 'B';
+    // splitPercentB is % to B, so random < (splitPercentB/100) goes to B
+    variant = Math.random() < (AB_TEST_CONFIG.splitPercentB / 100) ? 'B' : 'A';
     
     // Persist to both storage mechanisms
     setCookie(AB_COOKIE_NAME, variant, AB_COOKIE_DAYS);
@@ -318,6 +351,7 @@ export function setClarityVariantTag(): void {
 export interface ABDebugInfo {
   enabled: boolean;
   testName: string;
+  splitPercentB: number;
   currentVariant: ABVariant | null;
   sessionId: string;
   cookieValue: string | null;
@@ -331,6 +365,7 @@ export function getABDebugInfo(): ABDebugInfo {
   return {
     enabled: AB_TEST_CONFIG.enabled,
     testName: AB_TEST_CONFIG.testName,
+    splitPercentB: AB_TEST_CONFIG.splitPercentB,
     currentVariant: getCurrentVariant(),
     sessionId: getSessionId(),
     cookieValue: getCookie(AB_COOKIE_NAME),
