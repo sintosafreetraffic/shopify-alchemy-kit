@@ -124,21 +124,37 @@ const SleepCollective = () => {
     setIsSubmitting(true);
     
     try {
+      const trimmedName = formData.name.trim();
+      const trimmedEmail = formData.email.trim().toLowerCase();
+      const trimmedReason = formData.whyJoin.trim();
+
       const { error } = await supabase
         .from("collective_applications")
         .insert({
-          name: formData.name.trim(),
-          email: formData.email.trim().toLowerCase(),
+          name: trimmedName,
+          email: trimmedEmail,
           social_handles: formData.socialHandle?.trim() || null,
-          reason: formData.whyJoin.trim(),
+          reason: trimmedReason,
           preferred_tier: formData.preferredTier,
           message: formData.message?.trim() || null,
         });
 
       if (error) throw error;
 
+      // Send confirmation email to applicant and admin notification
+      supabase.functions.invoke("collective-notifications", {
+        body: {
+          type: "application_submitted",
+          applicant_name: trimmedName,
+          applicant_email: trimmedEmail,
+          preferred_tier: formData.preferredTier,
+          reason: trimmedReason,
+        },
+      }).catch((emailError) => {
+        console.error("Failed to send notification emails:", emailError);
+      });
+
       // Track Pinterest Lead event for partner application (with email for 100% coverage)
-      const trimmedEmail = formData.email.trim().toLowerCase();
       setEnhancedMatch(trimmedEmail).catch(() => {});
       trackLead("PartnerApplication", trimmedEmail).catch(() => {});
       captureEmail(trimmedEmail); // Send to CAPI context for checkout enrichment

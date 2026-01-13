@@ -163,6 +163,44 @@ Deno.serve(async (req) => {
 
     console.log(`Successfully provisioned affiliate ${affiliateId} for application ${application_id}`);
 
+    // Get the affiliate's referral code for the approval email
+    const { data: affiliateData } = await supabase
+      .from("affiliates")
+      .select("referral_code")
+      .eq("id", affiliateId)
+      .single();
+
+    // Send approval email to applicant
+    try {
+      const notificationPayload = {
+        type: "application_approved",
+        applicant_name: application.name,
+        applicant_email: application.email,
+        affiliate_referral_code: affiliateData?.referral_code || "N/A",
+      };
+
+      const notificationResponse = await fetch(
+        `${supabaseUrl}/functions/v1/collective-notifications`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${anonKey}`,
+          },
+          body: JSON.stringify(notificationPayload),
+        }
+      );
+
+      if (!notificationResponse.ok) {
+        console.error("Failed to send approval email:", await notificationResponse.text());
+      } else {
+        console.log("Approval email sent successfully");
+      }
+    } catch (emailError) {
+      console.error("Error sending approval email:", emailError);
+      // Don't fail the whole request if email fails
+    }
+
     return createSuccessResponse({
       message: "Affiliate provisioned successfully",
       affiliate_id: affiliateId,
