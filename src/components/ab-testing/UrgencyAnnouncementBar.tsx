@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { X, Clock, Gift, Truck } from 'lucide-react';
+import { Clock, Gift, Truck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCountdownTimer } from '@/components/CountdownTimer';
 
@@ -14,14 +14,16 @@ interface UrgencyAnnouncementBarProps {
 }
 
 export function UrgencyAnnouncementBar({ className }: UrgencyAnnouncementBarProps) {
-  const [dismissed, setDismissed] = useState(false);
   const { timeLeft } = useCountdownTimer();
   const [currentMessage, setCurrentMessage] = useState(0);
   
   const messages = [
     { icon: Gift, text: "🎁 FREE Sleep Mask today!" },
     { icon: Truck, text: "🚚 FREE Express Shipping!" },
-    { icon: Clock, text: `⏰ Sale ends ${String(timeLeft.hours).padStart(2, '0')}:${String(timeLeft.minutes).padStart(2, '0')}:${String(timeLeft.seconds).padStart(2, '0')}` },
+    {
+      icon: Clock,
+      text: `⏰ Sale ends ${String(timeLeft.hours).padStart(2, '0')}:${String(timeLeft.minutes).padStart(2, '0')}:${String(timeLeft.seconds).padStart(2, '0')}`,
+    },
   ];
   
   // Rotate messages every 4 seconds
@@ -31,11 +33,6 @@ export function UrgencyAnnouncementBar({ className }: UrgencyAnnouncementBarProp
     }, 4000);
     return () => clearInterval(interval);
   }, [messages.length]);
-  
-  // When dismissed, still render a placeholder to maintain layout
-  if (dismissed) {
-    return <div data-header-banner className="fixed top-0 left-0 right-0 h-9 z-[80]" />;
-  }
   
   const CurrentIcon = messages[currentMessage].icon;
   
@@ -55,13 +52,6 @@ export function UrgencyAnnouncementBar({ className }: UrgencyAnnouncementBarProp
           {messages[currentMessage].text}
         </span>
       </div>
-      <button
-        onClick={() => setDismissed(true)}
-        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-white/20 rounded transition-colors"
-        aria-label="Dismiss"
-      >
-        <X className="h-4 w-4" />
-      </button>
     </div>
   );
 }
