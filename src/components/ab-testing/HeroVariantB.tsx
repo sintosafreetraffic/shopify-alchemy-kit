@@ -98,12 +98,16 @@ export const HeroVariantB = () => {
   // Get mask variants for color selection
   const maskVariants = useMemo(() => {
     if (!freeGiftMaskProduct?.node.variants.edges) return [];
-    return freeGiftMaskProduct.node.variants.edges.map((edge: any) => ({
-      id: edge.node.id,
-      title: edge.node.title,
-      color: edge.node.title,
-      image: sleepMaskColorImages[edge.node.title] || defaultMaskImage,
-    }));
+    return freeGiftMaskProduct.node.variants.edges.map((edge: any) => {
+      const colorOption = edge.node.selectedOptions?.find((opt: any) => opt.name === 'Color');
+      const color = colorOption?.value || edge.node.title;
+      return {
+        id: edge.node.id,
+        title: edge.node.title,
+        color: color,
+        image: sleepMaskColorImages[color] || defaultMaskImage,
+      };
+    });
   }, [freeGiftMaskProduct]);
   
   // Get selected mask variant ID
