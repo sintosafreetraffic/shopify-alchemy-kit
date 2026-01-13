@@ -6,14 +6,9 @@
 
 import { useState, useEffect } from 'react';
 import { Clock, Gift, Truck } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { useCountdownTimer } from '@/components/CountdownTimer';
 
-interface UrgencyAnnouncementBarProps {
-  className?: string;
-}
-
-export function UrgencyAnnouncementBar({ className }: UrgencyAnnouncementBarProps) {
+export function UrgencyAnnouncementBar() {
   const { timeLeft } = useCountdownTimer();
   const [currentMessage, setCurrentMessage] = useState(0);
   
@@ -37,17 +32,12 @@ export function UrgencyAnnouncementBar({ className }: UrgencyAnnouncementBarProp
   const CurrentIcon = messages[currentMessage].icon;
   
   return (
-    <div 
+    <div
       data-header-banner
-      className={cn(
-        "fixed top-0 left-0 right-0 h-9 z-[85]",
-        "bg-primary text-primary-foreground px-4 relative",
-        "flex items-center justify-center",
-        className
-      )}
+      className="fixed top-0 left-0 right-0 h-9 bg-primary text-primary-foreground text-center text-sm font-medium z-[80] flex items-center justify-center"
     >
-      <div className="container mx-auto flex items-center justify-center gap-2 text-xs sm:text-sm font-medium whitespace-nowrap">
-        <CurrentIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-bounce flex-shrink-0" />
+      <div className="container mx-auto px-4 flex items-center justify-center gap-2">
+        <CurrentIcon className="h-4 w-4 animate-bounce flex-shrink-0" />
         <span className="animate-in fade-in duration-500" key={currentMessage}>
           {messages[currentMessage].text}
         </span>
