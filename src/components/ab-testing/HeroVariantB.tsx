@@ -115,17 +115,17 @@ export const HeroVariantB = () => {
   // Track page view once
   useEffect(() => {
     if (!hasTrackedView.current && product) {
-      trackPageVisit();
+      trackPageVisit(product.node.id);
       trackViewedProduct({
-        ProductName: product.node.title,
-        ProductID: product.node.id,
-        ImageURL: product.node.images.edges[0]?.node.url || "",
-        URL: window.location.href,
-        Price: parseFloat(mainVariant?.price.amount || "0"),
+        id: product.node.id,
+        title: product.node.title,
+        price: parseFloat(mainVariant?.price.amount || "0"),
+        sku: mainVariant?.id || "",
+        imageUrl: product.node.images?.edges?.[0]?.node?.url || "",
       });
       hasTrackedView.current = true;
     }
-  }, [product, mainVariant?.price.amount]);
+  }, [product, mainVariant?.price.amount, mainVariant?.id]);
 
   const handleAddToCart = async () => {
     if (!product || !mainVariant) return;
@@ -143,25 +143,29 @@ export const HeroVariantB = () => {
       // Set free mask color selection
       if (selectedMaskVariantId) {
         setFreeMaskSelections([{
-          productId: product.node.id,
-          maskVariantId: selectedMaskVariantId,
+          variantId: selectedMaskVariantId,
           color: selectedMaskColor,
         }]);
       }
 
-      // Add to cart
-      addItem({
-        id: mainVariant.id,
-        title: product.node.title,
-        price: parseFloat(mainVariant.price.amount),
+      // Add to cart (using the same cart interface as Hero.tsx)
+      const cartItem = {
+        product,
+        variantId: mainVariant.id,
+        variantTitle: mainVariant.title,
+        price: mainVariant.price,
+        compareAtPrice: mainVariant.compareAtPrice,
         quantity: 1,
-        image: product.node.images.edges[0]?.node.url || "",
-        handle: product.node.handle,
-        variantTitle: mainVariant.title !== "Default Title" ? mainVariant.title : undefined,
-      });
+        selectedOptions: mainVariant.selectedOptions || []
+      };
+      
+      addItem(cartItem);
 
       setCartOpen(true);
-      toast.success("Added to cart!");
+      toast.success("Added to cart!", {
+        description: `Added with ${selectedMaskColor} sleep mask.`,
+        duration: 1500,
+      });
     } catch (error) {
       console.error("Add to cart error:", error);
       toast.error("Failed to add to cart");
@@ -199,7 +203,7 @@ export const HeroVariantB = () => {
           {/* Product Images */}
           <div className="relative">
             <Suspense fallback={<CarouselFallback />}>
-              <ProductImageCarousel images={product.node.images.edges} />
+              <ProductImageCarousel />
             </Suspense>
             
             {/* Consumer Choice Badge */}
