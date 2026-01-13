@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      ab_events: {
+        Row: {
+          ab_variant: string
+          created_at: string
+          event_name: string
+          id: string
+          payload: Json | null
+          revenue: number | null
+          session_id: string
+          timestamp: string
+        }
+        Insert: {
+          ab_variant: string
+          created_at?: string
+          event_name: string
+          id?: string
+          payload?: Json | null
+          revenue?: number | null
+          session_id: string
+          timestamp?: string
+        }
+        Update: {
+          ab_variant?: string
+          created_at?: string
+          event_name?: string
+          id?: string
+          payload?: Json | null
+          revenue?: number | null
+          session_id?: string
+          timestamp?: string
+        }
+        Relationships: []
+      }
       add_to_cart_analytics: {
         Row: {
           created_at: string
@@ -3403,6 +3436,41 @@ export type Database = {
       }
     }
     Views: {
+      ab_funnel_comparison: {
+        Row: {
+          ab_variant: string | null
+          add_to_carts: number | null
+          atc_rate: number | null
+          ic_rate: number | null
+          initiates: number | null
+          page_views: number | null
+          purchase_rate: number | null
+          purchases: number | null
+          total_revenue: number | null
+        }
+        Relationships: []
+      }
+      ab_performance_overview: {
+        Row: {
+          ab_variant: string | null
+          avg_revenue_per_conversion: number | null
+          event_count: number | null
+          event_name: string | null
+          total_revenue: number | null
+          unique_sessions: number | null
+        }
+        Relationships: []
+      }
+      ab_revenue_split: {
+        Row: {
+          ab_variant: string | null
+          avg_order_value: number | null
+          total_orders: number | null
+          total_revenue: number | null
+          total_sessions: number | null
+        }
+        Relationships: []
+      }
       sleep_nights_live: {
         Row: {
           created_at: string | null
