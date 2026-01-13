@@ -13,6 +13,7 @@ import { Link } from "react-router-dom";
 import { HeroVariantB } from "@/components/ab-testing/HeroVariantB";
 import { ProductBenefitsSection } from "@/components/ProductBenefitsSection";
 import { GuaranteeSection } from "@/components/GuaranteeSection";
+import { useHeaderHeight } from "@/hooks/useHeaderHeight";
 import { Features } from "@/components/Features";
 import { ProductFAQSection } from "@/components/ProductFAQSection";
 import { LookInside } from "@/components/LookInside";
@@ -135,10 +136,11 @@ const FinalCTA = () => {
 const ErgonomicPillowProductVariantB = () => {
   const [showReviewForm, setShowReviewForm] = useState(false);
   const { setCartOpen } = useCartStore();
+  const headerHeight = useHeaderHeight();
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Urgency Announcement Bar - Top of page */}
+    <div className="min-h-screen bg-background" style={{ paddingTop: Math.max(headerHeight - 40, 0) }}>
+      {/* Urgency Announcement Bar - Top of page with proper spacing */}
       <UrgencyAnnouncementBar />
       
       {/* Variant B Hero with urgency elements */}
