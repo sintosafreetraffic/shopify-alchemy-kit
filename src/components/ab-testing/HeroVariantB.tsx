@@ -209,7 +209,7 @@ export const HeroVariantB = () => {
   const hasDiscount = comparePrice > price;
 
   return (
-    <section className="pt-0 pb-6 md:pb-10 lg:pb-14 overflow-x-hidden">
+    <section className="pt-4 md:pt-6 pb-6 md:pb-10 lg:pb-14 overflow-x-hidden">
       <div className="container mx-auto px-4 max-w-7xl">
         {/* Mobile Layout: Images first, then content - full width */}
         <div className="md:hidden space-y-4 w-full">
