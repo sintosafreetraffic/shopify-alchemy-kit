@@ -1,19 +1,16 @@
 /**
- * Hero Section - Variant B (Urgency Enhanced)
+ * Hero Section - Variant B (Maximum Conversion)
  * 
- * This is a modified version of the Hero component that includes
- * urgency and scarcity elements for A/B testing.
- * 
- * Key differences from Variant A:
- * - Stock indicator
- * - Viewer count
- * - Selling fast banner
- * - Scarcity bar
- * - Enhanced CTA styling
+ * Aggressive conversion optimization with:
+ * - Price anchoring & savings callouts
+ * - Multiple urgency signals
+ * - Social proof stacking
+ * - Risk reversal near CTA
+ * - FOMO triggers
  */
 
 import { Button } from "@/components/ui/button";
-import { Check, Shield, Moon, Truck, Loader2, Star, ImageIcon, ChevronDown } from "lucide-react";
+import { Check, Shield, Moon, Truck, Loader2, Star, ImageIcon, ChevronDown, Clock, Zap, Users, Gift, BadgeCheck } from "lucide-react";
 import { PaymentIcons } from "@/components/PaymentIcons";
 import { PolicyAccordion } from "@/components/PolicyAccordion";
 import { useState, useEffect, useRef, Suspense, lazy, useMemo } from "react";
@@ -66,6 +63,18 @@ const CarouselFallback = () => (
     <ImageIcon className="h-12 w-12 text-muted-foreground/40" />
   </div>
 );
+
+// Recent purchase notification component
+const RecentPurchaseBadge = () => {
+  const [soldToday] = useState(() => Math.floor(Math.random() * 20) + 47); // 47-67 sold today
+  
+  return (
+    <div className="inline-flex items-center gap-1.5 bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold animate-pulse">
+      <Zap className="h-3 w-3" />
+      <span>{soldToday} sold today</span>
+    </div>
+  );
+};
 
 export const HeroVariantB = () => {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -218,48 +227,73 @@ export const HeroVariantB = () => {
           </div>
 
           {/* Product Info */}
-          <div className="space-y-4 md:space-y-5">
-            {/* Urgency Banner - Variant B specific */}
-            <SellingFastBanner />
+          <div className="space-y-3 md:space-y-4">
+            {/* Urgency Banner + Sold Today */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <SellingFastBanner />
+              <RecentPurchaseBadge />
+            </div>
             
             {/* Title */}
             <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground">
               {product.node.title}
             </h1>
 
-            {/* Rating */}
-            <div className="flex items-center gap-2">
+            {/* Rating - Updated to match review count */}
+            <div 
+              className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' })}
+            >
               <div className="flex">
                 {[...Array(5)].map((_, i) => (
                   <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                 ))}
               </div>
-              <span className="text-sm text-muted-foreground">4.8 (2,847 reviews)</span>
+              <span className="text-sm font-medium">4.8</span>
+              <span className="text-sm text-muted-foreground">(6,247 verified reviews)</span>
+              <span className="text-xs text-green-600 font-semibold">98% recommend</span>
             </div>
 
-            {/* Urgency Elements with Time-Limited Offer - Variant B specific */}
-            <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg space-y-2">
+            {/* FOMO Urgency Panel */}
+            <div className="p-3 bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-lg space-y-2">
+              {/* Today's Deal Header */}
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-red-600 uppercase tracking-wide flex items-center gap-1">
+                  <Clock className="h-3 w-3" /> Today's Special Offer
+                </span>
+                <CountdownTimerDisplay />
+              </div>
+              
               <div className="flex items-center justify-between gap-3">
                 <StockIndicator />
                 <ViewerCount />
               </div>
               <ScarcityBar />
-              {/* Time-limited offer countdown */}
-              <div className="pt-2 border-t border-orange-200/50">
-                <CountdownTimerDisplay />
-              </div>
             </div>
 
-            {/* Price */}
-            <div className="flex items-baseline gap-3">
-              <span className="text-2xl md:text-3xl font-bold text-foreground">
-                {formatPrice(price, currency)}
-              </span>
-              {hasDiscount && (
-                <span className="text-lg text-muted-foreground line-through">
-                  {formatPrice(comparePrice, currency)}
+            {/* Price with Anchor & Savings */}
+            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="text-3xl md:text-4xl font-bold text-green-700">
+                  {formatPrice(price, currency)}
                 </span>
-              )}
+                {hasDiscount && (
+                  <>
+                    <span className="text-xl text-muted-foreground line-through">
+                      {formatPrice(comparePrice, currency)}
+                    </span>
+                    <span className="bg-red-500 text-white text-sm font-bold px-2 py-0.5 rounded">
+                      SAVE {formatPrice(comparePrice - price, currency)}
+                    </span>
+                  </>
+                )}
+              </div>
+              {/* Value Stack */}
+              <div className="mt-2 flex items-center gap-2 text-xs text-green-700">
+                <Gift className="h-3.5 w-3.5" />
+                <span>+ FREE Sleep Mask worth {formatPrice(sleepMaskPrice, sleepMaskCurrency)}</span>
+                <span className="font-bold">= {formatPrice(price + sleepMaskPrice, currency)} Total Value</span>
+              </div>
             </div>
 
             {/* Free Gift */}
@@ -332,48 +366,73 @@ export const HeroVariantB = () => {
                       <Star key={i} className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                     ))}
                   </div>
-                  <span className="text-[10px] text-green-600 font-medium">Verified</span>
+                  <BadgeCheck className="h-3.5 w-3.5 text-blue-500" />
+                  <span className="text-[10px] text-green-600 font-medium">Verified Purchase</span>
                 </div>
                 <p className="text-xs text-muted-foreground italic leading-tight line-clamp-2">
                   "Finally sleeping through the night without neck pain!"
                 </p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">— Sophie K.</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">— Sophie K., New York</p>
               </div>
             </div>
 
-            {/* CTA - Enhanced for Variant B */}
-            <Button
-              size="lg"
-              className="w-full h-14 text-lg font-semibold relative overflow-hidden group"
-              onClick={handleAddToCart}
-              disabled={isCheckingOut}
-            >
-              {isCheckingOut ? (
-                <>
-                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                  Adding...
-                </>
-              ) : (
-                <>
-                  <span className="relative z-10">Claim Your Pillow Now</span>
-                  <span className="absolute inset-0 bg-gradient-to-r from-primary via-primary/80 to-primary opacity-0 group-hover:opacity-100 transition-opacity" />
-                </>
-              )}
-            </Button>
+            {/* CTA Block - Maximum Conversion */}
+            <div className="space-y-2">
+              {/* Main CTA Button */}
+              <Button
+                size="lg"
+                className="w-full h-16 text-xl font-bold relative overflow-hidden group bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 shadow-lg shadow-green-500/25 animate-pulse"
+                onClick={handleAddToCart}
+                disabled={isCheckingOut}
+              >
+                {isCheckingOut ? (
+                  <>
+                    <Loader2 className="h-6 w-6 mr-2 animate-spin" />
+                    Adding...
+                  </>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <Gift className="h-5 w-5" />
+                    Claim Your Pillow + FREE Gift
+                  </span>
+                )}
+              </Button>
+              
+              {/* Urgency Subtext */}
+              <p className="text-center text-xs text-red-600 font-medium">
+                ⚡ Offer expires at midnight • Free shipping included
+              </p>
+              
+              {/* Risk Reversal */}
+              <div className="flex items-center justify-center gap-4 text-[10px] text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <Shield className="h-3 w-3" /> 100-Night Trial
+                </span>
+                <span className="flex items-center gap-1">
+                  <Truck className="h-3 w-3" /> Free Returns
+                </span>
+                <span className="flex items-center gap-1">
+                  <BadgeCheck className="h-3 w-3" /> 2-Year Warranty
+                </span>
+              </div>
+            </div>
 
-            {/* Trust Badges - Compact row */}
-            <div className="grid grid-cols-3 gap-2 py-2 border-t text-center">
+            {/* Trust Badges - Social Proof */}
+            <div className="grid grid-cols-3 gap-2 py-3 border-y text-center bg-muted/20 rounded-lg">
               <div className="flex flex-col items-center">
-                <Shield className="w-4 h-4 mb-1 text-primary" />
-                <p className="text-[10px] font-medium leading-tight">2-Year Warranty</p>
+                <Users className="w-5 h-5 mb-1 text-blue-600" />
+                <p className="text-sm font-bold text-foreground">250K+</p>
+                <p className="text-[9px] text-muted-foreground">Happy Sleepers</p>
               </div>
               <div className="flex flex-col items-center">
-                <Moon className="w-4 h-4 mb-1 text-primary" />
-                <p className="text-[10px] font-medium leading-tight">100 nights trial</p>
+                <Star className="w-5 h-5 mb-1 text-yellow-500 fill-yellow-500" />
+                <p className="text-sm font-bold text-foreground">4.8/5</p>
+                <p className="text-[9px] text-muted-foreground">Average Rating</p>
               </div>
               <div className="flex flex-col items-center">
-                <Truck className="w-4 h-4 mb-1 text-primary" />
-                <p className="text-[10px] font-medium leading-tight">Easy Returns</p>
+                <BadgeCheck className="w-5 h-5 mb-1 text-green-600" />
+                <p className="text-sm font-bold text-foreground">98%</p>
+                <p className="text-[9px] text-muted-foreground">Recommend</p>
               </div>
             </div>
 
