@@ -39,7 +39,6 @@ import { CountdownTimerDisplay } from "@/components/CountdownTimer";
 
 // Import assets - unique testimonial avatar for Variant B
 import testimonialAvatar from "@/assets/testimonial-sophie-variantb.webp";
-import consumerChoiceBadge from "@/assets/consumer-choice-badge-transparent.png";
 
 // Sleep mask color images from Shopify CDN
 const sleepMaskColorImages: Record<string, string> = {
@@ -219,11 +218,6 @@ export const HeroVariantB = () => {
             <Suspense fallback={<CarouselFallback />}>
               <ProductImageCarousel />
             </Suspense>
-            <img
-              src={consumerChoiceBadge}
-              alt="Consumer Choice Award"
-              className="absolute top-2 right-2 w-14 h-14"
-            />
           </div>
           
           {/* Product Info - Mobile */}
@@ -423,11 +417,6 @@ export const HeroVariantB = () => {
             <Suspense fallback={<CarouselFallback />}>
               <ProductImageCarousel />
             </Suspense>
-            <img
-              src={consumerChoiceBadge}
-              alt="Consumer Choice Award"
-              className="absolute top-2 right-2 w-20 h-20"
-            />
           </div>
 
           {/* Product Info - Desktop */}
