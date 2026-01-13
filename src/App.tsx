@@ -122,7 +122,7 @@ if (typeof window !== "undefined" && localStorage.getItem("DEBUG_TRACKING") === 
 }
 // Eagerly loaded pages (core shopping experience)
 import Home from "./pages/Home";
-import ErgonomicPillowProduct from "./pages/ErgonomicPillowProduct";
+import ErgonomicPillowProductAB from "./pages/ErgonomicPillowProductAB";
 import KneePillowProduct from "./pages/KneePillowProduct";
 import SleepMaskProduct from "./pages/SleepMaskProduct";
 import SleepBundleProduct from "./pages/SleepBundleProduct";
@@ -171,6 +171,8 @@ const AnalyticsDiagnostics = React.lazy(() => import("./pages/internal/Analytics
 const ContextDiagnostics = React.lazy(() => import("./pages/internal/ContextDiagnostics"));
 const SleepSources = React.lazy(() => import("./pages/settings/SleepSources"));
 const SleepSourcesDebug = React.lazy(() => import("./pages/debug/SleepSourcesDebug"));
+const ABTestingDebug = React.lazy(() => import("./pages/debug/ABTestingDebug"));
+const ABTestingDashboard = React.lazy(() => import("./pages/admin/ABTestingDashboard"));
 
 const queryClient = new QueryClient();
 
@@ -255,7 +257,7 @@ const AppContent = () => {
             
             {/* Product pages - /products/ is the industry standard (Shopify, Klaviyo compatible) */}
             <Route path="/products" element={<Products />} />
-            <Route path="/products/ergonomic-pillow" element={<ErgonomicPillowProduct />} />
+            <Route path="/products/ergonomic-pillow" element={<ErgonomicPillowProductAB />} />
             <Route path="/products/knee-pillow" element={<KneePillowProduct />} />
             <Route path="/products/sleep-mask" element={<SleepMaskProduct />} />
             <Route path="/products/sleep-bundle" element={<SleepBundleProduct />} />
@@ -302,10 +304,12 @@ const AppContent = () => {
             <Route path="/admin/ugc-submissions" element={<AdminUGCSubmissions />} />
             <Route path="/admin/shipment-tracking" element={<AdminShipmentTracking />} />
             <Route path="/admin/reviews" element={<AdminReviews />} />
+            <Route path="/admin/ab-testing" element={<ABTestingDashboard />} />
             <Route path="/internal/sleep-quiz-diagnostics" element={<SleepQuizDiagnostics />} />
             <Route path="/risebynight/tracking" element={<QuizRevealTracking />} />
             <Route path="/debug/analytics" element={<AnalyticsDiagnostics />} />
             <Route path="/debug/sleep-sources" element={<SleepSourcesDebug />} />
+            <Route path="/debug/ab-status" element={<ABTestingDebug />} />
             <Route path="/internal/context-diagnostics" element={<ContextDiagnostics />} />
             <Route path="/settings/sleep-sources" element={<SleepSources />} />
             
