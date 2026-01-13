@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { Header } from "./components/Header";
 import { Footer } from "./components/Footer";
 import { ScrollToTop } from "./components/ScrollToTop";
@@ -171,8 +171,6 @@ const AnalyticsDiagnostics = React.lazy(() => import("./pages/internal/Analytics
 const ContextDiagnostics = React.lazy(() => import("./pages/internal/ContextDiagnostics"));
 const SleepSources = React.lazy(() => import("./pages/settings/SleepSources"));
 const SleepSourcesDebug = React.lazy(() => import("./pages/debug/SleepSourcesDebug"));
-const ABTestingDebug = React.lazy(() => import("./pages/debug/ABTestingDebug"));
-const ABTestingDashboard = React.lazy(() => import("./pages/admin/ABTestingDashboard"));
 
 const queryClient = new QueryClient();
 
@@ -304,12 +302,13 @@ const AppContent = () => {
             <Route path="/admin/ugc-submissions" element={<AdminUGCSubmissions />} />
             <Route path="/admin/shipment-tracking" element={<AdminShipmentTracking />} />
             <Route path="/admin/reviews" element={<AdminReviews />} />
-            <Route path="/admin/ab-testing" element={<ABTestingDashboard />} />
+            {/* A/B Testing routes redirect to tracking dashboard */}
+            <Route path="/admin/ab-testing" element={<Navigate to="/risebynight/tracking?tab=urgencyab" replace />} />
+            <Route path="/debug/ab-status" element={<Navigate to="/risebynight/tracking?tab=urgencyab" replace />} />
             <Route path="/internal/sleep-quiz-diagnostics" element={<SleepQuizDiagnostics />} />
             <Route path="/risebynight/tracking" element={<QuizRevealTracking />} />
             <Route path="/debug/analytics" element={<AnalyticsDiagnostics />} />
             <Route path="/debug/sleep-sources" element={<SleepSourcesDebug />} />
-            <Route path="/debug/ab-status" element={<ABTestingDebug />} />
             <Route path="/internal/context-diagnostics" element={<ContextDiagnostics />} />
             <Route path="/settings/sleep-sources" element={<SleepSources />} />
             
