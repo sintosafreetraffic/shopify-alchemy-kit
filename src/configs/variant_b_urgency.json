@@ -1,0 +1,75 @@
+{
+  "version": "1.0.0",
+  "testName": "urgency_test_v1",
+  "description": "Variant B urgency configuration for A/B testing",
+  
+  "stockIndicator": {
+    "enabled": true,
+    "mode": "static_decrement",
+    "initialStock": 18,
+    "minStock": 3,
+    "decrementPerDay": 2,
+    "text": "Only {count} left in stock",
+    "lowStockThreshold": 10,
+    "lowStockText": "Low stock - selling fast!"
+  },
+  
+  "viewerCount": {
+    "enabled": true,
+    "mode": "static",
+    "staticValue": 9,
+    "text": "{count} people viewing this now"
+  },
+  
+  "sellingFast": {
+    "enabled": true,
+    "text": "🔥 Selling out fast today",
+    "showAfterSeconds": 3
+  },
+  
+  "demandIndicator": {
+    "enabled": true,
+    "text": "High demand today",
+    "showPercentage": true,
+    "percentage": 87
+  },
+  
+  "scarcityBar": {
+    "enabled": true,
+    "percentage": 23,
+    "text": "{percentage}% of today's stock remaining",
+    "color": "#D9534F"
+  },
+  
+  "morningPuffiness": {
+    "enabled": true,
+    "headline": "Wake Up Without Puffiness",
+    "subtext": "Our ergonomic design elevates your head just enough to prevent morning face swelling"
+  },
+  
+  "ctaEnhancements": {
+    "enabled": true,
+    "primaryText": "Claim Your Pillow Now",
+    "urgencySubtext": "Free sleep mask included with today's order",
+    "pulseAnimation": true
+  },
+  
+  "socialProof": {
+    "enabled": true,
+    "showRecentPurchases": true,
+    "recentPurchaseText": "Someone in {city} just ordered",
+    "cities": ["New York", "Los Angeles", "London", "Sydney", "Toronto", "Berlin"],
+    "intervalSeconds": 45
+  },
+  
+  "mobile": {
+    "collapseSecondaryElements": true,
+    "collapseThresholdPx": 640,
+    "hideViewerCount": true,
+    "hideMicroBanners": false,
+    "keepCtaAboveFold": true
+  },
+  
+  "urgencyColor": "#D9534F",
+  "accentColor": "#E67E22"
+}
