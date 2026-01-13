@@ -81,6 +81,7 @@ import ProductionMonitoringTab from "@/components/internal/ProductionMonitoringT
 import WeeklyReviewTab from "@/components/internal/WeeklyReviewTab";
 import PinterestSourceTruthTab from "@/components/internal/PinterestSourceTruthTab";
 import HeroABTestTab from "@/components/internal/HeroABTestTab";
+import UrgencyABTestTab from "@/components/internal/UrgencyABTestTab";
 import { useAdsReporting, DATE_PRESETS } from "@/hooks/useAdsReporting";
 
 interface AnalyticsStats {
@@ -220,7 +221,17 @@ const QuizRevealTracking = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [days, setDays] = useState("7");
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState(() => {
+    // Read initial tab from URL query param
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam && ['overview', 'phase4', 'sourcetruth', 'heroab', 'urgencyab', 'quiz', 'checkout', 'context', 'tracking', 'phases', 'weekly'].includes(tabParam)) {
+        return tabParam;
+      }
+    }
+    return "overview";
+  });
   
   // Client-side tracking state
   const [providerStatuses, setProviderStatuses] = useState<ProviderStatus[]>([]);
@@ -756,7 +767,7 @@ const QuizRevealTracking = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full max-w-6xl grid-cols-10">
+          <TabsList className="grid w-full max-w-7xl grid-cols-11">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
               <span className="hidden sm:inline">Overview</span>
@@ -772,6 +783,10 @@ const QuizRevealTracking = () => {
             <TabsTrigger value="heroab" className="flex items-center gap-2">
               <Percent className="w-4 h-4" />
               <span className="hidden sm:inline">Hero A/B</span>
+            </TabsTrigger>
+            <TabsTrigger value="urgencyab" className="flex items-center gap-2">
+              <Zap className="w-4 h-4 text-orange-500" />
+              <span className="hidden sm:inline">Urgency A/B</span>
             </TabsTrigger>
             <TabsTrigger value="quiz" className="flex items-center gap-2">
               <Eye className="w-4 h-4" />
@@ -802,6 +817,11 @@ const QuizRevealTracking = () => {
           {/* Hero A/B Test Tab */}
           <TabsContent value="heroab" className="mt-6">
             <HeroABTestTab />
+          </TabsContent>
+
+          {/* Urgency A/B Test Tab */}
+          <TabsContent value="urgencyab" className="mt-6">
+            <UrgencyABTestTab />
           </TabsContent>
 
           {/* Phase 4 Production Monitoring Tab */}
