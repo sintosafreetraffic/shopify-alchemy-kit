@@ -354,7 +354,7 @@ export const HeroVariantB = () => {
                   <BadgeCheck className="h-3 w-3 text-blue-500" />
                 </div>
                 <p className="text-[10px] text-muted-foreground italic leading-tight line-clamp-2">
-                  "Finally sleeping through the night!"
+                  "Woke up pain-free for the first time in years!"
                 </p>
                 <p className="text-[9px] text-muted-foreground">— Sophie K.</p>
               </div>
