@@ -29,8 +29,8 @@ export interface ABConfig {
   };
 }
 
-// Master A/B test configuration
-export const AB_TEST_CONFIG: ABConfig = {
+// Master A/B test configuration (mutable for admin toggle)
+export let AB_TEST_CONFIG: ABConfig = {
   enabled: true, // Set to false to disable all A/B testing
   testName: 'urgency_test_v1',
   variants: {
@@ -38,6 +38,31 @@ export const AB_TEST_CONFIG: ABConfig = {
     B: { name: 'Urgency', description: 'High-urgency elements enabled' },
   },
 };
+
+/**
+ * Enable or disable the A/B test at runtime
+ * Persists to localStorage for admin control
+ */
+export function setTestEnabled(enabled: boolean): void {
+  AB_TEST_CONFIG = { ...AB_TEST_CONFIG, enabled };
+  try {
+    localStorage.setItem('rbn_ab_test_enabled', String(enabled));
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+// Initialize enabled state from localStorage on load
+if (typeof window !== 'undefined') {
+  try {
+    const stored = localStorage.getItem('rbn_ab_test_enabled');
+    if (stored !== null) {
+      AB_TEST_CONFIG = { ...AB_TEST_CONFIG, enabled: stored === 'true' };
+    }
+  } catch {
+    // Ignore
+  }
+}
 
 // ============================================================================
 // COOKIE UTILITIES
