@@ -273,24 +273,37 @@ export const HeroVariantB = () => {
 
             {/* Price with Anchor & Savings - unified white background */}
             <div className="p-3 bg-white border border-border rounded-lg shadow-sm">
-              <div className="flex items-center gap-3 flex-wrap">
-                <span className="text-3xl md:text-4xl font-bold text-primary">
-                  {formatPrice(price, currency)}
-                </span>
-                {/* Always show compare price if available, or calculate a sensible one */}
-                <span className="text-xl text-muted-foreground line-through">
-                  {formatPrice(hasDiscount ? comparePrice : price * 1.25, currency)}
-                </span>
-                <span className="bg-primary text-primary-foreground text-sm font-bold px-2 py-0.5 rounded">
-                  SAVE {formatPrice(hasDiscount ? (comparePrice - price) : (price * 0.25), currency)}
-                </span>
-              </div>
-              {/* Value Stack */}
-              <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-                <Gift className="h-3.5 w-3.5 text-primary" />
-                <span>+ FREE Sleep Mask worth {formatPrice(sleepMaskPrice, sleepMaskCurrency)}</span>
-                <span className="font-bold text-foreground">= {formatPrice(price + sleepMaskPrice, currency)} Total Value</span>
-              </div>
+              {/* Use same currency for all values - respect EU override */}
+              {(() => {
+                const displayCurrency = (isEU && currency === 'USD') ? 'EUR' : currency;
+                const effectiveComparePrice = hasDiscount ? comparePrice : price * 1.25;
+                const effectiveSavings = hasDiscount ? (comparePrice - price) : (price * 0.25);
+                // Total value = compare price + mask price (original value before discount + gift)
+                const totalValue = effectiveComparePrice + sleepMaskPrice;
+                
+                return (
+                  <>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className="text-3xl md:text-4xl font-bold text-primary">
+                        {formatPrice(price, displayCurrency)}
+                      </span>
+                      {/* Always show compare price */}
+                      <span className="text-xl text-muted-foreground line-through">
+                        {formatPrice(effectiveComparePrice, displayCurrency)}
+                      </span>
+                      <span className="bg-primary text-primary-foreground text-sm font-bold px-2 py-0.5 rounded">
+                        SAVE {formatPrice(effectiveSavings, displayCurrency)}
+                      </span>
+                    </div>
+                    {/* Value Stack - Total = Compare price + mask (what you'd normally pay) */}
+                    <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                      <Gift className="h-3.5 w-3.5 text-primary" />
+                      <span>+ FREE Sleep Mask worth {formatPrice(sleepMaskPrice, displayCurrency)}</span>
+                      <span className="font-bold text-foreground">= {formatPrice(totalValue, displayCurrency)} Total Value</span>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
 
             {/* Free Gift - unified white background */}
