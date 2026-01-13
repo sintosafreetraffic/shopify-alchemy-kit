@@ -209,24 +209,226 @@ export const HeroVariantB = () => {
   const hasDiscount = comparePrice > price;
 
   return (
-    <section className="pt-3 pb-6 md:pt-4 md:pb-10 lg:pt-6 lg:pb-14">
-      <div className="container mx-auto px-4">
-        <div className="grid md:grid-cols-2 gap-6 lg:gap-10 items-start">
-          {/* Product Images */}
+    <section className="pt-3 pb-6 md:pt-4 md:pb-10 lg:pt-6 lg:pb-14 overflow-x-hidden">
+      <div className="container mx-auto px-4 max-w-7xl">
+        {/* Mobile Layout: Images first, then content - full width */}
+        <div className="md:hidden space-y-4 w-full">
+          {/* Product Images - Mobile */}
+          <div className="relative w-full">
+            <Suspense fallback={<CarouselFallback />}>
+              <ProductImageCarousel />
+            </Suspense>
+            <img
+              src={consumerChoiceBadge}
+              alt="Consumer Choice Award"
+              className="absolute top-2 right-2 w-14 h-14"
+            />
+          </div>
+          
+          {/* Product Info - Mobile */}
+          <div className="space-y-3 w-full">
+            {/* Urgency Banner + Sold Today */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <SellingFastBanner />
+              <RecentPurchaseBadge />
+            </div>
+            
+            {/* Title */}
+            <h1 className="text-2xl font-bold text-foreground">
+              {product.node.title}
+            </h1>
+
+            {/* Rating */}
+            <div 
+              className="flex items-center gap-2 flex-wrap cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' })}
+            >
+              <div className="flex">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                ))}
+              </div>
+              <span className="text-sm font-medium">4.8</span>
+              <span className="text-xs text-muted-foreground">(6,247 reviews)</span>
+              <span className="text-xs text-green-600 font-semibold">98% recommend</span>
+            </div>
+
+            {/* FOMO Urgency Panel - Mobile */}
+            <div className="p-3 bg-white border border-border rounded-lg space-y-2 shadow-sm w-full">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-bold text-primary uppercase tracking-wide flex items-center gap-1">
+                  <Clock className="h-3 w-3" /> Special Offer
+                </span>
+                <CountdownTimerDisplay />
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <StockIndicator />
+                <ViewerCount />
+              </div>
+              <ScarcityBar />
+            </div>
+
+            {/* Price Block - Mobile */}
+            <div className="p-3 bg-white border border-border rounded-lg shadow-sm w-full">
+              {(() => {
+                const displayCurrency = (isEU && currency === 'USD') ? 'EUR' : currency;
+                const effectiveComparePrice = hasDiscount ? comparePrice : price * 1.25;
+                const effectiveSavings = hasDiscount ? (comparePrice - price) : (price * 0.25);
+                const totalValue = effectiveComparePrice + sleepMaskPrice;
+                
+                return (
+                  <>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-2xl font-bold text-primary">
+                        {formatPrice(price, displayCurrency)}
+                      </span>
+                      <span className="text-base text-muted-foreground line-through">
+                        {formatPrice(effectiveComparePrice, displayCurrency)}
+                      </span>
+                      <span className="bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded">
+                        SAVE {formatPrice(effectiveSavings, displayCurrency)}
+                      </span>
+                    </div>
+                    <div className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap">
+                      <Gift className="h-3 w-3 text-primary flex-shrink-0" />
+                      <span>+ FREE Mask {formatPrice(sleepMaskPrice, displayCurrency)}</span>
+                      <span className="font-bold text-foreground">= {formatPrice(totalValue, displayCurrency)} Value</span>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+
+            {/* Free Gift - Mobile */}
+            <div className="p-3 bg-white border border-border rounded-lg shadow-sm w-full">
+              <div className="flex items-center gap-3">
+                <Popover open={isMaskColorPickerOpen} onOpenChange={setIsMaskColorPickerOpen}>
+                  <PopoverTrigger asChild>
+                    <button className="relative flex-shrink-0">
+                      <img
+                        src={sleepMaskColorImages[selectedMaskColor] || defaultMaskImage}
+                        alt={`${selectedMaskColor} Sleep Mask`}
+                        className="w-14 h-14 object-contain"
+                      />
+                      <div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground text-[9px] px-1 py-0.5 rounded-full font-medium flex items-center gap-0.5">
+                        {selectedMaskColor} <ChevronDown className="h-2 w-2" />
+                      </div>
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-56 p-2" align="start">
+                    <p className="text-xs font-medium mb-2">Choose mask color:</p>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {maskVariants.map((variant) => (
+                        <button
+                          key={variant.id}
+                          onClick={() => {
+                            setSelectedMaskColor(variant.color);
+                            setIsMaskColorPickerOpen(false);
+                          }}
+                          className={`p-1.5 rounded-lg border-2 transition-all ${
+                            selectedMaskColor === variant.color
+                              ? "border-primary bg-primary/5"
+                              : "border-transparent hover:border-muted"
+                          }`}
+                        >
+                          <img src={variant.image} alt={variant.color} className="w-full aspect-square object-contain" />
+                          <p className="text-[9px] text-center mt-0.5 font-medium truncate">{variant.color}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold">🎁 FREE Silk Sleep Mask</p>
+                  <p className="text-xs text-muted-foreground">Tap to choose color</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Testimonial - Mobile */}
+            <div className="flex items-center gap-2.5 p-2 bg-green-50/50 border border-green-100 rounded-lg w-full">
+              <img src={testimonialAvatar} alt="Sophie" className="w-10 h-10 rounded-full object-cover flex-shrink-0 ring-2 ring-green-200" />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1 mb-0.5">
+                  <div className="flex">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="h-2.5 w-2.5 fill-yellow-400 text-yellow-400" />
+                    ))}
+                  </div>
+                  <BadgeCheck className="h-3 w-3 text-blue-500" />
+                </div>
+                <p className="text-[10px] text-muted-foreground italic leading-tight line-clamp-2">
+                  "Finally sleeping through the night!"
+                </p>
+                <p className="text-[9px] text-muted-foreground">— Sophie K.</p>
+              </div>
+            </div>
+
+            {/* CTA - Mobile */}
+            <div className="space-y-2 w-full">
+              <Button
+                size="lg"
+                className="w-full h-14 text-lg font-bold bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 shadow-lg"
+                onClick={handleAddToCart}
+                disabled={isCheckingOut}
+              >
+                {isCheckingOut ? (
+                  <><Loader2 className="h-5 w-5 mr-2 animate-spin" />Adding...</>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <Gift className="h-5 w-5" />
+                    Claim Pillow + FREE Gift
+                  </span>
+                )}
+              </Button>
+              <p className="text-center text-xs text-red-600 font-medium">
+                ⚡ Offer expires at midnight
+              </p>
+              <div className="flex items-center justify-center gap-3 text-[10px] text-muted-foreground">
+                <span className="flex items-center gap-1"><Shield className="h-3 w-3" /> 100-Night Trial</span>
+                <span className="flex items-center gap-1"><Truck className="h-3 w-3" /> Free Returns</span>
+              </div>
+            </div>
+
+            {/* Trust Badges - Mobile */}
+            <div className="grid grid-cols-3 gap-2 py-2 text-center bg-muted/20 rounded-lg w-full">
+              <div className="flex flex-col items-center">
+                <Users className="w-4 h-4 mb-0.5 text-blue-600" />
+                <p className="text-xs font-bold">250K+</p>
+                <p className="text-[8px] text-muted-foreground">Sleepers</p>
+              </div>
+              <div className="flex flex-col items-center">
+                <Star className="w-4 h-4 mb-0.5 text-yellow-500 fill-yellow-500" />
+                <p className="text-xs font-bold">4.8/5</p>
+                <p className="text-[8px] text-muted-foreground">Rating</p>
+              </div>
+              <div className="flex flex-col items-center">
+                <BadgeCheck className="w-4 h-4 mb-0.5 text-green-600" />
+                <p className="text-xs font-bold">98%</p>
+                <p className="text-[8px] text-muted-foreground">Recommend</p>
+              </div>
+            </div>
+
+            <PaymentIcons />
+            <PolicyAccordion />
+          </div>
+        </div>
+
+        {/* Desktop Layout: Two columns */}
+        <div className="hidden md:grid md:grid-cols-2 gap-6 lg:gap-10 items-start">
+          {/* Product Images - Desktop */}
           <div className="relative">
             <Suspense fallback={<CarouselFallback />}>
               <ProductImageCarousel />
             </Suspense>
-            
-            {/* Consumer Choice Badge */}
             <img
               src={consumerChoiceBadge}
               alt="Consumer Choice Award"
-              className="absolute top-2 right-2 w-16 h-16 md:w-20 md:h-20"
+              className="absolute top-2 right-2 w-20 h-20"
             />
           </div>
 
-          {/* Product Info */}
+          {/* Product Info - Desktop */}
           <div className="space-y-3 md:space-y-4">
             {/* Urgency Banner + Sold Today */}
             <div className="flex items-center gap-2 flex-wrap">
