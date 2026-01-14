@@ -13,6 +13,7 @@ import { trackPageVisit } from "@/lib/pinterest";
 import { trackViewedProduct } from "@/lib/klaviyo";
 import { useHeaderHeight } from "@/hooks/useHeaderHeight";
 import { formatPrice } from "@/lib/formatPrice";
+import { trackATCClick } from "@/hooks/usePDPIntentTracking";
 import { useIsEU } from "@/hooks/useCurrencySymbol";
 import {
   Popover,
@@ -108,6 +109,9 @@ export const Hero = () => {
       toast.error("Product not available");
       return;
     }
+
+    // Track A/B intent event - fire and forget (never blocks UI)
+    trackATCClick();
 
     setIsCheckingOut(true);
     try {

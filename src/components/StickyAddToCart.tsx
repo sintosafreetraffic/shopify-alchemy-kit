@@ -8,6 +8,7 @@ import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import { ShoppingCart, Loader2, Plus, Minus, Check } from "lucide-react";
 import eyeMaskGift from "@/assets/eye-mask-gift-new.webp";
+import { trackStickyATCClick } from "@/hooks/usePDPIntentTracking";
 import { Badge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/formatPrice";
 import { useIsEU } from "@/hooks/useCurrencySymbol";
@@ -92,6 +93,9 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
       toast.error("Product not available");
       return;
     }
+
+    // Track A/B intent event for sticky ATC - fire and forget
+    trackStickyATCClick();
 
     setIsCheckingOut(true);
     try {
