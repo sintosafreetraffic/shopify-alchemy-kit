@@ -16,7 +16,7 @@ import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { supabase } from '@/integrations/supabase/client';
-import { AB_TEST_CONFIG, setTestEnabled, setTrafficSplit, getTrafficSplit, forceVariant, clearVariant, getABDebugInfo, type ABVariant } from '@/lib/abTesting';
+import { AB_TEST_CONFIG, setTestEnabled, setTrafficSplit, getTrafficSplit, fetchTrafficSplitFromDB, forceVariant, clearVariant, getABDebugInfo, type ABVariant } from '@/lib/abTesting';
 import { 
   Beaker, 
   TrendingUp, 
@@ -61,6 +61,16 @@ export default function UrgencyABTestTab() {
   const [debugInfo, setDebugInfo] = useState(getABDebugInfo());
   const [trafficSplit, setTrafficSplitState] = useState(getTrafficSplit());
   const [splitDrawerOpen, setSplitDrawerOpen] = useState(false);
+  const [savingSplit, setSavingSplit] = useState(false);
+
+  // Fetch traffic split from database on mount
+  useEffect(() => {
+    const loadTrafficSplit = async () => {
+      const dbSplit = await fetchTrafficSplitFromDB();
+      setTrafficSplitState(dbSplit);
+    };
+    loadTrafficSplit();
+  }, []);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -107,15 +117,18 @@ export default function UrgencyABTestTab() {
     setDebugInfo(getABDebugInfo());
   };
 
-  const refreshDebugInfo = () => {
+  const refreshDebugInfo = async () => {
     setDebugInfo(getABDebugInfo());
-    setTrafficSplitState(getTrafficSplit());
+    const dbSplit = await fetchTrafficSplitFromDB();
+    setTrafficSplitState(dbSplit);
   };
 
-  const handleSplitChange = (value: number[]) => {
+  const handleSplitChange = async (value: number[]) => {
     const percentB = value[0];
-    setTrafficSplit(percentB);
-    setTrafficSplitState(percentB);
+    setTrafficSplitState(percentB); // Optimistic UI update
+    setSavingSplit(true);
+    await setTrafficSplit(percentB);
+    setSavingSplit(false);
     setDebugInfo(getABDebugInfo());
   };
 
@@ -225,8 +238,11 @@ export default function UrgencyABTestTab() {
                     
                     {/* Slider */}
                     <div className="px-2">
-                      <Label className="text-sm text-muted-foreground mb-4 block">
+                      <Label className="text-sm text-muted-foreground mb-4 flex items-center gap-2">
                         Drag to adjust traffic split
+                        {savingSplit && (
+                          <span className="text-xs text-primary animate-pulse">Saving...</span>
+                        )}
                       </Label>
                       <Slider
                         value={[trafficSplit]}
@@ -235,6 +251,7 @@ export default function UrgencyABTestTab() {
                         max={100}
                         step={5}
                         className="w-full"
+                        disabled={savingSplit}
                       />
                       <div className="flex justify-between text-xs text-muted-foreground mt-2">
                         <span>100% A</span>
@@ -286,6 +303,7 @@ export default function UrgencyABTestTab() {
                     <div className="text-sm text-muted-foreground space-y-2">
                       <p><strong>Note:</strong></p>
                       <ul className="list-disc list-inside space-y-1 text-xs">
+                        <li>Split is stored in database — applies globally to all visitors</li>
                         <li>Changes apply immediately to new visitors</li>
                         <li>Existing visitors keep their assigned variant</li>
                         <li>Use "Clear" in Debug Controls to reset your own assignment</li>
