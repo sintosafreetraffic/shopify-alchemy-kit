@@ -379,16 +379,20 @@ export async function createStorefrontCheckout(
     throw new Error('No checkout URL returned from Shopify');
   }
 
-  // Build final checkout URL - use permanent Shopify domain for now
-  // TEMPORARY: www.risebynight.com still has DNS/SSL issues (421 Misdirected Request)
-  // Once DNS fully propagates away from Cloudflare, switch back to branded domain
+  // Build final checkout URL - use custom checkout subdomain
+  // DNS: checkout.risebynight.com CNAME → shops.myshopify.com
   let checkoutUrl = cart.checkoutUrl;
   
-  // Force to permanent Shopify domain until branded domain is fully working
-  const domainsToReplace = ['www.risebynight.com', 'risebynight.com'];
+  // Replace any Shopify domain with our custom checkout subdomain
+  const CUSTOM_CHECKOUT_DOMAIN = 'checkout.risebynight.com';
+  const domainsToReplace = [
+    SHOPIFY_STORE_PERMANENT_DOMAIN,
+    'www.risebynight.com', 
+    'risebynight.com'
+  ];
   for (const domain of domainsToReplace) {
     if (checkoutUrl.includes(domain)) {
-      checkoutUrl = checkoutUrl.replace(domain, SHOPIFY_STORE_PERMANENT_DOMAIN);
+      checkoutUrl = checkoutUrl.replace(domain, CUSTOM_CHECKOUT_DOMAIN);
       break;
     }
   }
