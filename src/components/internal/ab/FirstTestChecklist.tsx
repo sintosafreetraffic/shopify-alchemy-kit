@@ -1,259 +1,387 @@
 /**
- * First Test Checklist - Sanity check before going live
+ * Experimentation System Health Widget
  * 
- * Ensures operators verify critical items before running their first real test
+ * A read-only health indicator showing 5 database-driven auto-checks.
+ * No manual interaction required - all checks are computed from the database.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import {
   CheckCircle,
   AlertTriangle,
-  Rocket,
+  XCircle,
   RefreshCw,
   ExternalLink,
-  ClipboardCheck,
+  Activity,
+  HelpCircle,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
-interface ChecklistItem {
+// ============================================================================
+// Types
+// ============================================================================
+
+interface HealthCheck {
   id: string;
   label: string;
   description: string;
-  checkFn?: () => Promise<boolean>;
-  manualOnly?: boolean;
+  failureHint: string;
+  checkFn: () => Promise<{ passed: boolean; detail?: string }>;
 }
 
-const CHECKLIST_ITEMS: ChecklistItem[] = [
+interface CheckResult {
+  passed: boolean;
+  loading: boolean;
+  error: boolean;
+  detail?: string;
+}
+
+// ============================================================================
+// Auto-Check Definitions (5 database-driven checks)
+// ============================================================================
+
+const HEALTH_CHECKS: HealthCheck[] = [
   {
-    id: 'variant_assignment',
-    label: 'A/B variant assignment is stable',
-    description: 'Verify users don\'t flip between variants on page refresh',
-    manualOnly: true,
+    id: 'test_exists',
+    label: 'A/B tests exist',
+    description: 'At least one test created in the system',
+    failureHint: 'Create your first A/B test to begin experimenting.',
+    checkFn: async () => {
+      const { count, error } = await supabase
+        .from('ab_tests')
+        .select('*', { count: 'exact', head: true });
+      
+      if (error) throw error;
+      const exists = (count || 0) > 0;
+      return { 
+        passed: exists, 
+        detail: exists ? `${count} test(s) found` : 'No tests created yet' 
+      };
+    },
   },
   {
     id: 'events_flowing',
-    label: 'Events are flowing to ab_intent_events',
-    description: 'Check that clicks on CTA, price, etc. are being tracked',
+    label: 'Events flowing (24h)',
+    description: 'Intent events recorded in the last 24 hours',
+    failureHint: 'Ensure tracking is wired to PDP elements (ATC, price, etc.).',
     checkFn: async () => {
-      const { count } = await supabase
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { count, error } = await supabase
         .from('ab_intent_events')
-        .select('*', { count: 'exact', head: true });
-      return (count || 0) > 0;
+        .select('*', { count: 'exact', head: true })
+        .gte('timestamp', twentyFourHoursAgo);
+      
+      if (error) throw error;
+      const flowing = (count || 0) > 0;
+      return { 
+        passed: flowing, 
+        detail: flowing ? `${count} event(s) in last 24h` : 'No recent events' 
+      };
     },
   },
   {
-    id: 'test_created',
-    label: 'At least one test exists in ab_tests',
-    description: 'Create a test to verify the system is working',
+    id: 'cvr_sane',
+    label: 'CVR sane [0–1]',
+    description: 'All conversion rates are within valid range',
+    failureHint: 'Check for data corruption or calculation errors in CVR fields.',
     checkFn: async () => {
-      const { count } = await supabase
+      // Check for any CVR values outside [0, 1] range (excluding nulls)
+      const { data, error } = await supabase
         .from('ab_tests')
-        .select('*', { count: 'exact', head: true });
-      return (count || 0) > 0;
+        .select('id, cvr_a, cvr_b')
+        .or('cvr_a.lt.0,cvr_a.gt.1,cvr_b.lt.0,cvr_b.gt.1');
+      
+      if (error) throw error;
+      
+      // Filter out rows where both values are null (no issue)
+      const invalidRows = (data || []).filter(row => {
+        const aInvalid = row.cvr_a !== null && (row.cvr_a < 0 || row.cvr_a > 1);
+        const bInvalid = row.cvr_b !== null && (row.cvr_b < 0 || row.cvr_b > 1);
+        return aInvalid || bInvalid;
+      });
+      
+      const sane = invalidRows.length === 0;
+      return { 
+        passed: sane, 
+        detail: sane ? 'All CVR values valid' : `${invalidRows.length} test(s) with invalid CVR` 
+      };
     },
   },
   {
-    id: 'bis_reasonable',
-    label: 'BIS values look reasonable',
-    description: 'Verify BIS is not NaN, negative, or absurdly high (>€100)',
-    manualOnly: true,
+    id: 'bis_sane',
+    label: 'BIS sane (≥0)',
+    description: 'All BIS values are non-negative and valid',
+    failureHint: 'Review BIS calculation logic or check for corrupted metric data.',
+    checkFn: async () => {
+      // Check for any BIS values that are negative
+      const { data, error } = await supabase
+        .from('ab_tests')
+        .select('id, bis_final_a, bis_final_b')
+        .or('bis_final_a.lt.0,bis_final_b.lt.0');
+      
+      if (error) throw error;
+      
+      // Filter for actual negative values (not null)
+      const invalidRows = (data || []).filter(row => {
+        const aInvalid = row.bis_final_a !== null && row.bis_final_a < 0;
+        const bInvalid = row.bis_final_b !== null && row.bis_final_b < 0;
+        return aInvalid || bInvalid;
+      });
+      
+      const sane = invalidRows.length === 0;
+      return { 
+        passed: sane, 
+        detail: sane ? 'All BIS values valid' : `${invalidRows.length} test(s) with negative BIS` 
+      };
+    },
   },
   {
-    id: 'auto_stop_works',
-    label: 'Auto-stop recommendations appear correctly',
-    description: 'Simulate a scenario where auto-stop should trigger',
-    manualOnly: true,
-  },
-  {
-    id: 'archive_restore',
-    label: 'Archive and restore works',
-    description: 'Test archiving a dummy test and restoring it as draft',
-    manualOnly: true,
-  },
-  {
-    id: 'clarity_tagged',
-    label: 'Clarity is tagging A/B variants',
-    description: 'Open Clarity and verify ab_variant filter is available',
-    manualOnly: true,
-  },
-  {
-    id: 'pdp_tracking',
-    label: 'PDP elements are tracked',
-    description: 'Verify main ATC, sticky ATC, price section fire events',
-    manualOnly: true,
+    id: 'element_coverage',
+    label: 'Element coverage (≥3 types)',
+    description: 'Tracking spans multiple element types in last 7 days',
+    failureHint: 'Wire more PDP elements (price, reviews, gallery, etc.) to intent tracking.',
+    checkFn: async () => {
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      
+      // Get distinct element types from last 7 days
+      const { data, error } = await supabase
+        .from('ab_intent_events')
+        .select('element_type')
+        .gte('timestamp', sevenDaysAgo);
+      
+      if (error) throw error;
+      
+      const uniqueTypes = new Set((data || []).map(row => row.element_type));
+      const typeCount = uniqueTypes.size;
+      const sufficient = typeCount >= 3;
+      
+      return { 
+        passed: sufficient, 
+        detail: sufficient 
+          ? `${typeCount} element types tracked` 
+          : `Only ${typeCount} type(s) tracked – need ≥3` 
+      };
+    },
   },
 ];
 
-interface CheckState {
-  checked: boolean;
-  loading: boolean;
-  autoVerified?: boolean;
-}
+// ============================================================================
+// Operator Notes (passive, do not affect score)
+// ============================================================================
+
+const OPERATOR_NOTES = [
+  'Confirm variant assignment is stable (users don\'t flip between A/B on refresh).',
+  'Verify Microsoft Clarity is filtering by ab_variant.',
+  'Manually test one auto-stop scenario before relying on recommendations.',
+  'Check that archive/restore workflow works on a dummy test.',
+];
+
+// ============================================================================
+// Component
+// ============================================================================
 
 export default function FirstTestChecklist() {
-  const [checks, setChecks] = useState<Record<string, CheckState>>({});
-  const [runningAll, setRunningAll] = useState(false);
+  const [results, setResults] = useState<Record<string, CheckResult>>({});
+  const [isRunning, setIsRunning] = useState(false);
 
-  // Initialize check states
-  useEffect(() => {
-    const initial: Record<string, CheckState> = {};
-    CHECKLIST_ITEMS.forEach(item => {
-      initial[item.id] = { checked: false, loading: false };
+  // Initialize and run checks on mount
+  const runAllChecks = useCallback(async () => {
+    setIsRunning(true);
+    
+    // Set all to loading
+    const loadingState: Record<string, CheckResult> = {};
+    HEALTH_CHECKS.forEach(check => {
+      loadingState[check.id] = { passed: false, loading: true, error: false };
     });
-    setChecks(initial);
+    setResults(loadingState);
+
+    // Run all checks in parallel
+    const checkPromises = HEALTH_CHECKS.map(async (check) => {
+      try {
+        const result = await check.checkFn();
+        return { id: check.id, passed: result.passed, detail: result.detail, error: false };
+      } catch (e) {
+        console.error(`Health check failed: ${check.id}`, e);
+        return { id: check.id, passed: false, detail: 'Check failed', error: true };
+      }
+    });
+
+    const outcomes = await Promise.all(checkPromises);
+    
+    const newResults: Record<string, CheckResult> = {};
+    outcomes.forEach(outcome => {
+      newResults[outcome.id] = {
+        passed: outcome.passed,
+        loading: false,
+        error: outcome.error,
+        detail: outcome.detail,
+      };
+    });
+    
+    setResults(newResults);
+    setIsRunning(false);
   }, []);
 
-  const runAutoChecks = async () => {
-    setRunningAll(true);
-    
-    for (const item of CHECKLIST_ITEMS) {
-      if (item.checkFn) {
-        setChecks(prev => ({
-          ...prev,
-          [item.id]: { ...prev[item.id], loading: true },
-        }));
+  // Run checks on mount
+  useEffect(() => {
+    runAllChecks();
+  }, [runAllChecks]);
 
-        try {
-          const result = await item.checkFn();
-          setChecks(prev => ({
-            ...prev,
-            [item.id]: { checked: result, loading: false, autoVerified: true },
-          }));
-        } catch (e) {
-          setChecks(prev => ({
-            ...prev,
-            [item.id]: { checked: false, loading: false, autoVerified: true },
-          }));
-        }
-      }
+  // Calculate summary
+  const passedCount = Object.values(results).filter(r => r.passed && !r.error).length;
+  const totalChecks = HEALTH_CHECKS.length;
+  const allPassed = passedCount === totalChecks;
+  const progress = (passedCount / totalChecks) * 100;
+
+  // Get status icon for a check
+  const getStatusIcon = (result: CheckResult | undefined) => {
+    if (!result || result.loading) {
+      return <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />;
     }
-    
-    setRunningAll(false);
+    if (result.error) {
+      return <HelpCircle className="h-4 w-4 text-muted-foreground" />;
+    }
+    if (result.passed) {
+      return <CheckCircle className="h-4 w-4 text-green-600" />;
+    }
+    return <XCircle className="h-4 w-4 text-amber-500" />;
   };
 
-  const toggleManualCheck = (id: string) => {
-    setChecks(prev => ({
-      ...prev,
-      [id]: { ...prev[id], checked: !prev[id]?.checked },
-    }));
+  // Get row styling based on result
+  const getRowStyle = (result: CheckResult | undefined) => {
+    if (!result || result.loading || result.error) {
+      return 'bg-muted/20 border-transparent';
+    }
+    return result.passed 
+      ? 'bg-green-500/5 border-green-500/20' 
+      : 'bg-amber-500/5 border-amber-500/20';
   };
-
-  const completedCount = Object.values(checks).filter(c => c.checked).length;
-  const progress = (completedCount / CHECKLIST_ITEMS.length) * 100;
-  const allComplete = completedCount === CHECKLIST_ITEMS.length;
 
   return (
     <Card className="border-dashed">
-      <CardHeader>
+      <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-              <ClipboardCheck className="h-5 w-5 text-amber-600" />
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Activity className="h-5 w-5 text-primary" />
             </div>
             <div>
               <CardTitle className="text-base flex items-center gap-2">
-                First Test Checklist
-                <Badge variant="secondary" className="text-xs">
-                  {completedCount}/{CHECKLIST_ITEMS.length}
+                Experimentation System Health
+                <Badge 
+                  variant={allPassed ? 'default' : 'secondary'} 
+                  className="text-xs"
+                >
+                  {passedCount}/{totalChecks}
                 </Badge>
               </CardTitle>
               <CardDescription className="text-xs">
-                Verify before running real traffic
+                Automatic checks on A/B experiments &amp; tracking
               </CardDescription>
             </div>
           </div>
           <Button
             variant="outline"
             size="sm"
-            onClick={runAutoChecks}
-            disabled={runningAll}
+            onClick={runAllChecks}
+            disabled={isRunning}
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${runningAll ? 'animate-spin' : ''}`} />
-            Run Auto-Checks
+            <RefreshCw className={`h-4 w-4 mr-2 ${isRunning ? 'animate-spin' : ''}`} />
+            Re-run Checks
           </Button>
         </div>
       </CardHeader>
+
       <CardContent className="space-y-4">
         {/* Progress bar */}
         <div>
           <div className="flex items-center justify-between text-xs mb-1">
-            <span className="text-muted-foreground">Completion</span>
-            <span className="font-medium">{Math.round(progress)}%</span>
+            <span className="text-muted-foreground">System Status</span>
+            <span className="font-medium">{passedCount}/{totalChecks} passed</span>
           </div>
-          <Progress value={progress} className="h-2" />
+          <Progress 
+            value={progress} 
+            className={`h-2 ${allPassed ? '[&>div]:bg-green-500' : ''}`} 
+          />
         </div>
 
-        {/* Checklist items */}
+        {/* Health check items */}
         <div className="space-y-2">
-          {CHECKLIST_ITEMS.map(item => {
-            const state = checks[item.id] || { checked: false, loading: false };
+          {HEALTH_CHECKS.map(check => {
+            const result = results[check.id];
             
             return (
               <div
-                key={item.id}
-                className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
-                  state.checked 
-                    ? 'bg-green-500/5 border-green-500/20' 
-                    : 'bg-muted/30 border-transparent'
-                }`}
+                key={check.id}
+                className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${getRowStyle(result)}`}
               >
-                <Checkbox
-                  id={item.id}
-                  checked={state.checked}
-                  onCheckedChange={() => toggleManualCheck(item.id)}
-                  disabled={state.loading}
-                  className="mt-0.5"
-                />
-                <div className="flex-1 min-w-0">
-                  <label
-                    htmlFor={item.id}
-                    className={`text-sm font-medium cursor-pointer ${
-                      state.checked ? 'line-through text-muted-foreground' : ''
-                    }`}
-                  >
-                    {item.label}
-                  </label>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {item.description}
-                  </p>
+                <div className="shrink-0 mt-0.5">
+                  {getStatusIcon(result)}
                 </div>
-                <div className="shrink-0">
-                  {state.loading ? (
-                    <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />
-                  ) : state.autoVerified ? (
-                    state.checked ? (
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <AlertTriangle className="h-4 w-4 text-amber-500" />
-                    )
-                  ) : item.manualOnly ? (
-                    <Badge variant="outline" className="text-[10px]">Manual</Badge>
-                  ) : null}
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm font-medium ${result?.passed ? 'text-foreground' : ''}`}>
+                    {check.label}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {result?.error 
+                      ? 'Could not verify, retry later.' 
+                      : result?.detail || check.description
+                    }
+                  </p>
+                  {result && !result.loading && !result.passed && !result.error && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                      {check.failureHint}
+                    </p>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
 
-        {/* Completion message */}
-        {allComplete && (
-          <div className="flex items-center gap-3 p-4 bg-green-500/10 rounded-lg border border-green-500/20">
-            <Rocket className="h-6 w-6 text-green-600" />
-            <div>
-              <p className="text-sm font-medium text-green-700 dark:text-green-400">
-                Ready for Real Traffic!
-              </p>
-              <p className="text-xs text-muted-foreground">
-                All checks passed. Your experimentation platform is production-ready.
-              </p>
-            </div>
+        {/* Status message */}
+        {!isRunning && (
+          <div className={`flex items-center gap-3 p-3 rounded-lg border ${
+            allPassed 
+              ? 'bg-green-500/10 border-green-500/20' 
+              : 'bg-muted/30 border-transparent'
+          }`}>
+            {allPassed ? (
+              <>
+                <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
+                <p className="text-sm text-green-700 dark:text-green-400">
+                  System ready for serious experiments.
+                </p>
+              </>
+            ) : (
+              <>
+                <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
+                <p className="text-sm text-muted-foreground">
+                  Review failed checks before trusting test decisions.
+                </p>
+              </>
+            )}
           </div>
         )}
+
+        {/* Operator Notes (passive, informational only) */}
+        <div className="pt-3 border-t">
+          <p className="text-xs font-medium text-muted-foreground mb-2">
+            Operator Notes
+          </p>
+          <ul className="space-y-1.5">
+            {OPERATOR_NOTES.map((note, i) => (
+              <li key={i} className="text-xs text-muted-foreground flex items-start gap-2">
+                <span className="text-muted-foreground/50 shrink-0">•</span>
+                <span>{note}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
 
         {/* Clarity link */}
         <div className="pt-2 border-t">
