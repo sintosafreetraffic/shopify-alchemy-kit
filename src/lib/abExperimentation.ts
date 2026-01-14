@@ -9,6 +9,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 
 // ============================================================================
 // TYPES
@@ -390,13 +391,15 @@ export async function createTest(test: {
   traffic_split?: number;
   min_sample_size?: number;
 }): Promise<ABTest | null> {
+  const insertData = {
+    ...test,
+    variant_a_config: (test.variant_a_config || {}) as Json,
+    variant_b_config: (test.variant_b_config || {}) as Json,
+  };
+  
   const { data, error } = await supabase
     .from('ab_tests')
-    .insert([{
-      ...test,
-      variant_a_config: test.variant_a_config || {},
-      variant_b_config: test.variant_b_config || {},
-    }])
+    .insert([insertData])
     .select()
     .single();
 
@@ -412,9 +415,18 @@ export async function createTest(test: {
  * Update a test
  */
 export async function updateTest(id: string, updates: Partial<ABTest>): Promise<ABTest | null> {
+  // Cast JSON fields to satisfy Supabase types
+  const safeUpdates: Record<string, unknown> = { ...updates };
+  if (updates.variant_a_config) {
+    safeUpdates.variant_a_config = updates.variant_a_config as Json;
+  }
+  if (updates.variant_b_config) {
+    safeUpdates.variant_b_config = updates.variant_b_config as Json;
+  }
+  
   const { data, error } = await supabase
     .from('ab_tests')
-    .update(updates)
+    .update(safeUpdates)
     .eq('id', id)
     .select()
     .single();
