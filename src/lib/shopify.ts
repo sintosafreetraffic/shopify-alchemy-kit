@@ -379,20 +379,16 @@ export async function createStorefrontCheckout(
     throw new Error('No checkout URL returned from Shopify');
   }
 
-  // Build final checkout URL - use custom checkout subdomain
-  // DNS: checkout.risebynight.com CNAME → shops.myshopify.com
+  // Build final checkout URL - use permanent Shopify domain
+  // NOTE: Custom checkout subdomain requires adding it in Shopify Admin → 
+  // Settings → Domains → Connect existing before SSL will work
   let checkoutUrl = cart.checkoutUrl;
   
-  // Replace any Shopify domain with our custom checkout subdomain
-  const CUSTOM_CHECKOUT_DOMAIN = 'checkout.risebynight.com';
-  const domainsToReplace = [
-    SHOPIFY_STORE_PERMANENT_DOMAIN,
-    'www.risebynight.com', 
-    'risebynight.com'
-  ];
+  // Force to permanent Shopify domain (always works, has SSL)
+  const domainsToReplace = ['www.risebynight.com', 'risebynight.com'];
   for (const domain of domainsToReplace) {
     if (checkoutUrl.includes(domain)) {
-      checkoutUrl = checkoutUrl.replace(domain, CUSTOM_CHECKOUT_DOMAIN);
+      checkoutUrl = checkoutUrl.replace(domain, SHOPIFY_STORE_PERMANENT_DOMAIN);
       break;
     }
   }
