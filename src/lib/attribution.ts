@@ -1,6 +1,6 @@
 /**
  * Attribution capture and retrieval utility
- * Central source of truth for Pinterest epik and UTM data
+ * Central source of truth for Pinterest epik, UTM data, and A/B testing variant
  * 
  * Storage strategy:
  * - First-party cookie (_epik): SameSite=Lax, path=/, 30 day expiry
@@ -9,6 +9,7 @@
  */
 
 import { getContextId } from '@/lib/contextTracking';
+import { getCurrentVariant, getSessionId as getABSessionId } from '@/lib/abTesting';
 
 // Storage keys
 const EPIK_COOKIE_NAME = '_epik';
@@ -236,6 +237,21 @@ export function getAttributionForCheckout(): Array<{ key: string; value: string 
       }
     } catch {
       // Never block checkout if context_id fails
+    }
+    
+    // CRITICAL: Add A/B test variant and session for conversion tracking
+    // This enables purchase attribution to the correct A/B variant
+    try {
+      const abVariant = getCurrentVariant();
+      if (abVariant) {
+        attributes.push({ key: 'rbn_ab_variant', value: abVariant });
+      }
+      const abSessionId = getABSessionId();
+      if (abSessionId) {
+        attributes.push({ key: 'rbn_ab_session_id', value: abSessionId });
+      }
+    } catch {
+      // Never block checkout if A/B tracking fails
     }
     
     // CRITICAL: Add affiliate referral code for commission tracking
