@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      ab_auto_stop_log: {
+        Row: {
+          action_taken: string
+          created_at: string
+          id: string
+          metrics_at_trigger: Json
+          rule_triggered: string
+          test_id: string | null
+        }
+        Insert: {
+          action_taken: string
+          created_at?: string
+          id?: string
+          metrics_at_trigger: Json
+          rule_triggered: string
+          test_id?: string | null
+        }
+        Update: {
+          action_taken?: string
+          created_at?: string
+          id?: string
+          metrics_at_trigger?: Json
+          rule_triggered?: string
+          test_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ab_auto_stop_log_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "ab_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ab_events: {
         Row: {
           ab_variant: string
@@ -44,6 +79,227 @@ export type Database = {
           revenue?: number | null
           session_id?: string
           timestamp?: string
+        }
+        Relationships: []
+      }
+      ab_intent_events: {
+        Row: {
+          ab_variant: string
+          created_at: string
+          element_type: string
+          event_type: string
+          id: string
+          led_to_atc: boolean | null
+          led_to_checkout: boolean | null
+          page_path: string | null
+          session_id: string
+          test_id: string | null
+          timestamp: string
+        }
+        Insert: {
+          ab_variant: string
+          created_at?: string
+          element_type: string
+          event_type: string
+          id?: string
+          led_to_atc?: boolean | null
+          led_to_checkout?: boolean | null
+          page_path?: string | null
+          session_id: string
+          test_id?: string | null
+          timestamp?: string
+        }
+        Update: {
+          ab_variant?: string
+          created_at?: string
+          element_type?: string
+          event_type?: string
+          id?: string
+          led_to_atc?: boolean | null
+          led_to_checkout?: boolean | null
+          page_path?: string | null
+          session_id?: string
+          test_id?: string | null
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ab_intent_events_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "ab_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ab_test_archive: {
+        Row: {
+          archived_at: string
+          archived_by: string | null
+          id: string
+          is_restorable: boolean | null
+          learning_template: Json | null
+          lift_percent: number | null
+          metrics_summary: Json
+          snapshot_json: Json
+          test_id: string
+          test_name: string
+          total_revenue: number | null
+          total_sessions: number | null
+          winner: string | null
+        }
+        Insert: {
+          archived_at?: string
+          archived_by?: string | null
+          id?: string
+          is_restorable?: boolean | null
+          learning_template?: Json | null
+          lift_percent?: number | null
+          metrics_summary?: Json
+          snapshot_json: Json
+          test_id: string
+          test_name: string
+          total_revenue?: number | null
+          total_sessions?: number | null
+          winner?: string | null
+        }
+        Update: {
+          archived_at?: string
+          archived_by?: string | null
+          id?: string
+          is_restorable?: boolean | null
+          learning_template?: Json | null
+          lift_percent?: number | null
+          metrics_summary?: Json
+          snapshot_json?: Json
+          test_id?: string
+          test_name?: string
+          total_revenue?: number | null
+          total_sessions?: number | null
+          winner?: string | null
+        }
+        Relationships: []
+      }
+      ab_tests: {
+        Row: {
+          aov_a: number | null
+          aov_b: number | null
+          auto_stop_reason: string | null
+          auto_stop_rule: string | null
+          auto_stopped: boolean | null
+          bis_final_a: number | null
+          bis_final_b: number | null
+          bis_raw_a: number | null
+          bis_raw_b: number | null
+          confidence_adjuster_a: number | null
+          confidence_adjuster_b: number | null
+          conversions_a: number | null
+          conversions_b: number | null
+          created_at: string
+          cvr_a: number | null
+          cvr_b: number | null
+          description: string | null
+          ended_at: string | null
+          id: string
+          impact_zone: string
+          min_sample_size: number
+          name: string
+          power_zone_weight: number | null
+          projected_annual_impact: number | null
+          revenue_a: number | null
+          revenue_b: number | null
+          sessions_a: number | null
+          sessions_b: number | null
+          significance_method: string
+          significance_threshold: number
+          started_at: string | null
+          status: string
+          traffic_split: number
+          variant_a_config: Json
+          variant_b_config: Json
+          winner_declared_at: string | null
+          winner_reason: string | null
+          winner_variant: string | null
+        }
+        Insert: {
+          aov_a?: number | null
+          aov_b?: number | null
+          auto_stop_reason?: string | null
+          auto_stop_rule?: string | null
+          auto_stopped?: boolean | null
+          bis_final_a?: number | null
+          bis_final_b?: number | null
+          bis_raw_a?: number | null
+          bis_raw_b?: number | null
+          confidence_adjuster_a?: number | null
+          confidence_adjuster_b?: number | null
+          conversions_a?: number | null
+          conversions_b?: number | null
+          created_at?: string
+          cvr_a?: number | null
+          cvr_b?: number | null
+          description?: string | null
+          ended_at?: string | null
+          id?: string
+          impact_zone: string
+          min_sample_size?: number
+          name: string
+          power_zone_weight?: number | null
+          projected_annual_impact?: number | null
+          revenue_a?: number | null
+          revenue_b?: number | null
+          sessions_a?: number | null
+          sessions_b?: number | null
+          significance_method?: string
+          significance_threshold?: number
+          started_at?: string | null
+          status?: string
+          traffic_split?: number
+          variant_a_config?: Json
+          variant_b_config?: Json
+          winner_declared_at?: string | null
+          winner_reason?: string | null
+          winner_variant?: string | null
+        }
+        Update: {
+          aov_a?: number | null
+          aov_b?: number | null
+          auto_stop_reason?: string | null
+          auto_stop_rule?: string | null
+          auto_stopped?: boolean | null
+          bis_final_a?: number | null
+          bis_final_b?: number | null
+          bis_raw_a?: number | null
+          bis_raw_b?: number | null
+          confidence_adjuster_a?: number | null
+          confidence_adjuster_b?: number | null
+          conversions_a?: number | null
+          conversions_b?: number | null
+          created_at?: string
+          cvr_a?: number | null
+          cvr_b?: number | null
+          description?: string | null
+          ended_at?: string | null
+          id?: string
+          impact_zone?: string
+          min_sample_size?: number
+          name?: string
+          power_zone_weight?: number | null
+          projected_annual_impact?: number | null
+          revenue_a?: number | null
+          revenue_b?: number | null
+          sessions_a?: number | null
+          sessions_b?: number | null
+          significance_method?: string
+          significance_threshold?: number
+          started_at?: string | null
+          status?: string
+          traffic_split?: number
+          variant_a_config?: Json
+          variant_b_config?: Json
+          winner_declared_at?: string | null
+          winner_reason?: string | null
+          winner_variant?: string | null
         }
         Relationships: []
       }
