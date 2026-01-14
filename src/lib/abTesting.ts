@@ -57,41 +57,78 @@ export function setTestEnabled(enabled: boolean): void {
 }
 
 /**
- * Set the traffic split percentage for Variant B (0-100)
+ * Set the traffic split percentage for Variant B (0-100) - saves to DATABASE
  * E.g., 70 means 70% to B, 30% to A
  */
-export function setTrafficSplit(percentB: number): void {
+export async function setTrafficSplit(percentB: number): Promise<void> {
   const clampedPercent = Math.max(0, Math.min(100, percentB));
   AB_TEST_CONFIG.splitPercentB = clampedPercent;
+  
   try {
-    localStorage.setItem(AB_SPLIT_KEY, String(clampedPercent));
-  } catch {
-    // Ignore storage errors
+    const { error } = await supabase
+      .from('app_settings')
+      .upsert({ 
+        key: 'ab_traffic_split_percent_b', 
+        value: clampedPercent,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'key' });
+    
+    if (error) {
+      console.error('[ABTesting] Failed to save traffic split to database:', error);
+    } else {
+      console.log(`[ABTesting] Traffic split saved to database: ${100 - clampedPercent}% A / ${clampedPercent}% B`);
+    }
+  } catch (e) {
+    console.error('[ABTesting] Error saving traffic split:', e);
   }
-  console.log(`[ABTesting] Traffic split set to: ${100 - clampedPercent}% A / ${clampedPercent}% B`);
 }
 
 /**
- * Get the current traffic split percentage for Variant B
+ * Get the current traffic split percentage for Variant B (from memory)
  */
 export function getTrafficSplit(): number {
   return AB_TEST_CONFIG.splitPercentB;
 }
 
-// Initialize enabled state and split from localStorage on load
+/**
+ * Fetch the traffic split from the database and update in-memory config
+ * Call this on app initialization and when admin UI loads
+ */
+export async function fetchTrafficSplitFromDB(): Promise<number> {
+  try {
+    const { data, error } = await supabase
+      .from('app_settings')
+      .select('value')
+      .eq('key', 'ab_traffic_split_percent_b')
+      .single();
+    
+    if (error) {
+      console.warn('[ABTesting] Could not fetch traffic split from DB, using default:', error.message);
+      return AB_TEST_CONFIG.splitPercentB;
+    }
+    
+    const parsed = typeof data.value === 'number' ? data.value : parseInt(String(data.value), 10);
+    if (!isNaN(parsed) && parsed >= 0 && parsed <= 100) {
+      AB_TEST_CONFIG.splitPercentB = parsed;
+      console.log(`[ABTesting] Loaded traffic split from database: ${100 - parsed}% A / ${parsed}% B`);
+      return parsed;
+    }
+  } catch (e) {
+    console.error('[ABTesting] Error fetching traffic split:', e);
+  }
+  return AB_TEST_CONFIG.splitPercentB;
+}
+
+// Initialize enabled state from localStorage on load (enabled toggle stays local for quick access)
+// Traffic split is now fetched from database - see fetchTrafficSplitFromDB()
 if (typeof window !== 'undefined') {
   try {
     const storedEnabled = localStorage.getItem('rbn_ab_test_enabled');
     if (storedEnabled !== null) {
       AB_TEST_CONFIG.enabled = storedEnabled === 'true';
     }
-    const storedSplit = localStorage.getItem(AB_SPLIT_KEY);
-    if (storedSplit !== null) {
-      const parsed = parseInt(storedSplit, 10);
-      if (!isNaN(parsed) && parsed >= 0 && parsed <= 100) {
-        AB_TEST_CONFIG.splitPercentB = parsed;
-      }
-    }
+    // Fetch traffic split from database on module load
+    fetchTrafficSplitFromDB();
   } catch {
     // Ignore
   }
