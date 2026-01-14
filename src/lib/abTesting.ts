@@ -226,7 +226,7 @@ export function getCurrentVariant(): ABVariant | null {
 // SESSION ID (reuse existing analytics session)
 // ============================================================================
 
-function getSessionId(): string {
+export function getSessionId(): string {
   try {
     let sessionId = sessionStorage.getItem('analytics_session_id');
     if (!sessionId) {

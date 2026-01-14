@@ -141,6 +141,9 @@ interface AttributionData {
   referrer: string | null;
   rbn_context_id: string | null;
   rbn_ref_code: string | null; // Affiliate referral code
+  // A/B testing attribution
+  rbn_ab_variant: string | null;
+  rbn_ab_session_id: string | null;
   // Match signals from context table (populated via joinPinterestContext)
   client_ip_address: string | null;
   client_user_agent: string | null;
@@ -172,6 +175,9 @@ function extractAttributionFromOrder(order: any): AttributionData {
     referrer: findAttr('referrer', '_referrer') || order.referring_site,
     rbn_context_id: findAttr('rbn_context_id'),
     rbn_ref_code: findAttr('rbn_ref_code', 'ref_code', 'affiliate_code'), // Affiliate referral code
+    // A/B testing attribution
+    rbn_ab_variant: findAttr('rbn_ab_variant'),
+    rbn_ab_session_id: findAttr('rbn_ab_session_id'),
     // These will be populated by joinPinterestContext
     client_ip_address: null,
     client_user_agent: null,
@@ -850,6 +856,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
       has_landing_page: !!attribution.landing_page,
       has_context_id: !!attribution.rbn_context_id,
       has_ref_code: !!attribution.rbn_ref_code,
+      has_ab_variant: !!attribution.rbn_ab_variant,
+      ab_variant: attribution.rbn_ab_variant,
+      has_ab_session: !!attribution.rbn_ab_session_id,
       has_ip: !!attribution.client_ip_address,
       has_ua: !!attribution.client_user_agent,
     });
@@ -886,6 +895,56 @@ Deno.serve(async (req: Request): Promise<Response> => {
           }
         }
       }
+    }
+
+    // ============================================================
+    // A/B TEST CONVERSION TRACKING
+    // Track purchase event to ab_events table for funnel analysis
+    // ============================================================
+    if (shouldTrackPurchase && attribution.rbn_ab_variant) {
+      try {
+        const abSessionId = attribution.rbn_ab_session_id || `purchase_${order.id}`;
+        const orderValue = parseFloat(order.total_price);
+        
+        const { error: abEventError } = await supabase
+          .from('ab_events')
+          .insert({
+            event_name: 'purchase',
+            session_id: abSessionId,
+            ab_variant: attribution.rbn_ab_variant,
+            revenue: orderValue,
+            payload: {
+              order_id: String(order.id),
+              order_number: order.order_number,
+              currency: order.currency || 'USD',
+              email: email,
+              items: (order.line_items || []).map((item: any) => ({
+                product_id: item.product_id,
+                title: item.title,
+                quantity: item.quantity,
+                price: parseFloat(item.price),
+              })),
+              timestamp: new Date().toISOString(),
+              source: 'shopify_webhook',
+            },
+          });
+        
+        if (abEventError) {
+          console.error('[A/B] Failed to track purchase event:', abEventError.message);
+        } else {
+          console.log('[A/B] ✅ Purchase event tracked:', {
+            variant: attribution.rbn_ab_variant,
+            session_id: abSessionId,
+            revenue: orderValue,
+            order_id: order.id,
+          });
+        }
+      } catch (abError: any) {
+        console.error('[A/B] Purchase tracking error:', abError.message);
+        // Non-blocking - continue with other processing
+      }
+    } else if (shouldTrackPurchase && !attribution.rbn_ab_variant) {
+      console.log('[A/B] No variant in order attributes, skipping A/B purchase tracking');
     }
 
     // Extract product names from line items and map to our product categories
