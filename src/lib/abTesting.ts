@@ -32,7 +32,8 @@ export interface ABConfig {
 }
 
 // Master A/B test configuration (mutable for admin toggle)
-export let AB_TEST_CONFIG: ABConfig = {
+// IMPORTANT: Use mutation (not reassignment) so all importers see the same object
+export const AB_TEST_CONFIG: ABConfig = {
   enabled: true, // Set to false to disable all A/B testing
   testName: 'urgency_test_v1',
   splitPercentB: 50, // Default 50% to B (50/50 split)
@@ -47,7 +48,7 @@ export let AB_TEST_CONFIG: ABConfig = {
  * Persists to localStorage for admin control
  */
 export function setTestEnabled(enabled: boolean): void {
-  AB_TEST_CONFIG = { ...AB_TEST_CONFIG, enabled };
+  AB_TEST_CONFIG.enabled = enabled;
   try {
     localStorage.setItem('rbn_ab_test_enabled', String(enabled));
   } catch {
@@ -61,7 +62,7 @@ export function setTestEnabled(enabled: boolean): void {
  */
 export function setTrafficSplit(percentB: number): void {
   const clampedPercent = Math.max(0, Math.min(100, percentB));
-  AB_TEST_CONFIG = { ...AB_TEST_CONFIG, splitPercentB: clampedPercent };
+  AB_TEST_CONFIG.splitPercentB = clampedPercent;
   try {
     localStorage.setItem(AB_SPLIT_KEY, String(clampedPercent));
   } catch {
@@ -82,13 +83,13 @@ if (typeof window !== 'undefined') {
   try {
     const storedEnabled = localStorage.getItem('rbn_ab_test_enabled');
     if (storedEnabled !== null) {
-      AB_TEST_CONFIG = { ...AB_TEST_CONFIG, enabled: storedEnabled === 'true' };
+      AB_TEST_CONFIG.enabled = storedEnabled === 'true';
     }
     const storedSplit = localStorage.getItem(AB_SPLIT_KEY);
     if (storedSplit !== null) {
       const parsed = parseInt(storedSplit, 10);
       if (!isNaN(parsed) && parsed >= 0 && parsed <= 100) {
-        AB_TEST_CONFIG = { ...AB_TEST_CONFIG, splitPercentB: parsed };
+        AB_TEST_CONFIG.splitPercentB = parsed;
       }
     }
   } catch {
