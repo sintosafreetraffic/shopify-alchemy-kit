@@ -1,6 +1,12 @@
 /**
  * Active Tests Tab - Main experimentation dashboard
  * Shows active tests with Executive Summary, BIS, and auto-stop indicators
+ * 
+ * HARDENED for production with:
+ * - Safe number formatting (no NaN)
+ * - Clear status labels (Exploratory vs Decision-Ready)
+ * - Auto-stop RECOMMENDATIONS (never silent stops)
+ * - Projected impact with disclaimer
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -23,7 +29,14 @@ import {
   RefreshCw,
   Plus,
   DollarSign,
+  Info,
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import {
   type ABTest,
   fetchTests,
@@ -32,17 +45,32 @@ import {
   checkAutoStopRules,
   POWER_ZONES,
 } from '@/lib/abExperimentation';
+import {
+  safeNumber,
+  safePercent,
+  safeBIS,
+  safeLift,
+  formatLift,
+  validateTestData,
+  getTestReadiness,
+  getReadinessLabel,
+  getReadinessColor,
+  getAutoStopCopy,
+  PROJECTED_IMPACT_DISCLAIMER,
+} from '@/lib/abSafetyUtils';
 import CreateTestDialog from './CreateTestDialog';
+import FirstTestChecklist from './FirstTestChecklist';
 
 interface ExecutiveSummaryProps {
   test: ABTest;
 }
 
 function ExecutiveSummary({ test }: ExecutiveSummaryProps) {
-  const bisLift = test.bis_final_a > 0 
-    ? ((test.bis_final_b - test.bis_final_a) / test.bis_final_a) * 100 
-    : 0;
-  const isPositive = bisLift > 0;
+  const liftPercent = safeLift(test.bis_final_a, test.bis_final_b);
+  const isPositive = liftPercent !== null && liftPercent > 0;
+  const liftDisplay = formatLift(liftPercent, 'Calculating...');
+  const annualImpact = test.projected_annual_impact;
+  const hasValidImpact = Number.isFinite(annualImpact) && annualImpact !== 0;
 
   return (
     <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-4 border border-primary/20">
@@ -51,16 +79,31 @@ function ExecutiveSummary({ test }: ExecutiveSummaryProps) {
           <DollarSign className="h-5 w-5 text-primary" />
           <span className="text-sm font-medium">Executive Summary</span>
         </div>
-        <Badge variant={isPositive ? 'default' : 'destructive'}>
-          {isPositive ? '+' : ''}{bisLift.toFixed(1)}% BIS
+        <Badge variant={isPositive ? 'default' : liftPercent === null ? 'secondary' : 'destructive'}>
+          {liftDisplay} BIS
         </Badge>
       </div>
       <p className="text-lg font-semibold mt-2">
-        Variant {isPositive ? 'B' : 'A'} is pacing {isPositive ? '+' : ''}{bisLift.toFixed(1)}% BIS over 48h
+        {liftPercent !== null 
+          ? `Variant ${isPositive ? 'B' : 'A'} is pacing ${liftDisplay} BIS`
+          : 'Collecting baseline data...'
+        }
       </p>
-      <p className="text-sm text-muted-foreground">
-        Projected annualized impact: €{Math.abs(test.projected_annual_impact).toLocaleString()}
-      </p>
+      <div className="flex items-center gap-1 mt-1">
+        <p className="text-sm text-muted-foreground">
+          Projected annual impact: {hasValidImpact ? `€${Math.abs(annualImpact).toLocaleString()}` : '—'}
+        </p>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs">
+              <p className="text-xs">{PROJECTED_IMPACT_DISCLAIMER}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
     </div>
   );
 }
@@ -73,20 +116,24 @@ interface TestCardProps {
 function TestCard({ test, onRefresh }: TestCardProps) {
   const [updating, setUpdating] = useState(false);
   
-  const totalSessions = test.sessions_a + test.sessions_b;
-  const progressToMinSample = Math.min(
-    ((test.sessions_a + test.sessions_b) / (test.min_sample_size * 2)) * 100,
-    100
-  );
+  const totalSessions = (test.sessions_a || 0) + (test.sessions_b || 0);
+  const minSampleTotal = (test.min_sample_size || 300) * 2;
+  const progressToMinSample = Math.min((totalSessions / minSampleTotal) * 100, 100);
 
   const { probabilityBBetter, significanceReached } = calculateBayesianSignificance(
-    test.conversions_a,
-    test.sessions_a,
-    test.conversions_b,
-    test.sessions_b
+    test.conversions_a || 0,
+    test.sessions_a || 0,
+    test.conversions_b || 0,
+    test.sessions_b || 0
   );
 
   const autoStopResult = checkAutoStopRules(test);
+  const autoStopCopy = autoStopResult.shouldStop 
+    ? getAutoStopCopy(autoStopResult.rule || '', autoStopResult.reason || '')
+    : null;
+  
+  const readiness = getTestReadiness(test);
+  const validation = validateTestData(test);
 
   const handleStatusChange = async (newStatus: 'active' | 'paused') => {
     setUpdating(true);
@@ -113,6 +160,9 @@ function TestCard({ test, onRefresh }: TestCardProps) {
                 {test.name}
                 {test.status === 'active' && <Badge variant="default" className="text-xs">Live</Badge>}
                 {test.status === 'paused' && <Badge variant="secondary" className="text-xs">Paused</Badge>}
+                <Badge variant={getReadinessColor(readiness)} className="text-xs">
+                  {getReadinessLabel(readiness)}
+                </Badge>
               </CardTitle>
               <CardDescription>
                 {test.impact_zone.replace('_', ' ')} • Power: {(zoneConfig.weight * 100).toFixed(0)}%
@@ -146,15 +196,46 @@ function TestCard({ test, onRefresh }: TestCardProps) {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Auto-stop warning */}
-        {autoStopResult.shouldStop && (
-          <div className="flex items-center gap-2 p-3 bg-amber-500/10 rounded-lg border border-amber-500/20">
-            <AlertTriangle className="h-5 w-5 text-amber-500" />
+        {/* Validation warnings */}
+        {validation.errors.length > 0 && (
+          <div className="flex items-start gap-2 p-3 bg-red-500/10 rounded-lg border border-red-500/20">
+            <AlertTriangle className="h-5 w-5 text-red-500 shrink-0" />
             <div>
-              <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
-                Auto-Stop Recommended
+              <p className="text-sm font-medium text-red-600 dark:text-red-400">Data Issue</p>
+              {validation.errors.map((err, i) => (
+                <p key={i} className="text-xs text-muted-foreground">{err}</p>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Auto-stop recommendation (NOT auto-stopped) */}
+        {autoStopCopy && (
+          <div className={`flex items-center gap-2 p-3 rounded-lg border ${
+            autoStopCopy.severity === 'warning' 
+              ? 'bg-amber-500/10 border-amber-500/20' 
+              : autoStopCopy.severity === 'success'
+              ? 'bg-green-500/10 border-green-500/20'
+              : 'bg-blue-500/10 border-blue-500/20'
+          }`}>
+            {autoStopCopy.severity === 'success' ? (
+              <CheckCircle className="h-5 w-5 text-green-600" />
+            ) : (
+              <AlertTriangle className={`h-5 w-5 ${
+                autoStopCopy.severity === 'warning' ? 'text-amber-500' : 'text-blue-500'
+              }`} />
+            )}
+            <div>
+              <p className={`text-sm font-medium ${
+                autoStopCopy.severity === 'warning' 
+                  ? 'text-amber-600 dark:text-amber-400'
+                  : autoStopCopy.severity === 'success'
+                  ? 'text-green-600 dark:text-green-400'
+                  : 'text-blue-600 dark:text-blue-400'
+              }`}>
+                {autoStopCopy.title}
               </p>
-              <p className="text-xs text-muted-foreground">{autoStopResult.reason}</p>
+              <p className="text-xs text-muted-foreground">{autoStopCopy.description}</p>
             </div>
           </div>
         )}
@@ -178,15 +259,15 @@ function TestCard({ test, onRefresh }: TestCardProps) {
             <div className="space-y-1">
               <div className="flex justify-between text-xs">
                 <span>Sessions</span>
-                <span>{test.sessions_a.toLocaleString()}</span>
+                <span>{safeNumber(test.sessions_a)}</span>
               </div>
               <div className="flex justify-between text-xs">
                 <span>CVR</span>
-                <span>{(test.cvr_a * 100).toFixed(2)}%</span>
+                <span>{safePercent(test.cvr_a, 2)}</span>
               </div>
               <div className="flex justify-between text-xs">
                 <span>BIS</span>
-                <span>€{test.bis_final_a.toFixed(2)}</span>
+                <span>{safeBIS(test.bis_final_a)}</span>
               </div>
             </div>
           </div>
@@ -198,15 +279,15 @@ function TestCard({ test, onRefresh }: TestCardProps) {
             <div className="space-y-1">
               <div className="flex justify-between text-xs">
                 <span>Sessions</span>
-                <span>{test.sessions_b.toLocaleString()}</span>
+                <span>{safeNumber(test.sessions_b)}</span>
               </div>
               <div className="flex justify-between text-xs">
                 <span>CVR</span>
-                <span>{(test.cvr_b * 100).toFixed(2)}%</span>
+                <span>{safePercent(test.cvr_b, 2)}</span>
               </div>
               <div className="flex justify-between text-xs">
                 <span>BIS</span>
-                <span className="font-medium">€{test.bis_final_b.toFixed(2)}</span>
+                <span className="font-medium">{safeBIS(test.bis_final_b)}</span>
               </div>
             </div>
           </div>
@@ -317,6 +398,11 @@ export default function ActiveTestsTab() {
             <TestCard key={test.id} test={test} onRefresh={loadTests} />
           ))}
         </div>
+      )}
+
+      {/* First Test Checklist - show when no tests or first test */}
+      {tests.length <= 1 && (
+        <FirstTestChecklist />
       )}
 
       <CreateTestDialog 
