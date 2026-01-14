@@ -52,6 +52,7 @@ import {
   Target,
   Percent,
   Info,
+  Beaker,
 } from "lucide-react";
 import { 
   LineChart, 
@@ -82,6 +83,7 @@ import WeeklyReviewTab from "@/components/internal/WeeklyReviewTab";
 import PinterestSourceTruthTab from "@/components/internal/PinterestSourceTruthTab";
 import HeroABTestTab from "@/components/internal/HeroABTestTab";
 import UrgencyABTestTab from "@/components/internal/UrgencyABTestTab";
+import ABExperimentationPlatform from "@/components/internal/ab/ABExperimentationPlatform";
 import { useAdsReporting, DATE_PRESETS } from "@/hooks/useAdsReporting";
 
 interface AnalyticsStats {
@@ -767,10 +769,14 @@ const QuizRevealTracking = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full max-w-7xl grid-cols-11">
+          <TabsList className="grid w-full max-w-7xl grid-cols-12">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
               <span className="hidden sm:inline">Overview</span>
+            </TabsTrigger>
+            <TabsTrigger value="experiments" className="flex items-center gap-2">
+              <Beaker className="w-4 h-4 text-primary" />
+              <span className="hidden sm:inline">Experiments</span>
             </TabsTrigger>
             <TabsTrigger value="phase4" className="flex items-center gap-2">
               <Shield className="w-4 h-4" />
@@ -813,6 +819,11 @@ const QuizRevealTracking = () => {
               <span className="hidden sm:inline">Weekly</span>
             </TabsTrigger>
           </TabsList>
+
+          {/* A/B Experimentation Platform Tab */}
+          <TabsContent value="experiments" className="mt-6">
+            <ABExperimentationPlatform />
+          </TabsContent>
 
           {/* Hero A/B Test Tab */}
           <TabsContent value="heroab" className="mt-6">
