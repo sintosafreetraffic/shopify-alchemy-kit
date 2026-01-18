@@ -48,7 +48,9 @@ import {
   Info,
   ShieldAlert,
   Clock,
+  Paintbrush,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import FirstTestChecklist from './FirstTestChecklist';
 
 interface FunnelData {
@@ -546,6 +548,7 @@ function calculateTestStatus(
 // ============================================================================
 
 export default function UrgencyTestsView() {
+  const navigate = useNavigate();
   const [funnelData, setFunnelData] = useState<FunnelData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -926,6 +929,14 @@ export default function UrgencyTestsView() {
           </div>
         </div>
         <div className="flex items-center gap-4">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => navigate('/internal/visual-editor?page=ergonomic-pillow')}
+          >
+            <Paintbrush className="h-4 w-4 mr-2" />
+            Visual Editor
+          </Button>
           <div className="flex items-center gap-2">
             <Switch 
               id="test-toggle" 
