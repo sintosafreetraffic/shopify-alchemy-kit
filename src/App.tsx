@@ -169,6 +169,7 @@ const SleepQuizDiagnostics = React.lazy(() => import("./pages/internal/SleepQuiz
 const QuizRevealTracking = React.lazy(() => import("./pages/internal/QuizRevealTracking"));
 const AnalyticsDiagnostics = React.lazy(() => import("./pages/internal/AnalyticsDiagnostics"));
 const ContextDiagnostics = React.lazy(() => import("./pages/internal/ContextDiagnostics"));
+const VisualEditorPage = React.lazy(() => import("./pages/internal/VisualEditorPage"));
 const SleepSources = React.lazy(() => import("./pages/settings/SleepSources"));
 const SleepSourcesDebug = React.lazy(() => import("./pages/debug/SleepSourcesDebug"));
 
@@ -306,6 +307,7 @@ const AppContent = () => {
             <Route path="/admin/ab-testing" element={<Navigate to="/risebynight/tracking?tab=urgencyab" replace />} />
             <Route path="/debug/ab-status" element={<Navigate to="/risebynight/tracking?tab=urgencyab" replace />} />
             <Route path="/internal/sleep-quiz-diagnostics" element={<SleepQuizDiagnostics />} />
+            <Route path="/internal/visual-editor" element={<VisualEditorPage />} />
             <Route path="/risebynight/tracking" element={<QuizRevealTracking />} />
             <Route path="/debug/analytics" element={<AnalyticsDiagnostics />} />
             <Route path="/debug/sleep-sources" element={<SleepSourcesDebug />} />
