@@ -14,6 +14,7 @@ import { trackViewedProduct } from "@/lib/klaviyo";
 import { useHeaderHeight } from "@/hooks/useHeaderHeight";
 import { formatPrice } from "@/lib/formatPrice";
 import { trackATCClick } from "@/hooks/usePDPIntentTracking";
+import { trackABEvent } from "@/lib/abTesting";
 import { useIsEU } from "@/hooks/useCurrencySymbol";
 import {
   Popover,
@@ -110,8 +111,21 @@ export const Hero = () => {
       return;
     }
 
+    const variant = product.node.variants.edges[0]?.node;
+    
     // Track A/B intent event - fire and forget (never blocks UI)
     trackATCClick();
+    
+    // Track A/B funnel event (for ab_funnel_comparison view)
+    trackABEvent({
+      eventName: 'add_to_cart',
+      revenue: parseFloat(variant?.price.amount || "0"),
+      payload: {
+        productId: product.node.id,
+        productTitle: product.node.title,
+        variantId: variant?.id,
+      },
+    });
 
     setIsCheckingOut(true);
     try {
