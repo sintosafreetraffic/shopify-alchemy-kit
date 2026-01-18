@@ -365,3 +365,11 @@ verify_jwt = false
 # Affiliate Discount Sync - Syncs codes with Shopify (requires JWT for auth)
 [functions.affiliate-discount-sync]
 verify_jwt = true
+
+# ============================================================
+# A/B TESTING PROBABILITY COMPUTATION
+# ============================================================
+
+# A/B Probability Compute - Server-side Bayesian probability (public, returns aggregates only)
+[functions.ab-probability-compute]
+verify_jwt = false
