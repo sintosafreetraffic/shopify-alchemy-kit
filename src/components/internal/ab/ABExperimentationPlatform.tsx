@@ -32,10 +32,10 @@ export default function ABExperimentationPlatform() {
           <div>
             <h2 className="text-xl font-semibold flex items-center gap-2">
               Experimentation Platform
-              <Badge variant="secondary" className="text-xs">v2.0</Badge>
+              <Badge variant="secondary" className="text-xs">v2.1</Badge>
             </h2>
             <p className="text-sm text-muted-foreground">
-              Scientific A/B testing with Bayesian analysis & auto-stop rules
+              Measure impact, decide winners, archive learnings
             </p>
           </div>
         </div>
@@ -50,6 +50,24 @@ export default function ABExperimentationPlatform() {
           </div>
         </div>
       </div>
+
+      {/* Mental Model Explanation */}
+      <Card className="bg-muted/30 border-dashed">
+        <CardContent className="py-4">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <Shield className="w-4 h-4 text-primary" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">This is a tracking &amp; decision system, not a page editor.</p>
+              <p className="text-xs text-muted-foreground">
+                Variants are implemented in code (e.g. <code className="px-1 py-0.5 bg-muted rounded text-xs">HeroVariantB</code>, <code className="px-1 py-0.5 bg-muted rounded text-xs">useABVariant()</code>). 
+                This dashboard measures impact, declares winners, and archives learnings.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
@@ -87,18 +105,22 @@ export default function ABExperimentationPlatform() {
       {/* Platform info footer */}
       <Card className="bg-muted/30">
         <CardContent className="py-4">
-          <div className="flex items-start gap-4 text-xs text-muted-foreground">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs text-muted-foreground">
             <div>
               <p className="font-medium text-foreground mb-1">Statistical Method</p>
-              <p>Bayesian with 95% credible interval, minimum 300 sessions per variant</p>
+              <p>Bayesian with 95% credible interval, min 300 sessions/variant</p>
             </div>
             <div>
               <p className="font-medium text-foreground mb-1">Auto-Stop Rules</p>
-              <p>Performance gap (&gt;20% worse), significance reached, 48h plateau</p>
+              <p>Recommendation only — never auto-stops without confirmation</p>
+            </div>
+            <div>
+              <p className="font-medium text-foreground mb-1">Overlap Rules</p>
+              <p>Max 3 active tests, only 1 may affect pricing/CTA/urgency</p>
             </div>
             <div>
               <p className="font-medium text-foreground mb-1">Zone Guardrails</p>
-              <p>Max 3 tests, price/urgency exclusive, no overlapping impact zones</p>
+              <p>No overlapping impact zones between concurrent tests</p>
             </div>
           </div>
         </CardContent>

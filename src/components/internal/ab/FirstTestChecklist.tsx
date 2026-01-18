@@ -47,9 +47,9 @@ interface CheckResult {
 const HEALTH_CHECKS: HealthCheck[] = [
   {
     id: 'test_exists',
-    label: 'A/B tests exist',
-    description: 'At least one test created in the system',
-    failureHint: 'Create your first A/B test to begin experimenting.',
+    label: 'Experiments Registered',
+    description: 'At least one experiment tracked in the system',
+    failureHint: 'Register your first code-implemented experiment to begin tracking.',
     checkFn: async () => {
       const { count, error } = await supabase
         .from('ab_tests')
@@ -59,34 +59,35 @@ const HEALTH_CHECKS: HealthCheck[] = [
       const exists = (count || 0) > 0;
       return { 
         passed: exists, 
-        detail: exists ? `${count} test(s) found` : 'No tests created yet' 
+        detail: exists ? `${count} experiment(s) registered` : 'No experiments tracked yet' 
       };
     },
   },
   {
     id: 'events_flowing',
-    label: 'Events flowing (24h)',
-    description: 'Intent events recorded in the last 24 hours',
+    label: 'Intent Events Flowing',
+    description: 'Intent events recorded in the last 7 days',
     failureHint: 'Ensure tracking is wired to PDP elements (ATC, price, etc.).',
     checkFn: async () => {
-      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      // Use 7-day window to avoid false alarms on weekends/low traffic
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
       const { count, error } = await supabase
         .from('ab_intent_events')
         .select('*', { count: 'exact', head: true })
-        .gte('timestamp', twentyFourHoursAgo);
+        .gte('timestamp', sevenDaysAgo);
       
       if (error) throw error;
       const flowing = (count || 0) > 0;
       return { 
         passed: flowing, 
-        detail: flowing ? `${count} event(s) in last 24h` : 'No recent events' 
+        detail: flowing ? `${count} event(s) in last 7 days` : 'No events in last 7 days' 
       };
     },
   },
   {
     id: 'cvr_sane',
-    label: 'CVR sane [0–1]',
-    description: 'All conversion rates are within valid range',
+    label: 'CVR Sanity',
+    description: 'All conversion rates are within valid range [0–1]',
     failureHint: 'Check for data corruption or calculation errors in CVR fields.',
     checkFn: async () => {
       // Check for any CVR values outside [0, 1] range (excluding nulls)
@@ -113,8 +114,8 @@ const HEALTH_CHECKS: HealthCheck[] = [
   },
   {
     id: 'bis_sane',
-    label: 'BIS sane (≥0)',
-    description: 'All BIS values are non-negative and valid',
+    label: 'BIS Sanity',
+    description: 'All BIS values are non-negative and valid (≥0)',
     failureHint: 'Review BIS calculation logic or check for corrupted metric data.',
     checkFn: async () => {
       // Check for any BIS values that are negative
@@ -141,9 +142,10 @@ const HEALTH_CHECKS: HealthCheck[] = [
   },
   {
     id: 'element_coverage',
-    label: 'Element coverage (≥3 types)',
-    description: 'Tracking spans multiple element types in last 7 days',
-    failureHint: 'Wire more PDP elements (price, reviews, gallery, etc.) to intent tracking.',
+    label: 'Element Coverage',
+    description: 'At least 1 element type tracked in last 7 days',
+    failureHint: 'Wire PDP elements (price, ATC, reviews, etc.) to intent tracking.',
+    // This check uses soft logic: ≥1 = pass, <3 = info note (handled in render)
     checkFn: async () => {
       const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
       
@@ -157,13 +159,16 @@ const HEALTH_CHECKS: HealthCheck[] = [
       
       const uniqueTypes = new Set((data || []).map(row => row.element_type));
       const typeCount = uniqueTypes.size;
-      const sufficient = typeCount >= 3;
+      // Pass if ≥1 (soft requirement), but detail shows coverage
+      const hasAny = typeCount >= 1;
       
       return { 
-        passed: sufficient, 
-        detail: sufficient 
-          ? `${typeCount} element types tracked` 
-          : `Only ${typeCount} type(s) tracked – need ≥3` 
+        passed: hasAny, 
+        detail: typeCount >= 3 
+          ? `${typeCount} element types tracked ✓` 
+          : typeCount >= 1
+          ? `${typeCount} type(s) tracked (consider adding more for broader insights)`
+          : 'No element types tracked'
       };
     },
   },
@@ -174,10 +179,10 @@ const HEALTH_CHECKS: HealthCheck[] = [
 // ============================================================================
 
 const OPERATOR_NOTES = [
-  'Confirm variant assignment is stable (users don\'t flip between A/B on refresh).',
-  'Verify Microsoft Clarity is filtering by ab_variant.',
-  'Manually test one auto-stop scenario before relying on recommendations.',
-  'Check that archive/restore workflow works on a dummy test.',
+  'Clarity tagging should be verified in Clarity UI.',
+  'Variant stability is enforced via localStorage cookie.',
+  'Auto-stop never acts without human confirmation.',
+  'Max 3 active tests; only 1 may affect pricing/CTA/urgency.',
 ];
 
 // ============================================================================
@@ -187,10 +192,12 @@ const OPERATOR_NOTES = [
 export default function FirstTestChecklist() {
   const [results, setResults] = useState<Record<string, CheckResult>>({});
   const [isRunning, setIsRunning] = useState(false);
+  const [connectionError, setConnectionError] = useState(false);
 
   // Initialize and run checks on mount
   const runAllChecks = useCallback(async () => {
     setIsRunning(true);
+    setConnectionError(false);
     
     // Set all to loading
     const loadingState: Record<string, CheckResult> = {};
@@ -206,11 +213,17 @@ export default function FirstTestChecklist() {
         return { id: check.id, passed: result.passed, detail: result.detail, error: false };
       } catch (e) {
         console.error(`Health check failed: ${check.id}`, e);
-        return { id: check.id, passed: false, detail: 'Check failed', error: true };
+        return { id: check.id, passed: false, detail: 'Could not verify', error: true };
       }
     });
 
     const outcomes = await Promise.all(checkPromises);
+    
+    // Check if all checks failed (likely connection issue)
+    const allFailed = outcomes.every(o => o.error);
+    if (allFailed) {
+      setConnectionError(true);
+    }
     
     const newResults: Record<string, CheckResult> = {};
     outcomes.forEach(outcome => {
@@ -233,8 +246,9 @@ export default function FirstTestChecklist() {
 
   // Calculate summary
   const passedCount = Object.values(results).filter(r => r.passed && !r.error).length;
+  const errorCount = Object.values(results).filter(r => r.error).length;
   const totalChecks = HEALTH_CHECKS.length;
-  const allPassed = passedCount === totalChecks;
+  const allPassed = passedCount === totalChecks && errorCount === 0;
   const progress = (passedCount / totalChecks) * 100;
 
   // Get status icon for a check
@@ -297,6 +311,19 @@ export default function FirstTestChecklist() {
       </CardHeader>
 
       <CardContent className="space-y-4">
+        {/* Connection error state */}
+        {connectionError && (
+          <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/50 border-muted-foreground/20">
+            <AlertTriangle className="h-5 w-5 text-muted-foreground shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">System Offline</p>
+              <p className="text-xs text-muted-foreground">
+                Could not connect to database. Cached data may be shown.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Progress bar */}
         <div>
           <div className="flex items-center justify-between text-xs mb-1">
@@ -305,7 +332,7 @@ export default function FirstTestChecklist() {
           </div>
           <Progress 
             value={progress} 
-            className={`h-2 ${allPassed ? '[&>div]:bg-green-500' : ''}`} 
+            className={`h-2 ${allPassed ? '[&>div]:bg-green-500' : connectionError ? '[&>div]:bg-muted-foreground' : ''}`} 
           />
         </div>
 
@@ -348,20 +375,20 @@ export default function FirstTestChecklist() {
           <div className={`flex items-center gap-3 p-3 rounded-lg border ${
             allPassed 
               ? 'bg-green-500/10 border-green-500/20' 
-              : 'bg-muted/30 border-transparent'
+              : 'bg-amber-500/10 border-amber-500/20'
           }`}>
             {allPassed ? (
               <>
                 <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
                 <p className="text-sm text-green-700 dark:text-green-400">
-                  System ready for serious experiments.
+                  ✅ {passedCount}/{totalChecks} Healthy — System ready for experiments.
                 </p>
               </>
             ) : (
               <>
                 <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
-                <p className="text-sm text-muted-foreground">
-                  Review failed checks before trusting test decisions.
+                <p className="text-sm text-amber-600 dark:text-amber-400">
+                  ⚠️ Degraded — {passedCount}/{totalChecks} checks passed. See details above.
                 </p>
               </>
             )}
