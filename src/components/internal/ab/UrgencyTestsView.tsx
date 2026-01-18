@@ -5,12 +5,12 @@
  * Includes test controls, traffic split management, funnel comparisons,
  * and explicit Directional/Leading/Inconclusive status indicators.
  * 
- * v2.3 Refinements:
- * - BIS-first lift calculation (BIS → Revenue/Session → Purchase Rate)
- * - Bayesian P(B>A) probability using Beta distributions + Monte Carlo
- * - Stricter thresholds: LIFT_DIR=1%, LIFT_LEAD=2%, P(B>A)≥90%
- * - Status header shows Rev/Session lift + P(B>A) + BIS formula tooltip
- * - "Leading" requires sample + lift + probability thresholds met
+ * v2.4 Production Hardening:
+ * - Seeded RNG for deterministic P(B>A) per hour bucket (no refresh jitter)
+ * - Dual-signal probability: P_ATC (early) + P_Purchase (when n≥10)
+ * - Honest labeling: "Profit proxy: Rev/Session" with BIS availability note
+ * - State machine uses P_ATC for early signal, P_Purchase when available
+ * - Conflict handling: warning when ATC and Purchase signals disagree
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -23,6 +23,7 @@ import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import { AB_TEST_CONFIG, setTestEnabled, setTrafficSplit, getTrafficSplit, fetchTrafficSplitFromDB, forceVariant, clearVariant, getABDebugInfo, type ABVariant } from '@/lib/abTesting';
 import { 
@@ -42,6 +43,7 @@ import {
   ArrowUpRight,
   Minus,
   HelpCircle,
+  Info,
 } from 'lucide-react';
 import FirstTestChecklist from './FirstTestChecklist';
 
@@ -58,7 +60,7 @@ interface FunnelData {
 }
 
 // ============================================================================
-// Status State Logic (v2.3 - Bayesian + BIS-first)
+// Status State Logic (v2.4 - Seeded RNG + Dual Signal)
 // ============================================================================
 
 type TestStatusState = 'inconclusive' | 'directional' | 'leading' | 'winner_declared';
@@ -69,7 +71,9 @@ interface TestStatusResult {
   description: string;
   variant?: 'A' | 'B';
   lift?: number;
-  probability?: number;
+  probabilityATC?: number;
+  probabilityPurchase?: number | null; // null = insufficient data
+  signalConflict?: boolean;
 }
 
 interface MetricValues {
@@ -79,47 +83,99 @@ interface MetricValues {
   revenuePerSessionB: number | null;
   purchaseRateA: number;
   purchaseRateB: number;
-  conversionsA: number;
+  atcRateA: number;
+  atcRateB: number;
+  conversionsA: number; // purchases
   conversionsB: number;
-  sessionsA: number;
+  atcA: number; // add to carts
+  atcB: number;
+  sessionsA: number; // page views
   sessionsB: number;
 }
 
 const MIN_SAMPLE_SIZE = 300; // Configurable, matches platform default
 const LIFT_DIR = 0.01; // 1% minimum lift for directional signal
 const LIFT_LEAD = 0.02; // 2% minimum lift for leading status
-const PROBABILITY_THRESHOLD = 0.90; // 90% probability B > A required for "Leading"
-const MIN_SAMPLES_FOR_PROBABILITY = 30; // Min per variant for reliable P(B>A)
+const PROBABILITY_THRESHOLD = 0.90; // 90% probability for "Leading"
+const MIN_SAMPLES_FOR_PROBABILITY = 30; // Min per variant for reliable P
+const MIN_PURCHASES_FOR_PROBABILITY = 10; // Min purchases per variant for P_Purchase
+const MIN_ATC_FOR_PROBABILITY = 5; // Min ATCs per variant for P_ATC
+
+// ============================================================================
+// Seeded RNG (deterministic per hour bucket)
+// ============================================================================
+
+/**
+ * Simple seeded PRNG using a modified LCG algorithm.
+ * Produces deterministic sequence given the same seed.
+ */
+class SeededRandom {
+  private seed: number;
+
+  constructor(seed: number) {
+    this.seed = seed % 2147483647;
+    if (this.seed <= 0) this.seed += 2147483646;
+  }
+
+  /** Generate next random number in [0, 1) */
+  next(): number {
+    this.seed = (this.seed * 16807) % 2147483647;
+    return (this.seed - 1) / 2147483646;
+  }
+}
+
+/**
+ * Create a seed from test name + current hour bucket.
+ * Same seed = same probability output for the entire hour.
+ */
+function createHourlySeed(testName: string): number {
+  const hourBucket = Math.floor(Date.now() / 3600000); // hour bucket
+  const seedString = `${testName}_${hourBucket}`;
+  
+  // Simple hash function
+  let hash = 0;
+  for (let i = 0; i < seedString.length; i++) {
+    const char = seedString.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit int
+  }
+  return Math.abs(hash);
+}
 
 /**
  * Estimate P(B > A) using Monte Carlo simulation with Beta distributions.
- * Each variant modeled as Beta(conversions + 1, sessions - conversions + 1)
+ * Uses SEEDED random for deterministic results per hour.
  * Returns null if insufficient data for reliable estimate.
  */
 function calculateProbabilityBBetterThanA(
   conversionsA: number,
   sessionsA: number,
   conversionsB: number,
-  sessionsB: number
+  sessionsB: number,
+  rng: SeededRandom,
+  minConversions: number = 5 // Min conversions per variant
 ): number | null {
-  // Require minimum samples for reliable estimate
+  // Require minimum samples and conversions for reliable estimate
   if (sessionsA < MIN_SAMPLES_FOR_PROBABILITY || sessionsB < MIN_SAMPLES_FOR_PROBABILITY) {
     return null;
   }
+  if (conversionsA < minConversions || conversionsB < minConversions) {
+    return null;
+  }
   
-  // Beta distribution parameters (using Jeffreys prior: add 0.5 each)
+  // Beta distribution parameters (using Jeffreys prior: add 0.5 each, rounded to 1)
   const alphaA = conversionsA + 1;
   const betaA = sessionsA - conversionsA + 1;
   const alphaB = conversionsB + 1;
   const betaB = sessionsB - conversionsB + 1;
   
-  // Monte Carlo sampling (1000 draws)
+  // Monte Carlo sampling (1000 draws) with seeded RNG
   const SAMPLES = 1000;
   let bWins = 0;
   
   for (let i = 0; i < SAMPLES; i++) {
-    const sampleA = sampleBeta(alphaA, betaA);
-    const sampleB = sampleBeta(alphaB, betaB);
+    const sampleA = sampleBetaSeeded(alphaA, betaA, rng);
+    const sampleB = sampleBetaSeeded(alphaB, betaB, rng);
     if (sampleB > sampleA) bWins++;
   }
   
@@ -127,22 +183,20 @@ function calculateProbabilityBBetterThanA(
 }
 
 /**
- * Sample from Beta distribution using the inverse CDF method (Box-Muller approximation)
- * For production, this uses a gamma distribution approach.
+ * Sample from Beta distribution using seeded gamma sampling
  */
-function sampleBeta(alpha: number, beta: number): number {
-  // Use gamma sampling: Beta(a,b) = Gamma(a) / (Gamma(a) + Gamma(b))
-  const gammaA = sampleGamma(alpha);
-  const gammaB = sampleGamma(beta);
+function sampleBetaSeeded(alpha: number, beta: number, rng: SeededRandom): number {
+  const gammaA = sampleGammaSeeded(alpha, rng);
+  const gammaB = sampleGammaSeeded(beta, rng);
   return gammaA / (gammaA + gammaB);
 }
 
 /**
- * Sample from Gamma distribution using Marsaglia and Tsang's method
+ * Sample from Gamma distribution using Marsaglia and Tsang's method (seeded)
  */
-function sampleGamma(shape: number): number {
+function sampleGammaSeeded(shape: number, rng: SeededRandom): number {
   if (shape < 1) {
-    return sampleGamma(shape + 1) * Math.pow(Math.random(), 1 / shape);
+    return sampleGammaSeeded(shape + 1, rng) * Math.pow(rng.next(), 1 / shape);
   }
   
   const d = shape - 1 / 3;
@@ -151,12 +205,12 @@ function sampleGamma(shape: number): number {
   while (true) {
     let x: number, v: number;
     do {
-      x = randn();
+      x = randnSeeded(rng);
       v = 1 + c * x;
     } while (v <= 0);
     
     v = v * v * v;
-    const u = Math.random();
+    const u = rng.next();
     
     if (u < 1 - 0.0331 * (x * x) * (x * x)) {
       return d * v;
@@ -169,11 +223,11 @@ function sampleGamma(shape: number): number {
 }
 
 /**
- * Standard normal random using Box-Muller transform
+ * Standard normal random using Box-Muller transform (seeded)
  */
-function randn(): number {
-  const u1 = Math.random();
-  const u2 = Math.random();
+function randnSeeded(rng: SeededRandom): number {
+  const u1 = rng.next();
+  const u2 = rng.next();
   return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
 }
 
@@ -214,8 +268,14 @@ function getBestMetric(metrics: MetricValues): {
   };
 }
 
+/**
+ * Calculate test status with dual-signal probability (v2.4)
+ * Uses P_ATC for early signal, P_Purchase when available (≥10 conversions/variant)
+ * Detects signal conflicts between ATC and Purchase probability
+ */
 function calculateTestStatus(
   metrics: MetricValues,
+  testName: string,
   winnerDeclared: boolean = false
 ): TestStatusResult {
   const totalSessions = metrics.sessionsA + metrics.sessionsB;
@@ -225,13 +285,39 @@ function calculateTestStatus(
   const lift = metricA > 0 ? (metricB - metricA) / metricA : null;
   const absLift = lift !== null ? Math.abs(lift) : 0;
   
-  // Calculate P(B > A) for conversion-based probability
-  const probability = calculateProbabilityBBetterThanA(
+  // Create seeded RNG for deterministic probability
+  const rng = new SeededRandom(createHourlySeed(testName));
+  
+  // Calculate P_ATC (early signal) - requires MIN_ATC_FOR_PROBABILITY per variant
+  const probabilityATC = calculateProbabilityBBetterThanA(
+    metrics.atcA,
+    metrics.sessionsA,
+    metrics.atcB,
+    metrics.sessionsB,
+    rng,
+    MIN_ATC_FOR_PROBABILITY
+  );
+  
+  // Calculate P_Purchase (stable signal) - requires MIN_PURCHASES_FOR_PROBABILITY per variant
+  const probabilityPurchase = calculateProbabilityBBetterThanA(
     metrics.conversionsA,
     metrics.sessionsA,
     metrics.conversionsB,
-    metrics.sessionsB
+    metrics.sessionsB,
+    rng,
+    MIN_PURCHASES_FOR_PROBABILITY
   );
+  
+  // Detect signal conflict: P_ATC and P_Purchase strongly disagree
+  const signalConflict = 
+    probabilityATC !== null && 
+    probabilityPurchase !== null &&
+    ((probabilityATC >= 0.90 && probabilityPurchase < 0.70) ||
+     (probabilityATC < 0.10 && probabilityPurchase > 0.30));
+  
+  // Use best available probability for state decisions
+  // Prefer P_ATC for early signal, trust P_Purchase if available (later funnel = closer to revenue)
+  const effectiveProbability = probabilityPurchase ?? probabilityATC;
   
   // Winner declared takes precedence (manual only)
   if (winnerDeclared) {
@@ -241,7 +327,8 @@ function calculateTestStatus(
       description: 'Manually confirmed via winner workflow.',
       variant: lift && lift > 0 ? 'B' : 'A',
       lift: lift ?? undefined,
-      probability: probability ?? undefined,
+      probabilityATC: probabilityATC ?? undefined,
+      probabilityPurchase,
     };
   }
   
@@ -255,40 +342,50 @@ function calculateTestStatus(
       label: 'Inconclusive',
       description: reason,
       lift: lift ?? undefined,
-      probability: probability ?? undefined,
+      probabilityATC: probabilityATC ?? undefined,
+      probabilityPurchase,
     };
   }
   
   // Leading: full sample + lift threshold + probability threshold
+  // Uses P_ATC (or P_Purchase if available) for probability check
   const meetsLeadingCriteria = 
     totalSessions >= MIN_SAMPLE_SIZE && 
     absLift >= LIFT_LEAD && 
-    probability !== null && 
-    probability >= PROBABILITY_THRESHOLD;
+    effectiveProbability !== null && 
+    effectiveProbability >= PROBABILITY_THRESHOLD;
   
   if (meetsLeadingCriteria && lift !== null && lift > 0) {
+    const probSource = probabilityPurchase !== null ? 'purchase' : 'ATC';
     return {
       state: 'leading',
       label: 'B Leading',
-      description: `Min sample reached. B shows +${(lift * 100).toFixed(1)}% ${metricName} lift (P=${(probability! * 100).toFixed(0)}%). Leading (not declared winner) — confirm via winner workflow once significance is met.`,
+      description: `Min sample reached. B shows +${(lift * 100).toFixed(1)}% ${metricName} lift (P_${probSource}=${(effectiveProbability! * 100).toFixed(0)}%). Leading (not declared winner) — confirm via winner workflow once significance is met.`,
       variant: 'B',
       lift,
-      probability: probability ?? undefined,
+      probabilityATC: probabilityATC ?? undefined,
+      probabilityPurchase,
+      signalConflict,
     };
   } else if (meetsLeadingCriteria && lift !== null && lift < 0) {
+    const probSource = probabilityPurchase !== null ? 'purchase' : 'ATC';
     return {
       state: 'leading',
       label: 'A Leading',
-      description: `Min sample reached. A shows +${(Math.abs(lift) * 100).toFixed(1)}% ${metricName} advantage (P=${((1 - probability!) * 100).toFixed(0)}%). Confirm via winner workflow.`,
+      description: `Min sample reached. A shows +${(Math.abs(lift) * 100).toFixed(1)}% ${metricName} advantage (P_${probSource}=${((1 - effectiveProbability!) * 100).toFixed(0)}%). Confirm via winner workflow.`,
       variant: 'A',
       lift,
-      probability: probability ?? undefined,
+      probabilityATC: probabilityATC ?? undefined,
+      probabilityPurchase,
+      signalConflict,
     };
   }
   
   // Directional: partial sample with signal (but not yet leading)
   if (totalSessions >= MIN_SAMPLE_SIZE * 0.5 && absLift >= LIFT_DIR) {
-    const probText = probability !== null ? ` (P=${(lift! > 0 ? probability : 1 - probability) * 100 | 0}%)` : '';
+    const probText = probabilityATC !== null 
+      ? ` (P_ATC=${(lift! > 0 ? probabilityATC : 1 - probabilityATC) * 100 | 0}%)` 
+      : '';
     if (lift !== null && lift > 0) {
       return {
         state: 'directional',
@@ -296,7 +393,9 @@ function calculateTestStatus(
         description: `Early signal: B trending +${(lift * 100).toFixed(1)}% ${metricName}${probText}. Need ${Math.ceil(MIN_SAMPLE_SIZE - totalSessions)} more sessions or higher lift for "Leading".`,
         variant: 'B',
         lift,
-        probability: probability ?? undefined,
+        probabilityATC: probabilityATC ?? undefined,
+        probabilityPurchase,
+        signalConflict,
       };
     } else if (lift !== null) {
       return {
@@ -305,7 +404,9 @@ function calculateTestStatus(
         description: `Early signal: A trending better. B is ${(lift * 100).toFixed(1)}% ${metricName}${probText}.`,
         variant: 'A',
         lift,
-        probability: probability ?? undefined,
+        probabilityATC: probabilityATC ?? undefined,
+        probabilityPurchase,
+        signalConflict,
       };
     }
   }
@@ -315,7 +416,8 @@ function calculateTestStatus(
     label: 'Inconclusive',
     description: 'Not enough data to determine direction.',
     lift: lift ?? undefined,
-    probability: probability ?? undefined,
+    probabilityATC: probabilityATC ?? undefined,
+    probabilityPurchase,
   };
 }
 
@@ -419,7 +521,7 @@ export default function UrgencyTestsView() {
   const purchaseLift = calculateLift(variantA?.purchase_rate, variantB?.purchase_rate);
   const revenueLift = calculateLift(variantA?.total_revenue, variantB?.total_revenue);
 
-  // Calculate test status using explicit BIS-first rules (v2.3)
+  // Calculate test status using explicit BIS-first rules (v2.4)
   const testStatus = useMemo(() => {
     const sessionsA = variantA?.page_views || 0;
     const sessionsB = variantB?.page_views || 0;
@@ -433,13 +535,17 @@ export default function UrgencyTestsView() {
       revenuePerSessionB: sessionsB > 0 ? revenueB / sessionsB : null,
       purchaseRateA: variantA?.purchase_rate || 0,
       purchaseRateB: variantB?.purchase_rate || 0,
+      atcRateA: variantA?.atc_rate || 0,
+      atcRateB: variantB?.atc_rate || 0,
       conversionsA: variantA?.purchases || 0,
       conversionsB: variantB?.purchases || 0,
+      atcA: variantA?.add_to_carts || 0,
+      atcB: variantB?.add_to_carts || 0,
       sessionsA,
       sessionsB,
     };
     
-    return calculateTestStatus(metrics, false);
+    return calculateTestStatus(metrics, AB_TEST_CONFIG.testName, false);
   }, [variantA, variantB]);
   
   // Calculate BIS lift and Revenue/Session lift for header display
@@ -453,10 +559,18 @@ export default function UrgencyTestsView() {
     const rpsB = sessionsB > 0 ? revenueB / sessionsB : 0;
     const rpsLift = rpsA > 0 ? ((rpsB - rpsA) / rpsA) * 100 : null;
     
+    // ATC lift for early signal display
+    const atcA = variantA?.add_to_carts || 0;
+    const atcB = variantB?.add_to_carts || 0;
+    const atcRateA = sessionsA > 0 ? atcA / sessionsA : 0;
+    const atcRateB = sessionsB > 0 ? atcB / sessionsB : 0;
+    const atcLift = atcRateA > 0 ? ((atcRateB - atcRateA) / atcRateA) * 100 : null;
+    
     return {
       rpsLift,
       rpsA,
       rpsB,
+      atcLift,
       bisLift: null as number | null, // BIS not in funnel view
     };
   }, [variantA, variantB]);
@@ -521,90 +635,160 @@ export default function UrgencyTestsView() {
         </Card>
       )}
 
-      {/* Compact Status Header (v2.3 - BIS-first) */}
-      <Card className="bg-muted/30">
-        <CardContent className="py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              {/* Status pill */}
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${testEnabled ? 'bg-green-500 animate-pulse' : 'bg-muted-foreground'}`} />
-                <span className="text-sm font-medium">{testEnabled ? 'Running' : 'Paused'}</span>
+      {/* Compact Status Header (v2.4 - Dual Signal + Seeded RNG) */}
+      <TooltipProvider>
+        <Card className="bg-muted/30">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-6">
+                {/* Status pill */}
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${testEnabled ? 'bg-green-500 animate-pulse' : 'bg-muted-foreground'}`} />
+                  <span className="text-sm font-medium">{testEnabled ? 'Running' : 'Paused'}</span>
+                </div>
+                
+                {/* Split */}
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span>Split:</span>
+                  <span className="font-medium text-foreground">{100 - trafficSplit}% A / {trafficSplit}% B</span>
+                </div>
+                
+                {/* Test status */}
+                <div className="flex items-center gap-2">
+                  {getStatusBadge()}
+                </div>
               </div>
               
-              {/* Split */}
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span>Split:</span>
-                <span className="font-medium text-foreground">{100 - trafficSplit}% A / {trafficSplit}% B</span>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
+                  <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                </Button>
               </div>
+            </div>
+            
+            {/* Profit-first metrics row (v2.4) */}
+            <div className="flex items-center gap-6 mt-3 pl-4 border-t border-muted pt-3">
+              {/* Profit proxy: Revenue/Session lift (primary) */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-2 cursor-help">
+                    <span className="text-xs text-muted-foreground font-medium">Profit proxy:</span>
+                    {bisMetrics.rpsLift !== null ? (
+                      <Badge variant={bisMetrics.rpsLift > 0 ? 'default' : 'secondary'} className="text-xs">
+                        {bisMetrics.rpsLift > 0 ? '+' : ''}{bisMetrics.rpsLift.toFixed(1)}% Rev/Session
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-xs">
+                  <p className="text-xs">Revenue per session is the primary profit signal in this view.</p>
+                  <p className="text-xs text-muted-foreground mt-1">BIS (CVR × AOV × Margin × Weight) available in Experimentation Analytics.</p>
+                </TooltipContent>
+              </Tooltip>
               
-              {/* Test status */}
-              <div className="flex items-center gap-2">
-                {getStatusBadge()}
+              {/* P_ATC (early signal) */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-2 cursor-help">
+                    <span className="text-xs text-muted-foreground">P_ATC:</span>
+                    {testStatus.probabilityATC !== undefined ? (
+                      <Badge 
+                        variant={testStatus.probabilityATC >= PROBABILITY_THRESHOLD ? 'default' : 'outline'} 
+                        className="text-xs"
+                      >
+                        {(testStatus.probabilityATC * 100).toFixed(0)}%
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p className="text-xs">Probability B beats A based on add-to-cart rate.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Early signal (higher volume than purchases).</p>
+                </TooltipContent>
+              </Tooltip>
+              
+              {/* P_Purchase (stable signal, only when ≥10 per variant) */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-2 cursor-help">
+                    <span className="text-xs text-muted-foreground">P_Purchase:</span>
+                    {testStatus.probabilityPurchase !== null && testStatus.probabilityPurchase !== undefined ? (
+                      <Badge 
+                        variant={testStatus.probabilityPurchase >= PROBABILITY_THRESHOLD ? 'default' : 'outline'} 
+                        className="text-xs"
+                      >
+                        {(testStatus.probabilityPurchase * 100).toFixed(0)}%
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p className="text-xs">
+                    {testStatus.probabilityPurchase !== null 
+                      ? 'Probability B beats A based on purchase rate.' 
+                      : 'Insufficient purchases for stable estimate (need ≥10 per variant).'}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+              
+              {/* Signal conflict warning */}
+              {testStatus.signalConflict && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1 text-amber-600 cursor-help">
+                      <AlertTriangle className="h-3 w-3" />
+                      <span className="text-xs font-medium">Signal conflict</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-xs">
+                    <p className="text-xs">ATC and Purchase signals disagree significantly.</p>
+                    <p className="text-xs text-muted-foreground mt-1">Trust P_Purchase (closer to revenue) when available.</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              
+              {/* BIS tooltip */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="ml-auto flex items-center gap-1 cursor-help">
+                    <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                    <span className="text-[10px] text-muted-foreground">BIS formula</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-xs">
+                  <p className="text-xs font-medium">BIS = CVR × AOV × Margin × Traffic Weight</p>
+                  <p className="text-xs text-muted-foreground mt-1">Full BIS available in Experimentation Analytics where all inputs exist.</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            
+            {/* Status description */}
+            <p className="text-xs text-muted-foreground mt-2 pl-4">
+              {testStatus.description}
+            </p>
+            
+            {/* Decision policy legend */}
+            <div className="mt-3 pl-4 pt-2 border-t border-dashed border-muted">
+              <div className="flex items-center gap-1 mb-1">
+                <Info className="h-3 w-3 text-muted-foreground" />
+                <span className="text-[10px] font-medium text-muted-foreground">Decision policy</span>
+              </div>
+              <div className="grid grid-cols-4 gap-2 text-[10px] text-muted-foreground">
+                <div><span className="font-medium">Inconclusive:</span> &lt;150 sessions or &lt;1% lift</div>
+                <div><span className="font-medium">Directional:</span> ≥150 sessions + ≥1% lift</div>
+                <div><span className="font-medium">Leading:</span> ≥300 sessions + ≥2% lift + P≥90%</div>
+                <div><span className="font-medium">Winner:</span> Manual confirmation only</div>
               </div>
             </div>
-            
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
-                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              </Button>
-            </div>
-          </div>
-          
-          {/* BIS-first metrics row */}
-          <div className="flex items-center gap-6 mt-3 pl-4 border-t border-muted pt-3">
-            {/* Revenue/Session lift (primary when BIS unavailable) */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Rev/Session:</span>
-              {bisMetrics.rpsLift !== null ? (
-                <Badge variant={bisMetrics.rpsLift > 0 ? 'default' : 'secondary'} className="text-xs">
-                  {bisMetrics.rpsLift > 0 ? '+' : ''}{bisMetrics.rpsLift.toFixed(1)}%
-                </Badge>
-              ) : (
-                <span className="text-xs text-muted-foreground">—</span>
-              )}
-            </div>
-            
-            {/* Purchase rate (de-emphasized) */}
-            <div className="flex items-center gap-2 opacity-60">
-              <span className="text-xs text-muted-foreground">CVR:</span>
-              {purchaseLift !== null ? (
-                <span className="text-xs text-muted-foreground">
-                  {purchaseLift > 0 ? '+' : ''}{purchaseLift.toFixed(1)}%
-                </span>
-              ) : (
-                <span className="text-xs text-muted-foreground">—</span>
-              )}
-            </div>
-            
-            {/* Probability badge */}
-            {testStatus.probability !== undefined && testStatus.probability !== null && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">P(B&gt;A):</span>
-                <Badge 
-                  variant={testStatus.probability >= PROBABILITY_THRESHOLD ? 'default' : 'outline'} 
-                  className="text-xs"
-                >
-                  {(testStatus.probability * 100).toFixed(0)}%
-                </Badge>
-              </div>
-            )}
-            
-            {/* BIS tooltip */}
-            <div className="ml-auto flex items-center gap-1">
-              <HelpCircle className="h-3 w-3 text-muted-foreground" />
-              <span className="text-[10px] text-muted-foreground" title="BIS = CVR × AOV × Margin × Traffic Weight">
-                BIS = CVR × AOV × Margin × Weight
-              </span>
-            </div>
-          </div>
-          
-          {/* Status description */}
-          <p className="text-xs text-muted-foreground mt-2 pl-4">
-            {testStatus.description}
-          </p>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </TooltipProvider>
 
       {/* Header */}
       <div className="flex items-center justify-between">
