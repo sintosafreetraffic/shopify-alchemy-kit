@@ -5,15 +5,17 @@
  * Includes test controls, traffic split management, funnel comparisons,
  * and explicit Directional/Leading/Inconclusive status indicators.
  * 
- * v2.4 Production Hardening:
- * - Seeded RNG for deterministic P(B>A) per hour bucket (no refresh jitter)
+ * v2.4.1 Decision Integrity Hardening:
+ * - Data-seeded RNG for deterministic P(B>A) (changes only when data changes)
+ * - Server-side probability computation with client fallback
  * - Dual-signal probability: P_ATC (early) + P_Purchase (when n≥10)
- * - Honest labeling: "Profit proxy: Rev/Session" with BIS availability note
- * - State machine uses P_ATC for early signal, P_Purchase when available
- * - Conflict handling: warning when ATC and Purchase signals disagree
+ * - NEW: Customer Quality (refund proxy) metric
+ * - NEW: "Watch" status for conflicting or quality-risk signals
+ * - Leading requires P_Purchase when purchases are sufficient
+ * - Conflict handling: ATC vs Purchase + Quality degradation
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -44,6 +46,8 @@ import {
   Minus,
   HelpCircle,
   Info,
+  ShieldAlert,
+  Clock,
 } from 'lucide-react';
 import FirstTestChecklist from './FirstTestChecklist';
 
@@ -59,11 +63,36 @@ interface FunnelData {
   purchase_rate: number;
 }
 
+interface QualityMetrics {
+  ab_variant: string;
+  refund_count: number;
+  cancel_count: number;
+  chargeback_count: number;
+  return_count: number;
+  support_ticket_count: number;
+  total_quality_events: number;
+  refund_amount: number;
+  chargeback_amount: number;
+}
+
+interface ServerProbabilities {
+  p_atc_b_beats_a: number | null;
+  p_purchase_b_beats_a: number | null;
+  p_quality_b_worse_than_a: number | null;
+  quality_lift_percent: number;
+  rps_lift_percent: number | null;
+  refund_rate_a: number;
+  refund_rate_b: number;
+  computed_at: string;
+  method_version: string;
+  inputs_hash: string;
+}
+
 // ============================================================================
-// Status State Logic (v2.4 - Seeded RNG + Dual Signal)
+// Status State Logic (v2.4.1 - Data-Seeded + Watch Status + Quality)
 // ============================================================================
 
-type TestStatusState = 'inconclusive' | 'directional' | 'leading' | 'winner_declared';
+type TestStatusState = 'inconclusive' | 'directional' | 'watch' | 'leading' | 'winner_declared';
 
 interface TestStatusResult {
   state: TestStatusState;
@@ -72,8 +101,10 @@ interface TestStatusResult {
   variant?: 'A' | 'B';
   lift?: number;
   probabilityATC?: number;
-  probabilityPurchase?: number | null; // null = insufficient data
-  signalConflict?: boolean;
+  probabilityPurchase?: number | null;
+  probabilityQuality?: number | null; // P(B worse quality than A)
+  signalConflict?: 'atc_vs_purchase' | 'quality_risk' | 'both' | null;
+  recommendation?: string;
 }
 
 interface MetricValues {
@@ -91,24 +122,43 @@ interface MetricValues {
   atcB: number;
   sessionsA: number; // page views
   sessionsB: number;
+  refundsA: number;
+  refundsB: number;
 }
 
-const MIN_SAMPLE_SIZE = 300; // Configurable, matches platform default
+const MIN_SAMPLE_SIZE = 300;
 const LIFT_DIR = 0.01; // 1% minimum lift for directional signal
 const LIFT_LEAD = 0.02; // 2% minimum lift for leading status
 const PROBABILITY_THRESHOLD = 0.90; // 90% probability for "Leading"
-const MIN_SAMPLES_FOR_PROBABILITY = 30; // Min per variant for reliable P
-const MIN_PURCHASES_FOR_PROBABILITY = 10; // Min purchases per variant for P_Purchase
-const MIN_ATC_FOR_PROBABILITY = 5; // Min ATCs per variant for P_ATC
+const MIN_SAMPLES_FOR_PROBABILITY = 30;
+const MIN_PURCHASES_FOR_PROBABILITY = 10;
+const MIN_ATC_FOR_PROBABILITY = 5;
+const QUALITY_DEGRADATION_THRESHOLD = 0.15; // 15% worse refund rate triggers quality risk
+const SERVER_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 // ============================================================================
-// Seeded RNG (deterministic per hour bucket)
+// Cyrb53 Hash (fast, no dependencies) - for data-seeded RNG
 // ============================================================================
 
-/**
- * Simple seeded PRNG using a modified LCG algorithm.
- * Produces deterministic sequence given the same seed.
- */
+function cyrb53(str: string, seed = 0): number {
+  let h1 = 0xdeadbeef ^ seed;
+  let h2 = 0x41c6ce57 ^ seed;
+  for (let i = 0; i < str.length; i++) {
+    const ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507);
+  h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507);
+  h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+}
+
+// ============================================================================
+// Seeded RNG (data-seeded, deterministic by metrics)
+// ============================================================================
+
 class SeededRandom {
   private seed: number;
 
@@ -117,7 +167,6 @@ class SeededRandom {
     if (this.seed <= 0) this.seed += 2147483646;
   }
 
-  /** Generate next random number in [0, 1) */
   next(): number {
     this.seed = (this.seed * 16807) % 2147483647;
     return (this.seed - 1) / 2147483646;
@@ -125,27 +174,17 @@ class SeededRandom {
 }
 
 /**
- * Create a seed from test name + current hour bucket.
- * Same seed = same probability output for the entire hour.
+ * Create a seed from test name + current data values.
+ * Probability only changes when underlying data changes.
  */
-function createHourlySeed(testName: string): number {
-  const hourBucket = Math.floor(Date.now() / 3600000); // hour bucket
-  const seedString = `${testName}_${hourBucket}`;
-  
-  // Simple hash function
-  let hash = 0;
-  for (let i = 0; i < seedString.length; i++) {
-    const char = seedString.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32-bit int
-  }
-  return Math.abs(hash);
+function createDataSeed(testName: string, metrics: MetricValues): number {
+  const seedString = `${testName}|${metrics.sessionsA}|${metrics.sessionsB}|${metrics.atcA}|${metrics.atcB}|${metrics.conversionsA}|${metrics.conversionsB}|${metrics.refundsA}|${metrics.refundsB}`;
+  return cyrb53(seedString);
 }
 
 /**
  * Estimate P(B > A) using Monte Carlo simulation with Beta distributions.
- * Uses SEEDED random for deterministic results per hour.
- * Returns null if insufficient data for reliable estimate.
+ * Uses DATA-SEEDED random for deterministic results.
  */
 function calculateProbabilityBBetterThanA(
   conversionsA: number,
@@ -153,9 +192,8 @@ function calculateProbabilityBBetterThanA(
   conversionsB: number,
   sessionsB: number,
   rng: SeededRandom,
-  minConversions: number = 5 // Min conversions per variant
+  minConversions: number = 5
 ): number | null {
-  // Require minimum samples and conversions for reliable estimate
   if (sessionsA < MIN_SAMPLES_FOR_PROBABILITY || sessionsB < MIN_SAMPLES_FOR_PROBABILITY) {
     return null;
   }
@@ -163,13 +201,11 @@ function calculateProbabilityBBetterThanA(
     return null;
   }
   
-  // Beta distribution parameters (using Jeffreys prior: add 0.5 each, rounded to 1)
   const alphaA = conversionsA + 1;
   const betaA = sessionsA - conversionsA + 1;
   const alphaB = conversionsB + 1;
   const betaB = sessionsB - conversionsB + 1;
   
-  // Monte Carlo sampling (1000 draws) with seeded RNG
   const SAMPLES = 1000;
   let bWins = 0;
   
@@ -182,18 +218,12 @@ function calculateProbabilityBBetterThanA(
   return bWins / SAMPLES;
 }
 
-/**
- * Sample from Beta distribution using seeded gamma sampling
- */
 function sampleBetaSeeded(alpha: number, beta: number, rng: SeededRandom): number {
   const gammaA = sampleGammaSeeded(alpha, rng);
   const gammaB = sampleGammaSeeded(beta, rng);
   return gammaA / (gammaA + gammaB);
 }
 
-/**
- * Sample from Gamma distribution using Marsaglia and Tsang's method (seeded)
- */
 function sampleGammaSeeded(shape: number, rng: SeededRandom): number {
   if (shape < 1) {
     return sampleGammaSeeded(shape + 1, rng) * Math.pow(rng.next(), 1 / shape);
@@ -222,9 +252,6 @@ function sampleGammaSeeded(shape: number, rng: SeededRandom): number {
   }
 }
 
-/**
- * Standard normal random using Box-Muller transform (seeded)
- */
 function randnSeeded(rng: SeededRandom): number {
   const u1 = rng.next();
   const u2 = rng.next();
@@ -269,14 +296,18 @@ function getBestMetric(metrics: MetricValues): {
 }
 
 /**
- * Calculate test status with dual-signal probability (v2.4)
- * Uses P_ATC for early signal, P_Purchase when available (≥10 conversions/variant)
- * Detects signal conflicts between ATC and Purchase probability
+ * Calculate test status with v2.4.1 decision integrity:
+ * - Data-seeded RNG (deterministic by metrics, not time)
+ * - Dual-signal: P_ATC (early) + P_Purchase (when ≥10/variant)
+ * - Watch status for conflicts or quality risks
+ * - Leading requires P_Purchase when purchases sufficient
+ * - Quality guardrail prevents low-quality wins
  */
 function calculateTestStatus(
   metrics: MetricValues,
   testName: string,
-  winnerDeclared: boolean = false
+  winnerDeclared: boolean = false,
+  serverProbs?: ServerProbabilities | null
 ): TestStatusResult {
   const totalSessions = metrics.sessionsA + metrics.sessionsB;
   
@@ -285,39 +316,78 @@ function calculateTestStatus(
   const lift = metricA > 0 ? (metricB - metricA) / metricA : null;
   const absLift = lift !== null ? Math.abs(lift) : 0;
   
-  // Create seeded RNG for deterministic probability
-  const rng = new SeededRandom(createHourlySeed(testName));
+  // Use server probabilities if available, otherwise compute locally
+  let probabilityATC: number | null = null;
+  let probabilityPurchase: number | null = null;
+  let probabilityQuality: number | null = null;
+  let qualityLiftPercent = 0;
   
-  // Calculate P_ATC (early signal) - requires MIN_ATC_FOR_PROBABILITY per variant
-  const probabilityATC = calculateProbabilityBBetterThanA(
-    metrics.atcA,
-    metrics.sessionsA,
-    metrics.atcB,
-    metrics.sessionsB,
-    rng,
-    MIN_ATC_FOR_PROBABILITY
-  );
+  if (serverProbs) {
+    probabilityATC = serverProbs.p_atc_b_beats_a;
+    probabilityPurchase = serverProbs.p_purchase_b_beats_a;
+    probabilityQuality = serverProbs.p_quality_b_worse_than_a;
+    qualityLiftPercent = serverProbs.quality_lift_percent;
+  } else {
+    // Client-side fallback with data-seeded RNG
+    const rng = new SeededRandom(createDataSeed(testName, metrics));
+    
+    probabilityATC = calculateProbabilityBBetterThanA(
+      metrics.atcA, metrics.sessionsA, metrics.atcB, metrics.sessionsB,
+      rng, MIN_ATC_FOR_PROBABILITY
+    );
+    
+    const rng2 = new SeededRandom(createDataSeed(testName, metrics) + 1);
+    probabilityPurchase = calculateProbabilityBBetterThanA(
+      metrics.conversionsA, metrics.sessionsA, metrics.conversionsB, metrics.sessionsB,
+      rng2, MIN_PURCHASES_FOR_PROBABILITY
+    );
+    
+    // Calculate quality lift (refund rate difference) - client side
+    const refundRateA = metrics.conversionsA > 0 ? metrics.refundsA / metrics.conversionsA : 0;
+    const refundRateB = metrics.conversionsB > 0 ? metrics.refundsB / metrics.conversionsB : 0;
+    qualityLiftPercent = refundRateA > 0 
+      ? ((refundRateB - refundRateA) / refundRateA) * 100 
+      : (refundRateB > 0 ? 100 : 0);
+  }
   
-  // Calculate P_Purchase (stable signal) - requires MIN_PURCHASES_FOR_PROBABILITY per variant
-  const probabilityPurchase = calculateProbabilityBBetterThanA(
-    metrics.conversionsA,
-    metrics.sessionsA,
-    metrics.conversionsB,
-    metrics.sessionsB,
-    rng,
-    MIN_PURCHASES_FOR_PROBABILITY
-  );
-  
-  // Detect signal conflict: P_ATC and P_Purchase strongly disagree
-  const signalConflict = 
+  // Detect signal conflicts
+  const hardConflict = 
     probabilityATC !== null && 
     probabilityPurchase !== null &&
-    ((probabilityATC >= 0.90 && probabilityPurchase < 0.70) ||
-     (probabilityATC < 0.10 && probabilityPurchase > 0.30));
+    ((probabilityATC >= 0.90 && probabilityPurchase <= 0.40) ||
+     (probabilityATC <= 0.10 && probabilityPurchase >= 0.60));
   
-  // Use best available probability for state decisions
-  // Prefer P_ATC for early signal, trust P_Purchase if available (later funnel = closer to revenue)
-  const effectiveProbability = probabilityPurchase ?? probabilityATC;
+  const watchConflict = 
+    probabilityATC !== null && 
+    probabilityPurchase !== null &&
+    Math.abs(probabilityATC - probabilityPurchase) >= 0.25;
+  
+  // Quality risk: B improves profit but worsens quality beyond threshold
+  const hasQualityRisk = 
+    lift !== null && lift > 0 && 
+    qualityLiftPercent >= QUALITY_DEGRADATION_THRESHOLD * 100 &&
+    metrics.conversionsA >= MIN_PURCHASES_FOR_PROBABILITY &&
+    metrics.conversionsB >= MIN_PURCHASES_FOR_PROBABILITY;
+  
+  // Determine conflict type
+  let signalConflict: 'atc_vs_purchase' | 'quality_risk' | 'both' | null = null;
+  if ((hardConflict || watchConflict) && hasQualityRisk) {
+    signalConflict = 'both';
+  } else if (hardConflict || watchConflict) {
+    signalConflict = 'atc_vs_purchase';
+  } else if (hasQualityRisk) {
+    signalConflict = 'quality_risk';
+  }
+  
+  // For Leading: REQUIRE P_Purchase when purchases sufficient
+  const purchasesSufficient = 
+    metrics.conversionsA >= MIN_PURCHASES_FOR_PROBABILITY && 
+    metrics.conversionsB >= MIN_PURCHASES_FOR_PROBABILITY;
+  
+  // Effective probability for Leading: must use P_Purchase if available
+  const effectiveProbability = purchasesSufficient 
+    ? probabilityPurchase 
+    : probabilityATC;
   
   // Winner declared takes precedence (manual only)
   if (winnerDeclared) {
@@ -329,6 +399,8 @@ function calculateTestStatus(
       lift: lift ?? undefined,
       probabilityATC: probabilityATC ?? undefined,
       probabilityPurchase,
+      probabilityQuality,
+      signalConflict,
     };
   }
   
@@ -344,30 +416,64 @@ function calculateTestStatus(
       lift: lift ?? undefined,
       probabilityATC: probabilityATC ?? undefined,
       probabilityPurchase,
+      probabilityQuality,
+      recommendation: 'Continue collecting data',
     };
   }
   
-  // Leading: full sample + lift threshold + probability threshold
-  // Uses P_ATC (or P_Purchase if available) for probability check
+  // Watch: conflicts or quality risks that need investigation
+  if (signalConflict) {
+    let recommendation = '';
+    if (signalConflict === 'both') {
+      recommendation = 'Investigate: ATC vs Purchase mismatch AND customer quality risk';
+    } else if (signalConflict === 'atc_vs_purchase') {
+      recommendation = probabilityPurchase !== null 
+        ? 'Trust P_Purchase (closer to revenue). Continue monitoring.'
+        : 'Wait — purchase signal not ready';
+    } else {
+      recommendation = `Quality risk: +${qualityLiftPercent.toFixed(0)}% refund rate in B. Investigate customer fit.`;
+    }
+    
+    return {
+      state: 'watch',
+      label: 'Watch',
+      description: `Signal conflict detected. ${lift && lift > 0 ? 'B' : 'A'} trending but requires investigation.`,
+      variant: lift && lift > 0 ? 'B' : 'A',
+      lift: lift ?? undefined,
+      probabilityATC: probabilityATC ?? undefined,
+      probabilityPurchase,
+      probabilityQuality,
+      signalConflict,
+      recommendation,
+    };
+  }
+  
+  // Leading criteria: full sample + lift + probability + no conflicts + quality OK
   const meetsLeadingCriteria = 
     totalSessions >= MIN_SAMPLE_SIZE && 
     absLift >= LIFT_LEAD && 
     effectiveProbability !== null && 
-    effectiveProbability >= PROBABILITY_THRESHOLD;
+    effectiveProbability >= PROBABILITY_THRESHOLD &&
+    !hasQualityRisk;
   
-  if (meetsLeadingCriteria && lift !== null && lift > 0) {
+  // CRITICAL: Never Leading with only ATC-based probability when purchases are sufficient
+  const canBeLead = !purchasesSufficient || probabilityPurchase !== null;
+  
+  if (meetsLeadingCriteria && canBeLead && lift !== null && lift > 0) {
     const probSource = probabilityPurchase !== null ? 'purchase' : 'ATC';
     return {
       state: 'leading',
       label: 'B Leading',
-      description: `Min sample reached. B shows +${(lift * 100).toFixed(1)}% ${metricName} lift (P_${probSource}=${(effectiveProbability! * 100).toFixed(0)}%). Leading (not declared winner) — confirm via winner workflow once significance is met.`,
+      description: `Min sample reached. B shows +${(lift * 100).toFixed(1)}% ${metricName} lift (P_${probSource}=${(effectiveProbability! * 100).toFixed(0)}%). Confirm via winner workflow.`,
       variant: 'B',
       lift,
       probabilityATC: probabilityATC ?? undefined,
       probabilityPurchase,
+      probabilityQuality,
       signalConflict,
+      recommendation: 'Consider declaring winner if business criteria met',
     };
-  } else if (meetsLeadingCriteria && lift !== null && lift < 0) {
+  } else if (meetsLeadingCriteria && canBeLead && lift !== null && lift < 0) {
     const probSource = probabilityPurchase !== null ? 'purchase' : 'ATC';
     return {
       state: 'leading',
@@ -377,7 +483,9 @@ function calculateTestStatus(
       lift,
       probabilityATC: probabilityATC ?? undefined,
       probabilityPurchase,
+      probabilityQuality,
       signalConflict,
+      recommendation: 'Consider declaring winner if business criteria met',
     };
   }
   
@@ -386,16 +494,24 @@ function calculateTestStatus(
     const probText = probabilityATC !== null 
       ? ` (P_ATC=${(lift! > 0 ? probabilityATC : 1 - probabilityATC) * 100 | 0}%)` 
       : '';
+    
+    const needsMorePurchases = purchasesSufficient && probabilityPurchase === null;
+    const recommendation = needsMorePurchases 
+      ? 'Wait — purchase probability not yet stable'
+      : `Need ${Math.ceil(MIN_SAMPLE_SIZE - totalSessions)} more sessions for Leading`;
+    
     if (lift !== null && lift > 0) {
       return {
         state: 'directional',
         label: 'B Directional',
-        description: `Early signal: B trending +${(lift * 100).toFixed(1)}% ${metricName}${probText}. Need ${Math.ceil(MIN_SAMPLE_SIZE - totalSessions)} more sessions or higher lift for "Leading".`,
+        description: `Early signal: B trending +${(lift * 100).toFixed(1)}% ${metricName}${probText}.`,
         variant: 'B',
         lift,
         probabilityATC: probabilityATC ?? undefined,
         probabilityPurchase,
+        probabilityQuality,
         signalConflict,
+        recommendation,
       };
     } else if (lift !== null) {
       return {
@@ -406,7 +522,9 @@ function calculateTestStatus(
         lift,
         probabilityATC: probabilityATC ?? undefined,
         probabilityPurchase,
+        probabilityQuality,
         signalConflict,
+        recommendation,
       };
     }
   }
@@ -418,6 +536,8 @@ function calculateTestStatus(
     lift: lift ?? undefined,
     probabilityATC: probabilityATC ?? undefined,
     probabilityPurchase,
+    probabilityQuality,
+    recommendation: 'Continue collecting data',
   };
 }
 
@@ -521,7 +641,7 @@ export default function UrgencyTestsView() {
   const purchaseLift = calculateLift(variantA?.purchase_rate, variantB?.purchase_rate);
   const revenueLift = calculateLift(variantA?.total_revenue, variantB?.total_revenue);
 
-  // Calculate test status using explicit BIS-first rules (v2.4)
+  // Calculate test status using v2.4.1 decision integrity rules
   const testStatus = useMemo(() => {
     const sessionsA = variantA?.page_views || 0;
     const sessionsB = variantB?.page_views || 0;
@@ -543,6 +663,8 @@ export default function UrgencyTestsView() {
       atcB: variantB?.add_to_carts || 0,
       sessionsA,
       sessionsB,
+      refundsA: 0, // Quality data fetched separately (future: integrate with quality_events)
+      refundsB: 0,
     };
     
     return calculateTestStatus(metrics, AB_TEST_CONFIG.testName, false);

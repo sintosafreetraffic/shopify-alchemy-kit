@@ -2354,6 +2354,39 @@ export type Database = {
         }
         Relationships: []
       }
+      quality_events: {
+        Row: {
+          ab_variant: string
+          amount: number | null
+          created_at: string
+          currency: string | null
+          event_type: string
+          id: string
+          order_id: string
+          reason: string | null
+        }
+        Insert: {
+          ab_variant: string
+          amount?: number | null
+          created_at?: string
+          currency?: string | null
+          event_type: string
+          id?: string
+          order_id: string
+          reason?: string | null
+        }
+        Update: {
+          ab_variant?: string
+          amount?: number | null
+          created_at?: string
+          currency?: string | null
+          event_type?: string
+          id?: string
+          order_id?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
       quiz_reveal_analytics: {
         Row: {
           created_at: string
@@ -3714,6 +3747,20 @@ export type Database = {
           event_name: string | null
           total_revenue: number | null
           unique_sessions: number | null
+        }
+        Relationships: []
+      }
+      ab_quality_metrics: {
+        Row: {
+          ab_variant: string | null
+          cancel_count: number | null
+          chargeback_amount: number | null
+          chargeback_count: number | null
+          refund_amount: number | null
+          refund_count: number | null
+          return_count: number | null
+          support_ticket_count: number | null
+          total_quality_events: number | null
         }
         Relationships: []
       }
