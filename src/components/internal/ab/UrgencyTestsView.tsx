@@ -1,11 +1,17 @@
 /**
- * Urgency Tests View
+ * Urgency Operations View
  * 
  * Shows experiments filtered to urgency_social impact zone.
- * Includes the original UrgencyABTestTab functionality + system health widget.
+ * Includes test controls, traffic split management, funnel comparisons,
+ * and explicit Directional/Leading/Inconclusive status indicators.
+ * 
+ * v2.2 Refinements:
+ * - Renamed to "Urgency Operations" (not "Control Room")
+ * - Added explicit status states: Directional, Leading, Inconclusive
+ * - Never shows "Winner" unless manually declared
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,6 +37,9 @@ import {
   SlidersHorizontal,
   Percent,
   AlertTriangle,
+  ArrowUpRight,
+  Minus,
+  HelpCircle,
 } from 'lucide-react';
 import FirstTestChecklist from './FirstTestChecklist';
 
@@ -45,6 +54,94 @@ interface FunnelData {
   ic_rate: number;
   purchase_rate: number;
 }
+
+// ============================================================================
+// Status State Logic
+// ============================================================================
+
+type TestStatusState = 'inconclusive' | 'directional' | 'leading' | 'winner_declared';
+
+interface TestStatusResult {
+  state: TestStatusState;
+  label: string;
+  description: string;
+  variant?: 'A' | 'B';
+}
+
+const MIN_SAMPLE_SIZE = 300; // Configurable, matches platform default
+const LIFT_THRESHOLD = 0.01; // 1% minimum lift to not be inconclusive
+
+function calculateTestStatus(
+  sessionsA: number,
+  sessionsB: number,
+  metricA: number,
+  metricB: number,
+  winnerDeclared: boolean = false
+): TestStatusResult {
+  const totalSessions = sessionsA + sessionsB;
+  const lift = metricA > 0 ? (metricB - metricA) / metricA : null;
+  const absLift = lift !== null ? Math.abs(lift) : 0;
+  
+  // Winner declared takes precedence
+  if (winnerDeclared) {
+    return {
+      state: 'winner_declared',
+      label: 'Winner Declared',
+      description: 'Manually confirmed via winner workflow.',
+      variant: lift && lift > 0 ? 'B' : 'A',
+    };
+  }
+  
+  // Inconclusive: not enough data or lift too small
+  if (totalSessions < MIN_SAMPLE_SIZE * 0.5 || absLift < LIFT_THRESHOLD) {
+    return {
+      state: 'inconclusive',
+      label: 'Inconclusive',
+      description: totalSessions < MIN_SAMPLE_SIZE * 0.5 
+        ? `Need ${Math.ceil(MIN_SAMPLE_SIZE * 0.5 - totalSessions)} more sessions for directional signal.`
+        : 'Lift is within noise threshold (<1%).',
+    };
+  }
+  
+  // Leading: full sample reached with positive lift
+  if (totalSessions >= MIN_SAMPLE_SIZE && lift !== null && lift > 0) {
+    return {
+      state: 'leading',
+      label: 'B Leading',
+      description: `Min sample reached. B shows +${(lift * 100).toFixed(1)}% lift.`,
+      variant: 'B',
+    };
+  }
+  
+  // Directional: partial sample with signal
+  if (totalSessions >= MIN_SAMPLE_SIZE * 0.5) {
+    if (lift !== null && lift > 0) {
+      return {
+        state: 'directional',
+        label: 'B Directional',
+        description: `Early signal: B trending +${(lift * 100).toFixed(1)}%. Need ${Math.ceil(MIN_SAMPLE_SIZE - totalSessions)} more sessions.`,
+        variant: 'B',
+      };
+    } else if (lift !== null && lift < 0) {
+      return {
+        state: 'directional',
+        label: 'A Directional',
+        description: `Early signal: A trending better. B is ${(lift * 100).toFixed(1)}%.`,
+        variant: 'A',
+      };
+    }
+  }
+  
+  return {
+    state: 'inconclusive',
+    label: 'Inconclusive',
+    description: 'Not enough data to determine direction.',
+  };
+}
+
+// ============================================================================
+// Component
+// ============================================================================
 
 export default function UrgencyTestsView() {
   const [funnelData, setFunnelData] = useState<FunnelData[]>([]);
@@ -142,6 +239,50 @@ export default function UrgencyTestsView() {
   const purchaseLift = calculateLift(variantA?.purchase_rate, variantB?.purchase_rate);
   const revenueLift = calculateLift(variantA?.total_revenue, variantB?.total_revenue);
 
+  // Calculate test status using explicit rules
+  const testStatus = useMemo(() => {
+    const sessionsA = variantA?.page_views || 0;
+    const sessionsB = variantB?.page_views || 0;
+    const purchaseRateA = variantA?.purchase_rate || 0;
+    const purchaseRateB = variantB?.purchase_rate || 0;
+    
+    return calculateTestStatus(sessionsA, sessionsB, purchaseRateA, purchaseRateB, false);
+  }, [variantA, variantB]);
+
+  // Status badge styling
+  const getStatusBadge = () => {
+    switch (testStatus.state) {
+      case 'leading':
+        return (
+          <Badge variant="default" className="text-xs flex items-center gap-1">
+            <ArrowUpRight className="h-3 w-3" />
+            {testStatus.label}
+          </Badge>
+        );
+      case 'directional':
+        return (
+          <Badge variant="secondary" className="text-xs flex items-center gap-1 bg-blue-500/10 text-blue-600 border-blue-500/20">
+            <TrendingUp className="h-3 w-3" />
+            {testStatus.label}
+          </Badge>
+        );
+      case 'winner_declared':
+        return (
+          <Badge className="text-xs flex items-center gap-1 bg-green-500 text-white">
+            <CheckCircle className="h-3 w-3" />
+            {testStatus.label}
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="outline" className="text-xs flex items-center gap-1 text-muted-foreground">
+            <Minus className="h-3 w-3" />
+            {testStatus.label}
+          </Badge>
+        );
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* System Health Widget */}
@@ -168,6 +309,43 @@ export default function UrgencyTestsView() {
         </Card>
       )}
 
+      {/* Compact Status Header */}
+      <Card className="bg-muted/30">
+        <CardContent className="py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              {/* Status pill */}
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${testEnabled ? 'bg-green-500 animate-pulse' : 'bg-muted-foreground'}`} />
+                <span className="text-sm font-medium">{testEnabled ? 'Running' : 'Paused'}</span>
+              </div>
+              
+              {/* Split */}
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>Split:</span>
+                <span className="font-medium text-foreground">{100 - trafficSplit}% A / {trafficSplit}% B</span>
+              </div>
+              
+              {/* Test status */}
+              <div className="flex items-center gap-2">
+                {getStatusBadge()}
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
+          </div>
+          
+          {/* Status description */}
+          <p className="text-xs text-muted-foreground mt-2 pl-4">
+            {testStatus.description}
+          </p>
+        </CardContent>
+      </Card>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -192,10 +370,6 @@ export default function UrgencyTestsView() {
               Test {testEnabled ? 'Enabled' : 'Disabled'}
             </Label>
           </div>
-          <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
         </div>
       </div>
 
@@ -482,8 +656,11 @@ export default function UrgencyTestsView() {
             <div className="space-y-4">
               <h4 className="font-medium text-sm flex items-center gap-2">
                 Variant B (Treatment)
-                {purchaseLift !== null && purchaseLift > 0 && (
-                  <Badge className="text-xs">Winner</Badge>
+                {testStatus.state === 'leading' && testStatus.variant === 'B' && (
+                  <Badge variant="secondary" className="text-xs">Leading</Badge>
+                )}
+                {testStatus.state === 'directional' && testStatus.variant === 'B' && (
+                  <Badge variant="outline" className="text-xs">Directional</Badge>
                 )}
               </h4>
               <div className="space-y-3">
@@ -509,6 +686,24 @@ export default function UrgencyTestsView() {
                   <Progress value={(variantB?.purchase_rate || 0) * 100} className="h-2 [&>div]:bg-primary" />
                 </div>
               </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Status Legend */}
+      <Card className="bg-muted/30">
+        <CardContent className="py-4">
+          <div className="flex items-start gap-2">
+            <HelpCircle className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+            <div className="text-xs text-muted-foreground space-y-1">
+              <p><strong>Status definitions:</strong></p>
+              <ul className="space-y-0.5 ml-2">
+                <li><span className="font-medium">Inconclusive</span> — Not enough data or lift &lt;1%</li>
+                <li><span className="font-medium">Directional</span> — Early signal (50%+ of min sample)</li>
+                <li><span className="font-medium">Leading</span> — Min sample reached with positive lift</li>
+                <li><span className="font-medium">Winner Declared</span> — Manually confirmed via winner workflow</li>
+              </ul>
             </div>
           </div>
         </CardContent>

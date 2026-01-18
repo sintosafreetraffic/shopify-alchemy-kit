@@ -3,13 +3,20 @@
  * 
  * A read-only health indicator showing 5 database-driven auto-checks + 1 informational row.
  * No manual interaction required - all checks are computed from the database.
+ * 
+ * v2.2 Refinements:
+ * - Added lastAttemptedAt and lastSuccessfulAt timestamps
+ * - Added optional auto-refresh with 30-min cadence + jitter
+ * - Calm error UX when database is unreachable
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import {
   CheckCircle,
   AlertTriangle,
@@ -19,6 +26,7 @@ import {
   Activity,
   HelpCircle,
   Info,
+  Clock,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -97,7 +105,6 @@ const HEALTH_CHECKS: HealthCheck[] = [
     description: 'All conversion rates are within valid range [0–1]',
     failureHint: 'Check for data corruption or calculation errors in CVR fields.',
     checkFn: async () => {
-      // Check for any CVR values outside [0, 1] range (excluding nulls)
       const { data, error } = await supabase
         .from('ab_tests')
         .select('id, cvr_a, cvr_b')
@@ -105,7 +112,6 @@ const HEALTH_CHECKS: HealthCheck[] = [
       
       if (error) throw error;
       
-      // Filter out rows where both values are null (no issue)
       const invalidRows = (data || []).filter(row => {
         const aInvalid = row.cvr_a !== null && (row.cvr_a < 0 || row.cvr_a > 1);
         const bInvalid = row.cvr_b !== null && (row.cvr_b < 0 || row.cvr_b > 1);
@@ -125,7 +131,6 @@ const HEALTH_CHECKS: HealthCheck[] = [
     description: 'All BIS values are non-negative and valid (≥0)',
     failureHint: 'Review BIS calculation logic or check for corrupted metric data.',
     checkFn: async () => {
-      // Check for any BIS values that are negative
       const { data, error } = await supabase
         .from('ab_tests')
         .select('id, bis_final_a, bis_final_b')
@@ -133,7 +138,6 @@ const HEALTH_CHECKS: HealthCheck[] = [
       
       if (error) throw error;
       
-      // Filter for actual negative values (not null)
       const invalidRows = (data || []).filter(row => {
         const aInvalid = row.bis_final_a !== null && row.bis_final_a < 0;
         const bInvalid = row.bis_final_b !== null && row.bis_final_b < 0;
@@ -152,11 +156,9 @@ const HEALTH_CHECKS: HealthCheck[] = [
     label: 'Element Coverage',
     description: 'At least 1 element type tracked in last 7 days',
     failureHint: 'Wire PDP elements (price, ATC, reviews, etc.) to intent tracking.',
-    // This check uses soft logic: ≥1 = pass, <3 = info note (handled in render)
     checkFn: async () => {
       const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
       
-      // Get distinct element types from last 7 days
       const { data, error } = await supabase
         .from('ab_intent_events')
         .select('element_type')
@@ -166,7 +168,6 @@ const HEALTH_CHECKS: HealthCheck[] = [
       
       const uniqueTypes = new Set((data || []).map(row => row.element_type));
       const typeCount = uniqueTypes.size;
-      // Pass if ≥1 (soft requirement), but detail shows coverage
       const hasAny = typeCount >= 1;
       
       return { 
@@ -202,6 +203,17 @@ export default function FirstTestChecklist() {
   const [testStatusCounts, setTestStatusCounts] = useState<TestStatusCounts>({ running: 0, concluded: 0, total: 0 });
   const [isRunning, setIsRunning] = useState(false);
   const [connectionError, setConnectionError] = useState(false);
+  
+  // Timestamp tracking
+  const [lastAttemptedAt, setLastAttemptedAt] = useState<Date | null>(null);
+  const [lastSuccessfulAt, setLastSuccessfulAt] = useState<Date | null>(null);
+  
+  // Auto-refresh state
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
+  const autoRefreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Previous successful results (shown when connection fails)
+  const [lastSuccessfulResults, setLastSuccessfulResults] = useState<Record<string, CheckResult>>({});
 
   // Fetch test status counts for the 6th informational row
   const fetchTestStatusCounts = useCallback(async () => {
@@ -226,6 +238,7 @@ export default function FirstTestChecklist() {
   const runAllChecks = useCallback(async () => {
     setIsRunning(true);
     setConnectionError(false);
+    setLastAttemptedAt(new Date());
     
     // Set all to loading
     const loadingState: Record<string, CheckResult> = {};
@@ -254,6 +267,9 @@ export default function FirstTestChecklist() {
     const allFailed = outcomes.every(o => o.error);
     if (allFailed) {
       setConnectionError(true);
+    } else {
+      // Update lastSuccessfulAt only when checks complete successfully
+      setLastSuccessfulAt(new Date());
     }
     
     const newResults: Record<string, CheckResult> = {};
@@ -267,6 +283,12 @@ export default function FirstTestChecklist() {
     });
     
     setResults(newResults);
+    
+    // Store successful results if not a connection error
+    if (!allFailed) {
+      setLastSuccessfulResults(newResults);
+    }
+    
     setIsRunning(false);
   }, [fetchTestStatusCounts]);
 
@@ -274,13 +296,55 @@ export default function FirstTestChecklist() {
   useEffect(() => {
     runAllChecks();
   }, [runAllChecks]);
+  
+  // Auto-refresh logic with jitter
+  useEffect(() => {
+    if (autoRefreshEnabled) {
+      // 30 minutes = 1800000ms, add ±20% jitter
+      const baseInterval = 30 * 60 * 1000;
+      const jitter = (Math.random() - 0.5) * 0.4 * baseInterval; // ±20%
+      const interval = baseInterval + jitter;
+      
+      autoRefreshIntervalRef.current = setInterval(() => {
+        runAllChecks();
+      }, interval);
+      
+      return () => {
+        if (autoRefreshIntervalRef.current) {
+          clearInterval(autoRefreshIntervalRef.current);
+        }
+      };
+    } else {
+      if (autoRefreshIntervalRef.current) {
+        clearInterval(autoRefreshIntervalRef.current);
+        autoRefreshIntervalRef.current = null;
+      }
+    }
+  }, [autoRefreshEnabled, runAllChecks]);
 
-  // Calculate summary
-  const passedCount = Object.values(results).filter(r => r.passed && !r.error).length;
+  // Calculate summary - use lastSuccessfulResults if connection error
+  const displayResults = connectionError && Object.keys(lastSuccessfulResults).length > 0 
+    ? lastSuccessfulResults 
+    : results;
+  const passedCount = Object.values(displayResults).filter(r => r.passed && !r.error).length;
   const errorCount = Object.values(results).filter(r => r.error).length;
   const totalChecks = HEALTH_CHECKS.length;
   const allPassed = passedCount === totalChecks && errorCount === 0;
   const progress = (passedCount / totalChecks) * 100;
+
+  // Format timestamp
+  const formatTimestamp = (date: Date | null) => {
+    if (!date) return 'Never';
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return date.toLocaleDateString();
+  };
 
   // Get status icon for a check
   const getStatusIcon = (result: CheckResult | undefined) => {
@@ -329,29 +393,62 @@ export default function FirstTestChecklist() {
               </CardDescription>
             </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={runAllChecks}
-            disabled={isRunning}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isRunning ? 'animate-spin' : ''}`} />
-            Re-run Checks
-          </Button>
+          <div className="flex items-center gap-3">
+            {/* Auto-refresh toggle */}
+            <div className="flex items-center gap-2">
+              <Switch
+                id="auto-refresh"
+                checked={autoRefreshEnabled}
+                onCheckedChange={setAutoRefreshEnabled}
+                className="scale-75"
+              />
+              <Label htmlFor="auto-refresh" className="text-xs text-muted-foreground cursor-pointer">
+                Auto-refresh
+              </Label>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={runAllChecks}
+              disabled={isRunning}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isRunning ? 'animate-spin' : ''}`} />
+              Re-run
+            </Button>
+          </div>
+        </div>
+        
+        {/* Timestamps */}
+        <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            <span>Last checked: {formatTimestamp(lastAttemptedAt)}</span>
+          </div>
+          {lastSuccessfulAt && (
+            <div className="flex items-center gap-1">
+              <CheckCircle className="h-3 w-3 text-green-600" />
+              <span>Last successful: {formatTimestamp(lastSuccessfulAt)}</span>
+            </div>
+          )}
         </div>
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Connection error state */}
+        {/* Connection error state - calm, not alarming */}
         {connectionError && (
-          <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/50 border-muted-foreground/20">
+          <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30 border-muted-foreground/20">
             <AlertTriangle className="h-5 w-5 text-muted-foreground shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">System Offline</p>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-muted-foreground">Database unreachable</p>
               <p className="text-xs text-muted-foreground">
-                Could not verify health checks. Database connection may be unavailable.
+                Health could not be verified. Try again in a moment.
+                {Object.keys(lastSuccessfulResults).length > 0 && ' Showing last successful results.'}
               </p>
             </div>
+            <Button variant="outline" size="sm" onClick={runAllChecks} disabled={isRunning}>
+              <RefreshCw className={`h-4 w-4 mr-1 ${isRunning ? 'animate-spin' : ''}`} />
+              Re-run Checks
+            </Button>
           </div>
         )}
 
@@ -370,7 +467,7 @@ export default function FirstTestChecklist() {
         {/* Health check items */}
         <div className="space-y-2">
           {HEALTH_CHECKS.map(check => {
-            const result = results[check.id];
+            const result = displayResults[check.id];
             
             return (
               <div
@@ -417,7 +514,7 @@ export default function FirstTestChecklist() {
         </div>
 
         {/* Status message */}
-        {!isRunning && (
+        {!isRunning && !connectionError && (
           <div className={`flex items-center gap-3 p-3 rounded-lg border ${
             allPassed 
               ? 'bg-green-500/10 border-green-500/20' 
