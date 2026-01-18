@@ -75,25 +75,32 @@ export default function UnifiedExperimentationTab() {
               <p className="text-sm font-medium">This is a tracking &amp; decision system — not a page editor.</p>
               <p className="text-xs text-muted-foreground">
                 Variants are implemented in code (e.g. <code className="px-1 py-0.5 bg-muted rounded text-xs">HeroVariantB</code>, <code className="px-1 py-0.5 bg-muted rounded text-xs">useABVariant()</code>). 
-                This dashboard measures impact, recommends stopping, declares winners, and archives learnings.
+                This UI registers experiments, measures impact, recommends actions, and archives learnings.
               </p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Scope Selector: Urgency Tests | All Tests */}
+      {/* Scope Selector: Urgency Operations | Experimentation Platform */}
       <Tabs value={scope} onValueChange={(v) => setScope(v as ExperimentScope)} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 lg:w-[300px]">
-          <TabsTrigger value="urgency" className="flex items-center gap-2">
-            <Zap className="h-4 w-4 text-orange-500" />
-            <span>Urgency Tests</span>
-          </TabsTrigger>
-          <TabsTrigger value="all" className="flex items-center gap-2">
-            <Beaker className="h-4 w-4" />
-            <span>All Tests</span>
-          </TabsTrigger>
-        </TabsList>
+        <div className="space-y-2">
+          <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
+            <TabsTrigger value="urgency" className="flex items-center gap-2">
+              <Zap className="h-4 w-4 text-orange-500" />
+              <span>Urgency Operations</span>
+            </TabsTrigger>
+            <TabsTrigger value="all" className="flex items-center gap-2">
+              <Beaker className="h-4 w-4" />
+              <span>Experimentation Platform</span>
+            </TabsTrigger>
+          </TabsList>
+          <p className="text-xs text-muted-foreground pl-1">
+            {scope === 'urgency' 
+              ? 'Operate the urgency experiment + see core health.' 
+              : 'All experiments across the store: decide winners, archive learnings.'}
+          </p>
+        </div>
 
         {/* Urgency Tests View - Default */}
         <TabsContent value="urgency" className="mt-4">
