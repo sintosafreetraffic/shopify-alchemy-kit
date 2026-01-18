@@ -83,7 +83,7 @@ import WeeklyReviewTab from "@/components/internal/WeeklyReviewTab";
 import PinterestSourceTruthTab from "@/components/internal/PinterestSourceTruthTab";
 import HeroABTestTab from "@/components/internal/HeroABTestTab";
 import UrgencyABTestTab from "@/components/internal/UrgencyABTestTab";
-import ABExperimentationPlatform from "@/components/internal/ab/ABExperimentationPlatform";
+import UnifiedExperimentationTab from "@/components/internal/ab/UnifiedExperimentationTab";
 import { useAdsReporting, DATE_PRESETS } from "@/hooks/useAdsReporting";
 
 interface AnalyticsStats {
@@ -774,10 +774,7 @@ const QuizRevealTracking = () => {
               <TrendingUp className="w-4 h-4" />
               <span className="hidden sm:inline">Overview</span>
             </TabsTrigger>
-            <TabsTrigger value="experiments" className="flex items-center gap-2">
-              <Beaker className="w-4 h-4 text-primary" />
-              <span className="hidden sm:inline">Experiments</span>
-            </TabsTrigger>
+            {/* Experiments tab removed - now integrated into Urgency A/B */}
             <TabsTrigger value="phase4" className="flex items-center gap-2">
               <Shield className="w-4 h-4" />
               <span className="hidden sm:inline">Phase 4</span>
@@ -820,19 +817,16 @@ const QuizRevealTracking = () => {
             </TabsTrigger>
           </TabsList>
 
-          {/* A/B Experimentation Platform Tab */}
-          <TabsContent value="experiments" className="mt-6">
-            <ABExperimentationPlatform />
-          </TabsContent>
+          {/* Experiments tab removed - integrated into Urgency A/B */}
 
           {/* Hero A/B Test Tab */}
           <TabsContent value="heroab" className="mt-6">
             <HeroABTestTab />
           </TabsContent>
 
-          {/* Urgency A/B Test Tab */}
+          {/* Urgency A/B Test Tab - Now includes full experimentation platform */}
           <TabsContent value="urgencyab" className="mt-6">
-            <UrgencyABTestTab />
+            <UnifiedExperimentationTab />
           </TabsContent>
 
           {/* Phase 4 Production Monitoring Tab */}
