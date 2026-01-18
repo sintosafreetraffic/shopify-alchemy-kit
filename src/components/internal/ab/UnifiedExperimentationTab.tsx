@@ -92,13 +92,13 @@ export default function UnifiedExperimentationTab() {
             </TabsTrigger>
             <TabsTrigger value="all" className="flex items-center gap-2">
               <Beaker className="h-4 w-4" />
-              <span>Experimentation Platform</span>
+              <span>Experimentation Analytics</span>
             </TabsTrigger>
           </TabsList>
           <p className="text-xs text-muted-foreground pl-1">
             {scope === 'urgency' 
               ? 'Operate the urgency experiment + see core health.' 
-              : 'All experiments across the store: decide winners, archive learnings.'}
+              : 'All experiments analytics: decide winners, archive learnings.'}
           </p>
         </div>
 
