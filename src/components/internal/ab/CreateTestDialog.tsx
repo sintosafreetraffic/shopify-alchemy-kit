@@ -100,10 +100,11 @@ export default function CreateTestDialog({ open, onOpenChange, onCreated }: Crea
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Beaker className="h-5 w-5" />
-            Create New A/B Test
+            Track Experiment
           </DialogTitle>
           <DialogDescription>
-            Set up a new experiment with zone-based guardrails
+            Register an experiment for measurement and decision-making.
+            Page changes are implemented in code.
           </DialogDescription>
         </DialogHeader>
 
@@ -248,7 +249,7 @@ export default function CreateTestDialog({ open, onOpenChange, onCreated }: Crea
             onClick={handleCreate} 
             disabled={!name.trim() || creating || conflict.hasConflict}
           >
-            {creating ? 'Creating...' : 'Create Test'}
+            {creating ? 'Registering...' : 'Track Experiment'}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -362,7 +362,7 @@ export default function ActiveTestsTab() {
           </Button>
           <Button size="sm" onClick={() => setCreateDialogOpen(true)} disabled={activeCount >= 3}>
             <Plus className="h-4 w-4 mr-2" />
-            New Test
+            Track Experiment
           </Button>
         </div>
       </div>
@@ -382,13 +382,13 @@ export default function ActiveTestsTab() {
         <Card className="py-12">
           <CardContent className="flex flex-col items-center justify-center text-center">
             <Beaker className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Active Tests</h3>
-            <p className="text-muted-foreground mb-4">
-              Create your first A/B test to start experimenting
+            <h3 className="text-lg font-semibold mb-2">No Experiments Tracked</h3>
+            <p className="text-muted-foreground mb-4 max-w-sm">
+              Register your first code-implemented experiment for measurement and decision-making.
             </p>
             <Button onClick={() => setCreateDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
-              Create Test
+              Track Experiment
             </Button>
           </CardContent>
         </Card>
