@@ -4,10 +4,11 @@
  * A read-only health indicator showing 5 database-driven auto-checks + 1 informational row.
  * No manual interaction required - all checks are computed from the database.
  * 
- * v2.2 Refinements:
- * - Added lastAttemptedAt and lastSuccessfulAt timestamps
- * - Added optional auto-refresh with 30-min cadence + jitter
- * - Calm error UX when database is unreachable
+ * v2.3 Refinements:
+ * - lastSuccessfulAt ONLY set when ALL checks complete with ZERO errors
+ * - Auto-refresh uses setTimeout with re-rolled jitter each run (not setInterval)
+ * - Default: auto-refresh OFF, 30-min cadence ±20% jitter when enabled
+ * - Calm "Database unreachable" error UX
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -263,13 +264,12 @@ export default function FirstTestChecklist() {
       fetchTestStatusCounts(),
     ]);
     
-    // Check if all checks failed (likely connection issue)
+    // Check if ANY check errored (not just all failed)
+    const hasAnyError = outcomes.some(o => o.error);
     const allFailed = outcomes.every(o => o.error);
+    
     if (allFailed) {
       setConnectionError(true);
-    } else {
-      // Update lastSuccessfulAt only when checks complete successfully
-      setLastSuccessfulAt(new Date());
     }
     
     const newResults: Record<string, CheckResult> = {};
@@ -284,9 +284,13 @@ export default function FirstTestChecklist() {
     
     setResults(newResults);
     
-    // Store successful results if not a connection error
-    if (!allFailed) {
+    // ONLY update lastSuccessfulAt when ALL checks complete with ZERO errors
+    if (!hasAnyError) {
+      setLastSuccessfulAt(new Date());
       setLastSuccessfulResults(newResults);
+    } else if (!allFailed) {
+      // Partial success - still store results but don't update lastSuccessfulAt
+      // (keep showing previous successful timestamp)
     }
     
     setIsRunning(false);
@@ -297,29 +301,33 @@ export default function FirstTestChecklist() {
     runAllChecks();
   }, [runAllChecks]);
   
-  // Auto-refresh logic with jitter
+  // Auto-refresh logic with setTimeout + re-rolled jitter each run
   useEffect(() => {
-    if (autoRefreshEnabled) {
-      // 30 minutes = 1800000ms, add ±20% jitter
+    const scheduleNextRun = () => {
+      if (!autoRefreshEnabled) return;
+      
+      // 30 minutes = 1800000ms, add ±20% jitter (re-rolled each time)
       const baseInterval = 30 * 60 * 1000;
       const jitter = (Math.random() - 0.5) * 0.4 * baseInterval; // ±20%
       const interval = baseInterval + jitter;
       
-      autoRefreshIntervalRef.current = setInterval(() => {
-        runAllChecks();
+      autoRefreshIntervalRef.current = setTimeout(async () => {
+        await runAllChecks();
+        // Schedule next run with fresh jitter
+        scheduleNextRun();
       }, interval);
-      
-      return () => {
-        if (autoRefreshIntervalRef.current) {
-          clearInterval(autoRefreshIntervalRef.current);
-        }
-      };
-    } else {
+    };
+    
+    if (autoRefreshEnabled) {
+      scheduleNextRun();
+    }
+    
+    return () => {
       if (autoRefreshIntervalRef.current) {
-        clearInterval(autoRefreshIntervalRef.current);
+        clearTimeout(autoRefreshIntervalRef.current);
         autoRefreshIntervalRef.current = null;
       }
-    }
+    };
   }, [autoRefreshEnabled, runAllChecks]);
 
   // Calculate summary - use lastSuccessfulResults if connection error
