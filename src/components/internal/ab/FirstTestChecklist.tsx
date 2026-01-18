@@ -1,7 +1,7 @@
 /**
  * Experimentation System Health Widget
  * 
- * A read-only health indicator showing 5 database-driven auto-checks.
+ * A read-only health indicator showing 5 database-driven auto-checks + 1 informational row.
  * No manual interaction required - all checks are computed from the database.
  */
 
@@ -18,6 +18,7 @@ import {
   ExternalLink,
   Activity,
   HelpCircle,
+  Info,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -38,6 +39,12 @@ interface CheckResult {
   loading: boolean;
   error: boolean;
   detail?: string;
+}
+
+interface TestStatusCounts {
+  running: number;
+  concluded: number;
+  total: number;
 }
 
 // ============================================================================
@@ -183,6 +190,7 @@ const OPERATOR_NOTES = [
   'Variant stability is enforced via localStorage cookie.',
   'Auto-stop never acts without human confirmation.',
   'Max 3 active tests; only 1 may affect pricing/CTA/urgency.',
+  'Winner declaration requires manual confirm + min sample met.',
 ];
 
 // ============================================================================
@@ -191,8 +199,28 @@ const OPERATOR_NOTES = [
 
 export default function FirstTestChecklist() {
   const [results, setResults] = useState<Record<string, CheckResult>>({});
+  const [testStatusCounts, setTestStatusCounts] = useState<TestStatusCounts>({ running: 0, concluded: 0, total: 0 });
   const [isRunning, setIsRunning] = useState(false);
   const [connectionError, setConnectionError] = useState(false);
+
+  // Fetch test status counts for the 6th informational row
+  const fetchTestStatusCounts = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('ab_tests')
+        .select('status');
+      
+      if (error) throw error;
+      
+      const running = (data || []).filter(t => t.status === 'active').length;
+      const concluded = (data || []).filter(t => t.status === 'completed' || t.status === 'stopped').length;
+      const total = (data || []).length;
+      
+      setTestStatusCounts({ running, concluded, total });
+    } catch (e) {
+      console.error('Failed to fetch test status counts:', e);
+    }
+  }, []);
 
   // Initialize and run checks on mount
   const runAllChecks = useCallback(async () => {
@@ -206,7 +234,7 @@ export default function FirstTestChecklist() {
     });
     setResults(loadingState);
 
-    // Run all checks in parallel
+    // Run all checks in parallel + fetch test status counts
     const checkPromises = HEALTH_CHECKS.map(async (check) => {
       try {
         const result = await check.checkFn();
@@ -217,7 +245,10 @@ export default function FirstTestChecklist() {
       }
     });
 
-    const outcomes = await Promise.all(checkPromises);
+    const [outcomes] = await Promise.all([
+      Promise.all(checkPromises),
+      fetchTestStatusCounts(),
+    ]);
     
     // Check if all checks failed (likely connection issue)
     const allFailed = outcomes.every(o => o.error);
@@ -237,7 +268,7 @@ export default function FirstTestChecklist() {
     
     setResults(newResults);
     setIsRunning(false);
-  }, []);
+  }, [fetchTestStatusCounts]);
 
   // Run checks on mount
   useEffect(() => {
@@ -318,7 +349,7 @@ export default function FirstTestChecklist() {
             <div>
               <p className="text-sm font-medium text-muted-foreground">System Offline</p>
               <p className="text-xs text-muted-foreground">
-                Could not connect to database. Cached data may be shown.
+                Could not verify health checks. Database connection may be unavailable.
               </p>
             </div>
           </div>
@@ -368,6 +399,21 @@ export default function FirstTestChecklist() {
               </div>
             );
           })}
+
+          {/* 6th row: Active Test States (informational, non-blocking) */}
+          <div className="flex items-start gap-3 p-3 rounded-lg border bg-muted/20 border-transparent">
+            <div className="shrink-0 mt-0.5">
+              <Info className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-muted-foreground">
+                Active Test States
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {testStatusCounts.running} running, {testStatusCounts.concluded} concluded ({testStatusCounts.total} total)
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Status message */}
