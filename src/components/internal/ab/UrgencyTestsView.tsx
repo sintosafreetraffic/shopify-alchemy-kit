@@ -5,13 +5,14 @@
  * Includes test controls, traffic split management, funnel comparisons,
  * and explicit Directional/Leading/Inconclusive status indicators.
  * 
- * v2.4.1 Decision Integrity Hardening:
+ * v2.4.2 Decision Integrity Hardening:
  * - Data-seeded RNG for deterministic P(B>A) (changes only when data changes)
- * - Server-side probability computation with client fallback
+ * - Server-side probability computation with client fallback + caching
  * - Dual-signal probability: P_ATC (early) + P_Purchase (when n≥10)
- * - NEW: Customer Quality (refund proxy) metric
- * - NEW: "Watch" status for conflicting or quality-risk signals
+ * - Customer Quality (refund proxy) metric with visual display
+ * - "Watch" status for conflicting or quality-risk signals
  * - Leading requires P_Purchase when purchases are sufficient
+ * - Preflight status display for automated test moments
  * - Conflict handling: ATC vs Purchase + Quality degradation
  */
 
@@ -28,6 +29,10 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import { AB_TEST_CONFIG, setTestEnabled, setTrafficSplit, getTrafficSplit, fetchTrafficSplitFromDB, forceVariant, clearVariant, getABDebugInfo, type ABVariant } from '@/lib/abTesting';
+import { useServerProbabilities } from '@/hooks/useServerProbabilities';
+import { usePreflightStatus } from '@/hooks/usePreflightStatus';
+import { PreflightStatusBadge } from './PreflightStatusBadge';
+import { QualityMetricDisplay } from './QualityMetricDisplay';
 import { 
   Beaker, 
   TrendingUp, 
@@ -49,9 +54,11 @@ import {
   ShieldAlert,
   Clock,
   Paintbrush,
+  Server,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import FirstTestChecklist from './FirstTestChecklist';
+import { formatDistanceToNow } from 'date-fns';
 
 interface FunnelData {
   ab_variant: string;
@@ -558,6 +565,25 @@ export default function UrgencyTestsView() {
   const [splitDrawerOpen, setSplitDrawerOpen] = useState(false);
   const [savingSplit, setSavingSplit] = useState(false);
 
+  // v2.4.2: Server-side probabilities with caching
+  const { 
+    data: serverProbs, 
+    loading: probsLoading, 
+    error: probsError,
+    lastFetched: probsLastFetched,
+    isStale: probsIsStale,
+    refresh: refreshProbs 
+  } = useServerProbabilities(AB_TEST_CONFIG.testName);
+  
+  // v2.4.2: Preflight status
+  const {
+    latestRun: preflightRun,
+    loading: preflightLoading,
+    canIncreaseTraffic,
+    warningMessage: preflightWarning,
+    refresh: refreshPreflight
+  } = usePreflightStatus(AB_TEST_CONFIG.testName);
+
   // Fetch traffic split from database on mount
   useEffect(() => {
     const loadTrafficSplit = async () => {
@@ -589,6 +615,11 @@ export default function UrgencyTestsView() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+  
+  // Combined refresh
+  const handleRefreshAll = useCallback(async () => {
+    await Promise.all([fetchData(), refreshProbs(), refreshPreflight()]);
+  }, [fetchData, refreshProbs, refreshPreflight]);
 
   const handleToggleTest = () => {
     const newState = !testEnabled;
@@ -644,12 +675,16 @@ export default function UrgencyTestsView() {
   const purchaseLift = calculateLift(variantA?.purchase_rate, variantB?.purchase_rate);
   const revenueLift = calculateLift(variantA?.total_revenue, variantB?.total_revenue);
 
-  // Calculate test status using v2.4.1 decision integrity rules
+  // Calculate test status using v2.4.2 decision integrity rules (with server probs)
   const testStatus = useMemo(() => {
     const sessionsA = variantA?.page_views || 0;
     const sessionsB = variantB?.page_views || 0;
     const revenueA = variantA?.total_revenue || 0;
     const revenueB = variantB?.total_revenue || 0;
+    
+    // Use server-side refund data if available
+    const refundsA = serverProbs?.metrics?.refunds_a || 0;
+    const refundsB = serverProbs?.metrics?.refunds_b || 0;
     
     const metrics: MetricValues = {
       bisA: null, // BIS not available in funnel view, will fallback
@@ -666,12 +701,13 @@ export default function UrgencyTestsView() {
       atcB: variantB?.add_to_carts || 0,
       sessionsA,
       sessionsB,
-      refundsA: 0, // Quality data fetched separately (future: integrate with quality_events)
-      refundsB: 0,
+      refundsA,
+      refundsB,
     };
     
-    return calculateTestStatus(metrics, AB_TEST_CONFIG.testName, false);
-  }, [variantA, variantB]);
+    // Pass server probabilities for server-side compute (preferred)
+    return calculateTestStatus(metrics, AB_TEST_CONFIG.testName, false, serverProbs);
+  }, [variantA, variantB, serverProbs]);
   
   // Calculate BIS lift and Revenue/Session lift for header display
   const bisMetrics = useMemo(() => {
@@ -760,7 +796,7 @@ export default function UrgencyTestsView() {
         </Card>
       )}
 
-      {/* Compact Status Header (v2.4 - Dual Signal + Seeded RNG) */}
+      {/* Compact Status Header (v2.4.2 - Dual Signal + Quality + Preflight) */}
       <TooltipProvider>
         <Card className="bg-muted/30">
           <CardContent className="py-4">
@@ -782,11 +818,42 @@ export default function UrgencyTestsView() {
                 <div className="flex items-center gap-2">
                   {getStatusBadge()}
                 </div>
+                
+                {/* Preflight status (v2.4.2) */}
+                <PreflightStatusBadge run={preflightRun} loading={preflightLoading} />
               </div>
               
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
-                  <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                {/* Server compute indicator */}
+                {serverProbs && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground cursor-help">
+                        <Server className="h-3 w-3" />
+                        <span>{serverProbs.method_version}</span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p className="text-xs">Server-side probability computation</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Last computed: {probsLastFetched ? formatDistanceToNow(probsLastFetched, { addSuffix: true }) : 'never'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Hash: {serverProbs.inputs_hash}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+                {probsIsStale && (
+                  <Badge variant="outline" className="text-xs text-amber-600 border-amber-500/30">
+                    Stale
+                  </Badge>
+                )}
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleRefreshAll} 
+                  disabled={loading || probsLoading}
+                >
+                  <RefreshCw className={`h-4 w-4 ${(loading || probsLoading) ? 'animate-spin' : ''}`} />
                 </Button>
               </div>
             </div>
@@ -877,6 +944,16 @@ export default function UrgencyTestsView() {
                   </TooltipContent>
                 </Tooltip>
               )}
+              
+              {/* Customer Quality metric (v2.4.2) */}
+              <QualityMetricDisplay
+                refundRateA={serverProbs?.refund_rate_a || 0}
+                refundRateB={serverProbs?.refund_rate_b || 0}
+                probabilityBWorse={serverProbs?.p_quality_b_worse_than_a ?? null}
+                qualityLiftPercent={serverProbs?.quality_lift_percent || 0}
+                purchasesA={serverProbs?.metrics?.purchases_a || variantA?.purchases || 0}
+                purchasesB={serverProbs?.metrics?.purchases_b || variantB?.purchases || 0}
+              />
               
               {/* BIS tooltip */}
               <Tooltip>
