@@ -15,6 +15,7 @@ import { trackViewedProduct } from "@/lib/klaviyo";
 import { CountdownTimerDisplay } from "./CountdownTimer";
 import { formatPrice } from "@/lib/formatPrice";
 import { useIsEU } from "@/hooks/useCurrencySymbol";
+import { mobileHeroConfig } from "@/config/mobileHeroConfig";
 
 
 // Lazy load the image carousel to reduce initial bundle
@@ -143,6 +144,42 @@ export const KneePillowHero = () => {
             <p className="text-sm text-muted-foreground mt-0.5">
               Perfect Support for Side Sleepers
             </p>
+            
+            {/* Mobile Price */}
+            <p className="text-xl font-bold mt-2 text-primary">{formatPrice(productPrice, currencyCode)}</p>
+            
+            {/* MOBILE CTA FIRST: Show CTA immediately after price when enabled */}
+            {mobileHeroConfig.MOBILE_CTA_FIRST && (
+              <div className="mt-3">
+                <Button 
+                  size="lg"
+                  className="w-full text-lg py-6 font-bold shadow-lg hover:shadow-xl transition-all touch-manipulation animate-subtle-bounce bg-primary text-primary-foreground hover:bg-black hover:text-white relative overflow-hidden group" 
+                  onClick={handleAddToCart}
+                  disabled={isCheckingOut || !product}
+                >
+                  {isCheckingOut ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Adding...
+                    </>
+                  ) : (
+                    <>
+                      <span className="inline-block transition-all duration-300 group-hover:-translate-y-12 group-hover:opacity-0">
+                        ADD TO CART
+                      </span>
+                      <span className="absolute inset-0 flex items-center justify-center translate-y-12 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                        ADD TO CART
+                      </span>
+                    </>
+                  )}
+                </Button>
+                
+                {/* Mobile Payment Icons - compact */}
+                <div className="pt-2">
+                  <PaymentIcons />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -193,8 +230,8 @@ export const KneePillowHero = () => {
               Perfect Support for Side Sleepers
             </p>
 
-            {/* Price Display - Above USPs */}
-            <div className="flex items-center gap-3 mt-2 mb-3">
+            {/* Price Display - Above USPs (desktop only when MOBILE_CTA_FIRST, mobile shows in header) */}
+            <div className={`flex items-center gap-3 mt-2 mb-3 ${mobileHeroConfig.MOBILE_CTA_FIRST ? 'hidden md:flex' : ''}`}>
               <p className="text-xl md:text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
             </div>
 
@@ -218,33 +255,35 @@ export const KneePillowHero = () => {
               </div>
             </div>
 
-            {/* Add to Cart Button */}
-            <Button
-              size="lg"
-              className="w-full text-lg md:text-xl py-6 font-bold shadow-lg hover:shadow-xl transition-all touch-manipulation animate-subtle-bounce bg-primary text-primary-foreground hover:bg-black hover:text-white relative overflow-hidden group"
-              onClick={handleAddToCart}
-              disabled={isCheckingOut || !product}
-            >
-              {isCheckingOut ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Adding...
-                </>
-              ) : (
-                <>
-                  <span className="inline-block transition-all duration-300 group-hover:-translate-y-12 group-hover:opacity-0">
-                    ADD TO CART
-                  </span>
-                  <span className="absolute inset-0 flex items-center justify-center translate-y-12 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                    ADD TO CART
-                  </span>
-                </>
-              )}
-            </Button>
+            {/* Desktop CTA always shows, Mobile CTA only if MOBILE_CTA_FIRST is false */}
+            <div className={mobileHeroConfig.MOBILE_CTA_FIRST ? "hidden md:block" : ""}>
+              <Button
+                size="lg"
+                className="w-full text-lg md:text-xl py-6 font-bold shadow-lg hover:shadow-xl transition-all touch-manipulation animate-subtle-bounce bg-primary text-primary-foreground hover:bg-black hover:text-white relative overflow-hidden group"
+                onClick={handleAddToCart}
+                disabled={isCheckingOut || !product}
+              >
+                {isCheckingOut ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Adding...
+                  </>
+                ) : (
+                  <>
+                    <span className="inline-block transition-all duration-300 group-hover:-translate-y-12 group-hover:opacity-0">
+                      ADD TO CART
+                    </span>
+                    <span className="absolute inset-0 flex items-center justify-center translate-y-12 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                      ADD TO CART
+                    </span>
+                  </>
+                )}
+              </Button>
 
-            {/* Payment Icons */}
-            <div className="pt-4">
-              <PaymentIcons />
+              {/* Payment Icons */}
+              <div className="pt-4">
+                <PaymentIcons />
+              </div>
             </div>
 
             <div className="grid grid-cols-3 gap-3 py-3 border-t text-center">
