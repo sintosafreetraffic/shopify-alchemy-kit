@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { getPersonaCookie, type PersonaCluster } from "@/lib/personaCookie";
 import { supabase } from "@/integrations/supabase/client";
+import { getSessionId } from "@/lib/abTesting";
 
 // Hero images
 import heroDesktop from "@/assets/hero-cloud-sleep.webp";
@@ -62,20 +63,7 @@ async function trackHeroVariantExposure(variant: HeadlineVariant, persona: Perso
   }
 }
 
-/**
- * Get or create a session ID for tracking
- */
-function getSessionId(): string {
-  if (typeof window === "undefined") return "ssr";
-  
-  let sessionId = sessionStorage.getItem("rbn_session_id");
-  if (!sessionId) {
-    sessionId = crypto.randomUUID();
-    sessionStorage.setItem("rbn_session_id", sessionId);
-  }
-  return sessionId;
-}
-
+// Uses unified session ID from abTesting.ts (imported at top)
 const HomeHero = () => {
   const navigate = useNavigate();
   const hasTracked = useRef(false);
