@@ -12,6 +12,7 @@ import { isTrackingAllowed, onConsentChange, getConsentStatus } from './consent'
 import { captureAttribution, hasAttributionParams } from './attribution';
 import { captureContext, captureContextOnConsentChange } from './contextTracking';
 import { supabase } from '@/integrations/supabase/client';
+import { getSessionId } from '@/lib/abTesting';
 import { safePintrk as pinterestSafePintrk, trackPageVisit as pinterestTrackPageVisit } from './pinterest';
 
 // ============================================================================
@@ -304,20 +305,8 @@ export function trackPageView(route: string): void {
 
 // ============================================================================
 // SUPABASE PAGE VISIT LOGGING
+// Uses unified getSessionId from abTesting.ts (imported at top)
 // ============================================================================
-
-function getSessionId(): string {
-  try {
-    let sessionId = sessionStorage.getItem('analytics_session_id');
-    if (!sessionId) {
-      sessionId = `sess_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
-      sessionStorage.setItem('analytics_session_id', sessionId);
-    }
-    return sessionId;
-  } catch {
-    return `sess_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
-  }
-}
 
 function getDeviceType(): string {
   const ua = navigator.userAgent.toLowerCase();

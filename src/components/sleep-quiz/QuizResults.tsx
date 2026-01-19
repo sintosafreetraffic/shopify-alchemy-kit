@@ -53,21 +53,10 @@ import {
   getCoachReadinessExplanation,
 } from "./QuizHelpers";
 import { CLUSTER_TO_URL_SLUG } from "@/data/personaLandingMocks";
+import { getSessionId } from "@/lib/abTesting";
 
 // ============ ANALYTICS TRACKING ============
-
-/**
- * Get or create a session ID for tracking
- */
-const getSessionId = (): string => {
-  const key = "rbn_quiz_session_id";
-  let sessionId = sessionStorage.getItem(key);
-  if (!sessionId) {
-    sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-    sessionStorage.setItem(key, sessionId);
-  }
-  return sessionId;
-};
+// Uses unified session ID from abTesting.ts for cross-funnel tracking consistency
 
 /**
  * Track quiz reveal analytics events

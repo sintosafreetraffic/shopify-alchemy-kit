@@ -25,6 +25,7 @@
 
 import type { PersonaCluster, CoreNeed } from "@/components/sleep-quiz/QuizTypes";
 import { CORE_NEED_MAP } from "@/components/sleep-quiz/QuizTypes";
+import { getSessionId } from "@/lib/abTesting";
 
 // ============ TYPES ============
 
@@ -653,17 +654,10 @@ export async function logModuleInteraction(
   }
 }
 
-// Session ID helper (anonymous, no PII)
+// Session ID helper - uses unified session ID for cross-funnel tracking
+// Import is at top of file for proper module resolution
+
 function getOrCreateSessionId(): string {
   if (typeof window === "undefined") return "server";
-  
-  const storageKey = "rbn_persona_session_id";
-  let sessionId = sessionStorage.getItem(storageKey);
-  
-  if (!sessionId) {
-    sessionId = `${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
-    sessionStorage.setItem(storageKey, sessionId);
-  }
-  
-  return sessionId;
+  return getSessionId();
 }

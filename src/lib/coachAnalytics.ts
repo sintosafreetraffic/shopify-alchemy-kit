@@ -3,24 +3,19 @@
  * 
  * Deterministic tracking for AI Coach plan interactions.
  * All events include persona, readiness, and spine score context.
+ * 
+ * IMPORTANT: Uses unified session ID from abTesting.ts to ensure funnel integrity
  */
 
 import type { PersonaCluster } from "@/types/coach-plan";
+import { getSessionId as getUnifiedSessionId } from "@/lib/abTesting";
 
 // ============ SESSION ID HELPER ============
+// Use unified session ID for cross-funnel tracking consistency
 
 function getOrCreateSessionId(): string {
   if (typeof window === "undefined") return "server";
-  
-  const storageKey = "rbn_analytics_session_id";
-  let sessionId = sessionStorage.getItem(storageKey);
-  
-  if (!sessionId) {
-    sessionId = `${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
-    sessionStorage.setItem(storageKey, sessionId);
-  }
-  
-  return sessionId;
+  return getUnifiedSessionId();
 }
 
 // ============ SPINE SCORE BUCKET ============
