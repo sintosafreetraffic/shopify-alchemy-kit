@@ -1,16 +1,11 @@
 /**
  * Checkout Analytics Tracking
  * Tracks checkout reliability metrics: success, timeout, retry, errors
+ * 
+ * IMPORTANT: Uses unified session ID from abTesting.ts to ensure funnel integrity
+ * This allows tracking ATC → Checkout → Purchase with the same session_id
  */
-
-const getSessionId = (): string => {
-  let sessionId = sessionStorage.getItem("checkout_session_id");
-  if (!sessionId) {
-    sessionId = `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
-    sessionStorage.setItem("checkout_session_id", sessionId);
-  }
-  return sessionId;
-};
+import { getSessionId } from "@/lib/abTesting";
 
 const getDeviceType = (): string => {
   const ua = navigator.userAgent;
