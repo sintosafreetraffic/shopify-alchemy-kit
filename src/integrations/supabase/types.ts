@@ -132,6 +132,54 @@ export type Database = {
           },
         ]
       }
+      ab_preflight_runs: {
+        Row: {
+          checks_json: Json
+          commit_sha: string | null
+          completed_at: string | null
+          created_at: string
+          id: string
+          run_at: string
+          status: string
+          summary: string | null
+          test_id: string
+          traffic_after: number | null
+          traffic_before: number | null
+          trigger_type: string
+          variant: string
+        }
+        Insert: {
+          checks_json?: Json
+          commit_sha?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          run_at?: string
+          status?: string
+          summary?: string | null
+          test_id: string
+          traffic_after?: number | null
+          traffic_before?: number | null
+          trigger_type: string
+          variant?: string
+        }
+        Update: {
+          checks_json?: Json
+          commit_sha?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          run_at?: string
+          status?: string
+          summary?: string | null
+          test_id?: string
+          traffic_after?: number | null
+          traffic_before?: number | null
+          trigger_type?: string
+          variant?: string
+        }
+        Relationships: []
+      }
       ab_test_archive: {
         Row: {
           archived_at: string
