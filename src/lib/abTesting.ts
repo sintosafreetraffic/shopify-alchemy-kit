@@ -293,15 +293,33 @@ interface TrackABEventParams {
   payload?: Record<string, unknown>;
 }
 
+// Track which events have been sent this session to prevent duplicates
+const trackedEventsThisSession = new Set<string>();
+
 /**
  * Track an A/B test event to Supabase
  * Fire-and-forget, never blocks UI
+ * Deduplicates events per session to prevent double-tracking
  */
 export async function trackABEvent(params: TrackABEventParams): Promise<void> {
   const { eventName, revenue, payload = {} } = params;
   
   const variant = getOrAssignVariant();
   const sessionId = getSessionId();
+  
+  // Create a unique key for this event type in this session
+  // We allow multiple add_to_cart events (different products) but dedupe same-source calls
+  const source = (payload as Record<string, unknown>).source || 'unknown';
+  const productId = (payload as Record<string, unknown>).productId || '';
+  const dedupeKey = `${sessionId}:${eventName}:${source}:${productId}`;
+  
+  // Skip if we've already tracked this exact event
+  if (trackedEventsThisSession.has(dedupeKey)) {
+    console.log(`[ABTesting] Skipping duplicate event: ${eventName} (source: ${source})`);
+    return;
+  }
+  
+  trackedEventsThisSession.add(dedupeKey);
   
   try {
     const { error } = await supabase
@@ -322,11 +340,14 @@ export async function trackABEvent(params: TrackABEventParams): Promise<void> {
     
     if (error) {
       console.warn('[ABTesting] Failed to track event:', error.message);
+      // Remove from tracked set so it can be retried
+      trackedEventsThisSession.delete(dedupeKey);
     } else {
       console.log(`[ABTesting] Event tracked: ${eventName} (Variant ${variant})`);
     }
   } catch (e) {
     console.warn('[ABTesting] Event tracking error:', e);
+    trackedEventsThisSession.delete(dedupeKey);
   }
 }
 

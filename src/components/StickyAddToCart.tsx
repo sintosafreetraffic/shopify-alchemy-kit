@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { ShoppingCart, Loader2, Plus, Minus, Check } from "lucide-react";
 import eyeMaskGift from "@/assets/eye-mask-gift-new.webp";
 import { trackStickyATCClick } from "@/hooks/usePDPIntentTracking";
-import { trackABEvent } from "@/lib/abTesting";
+// trackABEvent moved to cartStore for centralized ATC tracking
 import { Badge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/formatPrice";
 import { useIsEU } from "@/hooks/useCurrencySymbol";
@@ -98,18 +98,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
     // Track A/B intent event for sticky ATC - fire and forget
     trackStickyATCClick();
     
-    // Track A/B funnel event (for ab_funnel_comparison view)
-    const variant = product.node.variants.edges[0]?.node;
-    trackABEvent({
-      eventName: 'add_to_cart',
-      revenue: parseFloat(variant?.price.amount || "0"),
-      payload: {
-        productId: product.node.id,
-        productTitle: product.node.title,
-        variantId: variant?.id,
-        source: 'sticky_atc',
-      },
-    });
+    // Note: trackABEvent for ab_funnel_comparison is now handled centrally in cartStore.addItem()
 
     setIsCheckingOut(true);
     try {
