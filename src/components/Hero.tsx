@@ -14,7 +14,7 @@ import { trackViewedProduct } from "@/lib/klaviyo";
 import { useHeaderHeight } from "@/hooks/useHeaderHeight";
 import { formatPrice } from "@/lib/formatPrice";
 import { trackATCClick } from "@/hooks/usePDPIntentTracking";
-import { trackABEvent } from "@/lib/abTesting";
+// trackABEvent moved to cartStore for centralized ATC tracking
 import { useIsEU } from "@/hooks/useCurrencySymbol";
 import {
   Popover,
@@ -116,16 +116,7 @@ export const Hero = () => {
     // Track A/B intent event - fire and forget (never blocks UI)
     trackATCClick();
     
-    // Track A/B funnel event (for ab_funnel_comparison view)
-    trackABEvent({
-      eventName: 'add_to_cart',
-      revenue: parseFloat(variant?.price.amount || "0"),
-      payload: {
-        productId: product.node.id,
-        productTitle: product.node.title,
-        variantId: variant?.id,
-      },
-    });
+    // Note: trackABEvent for ab_funnel_comparison is now handled centrally in cartStore.addItem()
 
     setIsCheckingOut(true);
     try {

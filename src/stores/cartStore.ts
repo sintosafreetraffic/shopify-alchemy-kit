@@ -6,6 +6,7 @@ import { trackAddToCart, trackInitiateCheckout, clearInitiateCheckoutFingerprint
 import { trackAddedToCart as trackKlaviyoAddToCart, trackStartedCheckout as trackKlaviyoStartedCheckout } from '@/lib/klaviyo';
 import { trackRevenueAttribution } from '@/lib/personaAnalytics';
 import { trackAddToCartEvent } from '@/lib/addToCartAnalytics';
+import { trackABEvent } from '@/lib/abTesting';
 
 export interface CartItem {
   product: ShopifyProduct;
@@ -110,6 +111,19 @@ export const useCartStore = create<CartStore>()(
           price: parseFloat(item.price.amount),
           currency: item.price.currencyCode,
           quantity: item.quantity,
+        });
+        
+        // Track A/B funnel event (for ab_funnel_comparison view)
+        // This ensures all ATCs are tracked regardless of which component triggered them
+        trackABEvent({
+          eventName: 'add_to_cart',
+          revenue: parseFloat(item.price.amount),
+          payload: {
+            productId: item.product.node.id,
+            productTitle: item.product.node.title,
+            variantId: item.variantId,
+            source: 'cart_store',
+          },
         });
         
         if (existingItem) {

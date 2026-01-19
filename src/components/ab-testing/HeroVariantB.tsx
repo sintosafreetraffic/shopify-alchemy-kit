@@ -145,12 +145,7 @@ export const HeroVariantB = () => {
     setIsCheckingOut(true);
     
     try {
-      // Track A/B event
-      trackEvent('add_to_cart', parseFloat(mainVariant.price.amount), {
-        productId: product.node.id,
-        productTitle: product.node.title,
-        variantId: mainVariant.id,
-      });
+      // Note: A/B event tracking is now handled centrally in cartStore.addItem()
 
       // Set free mask color selection
       if (selectedMaskVariantId) {
