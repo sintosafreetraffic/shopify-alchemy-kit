@@ -3,17 +3,11 @@
  * Stores cart events in Supabase for funnel analysis
  */
 import { supabase } from "@/integrations/supabase/client";
+import { getSessionId } from "@/lib/abTesting";
 
-// Get or create session ID for tracking
-function getSessionId(): string {
-  const key = 'analytics_session_id';
-  let sessionId = sessionStorage.getItem(key);
-  if (!sessionId) {
-    sessionId = `s_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
-    sessionStorage.setItem(key, sessionId);
-  }
-  return sessionId;
-}
+// Re-export getSessionId for backwards compatibility
+// Now uses the unified session ID from abTesting.ts to ensure consistent tracking
+export { getSessionId };
 
 // Detect device type
 function getDeviceType(): string {
