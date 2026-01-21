@@ -351,7 +351,7 @@ export const CartDrawer = () => {
       {/* Recommendations Panel - Attached to cart */}
       {isOpen && createPortal(
         <div 
-          className="fixed top-0 bottom-0 right-[512px] w-80 bg-secondary/50 border-r border-border z-[150] hidden lg:flex flex-col pointer-events-auto"
+          className="fixed top-0 bottom-0 right-[512px] w-80 bg-sky-50 border-r border-border z-[150] hidden lg:flex flex-col pointer-events-auto"
           data-recommendations-panel
         >
           <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
@@ -835,7 +835,7 @@ export const CartDrawer = () => {
                           return (
                             <div 
                               key={product.node.id} 
-                              className="border rounded p-2 bg-secondary/30"
+                              className="border rounded p-2 bg-sky-50"
                             >
                               <div className="flex items-center gap-2">
                                 {displayImage && (
