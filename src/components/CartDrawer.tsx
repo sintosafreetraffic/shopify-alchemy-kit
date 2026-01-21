@@ -355,25 +355,6 @@ export const CartDrawer = () => {
           data-recommendations-panel
         >
           <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
-            {/* Bundle Offer Banner */}
-            {bundleOffer && (
-              <div className="bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 rounded-lg p-3 mb-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-semibold text-primary">Complete the Set & Save!</span>
-                </div>
-                <p className="text-xs text-muted-foreground mb-3">
-                  Add the {bundleOffer.bundle.name} and save {bundleOffer.bundle.discountPercent}%
-                </p>
-                <Button
-                  size="sm"
-                  className="w-full"
-                  onClick={() => handleAddRecommendation(bundleOffer.bundleProduct)}
-                >
-                  Add Bundle
-                </Button>
-              </div>
-            )}
             
             {smartRecommendations.map((product) => {
               const variant = product.node.variants.edges[0]?.node;
