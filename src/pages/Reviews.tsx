@@ -1,8 +1,12 @@
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Star, Quote, ThumbsUp, Shield } from "lucide-react";
+import { Star, Quote, ThumbsUp, Shield, Edit3 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ReviewSubmissionForm } from "@/components/reviews/ReviewSubmissionForm";
 
 const Reviews = () => {
+  const [isReviewFormOpen, setIsReviewFormOpen] = useState(false);
   const reviews = [
     {
       name: "Sarah Johnson",
@@ -119,9 +123,24 @@ const Reviews = () => {
               </div>
               <span className="text-lg text-muted-foreground">Based on verified customer reviews</span>
             </div>
+            <Button 
+              onClick={() => setIsReviewFormOpen(true)} 
+              size="lg"
+              className="gap-2 mt-6"
+            >
+              <Edit3 className="w-4 h-4" />
+              Write a Review
+            </Button>
           </div>
         </div>
       </section>
+
+      {/* Review Submission Form */}
+      <ReviewSubmissionForm
+        open={isReviewFormOpen}
+        onOpenChange={setIsReviewFormOpen}
+        productHandle="general"
+      />
 
       {/* Trust Badges */}
       <section className="py-4 md:py-8 border-b">
