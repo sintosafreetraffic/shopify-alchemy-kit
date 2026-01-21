@@ -10,7 +10,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { ShoppingCart, Minus, Plus, Trash2, Lock, Loader2, Moon, RotateCcw, Shield, Gift, Truck, ChevronDown, Check } from "lucide-react";
+import { ShoppingCart, Minus, Plus, Trash2, Lock, Loader2, Moon, RotateCcw, Shield, Gift, Truck, ChevronDown, Check, Sparkles, TrendingUp, Star } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -37,7 +37,7 @@ const sleepMaskColorImages: Record<string, string> = {
   "Silver": sleepMaskSilver,
   "Black": sleepMaskBlack,
 };
-import { useRecommendedProducts, useProductPrices, useFreeGiftMaskProduct } from "@/hooks/useShopifyProducts";
+import { useRecommendedProducts, useProductPrices, useFreeGiftMaskProduct, useShopifyProducts } from "@/hooks/useShopifyProducts";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import { ImageModal } from "./ImageModal";
@@ -45,6 +45,7 @@ import { CheckoutLoadingOverlay } from "./CheckoutLoadingOverlay";
 import { useCheckoutStatus } from "@/hooks/useCheckoutStatus";
 import { createCheckoutWithResilience, openCheckoutUrl, isMobileDevice } from "@/lib/checkoutUtils";
 import { formatPrice, getCurrencySymbol } from "@/lib/formatPrice";
+import { getSmartRecommendations, getSocialProofBadge, getBundleOffer, getProductDisplayName } from "@/lib/upsellStrategy";
 
 export const CartDrawer = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -78,9 +79,22 @@ export const CartDrawer = () => {
 
   // Use cached product data for recommendations and prices
   const cartProductIds = useMemo(() => items.map(item => item.product.node.id), [items]);
-  const { data: recommendedProducts = [] } = useRecommendedProducts(cartProductIds, 3);
+  const cartProducts = useMemo(() => items.map(item => item.product), [items]);
+  const { data: allProducts = [] } = useShopifyProducts(20); // Fetch all products for smart recommendations
   const { data: currentPrices = {} } = useProductPrices();
   const { data: freeGiftMaskProduct } = useFreeGiftMaskProduct();
+  
+  // Smart recommendations based on cart contents
+  const smartRecommendations = useMemo(() => {
+    if (allProducts.length === 0) return [];
+    return getSmartRecommendations(allProducts, cartProducts, 3);
+  }, [allProducts, cartProducts]);
+  
+  // Bundle offer logic
+  const bundleOffer = useMemo(() => {
+    if (allProducts.length === 0 || items.length === 0) return null;
+    return getBundleOffer(cartProducts, allProducts);
+  }, [allProducts, cartProducts, items.length]);
 
   // Sync local state with store state
   useEffect(() => {
@@ -337,11 +351,31 @@ export const CartDrawer = () => {
       {/* Recommendations Panel - Attached to cart */}
       {isOpen && createPortal(
         <div 
-          className="fixed top-0 bottom-0 right-[512px] w-80 bg-blue-100 border-r border-border z-[150] hidden lg:flex flex-col pointer-events-auto"
+          className="fixed top-0 bottom-0 right-[512px] w-80 bg-secondary/50 border-r border-border z-[150] hidden lg:flex flex-col pointer-events-auto"
           data-recommendations-panel
         >
           <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
-            {recommendedProducts.map((product) => {
+            {/* Bundle Offer Banner */}
+            {bundleOffer && (
+              <div className="bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 rounded-lg p-3 mb-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-semibold text-primary">Complete the Set & Save!</span>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Add the {bundleOffer.bundle.name} and save {bundleOffer.bundle.discountPercent}%
+                </p>
+                <Button
+                  size="sm"
+                  className="w-full"
+                  onClick={() => handleAddRecommendation(bundleOffer.bundleProduct)}
+                >
+                  Add Bundle
+                </Button>
+              </div>
+            )}
+            
+            {smartRecommendations.map((product) => {
               const variant = product.node.variants.edges[0]?.node;
               const image = product.node.images.edges[0]?.node;
               const isSleepMask = product.node.title.toLowerCase().includes('silk deep sleep mask');
@@ -354,12 +388,28 @@ export const CartDrawer = () => {
               const colorOption = isSleepMask ? product.node.options?.find(opt => opt.name === 'Color') : null;
               const availableColors = colorOption?.values || [];
               
+              // Get social proof badge
+              const badge = getSocialProofBadge(product.node.handle);
+              
               return (
                 <div
                   key={product.node.id}
                   className="border border-border rounded-lg p-3 bg-background hover:shadow-md transition-all"
                 >
-                   {displayImage && (
+                  {/* Social Proof Badge */}
+                  {badge && (
+                    <div className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full mb-2 ${
+                      badge.variant === 'popular' ? 'bg-primary/10 text-primary' :
+                      badge.variant === 'value' ? 'bg-accent/20 text-accent-foreground' :
+                      'bg-secondary text-secondary-foreground'
+                    }`}>
+                      {badge.variant === 'popular' && <TrendingUp className="w-3 h-3" />}
+                      {badge.variant === 'value' && <Star className="w-3 h-3" />}
+                      {badge.label}
+                    </div>
+                  )}
+                  
+                  {displayImage && (
                     <div 
                       className="w-full aspect-square bg-secondary/20 rounded-md overflow-hidden mb-3 relative"
                     >
@@ -742,11 +792,31 @@ export const CartDrawer = () => {
                   )}
                   
                   {/* Mobile Recommendations */}
-                  {recommendedProducts.length > 0 && (
+                  {smartRecommendations.length > 0 && (
                     <div className="pt-2 border-t mt-2 lg:hidden">
                       <h3 className="text-xs font-semibold mb-1.5 text-muted-foreground">You may also like</h3>
+                      
+                      {/* Mobile Bundle Offer */}
+                      {bundleOffer && (
+                        <div className="bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 rounded-lg p-2 mb-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
+                              <Sparkles className="w-3 h-3 text-primary" />
+                              <span className="text-xs font-medium text-primary">Save {bundleOffer.bundle.discountPercent}% with Bundle</span>
+                            </div>
+                            <Button
+                              size="sm"
+                              className="h-6 px-2 text-xs"
+                              onClick={() => handleAddRecommendation(bundleOffer.bundleProduct)}
+                            >
+                              Add
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                      
                       <div className="flex flex-col gap-2">
-                        {recommendedProducts.map((product) => {
+                        {smartRecommendations.map((product) => {
                           const variant = product.node.variants.edges[0]?.node;
                           const image = product.node.images.edges[0]?.node;
                           const isSleepMask = product.node.title.toLowerCase().includes('silk deep sleep mask');
@@ -758,6 +828,9 @@ export const CartDrawer = () => {
                           // Get available colors for sleep mask
                           const colorOption = isSleepMask ? product.node.options?.find(opt => opt.name === 'Color') : null;
                           const availableColors = colorOption?.values || [];
+                          
+                          // Get social proof badge
+                          const badge = getSocialProofBadge(product.node.handle);
                           
                           return (
                             <div 
@@ -777,6 +850,18 @@ export const CartDrawer = () => {
                                   </div>
                                 )}
                                 <div className="flex-1 min-w-0">
+                                  {/* Mobile Social Proof Badge */}
+                                  {badge && (
+                                    <div className={`inline-flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full mb-0.5 ${
+                                      badge.variant === 'popular' ? 'bg-primary/10 text-primary' :
+                                      badge.variant === 'value' ? 'bg-accent/20 text-accent-foreground' :
+                                      'bg-secondary text-secondary-foreground'
+                                    }`}>
+                                      {badge.variant === 'popular' && <TrendingUp className="w-2.5 h-2.5" />}
+                                      {badge.variant === 'value' && <Star className="w-2.5 h-2.5" />}
+                                      {badge.label}
+                                    </div>
+                                  )}
                                   <h4 className="font-medium text-xs leading-tight line-clamp-1">
                                     {product.node.title.replace('RiseByNight', 'Rise By Night™')}
                                   </h4>
@@ -788,7 +873,7 @@ export const CartDrawer = () => {
                                 </div>
                                 <Button
                                   size="sm"
-                                  className="h-7 px-3 text-xs bg-black text-white hover:bg-black/90"
+                                  className="h-7 px-3 text-xs"
                                   onClick={() => handleAddRecommendation(product, isSleepMask ? selectedColor : undefined)}
                                 >
                                   ADD
