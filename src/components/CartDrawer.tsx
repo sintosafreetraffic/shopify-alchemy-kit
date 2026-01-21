@@ -847,7 +847,7 @@ export const CartDrawer = () => {
                               {/* Color selector for sleep masks on mobile */}
                               {isSleepMask && availableColors.length > 0 && (
                                 <div className="mt-2 pt-2 border-t border-border/50">
-                                  <div className="flex items-center gap-0.5 flex-wrap">
+                                  <div className="flex items-center gap-0.5">
                                     <span className="text-[10px] text-muted-foreground mr-0.5">Color:</span>
                                     {availableColors.map((color) => (
                                       <button
