@@ -778,23 +778,6 @@ export const CartDrawer = () => {
                       <h3 className="text-xs font-semibold mb-1.5 text-muted-foreground">You may also like</h3>
                       
                       {/* Mobile Bundle Offer */}
-                      {bundleOffer && (
-                        <div className="bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 rounded-lg p-2 mb-2">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1.5">
-                              <Sparkles className="w-3 h-3 text-primary" />
-                              <span className="text-xs font-medium text-primary">Save {bundleOffer.bundle.discountPercent}% with Bundle</span>
-                            </div>
-                            <Button
-                              size="sm"
-                              className="h-6 px-2 text-xs"
-                              onClick={() => handleAddRecommendation(bundleOffer.bundleProduct)}
-                            >
-                              Add
-                            </Button>
-                          </div>
-                        </div>
-                      )}
                       
                       <div className="flex flex-col gap-2">
                         {smartRecommendations.map((product) => {
