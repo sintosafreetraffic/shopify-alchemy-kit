@@ -864,29 +864,27 @@ export const CartDrawer = () => {
                               {/* Color selector for sleep masks on mobile */}
                               {isSleepMask && availableColors.length > 0 && (
                                 <div className="mt-2 pt-2 border-t border-border/50">
-                                   <div className="flex items-center gap-1">
-                                     <span className="shrink-0 text-[10px] text-muted-foreground">Color:</span>
-                                     <div className="flex flex-1 min-w-0 items-center gap-1 flex-nowrap overflow-x-auto pr-1">
-                                       {availableColors.map((color) => (
-                                         <button
-                                           key={color}
-                                           onClick={() => setRecommendationColors(prev => ({ ...prev, [product.node.id]: color }))}
-                                           className={`shrink-0 w-5 h-5 rounded border-2 overflow-hidden transition-all ${
-                                             selectedColor === color 
-                                               ? 'border-primary ring-1 ring-primary' 
-                                               : 'border-border hover:border-primary/50'
-                                           }`}
-                                           title={color}
-                                         >
-                                           <img 
-                                             src={sleepMaskColorImages[color] || sleepMaskNavy}
-                                             alt={color}
-                                             className="w-full h-full object-contain"
-                                           />
-                                         </button>
-                                       ))}
-                                     </div>
-                                   </div>
+                                  <div className="flex items-center gap-0.5 flex-wrap">
+                                    <span className="text-[10px] text-muted-foreground mr-0.5">Color:</span>
+                                    {availableColors.map((color) => (
+                                      <button
+                                        key={color}
+                                        onClick={() => setRecommendationColors(prev => ({ ...prev, [product.node.id]: color }))}
+                                        className={`w-4 h-4 rounded-sm border overflow-hidden transition-all ${
+                                          selectedColor === color 
+                                            ? 'border-primary ring-1 ring-primary' 
+                                            : 'border-border hover:border-primary/50'
+                                        }`}
+                                        title={color}
+                                      >
+                                        <img 
+                                          src={sleepMaskColorImages[color] || sleepMaskNavy}
+                                          alt={color}
+                                          className="w-full h-full object-contain"
+                                        />
+                                      </button>
+                                    ))}
+                                  </div>
                                 </div>
                               )}
                             </div>
