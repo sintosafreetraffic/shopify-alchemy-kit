@@ -853,7 +853,7 @@ export const CartDrawer = () => {
                                       <button
                                         key={color}
                                         onClick={() => setRecommendationColors(prev => ({ ...prev, [product.node.id]: color }))}
-                                        className={`w-1.5 h-1.5 rounded-sm border overflow-hidden transition-all ${
+                                        className={`w-[5px] h-[5px] rounded-sm border overflow-hidden transition-all ${
                                           selectedColor === color 
                                             ? 'border-primary ring-1 ring-primary' 
                                             : 'border-border hover:border-primary/50'
