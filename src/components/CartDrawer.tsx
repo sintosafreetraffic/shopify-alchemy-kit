@@ -847,13 +847,13 @@ export const CartDrawer = () => {
                               {/* Color selector for sleep masks on mobile */}
                               {isSleepMask && availableColors.length > 0 && (
                                 <div className="mt-2 pt-2 border-t border-border/50">
-                                  <div className="flex items-center gap-0.5">
-                                    <span className="text-[10px] text-muted-foreground mr-0.5">Color:</span>
+                                  <div className="flex items-center gap-px">
+                                    <span className="text-[10px] text-muted-foreground mr-0">Color:</span>
                                     {availableColors.map((color) => (
                                       <button
                                         key={color}
                                         onClick={() => setRecommendationColors(prev => ({ ...prev, [product.node.id]: color }))}
-                                        className={`w-3 h-3 rounded-sm border overflow-hidden transition-all ${
+                                        className={`w-2 h-2 rounded-sm border overflow-hidden transition-all ${
                                           selectedColor === color 
                                             ? 'border-primary ring-1 ring-primary' 
                                             : 'border-border hover:border-primary/50'
