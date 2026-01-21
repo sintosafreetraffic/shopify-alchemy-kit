@@ -411,14 +411,14 @@ export const CartDrawer = () => {
                   {isSleepMask && availableColors.length > 0 && (
                     <div className="mb-3 p-2 bg-secondary/30 rounded-lg">
                       <p className="text-xs text-muted-foreground mb-2">Select color:</p>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-1.5">
                         {availableColors.map((color) => (
                           <button
                             key={color}
                             onClick={() => setRecommendationColors(prev => ({ ...prev, [product.node.id]: color }))}
-                            className={`w-10 h-10 rounded-lg border-2 overflow-hidden transition-all shadow-sm ${
+                            className={`w-7 h-7 rounded-md border-2 overflow-hidden transition-all shadow-sm ${
                               selectedColor === color 
-                                ? 'border-primary ring-2 ring-primary ring-offset-1 scale-105' 
+                                ? 'border-primary ring-1 ring-primary ring-offset-1 scale-105' 
                                 : 'border-border hover:border-primary/50 hover:scale-105'
                             }`}
                             title={color}
