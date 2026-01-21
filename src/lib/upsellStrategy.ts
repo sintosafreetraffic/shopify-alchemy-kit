@@ -1,11 +1,11 @@
 import type { ShopifyProduct } from "@/lib/shopify";
 
-// Product handles for mapping
+// Product handles for mapping - MUST match actual Shopify handles exactly
 export const PRODUCT_HANDLES = {
-  ERGONOMIC_PILLOW: 'ergonomic-sleep-pillow',
-  KNEE_PILLOW: 'knee-pillow',
-  SLEEP_MASK: 'silk-deep-sleep-mask',
-  BUNDLE: 'complete-sleep-bundle',
+  ERGONOMIC_PILLOW: 'risebynight-ergonomic-sleep-pillow',
+  KNEE_PILLOW: 'risebynight-ergonomic-knee-pillow',
+  SLEEP_MASK: 'risebynight-silk-deep-sleep-mask',
+  BUNDLE: 'rise-by-night™-complete-sleep-bundle',
 } as const;
 
 // Complementary product mapping - what to recommend based on cart contents
