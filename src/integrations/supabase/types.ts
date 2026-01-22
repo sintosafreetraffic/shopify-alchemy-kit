@@ -2345,6 +2345,39 @@ export type Database = {
         }
         Relationships: []
       }
+      product_cost_prices: {
+        Row: {
+          cost_bulk: number
+          cost_single: number
+          created_at: string
+          effective_from: string
+          effective_to: string | null
+          id: string
+          product_handle: string
+          product_title: string
+        }
+        Insert: {
+          cost_bulk: number
+          cost_single: number
+          created_at?: string
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          product_handle: string
+          product_title: string
+        }
+        Update: {
+          cost_bulk?: number
+          cost_single?: number
+          created_at?: string
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          product_handle?: string
+          product_title?: string
+        }
+        Relationships: []
+      }
       product_reviews: {
         Row: {
           admin_notes: string | null
