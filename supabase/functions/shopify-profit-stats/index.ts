@@ -44,10 +44,78 @@ interface CostPrice {
 interface DailyProfit {
   date: string;
   revenue: number;
-  cost: number;
+  productCost: number;
+  adSpend: number;
+  totalCost: number;
   profit: number;
   orderCount: number;
   productBreakdown: Record<string, { qty: number; revenue: number; cost: number; profit: number }>;
+}
+
+interface PinterestAnalyticsRow {
+  DATE: string;
+  SPEND_IN_MICRO_DOLLAR: string;
+  TOTAL_CONVERSIONS: string;
+}
+
+// Fetch Pinterest ad spend data
+async function fetchPinterestAdSpend(startDate: Date, endDate: Date): Promise<Map<string, number>> {
+  const accessToken = Deno.env.get("PINTEREST_ACCESS_TOKEN");
+  const adAccountId = Deno.env.get("PINTEREST_AD_ACCOUNT_ID");
+  
+  const adSpendByDate = new Map<string, number>();
+  
+  if (!accessToken || !adAccountId) {
+    console.log("[ProfitStats] Pinterest credentials not configured, skipping ad spend");
+    return adSpendByDate;
+  }
+
+  try {
+    const startStr = startDate.toISOString().split("T")[0];
+    const endStr = endDate.toISOString().split("T")[0];
+    
+    console.log(`[ProfitStats] Fetching Pinterest ad spend from ${startStr} to ${endStr}`);
+    
+    // Pinterest Analytics API - Get ad account analytics
+    const analyticsUrl = new URL(`https://api.pinterest.com/v5/ad_accounts/${adAccountId}/analytics`);
+    analyticsUrl.searchParams.set("start_date", startStr);
+    analyticsUrl.searchParams.set("end_date", endStr);
+    analyticsUrl.searchParams.set("columns", "SPEND_IN_MICRO_DOLLAR,TOTAL_CONVERSIONS");
+    analyticsUrl.searchParams.set("granularity", "DAY");
+    
+    const response = await fetch(analyticsUrl.toString(), {
+      headers: {
+        "Authorization": `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[ProfitStats] Pinterest API error: ${response.status}`, errorText);
+      return adSpendByDate;
+    }
+
+    const data = await response.json();
+    console.log(`[ProfitStats] Pinterest API response:`, JSON.stringify(data).substring(0, 500));
+    
+    // Pinterest returns array of daily metrics
+    if (Array.isArray(data)) {
+      for (const row of data as PinterestAnalyticsRow[]) {
+        if (row.DATE && row.SPEND_IN_MICRO_DOLLAR) {
+          // Pinterest returns spend in micro dollars (1/1,000,000 of a dollar)
+          const spendDollars = parseInt(row.SPEND_IN_MICRO_DOLLAR, 10) / 1_000_000;
+          adSpendByDate.set(row.DATE, spendDollars);
+        }
+      }
+    }
+    
+    console.log(`[ProfitStats] Found Pinterest ad spend for ${adSpendByDate.size} days`);
+  } catch (error) {
+    console.error("[ProfitStats] Error fetching Pinterest analytics:", error);
+  }
+  
+  return adSpendByDate;
 }
 
 serve(async (req) => {
@@ -71,11 +139,15 @@ serve(async (req) => {
     const apiVersion = "2024-10";
     
     // Calculate date range
+    const endDate = new Date();
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
     startDate.setHours(0, 0, 0, 0);
 
     console.log(`[ProfitStats] Fetching orders from ${startDate.toISOString()} (${days} days)`);
+
+    // Fetch Pinterest ad spend in parallel with Shopify orders
+    const pinterestPromise = fetchPinterestAdSpend(startDate, endDate);
 
     // Fetch cost prices from Supabase
     const { data: costPrices, error: costError } = await supabase
@@ -136,9 +208,11 @@ serve(async (req) => {
 
     console.log(`[ProfitStats] Found ${allOrders.length} orders in ${pageCount} pages`);
 
+    // Wait for Pinterest data
+    const pinterestAdSpend = await pinterestPromise;
+
     // Helper to find cost price for a product at a specific date
     const findCostPrice = (productTitle: string, orderDate: Date): CostPrice | null => {
-      // Try to match by product title (normalize)
       const normalizedTitle = productTitle.toLowerCase();
       
       for (const cp of costPricesList) {
@@ -159,7 +233,6 @@ serve(async (req) => {
     const dailyData: Map<string, DailyProfit> = new Map();
 
     for (const order of allOrders) {
-      // Skip cancelled/refunded orders
       if (order.financial_status === "refunded" || order.financial_status === "voided") {
         continue;
       }
@@ -168,7 +241,6 @@ serve(async (req) => {
       let dateKey: string;
 
       if (granularity === "weekly") {
-        // Get Monday of the week
         const monday = new Date(orderDate);
         monday.setDate(orderDate.getDate() - orderDate.getDay() + 1);
         dateKey = monday.toISOString().split("T")[0];
@@ -182,7 +254,9 @@ serve(async (req) => {
         dailyData.set(dateKey, {
           date: dateKey,
           revenue: 0,
-          cost: 0,
+          productCost: 0,
+          adSpend: 0,
+          totalCost: 0,
           profit: 0,
           orderCount: 0,
           productBreakdown: {},
@@ -192,14 +266,12 @@ serve(async (req) => {
       const dayData = dailyData.get(dateKey)!;
       dayData.orderCount++;
 
-      // Count quantities per product in this order (for bulk pricing)
       const productQuantities: Map<string, number> = new Map();
       for (const item of order.line_items || []) {
         const key = item.title;
         productQuantities.set(key, (productQuantities.get(key) || 0) + item.quantity);
       }
 
-      // Calculate costs for each line item
       for (const item of order.line_items || []) {
         const itemRevenue = parseFloat(item.price) * item.quantity;
         dayData.revenue += itemRevenue;
@@ -209,14 +281,12 @@ serve(async (req) => {
 
         if (costPrice) {
           const totalQtyInOrder = productQuantities.get(item.title) || item.quantity;
-          // Use bulk pricing if 2+ of same product in order
           const unitCost = totalQtyInOrder >= 2 ? costPrice.cost_bulk : costPrice.cost_single;
           itemCost = unitCost * item.quantity;
         }
 
-        dayData.cost += itemCost;
+        dayData.productCost += itemCost;
 
-        // Track product breakdown
         if (!dayData.productBreakdown[item.title]) {
           dayData.productBreakdown[item.title] = { qty: 0, revenue: 0, cost: 0, profit: 0 };
         }
@@ -225,8 +295,33 @@ serve(async (req) => {
         dayData.productBreakdown[item.title].cost += itemCost;
         dayData.productBreakdown[item.title].profit += (itemRevenue - itemCost);
       }
+    }
 
-      dayData.profit = dayData.revenue - dayData.cost;
+    // Add Pinterest ad spend to each period
+    for (const [dateKey, dayData] of dailyData) {
+      if (granularity === "daily") {
+        dayData.adSpend = pinterestAdSpend.get(dateKey) || 0;
+      } else if (granularity === "weekly") {
+        // Sum up the week's ad spend
+        const weekStart = new Date(dateKey);
+        for (let i = 0; i < 7; i++) {
+          const dayStr = weekStart.toISOString().split("T")[0];
+          dayData.adSpend += pinterestAdSpend.get(dayStr) || 0;
+          weekStart.setDate(weekStart.getDate() + 1);
+        }
+      } else if (granularity === "monthly") {
+        // Sum up the month's ad spend
+        const monthStart = new Date(dateKey);
+        const month = monthStart.getMonth();
+        while (monthStart.getMonth() === month) {
+          const dayStr = monthStart.toISOString().split("T")[0];
+          dayData.adSpend += pinterestAdSpend.get(dayStr) || 0;
+          monthStart.setDate(monthStart.getDate() + 1);
+        }
+      }
+      
+      dayData.totalCost = dayData.productCost + dayData.adSpend;
+      dayData.profit = dayData.revenue - dayData.totalCost;
     }
 
     // Convert to sorted array
@@ -238,14 +333,16 @@ serve(async (req) => {
     const totals = profitData.reduce(
       (acc, day) => ({
         revenue: acc.revenue + day.revenue,
-        cost: acc.cost + day.cost,
+        productCost: acc.productCost + day.productCost,
+        adSpend: acc.adSpend + day.adSpend,
+        totalCost: acc.totalCost + day.totalCost,
         profit: acc.profit + day.profit,
         orderCount: acc.orderCount + day.orderCount,
       }),
-      { revenue: 0, cost: 0, profit: 0, orderCount: 0 }
+      { revenue: 0, productCost: 0, adSpend: 0, totalCost: 0, profit: 0, orderCount: 0 }
     );
 
-    // Get unique products from all orders for the cost price editor
+    // Get unique products from all orders
     const uniqueProducts = new Set<string>();
     for (const order of allOrders) {
       for (const item of order.line_items || []) {
@@ -258,7 +355,9 @@ serve(async (req) => {
       totals: {
         ...totals,
         revenue: Math.round(totals.revenue * 100) / 100,
-        cost: Math.round(totals.cost * 100) / 100,
+        productCost: Math.round(totals.productCost * 100) / 100,
+        adSpend: Math.round(totals.adSpend * 100) / 100,
+        totalCost: Math.round(totals.totalCost * 100) / 100,
         profit: Math.round(totals.profit * 100) / 100,
         margin: totals.revenue > 0 ? Math.round((totals.profit / totals.revenue) * 10000) / 100 : 0,
       },
@@ -267,9 +366,10 @@ serve(async (req) => {
       currency: allOrders[0]?.currency || "EUR",
       granularity,
       days,
+      pinterestConnected: !!(Deno.env.get("PINTEREST_ACCESS_TOKEN") && Deno.env.get("PINTEREST_AD_ACCOUNT_ID")),
     };
 
-    console.log(`[ProfitStats] Returning ${profitData.length} periods, total profit: ${totals.profit}`);
+    console.log(`[ProfitStats] Returning ${profitData.length} periods, total profit: ${totals.profit}, ad spend: ${totals.adSpend}`);
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
