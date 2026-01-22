@@ -43,6 +43,8 @@ import {
   RefreshCw,
   Calendar,
   BarChart3,
+  Megaphone,
+  PieChart,
 } from "lucide-react";
 import {
   LineChart,
@@ -71,7 +73,9 @@ interface CostPrice {
 interface DailyProfit {
   date: string;
   revenue: number;
-  cost: number;
+  productCost: number;
+  adSpend: number;
+  totalCost: number;
   profit: number;
   orderCount: number;
   productBreakdown: Record<string, { qty: number; revenue: number; cost: number; profit: number }>;
@@ -81,7 +85,9 @@ interface ProfitStats {
   profitData: DailyProfit[];
   totals: {
     revenue: number;
-    cost: number;
+    productCost: number;
+    adSpend: number;
+    totalCost: number;
     profit: number;
     orderCount: number;
     margin: number;
@@ -91,6 +97,7 @@ interface ProfitStats {
   currency: string;
   granularity: string;
   days: number;
+  pinterestConnected: boolean;
 }
 
 export default function ProfitCalculator() {
@@ -238,7 +245,9 @@ export default function ProfitCalculator() {
       ? format(new Date(d.date), "MMM d")
       : format(new Date(d.date), "MMM d"),
     revenue: Math.round(d.revenue * 100) / 100,
-    cost: Math.round(d.cost * 100) / 100,
+    productCost: Math.round(d.productCost * 100) / 100,
+    adSpend: Math.round(d.adSpend * 100) / 100,
+    totalCost: Math.round(d.totalCost * 100) / 100,
     profit: Math.round(d.profit * 100) / 100,
     orders: d.orderCount,
   })) || [];
@@ -318,7 +327,7 @@ export default function ProfitCalculator() {
         </Card>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
           <Card>
             <CardHeader className="pb-2">
               <CardDescription className="flex items-center gap-2">
@@ -336,12 +345,41 @@ export default function ProfitCalculator() {
             <CardHeader className="pb-2">
               <CardDescription className="flex items-center gap-2">
                 <Package className="h-4 w-4" />
-                Costs
+                Product Cost
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold text-amber-600">
+                {stats ? formatCurrency(stats.totals.productCost) : "—"}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription className="flex items-center gap-2">
+                <Megaphone className="h-4 w-4" />
+                Ad Spend
+                {stats?.pinterestConnected && (
+                  <Badge variant="outline" className="ml-1 text-[10px] py-0">Pinterest</Badge>
+                )}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold text-blue-600">
+                {stats ? formatCurrency(stats.totals.adSpend) : "—"}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription className="flex items-center gap-2">
+                <PieChart className="h-4 w-4" />
+                Total Cost
               </CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold text-orange-600">
-                {stats ? formatCurrency(stats.totals.cost) : "—"}
+                {stats ? formatCurrency(stats.totals.totalCost) : "—"}
               </p>
             </CardContent>
           </Card>
@@ -353,7 +391,7 @@ export default function ProfitCalculator() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className={`text-2xl font-bold ${stats && stats.totals.profit >= 0 ? "text-green-600" : "text-red-600"}`}>
+              <p className={`text-2xl font-bold ${stats && stats.totals.profit >= 0 ? "text-emerald-600" : "text-red-600"}`}>
                 {stats ? formatCurrency(stats.totals.profit) : "—"}
               </p>
             </CardContent>
@@ -428,11 +466,19 @@ export default function ProfitCalculator() {
                   />
                   <Area
                     type="monotone"
-                    dataKey="cost"
-                    stroke="hsl(25 95% 53%)"
-                    fill="hsl(25 95% 53% / 0.2)"
+                    dataKey="productCost"
+                    stroke="hsl(45 93% 47%)"
+                    fill="hsl(45 93% 47% / 0.2)"
                     strokeWidth={2}
-                    name="Cost"
+                    name="Product Cost"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="adSpend"
+                    stroke="hsl(217 91% 60%)"
+                    fill="hsl(217 91% 60% / 0.2)"
+                    strokeWidth={2}
+                    name="Ad Spend"
                   />
                   <Area
                     type="monotone"
