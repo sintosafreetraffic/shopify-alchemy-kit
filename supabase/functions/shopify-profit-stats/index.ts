@@ -434,7 +434,11 @@ serve(async (req) => {
 
       if (granularity === "weekly") {
         const monday = new Date(orderDate);
-        monday.setDate(orderDate.getDate() - orderDate.getDay() + 1);
+        const dayOfWeek = orderDate.getDay();
+        // Handle Sunday (0) -> go back 6 days to Monday
+        // Handle other days -> go back (day - 1) days
+        const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        monday.setDate(orderDate.getDate() - daysToSubtract);
         dateKey = monday.toISOString().split("T")[0];
       } else if (granularity === "monthly") {
         dateKey = `${orderDate.getFullYear()}-${String(orderDate.getMonth() + 1).padStart(2, "0")}-01`;
