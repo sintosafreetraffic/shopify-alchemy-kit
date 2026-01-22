@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useShopifyProducts } from "@/hooks/useShopifyProducts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -596,17 +597,10 @@ export default function ProfitCalculator() {
             <DialogTitle>Add Cost Price</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Product Title *</Label>
-              <Input
-                placeholder="e.g., Ergonomic Memory Foam Pillow"
-                value={newCostPrice.product_title}
-                onChange={(e) => setNewCostPrice({ ...newCostPrice, product_title: e.target.value })}
-              />
-              <p className="text-xs text-muted-foreground">
-                Match this to Shopify product titles for automatic matching
-              </p>
-            </div>
+            <ProductSelectForm 
+              newCostPrice={newCostPrice}
+              setNewCostPrice={setNewCostPrice}
+            />
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Cost (Single) *</Label>
@@ -647,6 +641,52 @@ export default function ProfitCalculator() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+// Product selector component that uses Shopify products hook
+function ProductSelectForm({
+  newCostPrice,
+  setNewCostPrice,
+}: {
+  newCostPrice: { product_title: string; product_handle: string; cost_single: string; cost_bulk: string };
+  setNewCostPrice: React.Dispatch<React.SetStateAction<{ product_title: string; product_handle: string; cost_single: string; cost_bulk: string }>>;
+}) {
+  const { data: products, isLoading } = useShopifyProducts();
+
+  const handleProductSelect = (handle: string) => {
+    const product = products?.find((p) => p.node.handle === handle);
+    if (product) {
+      setNewCostPrice((prev) => ({
+        ...prev,
+        product_title: product.node.title,
+        product_handle: product.node.handle,
+      }));
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <Label>Product *</Label>
+      <Select
+        value={newCostPrice.product_handle}
+        onValueChange={handleProductSelect}
+      >
+        <SelectTrigger>
+          <SelectValue placeholder={isLoading ? "Loading products..." : "Select a product"} />
+        </SelectTrigger>
+        <SelectContent>
+          {products?.map((product) => (
+            <SelectItem key={product.node.id} value={product.node.handle}>
+              {product.node.title}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <p className="text-xs text-muted-foreground">
+        Select from your Shopify products
+      </p>
     </div>
   );
 }
