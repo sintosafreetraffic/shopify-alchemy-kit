@@ -514,11 +514,19 @@ export default function ProfitCalculator() {
 
           <TabsContent value="current">
             <Card>
-              <CardHeader>
-                <CardTitle>Current Cost Prices</CardTitle>
-                <CardDescription>
-                  Active pricing used for profit calculations. Bulk price applies when 2+ of the same item in one order.
-                </CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Current Cost Prices</CardTitle>
+                  <CardDescription>
+                    Active pricing used for profit calculations. Bulk price applies when 2+ of the same item in one order.
+                  </CardDescription>
+                </div>
+                {currentCostPrices.length > 0 && (
+                  <Button onClick={() => setShowAddModal(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Price
+                  </Button>
+                )}
               </CardHeader>
               <CardContent>
                 {currentCostPrices.length === 0 ? (
