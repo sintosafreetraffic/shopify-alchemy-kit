@@ -120,6 +120,7 @@ export default function ProfitCalculator() {
     product_handle: "",
     cost_single: "",
     cost_bulk: "",
+    effective_from: "", // Allow backdating
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -183,16 +184,27 @@ export default function ProfitCalculator() {
 
     setIsSaving(true);
     try {
+      // Determine effective_from date - use provided date or current date
+      const effectiveFromDate = newCostPrice.effective_from 
+        ? new Date(newCostPrice.effective_from).toISOString()
+        : new Date().toISOString();
+
       // First, close out any existing active cost price for this product
-      const { error: updateError } = await supabase
-        .from("product_cost_prices")
-        .update({ effective_to: new Date().toISOString() })
-        .eq("product_title", newCostPrice.product_title)
-        .is("effective_to", null);
+      // Only close if the new effective date is today or later
+      const now = new Date();
+      const effectiveFromDateObj = new Date(effectiveFromDate);
+      
+      if (effectiveFromDateObj >= new Date(now.toISOString().split('T')[0])) {
+        const { error: updateError } = await supabase
+          .from("product_cost_prices")
+          .update({ effective_to: effectiveFromDate })
+          .eq("product_title", newCostPrice.product_title)
+          .is("effective_to", null);
 
-      if (updateError) throw updateError;
+        if (updateError) throw updateError;
+      }
 
-      // Insert new cost price
+      // Insert new cost price with specified effective_from date
       const { error: insertError } = await supabase
         .from("product_cost_prices")
         .insert({
@@ -200,13 +212,14 @@ export default function ProfitCalculator() {
           product_handle: newCostPrice.product_handle || newCostPrice.product_title.toLowerCase().replace(/\s+/g, "-"),
           cost_single: parseFloat(newCostPrice.cost_single),
           cost_bulk: parseFloat(newCostPrice.cost_bulk),
+          effective_from: effectiveFromDate,
         });
 
       if (insertError) throw insertError;
 
       toast.success("Cost price added successfully");
       setShowAddModal(false);
-      setNewCostPrice({ product_title: "", product_handle: "", cost_single: "", cost_bulk: "" });
+      setNewCostPrice({ product_title: "", product_handle: "", cost_single: "", cost_bulk: "", effective_from: "" });
       fetchProfitData();
     } catch (err) {
       console.error("Error adding cost price:", err);
@@ -689,6 +702,17 @@ export default function ProfitCalculator() {
                   Cost when qty ≥ 2 in order
                 </p>
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Effective From</Label>
+              <Input
+                type="date"
+                value={newCostPrice.effective_from}
+                onChange={(e) => setNewCostPrice({ ...newCostPrice, effective_from: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">
+                Leave blank for today. Set to a past date to apply costs to historical orders.
+              </p>
             </div>
           </div>
           <DialogFooter>

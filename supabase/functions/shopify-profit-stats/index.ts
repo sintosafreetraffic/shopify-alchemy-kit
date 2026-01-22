@@ -58,15 +58,102 @@ interface PinterestAnalyticsRow {
   TOTAL_CONVERSIONS: string;
 }
 
-// Fetch Pinterest ad spend data
-async function fetchPinterestAdSpend(startDate: Date, endDate: Date): Promise<Map<string, number>> {
-  const accessToken = Deno.env.get("PINTEREST_ACCESS_TOKEN");
-  const adAccountId = Deno.env.get("PINTEREST_AD_ACCOUNT_ID");
+// Get valid Pinterest access token (with auto-refresh like pinterest-ads-reporting)
+// deno-lint-ignore no-explicit-any
+async function getValidAccessToken(supabaseClient: any): Promise<string | null> {
+  const appId = Deno.env.get("PINTEREST_APP_ID");
+  const appSecret = Deno.env.get("PINTEREST_APP_SECRET");
+
+  const { data: tokenData, error: fetchError } = await supabaseClient
+    .from("pinterest_oauth_tokens")
+    .select("id, access_token, refresh_token, expires_at")
+    .single();
+
+  if (fetchError || !tokenData) {
+    console.log("[ProfitStats] No Pinterest OAuth tokens found");
+    return null;
+  }
+
+  const { id, access_token, refresh_token, expires_at } = tokenData as {
+    id: string;
+    access_token: string;
+    refresh_token: string | null;
+    expires_at: string;
+  };
+
+  const expiresAt = new Date(expires_at);
+  const now = new Date();
+  const bufferMs = 5 * 60 * 1000; // 5 minute buffer
+
+  // Token still valid
+  if (expiresAt.getTime() - now.getTime() > bufferMs) {
+    console.log("[ProfitStats] Pinterest token valid");
+    return access_token;
+  }
+
+  // Need to refresh
+  if (!refresh_token || !appId || !appSecret) {
+    console.log("[ProfitStats] Token expired and cannot refresh (missing credentials)");
+    return null;
+  }
+
+  console.log("[ProfitStats] Refreshing Pinterest token...");
   
+  const credentials = btoa(`${appId}:${appSecret}`);
+  
+  const response = await fetch("https://api.pinterest.com/v5/oauth/token", {
+    method: "POST",
+    headers: {
+      "Authorization": `Basic ${credentials}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({
+      grant_type: "refresh_token",
+      refresh_token: refresh_token,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("[ProfitStats] Token refresh failed:", response.status, errorText);
+    return null;
+  }
+
+  const newTokens = await response.json();
+  const newExpiresAt = new Date(Date.now() + newTokens.expires_in * 1000).toISOString();
+
+  await supabaseClient
+    .from("pinterest_oauth_tokens")
+    .update({
+      access_token: newTokens.access_token,
+      refresh_token: newTokens.refresh_token || refresh_token,
+      expires_at: newExpiresAt,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+
+  console.log("[ProfitStats] Pinterest token refreshed successfully");
+  return newTokens.access_token;
+}
+
+// Fetch Pinterest ad spend data using OAuth tokens
+// deno-lint-ignore no-explicit-any
+async function fetchPinterestAdSpend(
+  supabaseClient: any,
+  startDate: Date, 
+  endDate: Date
+): Promise<Map<string, number>> {
+  const adAccountId = Deno.env.get("PINTEREST_AD_ACCOUNT_ID");
   const adSpendByDate = new Map<string, number>();
   
-  if (!accessToken || !adAccountId) {
-    console.log("[ProfitStats] Pinterest credentials not configured, skipping ad spend");
+  if (!adAccountId) {
+    console.log("[ProfitStats] Pinterest ad account ID not configured, skipping ad spend");
+    return adSpendByDate;
+  }
+
+  const accessToken = await getValidAccessToken(supabaseClient);
+  if (!accessToken) {
+    console.log("[ProfitStats] No valid Pinterest access token available");
     return adSpendByDate;
   }
 
@@ -146,8 +233,8 @@ serve(async (req) => {
 
     console.log(`[ProfitStats] Fetching orders from ${startDate.toISOString()} (${days} days)`);
 
-    // Fetch Pinterest ad spend in parallel with Shopify orders
-    const pinterestPromise = fetchPinterestAdSpend(startDate, endDate);
+    // Fetch Pinterest ad spend in parallel with Shopify orders (pass supabase client for OAuth)
+    const pinterestPromise = fetchPinterestAdSpend(supabase, startDate, endDate);
 
     // Fetch cost prices from Supabase
     const { data: costPrices, error: costError } = await supabase
