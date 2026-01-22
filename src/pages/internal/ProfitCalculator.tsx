@@ -676,12 +676,18 @@ function ProductSelectForm({
         <SelectTrigger>
           <SelectValue placeholder={isLoading ? "Loading products..." : "Select a product"} />
         </SelectTrigger>
-        <SelectContent>
-          {products?.map((product) => (
-            <SelectItem key={product.node.id} value={product.node.handle}>
-              {product.node.title}
-            </SelectItem>
-          ))}
+        <SelectContent className="max-h-[300px] overflow-y-auto z-[9999]" position="popper" sideOffset={4}>
+          {isLoading ? (
+            <div className="px-3 py-2 text-sm text-muted-foreground">Loading products...</div>
+          ) : products && products.length > 0 ? (
+            products.map((product) => (
+              <SelectItem key={product.node.id} value={product.node.handle}>
+                {product.node.title}
+              </SelectItem>
+            ))
+          ) : (
+            <div className="px-3 py-2 text-sm text-muted-foreground">No products found</div>
+          )}
         </SelectContent>
       </Select>
       <p className="text-xs text-muted-foreground">
