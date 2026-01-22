@@ -502,31 +502,80 @@ serve(async (req) => {
       }
     }
 
-    // Add Pinterest ad spend to each period
-    for (const [dateKey, dayData] of dailyData) {
-      if (granularity === "daily") {
+    // For non-daily granularity, we need to aggregate ad spend differently
+    // Instead of only summing ad spend for periods that have orders,
+    // we should sum ALL ad spend from the full date range and distribute correctly
+    
+    if (granularity === "daily") {
+      // For daily, just assign ad spend directly to matching dates
+      for (const [dateKey, dayData] of dailyData) {
         dayData.adSpend = pinterestAdSpend.get(dateKey) || 0;
-      } else if (granularity === "weekly") {
-        // Sum up the week's ad spend
-        const weekStart = new Date(dateKey);
-        for (let i = 0; i < 7; i++) {
-          const dayStr = weekStart.toISOString().split("T")[0];
-          dayData.adSpend += pinterestAdSpend.get(dayStr) || 0;
-          weekStart.setDate(weekStart.getDate() + 1);
-        }
-      } else if (granularity === "monthly") {
-        // Sum up the month's ad spend
-        const monthStart = new Date(dateKey);
-        const month = monthStart.getMonth();
-        while (monthStart.getMonth() === month) {
-          const dayStr = monthStart.toISOString().split("T")[0];
-          dayData.adSpend += pinterestAdSpend.get(dayStr) || 0;
-          monthStart.setDate(monthStart.getDate() + 1);
-        }
+        dayData.totalCost = dayData.productCost + dayData.adSpend;
+        dayData.profit = dayData.revenue - dayData.totalCost;
       }
       
-      dayData.totalCost = dayData.productCost + dayData.adSpend;
-      dayData.profit = dayData.revenue - dayData.totalCost;
+      // Also need to include days with ad spend but no orders
+      for (const [adDate, spend] of pinterestAdSpend) {
+        if (!dailyData.has(adDate) && spend > 0) {
+          const adDateObj = new Date(adDate);
+          if (adDateObj >= startDate && adDateObj <= endDate) {
+            dailyData.set(adDate, {
+              date: adDate,
+              revenue: 0,
+              productCost: 0,
+              adSpend: spend,
+              totalCost: spend,
+              profit: -spend,
+              orderCount: 0,
+              productBreakdown: {},
+            });
+          }
+        }
+      }
+    } else {
+      // For weekly/monthly, first aggregate ALL ad spend into the correct buckets
+      const adSpendByBucket = new Map<string, number>();
+      
+      for (const [adDate, spend] of pinterestAdSpend) {
+        const adDateObj = new Date(adDate);
+        let bucketKey: string;
+        
+        if (granularity === "weekly") {
+          const monday = new Date(adDateObj);
+          const dayOfWeek = adDateObj.getDay();
+          const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+          monday.setDate(adDateObj.getDate() - daysToSubtract);
+          bucketKey = monday.toISOString().split("T")[0];
+        } else {
+          // monthly
+          bucketKey = `${adDateObj.getFullYear()}-${String(adDateObj.getMonth() + 1).padStart(2, "0")}-01`;
+        }
+        
+        adSpendByBucket.set(bucketKey, (adSpendByBucket.get(bucketKey) || 0) + spend);
+      }
+      
+      // Now assign aggregated ad spend to each period
+      for (const [dateKey, dayData] of dailyData) {
+        dayData.adSpend = adSpendByBucket.get(dateKey) || 0;
+        dayData.totalCost = dayData.productCost + dayData.adSpend;
+        dayData.profit = dayData.revenue - dayData.totalCost;
+      }
+      
+      // Also include buckets with ad spend but no orders
+      for (const [bucketKey, spend] of adSpendByBucket) {
+        if (!dailyData.has(bucketKey) && spend > 0) {
+          dailyData.set(bucketKey, {
+            date: bucketKey,
+            revenue: 0,
+            productCost: 0,
+            adSpend: spend,
+            totalCost: spend,
+            profit: -spend,
+            orderCount: 0,
+            productBreakdown: {},
+          });
+        }
+      }
     }
 
     // Convert to sorted array
