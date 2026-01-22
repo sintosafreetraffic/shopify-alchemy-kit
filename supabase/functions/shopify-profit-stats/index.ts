@@ -298,7 +298,89 @@ serve(async (req) => {
     // Wait for Pinterest data
     const pinterestAdSpend = await pinterestPromise;
 
-    // Helper to find cost price for a product at a specific date
+    // Bundle component definitions - Sleep Bundle is composed of these products
+    const BUNDLE_COMPONENTS: Record<string, string[]> = {
+      "sleep bundle": ["ergonomic sleep pillow", "sleep mask", "knee pillow"],
+      "double sleep bundle": ["ergonomic sleep pillow", "sleep mask", "knee pillow"],
+    };
+
+    // Helper to find cost price for a single product at a specific date
+    const findSingleProductCost = (productTitle: string, orderDate: Date, useBulk: boolean): number | null => {
+      const normalizedTitle = productTitle.toLowerCase().trim();
+      
+      const matchingPrices: CostPrice[] = [];
+      
+      for (const cp of costPricesList) {
+        const cpTitle = cp.product_title.toLowerCase().trim();
+        const cpHandle = cp.product_handle.toLowerCase().trim();
+        
+        // Match by title (partial match) or exact handle
+        const titleMatch = normalizedTitle.includes(cpTitle) || cpTitle.includes(normalizedTitle);
+        const handleMatch = normalizedTitle.replace(/[^a-z0-9]/g, '-').includes(cpHandle) || 
+                           cpHandle.includes(normalizedTitle.replace(/[^a-z0-9]/g, '-'));
+        
+        if (titleMatch || handleMatch) {
+          const effectiveFrom = new Date(cp.effective_from);
+          const effectiveTo = cp.effective_to ? new Date(cp.effective_to) : null;
+          
+          if (orderDate >= effectiveFrom && (!effectiveTo || orderDate <= effectiveTo)) {
+            matchingPrices.push(cp);
+          }
+        }
+      }
+      
+      if (matchingPrices.length > 0) {
+        matchingPrices.sort((a, b) => new Date(b.effective_from).getTime() - new Date(a.effective_from).getTime());
+        const cp = matchingPrices[0];
+        return useBulk ? cp.cost_bulk : cp.cost_single;
+      }
+      
+      return null;
+    };
+
+    // Helper to calculate bundle cost dynamically from components
+    const calculateBundleCost = (bundleTitle: string, orderDate: Date, quantity: number): number | null => {
+      const normalizedBundle = bundleTitle.toLowerCase().trim();
+      
+      // Check if this is a bundle product
+      let componentList: string[] | null = null;
+      let isDoublePricing = false;
+      
+      for (const [bundleName, components] of Object.entries(BUNDLE_COMPONENTS)) {
+        if (normalizedBundle.includes(bundleName)) {
+          componentList = components;
+          isDoublePricing = bundleName.includes("double");
+          break;
+        }
+      }
+      
+      if (!componentList) {
+        return null; // Not a bundle
+      }
+      
+      // Calculate total cost from components
+      let totalComponentCost = 0;
+      let allComponentsFound = true;
+      
+      for (const component of componentList) {
+        const componentCost = findSingleProductCost(component, orderDate, isDoublePricing);
+        if (componentCost === null) {
+          console.log(`[ProfitStats] Missing cost for bundle component: ${component}`);
+          allComponentsFound = false;
+        } else {
+          totalComponentCost += componentCost;
+        }
+      }
+      
+      if (!allComponentsFound) {
+        console.log(`[ProfitStats] Bundle ${bundleTitle} missing some component costs, returning partial: ${totalComponentCost}`);
+      }
+      
+      // For double bundle, we already use bulk prices. Total is per bundle unit.
+      return totalComponentCost * quantity;
+    };
+
+    // Helper to find cost price for a product at a specific date (handles bundles)
     const findCostPrice = (productTitle: string, orderDate: Date): CostPrice | null => {
       const normalizedTitle = productTitle.toLowerCase().trim();
       
@@ -331,6 +413,12 @@ serve(async (req) => {
       }
       
       return null;
+    };
+    
+    // Check if product is a bundle
+    const isBundle = (productTitle: string): boolean => {
+      const normalized = productTitle.toLowerCase().trim();
+      return Object.keys(BUNDLE_COMPONENTS).some(bundle => normalized.includes(bundle));
     };
 
     // Process orders and calculate profit by date
@@ -380,13 +468,22 @@ serve(async (req) => {
         const itemRevenue = parseFloat(item.price) * item.quantity;
         dayData.revenue += itemRevenue;
 
-        const costPrice = findCostPrice(item.title, orderDate);
         let itemCost = 0;
-
-        if (costPrice) {
-          const totalQtyInOrder = productQuantities.get(item.title) || item.quantity;
-          const unitCost = totalQtyInOrder >= 2 ? costPrice.cost_bulk : costPrice.cost_single;
-          itemCost = unitCost * item.quantity;
+        
+        // Check if this is a bundle - calculate dynamically from components
+        if (isBundle(item.title)) {
+          const bundleCost = calculateBundleCost(item.title, orderDate, item.quantity);
+          if (bundleCost !== null) {
+            itemCost = bundleCost;
+          }
+        } else {
+          // Regular product - use stored cost price
+          const costPrice = findCostPrice(item.title, orderDate);
+          if (costPrice) {
+            const totalQtyInOrder = productQuantities.get(item.title) || item.quantity;
+            const unitCost = totalQtyInOrder >= 2 ? costPrice.cost_bulk : costPrice.cost_single;
+            itemCost = unitCost * item.quantity;
+          }
         }
 
         dayData.productCost += itemCost;
