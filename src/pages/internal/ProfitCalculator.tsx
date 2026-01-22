@@ -73,9 +73,10 @@ interface CostPrice {
 interface DailyProfit {
   date: string;
   revenue: number;
-  productCost: number;
-  adSpend: number;
-  totalCost: number;
+  productCost?: number;
+  adSpend?: number;
+  totalCost?: number;
+  cost?: number; // backward compat
   profit: number;
   orderCount: number;
   productBreakdown: Record<string, { qty: number; revenue: number; cost: number; profit: number }>;
@@ -85,9 +86,10 @@ interface ProfitStats {
   profitData: DailyProfit[];
   totals: {
     revenue: number;
-    productCost: number;
-    adSpend: number;
-    totalCost: number;
+    productCost?: number;
+    adSpend?: number;
+    totalCost?: number;
+    cost?: number; // backward compat
     profit: number;
     orderCount: number;
     margin: number;
@@ -97,7 +99,7 @@ interface ProfitStats {
   currency: string;
   granularity: string;
   days: number;
-  pinterestConnected: boolean;
+  pinterestConnected?: boolean;
 }
 
 export default function ProfitCalculator() {
@@ -245,12 +247,17 @@ export default function ProfitCalculator() {
       ? format(new Date(d.date), "MMM d")
       : format(new Date(d.date), "MMM d"),
     revenue: Math.round(d.revenue * 100) / 100,
-    productCost: Math.round(d.productCost * 100) / 100,
-    adSpend: Math.round(d.adSpend * 100) / 100,
-    totalCost: Math.round(d.totalCost * 100) / 100,
+    productCost: Math.round((d.productCost ?? d.cost ?? 0) * 100) / 100,
+    adSpend: Math.round((d.adSpend ?? 0) * 100) / 100,
+    totalCost: Math.round((d.totalCost ?? d.cost ?? 0) * 100) / 100,
     profit: Math.round(d.profit * 100) / 100,
     orders: d.orderCount,
   })) || [];
+
+  // Helper to get totals with backward compatibility
+  const getProductCost = () => stats?.totals.productCost ?? stats?.totals.cost ?? 0;
+  const getAdSpend = () => stats?.totals.adSpend ?? 0;
+  const getTotalCost = () => stats?.totals.totalCost ?? stats?.totals.cost ?? 0;
 
   const currentCostPrices = stats?.costPrices.filter(cp => !cp.effective_to) || [];
   const historicalCostPrices = stats?.costPrices.filter(cp => cp.effective_to) || [];
@@ -350,7 +357,7 @@ export default function ProfitCalculator() {
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold text-amber-600">
-                {stats ? formatCurrency(stats.totals.productCost) : "—"}
+                {stats ? formatCurrency(getProductCost()) : "—"}
               </p>
             </CardContent>
           </Card>
@@ -366,7 +373,7 @@ export default function ProfitCalculator() {
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold text-blue-600">
-                {stats ? formatCurrency(stats.totals.adSpend) : "—"}
+                {stats ? formatCurrency(getAdSpend()) : "—"}
               </p>
             </CardContent>
           </Card>
@@ -379,7 +386,7 @@ export default function ProfitCalculator() {
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold text-orange-600">
-                {stats ? formatCurrency(stats.totals.totalCost) : "—"}
+                {stats ? formatCurrency(getTotalCost()) : "—"}
               </p>
             </CardContent>
           </Card>
