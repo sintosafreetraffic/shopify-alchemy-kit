@@ -213,19 +213,36 @@ serve(async (req) => {
 
     // Helper to find cost price for a product at a specific date
     const findCostPrice = (productTitle: string, orderDate: Date): CostPrice | null => {
-      const normalizedTitle = productTitle.toLowerCase();
+      const normalizedTitle = productTitle.toLowerCase().trim();
+      
+      // Find all matching cost prices, sorted by most recent first
+      const matchingPrices: CostPrice[] = [];
       
       for (const cp of costPricesList) {
-        const cpTitle = cp.product_title.toLowerCase();
-        if (normalizedTitle.includes(cpTitle) || cpTitle.includes(normalizedTitle)) {
+        const cpTitle = cp.product_title.toLowerCase().trim();
+        const cpHandle = cp.product_handle.toLowerCase().trim();
+        
+        // Match by title (partial match) or exact handle
+        const titleMatch = normalizedTitle.includes(cpTitle) || cpTitle.includes(normalizedTitle);
+        const handleMatch = normalizedTitle.replace(/[^a-z0-9]/g, '-').includes(cpHandle) || 
+                           cpHandle.includes(normalizedTitle.replace(/[^a-z0-9]/g, '-'));
+        
+        if (titleMatch || handleMatch) {
           const effectiveFrom = new Date(cp.effective_from);
           const effectiveTo = cp.effective_to ? new Date(cp.effective_to) : null;
           
           if (orderDate >= effectiveFrom && (!effectiveTo || orderDate <= effectiveTo)) {
-            return cp;
+            matchingPrices.push(cp);
           }
         }
       }
+      
+      // Return the most recently created matching price
+      if (matchingPrices.length > 0) {
+        matchingPrices.sort((a, b) => new Date(b.effective_from).getTime() - new Date(a.effective_from).getTime());
+        return matchingPrices[0];
+      }
+      
       return null;
     };
 
