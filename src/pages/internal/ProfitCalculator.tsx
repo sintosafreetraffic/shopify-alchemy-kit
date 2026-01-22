@@ -45,6 +45,7 @@ import {
   BarChart3,
   Megaphone,
   PieChart,
+  Pencil,
 } from "lucide-react";
 import {
   LineChart,
@@ -123,6 +124,10 @@ export default function ProfitCalculator() {
     effective_from: "", // Allow backdating
   });
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Edit effective date
+  const [editingPrice, setEditingPrice] = useState<CostPrice | null>(null);
+  const [editEffectiveFrom, setEditEffectiveFrom] = useState("");
 
   // Check admin access
   useEffect(() => {
@@ -227,6 +232,82 @@ export default function ProfitCalculator() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  // Handle editing effective date
+  const handleEditEffectiveDate = async () => {
+    if (!editingPrice || !editEffectiveFrom) {
+      toast.error("Please select a date");
+      return;
+    }
+
+    const newEffectiveFrom = new Date(editEffectiveFrom);
+    newEffectiveFrom.setHours(0, 0, 0, 0);
+    
+    // Check for overlaps with other prices of the same product
+    const allPricesForProduct = stats?.costPrices.filter(
+      cp => cp.product_handle === editingPrice.product_handle && cp.id !== editingPrice.id
+    ) || [];
+    
+    // Check if the new date would overlap with any existing price range
+    for (const existingPrice of allPricesForProduct) {
+      const existingFrom = new Date(existingPrice.effective_from);
+      existingFrom.setHours(0, 0, 0, 0);
+      const existingTo = existingPrice.effective_to 
+        ? new Date(existingPrice.effective_to) 
+        : null;
+      if (existingTo) {
+        existingTo.setHours(23, 59, 59, 999);
+      }
+
+      // Check overlap: new date falls within existing range
+      if (existingTo) {
+        // Historical price with end date
+        if (newEffectiveFrom >= existingFrom && newEffectiveFrom <= existingTo) {
+          toast.error(`Date overlaps with existing price period: ${format(existingFrom, "MMM d, yyyy")} - ${format(existingTo, "MMM d, yyyy")}`);
+          return;
+        }
+      } else {
+        // Active price (no end date) - check if new date would be after this start
+        if (newEffectiveFrom >= existingFrom) {
+          toast.error(`Date overlaps with current active price starting ${format(existingFrom, "MMM d, yyyy")}`);
+          return;
+        }
+      }
+
+      // Also check if editing a current price, the new date doesn't go before a historical price's end
+      if (!editingPrice.effective_to && existingTo) {
+        if (newEffectiveFrom <= existingTo) {
+          toast.error(`New date must be after the previous price period ending ${format(existingTo, "MMM d, yyyy")}`);
+          return;
+        }
+      }
+    }
+
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from("product_cost_prices")
+        .update({ effective_from: newEffectiveFrom.toISOString() })
+        .eq("id", editingPrice.id);
+
+      if (error) throw error;
+
+      toast.success("Effective date updated");
+      setEditingPrice(null);
+      setEditEffectiveFrom("");
+      fetchProfitData();
+    } catch (err) {
+      console.error("Error updating effective date:", err);
+      toast.error("Failed to update effective date");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const openEditModal = (price: CostPrice) => {
+    setEditingPrice(price);
+    setEditEffectiveFrom(format(new Date(price.effective_from), "yyyy-MM-dd"));
   };
 
   if (isLoading) {
@@ -561,6 +642,7 @@ export default function ProfitCalculator() {
                         <TableHead className="text-right">Bulk (2x+)</TableHead>
                         <TableHead className="text-right">Savings</TableHead>
                         <TableHead>Effective From</TableHead>
+                        <TableHead className="w-[60px]"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -576,6 +658,15 @@ export default function ProfitCalculator() {
                           </TableCell>
                           <TableCell className="text-muted-foreground">
                             {format(new Date(cp.effective_from), "MMM d, yyyy")}
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openEditModal(cp)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -609,6 +700,7 @@ export default function ProfitCalculator() {
                         <TableHead className="text-right">Single</TableHead>
                         <TableHead className="text-right">Bulk</TableHead>
                         <TableHead>Period</TableHead>
+                        <TableHead className="w-[60px]"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -620,6 +712,15 @@ export default function ProfitCalculator() {
                           <TableCell className="text-muted-foreground text-sm">
                             {format(new Date(cp.effective_from), "MMM d, yyyy")} — {" "}
                             {cp.effective_to ? format(new Date(cp.effective_to), "MMM d, yyyy") : "Now"}
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openEditModal(cp)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -722,6 +823,44 @@ export default function ProfitCalculator() {
             <Button onClick={handleAddCostPrice} disabled={isSaving}>
               {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Add Cost Price
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Effective Date Modal */}
+      <Dialog open={!!editingPrice} onOpenChange={(open) => !open && setEditingPrice(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Effective Date</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="p-3 bg-muted rounded-md">
+              <p className="font-medium">{editingPrice?.product_title}</p>
+              <p className="text-sm text-muted-foreground">
+                Single: {editingPrice && formatCurrency(editingPrice.cost_single)} / 
+                Bulk: {editingPrice && formatCurrency(editingPrice.cost_bulk)}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>Effective From *</Label>
+              <Input
+                type="date"
+                value={editEffectiveFrom}
+                onChange={(e) => setEditEffectiveFrom(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                The system will check for overlaps with other prices for this product.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingPrice(null)}>
+              Cancel
+            </Button>
+            <Button onClick={handleEditEffectiveDate} disabled={isSaving}>
+              {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Save Changes
             </Button>
           </DialogFooter>
         </DialogContent>
