@@ -555,6 +555,21 @@ export default function ProfitCalculator() {
                       formatCurrency(value),
                       name.charAt(0).toUpperCase() + name.slice(1),
                     ]}
+                    labelFormatter={(label: string) => {
+                      if (granularity === "weekly") {
+                        const startDate = new Date(label);
+                        const endDate = new Date(startDate);
+                        endDate.setDate(endDate.getDate() + 6);
+                        const formatDate = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                        return `${formatDate(startDate)} - ${formatDate(endDate)}`;
+                      } else if (granularity === "monthly") {
+                        const date = new Date(label);
+                        return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+                      }
+                      // Daily - show just the date nicely formatted
+                      const date = new Date(label);
+                      return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                    }}
                   />
                   <Legend />
                   <Area
