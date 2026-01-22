@@ -172,6 +172,7 @@ const ContextDiagnostics = React.lazy(() => import("./pages/internal/ContextDiag
 const VisualEditorPage = React.lazy(() => import("./pages/internal/VisualEditorPage"));
 const SleepSources = React.lazy(() => import("./pages/settings/SleepSources"));
 const SleepSourcesDebug = React.lazy(() => import("./pages/debug/SleepSourcesDebug"));
+const ProfitCalculator = React.lazy(() => import("./pages/internal/ProfitCalculator"));
 
 const queryClient = new QueryClient();
 
@@ -312,6 +313,7 @@ const AppContent = () => {
             <Route path="/debug/analytics" element={<AnalyticsDiagnostics />} />
             <Route path="/debug/sleep-sources" element={<SleepSourcesDebug />} />
             <Route path="/internal/context-diagnostics" element={<ContextDiagnostics />} />
+            <Route path="/internal/profit-calculator" element={<ProfitCalculator />} />
             <Route path="/settings/sleep-sources" element={<SleepSources />} />
             
             <Route path="*" element={<NotFound />} />

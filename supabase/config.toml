@@ -373,3 +373,11 @@ verify_jwt = true
 # A/B Probability Compute - Server-side Bayesian probability (public, returns aggregates only)
 [functions.ab-probability-compute]
 verify_jwt = false
+
+# ============================================================
+# PROFIT CALCULATOR
+# ============================================================
+
+# Shopify Profit Stats - Admin only, requires JWT and validates admin role internally
+[functions.shopify-profit-stats]
+verify_jwt = true
