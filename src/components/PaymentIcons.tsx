@@ -5,7 +5,7 @@ interface PaymentIconsProps {
   iconClassName?: string;
 }
 
-export const PaymentIcons = ({ className, iconClassName = "h-5 w-auto" }: PaymentIconsProps) => {
+export const PaymentIcons = ({ className, iconClassName = "h-4 sm:h-5 w-auto" }: PaymentIconsProps) => {
   return (
     <div className={cn("flex items-center justify-center gap-3 flex-wrap", className)}>
       {/* Visa */}
