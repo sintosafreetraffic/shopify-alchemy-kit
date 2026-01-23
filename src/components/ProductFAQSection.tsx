@@ -8,7 +8,7 @@ const faqs = [
   },
   {
     question: "What are the pillow dimensions and materials?",
-    answer: "Dimensions: 60cm × 35cm × 11cm (23.6\" × 13.8\" × 4.3\"). Material composition: Medical-grade memory foam core with cooling gel infusion, breathable bamboo-derived rayon cover (40% bamboo rayon, 60% polyester), hypoallergenic inner lining, and CertiPUR-US certified foam free from harmful chemicals."
+    answer: "Dimensions: 62cm × 37cm × 12cm (24.4\" × 14.6\" × 4.7\"). Material composition: Medical-grade memory foam core with cooling gel infusion, breathable bamboo-derived rayon cover (40% bamboo rayon, 60% polyester), hypoallergenic inner lining, and CertiPUR-US certified foam free from harmful chemicals."
   },
   {
     question: "How does the 100-night trial work?",
