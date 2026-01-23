@@ -1,5 +1,5 @@
 // Static images to display alongside specific customer reviews
-// Maps customer names to their product images
+// Maps review titles to their product images (ensures uniqueness)
 
 import reviewImage1 from "@/assets/reviews/review-image-1.webp";
 import reviewImage2 from "@/assets/reviews/review-image-2.webp";
@@ -8,17 +8,18 @@ import reviewImage4 from "@/assets/reviews/review-image-4.webp";
 import reviewImage5 from "@/assets/reviews/review-image-5.webp";
 import reviewImage6 from "@/assets/reviews/review-image-6.webp";
 
-// Map customer names to their static review images
-// These will be displayed if the review doesn't already have media from the database
+// Map review titles to their static review images
+// Using titles ensures each image appears only once
 export const reviewStaticImages: Record<string, string> = {
-  "Marcus Chen": reviewImage1,
-  "Brian O'Connor": reviewImage2,
-  "Robert James": reviewImage3,
-  "David Patterson": reviewImage4,
-  "Michael Torres": reviewImage5,
-  "Jennifer Walsh": reviewImage6,
+  "No more dead arm! Game changer": reviewImage1,
+  "Finally have energy again": reviewImage2,
+  "Great for arm numbness, took time to adjust": reviewImage3,
+  "Back pain relief I didn't expect": reviewImage4,
+  "Neck AND shoulder pain solved": reviewImage5,
+  "Jaw pain GONE + better focus at work": reviewImage6,
 };
 
-export function getStaticReviewImage(customerName: string): string | null {
-  return reviewStaticImages[customerName] || null;
+export function getStaticReviewImage(reviewTitle: string | null): string | null {
+  if (!reviewTitle) return null;
+  return reviewStaticImages[reviewTitle] || null;
 }
