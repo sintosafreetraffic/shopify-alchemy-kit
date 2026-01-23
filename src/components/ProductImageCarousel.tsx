@@ -2,7 +2,7 @@
 // Product demo video uses image-first poster with click-to-play
 import { useState, useEffect, useRef } from "react";
 // All images are already WebP format for optimal performance
-import pillowHeroNew from "@/assets/ergonomic-pillow-main-hero.webp";
+import pillowHeroNew from "@/assets/ergonomic-pillow-hero.webp";
 import pillowBenefitsNew from "@/assets/pillow-benefits-new.webp";
 import pillowBenefitsUpdated from "@/assets/pillow-benefits-updated.webp";
 import neckPainSpine from "@/assets/neck-pain-spine.webp";
