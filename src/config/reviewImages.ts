@@ -14,9 +14,9 @@ export const reviewStaticImages: Record<string, string> = {
   "Marcus Chen": reviewImage1,
   "Brian O'Connor": reviewImage2,
   "Robert James": reviewImage3,
-  "Sarah Miller": reviewImage4,
-  "Emily Davis": reviewImage5,
-  "Jennifer Smith": reviewImage6,
+  "David Patterson": reviewImage4,
+  "Michael Torres": reviewImage5,
+  "Jennifer Walsh": reviewImage6,
 };
 
 export function getStaticReviewImage(customerName: string): string | null {
