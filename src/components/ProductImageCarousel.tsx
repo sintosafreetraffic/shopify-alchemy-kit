@@ -67,11 +67,11 @@ export const ProductImageCarousel = () => {
   // Multiple views of the Rise By Night pillow (desktop order)
   const images = [
     { url: pillowHeroNew, alt: "Rise By Night ergonomic pillow main view", type: "image" },
-    { url: pillowBundleNew, alt: "Rise By Night pillow bundle with mulberry silk sleep mask and extra pillow cover", type: "image" },
     { url: pillowDeeperSleep, alt: "Rise By Night pillow - engineered for deeper sleep with reduced neck and shoulder pressure", type: "image" },
-    { url: pillowMaleModel, alt: "Rise By Night pillow - male model sleeping with ergonomic support", type: "image" },
-    { url: pillowCoverMask, alt: "Rise By Night pillow - removable cover and silk sleep mask", type: "image" },
     { url: pillowTrusted, alt: "Rise By Night pillow - trusted by 100,000+ sleepers with customer reviews", type: "image" },
+    { url: pillowCoverMask, alt: "Rise By Night pillow - removable cover and silk sleep mask", type: "image" },
+    { url: pillowMaleModel, alt: "Rise By Night pillow - male model sleeping with ergonomic support", type: "image" },
+    { url: pillowBundleNew, alt: "Rise By Night pillow bundle with mulberry silk sleep mask and extra pillow cover", type: "image" },
     { url: pillowMaleMask, alt: "Rise By Night pillow - male model sleeping with silk sleep mask", type: "image" },
   ];
 
@@ -81,11 +81,11 @@ export const ProductImageCarousel = () => {
   // Mobile order - same product images as desktop, reordered
   const mobileImages = [
     images[0], // pillowHeroNew
-    images[1], // pillowBundleNew
-    images[2], // pillowDeeperSleep
-    images[3], // pillowMaleModel
-    images[4], // pillowCoverMask
-    images[5], // pillowTrusted
+    images[1], // pillowDeeperSleep
+    images[2], // pillowTrusted
+    images[3], // pillowCoverMask
+    images[4], // pillowMaleModel
+    images[5], // pillowBundleNew
     images[6], // pillowMaleMask
   ];
   
