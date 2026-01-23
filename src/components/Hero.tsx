@@ -308,7 +308,7 @@ export const Hero = () => {
               </div>
               <div className="flex items-center gap-2">
                 <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0" />
-                <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">Jaw relief for TMJ sufferers</span> – Proper cervical alignment reduces clenching & tension</p>
+                <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">Jaw & neck tension relief</span> – Proper alignment reduces clenching & strain</p>
               </div>
               <div className="flex items-center gap-2">
                 <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0" />
