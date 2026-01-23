@@ -24,28 +24,25 @@ const policies = [
   },
   {
     icon: Star,
-    title: "Measurements",
+    title: "Material Composition & Measurements",
     content: (
-      <div className="space-y-2">
-        <ul className="space-y-1">
-          <li>• Length: 62cm (24.4")</li>
-          <li>• Width: 37cm (14.6")</li>
-          <li>• Height: 12cm (4.7")</li>
-        </ul>
-      </div>
-    )
-  },
-  {
-    icon: Star,
-    title: "Material Composition",
-    content: (
-      <div className="space-y-3">
-        <p>Our premium ergonomic pillow is crafted with carefully selected materials for optimal comfort and support:</p>
-        <ul className="list-disc list-inside space-y-2">
-          <li><strong>High-density, slow-rebound viscoelastic memory foam</strong> — adapts precisely to the natural curve of your neck and shoulders</li>
-          <li><strong>Breathable, moisture-wicking CoolingTech™ micro-knit cover</strong> — stays soft, fresh, and comfortable throughout the night</li>
-          <li><strong>Ventilated 3D AirMesh side panels</strong> — enhance airflow and prevent heat buildup for a cool, supportive sleep experience</li>
-        </ul>
+      <div className="space-y-4">
+        <div>
+          <h4 className="font-semibold mb-2">Measurements</h4>
+          <ul className="space-y-1">
+            <li>• Length: 24.4" (62cm)</li>
+            <li>• Width: 14.6" (37cm)</li>
+            <li>• Height: 4.7" (12cm)</li>
+          </ul>
+        </div>
+        <div>
+          <h4 className="font-semibold mb-2">Materials</h4>
+          <ul className="list-disc list-inside space-y-2">
+            <li><strong>High-density, slow-rebound viscoelastic memory foam</strong> — adapts precisely to the natural curve of your neck and shoulders</li>
+            <li><strong>Breathable, moisture-wicking CoolingTech™ micro-knit cover</strong> — stays soft, fresh, and comfortable throughout the night</li>
+            <li><strong>Ventilated 3D AirMesh side panels</strong> — enhance airflow and prevent heat buildup for a cool, supportive sleep experience</li>
+          </ul>
+        </div>
       </div>
     )
   }
