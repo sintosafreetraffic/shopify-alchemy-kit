@@ -23,14 +23,24 @@ const painTypes = [
     solution: "Designed with special ergonomic contours, Rise By Night ensures your shoulders remain in a natural position, relieving tension and preventing soreness so you wake up feeling relaxed and refreshed."
   },
   {
+    title: "Arm Numbness",
+    cause: "Side sleepers often experience tingling and numbness when pillows compress nerves in the shoulder and arm. This disrupts sleep and causes discomfort that lingers into morning.",
+    solution: "The contoured side-sleeper zones reduce pressure on your shoulder joint, allowing proper blood flow and nerve function. Wake up without pins and needles or arm discomfort."
+  },
+  {
+    title: "Jaw Pain & TMJ",
+    cause: "Improper head positioning creates tension in the jaw muscles and temporomandibular joint, leading to clenching, grinding, and chronic facial pain that affects your daily life.",
+    solution: "Proper cervical alignment reduces strain on jaw muscles and prevents the forward head posture that worsens TMJ symptoms. Many users report reduced jaw tension within the first week."
+  },
+  {
+    title: "Puffy Morning Face",
+    cause: "Sleeping flat allows fluid to pool in facial tissues overnight, causing puffiness, under-eye bags, and a tired appearance that takes hours to resolve.",
+    solution: "The ergonomic elevation promotes gentle lymphatic drainage throughout the night. Wake up with a refreshed, de-puffed appearance without changing your skincare routine."
+  },
+  {
     title: "Restless Sleep",
     cause: "Tossing and turning is often caused by discomfort from pressure points and inadequate support, preventing you from achieving the deep, restorative sleep your body needs.",
     solution: "High-density memory foam conforms to your unique shape, minimizing pressure points and keeping your head and neck perfectly supported. This ensures uninterrupted sleep, leaving you energized each morning."
-  },
-  {
-    title: "Morning Headaches",
-    cause: "Misaligned neck and shoulder positions restrict blood flow and cause muscle tension, triggering headaches and fatigue that affect your entire day.",
-    solution: "By promoting optimal alignment, Rise By Night improves circulation and reduces tension throughout the night. Wake up pain-free, clear-headed, and ready to take on whatever the day brings."
   },
   {
     title: "Sleep Disruption",

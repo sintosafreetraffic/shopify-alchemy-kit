@@ -1,27 +1,37 @@
 // Ergonomic Pillow Benefits - uses shared BenefitsSection
-import { Moon, Zap, Heart, Shield } from "lucide-react";
+import { Moon, Zap, Heart, Shield, Sparkles, Activity } from "lucide-react";
 import { BenefitsSection } from "@/components/shared/BenefitsSection";
 
 const benefits = [
   {
-    icon: Moon,
-    title: "Better Sleep Quality",
-    description: "Fall asleep 50% faster and enjoy deeper, more restorative sleep cycles"
+    icon: Zap,
+    title: "Stop Waking Up Exhausted",
+    description: "End morning fatigue. Proper alignment means deeper sleep cycles so you wake recharged, not drained"
   },
   {
-    icon: Zap,
-    title: "Wake Up Energized",
-    description: "No more morning neck pain or headaches. Start your day feeling refreshed"
+    icon: Sparkles,
+    title: "Wake Up Looking Refreshed",
+    description: "Gentle elevation prevents fluid buildup overnight. No more puffy face or tired eyes"
+  },
+  {
+    icon: Activity,
+    title: "Accelerate Recovery",
+    description: "Optimal spinal alignment reduces muscle tension, helping your body repair and recover faster"
   },
   {
     icon: Heart,
-    title: "Health Benefits",
-    description: "Reduces snoring, improves breathing, and promotes proper spinal alignment"
+    title: "Breathe Better, Sleep Deeper",
+    description: "Promotes open airways to reduce snoring and breathing disruptions throughout the night"
+  },
+  {
+    icon: Moon,
+    title: "Fall Asleep Faster",
+    description: "Comfortable from the first moment. No more adjusting and repositioning to find relief"
   },
   {
     icon: Shield,
-    title: "Premium Quality",
-    description: "Certified hypoallergenic materials, dust mite resistant, and machine washable cover"
+    title: "Premium Hypoallergenic",
+    description: "Certified materials, dust mite resistant, and machine washable cover for lasting freshness"
   }
 ];
 
