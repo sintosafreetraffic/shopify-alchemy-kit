@@ -303,16 +303,16 @@ export const Hero = () => {
             {/* Benefit-Focused USPs Section - 3 Categories */}
             <div className="space-y-2 mb-3">
               <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0" />
-                <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">Neck, back, shoulder, jaw & arm relief</span> – Ergonomic contours eliminate pressure points</p>
+                <Check className="w-5 h-5 sm:w-5 sm:h-5 text-primary shrink-0" />
+                <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight"><span className="font-semibold">Neck, back, shoulder, jaw & arm relief</span> – Ergonomic contours eliminate pressure points</p>
               </div>
               <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0" />
-                <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">Deeper sleep, energized mornings</span> – Stay comfortable all night so your body fully recovers</p>
+                <Check className="w-5 h-5 sm:w-5 sm:h-5 text-primary shrink-0" />
+                <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight"><span className="font-semibold">Deeper sleep, energized mornings</span> – Stay comfortable all night so your body fully recovers</p>
               </div>
               <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0" />
-                <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">Clearer, younger-looking skin</span> – Proper alignment reduces puffiness and protects delicate skin</p>
+                <Check className="w-5 h-5 sm:w-5 sm:h-5 text-primary shrink-0" />
+                <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight"><span className="font-semibold">Clearer, younger-looking skin</span> – Proper alignment reduces puffiness and protects delicate skin</p>
               </div>
             </div>
 
