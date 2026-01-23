@@ -300,23 +300,19 @@ export const Hero = () => {
               <p className="text-xl md:text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
             </div>
 
-            {/* Benefit-Focused USPs Section - Specific Pain Points */}
+            {/* Benefit-Focused USPs Section - 3 Categories */}
             <div className="space-y-2 mb-3">
               <div className="flex items-center gap-2">
                 <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0" />
-                <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">No more arm numbness</span> – Contoured zones prevent nerve compression for side sleepers</p>
+                <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">Neck, back, shoulder, jaw & arm relief</span> – Ergonomic contours eliminate pressure points</p>
               </div>
               <div className="flex items-center gap-2">
                 <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0" />
-                <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">Jaw & neck tension relief</span> – Proper alignment reduces clenching & strain</p>
+                <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">Deeper sleep, energized mornings</span> – Stay comfortable all night so your body fully recovers</p>
               </div>
               <div className="flex items-center gap-2">
                 <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0" />
-                <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">Wake up refreshed, not puffy</span> – Gentle elevation promotes overnight drainage</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0" />
-                <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">Recover faster</span> – Reduces muscle tension so your body repairs overnight</p>
+                <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">Clearer, younger-looking skin</span> – Proper alignment reduces puffiness and protects delicate skin</p>
               </div>
             </div>
 
