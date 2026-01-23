@@ -28,19 +28,17 @@ const policies = [
     content: (
       <div className="space-y-4">
         <div>
-          <h4 className="font-semibold mb-2">Measurements</h4>
-          <ul className="space-y-1">
-            <li>• Length: 24.4" (62cm)</li>
-            <li>• Width: 14.6" (37cm)</li>
-            <li>• Height: 4.7" (12cm)</li>
+          <p className="mb-2">Crafted with premium materials for optimal comfort:</p>
+          <ul className="list-disc list-inside space-y-1">
+            <li>High-density, slow-rebound viscoelastic memory foam</li>
+            <li>Breathable, moisture-wicking CoolingTech™ micro-knit cover</li>
+            <li>Ventilated 3D AirMesh side panels for enhanced airflow</li>
           </ul>
         </div>
         <div>
-          <h4 className="font-semibold mb-2">Materials</h4>
-          <ul className="list-disc list-inside space-y-2">
-            <li><strong>High-density, slow-rebound viscoelastic memory foam</strong> — adapts precisely to the natural curve of your neck and shoulders</li>
-            <li><strong>Breathable, moisture-wicking CoolingTech™ micro-knit cover</strong> — stays soft, fresh, and comfortable throughout the night</li>
-            <li><strong>Ventilated 3D AirMesh side panels</strong> — enhance airflow and prevent heat buildup for a cool, supportive sleep experience</li>
+          <p className="mb-2">Sized for proper cervical support:</p>
+          <ul className="space-y-1">
+            <li>• 24.4" × 14.6" × 4.7" (62cm × 37cm × 12cm)</li>
           </ul>
         </div>
       </div>
