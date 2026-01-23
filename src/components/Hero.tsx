@@ -249,7 +249,7 @@ export const Hero = () => {
         </div>
 
         {/* Desktop Grid Layout */}
-        <div className="grid md:grid-cols-2 gap-6 lg:gap-10 md:items-start">
+        <div className="grid md:grid-cols-2 gap-6 lg:gap-10 items-start">
           {/* Scrollable Product Images Column - Desktop Only */}
           <div className="hidden md:block relative order-2 md:order-1">
             <Suspense fallback={<CarouselFallback />}>
