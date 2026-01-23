@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getMediaUrl } from "@/hooks/useProductReviews";
+import { getStaticReviewImage } from "@/config/reviewImages";
 import type { ProductReview } from "@/types/reviews";
 import { formatDistanceToNow } from "date-fns";
 
@@ -25,8 +26,12 @@ export const ReviewCard = ({
   const [showVideo, setShowVideo] = useState(false);
 
   const primaryMedia = review.review_media?.[0];
-  const hasMedia = !!primaryMedia;
+  const hasDbMedia = !!primaryMedia;
   const isVideo = primaryMedia?.media_type === "video";
+  
+  // Get static image if no database media exists
+  const staticImage = getStaticReviewImage(review.customer_name);
+  const hasMedia = hasDbMedia || !!staticImage;
 
   const handleHelpfulClick = async () => {
     if (hasVoted || !sessionId) return;
@@ -63,32 +68,43 @@ export const ReviewCard = ({
       {/* Media Section */}
       {hasMedia && (
         <div className="relative">
-          {isVideo ? (
-            showVideo ? (
-              <video
-                src={getMediaUrl(primaryMedia.storage_path)}
-                controls
-                autoPlay
-                className="w-full aspect-video object-cover"
-              />
-            ) : (
-              <div
-                className="relative cursor-pointer group"
-                onClick={() => setShowVideo(true)}
-              >
-                <div className="w-full aspect-video bg-muted flex items-center justify-center">
-                  <Play className="w-12 h-12 text-primary group-hover:scale-110 transition-transform" />
+          {hasDbMedia ? (
+            // Database media (uploaded by customer)
+            isVideo ? (
+              showVideo ? (
+                <video
+                  src={getMediaUrl(primaryMedia.storage_path)}
+                  controls
+                  autoPlay
+                  className="w-full aspect-video object-cover"
+                />
+              ) : (
+                <div
+                  className="relative cursor-pointer group"
+                  onClick={() => setShowVideo(true)}
+                >
+                  <div className="w-full aspect-video bg-muted flex items-center justify-center">
+                    <Play className="w-12 h-12 text-primary group-hover:scale-110 transition-transform" />
+                  </div>
                 </div>
-              </div>
+              )
+            ) : (
+              <img
+                src={getMediaUrl(primaryMedia.storage_path)}
+                alt={`Review by ${review.customer_name}`}
+                className="w-full object-cover"
+                loading="lazy"
+              />
             )
-          ) : (
+          ) : staticImage ? (
+            // Static product image
             <img
-              src={getMediaUrl(primaryMedia.storage_path)}
-              alt={`Review by ${review.customer_name}`}
-              className="w-full object-cover"
+              src={staticImage}
+              alt={`Product photo by ${review.customer_name}`}
+              className="w-full object-cover max-h-80"
               loading="lazy"
             />
-          )}
+          ) : null}
         </div>
       )}
 
