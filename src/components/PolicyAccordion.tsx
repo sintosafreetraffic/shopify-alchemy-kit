@@ -14,7 +14,7 @@ const policies = [
   },
   {
     icon: Truck,
-    title: "Free Shipping",
+    title: "Free Shipping & Delivery Window",
     content: "Enjoy free shipping on all orders containing pillows within the United States. Orders are typically processed within 1-2 business days and delivered within 5-7 days. Track your order every step of the way with our real-time tracking system."
   },
   {

@@ -9,7 +9,7 @@ export const GuaranteeSection = () => {
             <div className="inline-flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary/10 mb-1 md:mb-2">
               <Truck className="w-5 h-5 md:w-6 md:h-6 text-primary" />
             </div>
-            <h3 className="text-sm md:text-base lg:text-lg font-bold">Free Shipping</h3>
+            <h3 className="text-sm md:text-base lg:text-lg font-bold">Free Shipping & Delivery</h3>
             <p className="text-[10px] md:text-xs lg:text-sm text-muted-foreground">On pillow orders within the U.S.</p>
           </div>
           
