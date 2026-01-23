@@ -13,7 +13,7 @@ export const mobileHeroConfig = {
    * When true: CTA button appears immediately after price on mobile (above the fold)
    * When false: CTA button appears after USPs and included items (previous behavior)
    */
-  MOBILE_CTA_FIRST: true,
+  MOBILE_CTA_FIRST: false,
   
   /**
    * When true: Simplifies mobile hero by hiding included items section on mobile
