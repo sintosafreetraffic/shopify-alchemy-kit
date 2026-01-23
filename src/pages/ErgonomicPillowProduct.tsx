@@ -14,6 +14,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { ReviewsWall, ReviewSubmissionForm } from "@/components/reviews";
 import { ReviewsSection } from "@/components/ReviewsSection";
+import { useShopifyProducts } from "@/hooks/useShopifyProducts";
+import { useCartStore } from "@/stores/cartStore";
 
 // Lazy load sections with carousels to reduce initial bundle
 const VideoSection = lazy(() => import("@/components/VideoSection").then((mod) => ({ default: mod.VideoSection })));
@@ -43,6 +45,53 @@ const QuizCTA = ({ variant = "default" }: { variant?: "default" | "subtle" }) =>
   </div>
 );
 
+// Inline CTA Component - captures users mid-page
+const InlineCTA = () => {
+  const { data: products } = useShopifyProducts(1);
+  const product = products?.[0] || null;
+  const { addItem, setCartOpen } = useCartStore();
+  const [isAdding, setIsAdding] = useState(false);
+
+  const handleAddToCart = async () => {
+    if (!product) return;
+    setIsAdding(true);
+    try {
+      const variant = product.node.variants.edges[0].node;
+      addItem({
+        product,
+        variantId: variant.id,
+        variantTitle: variant.title,
+        price: variant.price,
+        compareAtPrice: variant.compareAtPrice,
+        quantity: 1,
+        selectedOptions: variant.selectedOptions || []
+      });
+      setCartOpen(true);
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
+  return (
+    <div className="py-6 md:py-8 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5">
+      <div className="container mx-auto px-4 text-center">
+        <h3 className="text-lg md:text-xl font-semibold mb-2">Ready to sleep better?</h3>
+        <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
+          Join thousands who wake up pain-free every morning.
+        </p>
+        <Button 
+          size="lg" 
+          className="rounded-full px-8"
+          onClick={handleAddToCart}
+          disabled={isAdding || !product}
+        >
+          {isAdding ? "Adding..." : "Add to Cart"}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 const ErgonomicPillowProduct = () => {
   const [showReviewForm, setShowReviewForm] = useState(false);
 
@@ -50,9 +99,13 @@ const ErgonomicPillowProduct = () => {
     <div className="min-h-screen bg-background">
       <Hero />
       <Features />
+      <ChiropractorEndorsement />
       <ProductBenefitsSection />
       <PainReliefSection />
-      <ChiropractorEndorsement />
+      
+      {/* Inline CTA after pain points */}
+      <InlineCTA />
+      
       <LookInside />
 
       {/* Customer Reviews Wall */}

@@ -1,15 +1,8 @@
 // Performance: Using OptimizedImage for lazy loading
-import { Check, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Check } from "lucide-react";
 import testimonial from "@/assets/happy-sleepers-pillow.webp";
-import offerBundle from "@/assets/offer-bundle.png";
 import comparisonChart from "@/assets/pillow-comparison.webp";
 import OptimizedImage from "@/components/OptimizedImage";
-import { useState, useEffect } from "react";
-import { useCartStore } from "@/stores/cartStore";
-import { fetchProducts } from "@/lib/shopify";
-import type { ShopifyProduct } from "@/lib/shopify";
-import { toast } from "sonner";
 
 const features: Array<{
   image: string;
@@ -43,60 +36,6 @@ const features: Array<{
 ];
 
 export const Features = () => {
-  const [product, setProduct] = useState<ShopifyProduct | null>(null);
-  const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const { addItem, createCheckout, checkoutUrl, setCheckoutUrl } = useCartStore();
-
-  useEffect(() => {
-    const loadProduct = async () => {
-      try {
-        const products = await fetchProducts(1);
-        if (products.length > 0) {
-          setProduct(products[0]);
-        }
-      } catch (error) {
-        console.error("Error loading product:", error);
-      }
-    };
-    loadProduct();
-  }, []);
-
-  const handleBuyNow = async () => {
-    if (!product) {
-      toast.error("Product not available");
-      return;
-    }
-
-    setIsCheckingOut(true);
-    try {
-      const variant = product.node.variants.edges[0].node;
-      
-      const cartItem = {
-        product,
-        variantId: variant.id,
-        variantTitle: variant.title,
-        price: variant.price,
-        compareAtPrice: variant.compareAtPrice,
-        quantity: 1,
-        selectedOptions: variant.selectedOptions || []
-      };
-      
-      addItem(cartItem);
-      await createCheckout();
-      
-      const url = useCartStore.getState().checkoutUrl;
-      if (url) {
-        window.open(url, '_blank');
-        setCheckoutUrl(null);
-      }
-    } catch (error) {
-      console.error('Checkout failed:', error);
-      toast.error("Failed to start checkout");
-    } finally {
-      setIsCheckingOut(false);
-    }
-  };
-
   return (
     <section className="py-4 md:py-6 lg:py-10 px-4 bg-primary/5">
       <div className="container mx-auto max-w-6xl space-y-4 md:space-y-8 lg:space-y-12">
