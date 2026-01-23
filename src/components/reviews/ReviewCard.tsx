@@ -29,8 +29,8 @@ export const ReviewCard = ({
   const hasDbMedia = !!primaryMedia;
   const isVideo = primaryMedia?.media_type === "video";
   
-  // Get static image if no database media exists
-  const staticImage = getStaticReviewImage(review.customer_name);
+  // Get static image if no database media exists (uses review title for uniqueness)
+  const staticImage = getStaticReviewImage(review.title);
   const hasMedia = hasDbMedia || !!staticImage;
 
   const handleHelpfulClick = async () => {
