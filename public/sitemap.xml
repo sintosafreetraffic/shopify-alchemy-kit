@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Core Pages -->
+  <url>
+    <loc>https://shopify-alchemy-kit.lovable.app/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  
+  <!-- Products -->
+  <url>
+    <loc>https://shopify-alchemy-kit.lovable.app/products</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://shopify-alchemy-kit.lovable.app/products/ergonomic-pillow</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://shopify-alchemy-kit.lovable.app/products/knee-pillow</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://shopify-alchemy-kit.lovable.app/products/silk-sleep-mask</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://shopify-alchemy-kit.lovable.app/products/sleep-bundle</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- Reviews & Social Proof -->
+  <url>
+    <loc>https://shopify-alchemy-kit.lovable.app/reviews</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <!-- Content Pages -->
+  <url>
+    <loc>https://shopify-alchemy-kit.lovable.app/faq</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://shopify-alchemy-kit.lovable.app/about-us</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://shopify-alchemy-kit.lovable.app/benefits</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://shopify-alchemy-kit.lovable.app/sleep-guides</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://shopify-alchemy-kit.lovable.app/sleep-quiz</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <!-- Trust & Policy Pages -->
+  <url>
+    <loc>https://shopify-alchemy-kit.lovable.app/guarantee</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://shopify-alchemy-kit.lovable.app/shipping-policy</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://shopify-alchemy-kit.lovable.app/return-policy</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://shopify-alchemy-kit.lovable.app/privacy-policy</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://shopify-alchemy-kit.lovable.app/terms-conditions</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://shopify-alchemy-kit.lovable.app/imprint</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <!-- Utility -->
+  <url>
+    <loc>https://shopify-alchemy-kit.lovable.app/track-order</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
+</urlset>

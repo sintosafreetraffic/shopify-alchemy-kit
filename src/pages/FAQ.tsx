@@ -1,6 +1,11 @@
+import { useMemo } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { useSEO, SEO_CONFIGS } from "@/hooks/useSEO";
+import { FAQSchema } from "@/components/seo/SEOSchemas";
 
 const FAQ = () => {
+  // SEO meta tags
+  useSEO(SEO_CONFIGS.faq);
   const faqCategories = [
     {
       category: "Product Information",
@@ -109,8 +114,16 @@ const FAQ = () => {
     }
   ];
 
+  // Flatten all questions for FAQ schema
+  const allQuestions = useMemo(() => 
+    faqCategories.flatMap(cat => cat.questions),
+    []
+  );
+
   return (
     <div className="min-h-screen bg-background">
+      {/* FAQ Schema for rich snippets */}
+      <FAQSchema items={allQuestions} />
       {/* Hero Section */}
       <section className="py-8 md:py-16 bg-gradient-to-b from-primary/5 to-background">
         <div className="container mx-auto px-4">

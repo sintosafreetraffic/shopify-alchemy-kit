@@ -202,9 +202,10 @@ export const Hero = () => {
               </div>
             </div>
             
-            <h1 className="text-lg font-bold leading-tight tracking-tight truncate mt-3">
+            {/* Mobile title - styled as heading but using p tag to avoid duplicate H1 */}
+            <p className="text-lg font-bold leading-tight tracking-tight truncate mt-3" aria-label="Product title">
               Rise By Night™ Ergonomic Sleep Pillow
-            </h1>
+            </p>
             
             <p className="text-sm text-muted-foreground mt-0.5">
               The #1 Rated Ergonomic Pillow in the U.S.

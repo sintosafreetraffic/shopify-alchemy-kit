@@ -5,6 +5,8 @@ import OptimizedImage from "@/components/OptimizedImage";
 import { useShopifyProducts } from "@/hooks/useShopifyProducts";
 import { formatPrice } from "@/lib/formatPrice";
 import { useIsEU } from "@/hooks/useCurrencySymbol";
+import { useSEO, SEO_CONFIGS } from "@/hooks/useSEO";
+import { BreadcrumbSchema } from "@/components/seo/SEOSchemas";
 
 // Product handle to internal route mapping
 const PRODUCT_ROUTES: Record<string, string> = {
@@ -47,8 +49,15 @@ const HANDLE_ALIASES: Record<string, string[]> = {
 };
 
 const Products = () => {
+  useSEO(SEO_CONFIGS.products);
+  
   const { data: shopifyProducts, isLoading } = useShopifyProducts(10);
   const isEU = useIsEU();
+  
+  const breadcrumbs = [
+    { name: "Home", url: "/" },
+    { name: "Products", url: "/products" },
+  ];
 
   // Filter and sort products based on our order
   const sortedProducts = PRODUCT_ORDER
@@ -80,6 +89,9 @@ const Products = () => {
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
             Ergonomic sleep solutions designed by chiropractors, loved by thousands
           </p>
+
+          {/* Breadcrumb Schema for SEO */}
+          <BreadcrumbSchema items={breadcrumbs} />
           
           {/* Trust Badges */}
           <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
