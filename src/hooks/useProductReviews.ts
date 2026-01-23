@@ -65,7 +65,18 @@ export function useProductReviews(
         review_media: mediaData?.filter((m) => m.review_id === review.id) || [],
       })) as ProductReview[];
 
-      return reviewsWithMedia;
+      // Deduplicate by customer name - keep only the first (most recent based on sort) review per customer
+      const seenCustomers = new Set<string>();
+      const uniqueReviews = reviewsWithMedia.filter((review) => {
+        const customerKey = review.customer_name.toLowerCase().trim();
+        if (seenCustomers.has(customerKey)) {
+          return false;
+        }
+        seenCustomers.add(customerKey);
+        return true;
+      });
+
+      return uniqueReviews;
     },
   });
 }
