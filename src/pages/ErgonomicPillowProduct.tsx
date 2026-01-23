@@ -16,6 +16,8 @@ import { ReviewsWall, ReviewSubmissionForm } from "@/components/reviews";
 import { ReviewsSection } from "@/components/ReviewsSection";
 import { useShopifyProducts } from "@/hooks/useShopifyProducts";
 import { useCartStore } from "@/stores/cartStore";
+import { useSEO, SEO_CONFIGS } from "@/hooks/useSEO";
+import { ProductSchema, BreadcrumbSchema } from "@/components/seo/SEOSchemas";
 
 // Lazy load sections with carousels to reduce initial bundle
 const VideoSection = lazy(() => import("@/components/VideoSection").then((mod) => ({ default: mod.VideoSection })));
@@ -93,10 +95,19 @@ const InlineCTA = () => {
 };
 
 const ErgonomicPillowProduct = () => {
+  useSEO(SEO_CONFIGS.ergonomicPillow);
   const [showReviewForm, setShowReviewForm] = useState(false);
 
   return (
     <div className="min-h-screen bg-background">
+      <ProductSchema
+        name="RiseByNight Ergonomic Cervical Pillow"
+        description="Doctor-recommended contour memory foam pillow for neck and shoulder pain relief. Rated 4.8★ by 1000+ verified customers."
+        url="/products/ergonomic-pillow"
+        price="59.99"
+        ratingValue={4.8}
+        reviewCount={6247}
+      />
       <Hero />
       <Features />
       <ChiropractorEndorsement />

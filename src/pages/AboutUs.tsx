@@ -2,8 +2,10 @@
 import { Heart, Target, Users } from "lucide-react";
 import moonIcon from "@/assets/moon-icon-blue-new.png";
 import OptimizedImage from "@/components/OptimizedImage";
+import { useSEO, SEO_CONFIGS } from "@/hooks/useSEO";
 
 export default function AboutUs() {
+  useSEO(SEO_CONFIGS.aboutUs);
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}

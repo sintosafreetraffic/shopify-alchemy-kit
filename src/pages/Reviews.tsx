@@ -4,8 +4,10 @@ import { Star, Quote, ThumbsUp, Shield, Edit3 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ReviewSubmissionForm } from "@/components/reviews/ReviewSubmissionForm";
+import { useSEO, SEO_CONFIGS } from "@/hooks/useSEO";
 
 const Reviews = () => {
+  useSEO(SEO_CONFIGS.reviews);
   const [isReviewFormOpen, setIsReviewFormOpen] = useState(false);
   const reviews = [
     {

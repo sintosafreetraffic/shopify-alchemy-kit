@@ -9,6 +9,8 @@ import { Link } from "react-router-dom";
 import moonIcon from "@/assets/moon-icon-blue.png";
 import HomeHero from "@/components/HomeHero";
 import { fetchProducts, getBuyerCountrySync } from "@/lib/shopify";
+import { useSEO, SEO_CONFIGS } from "@/hooks/useSEO";
+import { OrganizationSchema, WebsiteSchema } from "@/components/seo/SEOSchemas";
 
 // New homepage sections
 import {
@@ -36,6 +38,9 @@ const SectionFallback = () => (
 export default function Home() {
   const queryClient = useQueryClient();
 
+  // SEO meta tags
+  useSEO(SEO_CONFIGS.home);
+
   // Prefetch products for faster /products page navigation
   useEffect(() => {
     const country = getBuyerCountrySync() ?? "unknown";
@@ -48,6 +53,10 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
+      {/* SEO Schemas for homepage */}
+      <OrganizationSchema />
+      <WebsiteSchema />
+
       {/* Evergreen Quiz-First Hero */}
       <HomeHero />
 

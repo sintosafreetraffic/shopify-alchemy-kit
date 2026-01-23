@@ -9,6 +9,8 @@ import { SleepMaskPainRelief } from "@/components/SleepMaskPainRelief";
 import { SleepMaskLookInside } from "@/components/SleepMaskLookInside";
 import { SleepMaskFAQ } from "@/components/SleepMaskFAQ";
 import { ReviewsWall, ReviewSubmissionForm } from "@/components/reviews";
+import { useSEO, SEO_CONFIGS } from "@/hooks/useSEO";
+import { ProductSchema, BreadcrumbSchema } from "@/components/seo/SEOSchemas";
 
 // Fallback for lazy-loaded sections
 const SectionFallback = () => (
@@ -18,10 +20,19 @@ const SectionFallback = () => (
 );
 
 const SleepMaskProduct = () => {
+  useSEO(SEO_CONFIGS.sleepMask);
   const [showReviewForm, setShowReviewForm] = useState(false);
 
   return (
     <div className="min-h-screen bg-background">
+      <ProductSchema
+        name="RiseByNight Silk Deep Sleep Mask"
+        description="100% pure mulberry silk sleep mask that blocks 100% of light. Gentle on skin."
+        url="/products/silk-sleep-mask"
+        price="29.99"
+        ratingValue={4.9}
+        reviewCount={3200}
+      />
       <SleepMaskHero />
       <SleepMaskFeatures />
       <SleepMaskBenefits />
