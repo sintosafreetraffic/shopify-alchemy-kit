@@ -300,23 +300,23 @@ export const Hero = () => {
               <p className="text-xl md:text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
             </div>
 
-            {/* Benefit-Focused USPs Section */}
+            {/* Benefit-Focused USPs Section - Specific Pain Points */}
             <div className="space-y-2 mb-3">
               <div className="flex items-center gap-2">
                 <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0" />
-                <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">Wake up pain-free</span> – Scientifically designed to relieve neck & shoulder pain</p>
+                <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">No more arm numbness</span> – Contoured zones prevent nerve compression for side sleepers</p>
               </div>
               <div className="flex items-center gap-2">
                 <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0" />
-                <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">Sleep undisturbed</span> – Proper spinal alignment reduces tossing & turning</p>
+                <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">Jaw relief for TMJ sufferers</span> – Proper cervical alignment reduces clenching & tension</p>
               </div>
               <div className="flex items-center gap-2">
                 <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0" />
-                <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">Built to last</span> – Premium memory foam holds its shape for years</p>
+                <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">Wake up refreshed, not puffy</span> – Gentle elevation promotes overnight drainage</p>
               </div>
               <div className="flex items-center gap-2">
                 <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0" />
-                <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">Stay cool</span> – Cooling gel prevents overheating & night sweats</p>
+                <p className="text-[10px] sm:text-[11px] lg:text-xs xl:text-sm leading-tight"><span className="font-semibold">Recover faster</span> – Reduces muscle tension so your body repairs overnight</p>
               </div>
             </div>
 
@@ -436,6 +436,24 @@ export const Hero = () => {
               {/* Payment Icons */}
               <div className="pt-2">
                 <PaymentIcons />
+              </div>
+            </div>
+
+            {/* Trust Band - Compact horizontal strip */}
+            <div className="flex items-center justify-center gap-2 sm:gap-4 py-2 text-[9px] sm:text-[10px] text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <Check className="w-3 h-3 text-primary" />
+                <span>100-Day Trial</span>
+              </div>
+              <div className="w-px h-3 bg-border" />
+              <div className="flex items-center gap-1">
+                <Check className="w-3 h-3 text-primary" />
+                <span>Chiropractor Recommended</span>
+              </div>
+              <div className="w-px h-3 bg-border" />
+              <div className="flex items-center gap-1">
+                <Check className="w-3 h-3 text-primary" />
+                <span>98% Satisfaction</span>
               </div>
             </div>
 
