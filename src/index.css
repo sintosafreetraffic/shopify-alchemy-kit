@@ -102,6 +102,7 @@ All colors MUST be HSL.
     position: relative;
     min-height: 100vh;
     background-color: white;
+    overflow-x: hidden;
   }
 
   #root {

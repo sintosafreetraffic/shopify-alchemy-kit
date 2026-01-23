@@ -317,7 +317,7 @@ export const Hero = () => {
             </div>
 
             {/* Included Items - Combined Section */}
-            <div className="rounded-xl py-3 px-4 mb-4 border" style={{ backgroundColor: 'rgba(59, 126, 237, 0.1)', borderColor: 'rgba(59, 126, 237, 0.3)' }}>
+            <div className="rounded-xl py-3 px-3 sm:px-4 mb-4 border w-full max-w-full overflow-hidden" style={{ backgroundColor: 'rgba(59, 126, 237, 0.1)', borderColor: 'rgba(59, 126, 237, 0.3)' }}>
               <p className="text-xs font-semibold mb-2" style={{ color: '#3b7eed' }}>Included with your pillow</p>
               <div className="flex items-center gap-3">
                 {/* Pillow Cover */}
@@ -436,7 +436,7 @@ export const Hero = () => {
             </div>
 
             {/* Trust Band - Compact horizontal strip */}
-            <div className="flex items-center justify-center gap-2 sm:gap-4 py-2 text-[9px] sm:text-[10px] text-muted-foreground">
+            <div className="flex items-center justify-center gap-1.5 sm:gap-4 py-2 text-[8px] sm:text-[10px] text-muted-foreground flex-wrap max-w-full">
               <div className="flex items-center gap-1">
                 <Check className="w-3 h-3 text-primary" />
                 <span>100-Day Trial</span>
