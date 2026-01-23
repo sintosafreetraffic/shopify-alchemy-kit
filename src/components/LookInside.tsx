@@ -364,11 +364,11 @@ export const LookInside = () => {
           <h3 className="text-base md:text-lg lg:text-xl font-bold mb-3 md:mb-4 text-center">Material Composition & Measurements</h3>
           <div className="grid md:grid-cols-2 gap-4 md:gap-6 max-w-3xl mx-auto">
             <div>
-              <h4 className="font-semibold text-sm md:text-base mb-2">Dimensions</h4>
+              <h4 className="font-semibold text-sm md:text-base mb-2">Measurements</h4>
               <ul className="text-xs md:text-sm text-muted-foreground space-y-1">
-                <li>• Length: 60cm (23.6")</li>
-                <li>• Width: 35cm (13.8")</li>
-                <li>• Height: 11cm (4.3")</li>
+                <li>• Length: 62cm (24.4")</li>
+                <li>• Width: 37cm (14.6")</li>
+                <li>• Height: 12cm (4.7")</li>
               </ul>
             </div>
             <div>
