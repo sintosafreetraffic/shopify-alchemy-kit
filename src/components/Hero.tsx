@@ -211,7 +211,7 @@ export const Hero = () => {
             </p>
             
             {/* Mobile Price - Above USPs */}
-            <p className="text-xl font-bold mt-2 text-primary">{formatPrice(productPrice, currencyCode)}</p>
+            <p className="text-2xl font-bold mt-2 text-primary">{formatPrice(productPrice, currencyCode)}</p>
             
             {/* MOBILE CTA FIRST: Show CTA immediately after price when enabled */}
             {mobileHeroConfig.MOBILE_CTA_FIRST && (

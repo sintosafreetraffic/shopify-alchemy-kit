@@ -171,7 +171,7 @@ export const SleepBundleHero = () => {
                     )}
                   </div>
                   <div className="space-y-1">
-                    <p className="text-xl md:text-2xl font-bold text-primary">
+                    <p className="text-2xl font-bold text-primary">
                       {formatPrice(product?.node.variants.edges[0]?.node.price.amount || "149.99", getCurrency(product?.node.variants.edges[0]?.node.price.currencyCode))}
                     </p>
                     {product?.node.variants.edges[0]?.node.compareAtPrice && (
@@ -201,7 +201,7 @@ export const SleepBundleHero = () => {
                     )}
                   </div>
                   <div className="space-y-1">
-                    <p className="text-xl md:text-2xl font-bold text-primary">
+                    <p className="text-2xl font-bold text-primary">
                       {formatPrice(product?.node.variants.edges[1]?.node.price.amount || "249.99", getCurrency(product?.node.variants.edges[1]?.node.price.currencyCode))}
                     </p>
                     {product?.node.variants.edges[1]?.node.compareAtPrice && (
