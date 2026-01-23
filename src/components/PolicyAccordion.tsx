@@ -24,6 +24,19 @@ const policies = [
   },
   {
     icon: Star,
+    title: "Measurements",
+    content: (
+      <div className="space-y-2">
+        <ul className="space-y-1">
+          <li>• Length: 62cm (24.4")</li>
+          <li>• Width: 37cm (14.6")</li>
+          <li>• Height: 12cm (4.7")</li>
+        </ul>
+      </div>
+    )
+  },
+  {
+    icon: Star,
     title: "Material Composition",
     content: (
       <div className="space-y-3">

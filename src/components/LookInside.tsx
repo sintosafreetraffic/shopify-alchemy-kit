@@ -360,27 +360,6 @@ export const LookInside = () => {
             </p>
           </div>
         </div>
-        <div className="mt-6 md:mt-10 bg-primary/5 border border-primary/20 rounded-lg p-4 md:p-6">
-          <h3 className="text-base md:text-lg lg:text-xl font-bold mb-3 md:mb-4 text-center">Material Composition & Measurements</h3>
-          <div className="grid md:grid-cols-2 gap-4 md:gap-6 max-w-3xl mx-auto">
-            <div>
-              <h4 className="font-semibold text-sm md:text-base mb-2">Measurements</h4>
-              <ul className="text-xs md:text-sm text-muted-foreground space-y-1">
-                <li>• Length: 62cm (24.4")</li>
-                <li>• Width: 37cm (14.6")</li>
-                <li>• Height: 12cm (4.7")</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold text-sm md:text-base mb-2">Materials</h4>
-              <ul className="text-xs md:text-sm text-muted-foreground space-y-1">
-                <li>• Core: Medical-grade memory foam with cooling gel</li>
-                <li>• Cover: 40% bamboo rayon, 60% polyester</li>
-                <li>• CertiPUR-US certified, hypoallergenic</li>
-              </ul>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
   );
