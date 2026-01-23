@@ -284,6 +284,11 @@ export const KneePillowHero = () => {
               <div className="pt-4">
                 <PaymentIcons />
               </div>
+              
+              {/* Policy Accordion - Desktop only, under Add to Cart */}
+              <div className="hidden md:block mt-4">
+                <PolicyAccordion />
+              </div>
             </div>
 
             <div className="grid grid-cols-3 gap-3 py-3 border-t text-center">
@@ -304,7 +309,10 @@ export const KneePillowHero = () => {
         </div>
       </div>
       
-      <PolicyAccordion />
+      {/* Policy Accordion - Mobile only */}
+      <div className="md:hidden">
+        <PolicyAccordion />
+      </div>
     </section>
   );
 };
