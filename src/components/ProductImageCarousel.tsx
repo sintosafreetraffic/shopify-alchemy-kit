@@ -9,8 +9,6 @@ import pillowMaleModel from "@/assets/ergonomic-pillow-male-model.png";
 import pillowCoverMask from "@/assets/ergonomic-pillow-cover-mask.webp";
 import pillowTrusted from "@/assets/ergonomic-pillow-trusted.webp";
 import pillowMaleMask from "@/assets/ergonomic-pillow-male-mask.webp";
-import neckPainSpine from "@/assets/neck-pain-spine.webp";
-import pillowBenefitsUpdated from "@/assets/pillow-benefits-updated.webp";
 import {
   Carousel,
   CarouselContent,
@@ -75,8 +73,6 @@ export const ProductImageCarousel = () => {
     { url: pillowCoverMask, alt: "Rise By Night pillow - removable cover and silk sleep mask", type: "image" },
     { url: pillowTrusted, alt: "Rise By Night pillow - trusted by 100,000+ sleepers with customer reviews", type: "image" },
     { url: pillowMaleMask, alt: "Rise By Night pillow - male model sleeping with silk sleep mask", type: "image" },
-    { url: neckPainSpine, alt: "Rise By Night pillow - neck pain and spine alignment relief", type: "image" },
-    { url: pillowBenefitsUpdated, alt: "Rise By Night pillow - premium ergonomic pillow benefits including neck support, pressure relief, custom fit, durability, high-end materials, enhanced sleep", type: "image" },
   ];
 
   // Get only image URLs (excluding videos) for the modal navigation
@@ -91,8 +87,6 @@ export const ProductImageCarousel = () => {
     images[4], // pillowCoverMask
     images[5], // pillowTrusted
     images[6], // pillowMaleMask
-    images[7], // neckPainSpine
-    images[8], // pillowBenefitsUpdated
   ];
   
   // Get only image URLs for mobile (excluding videos) for the modal navigation
