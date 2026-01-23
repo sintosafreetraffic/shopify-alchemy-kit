@@ -258,7 +258,7 @@ export const Hero = () => {
           </div>
           
           {/* Sticky Product Details Column */}
-          <div className="space-y-2 order-1 md:order-2 md:sticky md:top-20 md:self-start">
+          <div className="space-y-2 order-1 md:order-2 md:sticky md:top-4 self-start">
 
             {/* Desktop Title Section */}
             <div className="hidden md:flex flex-col gap-3">
