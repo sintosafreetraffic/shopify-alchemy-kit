@@ -168,8 +168,8 @@ export const Hero = () => {
   const currencyCode = (isEU && shopifyCurrency === 'USD') ? 'EUR' : shopifyCurrency;
 
   return (
-    <section className="pb-3 md:pb-6 bg-background overflow-visible" style={{ paddingTop: Math.max(headerHeight - 80, 0) }}>
-      <div className="container mx-auto px-4 max-w-7xl overflow-visible">
+    <section className="pb-3 md:pb-6 bg-background overflow-x-hidden" style={{ paddingTop: Math.max(headerHeight - 80, 0) }}>
+      <div className="container mx-auto px-4 max-w-7xl overflow-x-hidden">
         {/* Mobile Layout: Carousel at top, then title */}
         <div className="md:hidden space-y-3 md:space-y-4 mb-0 md:mb-6">
           <Suspense fallback={<CarouselFallback />}>
