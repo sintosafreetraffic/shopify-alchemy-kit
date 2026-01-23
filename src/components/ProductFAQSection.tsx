@@ -7,6 +7,10 @@ const faqs = [
     answer: "The Rise By Night pillow uses scientifically-designed ergonomic contours and medical-grade cooling gel technology to maintain proper spinal alignment, reduce sleep apnea episodes by 86%, and eliminate snoring. Unlike regular pillows that flatten quickly, Rise By Night maintains its shape and support for 3-5 years."
   },
   {
+    question: "What are the pillow dimensions and materials?",
+    answer: "Dimensions: 60cm × 35cm × 11cm (23.6\" × 13.8\" × 4.3\"). Material composition: Medical-grade memory foam core with cooling gel infusion, breathable bamboo-derived rayon cover (40% bamboo rayon, 60% polyester), hypoallergenic inner lining, and CertiPUR-US certified foam free from harmful chemicals."
+  },
+  {
     question: "How does the 100-night trial work?",
     answer: "Try Rise By Night risk-free for 100 nights. If you're not completely satisfied, simply contact us for a full refund. No questions asked, no hassle. We'll arrange a free pickup and process your refund within 5 business days."
   },
