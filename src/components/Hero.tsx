@@ -453,11 +453,19 @@ export const Hero = () => {
               </div>
             </div>
 
+            {/* Policy Accordion - Desktop Only (inside right column) */}
+            <div className="hidden md:block">
+              <PolicyAccordion />
+            </div>
+
           </div>
         </div>
       </div>
       
-      <PolicyAccordion />
+      {/* Policy Accordion - Mobile Only (full width) */}
+      <div className="md:hidden">
+        <PolicyAccordion />
+      </div>
     </section>
   );
 };
