@@ -284,13 +284,9 @@ export const KneePillowHero = () => {
               <div className="pt-4">
                 <PaymentIcons />
               </div>
-              
-              {/* Policy Accordion - Desktop only, under Add to Cart */}
-              <div className="hidden md:block mt-4">
-                <PolicyAccordion />
-              </div>
             </div>
 
+            {/* Trust badges */}
             <div className="grid grid-cols-3 gap-3 py-3 border-t text-center">
               <div className="flex flex-col items-center">
                 <Shield className="w-5 h-5 mb-1.5 text-primary" />
@@ -304,6 +300,11 @@ export const KneePillowHero = () => {
                 <Truck className="w-5 h-5 mb-1.5 text-primary" />
                 <p className="text-xs font-medium leading-tight">Easy Returns</p>
               </div>
+            </div>
+            
+            {/* Policy Accordion - Desktop only, under Add to Cart */}
+            <div className="hidden md:block">
+              <PolicyAccordion />
             </div>
           </div>
         </div>
