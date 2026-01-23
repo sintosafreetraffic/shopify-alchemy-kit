@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import pillowHeroNew from "@/assets/ergonomic-pillow-hero.webp";
 import pillowBundleNew from "@/assets/ergonomic-pillow-bundle.webp";
 import pillowDeeperSleep from "@/assets/ergonomic-pillow-deeper-sleep.webp";
+import pillowMaleModel from "@/assets/ergonomic-pillow-male-model.png";
 import pillowBenefitsNew from "@/assets/pillow-benefits-new.webp";
 import pillowBenefitsUpdated from "@/assets/pillow-benefits-updated.webp";
 import neckPainSpine from "@/assets/neck-pain-spine.webp";
@@ -69,6 +70,7 @@ export const ProductImageCarousel = () => {
     { url: pillowHeroNew, alt: "Rise By Night ergonomic pillow main view", type: "image" },
     { url: pillowBundleNew, alt: "Rise By Night pillow bundle with mulberry silk sleep mask and extra pillow cover", type: "image" },
     { url: pillowDeeperSleep, alt: "Rise By Night pillow - engineered for deeper sleep with reduced neck and shoulder pressure", type: "image" },
+    { url: pillowMaleModel, alt: "Rise By Night pillow - male model sleeping with ergonomic support", type: "image" },
     { url: "/videos/product-demo.mp4", alt: "Rise By Night pillow demonstration", type: "video", poster: "/videos/thumbnails/product-video-thumb.webp" },
     { url: pillowBenefitsNew, alt: "Rise By Night ergonomic pillow benefits - relieves neck & back pain, reduces sleep apnea, reduces acid reflux, relieves shoulders", type: "image" },
     { url: pillowEasyCleaning, alt: "Rise By Night pillow - easy cleaning and maintenance with removable cover", type: "image" },
@@ -84,11 +86,12 @@ export const ProductImageCarousel = () => {
     images[0], // pillowHeroNew
     images[1], // pillowBundleNew
     images[2], // pillowDeeperSleep
-    images[5], // pillowEasyCleaning
-    images[4], // pillowBenefitsNew
-    images[3], // video
-    images[6], // neckPainSpine
-    images[7], // pillowBenefitsUpdated
+    images[3], // pillowMaleModel
+    images[6], // pillowEasyCleaning
+    images[5], // pillowBenefitsNew
+    images[4], // video
+    images[7], // neckPainSpine
+    images[8], // pillowBenefitsUpdated
   ];
   
   // Get only image URLs for mobile (excluding videos) for the modal navigation
