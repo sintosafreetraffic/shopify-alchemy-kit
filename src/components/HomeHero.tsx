@@ -118,7 +118,7 @@ const HomeHero = () => {
         {/* Hero CTA Button */}
         <div className="absolute inset-x-0 bottom-8 md:bottom-12 flex justify-center">
           <Button
-            onClick={handleStartAssessment}
+            onClick={() => navigate("/products/ergonomic-pillow")}
             size="lg"
             className="h-14 px-10 text-base font-medium rounded-full bg-white/95 text-foreground hover:bg-white shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm"
           >
