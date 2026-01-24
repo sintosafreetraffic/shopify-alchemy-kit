@@ -116,7 +116,7 @@ const HomeHero = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40" />
         
         {/* Hero CTA Button */}
-        <div className="absolute inset-0 flex items-center justify-center">
+        <div className="absolute inset-x-0 bottom-8 md:bottom-12 flex justify-center">
           <Button
             onClick={handleStartAssessment}
             size="lg"
