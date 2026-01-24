@@ -114,6 +114,18 @@ const HomeHero = () => {
         </picture>
         {/* Subtle overlay for text readability */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40" />
+        
+        {/* Hero CTA Button */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <Button
+            onClick={handleStartAssessment}
+            size="lg"
+            className="h-14 px-10 text-base font-medium rounded-full bg-white/95 text-foreground hover:bg-white shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm"
+          >
+            Improve Your Sleep
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Content Section */}
