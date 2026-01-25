@@ -3574,6 +3574,66 @@ export type Database = {
         }
         Relationships: []
       }
+      tbls_purchase_attribution: {
+        Row: {
+          created_at: string
+          currency: string
+          customer_email_hash: string | null
+          id: string
+          landing_page: string | null
+          order_id: string
+          order_number: string | null
+          order_value: number
+          session_id: string | null
+          tbls_category: string | null
+          tbls_page_id: string | null
+          tbls_pin_id: string | null
+          tbls_subdomain: string | null
+          tbls_template: string | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          customer_email_hash?: string | null
+          id?: string
+          landing_page?: string | null
+          order_id: string
+          order_number?: string | null
+          order_value: number
+          session_id?: string | null
+          tbls_category?: string | null
+          tbls_page_id?: string | null
+          tbls_pin_id?: string | null
+          tbls_subdomain?: string | null
+          tbls_template?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          customer_email_hash?: string | null
+          id?: string
+          landing_page?: string | null
+          order_id?: string
+          order_number?: string | null
+          order_value?: number
+          session_id?: string | null
+          tbls_category?: string | null
+          tbls_page_id?: string | null
+          tbls_pin_id?: string | null
+          tbls_subdomain?: string | null
+          tbls_template?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Relationships: []
+      }
       tracking_alerts: {
         Row: {
           acknowledged_at: string | null
