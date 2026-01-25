@@ -48,10 +48,24 @@ interface PlatformStats {
   color: string;
 }
 
+interface OverlapStats {
+  uniqueOrders: number;
+  uniqueValue: number;
+  multiTouchOrders: number;
+  pinterestOnly: number;
+  metaOnly: number;
+  googleOnly: number;
+  pinterestMeta: number;
+  pinterestGoogle: number;
+  metaGoogle: number;
+  allThree: number;
+}
+
 interface CombinedStats {
   totalEvents: number;
   totalValue: number;
   platforms: PlatformStats[];
+  overlap: OverlapStats;
   dailyBreakdown: Array<{
     date: string;
     pinterest: number;
@@ -79,19 +93,19 @@ export const AttributionSourceTruthTab = () => {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - daysNum);
 
-      // Fetch all platform data in parallel
+      // Fetch all platform data in parallel (include order_id for overlap analysis)
       const [pinterestResult, metaResult, googleResult] = await Promise.all([
         supabase
           .from('pinterest_purchase_events')
-          .select('value, created_at, send_status, is_test')
+          .select('order_id, value, created_at, send_status, is_test')
           .gte('created_at', startDate.toISOString()),
         supabase
           .from('meta_purchase_events')
-          .select('value, created_at, send_status')
+          .select('order_id, value, created_at, send_status')
           .gte('created_at', startDate.toISOString()),
         supabase
           .from('google_purchase_events')
-          .select('value, created_at, send_status')
+          .select('order_id, value, created_at, send_status')
           .gte('created_at', startDate.toISOString()),
       ]);
 
@@ -100,14 +114,48 @@ export const AttributionSourceTruthTab = () => {
         (e: any) => !e.is_test && e.send_status === 'sent'
       );
       const pinterestValue = pinterestEvents.reduce((sum: number, e: any) => sum + (e.value || 0), 0);
+      const pinterestOrderIds = new Set(pinterestEvents.map((e: any) => e.order_id));
 
       // Process Meta
       const metaEvents = (metaResult.data || []).filter((e: any) => e.send_status === 'sent');
       const metaValue = metaEvents.reduce((sum: number, e: any) => sum + (e.value || 0), 0);
+      const metaOrderIds = new Set(metaEvents.map((e: any) => e.order_id));
 
       // Process Google
       const googleEvents = (googleResult.data || []).filter((e: any) => e.send_status?.includes('sent'));
       const googleValue = googleEvents.reduce((sum: number, e: any) => sum + (e.value || 0), 0);
+      const googleOrderIds = new Set(googleEvents.map((e: any) => e.order_id));
+
+      // Calculate overlap statistics
+      const allOrderIds = new Set([...pinterestOrderIds, ...metaOrderIds, ...googleOrderIds]);
+      let pinterestOnly = 0, metaOnly = 0, googleOnly = 0;
+      let pinterestMeta = 0, pinterestGoogle = 0, metaGoogle = 0, allThree = 0;
+      let uniqueValue = 0;
+
+      // Build unique order value map (use max value if duplicates exist)
+      const orderValueMap = new Map<string, number>();
+      [...pinterestEvents, ...metaEvents, ...googleEvents].forEach((e: any) => {
+        const existing = orderValueMap.get(e.order_id) || 0;
+        orderValueMap.set(e.order_id, Math.max(existing, e.value || 0));
+      });
+
+      allOrderIds.forEach(orderId => {
+        const inP = pinterestOrderIds.has(orderId);
+        const inM = metaOrderIds.has(orderId);
+        const inG = googleOrderIds.has(orderId);
+        
+        uniqueValue += orderValueMap.get(orderId) || 0;
+        
+        if (inP && inM && inG) allThree++;
+        else if (inP && inM) pinterestMeta++;
+        else if (inP && inG) pinterestGoogle++;
+        else if (inM && inG) metaGoogle++;
+        else if (inP) pinterestOnly++;
+        else if (inM) metaOnly++;
+        else if (inG) googleOnly++;
+      });
+
+      const multiTouchOrders = pinterestMeta + pinterestGoogle + metaGoogle + allThree;
 
       // Calculate daily breakdown
       const dailyData: Record<string, { date: string; pinterest: number; meta: number; google: number }> = {};
@@ -136,6 +184,18 @@ export const AttributionSourceTruthTab = () => {
           { platform: 'Meta', events: metaEvents.length, value: metaValue, color: PLATFORM_COLORS.meta },
           { platform: 'Google', events: googleEvents.length, value: googleValue, color: PLATFORM_COLORS.google },
         ],
+        overlap: {
+          uniqueOrders: allOrderIds.size,
+          uniqueValue,
+          multiTouchOrders,
+          pinterestOnly,
+          metaOnly,
+          googleOnly,
+          pinterestMeta,
+          pinterestGoogle,
+          metaGoogle,
+          allThree,
+        },
         dailyBreakdown: sortedDaily,
       });
     } catch (err) {
@@ -219,16 +279,40 @@ export const AttributionSourceTruthTab = () => {
             </div>
           ) : combinedStats ? (
             <div className="space-y-6">
+              {/* Key Insight: Unique vs Platform Events */}
+              <Card className="p-4 border-primary/20 bg-primary/5">
+                <div className="flex items-start gap-3">
+                  <Layers className="w-5 h-5 text-primary mt-0.5" />
+                  <div className="flex-1">
+                    <h3 className="text-sm font-medium mb-1">Multi-Touch Attribution</h3>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Each platform receives conversions independently. One order can be attributed to multiple platforms
+                      if the user clicked ads from different sources before purchasing.
+                    </p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="text-center p-2 rounded-lg bg-background">
+                        <p className="text-xl font-bold">{combinedStats.overlap.uniqueOrders}</p>
+                        <p className="text-xs text-muted-foreground">Unique Orders</p>
+                      </div>
+                      <div className="text-center p-2 rounded-lg bg-background">
+                        <p className="text-xl font-bold">{formatCurrency(combinedStats.overlap.uniqueValue)}</p>
+                        <p className="text-xs text-muted-foreground">Actual Revenue</p>
+                      </div>
+                      <div className="text-center p-2 rounded-lg bg-background">
+                        <p className="text-xl font-bold">{combinedStats.totalEvents}</p>
+                        <p className="text-xs text-muted-foreground">Platform Events</p>
+                      </div>
+                      <div className="text-center p-2 rounded-lg bg-background">
+                        <p className="text-xl font-bold text-amber-600">{combinedStats.overlap.multiTouchOrders}</p>
+                        <p className="text-xs text-muted-foreground">Multi-Touch</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
               {/* Summary Cards */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Card className="p-4">
-                  <p className="text-2xl font-bold">{combinedStats.totalEvents}</p>
-                  <p className="text-xs text-muted-foreground">Total Events</p>
-                </Card>
-                <Card className="p-4">
-                  <p className="text-2xl font-bold">{formatCurrency(combinedStats.totalValue)}</p>
-                  <p className="text-xs text-muted-foreground">Total Value Tracked</p>
-                </Card>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 {combinedStats.platforms.map((p) => (
                   <Card key={p.platform} className="p-4">
                     <div className="flex items-center gap-2">
@@ -239,6 +323,25 @@ export const AttributionSourceTruthTab = () => {
                     <p className="text-xs mt-1" style={{ color: p.color }}>{formatCurrency(p.value)}</p>
                   </Card>
                 ))}
+                {/* Overlap breakdown cards */}
+                <Card className="p-4 border-dashed">
+                  <p className="text-lg font-bold">{combinedStats.overlap.pinterestOnly + combinedStats.overlap.metaOnly + combinedStats.overlap.googleOnly}</p>
+                  <p className="text-xs text-muted-foreground">Single-Platform</p>
+                  <p className="text-xs mt-1 text-muted-foreground">
+                    P:{combinedStats.overlap.pinterestOnly} M:{combinedStats.overlap.metaOnly} G:{combinedStats.overlap.googleOnly}
+                  </p>
+                </Card>
+                <Card className="p-4 border-dashed border-amber-500/50">
+                  <p className="text-lg font-bold text-amber-600">{combinedStats.overlap.multiTouchOrders}</p>
+                  <p className="text-xs text-muted-foreground">Multi-Platform</p>
+                  <p className="text-xs mt-1 text-muted-foreground">
+                    {combinedStats.overlap.pinterestMeta > 0 && `P+M:${combinedStats.overlap.pinterestMeta} `}
+                    {combinedStats.overlap.pinterestGoogle > 0 && `P+G:${combinedStats.overlap.pinterestGoogle} `}
+                    {combinedStats.overlap.metaGoogle > 0 && `M+G:${combinedStats.overlap.metaGoogle} `}
+                    {combinedStats.overlap.allThree > 0 && `All:${combinedStats.overlap.allThree}`}
+                    {combinedStats.overlap.multiTouchOrders === 0 && "None"}
+                  </p>
+                </Card>
               </div>
 
               {/* Platform Distribution Chart */}
