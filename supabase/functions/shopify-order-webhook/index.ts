@@ -147,6 +147,9 @@ interface AttributionData {
   // Match signals from context table (populated via joinPinterestContext)
   client_ip_address: string | null;
   client_user_agent: string | null;
+  // Meta (Facebook) cookies for CAPI
+  meta_fbc: string | null;  // Click ID from _fbc cookie
+  meta_fbp: string | null;  // Browser ID from _fbp cookie
 }
 
 function extractAttributionFromOrder(order: any): AttributionData {
@@ -181,6 +184,9 @@ function extractAttributionFromOrder(order: any): AttributionData {
     // These will be populated by joinPinterestContext
     client_ip_address: null,
     client_user_agent: null,
+    // Meta (Facebook) cookies - captured from cart attributes
+    meta_fbc: findAttr('_fbc', 'fbc'),
+    meta_fbp: findAttr('_fbp', 'fbp'),
   };
 }
 
@@ -1320,6 +1326,57 @@ Deno.serve(async (req: Request): Promise<Response> => {
       await updateTrackingStatus(supabase, orderId, finalStatus, finalResponse);
     } else if (!shouldTrackPurchase) {
       console.log("[Pinterest] Skipping tracking for orders/create (only orders/paid triggers Pinterest)");
+    }
+
+    // META CONVERSIONS API TRACKING - Server-side purchase event
+    // Runs in parallel with Pinterest, non-blocking
+    if (shouldTrackPurchase) {
+      try {
+        const billingAddr = order.billing_address || {};
+        const shippingAddr = order.shipping_address || {};
+        const metaPayload = {
+          order_id: orderId,
+          value: orderValue,
+          currency: orderCurrency,
+          email: order.email,
+          phone: order.customer?.phone || billingAddr.phone,
+          first_name: billingAddr.first_name || shippingAddr.first_name,
+          last_name: billingAddr.last_name || shippingAddr.last_name,
+          city: billingAddr.city || shippingAddr.city,
+          state: billingAddr.province_code || shippingAddr.province_code,
+          zip: billingAddr.zip || shippingAddr.zip,
+          country: billingAddr.country_code || shippingAddr.country_code,
+          fbc: attribution.meta_fbc,
+          fbp: attribution.meta_fbp,
+          landing_page: attribution.landing_page,
+          client_ip_address: attribution.client_ip_address,
+          client_user_agent: attribution.client_user_agent,
+          products: (order.line_items || []).map((item: any) => ({
+            id: String(item.product_id),
+            name: item.title,
+            quantity: item.quantity,
+            price: parseFloat(item.price),
+          })),
+          is_test: isChaosTest,
+        };
+
+        // Fire-and-forget - don't block on Meta response
+        fetch(`${SUPABASE_URL}/functions/v1/meta-capi`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          },
+          body: JSON.stringify(metaPayload),
+        }).then(async (res) => {
+          const result = await res.json();
+          console.log("[Meta CAPI] Response:", { ok: res.ok, events_received: result.events_received });
+        }).catch((err) => {
+          console.error("[Meta CAPI] Error (non-blocking):", err.message);
+        });
+      } catch (metaError: any) {
+        console.error("[Meta CAPI] Setup error (non-blocking):", metaError.message);
+      }
     }
 
     // TRIGGER FULL SLEEP SYNC - Use fullSleepSync for complete 3-layer sync
