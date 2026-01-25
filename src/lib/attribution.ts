@@ -22,6 +22,9 @@ const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'ut
 const META_FBC_COOKIE = '_fbc';  // Click ID from ad clicks
 const META_FBP_COOKIE = '_fbp';  // Browser ID (persistent)
 
+// Google Click ID storage key
+const GCLID_STORAGE_KEY = 'google_gclid';
+
 // Cookie expiry: 30 days
 const COOKIE_MAX_AGE_DAYS = 30;
 
@@ -37,6 +40,8 @@ export interface Attribution {
   // Meta (Facebook) cookies for server-side tracking
   fbc: string | null;  // Meta click ID
   fbp: string | null;  // Meta browser ID
+  // Google Click ID for Enhanced Conversions
+  gclid: string | null;
 }
 
 /**
@@ -128,6 +133,13 @@ export function captureAttribution(): void {
       console.log('[Attribution] Pinterest click ID captured:', epik);
     }
     
+    // Capture Google Click ID (gclid) from URL params
+    const gclid = urlParams.get('gclid');
+    if (gclid) {
+      setStorageIfEmpty(GCLID_STORAGE_KEY, gclid);
+      console.log('[Attribution] Google Click ID captured:', gclid);
+    }
+    
     // Capture affiliate referral code (first-touch: don't overwrite)
     // This is CRITICAL for affiliate commission tracking
     const refCode = urlParams.get('ref');
@@ -192,6 +204,9 @@ export function getAttribution(): Attribution {
     const fbc = getCookie(META_FBC_COOKIE);
     const fbp = getCookie(META_FBP_COOKIE);
     
+    // Google Click ID from localStorage
+    const gclid = getStorage(GCLID_STORAGE_KEY);
+    
     return {
       epik,
       landing_page: getStorage(LANDING_PAGE_KEY),
@@ -203,6 +218,7 @@ export function getAttribution(): Attribution {
       ref_code: refCode,
       fbc,
       fbp,
+      gclid,
     };
   } catch {
     // Return empty attribution on any error
@@ -217,6 +233,7 @@ export function getAttribution(): Attribution {
       ref_code: null,
       fbc: null,
       fbp: null,
+      gclid: null,
     };
   }
 }
@@ -316,6 +333,11 @@ export function getAttributionForCheckout(): Array<{ key: string; value: string 
     }
     if (attribution.fbp) {
       attributes.push({ key: '_fbp', value: attribution.fbp });
+    }
+    
+    // Google Click ID for Enhanced Conversions
+    if (attribution.gclid) {
+      attributes.push({ key: '_gclid', value: attribution.gclid });
     }
     
     return attributes;

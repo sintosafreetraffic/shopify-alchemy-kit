@@ -150,6 +150,8 @@ interface AttributionData {
   // Meta (Facebook) cookies for CAPI
   meta_fbc: string | null;  // Click ID from _fbc cookie
   meta_fbp: string | null;  // Browser ID from _fbp cookie
+  // Google Click ID for Enhanced Conversions
+  google_gclid: string | null;
 }
 
 function extractAttributionFromOrder(order: any): AttributionData {
@@ -187,6 +189,8 @@ function extractAttributionFromOrder(order: any): AttributionData {
     // Meta (Facebook) cookies - captured from cart attributes
     meta_fbc: findAttr('_fbc', 'fbc'),
     meta_fbp: findAttr('_fbp', 'fbp'),
+    // Google Click ID for Enhanced Conversions
+    google_gclid: findAttr('_gclid', 'gclid'),
   };
 }
 
@@ -1376,6 +1380,48 @@ Deno.serve(async (req: Request): Promise<Response> => {
         });
       } catch (metaError: any) {
         console.error("[Meta CAPI] Setup error (non-blocking):", metaError.message);
+      }
+    }
+
+    // GOOGLE ENHANCED CONVERSIONS - Server-side purchase event
+    // Runs in parallel with Meta, non-blocking
+    if (shouldTrackPurchase) {
+      try {
+        const billingAddr = order.billing_address || {};
+        const shippingAddr = order.shipping_address || {};
+        const googlePayload = {
+          order_id: orderId,
+          value: orderValue,
+          currency: orderCurrency,
+          email: order.email,
+          phone: order.customer?.phone || billingAddr.phone,
+          first_name: billingAddr.first_name || shippingAddr.first_name,
+          last_name: billingAddr.last_name || shippingAddr.last_name,
+          street_address: billingAddr.address1 || shippingAddr.address1,
+          city: billingAddr.city || shippingAddr.city,
+          region: billingAddr.province_code || shippingAddr.province_code,
+          postal_code: billingAddr.zip || shippingAddr.zip,
+          country: billingAddr.country_code || shippingAddr.country_code,
+          gclid: attribution.google_gclid,
+          is_test: isChaosTest,
+        };
+
+        // Fire-and-forget - don't block on Google response
+        fetch(`${SUPABASE_URL}/functions/v1/google-enhanced-conversions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          },
+          body: JSON.stringify(googlePayload),
+        }).then(async (res) => {
+          const result = await res.json();
+          console.log("[Google EC] Response:", { ok: res.ok, send_status: result.send_status });
+        }).catch((err) => {
+          console.error("[Google EC] Error (non-blocking):", err.message);
+        });
+      } catch (googleError: any) {
+        console.error("[Google EC] Setup error (non-blocking):", googleError.message);
       }
     }
 
