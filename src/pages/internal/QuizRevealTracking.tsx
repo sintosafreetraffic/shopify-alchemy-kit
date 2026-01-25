@@ -81,6 +81,7 @@ import PhasesTab from "@/components/internal/PhasesTab";
 import ProductionMonitoringTab from "@/components/internal/ProductionMonitoringTab";
 import WeeklyReviewTab from "@/components/internal/WeeklyReviewTab";
 import PinterestSourceTruthTab from "@/components/internal/PinterestSourceTruthTab";
+import AttributionSourceTruthTab from "@/components/internal/AttributionSourceTruthTab";
 import HeroABTestTab from "@/components/internal/HeroABTestTab";
 import UrgencyABTestTab from "@/components/internal/UrgencyABTestTab";
 import UnifiedExperimentationTab from "@/components/internal/ab/UnifiedExperimentationTab";
@@ -781,7 +782,7 @@ const QuizRevealTracking = () => {
             </TabsTrigger>
             <TabsTrigger value="sourcetruth" className="flex items-center gap-2">
               <Target className="w-4 h-4" />
-              <span className="hidden sm:inline">Source Truth</span>
+              <span className="hidden sm:inline">Attribution</span>
             </TabsTrigger>
             <TabsTrigger value="heroab" className="flex items-center gap-2">
               <Percent className="w-4 h-4" />
@@ -834,9 +835,9 @@ const QuizRevealTracking = () => {
             <ProductionMonitoringTab />
           </TabsContent>
 
-          {/* Phase 4.2 Pinterest Source Truth Tab */}
+          {/* Unified Attribution Source Truth Tab - Pinterest + Meta + Google */}
           <TabsContent value="sourcetruth" className="mt-6">
-            <PinterestSourceTruthTab />
+            <AttributionSourceTruthTab />
           </TabsContent>
 
           {/* Phase 4.1 Weekly Review Tab */}
