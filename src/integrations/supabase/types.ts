@@ -1884,6 +1884,51 @@ export type Database = {
         }
         Relationships: []
       }
+      meta_purchase_events: {
+        Row: {
+          created_at: string
+          currency: string
+          error_message: string | null
+          event_id: string
+          events_received: number | null
+          fbc: string | null
+          fbp: string | null
+          id: string
+          order_id: string
+          response_status: number | null
+          send_status: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          error_message?: string | null
+          event_id: string
+          events_received?: number | null
+          fbc?: string | null
+          fbp?: string | null
+          id?: string
+          order_id: string
+          response_status?: number | null
+          send_status?: string
+          value: number
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          error_message?: string | null
+          event_id?: string
+          events_received?: number | null
+          fbc?: string | null
+          fbp?: string | null
+          id?: string
+          order_id?: string
+          response_status?: number | null
+          send_status?: string
+          value?: number
+        }
+        Relationships: []
+      }
       missing_purchase_events: {
         Row: {
           detected_at: string

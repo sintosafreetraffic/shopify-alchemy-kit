@@ -18,6 +18,10 @@ const LANDING_PAGE_KEY = 'pinterest_landing_page';
 const REFERRAL_CODE_KEY = 'rbn_ref_code';
 const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'] as const;
 
+// Meta (Facebook) cookie names - these are set by the Meta Pixel
+const META_FBC_COOKIE = '_fbc';  // Click ID from ad clicks
+const META_FBP_COOKIE = '_fbp';  // Browser ID (persistent)
+
 // Cookie expiry: 30 days
 const COOKIE_MAX_AGE_DAYS = 30;
 
@@ -30,6 +34,9 @@ export interface Attribution {
   utm_content: string | null;
   utm_term: string | null;
   ref_code: string | null;
+  // Meta (Facebook) cookies for server-side tracking
+  fbc: string | null;  // Meta click ID
+  fbp: string | null;  // Meta browser ID
 }
 
 /**
@@ -181,6 +188,10 @@ export function getAttribution(): Attribution {
       refCode = sessionStorage.getItem('referral_code');
     }
     
+    // Meta cookies - these are set by Meta Pixel and needed for server-side matching
+    const fbc = getCookie(META_FBC_COOKIE);
+    const fbp = getCookie(META_FBP_COOKIE);
+    
     return {
       epik,
       landing_page: getStorage(LANDING_PAGE_KEY),
@@ -190,6 +201,8 @@ export function getAttribution(): Attribution {
       utm_content: getStorage('utm_content'),
       utm_term: getStorage('utm_term'),
       ref_code: refCode,
+      fbc,
+      fbp,
     };
   } catch {
     // Return empty attribution on any error
@@ -202,13 +215,11 @@ export function getAttribution(): Attribution {
       utm_content: null,
       utm_term: null,
       ref_code: null,
+      fbc: null,
+      fbp: null,
     };
   }
 }
-
-/**
- * Get epik only (convenience helper for Pinterest tracking)
- */
 export function getEpik(): string | null {
   try {
     return getCookie(EPIK_COOKIE_NAME) || getStorage(EPIK_STORAGE_KEY);
@@ -297,6 +308,14 @@ export function getAttributionForCheckout(): Array<{ key: string; value: string 
     // Add referrer if available
     if (typeof document !== 'undefined' && document.referrer) {
       attributes.push({ key: '_referrer', value: document.referrer });
+    }
+    
+    // Meta (Facebook) cookies for server-side Conversions API
+    if (attribution.fbc) {
+      attributes.push({ key: '_fbc', value: attribution.fbc });
+    }
+    if (attribution.fbp) {
+      attributes.push({ key: '_fbp', value: attribution.fbp });
     }
     
     return attributes;

@@ -381,3 +381,7 @@ verify_jwt = false
 # Shopify Profit Stats - Admin only, requires JWT and validates admin role internally
 [functions.shopify-profit-stats]
 verify_jwt = true
+
+# Meta Conversions API - Server-side purchase tracking (internal use from webhook)
+[functions.meta-capi]
+verify_jwt = false
