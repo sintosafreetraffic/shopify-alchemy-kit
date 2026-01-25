@@ -4,6 +4,7 @@ import { X, Copy, Check, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { setEnhancedMatch, trackLead } from "@/lib/pinterest";
+import { trackLead as trackMetaLead } from "@/lib/meta-pixel";
 import { captureEmail } from "@/lib/contextTracking";
 import { useKlaviyoPopupTracking } from "@/hooks/useKlaviyoPopupTracking";
 import OptimizedImage from "@/components/OptimizedImage";
@@ -86,6 +87,7 @@ export const EmailPopup = ({
       try {
         await setEnhancedMatch(email);
         trackLead("Newsletter", email);
+        trackMetaLead(); // Track Meta Pixel Lead event
         captureEmail(email); // Send to CAPI context for checkout enrichment
       } catch (e) {
         console.warn("[email-popup] Pinterest tracking failed", e);

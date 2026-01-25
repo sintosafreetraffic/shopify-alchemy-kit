@@ -10,6 +10,7 @@ import { useShopifyProducts, useFreeGiftMaskProduct } from "@/hooks/useShopifyPr
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import { trackPageVisit } from "@/lib/pinterest";
+import { trackViewContent as trackMetaViewContent } from "@/lib/meta-pixel";
 import { trackViewedProduct } from "@/lib/klaviyo";
 import { useHeaderHeight } from "@/hooks/useHeaderHeight";
 import { formatPrice } from "@/lib/formatPrice";
@@ -96,10 +97,16 @@ export const Hero = () => {
     if (product && !hasTrackedView.current) {
       hasTrackedView.current = true;
       trackPageVisit(product.node.id);
+      
+      // Track Meta Pixel ViewContent
+      const price = parseFloat(product.node.variants.edges[0]?.node.price.amount || "0");
+      const currency = product.node.variants.edges[0]?.node.price.currencyCode || "EUR";
+      trackMetaViewContent(product.node.id, product.node.title, price, currency);
+      
       trackViewedProduct({
         id: product.node.id,
         title: product.node.title,
-        price: parseFloat(product.node.variants.edges[0]?.node.price.amount || "0"),
+        price: price,
         sku: product.node.variants.edges[0]?.node.id || "",
         imageUrl: product.node.images?.edges?.[0]?.node?.url || "",
       });

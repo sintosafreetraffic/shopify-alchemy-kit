@@ -9,6 +9,7 @@ import { useCartStore } from "@/stores/cartStore";
 import { fetchProducts, ShopifyProduct } from "@/lib/shopify";
 import { trackQuizStarted, identifyUser } from "@/lib/klaviyo";
 import { setEnhancedMatch, trackLead } from "@/lib/pinterest";
+import { trackLead as trackMetaLead } from "@/lib/meta-pixel";
 import { captureEmail } from "@/lib/contextTracking";
 import { setPersonaCookie } from "@/lib/personaCookie";
 import { supabase } from "@/integrations/supabase/client";
@@ -433,6 +434,7 @@ const SleepQuiz = () => {
       
       await setEnhancedMatch(trimmedEmail);
       trackLead("SleepQuizCompletion", trimmedEmail).catch(() => {});
+      trackMetaLead(); // Track Meta Pixel Lead event
       captureEmail(trimmedEmail); // Send to CAPI context for checkout enrichment
 
       if (analysisResult.profileCreated) {

@@ -10,6 +10,7 @@ import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import { trackPageVisit } from "@/lib/pinterest";
+import { trackViewContent as trackMetaViewContent } from "@/lib/meta-pixel";
 import { trackViewedProduct } from "@/lib/klaviyo";
 import { formatPrice } from "@/lib/formatPrice";
 import { PaymentIcons } from "./PaymentIcons";
@@ -65,10 +66,16 @@ export const SleepMaskHero = () => {
           // Track Klaviyo Viewed Product (only once per page load)
           if (!hasTrackedView.current) {
             hasTrackedView.current = true;
+            
+            // Track Meta Pixel ViewContent
+            const price = parseFloat(sleepMask.node.variants.edges[0]?.node.price.amount || "0");
+            const currency = sleepMask.node.variants.edges[0]?.node.price.currencyCode || "EUR";
+            trackMetaViewContent(sleepMask.node.id, sleepMask.node.title, price, currency);
+            
             trackViewedProduct({
               id: sleepMask.node.id,
               title: sleepMask.node.title,
-              price: parseFloat(sleepMask.node.variants.edges[0]?.node.price.amount || "0"),
+              price: price,
               sku: sleepMask.node.variants.edges[0]?.node.id || "",
               imageUrl: sleepMask.node.images?.edges?.[0]?.node?.url || "",
             });
