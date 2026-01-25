@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { createStorefrontCheckout } from '@/lib/shopify';
 import type { ShopifyProduct } from '@/lib/shopify';
 import { trackAddToCart, trackInitiateCheckout, clearInitiateCheckoutFingerprint } from '@/lib/pinterest';
+import { trackAddToCart as trackMetaAddToCart, trackInitiateCheckout as trackMetaInitiateCheckout } from '@/lib/meta-pixel';
 import { trackAddedToCart as trackKlaviyoAddToCart, trackStartedCheckout as trackKlaviyoStartedCheckout } from '@/lib/klaviyo';
 import { trackRevenueAttribution } from '@/lib/personaAnalytics';
 import { trackAddToCartEvent } from '@/lib/addToCartAnalytics';
@@ -81,6 +82,15 @@ export const useCartStore = create<CartStore>()(
           item.price.currencyCode,
           item.quantity
         ).catch(() => {});
+
+        // Track Meta Pixel AddToCart event
+        trackMetaAddToCart(
+          item.product.node.id,
+          item.product.node.title,
+          parseFloat(item.price.amount) * item.quantity,
+          item.price.currencyCode,
+          item.quantity
+        );
 
         // Track Klaviyo AddToCart event
         trackKlaviyoAddToCart({
@@ -202,6 +212,17 @@ export const useCartStore = create<CartStore>()(
           
           // Non-blocking: Pinterest tracking
           Promise.resolve().then(() => trackInitiateCheckout(checkoutItems)).catch(() => {});
+          
+          // Non-blocking: Meta Pixel InitiateCheckout tracking
+          Promise.resolve().then(() => trackMetaInitiateCheckout(
+            items.map(item => ({
+              productId: item.product.node.id,
+              productName: item.product.node.title,
+              quantity: item.quantity,
+              price: item.price,
+            })),
+            items[0]?.price.currencyCode || 'EUR'
+          )).catch(() => {});
           
           // Non-blocking: Klaviyo Started Checkout tracking
           const totalValue = items.reduce((sum, item) => sum + parseFloat(item.price.amount) * item.quantity, 0);

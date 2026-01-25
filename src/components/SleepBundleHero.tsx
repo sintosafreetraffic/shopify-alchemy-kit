@@ -8,6 +8,8 @@ import bundleImage from "@/assets/complete-sleep-bundle-updated.webp";
 import { fetchProducts, type ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import { trackViewedProduct } from "@/lib/klaviyo";
+import { trackViewContent as trackMetaViewContent } from "@/lib/meta-pixel";
+import { trackPageVisit } from "@/lib/pinterest";
 import OptimizedImage from "@/components/OptimizedImage";
 import { formatPrice } from "@/lib/formatPrice";
 import { useIsEU } from "@/hooks/useCurrencySymbol";
@@ -33,10 +35,19 @@ export const SleepBundleHero = () => {
           // Track Klaviyo Viewed Product (only once per page load)
           if (!hasTrackedView.current) {
             hasTrackedView.current = true;
+            
+            // Track Pinterest PageVisit
+            trackPageVisit(bundleProduct.node.id);
+            
+            // Track Meta Pixel ViewContent
+            const price = parseFloat(bundleProduct.node.variants.edges[0]?.node.price.amount || "0");
+            const currency = bundleProduct.node.variants.edges[0]?.node.price.currencyCode || "EUR";
+            trackMetaViewContent(bundleProduct.node.id, bundleProduct.node.title, price, currency);
+            
             trackViewedProduct({
               id: bundleProduct.node.id,
               title: bundleProduct.node.title,
-              price: parseFloat(bundleProduct.node.variants.edges[0]?.node.price.amount || "0"),
+              price: price,
               sku: bundleProduct.node.variants.edges[0]?.node.id || "",
               imageUrl: bundleProduct.node.images?.edges?.[0]?.node?.url || "",
             });
