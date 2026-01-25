@@ -1845,6 +1845,51 @@ export type Database = {
           },
         ]
       }
+      google_purchase_events: {
+        Row: {
+          created_at: string
+          currency: string
+          email_hash: string | null
+          error_message: string | null
+          event_id: string
+          gclid: string | null
+          id: string
+          order_id: string
+          phone_hash: string | null
+          response_status: number | null
+          send_status: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          email_hash?: string | null
+          error_message?: string | null
+          event_id: string
+          gclid?: string | null
+          id?: string
+          order_id: string
+          phone_hash?: string | null
+          response_status?: number | null
+          send_status?: string
+          value: number
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          email_hash?: string | null
+          error_message?: string | null
+          event_id?: string
+          gclid?: string | null
+          id?: string
+          order_id?: string
+          phone_hash?: string | null
+          response_status?: number | null
+          send_status?: string
+          value?: number
+        }
+        Relationships: []
+      }
       klaviyo_form_events: {
         Row: {
           created_at: string

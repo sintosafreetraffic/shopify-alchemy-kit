@@ -385,3 +385,7 @@ verify_jwt = true
 # Meta Conversions API - Server-side purchase tracking (internal use from webhook)
 [functions.meta-capi]
 verify_jwt = false
+
+# Google Enhanced Conversions - Server-side purchase tracking (internal use from webhook)
+[functions.google-enhanced-conversions]
+verify_jwt = false
