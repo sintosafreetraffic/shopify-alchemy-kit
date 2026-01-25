@@ -151,6 +151,16 @@
           fbq('init', '1419388323215799');
           fbq('track', 'PageView');
           
+          // Google Ads (gtag.js)
+          var gtagScript = document.createElement('script');
+          gtagScript.async = true;
+          gtagScript.src = 'https://www.googletagmanager.com/gtag/js?id=AW-17903761568';
+          document.head.appendChild(gtagScript);
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'AW-17903761568');
+          
           // Cleanup listeners
           window.removeEventListener('scroll', loadDeferredScripts);
           window.removeEventListener('click', loadDeferredScripts);
