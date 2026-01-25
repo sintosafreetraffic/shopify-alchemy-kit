@@ -389,3 +389,15 @@ verify_jwt = false
 # Google Enhanced Conversions - Server-side purchase tracking (internal use from webhook)
 [functions.google-enhanced-conversions]
 verify_jwt = false
+
+# ============================================================
+# TBLS INTEGRATION (The Big Landing Store)
+# ============================================================
+
+# TBLS Revenue API - Protected by TBLS_WEBHOOK_SECRET header
+[functions.tbls-revenue-api]
+verify_jwt = false
+
+# Get Approved Reviews - Public API for review syndication
+[functions.get-approved-reviews]
+verify_jwt = false
