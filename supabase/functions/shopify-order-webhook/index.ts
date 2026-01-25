@@ -152,6 +152,12 @@ interface AttributionData {
   meta_fbp: string | null;  // Browser ID from _fbp cookie
   // Google Click ID for Enhanced Conversions
   google_gclid: string | null;
+  // TBLS (The Big Landing Store) attribution for revenue-per-page tracking
+  tbls_page_id: string | null;
+  tbls_pin_id: string | null;
+  tbls_template: string | null;
+  tbls_subdomain: string | null;
+  tbls_category: string | null;
 }
 
 function extractAttributionFromOrder(order: any): AttributionData {
@@ -191,6 +197,12 @@ function extractAttributionFromOrder(order: any): AttributionData {
     meta_fbp: findAttr('_fbp', 'fbp'),
     // Google Click ID for Enhanced Conversions
     google_gclid: findAttr('_gclid', 'gclid'),
+    // TBLS (The Big Landing Store) attribution
+    tbls_page_id: findAttr('_tbls_page_id', 'tbls_page_id', 'tbls_page'),
+    tbls_pin_id: findAttr('_tbls_pin_id', 'tbls_pin_id', 'tbls_pin'),
+    tbls_template: findAttr('_tbls_template', 'tbls_template'),
+    tbls_subdomain: findAttr('_tbls_subdomain', 'tbls_subdomain'),
+    tbls_category: findAttr('_tbls_category', 'tbls_category'),
   };
 }
 
@@ -955,6 +967,56 @@ Deno.serve(async (req: Request): Promise<Response> => {
       }
     } else if (shouldTrackPurchase && !attribution.rbn_ab_variant) {
       console.log('[A/B] No variant in order attributes, skipping A/B purchase tracking');
+    }
+
+    // ============================================================
+    // TBLS (THE BIG LANDING STORE) REVENUE ATTRIBUTION
+    // Track which landing pages and pins generate purchases
+    // ============================================================
+    if (shouldTrackPurchase && (attribution.tbls_page_id || attribution.tbls_pin_id)) {
+      try {
+        const orderValue = parseFloat(order.total_price);
+        const emailHash = await sha256Hash(email);
+        
+        const { error: tblsError } = await supabase
+          .from('tbls_purchase_attribution')
+          .insert({
+            order_id: String(order.id),
+            order_number: order.order_number ? String(order.order_number) : null,
+            order_value: orderValue,
+            currency: order.currency || 'EUR',
+            tbls_page_id: attribution.tbls_page_id,
+            tbls_pin_id: attribution.tbls_pin_id,
+            tbls_template: attribution.tbls_template,
+            tbls_subdomain: attribution.tbls_subdomain,
+            tbls_category: attribution.tbls_category,
+            session_id: attribution.rbn_ab_session_id,
+            customer_email_hash: emailHash,
+            landing_page: attribution.landing_page,
+            utm_source: attribution.utm_source,
+            utm_medium: attribution.utm_medium,
+            utm_campaign: attribution.utm_campaign,
+          });
+        
+        if (tblsError) {
+          // Check if duplicate (idempotent)
+          if (tblsError.code === '23505' || tblsError.message?.includes('duplicate')) {
+            console.log('[TBLS] Duplicate order, attribution already recorded:', order.id);
+          } else {
+            console.error('[TBLS] Failed to log attribution:', tblsError.message);
+          }
+        } else {
+          console.log('[TBLS] ✅ Revenue attribution logged:', {
+            order_id: order.id,
+            page_id: attribution.tbls_page_id,
+            pin_id: attribution.tbls_pin_id,
+            value: orderValue,
+            currency: order.currency,
+          });
+        }
+      } catch (tblsError: any) {
+        console.error('[TBLS] Attribution tracking error (non-blocking):', tblsError.message);
+      }
     }
 
     // Extract product names from line items and map to our product categories

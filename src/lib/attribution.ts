@@ -25,6 +25,13 @@ const META_FBP_COOKIE = '_fbp';  // Browser ID (persistent)
 // Google Click ID storage key
 const GCLID_STORAGE_KEY = 'google_gclid';
 
+// TBLS (The Big Landing Store) attribution keys
+const TBLS_PAGE_ID_KEY = 'tbls_page_id';
+const TBLS_PIN_ID_KEY = 'tbls_pin_id';
+const TBLS_TEMPLATE_KEY = 'tbls_template';
+const TBLS_SUBDOMAIN_KEY = 'tbls_subdomain';
+const TBLS_CATEGORY_KEY = 'tbls_category';
+
 // Cookie expiry: 30 days
 const COOKIE_MAX_AGE_DAYS = 30;
 
@@ -42,6 +49,12 @@ export interface Attribution {
   fbp: string | null;  // Meta browser ID
   // Google Click ID for Enhanced Conversions
   gclid: string | null;
+  // TBLS (The Big Landing Store) attribution
+  tbls_page_id: string | null;
+  tbls_pin_id: string | null;
+  tbls_template: string | null;
+  tbls_subdomain: string | null;
+  tbls_category: string | null;
 }
 
 /**
@@ -166,6 +179,35 @@ export function captureAttribution(): void {
         setStorageIfEmpty(key, value);
       }
     }
+    
+    // Capture TBLS (The Big Landing Store) attribution (first-touch only)
+    // These params are added by TBLS landing pages to track revenue per page/pin
+    const tblsPageId = urlParams.get('tbls_page') || urlParams.get('tbls_page_id');
+    if (tblsPageId) {
+      setStorageIfEmpty(TBLS_PAGE_ID_KEY, tblsPageId);
+      console.log('[Attribution] TBLS page ID captured:', tblsPageId);
+    }
+    
+    const tblsPinId = urlParams.get('tbls_pin') || urlParams.get('tbls_pin_id');
+    if (tblsPinId) {
+      setStorageIfEmpty(TBLS_PIN_ID_KEY, tblsPinId);
+      console.log('[Attribution] TBLS pin ID captured:', tblsPinId);
+    }
+    
+    const tblsTemplate = urlParams.get('tbls_template');
+    if (tblsTemplate) {
+      setStorageIfEmpty(TBLS_TEMPLATE_KEY, tblsTemplate);
+    }
+    
+    const tblsSubdomain = urlParams.get('tbls_subdomain');
+    if (tblsSubdomain) {
+      setStorageIfEmpty(TBLS_SUBDOMAIN_KEY, tblsSubdomain);
+    }
+    
+    const tblsCategory = urlParams.get('tbls_category');
+    if (tblsCategory) {
+      setStorageIfEmpty(TBLS_CATEGORY_KEY, tblsCategory);
+    }
   } catch (e) {
     // Never throw - tracking failures must be silent
     console.warn('[Attribution] Capture failed:', e);
@@ -219,6 +261,12 @@ export function getAttribution(): Attribution {
       fbc,
       fbp,
       gclid,
+      // TBLS attribution
+      tbls_page_id: getStorage(TBLS_PAGE_ID_KEY),
+      tbls_pin_id: getStorage(TBLS_PIN_ID_KEY),
+      tbls_template: getStorage(TBLS_TEMPLATE_KEY),
+      tbls_subdomain: getStorage(TBLS_SUBDOMAIN_KEY),
+      tbls_category: getStorage(TBLS_CATEGORY_KEY),
     };
   } catch {
     // Return empty attribution on any error
@@ -234,6 +282,11 @@ export function getAttribution(): Attribution {
       fbc: null,
       fbp: null,
       gclid: null,
+      tbls_page_id: null,
+      tbls_pin_id: null,
+      tbls_template: null,
+      tbls_subdomain: null,
+      tbls_category: null,
     };
   }
 }
@@ -338,6 +391,23 @@ export function getAttributionForCheckout(): Array<{ key: string; value: string 
     // Google Click ID for Enhanced Conversions
     if (attribution.gclid) {
       attributes.push({ key: '_gclid', value: attribution.gclid });
+    }
+    
+    // TBLS (The Big Landing Store) attribution for revenue-per-page tracking
+    if (attribution.tbls_page_id) {
+      attributes.push({ key: '_tbls_page_id', value: attribution.tbls_page_id });
+    }
+    if (attribution.tbls_pin_id) {
+      attributes.push({ key: '_tbls_pin_id', value: attribution.tbls_pin_id });
+    }
+    if (attribution.tbls_template) {
+      attributes.push({ key: '_tbls_template', value: attribution.tbls_template });
+    }
+    if (attribution.tbls_subdomain) {
+      attributes.push({ key: '_tbls_subdomain', value: attribution.tbls_subdomain });
+    }
+    if (attribution.tbls_category) {
+      attributes.push({ key: '_tbls_category', value: attribution.tbls_category });
     }
     
     return attributes;
