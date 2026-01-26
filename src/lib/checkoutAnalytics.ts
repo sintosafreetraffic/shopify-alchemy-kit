@@ -4,8 +4,11 @@
  * 
  * IMPORTANT: Uses unified session ID from abTesting.ts to ensure funnel integrity
  * This allows tracking ATC → Checkout → Purchase with the same session_id
+ * 
+ * Includes TBLS (The Big Landing Store) attribution for revenue tracking
  */
 import { getSessionId } from "@/lib/abTesting";
+import { getAttribution } from "@/lib/attribution";
 
 const getDeviceType = (): string => {
   const ua = navigator.userAgent;
@@ -33,12 +36,19 @@ export async function trackCheckoutEvent(params: TrackCheckoutEventParams): Prom
       console.warn("[checkoutAnalytics] Missing Supabase config");
       return;
     }
+    
+    // Get TBLS attribution
+    const attribution = getAttribution();
 
     const payload = {
       action: "track",
       session_id: getSessionId(),
       device_type: getDeviceType(),
       user_agent: navigator.userAgent,
+      // TBLS attribution
+      tbls_page_id: attribution.tbls_page_id,
+      tbls_pin_id: attribution.tbls_pin_id,
+      tbls_template: attribution.tbls_template,
       ...params,
     };
 

@@ -73,6 +73,25 @@
           var sessionId = getSessionId();
           var params = new URLSearchParams(window.location.search);
           
+          // TBLS attribution capture (first-touch: check localStorage)
+          var tblsPageId = params.get('tbls_page') || params.get('tbls_page_id');
+          var tblsPinId = params.get('tbls_pin') || params.get('tbls_pin_id');
+          var tblsTemplate = params.get('tbls_template');
+          
+          // Store TBLS params in localStorage for downstream events (first-touch only)
+          try {
+            if (tblsPageId && !localStorage.getItem('tbls_page_id')) localStorage.setItem('tbls_page_id', tblsPageId);
+            if (tblsPinId && !localStorage.getItem('tbls_pin_id')) localStorage.setItem('tbls_pin_id', tblsPinId);
+            if (tblsTemplate && !localStorage.getItem('tbls_template')) localStorage.setItem('tbls_template', tblsTemplate);
+          } catch(e) {}
+          
+          // Read from localStorage (may have been set on earlier visit)
+          try {
+            tblsPageId = tblsPageId || localStorage.getItem('tbls_page_id');
+            tblsPinId = tblsPinId || localStorage.getItem('tbls_pin_id');
+            tblsTemplate = tblsTemplate || localStorage.getItem('tbls_template');
+          } catch(e) {}
+          
           var data = {
             session_id: sessionId,
             path: window.location.pathname,
@@ -81,7 +100,10 @@
             device_type: getDevice(),
             utm_source: params.get('utm_source'),
             utm_medium: params.get('utm_medium'),
-            utm_campaign: params.get('utm_campaign')
+            utm_campaign: params.get('utm_campaign'),
+            tbls_page_id: tblsPageId || null,
+            tbls_pin_id: tblsPinId || null,
+            tbls_template: tblsTemplate || null
           };
           
           // Fire and forget - use sendBeacon for reliability
