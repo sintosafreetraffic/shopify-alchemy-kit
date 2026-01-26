@@ -364,6 +364,9 @@ export type Database = {
           quantity: number
           referrer: string | null
           session_id: string
+          tbls_page_id: string | null
+          tbls_pin_id: string | null
+          tbls_template: string | null
           variant_id: string
           variant_title: string | null
         }
@@ -379,6 +382,9 @@ export type Database = {
           quantity?: number
           referrer?: string | null
           session_id: string
+          tbls_page_id?: string | null
+          tbls_pin_id?: string | null
+          tbls_template?: string | null
           variant_id: string
           variant_title?: string | null
         }
@@ -394,6 +400,9 @@ export type Database = {
           quantity?: number
           referrer?: string | null
           session_id?: string
+          tbls_page_id?: string | null
+          tbls_pin_id?: string | null
+          tbls_template?: string | null
           variant_id?: string
           variant_title?: string | null
         }
@@ -916,6 +925,9 @@ export type Database = {
           id: string
           retry_count: number | null
           session_id: string
+          tbls_page_id: string | null
+          tbls_pin_id: string | null
+          tbls_template: string | null
           user_agent: string | null
         }
         Insert: {
@@ -929,6 +941,9 @@ export type Database = {
           id?: string
           retry_count?: number | null
           session_id: string
+          tbls_page_id?: string | null
+          tbls_pin_id?: string | null
+          tbls_template?: string | null
           user_agent?: string | null
         }
         Update: {
@@ -942,6 +957,9 @@ export type Database = {
           id?: string
           retry_count?: number | null
           session_id?: string
+          tbls_page_id?: string | null
+          tbls_pin_id?: string | null
+          tbls_template?: string | null
           user_agent?: string | null
         }
         Relationships: []
@@ -2075,6 +2093,9 @@ export type Database = {
           path: string
           referrer: string | null
           session_id: string
+          tbls_page_id: string | null
+          tbls_pin_id: string | null
+          tbls_template: string | null
           user_agent: string | null
           utm_campaign: string | null
           utm_medium: string | null
@@ -2087,6 +2108,9 @@ export type Database = {
           path: string
           referrer?: string | null
           session_id: string
+          tbls_page_id?: string | null
+          tbls_pin_id?: string | null
+          tbls_template?: string | null
           user_agent?: string | null
           utm_campaign?: string | null
           utm_medium?: string | null
@@ -2099,6 +2123,9 @@ export type Database = {
           path?: string
           referrer?: string | null
           session_id?: string
+          tbls_page_id?: string | null
+          tbls_pin_id?: string | null
+          tbls_template?: string | null
           user_agent?: string | null
           utm_campaign?: string | null
           utm_medium?: string | null

@@ -17,6 +17,10 @@ interface TrackEventRequest {
   cart_total?: number;
   device_type?: string;
   user_agent?: string;
+  // TBLS attribution
+  tbls_page_id?: string;
+  tbls_pin_id?: string;
+  tbls_template?: string;
 }
 
 interface GetStatsRequest {
@@ -49,10 +53,13 @@ const handler = async (req: Request): Promise<Response> => {
         cart_item_count,
         cart_total,
         device_type,
-        user_agent 
+        user_agent,
+        tbls_page_id,
+        tbls_pin_id,
+        tbls_template,
       } = body as TrackEventRequest;
 
-      console.log(`[checkout-analytics] Tracking: ${event_type} session=${session_id} duration=${duration_ms}ms retries=${retry_count}`);
+      console.log(`[checkout-analytics] Tracking: ${event_type} session=${session_id} duration=${duration_ms}ms retries=${retry_count}${tbls_page_id ? ` tbls=${tbls_page_id}` : ''}`);
 
       const { error } = await supabase.from("checkout_analytics").insert({
         session_id,
@@ -64,6 +71,9 @@ const handler = async (req: Request): Promise<Response> => {
         cart_total,
         device_type,
         user_agent,
+        tbls_page_id: tbls_page_id || null,
+        tbls_pin_id: tbls_pin_id || null,
+        tbls_template: tbls_template || null,
       });
 
       if (error) {
