@@ -53,6 +53,7 @@ import {
   Percent,
   Info,
   Beaker,
+  Layers,
 } from "lucide-react";
 import { 
   LineChart, 
@@ -85,6 +86,7 @@ import AttributionSourceTruthTab from "@/components/internal/AttributionSourceTr
 import HeroABTestTab from "@/components/internal/HeroABTestTab";
 import UrgencyABTestTab from "@/components/internal/UrgencyABTestTab";
 import UnifiedExperimentationTab from "@/components/internal/ab/UnifiedExperimentationTab";
+import TBLSFunnelTab from "@/components/internal/TBLSFunnelTab";
 import { useAdsReporting, DATE_PRESETS } from "@/hooks/useAdsReporting";
 
 interface AnalyticsStats {
@@ -229,7 +231,7 @@ const QuizRevealTracking = () => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('tab');
-      if (tabParam && ['overview', 'phase4', 'sourcetruth', 'heroab', 'urgencyab', 'quiz', 'checkout', 'context', 'tracking', 'phases', 'weekly'].includes(tabParam)) {
+      if (tabParam && ['overview', 'phase4', 'sourcetruth', 'tbls', 'heroab', 'urgencyab', 'quiz', 'checkout', 'context', 'tracking', 'phases', 'weekly'].includes(tabParam)) {
         return tabParam;
       }
     }
@@ -770,7 +772,7 @@ const QuizRevealTracking = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full max-w-7xl grid-cols-12">
+          <TabsList className="grid w-full max-w-7xl grid-cols-12 lg:flex lg:flex-wrap lg:gap-1">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
               <span className="hidden sm:inline">Overview</span>
@@ -783,6 +785,10 @@ const QuizRevealTracking = () => {
             <TabsTrigger value="sourcetruth" className="flex items-center gap-2">
               <Target className="w-4 h-4" />
               <span className="hidden sm:inline">Attribution</span>
+            </TabsTrigger>
+            <TabsTrigger value="tbls" className="flex items-center gap-2">
+              <Layers className="w-4 h-4" />
+              <span className="hidden sm:inline">TBLS</span>
             </TabsTrigger>
             <TabsTrigger value="heroab" className="flex items-center gap-2">
               <Percent className="w-4 h-4" />
@@ -838,6 +844,11 @@ const QuizRevealTracking = () => {
           {/* Unified Attribution Source Truth Tab - Pinterest + Meta + Google */}
           <TabsContent value="sourcetruth" className="mt-6">
             <AttributionSourceTruthTab />
+          </TabsContent>
+
+          {/* TBLS Funnel Tab - Traffic & Conversions from The Big Landing Store */}
+          <TabsContent value="tbls" className="mt-6">
+            <TBLSFunnelTab />
           </TabsContent>
 
           {/* Phase 4.1 Weekly Review Tab */}
