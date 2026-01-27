@@ -8,7 +8,7 @@ import pillowDeeperSleep from "@/assets/pillow-deeper-sleep.webp";
 import pillowMaleModel from "@/assets/ergonomic-pillow-male-model.png";
 import pillowCoverMask from "@/assets/ergonomic-pillow-cover-mask.webp";
 import pillowTrusted from "@/assets/ergonomic-pillow-trusted.webp";
-import pillowMaleMask from "@/assets/ergonomic-pillow-male-mask.webp";
+
 import {
   Carousel,
   CarouselContent,
@@ -74,7 +74,6 @@ export const ProductImageCarousel = () => {
     { url: pillowCoverMask, alt: "Rise By Night pillow - removable cover and silk sleep mask", type: "image" },
     { url: pillowMaleModel, alt: "Rise By Night pillow - male model sleeping with ergonomic support", type: "image" },
     { url: pillowBundleNew, alt: "Rise By Night pillow bundle with mulberry silk sleep mask and extra pillow cover", type: "image" },
-    { url: pillowMaleMask, alt: "Rise By Night pillow - male model sleeping with silk sleep mask", type: "image" },
   ];
 
   // Get only image URLs (excluding videos) for the modal navigation
