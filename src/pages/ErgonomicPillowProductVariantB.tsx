@@ -1,10 +1,11 @@
 /**
  * Ergonomic Pillow Product Page - Variant B (Price Test: Pillow Only at €59.99)
  * 
- * This variant tests a simpler offer:
+ * Identical to Variant A except:
+ * - Uses "Pillow Only" variant at €59.99
  * - NO sleep mask included
- * - Price: €59.99 (pillow only)
- * - Clean layout similar to Variant A (no urgency elements)
+ * 
+ * This tests whether a lower price without the mask converts better.
  */
 
 import { Suspense, lazy, useState } from "react";
@@ -35,7 +36,7 @@ const SectionFallback = () => (
   <div className="py-8 flex items-center justify-center text-sm text-muted-foreground">Loading...</div>
 );
 
-// Quiz CTA Component
+// Quiz CTA Component (same as Variant A)
 const QuizCTA = ({ variant = "default" }: { variant?: "default" | "subtle" }) => (
   <div
     className={`py-4 md:py-6 lg:py-10 ${variant === "subtle" ? "bg-muted/20" : "bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5"}`}
@@ -55,7 +56,7 @@ const QuizCTA = ({ variant = "default" }: { variant?: "default" | "subtle" }) =>
   </div>
 );
 
-// Inline CTA Component - captures users mid-page (NO mask reference)
+// Inline CTA Component - captures users mid-page (uses "Pillow Only" variant)
 const InlineCTA = () => {
   const { data: products } = useShopifyProducts(1);
   const product = products?.[0] || null;
@@ -66,7 +67,12 @@ const InlineCTA = () => {
     if (!product) return;
     setIsAdding(true);
     try {
-      const variant = product.node.variants.edges[0].node;
+      // Find "Pillow Only" variant for Variant B
+      const pillowOnlyVariant = product.node.variants.edges.find(
+        (edge: any) => edge.node.title === "Pillow Only"
+      )?.node;
+      const variant = pillowOnlyVariant || product.node.variants.edges[0].node;
+      
       addItem({
         product,
         variantId: variant.id,
@@ -152,6 +158,8 @@ const ErgonomicPillowProductVariantB = () => {
       <QuizCTA />
 
       <GuaranteeSection />
+      
+      {/* Sticky Add to Cart - Note: Variant B uses "Pillow Only" variant in Hero */}
       <StickyAddToCart productType="ergonomic-pillow" />
 
       {/* Review Submission Modal */}

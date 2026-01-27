@@ -20,6 +20,7 @@ import sleepMaskGold from "@/assets/sleep-mask-gold.webp";
 import sleepMaskSilver from "@/assets/sleep-mask-silver.webp";
 import sleepMaskBlack from "@/assets/sleep-mask-black.webp";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { getCurrentVariant } from "@/lib/abTesting";
 
 const colors = [
   { name: "Navy", value: "navy", hex: "#1e3a8a", image: sleepMaskNavy },
@@ -126,8 +127,17 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
         })?.node;
         itemQuantity = quantity;
       } else if (isErgonomicPillow) {
-        // Ergonomic pillow: always single quantity
-        variant = product.node.variants.edges[0].node;
+        // Ergonomic pillow: Check A/B variant - Variant B uses "Pillow Only" at €59.99
+        const abVariant = getCurrentVariant();
+        if (abVariant === 'B') {
+          // Find "Pillow Only" variant for Variant B
+          variant = product.node.variants.edges.find(
+            v => v.node.title === "Pillow Only"
+          )?.node || product.node.variants.edges[0].node;
+        } else {
+          // Variant A: Default Title (with mask bundle)
+          variant = product.node.variants.edges[0].node;
+        }
         itemQuantity = 1;
       } else if (isKneePillow) {
         // Knee pillow: always single quantity (no more 1+1)
@@ -180,12 +190,30 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
     }
   };
 
+  // Get A/B variant for price/description adjustments
+  const abVariant = getCurrentVariant();
+  const isVariantB = abVariant === 'B';
+  
   // Get price and currency from product data
-  const productVariant = product?.node.variants.edges[0]?.node;
+  // For Variant B ergonomic pillow, use "Pillow Only" variant price
+  const getErgonomicVariant = () => {
+    if (isVariantB && isErgonomicPillow) {
+      const pillowOnlyVariant = product?.node.variants.edges.find(
+        v => v.node.title === "Pillow Only"
+      )?.node;
+      return pillowOnlyVariant || product?.node.variants.edges[0]?.node;
+    }
+    return product?.node.variants.edges[0]?.node;
+  };
+  const productVariant = isErgonomicPillow ? getErgonomicVariant() : product?.node.variants.edges[0]?.node;
   const shopifyCurrency = productVariant?.price.currencyCode || 'USD';
   // Override to EUR for EU countries if Shopify returns USD
   const currencyCode = (isEU && shopifyCurrency === 'USD') ? 'EUR' : shopifyCurrency;
-  const productPrice = isErgonomicPillow ? parseFloat(productVariant?.price.amount || "79.99") : isKneePillow ? parseFloat(productVariant?.price.amount || "39.99") : (product ? parseFloat(product.node.variants.edges[0].node.price.amount) : 129.99);
+  const productPrice = isErgonomicPillow 
+    ? parseFloat(productVariant?.price.amount || (isVariantB ? "59.99" : "79.99")) 
+    : isKneePillow 
+      ? parseFloat(productVariant?.price.amount || "39.99") 
+      : (product ? parseFloat(product.node.variants.edges[0].node.price.amount) : 129.99);
   
   // Calculate the value being added to cart (not current cart total)
   const addToCartValue = isSleepBundle
@@ -258,7 +286,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                     {isSleepBundle
                       ? `${selectedBundle === "1" ? "Single" : "Double"} Bundle`
                       : isPillowProduct
-                        ? "1 Pillow + Sleep Mask Included"
+                        ? (isVariantB && isErgonomicPillow ? "1 Pillow" : "1 Pillow + Sleep Mask Included")
                         : "Sleep Mask"}
                   </p>
                 </div>
