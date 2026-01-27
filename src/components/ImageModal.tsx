@@ -57,34 +57,6 @@ export const ImageModal = ({ imageUrl, onClose, images, currentIndex = 0, onNavi
       className="fixed inset-0 z-[300] flex items-center justify-center bg-black/90 p-4 md:p-8 animate-in fade-in duration-200"
       onClick={onClose}
     >
-      {/* Control buttons positioned just above the image */}
-      <div className="fixed top-16 right-4 md:top-20 md:right-8 flex gap-3 z-[310]">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsZoomed(!isZoomed);
-          }}
-          className="bg-white rounded-full p-3 md:p-3 shadow-xl hover:bg-gray-100 transition-colors"
-          aria-label={isZoomed ? "Zoom out" : "Zoom in"}
-        >
-          {isZoomed ? (
-            <ZoomOut className="h-6 w-6 md:h-5 md:w-5 text-black" />
-          ) : (
-            <ZoomIn className="h-6 w-6 md:h-5 md:w-5 text-black" />
-          )}
-        </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onClose();
-          }}
-          className="bg-white rounded-full p-3 md:p-3 shadow-xl hover:bg-gray-100 transition-colors"
-          aria-label="Close"
-        >
-          <X className="h-6 w-6 md:h-5 md:w-5 text-black stroke-[2.5]" />
-        </button>
-      </div>
-
       {/* Navigation arrows */}
       {canNavigate && (
         <>
@@ -122,6 +94,33 @@ export const ImageModal = ({ imageUrl, onClose, images, currentIndex = 0, onNavi
         className="relative max-w-5xl w-full"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Control buttons positioned just above the image */}
+        <div className="absolute -top-14 right-0 flex gap-3 z-[310]">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsZoomed(!isZoomed);
+            }}
+            className="bg-white rounded-full p-3 shadow-xl hover:bg-gray-100 transition-colors"
+            aria-label={isZoomed ? "Zoom out" : "Zoom in"}
+          >
+            {isZoomed ? (
+              <ZoomOut className="h-6 w-6 md:h-5 md:w-5 text-black" />
+            ) : (
+              <ZoomIn className="h-6 w-6 md:h-5 md:w-5 text-black" />
+            )}
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
+            className="bg-white rounded-full p-3 shadow-xl hover:bg-gray-100 transition-colors"
+            aria-label="Close"
+          >
+            <X className="h-6 w-6 md:h-5 md:w-5 text-black stroke-[2.5]" />
+          </button>
+        </div>
         
         <div className={`transition-transform duration-300 ${isZoomed ? 'scale-150 cursor-move overflow-auto max-h-[85vh]' : 'scale-100'}`}>
           <img
