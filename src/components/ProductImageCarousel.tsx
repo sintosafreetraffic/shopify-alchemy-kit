@@ -262,7 +262,7 @@ export const ProductImageCarousel = () => {
         </Carousel>
         
         {/* Desktop Thumbnail Indicators */}
-        <div className="flex gap-2 mt-4 max-w-full overflow-x-auto scrollbar-hide justify-start lg:justify-center px-1">
+        <div className="flex gap-2 mt-4 max-w-full overflow-x-auto scrollbar-hide justify-start lg:justify-center px-2">
           {images.map((item, index) => (
             <button
               key={index}
