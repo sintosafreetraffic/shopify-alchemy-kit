@@ -245,8 +245,8 @@ export const ProductImageCarousel = () => {
               </CarouselItem>
             ))}
           </CarouselContent>
-          <CarouselPrevious className="left-4 md:left-4" />
-          <CarouselNext className="right-4 md:right-4" />
+          <CarouselPrevious className="left-4 md:left-4 bg-white/50 hover:bg-white/70 border-0" />
+          <CarouselNext className="right-4 md:right-4 bg-white/50 hover:bg-white/70 border-0" />
         </Carousel>
         
         {/* Desktop Thumbnail Indicators */}
