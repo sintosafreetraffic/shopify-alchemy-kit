@@ -57,8 +57,8 @@ export const ImageModal = ({ imageUrl, onClose, images, currentIndex = 0, onNavi
       className="fixed inset-0 z-[300] flex items-center justify-center bg-black/90 p-4 md:p-8 animate-in fade-in duration-200"
       onClick={onClose}
     >
-      {/* Control buttons fixed to top right of viewport */}
-      <div className="fixed top-4 right-4 md:top-8 md:right-8 flex gap-3 z-[310]">
+      {/* Control buttons positioned just above the image */}
+      <div className="fixed top-16 right-4 md:top-20 md:right-8 flex gap-3 z-[310]">
         <button
           onClick={(e) => {
             e.stopPropagation();
