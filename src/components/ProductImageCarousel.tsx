@@ -59,8 +59,10 @@ const VideoPoster = ({ posterSrc, alt, width, height, onPlayClick, className = "
 
 export const ProductImageCarousel = () => {
   const [expandedImageIndex, setExpandedImageIndex] = useState<number | null>(null);
-  const [api, setApi] = useState<CarouselApi>();
-  const [current, setCurrent] = useState(0);
+  const [mobileApi, setMobileApi] = useState<CarouselApi>();
+  const [desktopApi, setDesktopApi] = useState<CarouselApi>();
+  const [mobileCurrent, setMobileCurrent] = useState(0);
+  const [desktopCurrent, setDesktopCurrent] = useState(0);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [selectedVideoSrc, setSelectedVideoSrc] = useState<string | null>(null);
 
@@ -104,22 +106,32 @@ export const ProductImageCarousel = () => {
     setVideoModalOpen(true);
   };
 
-  // Track carousel position
+  // Track mobile carousel position
   useEffect(() => {
-    if (!api) return;
+    if (!mobileApi) return;
 
-    setCurrent(api.selectedScrollSnap());
+    setMobileCurrent(mobileApi.selectedScrollSnap());
 
-    api.on("select", () => {
-      setCurrent(api.selectedScrollSnap());
+    mobileApi.on("select", () => {
+      setMobileCurrent(mobileApi.selectedScrollSnap());
     });
-  }, [api]);
+  }, [mobileApi]);
 
+  // Track desktop carousel position
+  useEffect(() => {
+    if (!desktopApi) return;
+
+    setDesktopCurrent(desktopApi.selectedScrollSnap());
+
+    desktopApi.on("select", () => {
+      setDesktopCurrent(desktopApi.selectedScrollSnap());
+    });
+  }, [desktopApi]);
   return (
     <>
       {/* Mobile Carousel */}
       <div className="md:hidden -mx-4">
-        <Carousel className="w-full" setApi={setApi}>
+        <Carousel className="w-full" setApi={setMobileApi}>
           <CarouselContent className="-ml-0">
             {mobileImages.map((item, index) => (
               <CarouselItem key={index} className="pl-0">
@@ -161,9 +173,9 @@ export const ProductImageCarousel = () => {
           {mobileImages.map((item, index) => (
             <button
               key={index}
-              onClick={() => api?.scrollTo(index)}
+              onClick={() => mobileApi?.scrollTo(index)}
               className={`relative w-12 h-12 rounded-lg overflow-hidden transition-all ${
-                current === index 
+                mobileCurrent === index 
                   ? 'ring-2 ring-primary ring-offset-1' 
                   : 'opacity-60 hover:opacity-100'
               }`}
@@ -198,114 +210,85 @@ export const ProductImageCarousel = () => {
         </div>
       </div>
 
-      {/* Desktop Static Gallery */}
+      {/* Desktop Carousel */}
       <div className="hidden md:block">
-        {/* First large image */}
-        <div className="overflow-hidden rounded-xl relative cursor-pointer hover:opacity-90 transition-opacity" onClick={() => images[0]?.type === "image" && openImageModal(images[0].url, false)}>
-          <img
-            src={images[0]?.url}
-            alt={images[0]?.alt}
-            className="w-full h-full object-cover rounded-xl"
-            loading="eager"
-            fetchPriority="high"
-            decoding="async"
-            width="1200"
-            height="900"
-          />
-        </div>
-
-        {/* Two images side by side */}
-        <div className="grid grid-cols-2 gap-0">
-          <div className="overflow-hidden rounded-xl aspect-square cursor-pointer hover:opacity-90 transition-opacity">
-            {images[1]?.type === "video" ? (
-              <VideoPoster
-                videoSrc={images[1].url}
-                alt={images[1].alt}
-                posterSrc={(images[1] as any).poster || pillowHeroNew}
-                width={600}
-                height={600}
-                onPlayClick={() => handleVideoClick(images[1].url)}
-                className="rounded-xl"
-              />
-            ) : (
-              <img
-                src={images[1]?.url}
-                alt={images[1]?.alt}
-                className="w-full h-full object-cover rounded-xl"
-                loading="lazy"
-                decoding="async"
-                width="600"
-                height="600"
-                onClick={() => openImageModal(images[1].url, false)}
-              />
-            )}
-          </div>
-          <div className="overflow-hidden rounded-xl aspect-square cursor-pointer hover:opacity-90 transition-opacity" onClick={() => {
-            if (images[2]?.type === "image") {
-              openImageModal(images[2]?.url, false);
-            }
-          }}>
-            <img
-              src={images[2]?.url}
-              alt={images[2]?.alt}
-              className="w-full h-full object-cover rounded-xl"
-              loading="lazy"
-              decoding="async"
-              width="600"
-              height="600"
-            />
-          </div>
-        </div>
-
-        {/* Second large image */}
-        <div className="overflow-hidden rounded-xl cursor-pointer hover:opacity-90 transition-opacity" onClick={() => {
-          if (images[3]?.type === "image") {
-            openImageModal(images[3]?.url, false);
-          }
-        }}>
-          <img
-            src={images[3]?.url}
-            alt={images[3]?.alt}
-            className="w-full h-full object-cover rounded-xl"
-            loading="lazy"
-            decoding="async"
-            width="1200"
-            height="900"
-          />
-        </div>
-
-        {/* Last two images side by side */}
-        <div className="grid grid-cols-2 gap-0">
-          <div className="overflow-hidden rounded-xl cursor-pointer hover:opacity-90 transition-opacity" onClick={() => {
-            if (images[4]?.type === "image") {
-              openImageModal(images[4]?.url, false);
-            }
-          }}>
-            <img
-              src={images[4]?.url}
-              alt={images[4]?.alt}
-              className="w-full h-full object-cover rounded-xl"
-              loading="lazy"
-              decoding="async"
-              width="600"
-              height="600"
-            />
-          </div>
-          <div className="overflow-hidden rounded-xl cursor-pointer hover:opacity-90 transition-opacity" onClick={() => {
-            if (images[5]?.type === "image") {
-              openImageModal(images[5]?.url, false);
-            }
-          }}>
-            <img
-              src={images[5]?.url}
-              alt={images[5]?.alt}
-              className="w-full h-full object-cover rounded-xl"
-              loading="lazy"
-              decoding="async"
-              width="600"
-              height="600"
-            />
-          </div>
+        <Carousel className="w-full" setApi={setDesktopApi}>
+          <CarouselContent className="-ml-0">
+            {images.map((item, index) => (
+              <CarouselItem key={index} className="pl-0">
+                <div 
+                  className="overflow-hidden rounded-xl relative cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={() => item.type === "image" && openImageModal(item.url, false)}
+                >
+                  {item.type === "video" ? (
+                    <VideoPoster
+                      videoSrc={item.url}
+                      alt={item.alt}
+                      posterSrc={(item as any).poster || pillowHeroNew}
+                      width={1200}
+                      height={900}
+                      onPlayClick={() => handleVideoClick(item.url)}
+                      className="rounded-xl"
+                    />
+                  ) : (
+                    <img
+                      src={item.url}
+                      alt={item.alt}
+                      className="w-full h-auto object-cover rounded-xl"
+                      loading={index === 0 ? "eager" : "lazy"}
+                      fetchPriority={index === 0 ? "high" : "low"}
+                      decoding="async"
+                      width="1200"
+                      height="900"
+                    />
+                  )}
+                </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <CarouselPrevious className="left-4" />
+          <CarouselNext className="right-4" />
+        </Carousel>
+        
+        {/* Desktop Thumbnail Indicators */}
+        <div className="flex justify-center gap-2 mt-4">
+          {images.map((item, index) => (
+            <button
+              key={index}
+              onClick={() => desktopApi?.scrollTo(index)}
+              className={`relative w-16 h-16 rounded-lg overflow-hidden transition-all ${
+                desktopCurrent === index 
+                  ? 'ring-2 ring-primary ring-offset-2' 
+                  : 'opacity-60 hover:opacity-100'
+              }`}
+              aria-label={`Go to slide ${index + 1}`}
+            >
+              {item.type === "video" ? (
+                <>
+                  <img
+                    src={(item as any).poster || pillowHeroNew}
+                    alt={`Thumbnail ${index + 1}`}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                    width={64}
+                    height={64}
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                    <div className="w-5 h-5 border-l-[8px] border-l-white border-y-[5px] border-y-transparent ml-0.5" />
+                  </div>
+                </>
+              ) : (
+                <img
+                  src={item.url}
+                  alt={`Thumbnail ${index + 1}`}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                  width={64}
+                  height={64}
+                />
+              )}
+            </button>
+          ))}
         </div>
       </div>
 
