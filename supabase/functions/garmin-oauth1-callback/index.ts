@@ -48,6 +48,18 @@ function log(level: 'info' | 'warn' | 'error', message: string, data?: Record<st
   }
 }
 
+// RFC 3986 percent-encoding (required for OAuth 1.0a)
+function percentEncode(str: string): string {
+  return encodeURIComponent(str)
+    // encodeURIComponent does NOT encode: ! ' ( ) *
+    // OAuth 1.0a (RFC 5849) requires RFC3986 encoding
+    .replace(/!/g, '%21')
+    .replace(/\*/g, '%2A')
+    .replace(/'/g, '%27')
+    .replace(/\(/g, '%28')
+    .replace(/\)/g, '%29');
+}
+
 // Verify HMAC signature on state
 async function verifyState(stateString: string, secret: string): Promise<{ valid: boolean; payload?: StatePayload; error?: string }> {
   try {
@@ -100,11 +112,14 @@ async function createOAuthSignature(
   consumerSecret: string,
   tokenSecret: string
 ): Promise<string> {
+  // Sort parameters and encode using RFC 3986
   const sortedParams = Object.keys(params).sort()
-    .map(k => `${encodeURIComponent(k)}=${encodeURIComponent(params[k])}`)
+    .map(k => `${percentEncode(k)}=${percentEncode(params[k])}`)
     .join('&');
-  const baseString = `${method.toUpperCase()}&${encodeURIComponent(url)}&${encodeURIComponent(sortedParams)}`;
-  const signingKey = `${encodeURIComponent(consumerSecret)}&${encodeURIComponent(tokenSecret)}`;
+  // Build signature base string per OAuth 1.0a spec
+  const baseString = `${method.toUpperCase()}&${percentEncode(url)}&${percentEncode(sortedParams)}`;
+  // Signing key is consumer secret + "&" + token secret (both encoded)
+  const signingKey = `${percentEncode(consumerSecret)}&${percentEncode(tokenSecret)}`;
   
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
@@ -248,7 +263,10 @@ Deno.serve(async (req) => {
     oauthParams.oauth_signature = signature;
     
     const authHeader = 'OAuth ' + Object.keys(oauthParams)
-      .map(k => `${encodeURIComponent(k)}="${encodeURIComponent(oauthParams[k])}"`)
+      // IMPORTANT: use RFC3986 percent-encoding for header values too.
+      // Some servers decode OAuth header params using form-style decoding
+      // (treating '+' as space). percentEncode ensures '+' becomes '%2B'.
+      .map(k => `${percentEncode(k)}="${percentEncode(oauthParams[k])}"`)
       .join(', ');
     
     log('info', 'Exchanging request token for access token', { userId });

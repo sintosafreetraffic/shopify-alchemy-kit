@@ -54,6 +54,8 @@ async function signState(payload: StatePayload, secret: string): Promise<string>
 // RFC 3986 percent-encoding (required for OAuth 1.0a)
 function percentEncode(str: string): string {
   return encodeURIComponent(str)
+    // encodeURIComponent does NOT encode: ! ' ( ) *
+    // OAuth 1.0a (RFC 5849) requires RFC3986 encoding
     .replace(/!/g, '%21')
     .replace(/\*/g, '%2A')
     .replace(/'/g, '%27')
@@ -221,7 +223,10 @@ Deno.serve(async (req) => {
     oauthParams.oauth_signature = signature;
     
     const authHeaderValue = 'OAuth ' + Object.keys(oauthParams)
-      .map(k => `${encodeURIComponent(k)}="${encodeURIComponent(oauthParams[k])}"`)
+      // IMPORTANT: use RFC3986 percent-encoding for header values too.
+      // Some servers decode OAuth header params using form-style decoding
+      // (treating '+' as space). percentEncode ensures '+' becomes '%2B'.
+      .map(k => `${percentEncode(k)}="${percentEncode(oauthParams[k])}"`)
       .join(', ');
     
     log('info', 'Requesting OAuth 1.0a request token', { 
