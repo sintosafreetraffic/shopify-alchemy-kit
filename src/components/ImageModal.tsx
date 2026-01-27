@@ -83,13 +83,6 @@ export const ImageModal = ({ imageUrl, onClose, images, currentIndex = 0, onNavi
         </>
       )}
 
-      {/* Image counter */}
-      {canNavigate && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[310] bg-white/90 rounded-full px-4 py-2 text-sm font-medium text-black">
-          {currentIndex + 1} / {images.length}
-        </div>
-      )}
-      
       <div
         className="relative max-w-5xl w-full"
         onClick={(e) => e.stopPropagation()}
@@ -132,6 +125,13 @@ export const ImageModal = ({ imageUrl, onClose, images, currentIndex = 0, onNavi
             decoding="async"
           />
         </div>
+
+        {/* Image counter positioned just below the image */}
+        {canNavigate && (
+          <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 z-[310] bg-white/90 rounded-full px-4 py-2 text-sm font-medium text-black">
+            {currentIndex + 1} / {images.length}
+          </div>
+        )}
       </div>
     </div>
   );
