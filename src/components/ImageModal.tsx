@@ -1,5 +1,5 @@
-import { X, ZoomIn, ZoomOut, ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useState } from "react";
+import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import { useEffect } from "react";
 
 interface ImageModalProps {
   imageUrl: string | null;
@@ -10,8 +10,6 @@ interface ImageModalProps {
 }
 
 export const ImageModal = ({ imageUrl, onClose, images, currentIndex = 0, onNavigate }: ImageModalProps) => {
-  const [isZoomed, setIsZoomed] = useState(false);
-
   const canNavigate = images && images.length > 1 && onNavigate;
   const hasPrev = canNavigate && currentIndex > 0;
   const hasNext = canNavigate && currentIndex < images.length - 1;
@@ -46,7 +44,6 @@ export const ImageModal = ({ imageUrl, onClose, images, currentIndex = 0, onNavi
     return () => {
       document.removeEventListener("keydown", handleKeydown);
       document.body.style.overflow = "unset";
-      setIsZoomed(false);
     };
   }, [imageUrl, onClose, hasPrev, hasNext, currentIndex, onNavigate]);
 
@@ -87,22 +84,8 @@ export const ImageModal = ({ imageUrl, onClose, images, currentIndex = 0, onNavi
         className="relative max-w-5xl w-full"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Control buttons positioned just above the image */}
-        <div className="absolute -top-14 right-0 flex gap-3 z-[310]">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsZoomed(!isZoomed);
-            }}
-            className="bg-white rounded-full p-3 shadow-xl hover:bg-gray-100 transition-colors"
-            aria-label={isZoomed ? "Zoom out" : "Zoom in"}
-          >
-            {isZoomed ? (
-              <ZoomOut className="h-6 w-6 md:h-5 md:w-5 text-black" />
-            ) : (
-              <ZoomIn className="h-6 w-6 md:h-5 md:w-5 text-black" />
-            )}
-          </button>
+        {/* Close button positioned just above the image */}
+        <div className="absolute -top-14 right-0 z-[310]">
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -115,16 +98,13 @@ export const ImageModal = ({ imageUrl, onClose, images, currentIndex = 0, onNavi
           </button>
         </div>
         
-        <div className={`transition-transform duration-300 ${isZoomed ? 'scale-150 cursor-move overflow-auto max-h-[85vh]' : 'scale-100'}`}>
-          <img
-            src={imageUrl}
-            alt="Product preview"
-            className="w-full h-auto max-h-[80vh] object-contain rounded-lg shadow-2xl"
-            draggable={isZoomed}
-            loading="lazy"
-            decoding="async"
-          />
-        </div>
+        <img
+          src={imageUrl}
+          alt="Product preview"
+          className="w-full h-auto max-h-[80vh] object-contain rounded-lg shadow-2xl"
+          loading="lazy"
+          decoding="async"
+        />
 
         {/* Image counter positioned just below the image */}
         {canNavigate && (
