@@ -8,6 +8,7 @@ import { fetchProducts, type ShopifyProduct } from "@/lib/shopify";
 import OptimizedImage from "@/components/OptimizedImage";
 import { formatPrice } from "@/lib/formatPrice";
 import { useIsEU } from "@/hooks/useCurrencySymbol";
+import { useABErgonomicPillow } from "@/hooks/useABProduct";
 // Using WebP variants where available for better performance
 import ergonomicPillowProduct from "@/assets/ergonomic-pillow-product.webp";
 import kneePillowMain from "@/assets/knee-pillow-main-new.webp";
@@ -18,6 +19,9 @@ export const ProductGallery = () => {
   const [shopifyProducts, setShopifyProducts] = useState<ShopifyProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const isEU = useIsEU();
+  
+  // Get A/B tested ergonomic pillow product
+  const { product: abErgonomicPillow, config: abConfig } = useABErgonomicPillow();
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -62,18 +66,21 @@ export const ProductGallery = () => {
     return fallback;
   };
 
+  // Use A/B tested product for ergonomic pillow (falls back to standard if not loaded)
+  const ergonomicPillowForDisplay = abErgonomicPillow || ergonomicPillowShopify;
+  
   const products = [
     {
       id: 2,
       name: "Rise By Night™ Ergonomic Pillow",
       tagline: "The #1 Rated Orthopedic Pillow",
-      price: getProductPrice(ergonomicPillowShopify, formatPrice("79.99", currencyCode)),
+      price: getProductPrice(ergonomicPillowForDisplay, formatPrice(abConfig.price.toString(), currencyCode)),
       originalPrice: undefined,
       rating: 4.8,
       reviews: "6,247",
       image: ergonomicPillowProduct,
       features: ["Ergonomic contour design", "Cooling gel technology", "High-density memory foam", "3-5 year lifespan"],
-      badge: "Sleep Mask Included",
+      badge: abConfig.includesMask ? "Sleep Mask Included" : "",
       link: "/products/ergonomic-pillow",
     },
     {
