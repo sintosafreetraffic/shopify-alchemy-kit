@@ -4,7 +4,7 @@ import type { ShopifyProduct } from "@/lib/shopify";
 export const PRODUCT_HANDLES = {
   ERGONOMIC_PILLOW: 'risebynight-ergonomic-sleep-pillow',
   KNEE_PILLOW: 'risebynight-ergonomic-knee-pillow',
-  SLEEP_MASK: 'risebynight-silk-deep-sleep-mask',
+  SLEEP_MASK: 'risebynight-silk-sleep-mask',
   BUNDLE: 'rise-by-night™-complete-sleep-bundle',
 } as const;
 
