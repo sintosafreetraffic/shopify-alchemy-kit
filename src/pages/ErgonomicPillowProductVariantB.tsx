@@ -1,11 +1,10 @@
 /**
- * Ergonomic Pillow Product Page - Variant B (Maximum Conversion)
+ * Ergonomic Pillow Product Page - Variant B (Price Test: Pillow Only at €59.99)
  * 
- * Aggressive conversion optimization with:
- * - Urgency announcement bar
- * - Exit intent popup
- * - Enhanced social proof
- * - Multiple CTAs throughout the page
+ * This variant tests a simpler offer:
+ * - NO sleep mask included
+ * - Price: €59.99 (pillow only)
+ * - Clean layout similar to Variant A (no urgency elements)
  */
 
 import { Suspense, lazy, useState } from "react";
@@ -20,71 +19,30 @@ import { PainReliefSection } from "@/components/PainReliefSection";
 import { ChiropractorEndorsement } from "@/components/ChiropractorEndorsement";
 import { StickyAddToCart } from "@/components/StickyAddToCart";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Gift, ShoppingCart } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { ReviewsWall, ReviewSubmissionForm } from "@/components/reviews";
 import { ReviewsSection } from "@/components/ReviewsSection";
-import { SocialProofToast, MorningPuffinessSection } from "@/components/ab-testing/UrgencyElements";
-import { ExitIntentPopup } from "@/components/ab-testing/ExitIntentPopup";
-import { CountdownTimerDisplay } from "@/components/CountdownTimer";
+import { useShopifyProducts } from "@/hooks/useShopifyProducts";
 import { useCartStore } from "@/stores/cartStore";
+import { useSEO, SEO_CONFIGS } from "@/hooks/useSEO";
+import { ProductSchema } from "@/components/seo/SEOSchemas";
 
 // Lazy load sections with carousels to reduce initial bundle
-const VideoSection = lazy(() => 
-  import("@/components/VideoSection").then((mod) => ({ default: mod.VideoSection }))
-);
+const VideoSection = lazy(() => import("@/components/VideoSection").then((mod) => ({ default: mod.VideoSection })));
 
 // Fallback for lazy-loaded sections
 const SectionFallback = () => (
-  <div className="py-8 flex items-center justify-center text-sm text-muted-foreground">
-    Loading...
-  </div>
+  <div className="py-8 flex items-center justify-center text-sm text-muted-foreground">Loading...</div>
 );
 
-// Inline CTA - used between sections
-const InlineCTA = () => {
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-  
-  return (
-    <div className="py-6 bg-gradient-to-r from-green-50 to-emerald-50 border-y border-green-200">
-      <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-center gap-4">
-        <div className="text-center md:text-left">
-          <p className="text-sm font-semibold text-green-800">
-            🎁 Limited Time: FREE Sleep Mask Included
-          </p>
-          <p className="text-xs text-green-600">
-            Order now and save + get free shipping
-          </p>
-        </div>
-        <Button 
-          onClick={scrollToTop}
-          className="bg-green-600 hover:bg-green-500 text-white font-bold px-6"
-        >
-          <ShoppingCart className="h-4 w-4 mr-2" />
-          Claim Your Pillow Now
-        </Button>
-      </div>
-    </div>
-  );
-};
-
-// Quiz CTA Component - with urgency twist
+// Quiz CTA Component
 const QuizCTA = ({ variant = "default" }: { variant?: "default" | "subtle" }) => (
   <div
-    className={`py-4 md:py-6 lg:py-10 ${
-      variant === "subtle" 
-        ? "bg-muted/20" 
-        : "bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5"
-    }`}
+    className={`py-4 md:py-6 lg:py-10 ${variant === "subtle" ? "bg-muted/20" : "bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5"}`}
   >
     <div className="container mx-auto px-4 text-center">
-      <p className="text-xs md:text-sm text-muted-foreground mb-1">
-        Not sure if this pillow is right for you?
-      </p>
-      <h3 className="text-base md:text-lg lg:text-xl font-semibold mb-2">
-        Take the Science-Backed Assessment
-      </h3>
+      <p className="text-xs md:text-sm text-muted-foreground mb-1">Not sure if this pillow is right for you?</p>
+      <h3 className="text-base md:text-lg lg:text-xl font-semibold mb-2">Take the Science-Backed Assessment</h3>
       <p className="text-xs md:text-sm text-muted-foreground mb-3 max-w-md mx-auto">
         Discover your sleeper type and get personalized recommendations.
       </p>
@@ -97,68 +55,79 @@ const QuizCTA = ({ variant = "default" }: { variant?: "default" | "subtle" }) =>
   </div>
 );
 
-// Final CTA before guarantee
-const FinalCTA = () => {
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+// Inline CTA Component - captures users mid-page (NO mask reference)
+const InlineCTA = () => {
+  const { data: products } = useShopifyProducts(1);
+  const product = products?.[0] || null;
+  const { addItem, setCartOpen } = useCartStore();
+  const [isAdding, setIsAdding] = useState(false);
+
+  const handleAddToCart = async () => {
+    if (!product) return;
+    setIsAdding(true);
+    try {
+      const variant = product.node.variants.edges[0].node;
+      addItem({
+        product,
+        variantId: variant.id,
+        variantTitle: variant.title,
+        price: variant.price,
+        compareAtPrice: variant.compareAtPrice,
+        quantity: 1,
+        selectedOptions: variant.selectedOptions || []
+      });
+      setCartOpen(true);
+    } finally {
+      setIsAdding(false);
+    }
   };
-  
+
   return (
-    <section className="py-10 bg-gradient-to-r from-red-600 via-red-500 to-orange-500 text-white">
+    <div className="py-6 md:py-8 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5">
       <div className="container mx-auto px-4 text-center">
-        <h2 className="text-2xl md:text-3xl font-bold mb-2">
-          Don't Wake Up With Neck Pain Tomorrow
-        </h2>
-        <p className="text-white/90 mb-4 max-w-xl mx-auto">
-          Join 250,000+ happy sleepers who transformed their sleep with our ergonomic pillow.
+        <h3 className="text-lg md:text-xl font-semibold mb-2">Ready to sleep better?</h3>
+        <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
+          Join thousands who wake up pain-free every morning.
         </p>
-        <div className="flex flex-col items-center gap-3">
-          <Button 
-            size="lg"
-            onClick={scrollToTop}
-            className="bg-white text-red-600 hover:bg-gray-100 font-bold text-lg px-8 h-14"
-          >
-            <Gift className="h-5 w-5 mr-2" />
-            Claim Your Pillow + FREE Gift
-          </Button>
-          <div className="flex items-center gap-2 text-sm text-white/80">
-            <span>⏰ Offer ends in:</span>
-            <CountdownTimerDisplay />
-          </div>
-        </div>
+        <Button 
+          size="lg" 
+          className="rounded-full px-8"
+          onClick={handleAddToCart}
+          disabled={isAdding || !product}
+        >
+          {isAdding ? "Adding..." : "Add to Cart"}
+        </Button>
       </div>
-    </section>
+    </div>
   );
 };
 
 const ErgonomicPillowProductVariantB = () => {
+  useSEO(SEO_CONFIGS.ergonomicPillow);
   const [showReviewForm, setShowReviewForm] = useState(false);
-  const { setCartOpen } = useCartStore();
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Variant B Hero with urgency elements */}
+      <ProductSchema
+        name="RiseByNight Ergonomic Cervical Pillow"
+        description="Doctor-recommended contour memory foam pillow for neck and shoulder pain relief. Rated 4.8★ by 1000+ verified customers."
+        url="/products/ergonomic-pillow"
+        price="59.99"
+        ratingValue={4.8}
+        reviewCount={6247}
+      />
+      
+      {/* Variant B Hero - €59.99 pillow only, no mask */}
       <HeroVariantB />
       
       <Features />
-      
-      {/* Inline CTA after features */}
-      <InlineCTA />
-      
-      {/* Morning Puffiness Section - Variant B specific */}
-      <section className="py-8 md:py-12 bg-muted/20">
-        <div className="container mx-auto px-4">
-          <MorningPuffinessSection className="max-w-2xl mx-auto" />
-        </div>
-      </section>
-      
+      <ChiropractorEndorsement />
       <ProductBenefitsSection />
       <PainReliefSection />
       
-      {/* Inline CTA after pain relief */}
+      {/* Inline CTA after pain points */}
       <InlineCTA />
       
-      <ChiropractorEndorsement />
       <LookInside />
 
       {/* Customer Reviews Wall */}
@@ -181,9 +150,6 @@ const ErgonomicPillowProductVariantB = () => {
 
       {/* Quiz CTA after FAQ */}
       <QuizCTA />
-      
-      {/* Final CTA with strong urgency */}
-      <FinalCTA />
 
       <GuaranteeSection />
       <StickyAddToCart productType="ergonomic-pillow" />
@@ -194,12 +160,6 @@ const ErgonomicPillowProductVariantB = () => {
         onOpenChange={setShowReviewForm}
         productHandle="ergonomic-pillow"
       />
-
-      {/* Social Proof Toast - Variant B specific */}
-      <SocialProofToast />
-      
-      {/* Exit Intent Popup */}
-      <ExitIntentPopup onClaim={() => setCartOpen(true)} />
     </div>
   );
 };
