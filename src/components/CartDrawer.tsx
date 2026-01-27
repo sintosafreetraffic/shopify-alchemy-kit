@@ -46,9 +46,12 @@ import { useCheckoutStatus } from "@/hooks/useCheckoutStatus";
 import { createCheckoutWithResilience, openCheckoutUrl, isMobileDevice } from "@/lib/checkoutUtils";
 import { formatPrice, getCurrencySymbol } from "@/lib/formatPrice";
 import { getSmartRecommendations, getSocialProofBadge, getBundleOffer, getProductDisplayName } from "@/lib/upsellStrategy";
+import { variantIncludesMask, AB_PRODUCT_HANDLES } from "@/lib/abProductConfig";
+import { useIsVariantB } from "@/hooks/useABProduct";
 
 export const CartDrawer = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const isVariantB = useIsVariantB();
   const [shouldBounce, setShouldBounce] = useState(false);
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
   const [openColorPickerIndex, setOpenColorPickerIndex] = useState<number | null>(null);
@@ -85,10 +88,15 @@ export const CartDrawer = () => {
   const { data: freeGiftMaskProduct } = useFreeGiftMaskProduct();
   
   // Smart recommendations based on cart contents
+  // Filter out the opposite variant's ergonomic pillow to avoid showing wrong price
   const smartRecommendations = useMemo(() => {
     if (allProducts.length === 0) return [];
-    return getSmartRecommendations(allProducts, cartProducts, 3);
-  }, [allProducts, cartProducts]);
+    const recommendations = getSmartRecommendations(allProducts, cartProducts, 3);
+    
+    // Exclude the wrong variant's ergonomic pillow from recommendations
+    const excludeHandle = isVariantB ? AB_PRODUCT_HANDLES.A : AB_PRODUCT_HANDLES.B;
+    return recommendations.filter(p => p.node.handle !== excludeHandle);
+  }, [allProducts, cartProducts, isVariantB]);
   
   // Bundle offer logic
   const bundleOffer = useMemo(() => {
@@ -171,9 +179,11 @@ export const CartDrawer = () => {
   const totalKneePillows = kneePillowItems.reduce((sum, item) => sum + item.quantity, 0);
   
   // Free gifts logic: 
-  // - Ergonomic pillow: 1 mask per pillow (included with each pillow)
+  // - Ergonomic pillow: 1 mask per pillow (included with each pillow) - BUT NOT FOR VARIANT B
   // - Knee pillow: NO free masks included (removed)
-  const ergonomicMasks = totalErgonomicPillows;
+  // - Variant B: No free masks included (pillow-only offer)
+  const includesMask = variantIncludesMask();
+  const ergonomicMasks = includesMask ? totalErgonomicPillows : 0;
   const freeGifts = ergonomicMasks;
   
   // No more BOGO discounts for any pillows
