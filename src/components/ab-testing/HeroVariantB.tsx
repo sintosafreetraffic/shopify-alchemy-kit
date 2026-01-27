@@ -1,19 +1,20 @@
 /**
  * Hero Section - Variant B (Price Test: Pillow Only at €59.99)
  * 
- * This variant tests a simpler offer:
+ * Identical to Variant A (Hero.tsx) except:
+ * - Uses "Pillow Only" variant at €59.99
  * - NO sleep mask included
- * - Price: €59.99 (pillow only)
- * - Clean, straightforward value proposition
+ * - Simplified "Included" section (pillow cover only)
  */
 
 import { Button } from "@/components/ui/button";
-import { Check, Shield, Truck, Loader2, Star, ImageIcon } from "lucide-react";
+import { Check, Shield, Moon, Truck, Loader2, Star, ImageIcon, ChevronDown } from "lucide-react";
 import { PaymentIcons } from "@/components/PaymentIcons";
 import { PolicyAccordion } from "@/components/PolicyAccordion";
-import { useState, useEffect, useRef, Suspense, lazy } from "react";
+import { useState, useEffect, useRef, Suspense, lazy, useMemo } from "react";
 import { useCartStore } from "@/stores/cartStore";
 import { useShopifyProducts } from "@/hooks/useShopifyProducts";
+import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import { trackPageVisit } from "@/lib/pinterest";
 import { trackViewContent as trackMetaViewContent } from "@/lib/meta-pixel";
@@ -23,9 +24,10 @@ import { formatPrice } from "@/lib/formatPrice";
 import { trackATCClick } from "@/hooks/usePDPIntentTracking";
 import { useIsEU } from "@/hooks/useCurrencySymbol";
 import { mobileHeroConfig } from "@/config/mobileHeroConfig";
+import testimonialAvatar from "@/assets/testimonial-new-updated.webp";
 import pillowCoverImage from "@/assets/pillow-cover-included.webp";
 
-// Lazy load the image carousel
+// Lazy load the image carousel to reduce initial bundle
 const ProductImageCarousel = lazy(() => 
   import("@/components/ProductImageCarousel").then(mod => ({ default: mod.ProductImageCarousel }))
 );
@@ -37,9 +39,8 @@ const CarouselFallback = () => (
   </div>
 );
 
-// VARIANT B OFFER CONFIG
-const VARIANT_B_PRICE = 59.99;
-const VARIANT_B_INCLUDES_MASK = false;
+// VARIANT B CONFIG: Use the "Pillow Only" variant
+const VARIANT_B_VARIANT_TITLE = "Pillow Only";
 
 export const HeroVariantB = () => {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -52,61 +53,65 @@ export const HeroVariantB = () => {
   const { data: products, isLoading: productsLoading } = useShopifyProducts(10);
   const product = products?.[0] || null;
   
-  // Get main variant for currency info (but we override the price)
-  const mainVariant = product?.node.variants.edges[0]?.node;
-  const shopifyCurrency = mainVariant?.price.currencyCode || 'USD';
-  // Override to EUR for EU countries if Shopify returns USD
-  const currencyCode = (isEU && shopifyCurrency === 'USD') ? 'EUR' : shopifyCurrency;
+  // Find the "Pillow Only" variant for Variant B
+  const pillowOnlyVariant = useMemo(() => {
+    if (!product?.node.variants.edges) return null;
+    return product.node.variants.edges.find(
+      (edge: any) => edge.node.title === VARIANT_B_VARIANT_TITLE
+    )?.node || null;
+  }, [product]);
+  
+  // Fallback to first variant if "Pillow Only" not found
+  const variant = pillowOnlyVariant || product?.node.variants.edges[0]?.node;
 
   // Track product view once when product is loaded
   useEffect(() => {
-    if (product && !hasTrackedView.current) {
+    if (product && variant && !hasTrackedView.current) {
       hasTrackedView.current = true;
       trackPageVisit(product.node.id);
       
-      // Track Meta Pixel ViewContent with Variant B price
-      trackMetaViewContent(product.node.id, product.node.title, VARIANT_B_PRICE, currencyCode);
+      // Track Meta Pixel ViewContent
+      const price = parseFloat(variant.price.amount || "0");
+      const currency = variant.price.currencyCode || "EUR";
+      trackMetaViewContent(product.node.id, product.node.title, price, currency);
       
       trackViewedProduct({
         id: product.node.id,
         title: product.node.title,
-        price: VARIANT_B_PRICE,
-        sku: mainVariant?.id || "",
+        price: price,
+        sku: variant.id || "",
         imageUrl: product.node.images?.edges?.[0]?.node?.url || "",
       });
     }
-  }, [product, currencyCode, mainVariant?.id]);
+  }, [product, variant]);
 
   const handleAddToCart = async () => {
-    if (!product) {
+    if (!product || !variant) {
       toast.error("Product not available");
       return;
     }
-
-    const variant = product.node.variants.edges[0]?.node;
     
-    // Track A/B intent event - fire and forget
+    // Track A/B intent event - fire and forget (never blocks UI)
     trackATCClick();
 
     setIsCheckingOut(true);
     try {
-      // VARIANT B: No free mask, use the Variant B price
+      const quantity = 1;
+      
+      // VARIANT B: No free mask - just the pillow
       const cartItem = {
         product,
         variantId: variant.id,
         variantTitle: variant.title,
-        // Note: We use the actual Shopify price here for checkout
-        // The visual display shows €59.99, but checkout uses Shopify's price
-        // This ensures proper fulfillment - price difference is handled via discount codes
         price: variant.price,
         compareAtPrice: variant.compareAtPrice,
-        quantity: 1,
+        quantity,
         selectedOptions: variant.selectedOptions || []
       };
       
       addItem(cartItem);
       const toastId = toast.success("Added to cart!", {
-        description: "1 pillow added to your cart.",
+        description: `${quantity} pillow added to your cart.`,
         duration: 1500,
         cancel: {
           label: "✕",
@@ -123,6 +128,12 @@ export const HeroVariantB = () => {
       setIsCheckingOut(false);
     }
   };
+
+  // Get product price from the Pillow Only variant
+  const productPrice = variant ? parseFloat(variant.price.amount) : 59.99;
+  const shopifyCurrency = variant?.price.currencyCode || 'USD';
+  // Override to EUR for EU countries if Shopify returns USD
+  const currencyCode = (isEU && shopifyCurrency === 'USD') ? 'EUR' : shopifyCurrency;
 
   return (
     <section className="pb-3 md:pb-6 bg-background overflow-x-hidden" style={{ paddingTop: Math.max(headerHeight - 80, 0) }}>
@@ -159,7 +170,7 @@ export const HeroVariantB = () => {
               </div>
             </div>
             
-            {/* Mobile title */}
+            {/* Mobile title - styled as heading but using p tag to avoid duplicate H1 */}
             <p className="text-lg font-bold leading-tight tracking-tight truncate mt-3" aria-label="Product title">
               Rise By Night™ Ergonomic Sleep Pillow
             </p>
@@ -168,8 +179,8 @@ export const HeroVariantB = () => {
               The #1 Rated Ergonomic Pillow in the U.S.
             </p>
             
-            {/* Mobile Price - Variant B: €59.99 pillow only */}
-            <p className="text-2xl font-bold mt-2 text-primary">{formatPrice(VARIANT_B_PRICE, currencyCode)}</p>
+            {/* Mobile Price - Above USPs */}
+            <p className="text-2xl font-bold mt-2 text-primary">{formatPrice(productPrice, currencyCode)}</p>
             
             {/* MOBILE CTA FIRST: Show CTA immediately after price when enabled */}
             {mobileHeroConfig.MOBILE_CTA_FIRST && (
@@ -253,9 +264,9 @@ export const HeroVariantB = () => {
               The #1 Rated Ergonomic Pillow in the U.S.
             </p>
 
-            {/* Price Display - Desktop Only - Variant B: €59.99 */}
+            {/* Price Display - Desktop Only (mobile price is above) */}
             <div className="hidden md:flex items-center gap-3 mt-2 mb-3">
-              <p className="text-xl md:text-2xl font-bold text-primary">{formatPrice(VARIANT_B_PRICE, currencyCode)}</p>
+              <p className="text-xl md:text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
             </div>
 
             {/* Benefit-Focused USPs Section - 3 Categories */}
@@ -285,33 +296,17 @@ export const HeroVariantB = () => {
                   </div>
                   <div className="text-left min-w-0">
                     <p className="text-xs font-medium" style={{ color: '#3b7eed' }}>Breathable Pillow Cover</p>
-                    <p className="text-[10px]" style={{ color: 'rgba(59, 126, 237, 0.8)' }}>Premium quality, washable</p>
+                    <p className="text-[10px]" style={{ color: 'rgba(59, 126, 237, 0.8)' }}>Premium quality, machine washable</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Trust Badges */}
-            <div className="grid grid-cols-3 gap-2 md:gap-4 pb-3 text-center">
-              <div className="flex flex-col items-center">
-                <Shield className="w-5 h-5 mb-1 text-primary" />
-                <p className="text-xs font-medium">100-Day Trial</p>
-              </div>
-              <div className="flex flex-col items-center">
-                <Truck className="w-5 h-5 mb-1 text-primary" />
-                <p className="text-xs font-medium">Free Shipping</p>
-              </div>
-              <div className="flex flex-col items-center">
-                <Check className="w-5 h-5 mb-1 text-primary" />
-                <p className="text-xs font-medium">Easy Returns</p>
-              </div>
-            </div>
-
-            {/* ADD TO CART BUTTON */}
-            {!mobileHeroConfig.MOBILE_CTA_FIRST && (
+            {/* Desktop CTA always shows, Mobile CTA only if MOBILE_CTA_FIRST is false */}
+            <div className={mobileHeroConfig.MOBILE_CTA_FIRST ? "hidden md:block" : ""}>
               <Button 
                 size="lg"
-                className="w-full md:hidden text-lg py-6 font-bold shadow-lg hover:shadow-xl transition-all touch-manipulation animate-subtle-bounce bg-primary text-primary-foreground hover:bg-black hover:text-white relative overflow-hidden group" 
+                className="w-full text-lg md:text-xl py-6 font-bold shadow-lg hover:shadow-xl transition-all touch-manipulation animate-subtle-bounce bg-primary text-primary-foreground hover:bg-black hover:text-white relative overflow-hidden group" 
                 onClick={handleAddToCart}
                 disabled={isCheckingOut || !product}
               >
@@ -331,43 +326,43 @@ export const HeroVariantB = () => {
                   </>
                 )}
               </Button>
-            )}
-            
-            {/* Desktop CTA */}
-            <Button 
-              size="lg"
-              className="hidden md:flex w-full text-lg py-6 font-bold shadow-lg hover:shadow-xl transition-all animate-subtle-bounce bg-primary text-primary-foreground hover:bg-black hover:text-white relative overflow-hidden group" 
-              onClick={handleAddToCart}
-              disabled={isCheckingOut || !product}
-            >
-              {isCheckingOut ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Adding...
-                </>
-              ) : (
-                <>
-                  <span className="inline-block transition-all duration-300 group-hover:-translate-y-12 group-hover:opacity-0">
-                    ADD TO CART
-                  </span>
-                  <span className="absolute inset-0 flex items-center justify-center translate-y-12 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                    ADD TO CART
-                  </span>
-                </>
-              )}
-            </Button>
-            
-            {/* Payment Icons */}
-            <div className="pt-2">
-              <PaymentIcons />
+
+              {/* Payment Icons */}
+              <div className="pt-2">
+                <PaymentIcons />
+              </div>
             </div>
 
-            {/* Policy Accordion */}
-            <div className="pt-2">
+            {/* Trust Band - Compact horizontal strip */}
+            <div className="flex items-center justify-center gap-1.5 sm:gap-4 py-2 text-[8px] sm:text-[10px] text-muted-foreground flex-wrap max-w-full">
+              <div className="flex items-center gap-1">
+                <Check className="w-3 h-3 text-primary" />
+                <span>100-Day Trial</span>
+              </div>
+              <div className="w-px h-3 bg-border" />
+              <div className="flex items-center gap-1">
+                <Check className="w-3 h-3 text-primary" />
+                <span>Chiropractor Recommended</span>
+              </div>
+              <div className="w-px h-3 bg-border" />
+              <div className="flex items-center gap-1">
+                <Check className="w-3 h-3 text-primary" />
+                <span>98% Satisfaction</span>
+              </div>
+            </div>
+
+            {/* Policy Accordion - Desktop Only (inside right column) */}
+            <div className="hidden md:block">
               <PolicyAccordion />
             </div>
+
           </div>
         </div>
+      </div>
+      
+      {/* Policy Accordion - Mobile Only (full width) */}
+      <div className="md:hidden">
+        <PolicyAccordion />
       </div>
     </section>
   );
