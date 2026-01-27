@@ -181,7 +181,7 @@ export const ProductImageCarousel = () => {
               onClick={() => mobileApi?.scrollTo(index)}
               className={`relative w-12 h-12 rounded-lg overflow-hidden transition-all ${
                 mobileCurrent === index 
-                  ? 'ring-2 ring-primary ring-offset-1' 
+                  ? 'ring-2 ring-primary ring-inset' 
                   : 'opacity-60 hover:opacity-100'
               }`}
               aria-label={`Go to slide ${index + 1}`}
@@ -269,7 +269,7 @@ export const ProductImageCarousel = () => {
               onClick={() => desktopApi?.scrollTo(index)}
               className={`relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 transition-all ${
                 desktopCurrent === index 
-                  ? 'ring-2 ring-primary ring-offset-2' 
+                  ? 'ring-2 ring-primary ring-inset' 
                   : 'opacity-60 hover:opacity-100'
               }`}
               aria-label={`Go to slide ${index + 1}`}
