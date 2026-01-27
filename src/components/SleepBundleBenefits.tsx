@@ -1,10 +1,76 @@
+import { useState, useEffect } from "react";
 import pillowMain from "@/assets/optisleep-pillow-main.png";
 import kneePillowMain from "@/assets/knee-pillow-new.png";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
-import { useCurrencySymbol } from "@/hooks/useCurrencySymbol";
+import { fetchProducts, type ShopifyProduct } from "@/lib/shopify";
+import { formatPrice } from "@/lib/formatPrice";
+import { useIsEU } from "@/hooks/useCurrencySymbol";
 
 export const SleepBundleBenefits = () => {
-  const currencySymbol = useCurrencySymbol();
+  const [bundleProduct, setBundleProduct] = useState<ShopifyProduct | null>(null);
+  const [individualProducts, setIndividualProducts] = useState<{
+    pillow: ShopifyProduct | null;
+    kneePillow: ShopifyProduct | null;
+    sleepMask: ShopifyProduct | null;
+  }>({ pillow: null, kneePillow: null, sleepMask: null });
+  const isEU = useIsEU();
+
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const products = await fetchProducts();
+        
+        const bundle = products.find(
+          (p: ShopifyProduct) => p.node.handle === "rise-by-night™-complete-sleep-bundle"
+        );
+        const pillow = products.find(
+          (p: ShopifyProduct) => p.node.handle === "risebynight-ergonomic-sleep-pillow"
+        );
+        const kneePillow = products.find(
+          (p: ShopifyProduct) => p.node.handle === "risebynight-ergonomic-knee-pillow"
+        );
+        const sleepMask = products.find(
+          (p: ShopifyProduct) => p.node.handle === "risebynight-silk-deep-sleep-mask"
+        );
+        
+        setBundleProduct(bundle || null);
+        setIndividualProducts({ pillow: pillow || null, kneePillow: kneePillow || null, sleepMask: sleepMask || null });
+      } catch (error) {
+        console.error("Failed to load products:", error);
+      }
+    };
+    loadProducts();
+  }, []);
+
+  // Helper to get currency with EU override
+  const getCurrency = (shopifyCurrency: string | undefined) => {
+    const currency = shopifyCurrency || 'USD';
+    return (isEU && currency === 'USD') ? 'EUR' : currency;
+  };
+
+  // Calculate prices from Shopify data
+  const bundlePrice = bundleProduct?.node.variants.edges[0]?.node.price;
+  const bundlePriceFormatted = bundlePrice 
+    ? formatPrice(bundlePrice.amount, getCurrency(bundlePrice.currencyCode))
+    : formatPrice("109.99", "EUR");
+
+  // Calculate "regular price" (sum of individual products)
+  const pillowPrice = individualProducts.pillow?.node.variants.edges[0]?.node.price;
+  const kneePillowPrice = individualProducts.kneePillow?.node.variants.edges[0]?.node.price;
+  const sleepMaskPrice = individualProducts.sleepMask?.node.variants.edges[0]?.node.price;
+  
+  const regularPriceTotal = (
+    (pillowPrice ? parseFloat(pillowPrice.amount) : 79.99) +
+    (kneePillowPrice ? parseFloat(kneePillowPrice.amount) : 39.99) +
+    (sleepMaskPrice ? parseFloat(sleepMaskPrice.amount) : 29.99)
+  );
+  
+  const bundlePriceNum = bundlePrice ? parseFloat(bundlePrice.amount) : 109.99;
+  const savings = Math.round(regularPriceTotal - bundlePriceNum);
+  
+  const currency = getCurrency(bundlePrice?.currencyCode);
+  const regularPriceFormatted = formatPrice(regularPriceTotal.toString(), currency);
+
   const products = [
     {
       image: pillowMain,
@@ -82,12 +148,14 @@ export const SleepBundleBenefits = () => {
           </div>
 
           <div className="mt-6 md:mt-8 bg-primary/5 border-2 border-primary rounded-lg p-4 md:p-6 text-center">
-            <h3 className="text-lg md:text-xl lg:text-2xl font-bold mb-1 md:mb-2">Save {currencySymbol}30 with the Bundle</h3>
+            <h3 className="text-lg md:text-xl lg:text-2xl font-bold mb-1 md:mb-2">
+              Save {formatPrice(savings.toString(), currency)} with the Bundle
+            </h3>
             <p className="text-sm md:text-base text-muted-foreground mb-1">
-              Regular price: <span className="line-through">{currencySymbol}229.97</span>
+              Regular price: <span className="line-through">{regularPriceFormatted}</span>
             </p>
             <p className="text-xl md:text-2xl lg:text-3xl font-bold text-primary">
-              Bundle price: {currencySymbol}199.99
+              Bundle price: {bundlePriceFormatted}
             </p>
           </div>
         </div>
