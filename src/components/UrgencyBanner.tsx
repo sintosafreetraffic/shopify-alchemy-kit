@@ -1,22 +1,13 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
 import { useCartStore } from "@/stores/cartStore";
 import { useCurrencySymbol } from "@/hooks/useCurrencySymbol";
-import { getOrAssignVariant } from "@/lib/abTesting";
-import { UrgencyAnnouncementBar } from "@/components/ab-testing/UrgencyAnnouncementBar";
 
 export const UrgencyBanner = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const currencySymbol = useCurrencySymbol();
   const isCartOpen = useCartStore((state) => state.isCartOpen);
-  const location = useLocation();
 
   const messages = [`Free Shipping from ${currencySymbol}50`, "100 Day Risk-Free Trial"];
-
-  // Check if on Variant B product page
-  const isVariantBProductPage = 
-    location.pathname === "/products/ergonomic-pillow" && 
-    getOrAssignVariant() === "B";
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -25,11 +16,6 @@ export const UrgencyBanner = () => {
 
     return () => clearInterval(interval);
   }, [messages.length]);
-
-  // Render Variant B announcement bar instead on Variant B pages
-  if (isVariantBProductPage) {
-    return <UrgencyAnnouncementBar />;
-  }
 
   return (
     <div
