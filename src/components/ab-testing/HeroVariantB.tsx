@@ -231,11 +231,11 @@ export const HeroVariantB = () => {
                   <span className="text-base font-semibold">6,247 verified product reviews</span>
                 </div>
                 
-                <div className="flex gap-1 sm:gap-1.5 flex-wrap">
-                  <div className="inline-flex items-center gap-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 px-1.5 sm:px-2 md:px-3 py-0.5 sm:py-1 md:py-1.5 rounded-md text-[9px] sm:text-[10px] md:text-xs font-bold whitespace-nowrap">
+                <div className="flex gap-1 sm:gap-1.5 flex-nowrap">
+                  <div className="inline-flex items-center gap-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 px-1.5 sm:px-2 md:px-3 py-0.5 sm:py-1 md:py-1.5 rounded-md text-[8px] sm:text-[9px] md:text-xs font-bold whitespace-nowrap">
                     ✓ 98% Customer Satisfaction
                   </div>
-                  <div className="inline-flex items-center gap-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 px-1.5 sm:px-2 md:px-3 py-0.5 sm:py-1 md:py-1.5 rounded-md text-[9px] sm:text-[10px] md:text-xs font-bold whitespace-nowrap">
+                  <div className="inline-flex items-center gap-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 px-1.5 sm:px-2 md:px-3 py-0.5 sm:py-1 md:py-1.5 rounded-md text-[8px] sm:text-[9px] md:text-xs font-bold whitespace-nowrap">
                     🔥 Frequently Purchased
                   </div>
                 </div>
