@@ -51,6 +51,16 @@ async function signState(payload: StatePayload, secret: string): Promise<string>
   return btoa(JSON.stringify(stateObject));
 }
 
+// RFC 3986 percent-encoding (required for OAuth 1.0a)
+function percentEncode(str: string): string {
+  return encodeURIComponent(str)
+    .replace(/!/g, '%21')
+    .replace(/\*/g, '%2A')
+    .replace(/'/g, '%27')
+    .replace(/\(/g, '%28')
+    .replace(/\)/g, '%29');
+}
+
 // Create OAuth 1.0a signature
 async function createOAuthSignature(
   method: string,
@@ -59,11 +69,16 @@ async function createOAuthSignature(
   consumerSecret: string,
   tokenSecret: string = ''
 ): Promise<string> {
+  // Sort parameters and encode using RFC 3986
   const sortedParams = Object.keys(params).sort()
-    .map(k => `${encodeURIComponent(k)}=${encodeURIComponent(params[k])}`)
+    .map(k => `${percentEncode(k)}=${percentEncode(params[k])}`)
     .join('&');
-  const baseString = `${method.toUpperCase()}&${encodeURIComponent(url)}&${encodeURIComponent(sortedParams)}`;
-  const signingKey = `${encodeURIComponent(consumerSecret)}&${encodeURIComponent(tokenSecret)}`;
+  
+  // Build signature base string per OAuth 1.0a spec
+  const baseString = `${method.toUpperCase()}&${percentEncode(url)}&${percentEncode(sortedParams)}`;
+  
+  // Signing key is consumer secret + "&" + token secret (both encoded)
+  const signingKey = `${percentEncode(consumerSecret)}&${percentEncode(tokenSecret)}`;
   
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
