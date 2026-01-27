@@ -81,11 +81,11 @@ export const ImageModal = ({ imageUrl, onClose, images, currentIndex = 0, onNavi
       )}
 
       <div
-        className="relative max-w-5xl w-full"
+        className="relative max-w-5xl w-full flex flex-col items-center gap-3"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close button positioned just above the image */}
-        <div className="absolute -top-14 right-0 z-[310]">
+        {/* Close button positioned above the image */}
+        <div className="w-full flex justify-end">
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -101,14 +101,14 @@ export const ImageModal = ({ imageUrl, onClose, images, currentIndex = 0, onNavi
         <img
           src={imageUrl}
           alt="Product preview"
-          className="w-full h-auto max-h-[80vh] object-contain rounded-lg shadow-2xl"
+          className="w-full h-auto max-h-[70vh] object-contain rounded-lg shadow-2xl"
           loading="lazy"
           decoding="async"
         />
 
-        {/* Image counter positioned just below the image */}
+        {/* Image counter positioned below the image */}
         {canNavigate && (
-          <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 z-[310] bg-white/90 rounded-full px-4 py-2 text-sm font-medium text-black">
+          <div className="bg-white/90 rounded-full px-4 py-2 text-sm font-medium text-black">
             {currentIndex + 1} / {images.length}
           </div>
         )}
