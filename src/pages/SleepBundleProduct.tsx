@@ -18,9 +18,9 @@ const SleepBundleProduct = () => {
     <div className="min-h-screen bg-background">
       <ProductSchema
         name="RiseByNight Complete Sleep Bundle"
-        description="Everything you need for perfect sleep. Save 25% vs buying separately."
+        description="Everything you need for perfect sleep. Save vs buying separately."
         url="/products/sleep-bundle"
-        price="99.99"
+        price="109.99"
         ratingValue={4.9}
         reviewCount={2100}
       />
