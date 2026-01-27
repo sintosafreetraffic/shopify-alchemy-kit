@@ -55,9 +55,11 @@ import {
   Clock,
   Paintbrush,
   Server,
+  Archive,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import FirstTestChecklist from './FirstTestChecklist';
+import EndTestDialog from './EndTestDialog';
 import { formatDistanceToNow } from 'date-fns';
 
 interface FunnelData {
@@ -564,6 +566,7 @@ export default function UrgencyTestsView() {
   const [trafficSplit, setTrafficSplitState] = useState(getTrafficSplit());
   const [splitDrawerOpen, setSplitDrawerOpen] = useState(false);
   const [savingSplit, setSavingSplit] = useState(false);
+  const [endTestDialogOpen, setEndTestDialogOpen] = useState(false);
 
   // v2.4.2: Server-side probabilities with caching
   const { 
@@ -1005,7 +1008,7 @@ export default function UrgencyTestsView() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <Button 
             variant="outline" 
             size="sm"
@@ -1013,6 +1016,15 @@ export default function UrgencyTestsView() {
           >
             <Paintbrush className="h-4 w-4 mr-2" />
             Visual Editor
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setEndTestDialogOpen(true)}
+            className="text-destructive border-destructive/30 hover:bg-destructive/10"
+          >
+            <Archive className="h-4 w-4 mr-2" />
+            End Test
           </Button>
           <div className="flex items-center gap-2">
             <Switch 
@@ -1365,6 +1377,29 @@ export default function UrgencyTestsView() {
           </div>
         </CardContent>
       </Card>
+      
+      {/* End Test Dialog */}
+      <EndTestDialog
+        open={endTestDialogOpen}
+        onOpenChange={setEndTestDialogOpen}
+        testSummary={{
+          testName: AB_TEST_CONFIG.testName,
+          sessionsA: variantA?.page_views || 0,
+          sessionsB: variantB?.page_views || 0,
+          purchasesA: variantA?.purchases || 0,
+          purchasesB: variantB?.purchases || 0,
+          revenueA: variantA?.total_revenue || 0,
+          revenueB: variantB?.total_revenue || 0,
+          purchaseRateA: variantA?.purchase_rate || 0,
+          purchaseRateB: variantB?.purchase_rate || 0,
+          winner: testStatus.variant,
+          liftPercent: testStatus.lift ? testStatus.lift * 100 : 0,
+        }}
+        onTestEnded={() => {
+          fetchData();
+          setEndTestDialogOpen(false);
+        }}
+      />
     </div>
   );
 }
