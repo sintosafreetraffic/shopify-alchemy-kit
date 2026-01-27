@@ -78,7 +78,7 @@ export const ProductImageCarousel = () => {
   // Get only image URLs (excluding videos) for the modal navigation
   const imageOnlyUrls = images.filter(img => img.type === "image").map(img => img.url);
 
-  // Mobile order - same product images as desktop, reordered
+  // Mobile order - same product images as desktop, excluding pillowMaleMask (image 7)
   const mobileImages = [
     images[0], // pillowHeroNew
     images[1], // pillowDeeperSleep
@@ -86,7 +86,6 @@ export const ProductImageCarousel = () => {
     images[3], // pillowCoverMask
     images[4], // pillowMaleModel
     images[5], // pillowBundleNew
-    images[6], // pillowMaleMask
   ];
   
   // Get only image URLs for mobile (excluding videos) for the modal navigation
