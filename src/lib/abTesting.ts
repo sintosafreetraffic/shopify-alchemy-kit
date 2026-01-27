@@ -207,6 +207,10 @@ function setCookie(name: string, value: string, days: number): void {
  * Uses cookie for persistence, localStorage as backup
  * 
  * CRITICAL: This function is synchronous and must not cause flicker
+ * 
+ * OVERRIDE LOGIC: When traffic split is 0% or 100%, force that variant
+ * regardless of what the user has stored. This ensures admin changes
+ * take effect immediately for all users.
  */
 export function getOrAssignVariant(): ABVariant {
   // If A/B testing disabled, always return A
@@ -214,6 +218,24 @@ export function getOrAssignVariant(): ABVariant {
     return 'A';
   }
 
+  // OVERRIDE: If traffic is 100% to one variant, force that variant for everyone
+  // This takes precedence over stored values
+  if (AB_TEST_CONFIG.splitPercentB >= 100) {
+    // 100% to B - force B for everyone
+    const forcedVariant: ABVariant = 'B';
+    setCookie(AB_COOKIE_NAME, forcedVariant, AB_COOKIE_DAYS);
+    try { localStorage.setItem(AB_STORAGE_KEY, forcedVariant); } catch {}
+    return forcedVariant;
+  }
+  if (AB_TEST_CONFIG.splitPercentB <= 0) {
+    // 0% to B (100% to A) - force A for everyone
+    const forcedVariant: ABVariant = 'A';
+    setCookie(AB_COOKIE_NAME, forcedVariant, AB_COOKIE_DAYS);
+    try { localStorage.setItem(AB_STORAGE_KEY, forcedVariant); } catch {}
+    return forcedVariant;
+  }
+
+  // Normal flow: Check existing assignment
   // 1. Check cookie first (primary source)
   let variant = getCookie(AB_COOKIE_NAME) as ABVariant | null;
   
@@ -256,6 +278,27 @@ export function forceVariant(variant: ABVariant): void {
     // Ignore
   }
   console.log(`[ABTesting] Variant forced to: ${variant}`);
+}
+
+/**
+ * Force ALL users to a specific variant by:
+ * 1. Updating the traffic split to 100% for that variant
+ * 2. Clearing the current user's stored variant so they get reassigned
+ * 
+ * This ensures even users who previously saw a different variant will now see the forced one.
+ */
+export async function forceVariantForAllUsers(variant: ABVariant): Promise<void> {
+  // Set traffic split: 100% B means splitPercentB = 100, 100% A means splitPercentB = 0
+  const targetSplit = variant === 'B' ? 100 : 0;
+  await setTrafficSplit(targetSplit);
+  
+  // Clear the current user's variant so they get reassigned on next call
+  clearVariant();
+  
+  // Force the new variant immediately for this session
+  forceVariant(variant);
+  
+  console.log(`[ABTesting] All users forced to Variant ${variant}`);
 }
 
 /**
