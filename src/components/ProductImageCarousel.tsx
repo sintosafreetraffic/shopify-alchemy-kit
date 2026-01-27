@@ -262,12 +262,12 @@ export const ProductImageCarousel = () => {
         </Carousel>
         
         {/* Desktop Thumbnail Indicators */}
-        <div className="flex justify-center gap-2 mt-4">
+        <div className="flex gap-2 mt-4 max-w-full overflow-x-auto scrollbar-hide justify-start lg:justify-center px-1">
           {images.map((item, index) => (
             <button
               key={index}
               onClick={() => desktopApi?.scrollTo(index)}
-              className={`relative w-16 h-16 rounded-lg overflow-hidden transition-all ${
+              className={`relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 transition-all ${
                 desktopCurrent === index 
                   ? 'ring-2 ring-primary ring-offset-2' 
                   : 'opacity-60 hover:opacity-100'

@@ -236,7 +236,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
 
   return (
     <div 
-      className={`fixed bottom-0 left-0 right-0 z-[100] bg-background border-t shadow-lg ${
+      className={`fixed bottom-0 left-0 right-0 z-[100] bg-background border-t shadow-lg max-w-[100vw] overflow-x-clip ${
         isMobile
           ? `transition-opacity duration-200 ${shouldHide ? "opacity-0 pointer-events-none" : "opacity-100"}`
           : `transition-all duration-200 ${shouldHide ? "translate-y-full opacity-0 pointer-events-none" : "translate-y-0 opacity-100"}`
@@ -247,7 +247,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
           <div className="text-center text-sm text-muted-foreground">Loading...</div>
         ) : (
           <>
-            <div className="flex flex-row items-center justify-end gap-3 w-full">
+            <div className="flex flex-row flex-wrap items-center justify-between gap-3 w-full">
               {/* Product Info */}
               <div className="flex items-center gap-3">
                 <div className="hidden sm:block w-12 h-12 bg-secondary/30 rounded-lg overflow-hidden flex-shrink-0">
@@ -269,7 +269,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                     />
                   )}
                 </div>
-                <div className="text-left hidden sm:block">
+                <div className="text-left hidden sm:block min-w-0">
                   <h3 className="font-semibold text-sm line-clamp-1">
                     {product.node.title}
                   </h3>
@@ -284,7 +284,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
               </div>
 
               {/* Bundle Selection & Add to Cart */}
-              <div className="flex items-center gap-2 w-full sm:w-auto flex-nowrap justify-center sm:justify-end">
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-center sm:justify-end lg:flex-nowrap">
                 {/* Bundle Selector - Only show for sleep bundle, NOT pillows */}
                 {isSleepBundle && (
                   <div className="flex gap-2">
