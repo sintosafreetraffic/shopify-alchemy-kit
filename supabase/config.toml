@@ -405,3 +405,19 @@ verify_jwt = false
 # Get Approved Reviews - Public API for review syndication
 [functions.get-approved-reviews]
 verify_jwt = false
+
+# ============================================================
+# MISSING FUNCTION CONFIGS (Required for deployment)
+# ============================================================
+
+# Collective Notifications - Internal use for affiliate notifications
+[functions.collective-notifications]
+verify_jwt = false
+
+# Shopify Revenue Stats - Admin only (validates JWT internally)
+[functions.shopify-revenue-stats]
+verify_jwt = true
+
+# Sync Shopify Products - CRON or admin (validates CRON_SECRET internally)
+[functions.sync-shopify-products]
+verify_jwt = false
