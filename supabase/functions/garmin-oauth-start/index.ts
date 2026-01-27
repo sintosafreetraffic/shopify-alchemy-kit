@@ -224,7 +224,13 @@ Deno.serve(async (req) => {
       .map(k => `${encodeURIComponent(k)}="${encodeURIComponent(oauthParams[k])}"`)
       .join(', ');
     
-    log('info', 'Requesting OAuth 1.0a request token', { userId });
+    log('info', 'Requesting OAuth 1.0a request token', { 
+      userId,
+      requestTokenUrl,
+      callbackUrl,
+      hasConsumerKey: !!garminClientId,
+      consumerKeyLength: garminClientId?.length || 0,
+    });
     
     const requestTokenResponse = await fetch(requestTokenUrl, {
       method: 'POST',
@@ -233,21 +239,26 @@ Deno.serve(async (req) => {
       },
     });
     
+    const responseText = await requestTokenResponse.text();
+    
     if (!requestTokenResponse.ok) {
-      const errorText = await requestTokenResponse.text();
-      log('error', 'Failed to get request token', { 
+      log('error', 'Failed to get request token from Garmin', { 
         userId, 
         status: requestTokenResponse.status,
-        error: errorText.substring(0, 200),
+        statusText: requestTokenResponse.statusText,
+        errorBody: responseText.substring(0, 500),
+        authHeaderPreview: authHeaderValue.substring(0, 100) + '...',
       });
       return new Response(
-        JSON.stringify({ error: 'Failed to initiate Garmin OAuth' }),
+        JSON.stringify({ 
+          error: 'Failed to initiate Garmin OAuth',
+          details: `Garmin returned ${requestTokenResponse.status}: ${responseText.substring(0, 100)}`,
+        }),
         { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
-    // Parse response (form-urlencoded)
-    const responseText = await requestTokenResponse.text();
+    // Parse response (form-urlencoded) - responseText already read above
     const responseParams = new URLSearchParams(responseText);
     const requestToken = responseParams.get('oauth_token');
     const requestTokenSecret = responseParams.get('oauth_token_secret');
