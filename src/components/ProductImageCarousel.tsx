@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 // All images are already WebP format for optimal performance
 import pillowHeroNew from "@/assets/ergonomic-pillow-hero.webp";
-import pillowBundleNew from "@/assets/ergonomic-pillow-bundle.webp";
+import pillowBundleNew from "@/assets/pillow-male-mask-new.webp";
 import pillowDeeperSleep from "@/assets/pillow-deeper-sleep.webp";
 import pillowMaleModel from "@/assets/ergonomic-pillow-male-model.png";
 import pillowCoverMask from "@/assets/ergonomic-pillow-cover-mask.webp";
