@@ -58,19 +58,19 @@ export const ImageModal = ({ imageUrl, onClose, images, currentIndex = 0, onNavi
       onClick={onClose}
     >
       {/* Control buttons fixed to top right of viewport */}
-      <div className="fixed top-4 right-4 md:top-8 md:right-8 flex gap-2 z-[310]">
+      <div className="fixed top-4 right-4 md:top-8 md:right-8 flex gap-3 z-[310]">
         <button
           onClick={(e) => {
             e.stopPropagation();
             setIsZoomed(!isZoomed);
           }}
-          className="bg-white/90 rounded-full p-2 md:p-3 shadow-lg hover:bg-white transition-colors"
+          className="bg-white rounded-full p-3 md:p-3 shadow-xl hover:bg-gray-100 transition-colors"
           aria-label={isZoomed ? "Zoom out" : "Zoom in"}
         >
           {isZoomed ? (
-            <ZoomOut className="h-4 w-4 md:h-5 md:w-5 text-black" />
+            <ZoomOut className="h-6 w-6 md:h-5 md:w-5 text-black" />
           ) : (
-            <ZoomIn className="h-4 w-4 md:h-5 md:w-5 text-black" />
+            <ZoomIn className="h-6 w-6 md:h-5 md:w-5 text-black" />
           )}
         </button>
         <button
@@ -78,10 +78,10 @@ export const ImageModal = ({ imageUrl, onClose, images, currentIndex = 0, onNavi
             e.stopPropagation();
             onClose();
           }}
-          className="bg-white/90 rounded-full p-2 md:p-3 shadow-lg hover:bg-white transition-colors"
+          className="bg-white rounded-full p-3 md:p-3 shadow-xl hover:bg-gray-100 transition-colors"
           aria-label="Close"
         >
-          <X className="h-4 w-4 md:h-5 md:w-5 text-black" />
+          <X className="h-6 w-6 md:h-5 md:w-5 text-black stroke-[2.5]" />
         </button>
       </div>
 
