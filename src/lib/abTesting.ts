@@ -277,6 +277,68 @@ export function getSessionId(): string {
 }
 
 // ============================================================================
+// EXCLUDED EMAILS (Internal team filtering)
+// ============================================================================
+
+let cachedExcludedEmails: string[] | null = null;
+let excludedEmailsFetchPromise: Promise<string[]> | null = null;
+
+/**
+ * Check if current session belongs to an excluded team member
+ * Uses cached value to avoid repeated DB calls
+ */
+async function isInternalSession(): Promise<boolean> {
+  try {
+    // Get current user email
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.email) return false;
+    
+    const email = user.email.toLowerCase();
+    
+    // Use cached excluded emails if available
+    if (cachedExcludedEmails !== null) {
+      return cachedExcludedEmails.includes(email);
+    }
+    
+    // Fetch excluded emails (with deduplication)
+    if (!excludedEmailsFetchPromise) {
+      excludedEmailsFetchPromise = (async () => {
+        const { data, error } = await supabase
+          .from('app_settings')
+          .select('value')
+          .eq('key', 'ab_excluded_emails')
+          .single();
+        
+        if (error || !data?.value) {
+          cachedExcludedEmails = [];
+          return [];
+        }
+        
+        const emails = Array.isArray(data.value) 
+          ? data.value.filter((e): e is string => typeof e === 'string').map(e => e.toLowerCase())
+          : [];
+        cachedExcludedEmails = emails;
+        return emails;
+      })();
+    }
+    
+    const excludedEmails = await excludedEmailsFetchPromise;
+    return excludedEmails.includes(email);
+  } catch (e) {
+    console.warn('[ABTesting] Error checking internal session:', e);
+    return false;
+  }
+}
+
+/**
+ * Clear the cached excluded emails (call when settings change)
+ */
+export function clearExcludedEmailsCache(): void {
+  cachedExcludedEmails = null;
+  excludedEmailsFetchPromise = null;
+}
+
+// ============================================================================
 // EVENT TRACKING
 // ============================================================================
 
@@ -301,6 +363,7 @@ const trackedPageViews = new Set<string>();
  * Track an A/B test event to Supabase
  * Fire-and-forget, never blocks UI
  * Only page_view is deduplicated - add_to_cart can fire multiple times per session
+ * Internal team sessions are marked with is_internal: true in payload
  */
 export async function trackABEvent(params: TrackABEventParams): Promise<void> {
   const { eventName, revenue, payload = {} } = params;
@@ -318,8 +381,11 @@ export async function trackABEvent(params: TrackABEventParams): Promise<void> {
     trackedPageViews.add(pageDedupeKey);
   }
   
+  // Check if this is an internal team session (async, non-blocking for tracking)
+  const isInternal = await isInternalSession();
+  
   // Log for debugging
-  console.log(`[ABTesting] Tracking event: ${eventName} (Variant ${variant}, Session ${sessionId.slice(-8)})`);
+  console.log(`[ABTesting] Tracking event: ${eventName} (Variant ${variant}, Session ${sessionId.slice(-8)}${isInternal ? ', INTERNAL' : ''})`);
   const source = (payload as Record<string, unknown>).source || 'direct';
   
   try {
@@ -336,6 +402,7 @@ export async function trackABEvent(params: TrackABEventParams): Promise<void> {
           referrer: document.referrer || null,
           userAgent: navigator.userAgent,
           timestamp: new Date().toISOString(),
+          is_internal: isInternal,
         },
       });
     

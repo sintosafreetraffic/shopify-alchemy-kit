@@ -60,6 +60,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import FirstTestChecklist from './FirstTestChecklist';
 import EndTestDialog from './EndTestDialog';
+import ABTestSettings from './ABTestSettings';
 import { formatDistanceToNow } from 'date-fns';
 
 interface FunnelData {
@@ -1214,6 +1215,9 @@ export default function UrgencyTestsView() {
           </p>
         </CardContent>
       </Card>
+
+      {/* A/B Test Settings */}
+      <ABTestSettings onSettingsChange={fetchData} />
 
       {/* Key Metrics */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
