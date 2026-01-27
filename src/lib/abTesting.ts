@@ -59,13 +59,18 @@ export function setTestEnabled(enabled: boolean): void {
 /**
  * Set the traffic split percentage for Variant B (0-100) - saves to DATABASE
  * E.g., 70 means 70% to B, 30% to A
+ * 
+ * Updates BOTH:
+ * 1. app_settings (used by variant assignment logic)
+ * 2. ab_tests table (used by dashboard display)
  */
 export async function setTrafficSplit(percentB: number): Promise<void> {
   const clampedPercent = Math.max(0, Math.min(100, percentB));
   AB_TEST_CONFIG.splitPercentB = clampedPercent;
   
   try {
-    const { error } = await supabase
+    // 1. Update app_settings (primary source for variant assignment)
+    const { error: settingsError } = await supabase
       .from('app_settings')
       .upsert({ 
         key: 'ab_traffic_split_percent_b', 
@@ -73,11 +78,39 @@ export async function setTrafficSplit(percentB: number): Promise<void> {
         updated_at: new Date().toISOString()
       }, { onConflict: 'key' });
     
-    if (error) {
-      console.error('[ABTesting] Failed to save traffic split to database:', error);
-    } else {
-      console.log(`[ABTesting] Traffic split saved to database: ${100 - clampedPercent}% A / ${clampedPercent}% B`);
+    if (settingsError) {
+      console.error('[ABTesting] Failed to save traffic split to app_settings:', settingsError);
     }
+    
+    // 2. Update ab_tests table (for dashboard display)
+    // Find the most recent active/draft test and update its traffic_split
+    const { data: activeTest, error: fetchError } = await supabase
+      .from('ab_tests')
+      .select('id')
+      .in('status', ['active', 'draft', 'running'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+    
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      // PGRST116 = no rows found, which is fine
+      console.warn('[ABTesting] Could not fetch active test:', fetchError.message);
+    }
+    
+    if (activeTest) {
+      const { error: updateError } = await supabase
+        .from('ab_tests')
+        .update({ traffic_split: clampedPercent })
+        .eq('id', activeTest.id);
+      
+      if (updateError) {
+        console.error('[ABTesting] Failed to update ab_tests traffic_split:', updateError);
+      } else {
+        console.log(`[ABTesting] ab_tests.traffic_split updated for test ${activeTest.id}`);
+      }
+    }
+    
+    console.log(`[ABTesting] Traffic split saved: ${100 - clampedPercent}% A / ${clampedPercent}% B`);
   } catch (e) {
     console.error('[ABTesting] Error saving traffic split:', e);
   }
