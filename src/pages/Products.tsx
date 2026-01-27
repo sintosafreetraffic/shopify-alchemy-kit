@@ -7,10 +7,12 @@ import { formatPrice } from "@/lib/formatPrice";
 import { useIsEU } from "@/hooks/useCurrencySymbol";
 import { useSEO, SEO_CONFIGS } from "@/hooks/useSEO";
 import { BreadcrumbSchema } from "@/components/seo/SEOSchemas";
+import { getErgonomicPillowHandle, AB_PRODUCT_HANDLES } from "@/lib/abProductConfig";
 
 // Product handle to internal route mapping
 const PRODUCT_ROUTES: Record<string, string> = {
   "risebynight-ergonomic-sleep-pillow": "ergonomic-pillow",
+  "risebynight-ergonomic-sleep-pillow-copy": "ergonomic-pillow", // Variant B product
   "risebynight-ergonomic-knee-pillow": "knee-pillow",
   "risebynight-silk-sleep-mask": "sleep-mask",
   "risebynight-silk-deep-sleep-mask": "sleep-mask",
@@ -20,6 +22,7 @@ const PRODUCT_ROUTES: Record<string, string> = {
 // Static data for reviews (aligned with product pages)
 const PRODUCT_REVIEWS: Record<string, { rating: number; reviews: string; badge?: string }> = {
   "risebynight-ergonomic-sleep-pillow": { rating: 4.8, reviews: "6,247", badge: "Best Seller" },
+  "risebynight-ergonomic-sleep-pillow-copy": { rating: 4.8, reviews: "6,247", badge: "Best Seller" }, // Variant B
   "risebynight-ergonomic-knee-pillow": { rating: 4.7, reviews: "5,100+" },
   "risebynight-silk-sleep-mask": { rating: 4.9, reviews: "3,200+" },
   "risebynight-silk-deep-sleep-mask": { rating: 4.9, reviews: "3,200+" },
@@ -29,15 +32,17 @@ const PRODUCT_REVIEWS: Record<string, { rating: number; reviews: string; badge?:
 // Taglines for products
 const PRODUCT_TAGLINES: Record<string, string> = {
   "risebynight-ergonomic-sleep-pillow": "Clinically designed for cervical support",
+  "risebynight-ergonomic-sleep-pillow-copy": "Clinically designed for cervical support", // Variant B
   "risebynight-ergonomic-knee-pillow": "Perfect support for side sleepers",
   "risebynight-silk-sleep-mask": "100% Pure Mulberry Silk",
   "risebynight-silk-deep-sleep-mask": "100% Pure Mulberry Silk",
   "rise-by-night™-complete-sleep-bundle": "Pillow + Knee Pillow + Sleep Mask",
 };
 
-// Product display order (use actual Shopify handles)
-const PRODUCT_ORDER = [
-  "risebynight-ergonomic-sleep-pillow",
+// Build product order dynamically based on A/B variant
+// This function returns the correct order with the right ergonomic pillow handle
+const getProductOrder = (ergonomicHandle: string) => [
+  ergonomicHandle, // Use the A/B-selected product handle
   "risebynight-ergonomic-knee-pillow", 
   "risebynight-silk-deep-sleep-mask",
   "rise-by-night™-complete-sleep-bundle",
@@ -54,13 +59,17 @@ const Products = () => {
   const { data: shopifyProducts, isLoading } = useShopifyProducts(10);
   const isEU = useIsEU();
   
+  // Get the correct ergonomic pillow handle based on A/B variant
+  const ergonomicPillowHandle = getErgonomicPillowHandle();
+  
   const breadcrumbs = [
     { name: "Home", url: "/" },
     { name: "Products", url: "/products" },
   ];
 
-  // Filter and sort products based on our order
-  const sortedProducts = PRODUCT_ORDER
+  // Filter and sort products based on our order (using A/B-aware product handles)
+  const productOrder = getProductOrder(ergonomicPillowHandle);
+  const sortedProducts = productOrder
     .map(handle => {
       // Check for exact match first
       let product = shopifyProducts?.find(p => p.node.handle === handle);
