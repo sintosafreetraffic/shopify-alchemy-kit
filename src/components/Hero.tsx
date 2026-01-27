@@ -461,12 +461,13 @@ export const Hero = () => {
               </div>
             </div>
 
-            {/* Policy Accordion - Desktop Only (inside right column) */}
-            <div className="hidden md:block">
-              <PolicyAccordion />
-            </div>
 
           </div>
+        </div>
+        
+        {/* Policy Accordion - Full Width on Desktop */}
+        <div className="hidden md:block mt-8">
+          <PolicyAccordion />
         </div>
       </div>
       
