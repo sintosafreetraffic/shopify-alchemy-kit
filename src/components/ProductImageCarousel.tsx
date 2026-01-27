@@ -163,8 +163,14 @@ export const ProductImageCarousel = () => {
               </CarouselItem>
             ))}
           </CarouselContent>
-          <CarouselPrevious className="left-2" />
-          <CarouselNext className="right-2" />
+          <CarouselPrevious
+            variant="ghost"
+            className="left-2 !bg-transparent hover:!bg-transparent !border-0 !shadow-none"
+          />
+          <CarouselNext
+            variant="ghost"
+            className="right-2 !bg-transparent hover:!bg-transparent !border-0 !shadow-none"
+          />
         </Carousel>
         
         {/* Carousel Thumbnail Indicators */}
@@ -245,8 +251,14 @@ export const ProductImageCarousel = () => {
               </CarouselItem>
             ))}
           </CarouselContent>
-          <CarouselPrevious className="left-4 md:left-4 !bg-transparent hover:!bg-transparent !border-0 !shadow-none" />
-          <CarouselNext className="right-4 md:right-4 !bg-transparent hover:!bg-transparent !border-0 !shadow-none" />
+          <CarouselPrevious
+            variant="ghost"
+            className="left-4 md:left-4 !bg-transparent hover:!bg-transparent !border-0 !shadow-none"
+          />
+          <CarouselNext
+            variant="ghost"
+            className="right-4 md:right-4 !bg-transparent hover:!bg-transparent !border-0 !shadow-none"
+          />
         </Carousel>
         
         {/* Desktop Thumbnail Indicators */}
