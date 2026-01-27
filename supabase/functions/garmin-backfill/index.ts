@@ -1,14 +1,14 @@
 /**
  * Garmin Backfill Edge Function
  * 
- * Requests historical sleep data from Garmin after OAuth connection.
+ * Requests historical sleep data from Garmin Health API.
  * 
  * IMPORTANT: Garmin uses PUSH-based backfill:
- * 1. We POST to their backfill endpoint
+ * 1. We POST to their backfill endpoint with OAuth 1.0a signature
  * 2. Garmin sends historical data via webhook over next 1-4 hours
  * 3. garmin-webhook handles deduplication and storage
  * 
- * This is "fire and forget" - we just request the backfill and track status.
+ * This requires OAuth 1.0a tokens (access_token + token_secret).
  * 
  * POST /garmin-backfill
  * Body: { days?: number } (default 30, max 90)
@@ -25,7 +25,7 @@ const corsHeaders = {
 function log(level: 'info' | 'warn' | 'error', message: string, data?: Record<string, unknown>) {
   const safeData = data ? { ...data } : {};
   delete safeData.access_token;
-  delete safeData.refresh_token;
+  delete safeData.token_secret;
   
   const entry = {
     timestamp: new Date().toISOString(),
@@ -39,6 +39,33 @@ function log(level: 'info' | 'warn' | 'error', message: string, data?: Record<st
   } else {
     console.log(JSON.stringify(entry));
   }
+}
+
+// Create OAuth 1.0a signature
+async function createOAuthSignature(
+  method: string,
+  url: string,
+  params: Record<string, string>,
+  consumerSecret: string,
+  tokenSecret: string
+): Promise<string> {
+  const sortedParams = Object.keys(params).sort()
+    .map(k => `${encodeURIComponent(k)}=${encodeURIComponent(params[k])}`)
+    .join('&');
+  const baseString = `${method.toUpperCase()}&${encodeURIComponent(url)}&${encodeURIComponent(sortedParams)}`;
+  const signingKey = `${encodeURIComponent(consumerSecret)}&${encodeURIComponent(tokenSecret)}`;
+  
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(signingKey),
+    { name: 'HMAC', hash: 'SHA-1' },
+    false,
+    ['sign']
+  );
+  
+  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(baseString));
+  return btoa(String.fromCharCode(...new Uint8Array(signature)));
 }
 
 Deno.serve(async (req) => {
@@ -152,11 +179,26 @@ Deno.serve(async (req) => {
 
     const metadata = source.metadata as Record<string, unknown>;
     const accessToken = metadata?.access_token as string;
+    const tokenSecret = metadata?.token_secret as string;
+    const oauthVersion = metadata?.oauth_version as string;
 
     if (!accessToken) {
       log('error', 'No access token in Garmin source', { userId });
       return new Response(
         JSON.stringify({ error: 'Garmin authentication expired', code: 'TOKEN_MISSING' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check if we have OAuth 1.0a credentials (required for backfill)
+    if (!tokenSecret || oauthVersion === '2.0') {
+      log('warn', 'OAuth 2.0 connection - backfill requires OAuth 1.0a', { userId, oauthVersion });
+      return new Response(
+        JSON.stringify({ 
+          error: 'Historical data backfill requires reconnecting Garmin with full permissions. Go to Sleep Sources and reconnect your Garmin device.', 
+          code: 'OAUTH_UPGRADE_REQUIRED',
+          action: 'reconnect',
+        }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -169,26 +211,47 @@ Deno.serve(async (req) => {
     const startTimestamp = Math.floor(startDate.getTime() / 1000);
     const endTimestamp = Math.floor(endDate.getTime() / 1000);
 
-    // Request backfill from Garmin Health API
-    // Garmin's backfill endpoint: POST /wellness-api/rest/backfill/sleeps
-    const backfillUrl = 'https://healthapi.garmin.com/wellness-api/rest/backfill/sleeps';
+    // Request backfill from Garmin Health API using OAuth 1.0a
+    const backfillUrl = 'https://apis.garmin.com/wellness-api/rest/backfill/sleeps';
     
-    log('info', 'Calling Garmin backfill API', { 
+    log('info', 'Calling Garmin backfill API with OAuth 1.0a', { 
       userId, 
       startDate: startDate.toISOString().split('T')[0],
       endDate: endDate.toISOString().split('T')[0],
     });
 
-    const backfillResponse = await fetch(backfillUrl, {
+    // Build OAuth 1.0a signed request
+    const oauthParams: Record<string, string> = {
+      oauth_consumer_key: garminClientId,
+      oauth_token: accessToken,
+      oauth_signature_method: 'HMAC-SHA1',
+      oauth_timestamp: Math.floor(Date.now() / 1000).toString(),
+      oauth_nonce: crypto.randomUUID().replace(/-/g, ''),
+      oauth_version: '1.0',
+    };
+
+    const requestParams: Record<string, string> = {
+      summaryStartTimeInSeconds: startTimestamp.toString(),
+      summaryEndTimeInSeconds: endTimestamp.toString(),
+    };
+
+    const allParams = { ...oauthParams, ...requestParams };
+    const signature = await createOAuthSignature('POST', backfillUrl, allParams, garminClientSecret, tokenSecret);
+    oauthParams.oauth_signature = signature;
+
+    const authHeaderValue = 'OAuth ' + Object.keys(oauthParams)
+      .map(k => `${encodeURIComponent(k)}="${encodeURIComponent(oauthParams[k])}"`)
+      .join(', ');
+
+    const queryString = `summaryStartTimeInSeconds=${startTimestamp}&summaryEndTimeInSeconds=${endTimestamp}`;
+    const fullUrl = `${backfillUrl}?${queryString}`;
+
+    const backfillResponse = await fetch(fullUrl, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+        'Authorization': authHeaderValue,
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: JSON.stringify({
-        summaryStartTimeInSeconds: startTimestamp,
-        summaryEndTimeInSeconds: endTimestamp,
-      }),
     });
 
     if (!backfillResponse.ok) {
@@ -196,7 +259,7 @@ Deno.serve(async (req) => {
       log('error', 'Garmin backfill request failed', { 
         userId, 
         status: backfillResponse.status,
-        error: errorText.substring(0, 200), // Truncate for safety
+        error: errorText.substring(0, 200),
       });
 
       // Persist failure status
@@ -222,15 +285,23 @@ Deno.serve(async (req) => {
         );
       }
 
-      // 502 with HTML usually means the Health API isn't accessible with Connect OAuth tokens
-      if (backfillResponse.status === 502 || (backfillResponse.status >= 500 && errorText.includes('<!DOCTYPE'))) {
-        log('warn', 'Health API not accessible - may require separate Health API partnership', { userId });
+      if (backfillResponse.status === 412) {
         return new Response(
           JSON.stringify({ 
-            error: 'Garmin Health API access not available. Sleep data will sync automatically when you sleep with your device.', 
-            code: 'HEALTH_API_UNAVAILABLE' 
+            error: 'Missing Garmin permissions. Please reconnect and grant all requested permissions.', 
+            code: 'MISSING_PERMISSIONS' 
           }),
-          { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (backfillResponse.status === 429) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Too many requests. Please wait a few minutes and try again.', 
+            code: 'RATE_LIMITED' 
+          }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
@@ -240,12 +311,15 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Parse response (Garmin returns job info)
+    // Parse response (Garmin returns job info or empty on success)
     let backfillData: { jobId?: string } = {};
+    const responseText = await backfillResponse.text();
     try {
-      backfillData = await backfillResponse.json();
+      if (responseText) {
+        backfillData = JSON.parse(responseText);
+      }
     } catch {
-      // Some endpoints return empty body on success
+      // Some endpoints return empty body on 202 Accepted
     }
 
     // Update source with backfill request timestamp and clear any previous error
@@ -264,6 +338,7 @@ Deno.serve(async (req) => {
     log('info', 'Backfill requested successfully', { 
       userId, 
       days,
+      status: backfillResponse.status,
       jobId: backfillData.jobId,
     });
 

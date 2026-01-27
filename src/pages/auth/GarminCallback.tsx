@@ -13,6 +13,7 @@ const errorMessages: Record<string, string> = {
   session_invalid: "Your connection session is invalid. Please try again.",
   nonce_mismatch: "Security validation failed. Please try again.",
   token_exchange_failed: "Failed to complete authorization with Garmin. Please try again.",
+  token_mismatch: "OAuth token mismatch. Please try again.",
   invalid_token_response: "Received an invalid response from Garmin. Please try again.",
   missing_access_token: "Garmin did not provide access credentials. Please try again.",
   storage_failed: "Failed to save your connection. Please try again.",
