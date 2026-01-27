@@ -1,11 +1,11 @@
 /**
- * Ergonomic Pillow Product Page - Variant B (Price Test: Pillow Only at €59.99)
+ * Ergonomic Pillow Product Page - Variant B (Price Test: €59.99 Pillow Only)
  * 
- * Identical to Variant A except:
- * - Uses "Pillow Only" variant at €59.99
- * - NO sleep mask included
+ * Uses a SEPARATE Shopify product (handle: risebynight-ergonomic-sleep-pillow-copy)
+ * at €59.99 with NO sleep mask included. The product selection is handled
+ * site-wide via useABErgonomicPillow hook and abProductConfig.ts.
  * 
- * This tests whether a lower price without the mask converts better.
+ * Traffic split is controlled via ab_traffic_split_percent_b in app_settings.
  */
 
 import { Suspense, lazy, useState } from "react";
@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { ReviewsWall, ReviewSubmissionForm } from "@/components/reviews";
 import { ReviewsSection } from "@/components/ReviewsSection";
-import { useShopifyProducts } from "@/hooks/useShopifyProducts";
+import { useABErgonomicPillow } from "@/hooks/useABProduct";
 import { useCartStore } from "@/stores/cartStore";
 import { useSEO, SEO_CONFIGS } from "@/hooks/useSEO";
 import { ProductSchema } from "@/components/seo/SEOSchemas";
@@ -56,10 +56,9 @@ const QuizCTA = ({ variant = "default" }: { variant?: "default" | "subtle" }) =>
   </div>
 );
 
-// Inline CTA Component - captures users mid-page (uses "Pillow Only" variant)
+// Inline CTA Component - captures users mid-page (uses A/B-aware product)
 const InlineCTA = () => {
-  const { data: products } = useShopifyProducts(1);
-  const product = products?.[0] || null;
+  const { product } = useABErgonomicPillow();
   const { addItem, setCartOpen } = useCartStore();
   const [isAdding, setIsAdding] = useState(false);
 
@@ -67,11 +66,8 @@ const InlineCTA = () => {
     if (!product) return;
     setIsAdding(true);
     try {
-      // Find "Pillow Only" variant for Variant B
-      const pillowOnlyVariant = product.node.variants.edges.find(
-        (edge: any) => edge.node.title === "Pillow Only"
-      )?.node;
-      const variant = pillowOnlyVariant || product.node.variants.edges[0].node;
+      // Product is already A/B-aware, just use first variant
+      const variant = product.node.variants.edges[0].node;
       
       addItem({
         product,

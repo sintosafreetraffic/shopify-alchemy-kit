@@ -4,6 +4,7 @@ import { useCartStore } from "@/stores/cartStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useSleepMaskColorStore } from "@/stores/sleepMaskColorStore";
 import { fetchProducts } from "@/lib/shopify";
+import { getErgonomicPillowHandle } from "@/lib/abProductConfig";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import { ShoppingCart, Loader2, Plus, Minus, Check } from "lucide-react";
@@ -64,7 +65,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
   useEffect(() => {
     const loadProduct = async () => {
       try {
-        const products = await fetchProducts(10);
+        const products = await fetchProducts(20);
         let selectedProduct: ShopifyProduct | undefined;
         
         if (productType === "knee-pillow") {
@@ -74,10 +75,17 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
         } else if (productType === "sleep-bundle") {
           selectedProduct = products.find(p => p.node.title.toLowerCase().includes('bundle'));
         } else {
-          selectedProduct = products.find(p => 
-            p.node.title.toLowerCase().includes('ergonomic') && 
-            !p.node.title.toLowerCase().includes('knee')
-          );
+          // Ergonomic pillow: use A/B-aware product handle
+          const targetHandle = getErgonomicPillowHandle();
+          selectedProduct = products.find(p => p.node.handle === targetHandle);
+          
+          // Fallback to any ergonomic pillow if specific handle not found
+          if (!selectedProduct) {
+            selectedProduct = products.find(p => 
+              p.node.title.toLowerCase().includes('ergonomic') && 
+              !p.node.title.toLowerCase().includes('knee')
+            );
+          }
         }
         
         if (selectedProduct) {
@@ -127,17 +135,9 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
         })?.node;
         itemQuantity = quantity;
       } else if (isErgonomicPillow) {
-        // Ergonomic pillow: Check A/B variant - Variant B uses "Pillow Only" at €59.99
-        const abVariant = getCurrentVariant();
-        if (abVariant === 'B') {
-          // Find "Pillow Only" variant for Variant B
-          variant = product.node.variants.edges.find(
-            v => v.node.title === "Pillow Only"
-          )?.node || product.node.variants.edges[0].node;
-        } else {
-          // Variant A: Default Title (with mask bundle)
-          variant = product.node.variants.edges[0].node;
-        }
+        // Ergonomic pillow: Product is already A/B-aware (loaded via getErgonomicPillowHandle)
+        // Just use the first variant of whatever product was loaded
+        variant = product.node.variants.edges[0].node;
         itemQuantity = 1;
       } else if (isKneePillow) {
         // Knee pillow: always single quantity (no more 1+1)
@@ -190,22 +190,13 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
     }
   };
 
-  // Get A/B variant for price/description adjustments
+  // Get A/B variant for description text
   const abVariant = getCurrentVariant();
   const isVariantB = abVariant === 'B';
   
   // Get price and currency from product data
-  // For Variant B ergonomic pillow, use "Pillow Only" variant price
-  const getErgonomicVariant = () => {
-    if (isVariantB && isErgonomicPillow) {
-      const pillowOnlyVariant = product?.node.variants.edges.find(
-        v => v.node.title === "Pillow Only"
-      )?.node;
-      return pillowOnlyVariant || product?.node.variants.edges[0]?.node;
-    }
-    return product?.node.variants.edges[0]?.node;
-  };
-  const productVariant = isErgonomicPillow ? getErgonomicVariant() : product?.node.variants.edges[0]?.node;
+  // Product is already A/B-aware (loaded via getErgonomicPillowHandle for ergonomic pillow)
+  const productVariant = product?.node.variants.edges[0]?.node;
   const shopifyCurrency = productVariant?.price.currencyCode || 'USD';
   // Override to EUR for EU countries if Shopify returns USD
   const currencyCode = (isEU && shopifyCurrency === 'USD') ? 'EUR' : shopifyCurrency;

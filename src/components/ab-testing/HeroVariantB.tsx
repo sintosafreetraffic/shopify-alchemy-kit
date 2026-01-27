@@ -1,8 +1,7 @@
 /**
  * Hero Section - Variant B (Price Test: Pillow Only at €59.99)
  * 
- * Identical to Variant A (Hero.tsx) except:
- * - Uses "Pillow Only" variant at €59.99
+ * Uses a SEPARATE Shopify product for the €59.99 pillow-only offer.
  * - NO sleep mask included
  * - Simplified "Included" section (pillow cover only)
  */
@@ -11,10 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Check, Shield, Moon, Truck, Loader2, Star, ImageIcon, ChevronDown } from "lucide-react";
 import { PaymentIcons } from "@/components/PaymentIcons";
 import { PolicyAccordion } from "@/components/PolicyAccordion";
-import { useState, useEffect, useRef, Suspense, lazy, useMemo } from "react";
+import { useState, useEffect, useRef, Suspense, lazy } from "react";
 import { useCartStore } from "@/stores/cartStore";
-import { useShopifyProducts } from "@/hooks/useShopifyProducts";
-import type { ShopifyProduct } from "@/lib/shopify";
+import { useABErgonomicPillow } from "@/hooks/useABProduct";
 import { toast } from "sonner";
 import { trackPageVisit } from "@/lib/pinterest";
 import { trackViewContent as trackMetaViewContent } from "@/lib/meta-pixel";
@@ -39,9 +37,6 @@ const CarouselFallback = () => (
   </div>
 );
 
-// VARIANT B CONFIG: Use the "Pillow Only" variant
-const VARIANT_B_VARIANT_TITLE = "Pillow Only";
-
 export const HeroVariantB = () => {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { addItem, setCartOpen } = useCartStore();
@@ -49,20 +44,11 @@ export const HeroVariantB = () => {
   const headerHeight = useHeaderHeight();
   const isEU = useIsEU();
 
-  // Use centralized cached product data
-  const { data: products, isLoading: productsLoading } = useShopifyProducts(10);
-  const product = products?.[0] || null;
+  // Use A/B-aware product hook - automatically selects correct product for Variant B
+  const { product, config, isLoading: productsLoading } = useABErgonomicPillow();
   
-  // Find the "Pillow Only" variant for Variant B
-  const pillowOnlyVariant = useMemo(() => {
-    if (!product?.node.variants.edges) return null;
-    return product.node.variants.edges.find(
-      (edge: any) => edge.node.title === VARIANT_B_VARIANT_TITLE
-    )?.node || null;
-  }, [product]);
-  
-  // Fallback to first variant if "Pillow Only" not found
-  const variant = pillowOnlyVariant || product?.node.variants.edges[0]?.node;
+  // Get the first variant (Variant B product only has one variant)
+  const variant = product?.node.variants.edges[0]?.node;
 
   // Track product view once when product is loaded
   useEffect(() => {
