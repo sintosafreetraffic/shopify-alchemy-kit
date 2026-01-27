@@ -8,6 +8,7 @@ import { trackAddedToCart as trackKlaviyoAddToCart, trackStartedCheckout as trac
 import { trackRevenueAttribution } from '@/lib/personaAnalytics';
 import { trackAddToCartEvent } from '@/lib/addToCartAnalytics';
 import { trackABEvent } from '@/lib/abTesting';
+import { variantIncludesMask, getVariantDiscountCodes } from '@/lib/abProductConfig';
 
 export interface CartItem {
   product: ShopifyProduct;
@@ -259,10 +260,13 @@ export const useCartStore = create<CartStore>()(
           
           const totalErgonomicPillows = ergonomicPillowItems.reduce((sum, item) => sum + item.quantity, 0);
           
+          // Check if current A/B variant includes free masks
+          const includesMask = variantIncludesMask();
+          
           // Calculate free masks:
-          // - Ergonomic pillow: 1 mask per pillow (included with each)
-          // - Knee pillow: NO free masks included
-          const freeMaskCount = totalErgonomicPillows;
+          // - Only if variant includes masks (Variant A does, Variant B doesn't)
+          // - 1 mask per ergonomic pillow
+          const freeMaskCount = includesMask ? totalErgonomicPillows : 0;
           
           // Get the selected mask variants from state
           const { freeMaskSelections } = get();
@@ -270,17 +274,10 @@ export const useCartStore = create<CartStore>()(
           // Use selected variants, or empty array if none selected
           const freeMaskVariants = freeMaskSelections.slice(0, freeMaskCount);
           
-          // Determine which discount codes to apply
-          const discountCodes: string[] = [];
+          // Determine which discount codes to apply based on A/B variant
+          const discountCodes = getVariantDiscountCodes(totalErgonomicPillows > 0);
           
-          // Add mask discount for ergonomic pillows
-          if (totalErgonomicPillows > 0) {
-            discountCodes.push('FREEMASKSERGONOMIC');
-          }
-          
-          // Knee pillows no longer include free masks
-          
-          // Add free mask discount if applicable
+          // Add free mask discount if applicable (only for Variant A)
           if (freeMaskCount > 0) {
             discountCodes.push('FREEMASKSFORYOU');
           }
