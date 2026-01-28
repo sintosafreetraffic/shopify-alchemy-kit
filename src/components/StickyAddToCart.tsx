@@ -21,7 +21,7 @@ import sleepMaskGold from "@/assets/sleep-mask-gold.webp";
 import sleepMaskSilver from "@/assets/sleep-mask-silver.webp";
 import sleepMaskBlack from "@/assets/sleep-mask-black.webp";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { getCurrentVariant } from "@/lib/abTesting";
+// A/B test concluded - always using pillow-only (Variant B)
 
 const colors = [
   { name: "Navy", value: "navy", hex: "#1e3a8a", image: sleepMaskNavy },
@@ -190,9 +190,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
     }
   };
 
-  // Get A/B variant for description text
-  const abVariant = getCurrentVariant();
-  const isVariantB = abVariant === 'B';
+  // A/B test concluded - always Variant B (pillow only)
   
   // Get price and currency from product data
   // Product is already A/B-aware (loaded via getErgonomicPillowHandle for ergonomic pillow)
@@ -201,7 +199,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
   // Override to EUR for EU countries if Shopify returns USD
   const currencyCode = (isEU && shopifyCurrency === 'USD') ? 'EUR' : shopifyCurrency;
   const productPrice = isErgonomicPillow 
-    ? parseFloat(productVariant?.price.amount || (isVariantB ? "59.99" : "79.99")) 
+    ? parseFloat(productVariant?.price.amount || "59.99")
     : isKneePillow 
       ? parseFloat(productVariant?.price.amount || "39.99") 
       : (product ? parseFloat(product.node.variants.edges[0].node.price.amount) : 129.99);
@@ -277,7 +275,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                     {isSleepBundle
                       ? `${selectedBundle === "1" ? "Single" : "Double"} Bundle`
                       : isPillowProduct
-                        ? (isVariantB && isErgonomicPillow ? "1 Pillow" : "1 Pillow + Sleep Mask Included")
+                        ? "1 Pillow"
                         : "Sleep Mask"}
                   </p>
                 </div>

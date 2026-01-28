@@ -169,7 +169,7 @@ export const Hero = () => {
 
   // Get product price from Shopify data
   const variant = product?.node.variants.edges[0]?.node;
-  const productPrice = variant ? parseFloat(variant.price.amount) : 79.99;
+  const productPrice = variant ? parseFloat(variant.price.amount) : 59.99;
   const shopifyCurrency = variant?.price.currencyCode || 'USD';
   // Override to EUR for EU countries if Shopify returns USD
   const currencyCode = (isEU && shopifyCurrency === 'USD') ? 'EUR' : shopifyCurrency;

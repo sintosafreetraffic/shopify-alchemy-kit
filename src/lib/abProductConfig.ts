@@ -8,26 +8,29 @@
 import { getCurrentVariant, getOrAssignVariant } from './abTesting';
 
 // Product handles for each variant
+// NOTE: A/B test concluded – now permanently using Variant B (€59.99 pillow only)
+// Both handles point to the pillow-only product for backward compatibility
 export const AB_PRODUCT_HANDLES = {
-  A: 'risebynight-ergonomic-sleep-pillow', // Original: €79.99 + free mask
-  B: 'risebynight-ergonomic-sleep-pillow-copy', // Variant B: €59.99, pillow only
+  A: 'risebynight-ergonomic-sleep-pillow-copy', // Permanent: €59.99, pillow only
+  B: 'risebynight-ergonomic-sleep-pillow-copy', // Permanent: €59.99, pillow only
 } as const;
 
 // Product configuration per variant
+// NOTE: A/B test concluded – both variants now use pillow-only config
 export const AB_PRODUCT_CONFIG = {
   A: {
-    handle: 'risebynight-ergonomic-sleep-pillow',
-    includesMask: true,
-    price: 79.99,
-    description: '1 Pillow + Sleep Mask Included',
-    discountCode: 'FREEMASKSERGONOMIC',
+    handle: 'risebynight-ergonomic-sleep-pillow-copy',
+    includesMask: false,
+    price: 59.99,
+    description: '1 Pillow',
+    discountCode: null,
   },
   B: {
     handle: 'risebynight-ergonomic-sleep-pillow-copy',
     includesMask: false,
     price: 59.99,
     description: '1 Pillow',
-    discountCode: null, // No mask discount needed
+    discountCode: null,
   },
 } as const;
 
