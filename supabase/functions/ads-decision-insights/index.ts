@@ -457,10 +457,10 @@ Aggression is earned. Silence is better than noise.
 // ============================================================================
 
 async function generateInsights(data: AdsDataInput): Promise<AIInsightsResponse> {
-  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
   
-  if (!LOVABLE_API_KEY) {
-    throw new Error("LOVABLE_API_KEY is not configured");
+  if (!OPENAI_API_KEY) {
+    throw new Error("OPENAI_API_KEY is not configured");
   }
 
   // Use configurable break-even ROAS (default: 1.54)
@@ -762,14 +762,14 @@ ${data.timeseries.slice(-7).map(e =>
 Provide your analysis as a JSON object with "insights" array and "summary" string.
 IMPORTANT: Include specific recommendations for individual ads/creatives when entity data is provided. Identify which specific ads to kill, scale, or test based on their relative performance.`;
 
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
+      Authorization: `Bearer ${OPENAI_API_KEY}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
+      model: "gpt-4o",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
