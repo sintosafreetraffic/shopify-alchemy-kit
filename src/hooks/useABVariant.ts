@@ -45,14 +45,24 @@ interface UseABVariantReturn {
 export function useABVariant(): UseABVariantReturn {
   // Get variant immediately (synchronous, from cookie/localStorage)
   // This ensures no flicker - variant is known before first render
-  const [variant] = useState<ABVariant>(() => getOrAssignVariant());
+  const [variant, setVariant] = useState<ABVariant>(() => getOrAssignVariant());
   const [isReady, setIsReady] = useState(false);
 
-  // Set Clarity tag on mount
+  // Re-evaluate variant after traffic split is loaded from database
+  // This ensures users who had Variant A are reassigned to B when split is 100%
   useEffect(() => {
-    setClarityVariantTag();
-    setIsReady(true);
-  }, []);
+    // Small delay to allow fetchTrafficSplitFromDB() to complete
+    const timer = setTimeout(() => {
+      const updatedVariant = getOrAssignVariant();
+      if (updatedVariant !== variant) {
+        setVariant(updatedVariant);
+      }
+      setClarityVariantTag();
+      setIsReady(true);
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Memoized track function
   const trackEvent = useCallback(
