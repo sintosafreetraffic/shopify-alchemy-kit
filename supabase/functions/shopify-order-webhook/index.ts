@@ -299,12 +299,17 @@ async function joinPinterestContext(
       // Match signals (consent-gated)
       client_ip_address: context.consent_status === 'granted' ? context.client_ip_address : null,
       client_user_agent: context.consent_status === 'granted' ? context.client_user_agent : null,
+      // Meta cookies fallback - critical for CAPI match quality
+      meta_fbc: attribution.meta_fbc || context.meta_fbc || null,
+      meta_fbp: attribution.meta_fbp || context.meta_fbp || null,
     };
     
     console.log('[Pinterest] Attribution merged:', {
       has_epik: !!merged.pinterest_click_id,
       has_ip: !!merged.client_ip_address,
       has_ua: !!merged.client_user_agent,
+      has_meta_fbc: !!merged.meta_fbc,
+      has_meta_fbp: !!merged.meta_fbp,
       epik_source: attribution.pinterest_click_id ? 'order' : (context.epik ? 'context' : 'none'),
     });
     

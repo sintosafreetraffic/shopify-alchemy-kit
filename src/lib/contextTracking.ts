@@ -196,15 +196,10 @@ export async function captureContext(): Promise<void> {
       utm_content: attribution.utm_content || undefined,
       utm_term: attribution.utm_term || undefined,
       referrer: typeof document !== 'undefined' ? document.referrer || undefined : undefined,
+      // Meta cookies for server-side CAPI enrichment
+      meta_fbc: attribution.fbc || undefined,
+      meta_fbp: attribution.fbp || undefined,
     };
-    
-    console.log('[ContextTracking] Sending context:', {
-      context_id: contextId,
-      consent_status: consentStatus,
-      has_epik: !!epik,
-      has_utm_source: !!attribution.utm_source,
-    });
-    
     // Get Supabase URL from env
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     if (!supabaseUrl) {

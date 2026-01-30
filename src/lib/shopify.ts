@@ -358,11 +358,9 @@ export async function createStorefrontCheckout(
     const attributionAttributes = getPinterestAttributionData();
     if (attributionAttributes.length > 0) {
       cartInput.attributes = attributionAttributes;
-      console.log('[Shopify] Attribution attached:', attributionAttributes.map(a => a.key));
     }
-  } catch (attrError) {
+  } catch {
     // Log but continue - attribution failure must not block checkout
-    console.warn('[Shopify] Attribution capture failed (non-blocking):', attrError);
   }
 
   // Create cart with discount codes in single API call (with buyer context for localized pricing)

@@ -102,6 +102,9 @@ interface TrackContextPayload {
   // PII fields - will be hashed at ingestion, never stored raw
   email?: string;
   phone?: string;
+  // Meta (Facebook) cookies for server-side CAPI enrichment
+  meta_fbc?: string;
+  meta_fbp?: string;
 }
 
 serve(async (req: Request): Promise<Response> => {
@@ -148,6 +151,8 @@ serve(async (req: Request): Promise<Response> => {
       has_utm_source: !!payload.utm_source,
       has_ip: !!clientIp,
       has_ua: !!clientUa,
+      has_meta_fbc: !!payload.meta_fbc,
+      has_meta_fbp: !!payload.meta_fbp,
     });
     
     // Get service role client for bypassing RLS
@@ -206,6 +211,14 @@ serve(async (req: Request): Promise<Response> => {
     // LAST-TOUCH epik: overwrite if provided and different
     if (payload.epik) {
       upsertData.epik = payload.epik;
+    }
+    
+    // LAST-TOUCH Meta cookies: overwrite if provided (latest click takes precedence)
+    if (payload.meta_fbc) {
+      upsertData.meta_fbc = payload.meta_fbc;
+    }
+    if (payload.meta_fbp) {
+      upsertData.meta_fbp = payload.meta_fbp;
     }
     
     // ========================================================================
