@@ -76,7 +76,34 @@ function getCookie(name: string): string | null {
 }
 
 /**
+ * Get the parent domain for cross-subdomain cookie sharing
+ * e.g., .risebynight.com from checkout.risebynight.com
+ */
+function getParentDomain(): string | null {
+  try {
+    const hostname = window.location.hostname;
+    // Skip domain attribute for localhost or IP addresses
+    if (hostname === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+      return null;
+    }
+    // For lovable.app preview domains, skip domain attribute
+    if (hostname.includes('lovable.app')) {
+      return null;
+    }
+    // Extract parent domain (e.g., .risebynight.com)
+    const parts = hostname.split('.');
+    if (parts.length >= 2) {
+      return '.' + parts.slice(-2).join('.');
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Safely set a cookie with proper attributes
+ * Uses parent domain for cross-subdomain sharing (checkout.risebynight.com can read cookies)
  */
 function setCookie(name: string, value: string, maxAgeDays: number): void {
   try {
@@ -84,9 +111,11 @@ function setCookie(name: string, value: string, maxAgeDays: number): void {
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + maxAgeDays);
     const secure = window.location.protocol === 'https:' ? '; Secure' : '';
-    document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expiryDate.toUTCString()}; path=/; SameSite=Lax${secure}`;
-  } catch (e) {
-    console.warn('[Attribution] Cookie write failed:', e);
+    const parentDomain = getParentDomain();
+    const domainAttr = parentDomain ? `; domain=${parentDomain}` : '';
+    document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expiryDate.toUTCString()}; path=/${domainAttr}; SameSite=Lax${secure}`;
+  } catch {
+    // Silent fail - tracking must not break page
   }
 }
 
@@ -111,8 +140,8 @@ function setStorageIfEmpty(key: string, value: string): void {
     if (!localStorage.getItem(key)) {
       localStorage.setItem(key, value);
     }
-  } catch (e) {
-    console.warn('[Attribution] localStorage write failed:', e);
+  } catch {
+    // Silent fail - tracking must not break page
   }
 }
 
@@ -123,8 +152,8 @@ function setStorage(key: string, value: string): void {
   try {
     if (typeof localStorage === 'undefined') return;
     localStorage.setItem(key, value);
-  } catch (e) {
-    console.warn('[Attribution] localStorage write failed:', e);
+  } catch {
+    // Silent fail - tracking must not break page
   }
 }
 
@@ -148,7 +177,6 @@ export function captureAttribution(): void {
       // Always update epik (latest click takes precedence for Pinterest)
       setCookie(EPIK_COOKIE_NAME, epik, COOKIE_MAX_AGE_DAYS);
       setStorage(EPIK_STORAGE_KEY, epik);
-      console.log('[Attribution] Pinterest click ID captured:', epik);
     }
     
     // =========================================================================
@@ -163,7 +191,6 @@ export function captureAttribution(): void {
         const constructedFbc = `fb.1.${Date.now()}.${fbclid}`;
         setCookie(META_FBC_COOKIE, constructedFbc, META_COOKIE_MAX_AGE_DAYS);
         setStorage(META_FBC_STORAGE_KEY, constructedFbc);
-        console.log('[Attribution] Meta _fbc constructed from fbclid:', constructedFbc);
       }
     }
     
@@ -181,7 +208,6 @@ export function captureAttribution(): void {
     const gclid = urlParams.get('gclid');
     if (gclid) {
       setStorageIfEmpty(GCLID_STORAGE_KEY, gclid);
-      console.log('[Attribution] Google Click ID captured:', gclid);
     }
     
     // Capture affiliate referral code (first-touch: don't overwrite)
@@ -193,14 +219,12 @@ export function captureAttribution(): void {
       if (typeof sessionStorage !== 'undefined') {
         sessionStorage.setItem('referral_code', refCode);
       }
-      console.log('[Attribution] Affiliate referral code captured:', refCode);
     }
     
     // Capture landing page (first-touch only)
     const existingLanding = getStorage(LANDING_PAGE_KEY);
     if (!existingLanding) {
       setStorage(LANDING_PAGE_KEY, window.location.href);
-      console.log('[Attribution] Landing page captured:', window.location.href);
     }
     
     // Capture UTMs (first-touch only)
@@ -216,13 +240,11 @@ export function captureAttribution(): void {
     const tblsPageId = urlParams.get('tbls_page') || urlParams.get('tbls_page_id');
     if (tblsPageId) {
       setStorageIfEmpty(TBLS_PAGE_ID_KEY, tblsPageId);
-      console.log('[Attribution] TBLS page ID captured:', tblsPageId);
     }
     
     const tblsPinId = urlParams.get('tbls_pin') || urlParams.get('tbls_pin_id');
     if (tblsPinId) {
       setStorageIfEmpty(TBLS_PIN_ID_KEY, tblsPinId);
-      console.log('[Attribution] TBLS pin ID captured:', tblsPinId);
     }
     
     const tblsTemplate = urlParams.get('tbls_template');
@@ -239,9 +261,8 @@ export function captureAttribution(): void {
     if (tblsCategory) {
       setStorageIfEmpty(TBLS_CATEGORY_KEY, tblsCategory);
     }
-  } catch (e) {
+  } catch {
     // Never throw - tracking failures must be silent
-    console.warn('[Attribution] Capture failed:', e);
   }
 }
 
@@ -375,7 +396,6 @@ export function getAttributionForCheckout(): Array<{ key: string; value: string 
     // This enables 40-60% of affiliate-attributable sales
     if (attribution.ref_code) {
       attributes.push({ key: 'rbn_ref_code', value: attribution.ref_code });
-      console.log('[Attribution] Affiliate ref_code added to checkout:', attribution.ref_code);
     }
     
     if (attribution.epik) {

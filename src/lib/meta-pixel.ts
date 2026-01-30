@@ -32,7 +32,7 @@ function isMetaPixelReady(): boolean {
  */
 function safeFbq(command: string, eventName: string, params?: Record<string, any>): boolean {
   if (!isMetaPixelReady()) {
-    console.log('[Meta Pixel] Not ready, event will be queued by fbq:', eventName);
+    // fbq queues events if not ready - just return false to skip local logging
     return false;
   }
   
@@ -43,8 +43,7 @@ function safeFbq(command: string, eventName: string, params?: Record<string, any
       window.fbq!(command, eventName);
     }
     return true;
-  } catch (error) {
-    console.error('[Meta Pixel] Error tracking event:', eventName, error);
+  } catch {
     return false;
   }
 }
@@ -81,10 +80,7 @@ export function trackViewContent(
     currency: currency,
   };
   
-  const success = safeFbq('track', 'ViewContent', params);
-  if (success) {
-    console.log('[Meta Pixel] ViewContent tracked', { productId: extractProductId(productId), productName, value });
-  }
+  safeFbq('track', 'ViewContent', params);
 }
 
 /**
@@ -99,7 +95,6 @@ export function trackAddToCart(
 ): void {
   // Validate value
   if (typeof value !== 'number' || isNaN(value) || value <= 0) {
-    console.warn('[Meta Pixel] AddToCart blocked - invalid value:', { value, productId });
     return;
   }
 
@@ -112,10 +107,7 @@ export function trackAddToCart(
     num_items: quantity,
   };
   
-  const success = safeFbq('track', 'AddToCart', params);
-  if (success) {
-    console.log('[Meta Pixel] AddToCart tracked', { productId: extractProductId(productId), productName, value, quantity });
-  }
+  safeFbq('track', 'AddToCart', params);
 }
 
 /**
@@ -148,10 +140,7 @@ export function trackInitiateCheckout(
     num_items: totalQuantity,
   };
   
-  const success = safeFbq('track', 'InitiateCheckout', params);
-  if (success) {
-    console.log('[Meta Pixel] InitiateCheckout tracked', { contentIds, totalValue, totalQuantity });
-  }
+  safeFbq('track', 'InitiateCheckout', params);
 }
 
 /**
@@ -159,20 +148,14 @@ export function trackInitiateCheckout(
  */
 export function trackLead(email?: string): void {
   // Note: We don't send the actual email to Meta, just fire the event
-  const success = safeFbq('track', 'Lead');
-  if (success) {
-    console.log('[Meta Pixel] Lead tracked');
-  }
+  safeFbq('track', 'Lead');
 }
 
 /**
  * Track CompleteRegistration event - when a user completes account registration
  */
 export function trackCompleteRegistration(): void {
-  const success = safeFbq('track', 'CompleteRegistration');
-  if (success) {
-    console.log('[Meta Pixel] CompleteRegistration tracked');
-  }
+  safeFbq('track', 'CompleteRegistration');
 }
 
 /**
@@ -183,8 +166,5 @@ export function trackSearch(searchQuery: string): void {
     search_string: searchQuery,
   };
   
-  const success = safeFbq('track', 'Search', params);
-  if (success) {
-    console.log('[Meta Pixel] Search tracked', { searchQuery });
-  }
+  safeFbq('track', 'Search', params);
 }

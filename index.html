@@ -160,11 +160,31 @@
                  params.get('utm_medium') === 'cpc' && (params.get('utm_source') || '').includes('facebook');
         }
         
+        // Get the parent domain for cross-subdomain cookie sharing
+        // e.g., risebynight.com from checkout.risebynight.com
+        function getParentDomain() {
+          try {
+            var hostname = window.location.hostname;
+            // If we're on localhost or IP, skip domain attribute
+            if (hostname === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+              return null;
+            }
+            // Extract parent domain (e.g., .risebynight.com)
+            var parts = hostname.split('.');
+            if (parts.length >= 2) {
+              return '.' + parts.slice(-2).join('.');
+            }
+            return null;
+          } catch(e) { return null; }
+        }
+        
         // Extract fbclid from URL and construct _fbc if cookie is missing
         function captureMetaCookies() {
           try {
             var params = new URLSearchParams(window.location.search);
             var fbclid = params.get('fbclid');
+            var parentDomain = getParentDomain();
+            var domainAttr = parentDomain ? '; domain=' + parentDomain : '';
             
             // Read existing cookies
             var existingFbc = document.cookie.match(/(^| )_fbc=([^;]+)/);
@@ -174,11 +194,10 @@
             // Format: fb.1.{timestamp_ms}.{fbclid}
             if (fbclid && !existingFbc) {
               var fbc = 'fb.1.' + Date.now() + '.' + fbclid;
-              // Set cookie with 90 day expiry (Meta standard)
+              // Set cookie with 90 day expiry, cross-subdomain (Meta standard)
               var expiry = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toUTCString();
               var secure = window.location.protocol === 'https:' ? '; Secure' : '';
-              document.cookie = '_fbc=' + encodeURIComponent(fbc) + '; expires=' + expiry + '; path=/; SameSite=Lax' + secure;
-              console.log('[Meta] Constructed _fbc from fbclid:', fbc);
+              document.cookie = '_fbc=' + encodeURIComponent(fbc) + '; expires=' + expiry + '; path=/' + domainAttr + '; SameSite=Lax' + secure;
             }
             
             // Persist to localStorage as fallback (cross-session recovery)
@@ -195,9 +214,7 @@
             // Store for React consumption
             window.__metaFbc = fbc || null;
             window.__metaFbp = fbp || null;
-          } catch(e) {
-            console.warn('[Meta] Cookie capture failed:', e);
-          }
+          } catch(e) { /* Silent fail - tracking must not break page */ }
         }
         
         // Load Meta Pixel immediately (for Facebook traffic or when called later)
@@ -209,10 +226,10 @@
           fbq('init', '1419388323215799');
           fbq('track', 'PageView');
           
-          console.log('[Meta] Pixel loaded', isFacebookTraffic() ? '(immediate - Facebook traffic)' : '(deferred)');
-          
           // Re-capture cookies after pixel initializes (pixel may set _fbp)
+          // Two recaptures: 500ms for fast devices, 2000ms for slow devices
           setTimeout(captureMetaCookies, 500);
+          setTimeout(captureMetaCookies, 2000);
         }
         
         function loadDeferredScripts() {

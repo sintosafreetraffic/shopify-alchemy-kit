@@ -2219,6 +2219,8 @@ export type Database = {
           expires_at: string
           id: string
           landing_page: string | null
+          meta_fbc: string | null
+          meta_fbp: string | null
           phone_hash: string | null
           referrer: string | null
           updated_at: string
@@ -2239,6 +2241,8 @@ export type Database = {
           expires_at: string
           id?: string
           landing_page?: string | null
+          meta_fbc?: string | null
+          meta_fbp?: string | null
           phone_hash?: string | null
           referrer?: string | null
           updated_at?: string
@@ -2259,6 +2263,8 @@ export type Database = {
           expires_at?: string
           id?: string
           landing_page?: string | null
+          meta_fbc?: string | null
+          meta_fbp?: string | null
           phone_hash?: string | null
           referrer?: string | null
           updated_at?: string
