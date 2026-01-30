@@ -208,17 +208,17 @@ export async function captureContext(): Promise<void> {
     }
     
     // Fire and forget - don't await to avoid blocking
+    // Use keepalive to ensure request completes during navigation
     fetch(`${supabaseUrl}/functions/v1/track-context`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
+      keepalive: true,
     })
       .then((response) => {
-        if (response.ok) {
-          console.log('[ContextTracking] ✅ Context captured successfully');
-        } else {
+        if (!response.ok) {
           console.warn('[ContextTracking] Response not ok:', response.status);
         }
       })
@@ -289,17 +289,17 @@ export async function captureContextOnConsentChange(options?: { bypassRateLimit?
     }
     
     // Fire and forget - don't await to avoid blocking UI
+    // Use keepalive to ensure request completes during navigation
     fetch(`${supabaseUrl}/functions/v1/track-context`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
+      keepalive: true,
     })
       .then((response) => {
-        if (response.ok) {
-          console.log('[ContextTracking] ✅ Consent change context captured');
-        } else {
+        if (!response.ok) {
           console.warn('[ContextTracking] Consent change capture response not ok:', response.status);
         }
       })
@@ -353,17 +353,18 @@ export async function captureEmail(email: string): Promise<void> {
       return;
     }
     
-    // Fire and forget
+    // Fire and forget with keepalive
     fetch(`${supabaseUrl}/functions/v1/track-context`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
+      keepalive: true,
     })
       .then((response) => {
-        if (response.ok) {
-          console.log('[ContextTracking] ✅ Email captured for CAPI enrichment');
+        if (!response.ok) {
+          console.warn('[ContextTracking] Email capture response not ok:', response.status);
         }
       })
       .catch((error) => {
@@ -373,6 +374,10 @@ export async function captureEmail(email: string): Promise<void> {
     console.warn('[ContextTracking] captureEmail error:', e);
   }
 }
+
+// Track if Meta cookies have been successfully synced to DB
+let metaCookiesSynced = false;
+let fbpPollingInterval: ReturnType<typeof setInterval> | null = null;
 
 /**
  * Initialize context tracking on app load
@@ -386,34 +391,138 @@ export function initializeContextTracking(): void {
     // Capture context on init
     captureContext();
     
-    // DELAYED RECAPTURE: Meta cookies (_fbp especially) may not be available
-    // until after the pixel loads (5s for non-Facebook traffic).
-    // Schedule additional captures to sync Meta cookies to DB.
-    setTimeout(() => {
-      const attribution = getAttribution();
-      if (attribution.fbc || attribution.fbp) {
-        console.log('[ContextTracking] Delayed Meta cookie sync...');
-        captureMetaCookiesOnly();
-      }
-    }, 3000);
+    // EVENT-DRIVEN META COOKIE SYNC
+    // 1. If fbclid exists in URL, _fbc was already constructed - sync immediately
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasFbclid = urlParams.has('fbclid');
     
-    setTimeout(() => {
-      const attribution = getAttribution();
-      if (attribution.fbc || attribution.fbp) {
-        console.log('[ContextTracking] Second delayed Meta cookie sync...');
-        captureMetaCookiesOnly();
-      }
-    }, 7000);
+    if (hasFbclid) {
+      // _fbc should already be constructed by attribution.ts - sync now
+      syncMetaCookiesImmediate('fbclid_present');
+    }
+    
+    // 2. Start polling for _fbp (created after pixel loads)
+    startFbpPolling();
+    
+    // 3. Listen for fbq initialization (event-driven backup)
+    listenForPixelLoad();
+    
   } catch (e) {
     console.warn('[ContextTracking] init error:', e);
   }
 }
 
 /**
- * Lightweight capture specifically for Meta cookies
- * Called after delays to ensure _fbp/_fbc make it to the DB
+ * Sync Meta cookies to DB immediately (for fbclid cases)
  */
-async function captureMetaCookiesOnly(): Promise<void> {
+function syncMetaCookiesImmediate(reason: string): void {
+  const attribution = getAttribution();
+  if (attribution.fbc) {
+    captureMetaCookiesOnly(reason);
+  }
+}
+
+/**
+ * Poll for _fbp cookie availability (created after pixel loads)
+ * Stops once _fbp is found and synced, or after max attempts
+ */
+function startFbpPolling(): void {
+  if (metaCookiesSynced) return;
+  
+  let attempts = 0;
+  const maxAttempts = 15; // ~15 seconds max
+  const pollInterval = 1000; // Check every 1s
+  
+  fbpPollingInterval = setInterval(() => {
+    attempts++;
+    
+    const attribution = getAttribution();
+    
+    // Found _fbp - sync and stop
+    if (attribution.fbp) {
+      captureMetaCookiesOnly('fbp_found');
+      metaCookiesSynced = true;
+      if (fbpPollingInterval) {
+        clearInterval(fbpPollingInterval);
+        fbpPollingInterval = null;
+      }
+      return;
+    }
+    
+    // Also sync if we have _fbc but haven't synced yet
+    if (attribution.fbc && !metaCookiesSynced) {
+      captureMetaCookiesOnly('fbc_found_during_poll');
+    }
+    
+    // Max attempts reached
+    if (attempts >= maxAttempts) {
+      if (fbpPollingInterval) {
+        clearInterval(fbpPollingInterval);
+        fbpPollingInterval = null;
+      }
+      // Final sync attempt with whatever we have
+      if ((attribution.fbc || attribution.fbp) && !metaCookiesSynced) {
+        captureMetaCookiesOnly('max_attempts_final');
+        metaCookiesSynced = true;
+      }
+    }
+  }, pollInterval);
+}
+
+/**
+ * Listen for Meta Pixel initialization (fbq ready)
+ * Triggers sync when pixel is loaded
+ */
+function listenForPixelLoad(): void {
+  if (typeof window === 'undefined') return;
+  
+  // Check if fbq is already loaded
+  if (typeof (window as any).fbq === 'function') {
+    // Pixel already loaded - check for cookies after short delay
+    setTimeout(() => {
+      if (!metaCookiesSynced) {
+        const attribution = getAttribution();
+        if (attribution.fbc || attribution.fbp) {
+          captureMetaCookiesOnly('fbq_already_loaded');
+          metaCookiesSynced = true;
+        }
+      }
+    }, 500);
+    return;
+  }
+  
+  // Watch for fbq to become available
+  let checkCount = 0;
+  const maxChecks = 20; // 10 seconds
+  const fbqWatcher = setInterval(() => {
+    checkCount++;
+    
+    if (typeof (window as any).fbq === 'function') {
+      clearInterval(fbqWatcher);
+      // Pixel just loaded - cookies should be available soon
+      setTimeout(() => {
+        if (!metaCookiesSynced) {
+          const attribution = getAttribution();
+          if (attribution.fbc || attribution.fbp) {
+            captureMetaCookiesOnly('fbq_loaded');
+            metaCookiesSynced = true;
+          }
+        }
+      }, 500);
+    }
+    
+    if (checkCount >= maxChecks) {
+      clearInterval(fbqWatcher);
+    }
+  }, 500);
+}
+
+/**
+ * Lightweight capture specifically for Meta cookies
+ * Called when _fbc/_fbp become available
+ * Uses keepalive: true to survive navigation to checkout
+ */
+async function captureMetaCookiesOnly(reason?: string): Promise<void> {
   try {
     if (typeof window === 'undefined') return;
     
@@ -437,10 +546,12 @@ async function captureMetaCookiesOnly(): Promise<void> {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     if (!supabaseUrl) return;
     
+    // Use keepalive to ensure request completes even during navigation
     fetch(`${supabaseUrl}/functions/v1/track-context`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
+      keepalive: true,
     }).catch(() => {});
   } catch {
     // Silent fail
