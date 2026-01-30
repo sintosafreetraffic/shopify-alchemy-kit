@@ -385,7 +385,64 @@ export function initializeContextTracking(): void {
     
     // Capture context on init
     captureContext();
+    
+    // DELAYED RECAPTURE: Meta cookies (_fbp especially) may not be available
+    // until after the pixel loads (5s for non-Facebook traffic).
+    // Schedule additional captures to sync Meta cookies to DB.
+    setTimeout(() => {
+      const attribution = getAttribution();
+      if (attribution.fbc || attribution.fbp) {
+        console.log('[ContextTracking] Delayed Meta cookie sync...');
+        captureMetaCookiesOnly();
+      }
+    }, 3000);
+    
+    setTimeout(() => {
+      const attribution = getAttribution();
+      if (attribution.fbc || attribution.fbp) {
+        console.log('[ContextTracking] Second delayed Meta cookie sync...');
+        captureMetaCookiesOnly();
+      }
+    }, 7000);
   } catch (e) {
     console.warn('[ContextTracking] init error:', e);
+  }
+}
+
+/**
+ * Lightweight capture specifically for Meta cookies
+ * Called after delays to ensure _fbp/_fbc make it to the DB
+ */
+async function captureMetaCookiesOnly(): Promise<void> {
+  try {
+    if (typeof window === 'undefined') return;
+    
+    const contextId = getContextId();
+    if (!contextId) return;
+    
+    const attribution = getAttribution();
+    
+    // Only proceed if we have Meta cookies to sync
+    if (!attribution.fbc && !attribution.fbp) return;
+    
+    const consentStatus = getConsentStatus();
+    
+    const payload = {
+      context_id: contextId,
+      consent_status: consentStatus,
+      meta_fbc: attribution.fbc || undefined,
+      meta_fbp: attribution.fbp || undefined,
+    };
+    
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    if (!supabaseUrl) return;
+    
+    fetch(`${supabaseUrl}/functions/v1/track-context`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }).catch(() => {});
+  } catch {
+    // Silent fail
   }
 }

@@ -90,11 +90,12 @@ function getParentDomain(): string | null {
     if (hostname.includes('lovable.app')) {
       return null;
     }
-    // Extract parent domain (e.g., .risebynight.com)
-    const parts = hostname.split('.');
-    if (parts.length >= 2) {
-      return '.' + parts.slice(-2).join('.');
+    // HARDCODED: Production domain for cross-subdomain cookie sharing
+    // This ensures checkout.risebynight.com can read cookies set on risebynight.com
+    if (hostname.endsWith('risebynight.com')) {
+      return '.risebynight.com';
     }
+    // For any other domain, omit domain attribute (safer than wrong domain)
     return null;
   } catch {
     return null;
