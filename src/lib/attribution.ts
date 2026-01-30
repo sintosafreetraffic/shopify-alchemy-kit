@@ -268,13 +268,22 @@ export function captureAttribution(): void {
 }
 
 /**
- * Check if URL contains Pinterest attribution params
+ * Check if URL contains attribution params (Pinterest, Meta, Google)
+ * Used to trigger context sync when new attribution arrives
  */
 export function hasAttributionParams(): boolean {
   try {
     if (typeof window === 'undefined') return false;
     const urlParams = new URLSearchParams(window.location.search);
-    return !!(urlParams.get('_ep') || urlParams.get('epik'));
+    return !!(
+      // Pinterest click IDs
+      urlParams.get('_ep') || 
+      urlParams.get('epik') ||
+      // Meta (Facebook) click ID
+      urlParams.get('fbclid') ||
+      // Google click ID
+      urlParams.get('gclid')
+    );
   } catch {
     return false;
   }
