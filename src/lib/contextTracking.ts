@@ -375,8 +375,9 @@ export async function captureEmail(email: string): Promise<void> {
   }
 }
 
-// Track if Meta cookies have been successfully synced to DB
-let metaCookiesSynced = false;
+// Track Meta cookie sync status separately
+let fbcSynced = false;
+let fbpSynced = false;
 let fbpPollingInterval: ReturnType<typeof setInterval> | null = null;
 
 /**
@@ -392,17 +393,26 @@ export function initializeContextTracking(): void {
     captureContext();
     
     // EVENT-DRIVEN META COOKIE SYNC
-    // 1. If fbclid exists in URL, _fbc was already constructed - sync immediately
+    // 1. If fbclid exists in URL, sync _fbc after short delay (cookie construction may be async)
     const urlParams = new URLSearchParams(window.location.search);
     const hasFbclid = urlParams.has('fbclid');
     
     if (hasFbclid) {
-      // _fbc should already be constructed by attribution.ts - sync now
-      syncMetaCookiesImmediate('fbclid_present');
+      // Wait 100ms for attribution.ts to construct _fbc cookie, then sync
+      setTimeout(() => {
+        syncFbcImmediate('fbclid_present');
+      }, 100);
+      
+      // Also retry at 500ms in case of slower execution
+      setTimeout(() => {
+        if (!fbcSynced) {
+          syncFbcImmediate('fbclid_present_retry');
+        }
+      }, 500);
     }
     
-    // 2. Start polling for _fbp (created after pixel loads)
-    startFbpPolling();
+    // 2. Start polling for _fbp (created after pixel loads) and late _fbc
+    startMetaCookiePolling();
     
     // 3. Listen for fbq initialization (event-driven backup)
     listenForPixelLoad();
@@ -413,21 +423,24 @@ export function initializeContextTracking(): void {
 }
 
 /**
- * Sync Meta cookies to DB immediately (for fbclid cases)
+ * Sync _fbc to DB immediately (for fbclid cases)
  */
-function syncMetaCookiesImmediate(reason: string): void {
+function syncFbcImmediate(reason: string): void {
+  if (fbcSynced) return;
+  
   const attribution = getAttribution();
   if (attribution.fbc) {
     captureMetaCookiesOnly(reason);
+    fbcSynced = true;
   }
 }
 
 /**
- * Poll for _fbp cookie availability (created after pixel loads)
- * Stops once _fbp is found and synced, or after max attempts
+ * Poll for Meta cookies availability
+ * Tracks fbp and fbc separately - stops only when both synced or max attempts
  */
-function startFbpPolling(): void {
-  if (metaCookiesSynced) return;
+function startMetaCookiePolling(): void {
+  if (fbcSynced && fbpSynced) return;
   
   let attempts = 0;
   const maxAttempts = 15; // ~15 seconds max
@@ -437,21 +450,32 @@ function startFbpPolling(): void {
     attempts++;
     
     const attribution = getAttribution();
+    let shouldSync = false;
     
-    // Found _fbp - sync and stop
-    if (attribution.fbp) {
-      captureMetaCookiesOnly('fbp_found');
-      metaCookiesSynced = true;
+    // Check for _fbp
+    if (attribution.fbp && !fbpSynced) {
+      fbpSynced = true;
+      shouldSync = true;
+    }
+    
+    // Check for _fbc (may appear late even without fbclid)
+    if (attribution.fbc && !fbcSynced) {
+      fbcSynced = true;
+      shouldSync = true;
+    }
+    
+    // Sync if we found new cookies
+    if (shouldSync) {
+      captureMetaCookiesOnly('polling_found');
+    }
+    
+    // Stop if both synced
+    if (fbcSynced && fbpSynced) {
       if (fbpPollingInterval) {
         clearInterval(fbpPollingInterval);
         fbpPollingInterval = null;
       }
       return;
-    }
-    
-    // Also sync if we have _fbc but haven't synced yet
-    if (attribution.fbc && !metaCookiesSynced) {
-      captureMetaCookiesOnly('fbc_found_during_poll');
     }
     
     // Max attempts reached
@@ -461,9 +485,8 @@ function startFbpPolling(): void {
         fbpPollingInterval = null;
       }
       // Final sync attempt with whatever we have
-      if ((attribution.fbc || attribution.fbp) && !metaCookiesSynced) {
+      if (attribution.fbc || attribution.fbp) {
         captureMetaCookiesOnly('max_attempts_final');
-        metaCookiesSynced = true;
       }
     }
   }, pollInterval);
@@ -480,13 +503,7 @@ function listenForPixelLoad(): void {
   if (typeof (window as any).fbq === 'function') {
     // Pixel already loaded - check for cookies after short delay
     setTimeout(() => {
-      if (!metaCookiesSynced) {
-        const attribution = getAttribution();
-        if (attribution.fbc || attribution.fbp) {
-          captureMetaCookiesOnly('fbq_already_loaded');
-          metaCookiesSynced = true;
-        }
-      }
+      syncAfterPixelLoad('fbq_already_loaded');
     }, 500);
     return;
   }
@@ -501,13 +518,7 @@ function listenForPixelLoad(): void {
       clearInterval(fbqWatcher);
       // Pixel just loaded - cookies should be available soon
       setTimeout(() => {
-        if (!metaCookiesSynced) {
-          const attribution = getAttribution();
-          if (attribution.fbc || attribution.fbp) {
-            captureMetaCookiesOnly('fbq_loaded');
-            metaCookiesSynced = true;
-          }
-        }
+        syncAfterPixelLoad('fbq_loaded');
       }, 500);
     }
     
@@ -515,6 +526,28 @@ function listenForPixelLoad(): void {
       clearInterval(fbqWatcher);
     }
   }, 500);
+}
+
+/**
+ * Sync cookies after pixel loads (checks for any unsynced cookies)
+ */
+function syncAfterPixelLoad(reason: string): void {
+  const attribution = getAttribution();
+  let shouldSync = false;
+  
+  if (attribution.fbc && !fbcSynced) {
+    fbcSynced = true;
+    shouldSync = true;
+  }
+  
+  if (attribution.fbp && !fbpSynced) {
+    fbpSynced = true;
+    shouldSync = true;
+  }
+  
+  if (shouldSync) {
+    captureMetaCookiesOnly(reason);
+  }
 }
 
 /**
