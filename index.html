@@ -161,19 +161,23 @@
         }
         
         // Get the parent domain for cross-subdomain cookie sharing
-        // e.g., risebynight.com from checkout.risebynight.com
+        // HARDCODED for production to avoid issues with co.uk, com.au, etc.
         function getParentDomain() {
           try {
             var hostname = window.location.hostname;
-            // If we're on localhost or IP, skip domain attribute
+            // Skip for localhost or IP addresses
             if (hostname === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
               return null;
             }
-            // Extract parent domain (e.g., .risebynight.com)
-            var parts = hostname.split('.');
-            if (parts.length >= 2) {
-              return '.' + parts.slice(-2).join('.');
+            // Skip for lovable.app preview domains
+            if (hostname.indexOf('lovable.app') !== -1) {
+              return null;
             }
+            // HARDCODED: Production domain for cross-subdomain cookies
+            if (hostname.indexOf('risebynight.com') !== -1) {
+              return '.risebynight.com';
+            }
+            // For any other domain, omit domain attribute (safer)
             return null;
           } catch(e) { return null; }
         }
