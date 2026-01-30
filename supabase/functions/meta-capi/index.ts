@@ -113,9 +113,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const eventData: MetaPurchaseEventData = await req.json();
 
-    // Generate unique event_id for deduplication
-    // This should match format used client-side for proper deduplication
-    const eventId = `purchase_${eventData.order_id}_${Date.now()}`;
+    // Generate stable event_id for deduplication
+    // CRITICAL: Use order_id only (no timestamp) to allow dedup with browser-side events
+    const eventId = `purchase_${eventData.order_id}`;
     const eventTime = Math.floor(Date.now() / 1000);
 
     console.log("[Meta CAPI] Processing purchase:", {

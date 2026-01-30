@@ -22,6 +22,10 @@ const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'ut
 const META_FBC_COOKIE = '_fbc';  // Click ID from ad clicks
 const META_FBP_COOKIE = '_fbp';  // Browser ID (persistent)
 
+// Meta localStorage fallback keys (for cross-session recovery)
+const META_FBC_STORAGE_KEY = 'meta_fbc';
+const META_FBP_STORAGE_KEY = 'meta_fbp';
+
 // Google Click ID storage key
 const GCLID_STORAGE_KEY = 'google_gclid';
 
@@ -32,8 +36,9 @@ const TBLS_TEMPLATE_KEY = 'tbls_template';
 const TBLS_SUBDOMAIN_KEY = 'tbls_subdomain';
 const TBLS_CATEGORY_KEY = 'tbls_category';
 
-// Cookie expiry: 30 days
+// Cookie expiry: 30 days for most, 90 days for Meta (per their standard)
 const COOKIE_MAX_AGE_DAYS = 30;
+const META_COOKIE_MAX_AGE_DAYS = 90;
 
 export interface Attribution {
   epik: string | null;
@@ -146,6 +151,32 @@ export function captureAttribution(): void {
       console.log('[Attribution] Pinterest click ID captured:', epik);
     }
     
+    // =========================================================================
+    // META (FACEBOOK) COOKIE CAPTURE - CRITICAL FOR MATCH QUALITY
+    // =========================================================================
+    // Capture fbclid from URL and construct _fbc if cookie missing
+    const fbclid = urlParams.get('fbclid');
+    if (fbclid) {
+      const existingFbc = getCookie(META_FBC_COOKIE);
+      if (!existingFbc) {
+        // Construct _fbc in Meta's format: fb.1.{timestamp_ms}.{fbclid}
+        const constructedFbc = `fb.1.${Date.now()}.${fbclid}`;
+        setCookie(META_FBC_COOKIE, constructedFbc, META_COOKIE_MAX_AGE_DAYS);
+        setStorage(META_FBC_STORAGE_KEY, constructedFbc);
+        console.log('[Attribution] Meta _fbc constructed from fbclid:', constructedFbc);
+      }
+    }
+    
+    // Always capture current Meta cookies to localStorage (for cross-session recovery)
+    const currentFbc = getCookie(META_FBC_COOKIE);
+    const currentFbp = getCookie(META_FBP_COOKIE);
+    if (currentFbc) {
+      setStorage(META_FBC_STORAGE_KEY, currentFbc);
+    }
+    if (currentFbp) {
+      setStorage(META_FBP_STORAGE_KEY, currentFbp);
+    }
+    
     // Capture Google Click ID (gclid) from URL params
     const gclid = urlParams.get('gclid');
     if (gclid) {
@@ -242,9 +273,14 @@ export function getAttribution(): Attribution {
       refCode = sessionStorage.getItem('referral_code');
     }
     
-    // Meta cookies - these are set by Meta Pixel and needed for server-side matching
-    const fbc = getCookie(META_FBC_COOKIE);
-    const fbp = getCookie(META_FBP_COOKIE);
+    // Meta cookies - prefer cookie, fallback to localStorage for cross-session recovery
+    // Also check window globals set by early script in index.html
+    const fbc = getCookie(META_FBC_COOKIE) || 
+                getStorage(META_FBC_STORAGE_KEY) || 
+                (typeof window !== 'undefined' ? (window as any).__metaFbc : null);
+    const fbp = getCookie(META_FBP_COOKIE) || 
+                getStorage(META_FBP_STORAGE_KEY) || 
+                (typeof window !== 'undefined' ? (window as any).__metaFbp : null);
     
     // Google Click ID from localStorage
     const gclid = getStorage(GCLID_STORAGE_KEY);

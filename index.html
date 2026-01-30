@@ -142,10 +142,79 @@
       !function(){if(!window.klaviyo){window._klOnsite=window._klOnsite||[];try{window.klaviyo=new Proxy({},{get:function(n,i){return"push"===i?function(){var n;(n=window._klOnsite).push.apply(n,arguments)}:function(){for(var n=arguments.length,o=new Array(n),w=0;w<n;w++)o[w]=arguments[w];var t="function"==typeof o[o.length-1]?o.pop():void 0,e=new Promise(function(n){window._klOnsite.push([i].concat(o,[function(i){t&&t(i),n(i)}]))});return e}}})}catch(n){window.klaviyo=window.klaviyo||[],window.klaviyo.push=function(){var n;(n=window._klOnsite).push.apply(n,arguments)}}}}();
     </script>
     
-    <!-- Third-party scripts deferred until first user interaction for better TTI -->
+    <!-- Third-party scripts: Meta Pixel loads immediately for Facebook traffic, others deferred -->
     <script type="text/javascript">
       (function() {
         var scriptsLoaded = false;
+        var metaPixelLoaded = false;
+        
+        // Check if this is Facebook/Meta traffic that needs immediate pixel loading
+        function isFacebookTraffic() {
+          var params = new URLSearchParams(window.location.search);
+          // Load immediately if: fbclid present OR utm_source=facebook OR utm_medium=paid_social
+          return params.has('fbclid') || 
+                 params.get('utm_source') === 'facebook' ||
+                 params.get('utm_source') === 'fb' ||
+                 params.get('utm_source') === 'meta' ||
+                 params.get('utm_medium') === 'paid_social' ||
+                 params.get('utm_medium') === 'cpc' && (params.get('utm_source') || '').includes('facebook');
+        }
+        
+        // Extract fbclid from URL and construct _fbc if cookie is missing
+        function captureMetaCookies() {
+          try {
+            var params = new URLSearchParams(window.location.search);
+            var fbclid = params.get('fbclid');
+            
+            // Read existing cookies
+            var existingFbc = document.cookie.match(/(^| )_fbc=([^;]+)/);
+            var existingFbp = document.cookie.match(/(^| )_fbp=([^;]+)/);
+            
+            // If fbclid exists in URL but _fbc cookie doesn't exist, construct it
+            // Format: fb.1.{timestamp_ms}.{fbclid}
+            if (fbclid && !existingFbc) {
+              var fbc = 'fb.1.' + Date.now() + '.' + fbclid;
+              // Set cookie with 90 day expiry (Meta standard)
+              var expiry = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toUTCString();
+              var secure = window.location.protocol === 'https:' ? '; Secure' : '';
+              document.cookie = '_fbc=' + encodeURIComponent(fbc) + '; expires=' + expiry + '; path=/; SameSite=Lax' + secure;
+              console.log('[Meta] Constructed _fbc from fbclid:', fbc);
+            }
+            
+            // Persist to localStorage as fallback (cross-session recovery)
+            var fbc = existingFbc ? existingFbc[2] : document.cookie.match(/(^| )_fbc=([^;]+)/)?.[2];
+            var fbp = existingFbp ? existingFbp[2] : null;
+            
+            if (fbc && typeof localStorage !== 'undefined') {
+              localStorage.setItem('meta_fbc', fbc);
+            }
+            if (fbp && typeof localStorage !== 'undefined') {
+              localStorage.setItem('meta_fbp', fbp);
+            }
+            
+            // Store for React consumption
+            window.__metaFbc = fbc || null;
+            window.__metaFbp = fbp || null;
+          } catch(e) {
+            console.warn('[Meta] Cookie capture failed:', e);
+          }
+        }
+        
+        // Load Meta Pixel immediately (for Facebook traffic or when called later)
+        function loadMetaPixel() {
+          if (metaPixelLoaded) return;
+          metaPixelLoaded = true;
+          
+          !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+          fbq('init', '1419388323215799');
+          fbq('track', 'PageView');
+          
+          console.log('[Meta] Pixel loaded', isFacebookTraffic() ? '(immediate - Facebook traffic)' : '(deferred)');
+          
+          // Re-capture cookies after pixel initializes (pixel may set _fbp)
+          setTimeout(captureMetaCookies, 500);
+        }
+        
         function loadDeferredScripts() {
           if (scriptsLoaded) return;
           scriptsLoaded = true;
@@ -168,10 +237,8 @@
           pintrk('load', '2612541212823');
           pintrk('page');
           
-          // Meta Pixel
-          !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
-          fbq('init', '1419388323215799');
-          fbq('track', 'PageView');
+          // Load Meta Pixel if not already loaded (for non-Facebook traffic)
+          loadMetaPixel();
           
           // Google Ads (gtag.js)
           var gtagScript = document.createElement('script');
@@ -189,7 +256,15 @@
           window.removeEventListener('touchstart', loadDeferredScripts);
         }
         
-        // Load on first user interaction OR after 5s timeout (whichever comes first)
+        // Capture Meta cookies IMMEDIATELY on page load (before any deferral)
+        captureMetaCookies();
+        
+        // If Facebook traffic: load Meta Pixel immediately, defer others
+        if (isFacebookTraffic()) {
+          loadMetaPixel();
+        }
+        
+        // Load other scripts on first user interaction OR after 5s timeout
         window.addEventListener('scroll', loadDeferredScripts, { passive: true, once: true });
         window.addEventListener('click', loadDeferredScripts, { once: true });
         window.addEventListener('touchstart', loadDeferredScripts, { passive: true, once: true });
