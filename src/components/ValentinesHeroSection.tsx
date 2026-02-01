@@ -36,8 +36,9 @@ export const ValentinesHeroSection = ({
   // Dynamic pricing based on Shopify product price
   const singlePrice = productPrice; // €119.99 from Shopify
   const couplesDealPrice = productPrice; // €119.99 selling price for 2
-  const regularTwoPrice = productPrice * 2; // €239.98 for 2 at regular price
-  const savings = regularTwoPrice - couplesDealPrice; // €119.99 savings
+  const singleCompareAtPrice = 199.99; // Regular single pillow price
+  const regularTwoPrice = singleCompareAtPrice * 2; // €399.98 for 2 at regular price
+  const savings = regularTwoPrice - couplesDealPrice; // €279.99 savings
 
   const handleAdd = () => {
     if (selectedQuantity === 2) {
