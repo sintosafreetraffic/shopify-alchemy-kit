@@ -712,8 +712,19 @@ export const CartDrawer = () => {
                         {/* Price + Quantity row */}
                         <div className="flex items-center justify-between gap-2 mt-2">
                           <div className="flex flex-col min-w-0 flex-shrink">
-                          {/* Simple price display - no more BOGO discounts */}
-                            {getItemCompareAtPrice(item) ? (
+                          {/* Valentine's 1+1 Deal pricing for ergonomic pillows */}
+                            {valentinesOffer.isActive && 
+                             item.product.node.title.toLowerCase().includes('ergonomic sleep pillow') && 
+                             item.quantity >= 2 ? (
+                              <>
+                                <span className="text-xs text-muted-foreground line-through whitespace-nowrap">
+                                  {formatPrice(getItemPrice(item) * item.quantity, cartCurrency)}
+                                </span>
+                                <span className="font-bold text-sm text-pink-500 whitespace-nowrap">
+                                  {formatPrice(getItemPrice(item) * Math.ceil(item.quantity / 2), cartCurrency)}
+                                </span>
+                              </>
+                            ) : getItemCompareAtPrice(item) ? (
                               <>
                                 <span className="text-xs text-muted-foreground line-through whitespace-nowrap">
                                   {formatPrice(getItemCompareAtPrice(item)! * item.quantity, cartCurrency)}
