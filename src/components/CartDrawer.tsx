@@ -154,7 +154,13 @@ export const CartDrawer = () => {
   const cartCurrency = isEU && shopifyCurrency === 'USD' ? 'EUR' : shopifyCurrency;
 
   // Use current prices from Shopify if available, fallback to stored prices
+  // During Valentine's offer, override ergonomic pillow price to €119.99 (1+1 deal base)
   const getItemPrice = (item: typeof items[0]) => {
+    // Valentine's override: Ergonomic pillow shows at €119.99 (the 1+1 deal price)
+    if (valentinesOffer.isActive && 
+        item.product.node.title.toLowerCase().includes('ergonomic sleep pillow')) {
+      return 119.99;
+    }
     const currentPrice = currentPrices[item.variantId];
     return currentPrice ? parseFloat(currentPrice.price) : parseFloat(item.price.amount);
   };
