@@ -245,7 +245,7 @@ export const Hero = () => {
               <p className="text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
               <span className="text-base line-through text-muted-foreground">{formatPrice(199.99, currencyCode)}</span>
               <div className="inline-flex items-center gap-1.5 bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-full">
-                <Moon className="w-4 h-4 text-primary" />
+                <Moon className="w-8 h-8 text-primary" />
                 <span className="text-xs font-semibold text-primary">40% OFF</span>
               </div>
             </div>
@@ -337,7 +337,7 @@ export const Hero = () => {
               <p className="text-xl md:text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
               <span className="text-lg line-through text-muted-foreground">{formatPrice(199.99, currencyCode)}</span>
               <div className="inline-flex items-center gap-1.5 bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-full shadow-sm">
-                <Moon className="w-5 h-5 text-primary" />
+                <Moon className="w-8 h-8 text-primary" />
                 <span className="text-sm font-semibold text-primary">40% OFF</span>
               </div>
             </div>
