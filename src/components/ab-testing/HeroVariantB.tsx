@@ -7,7 +7,7 @@
  */
 
 import { Button } from "@/components/ui/button";
-import { Check, Shield, Moon, Truck, Loader2, Star, ImageIcon, ChevronDown } from "lucide-react";
+import { Check, Shield, Moon, Truck, Loader2, Star, ImageIcon, ChevronDown, Heart } from "lucide-react";
 import { PaymentIcons } from "@/components/PaymentIcons";
 import { PolicyAccordion } from "@/components/PolicyAccordion";
 import { useState, useEffect, useRef, Suspense, lazy } from "react";
@@ -172,8 +172,16 @@ export const HeroVariantB = () => {
               The #1 Rated Ergonomic Pillow in the U.S.
             </p>
             
-            {/* Mobile Price - Above USPs */}
-            <p className="text-2xl font-bold mt-2 text-primary">{formatPrice(productPrice, currencyCode)}</p>
+            {/* Mobile Price with Valentine's Badge */}
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              <p className="text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
+              {valentinesOffer.isActive && (
+                <div className="inline-flex items-center gap-1.5 bg-gradient-to-r from-pink-50 to-rose-50 dark:from-pink-950/40 dark:to-rose-950/40 border border-pink-200 dark:border-pink-800 px-2.5 py-1 rounded-full">
+                  <Heart className="w-3.5 h-3.5 text-pink-500 fill-pink-500" />
+                  <span className="text-xs font-semibold text-pink-600 dark:text-pink-400">Valentine's Deal</span>
+                </div>
+              )}
+            </div>
             
             {/* MOBILE CTA FIRST: Show CTA immediately after price when enabled */}
             {mobileHeroConfig.MOBILE_CTA_FIRST && (
@@ -257,9 +265,15 @@ export const HeroVariantB = () => {
               The #1 Rated Ergonomic Pillow in the U.S.
             </p>
 
-            {/* Price Display - Desktop Only (mobile price is above) */}
+            {/* Price Display with Valentine's Badge - Desktop Only */}
             <div className="hidden md:flex items-center gap-3 mt-2 mb-3">
               <p className="text-xl md:text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
+              {valentinesOffer.isActive && (
+                <div className="inline-flex items-center gap-1.5 bg-gradient-to-r from-pink-50 to-rose-50 dark:from-pink-950/40 dark:to-rose-950/40 border border-pink-200 dark:border-pink-800 px-3 py-1.5 rounded-full shadow-sm">
+                  <Heart className="w-4 h-4 text-pink-500 fill-pink-500" />
+                  <span className="text-sm font-semibold text-pink-600 dark:text-pink-400">Valentine's Deal</span>
+                </div>
+              )}
             </div>
 
             {/* Benefit-Focused USPs Section - 3 Categories */}
