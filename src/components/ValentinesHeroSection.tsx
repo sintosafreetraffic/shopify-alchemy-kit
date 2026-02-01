@@ -6,7 +6,7 @@
  */
 
 import { useState } from "react";
-import { useValentinesOffer } from "@/hooks/useValentinesOffer";
+import { useValentinesOffer, useValentinesStock } from "@/hooks/useValentinesOffer";
 import { ValentinesCountdown } from "./ValentinesCountdown";
 import { Button } from "@/components/ui/button";
 import { Heart, Package, Truck, Gift } from "lucide-react";
@@ -28,6 +28,7 @@ export const ValentinesHeroSection = ({
   productPrice,
 }: ValentinesHeroSectionProps) => {
   const { isActive, messaging, urgency, style, deliveryText, isDeliveryDeadlinePassed } = useValentinesOffer();
+  const stockCount = useValentinesStock();
   const [selectedQuantity, setSelectedQuantity] = useState<1 | 2>(2);
 
   if (!isActive) return null;
@@ -124,7 +125,7 @@ export const ValentinesHeroSection = ({
         {/* Stock indicator */}
         {urgency.showStock && (
           <p className="text-xs text-muted-foreground mb-2">
-            📦 {urgency.stockText.replace('{count}', String(urgency.stockCount))}
+            📦 {urgency.stockText.replace('{count}', String(stockCount))}
           </p>
         )}
 
