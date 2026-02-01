@@ -10,6 +10,17 @@ import { trackAddToCartEvent } from '@/lib/addToCartAnalytics';
 import { trackABEvent } from '@/lib/abTesting';
 import { variantIncludesMask, getVariantDiscountCodes } from '@/lib/abProductConfig';
 
+// Known deleted variant IDs that should be removed from carts
+// Add any variants here that were deleted from Shopify
+const DELETED_VARIANT_IDS = [
+  'gid://shopify/ProductVariant/47494957564124', // Old ergonomic pillow variant (deleted 2026-02-01)
+];
+
+// Helper to filter out deleted variants from cart items
+function filterDeletedVariants(items: CartItem[]): CartItem[] {
+  return items.filter(item => !DELETED_VARIANT_IDS.includes(item.variantId));
+}
+
 export interface CartItem {
   product: ShopifyProduct;
   variantId: string;
@@ -302,11 +313,19 @@ export const useCartStore = create<CartStore>()(
         freeMaskSelections: state.freeMaskSelections,
         // Explicitly exclude: isLoading, isCartOpen
       }),
-      // Reset loading state on rehydrate to fix any stuck states
+      // Reset loading state on rehydrate and remove deleted variants
       onRehydrateStorage: () => (state) => {
         if (state) {
           state.isLoading = false;
           state.isCartOpen = false;
+          
+          // Filter out any deleted variants from the persisted cart
+          const originalCount = state.items.length;
+          state.items = filterDeletedVariants(state.items);
+          
+          if (state.items.length < originalCount) {
+            console.log('[CartStore] Removed deleted variant(s) from cart:', originalCount - state.items.length);
+          }
         }
       },
     }
