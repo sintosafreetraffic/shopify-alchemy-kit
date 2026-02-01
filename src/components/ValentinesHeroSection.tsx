@@ -88,9 +88,14 @@ export const ValentinesHeroSection = ({
               <Package className="w-4 h-4 text-muted-foreground" />
               <span className="text-sm font-medium">1 Pillow</span>
             </div>
-            <p className="text-lg font-bold">
-              {formatPrice(singlePrice, currencyCode)}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-lg font-bold">
+                {formatPrice(singlePrice, currencyCode)}
+              </p>
+              <span className="text-xs line-through text-muted-foreground">
+                {formatPrice(singleCompareAtPrice, currencyCode)}
+              </span>
+            </div>
           </button>
 
           {/* Couples deal option */}
