@@ -285,6 +285,7 @@ export const HeroVariantB = () => {
                 onAddCouple={handleAddCouple}
                 isAdding={isCheckingOut}
                 currencyCode={currencyCode}
+                productPrice={productPrice}
               />
             )}
 

@@ -17,6 +17,7 @@ interface ValentinesHeroSectionProps {
   onAddCouple: () => void;
   isAdding: boolean;
   currencyCode: string;
+  productPrice: number; // Dynamic price from Shopify
 }
 
 export const ValentinesHeroSection = ({
@@ -24,11 +25,18 @@ export const ValentinesHeroSection = ({
   onAddCouple,
   isAdding,
   currencyCode,
+  productPrice,
 }: ValentinesHeroSectionProps) => {
-  const { isActive, pricing, messaging, urgency, style, deliveryText, isDeliveryDeadlinePassed } = useValentinesOffer();
+  const { isActive, messaging, urgency, style, deliveryText, isDeliveryDeadlinePassed } = useValentinesOffer();
   const [selectedQuantity, setSelectedQuantity] = useState<1 | 2>(2);
 
   if (!isActive) return null;
+
+  // Dynamic pricing based on Shopify product price
+  const singlePrice = productPrice; // €119.99 from Shopify
+  const regularTwoPrice = productPrice * 2; // €239.98 compare price
+  const couplesDealPrice = productPrice; // €119.99 selling price for 2
+  const savings = regularTwoPrice - couplesDealPrice; // €119.99 savings
 
   const handleAdd = () => {
     if (selectedQuantity === 2) {
@@ -74,7 +82,7 @@ export const ValentinesHeroSection = ({
               <span className="text-sm font-medium">1 Pillow</span>
             </div>
             <p className="text-lg font-bold">
-              {formatPrice(pricing.singlePrice, currencyCode)}
+              {formatPrice(singlePrice, currencyCode)}
             </p>
           </button>
 
@@ -101,14 +109,14 @@ export const ValentinesHeroSection = ({
             </div>
             <div className="flex items-center gap-2">
               <p className="text-lg font-bold" style={{ color: style.accentColor }}>
-                {formatPrice(pricing.couplesDealPrice, currencyCode)}
+                {formatPrice(couplesDealPrice, currencyCode)}
               </p>
               <span className="text-xs line-through text-muted-foreground">
-                {formatPrice(pricing.regularTwoPrice, currencyCode)}
+                {formatPrice(regularTwoPrice, currencyCode)}
               </span>
             </div>
             <p className="text-xs font-semibold mt-0.5" style={{ color: style.accentColor }}>
-              {messaging.savingsBadge}
+              Save {formatPrice(savings, currencyCode)}
             </p>
           </button>
         </div>

@@ -353,6 +353,7 @@ export const Hero = () => {
                 onAddCouple={handleAddCouple}
                 isAdding={isCheckingOut}
                 currencyCode={currencyCode}
+                productPrice={productPrice}
               />
             )}
 
