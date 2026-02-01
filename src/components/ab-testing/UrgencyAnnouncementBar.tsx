@@ -1,46 +1,38 @@
 /**
- * Urgency Announcement Bar for Variant B
+ * Urgency Announcement Bar for Valentine's Sale
  * 
- * Fixed bar at top with countdown and offer messaging
+ * Fixed bar at top with marquee scrolling effect (right to left)
  */
 
-import { useState, useEffect } from 'react';
-import { Clock, Gift, Truck } from 'lucide-react';
-import { useCountdownTimer } from '@/components/CountdownTimer';
+import { Heart } from 'lucide-react';
 
 export function UrgencyAnnouncementBar() {
-  const { timeLeft } = useCountdownTimer();
-  const [currentMessage, setCurrentMessage] = useState(0);
-  
   const messages = [
-    { icon: Gift, text: "🎁 FREE Sleep Mask today!" },
-    { icon: Truck, text: "🚚 FREE Express Shipping!" },
-    {
-      icon: Clock,
-      text: `⏰ Sale ends ${String(timeLeft.hours).padStart(2, '0')}:${String(timeLeft.minutes).padStart(2, '0')}:${String(timeLeft.seconds).padStart(2, '0')}`,
-    },
+    "💕 Valentine's Sale",
+    "Buy 1 Get 1 Free",
+    "💕 Valentine's Sale",
+    "Buy 1 Get 1 Free",
   ];
-  
-  // Rotate messages every 4 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentMessage((prev) => (prev + 1) % messages.length);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, [messages.length]);
-  
-  const CurrentIcon = messages[currentMessage].icon;
   
   return (
     <div
       data-header-banner
-      className="fixed top-0 left-0 right-0 h-9 bg-primary text-primary-foreground text-center text-sm font-medium z-[80] flex items-center justify-center"
+      className="fixed top-0 left-0 right-0 h-9 bg-gradient-to-r from-valentine-pink via-valentine-rose to-valentine-pink text-valentine-foreground text-center text-sm font-semibold z-[80] flex items-center overflow-hidden"
     >
-      <div className="container mx-auto px-4 flex items-center justify-center gap-2">
-        <CurrentIcon className="h-4 w-4 animate-bounce flex-shrink-0" />
-        <span className="animate-in fade-in duration-500" key={currentMessage}>
-          {messages[currentMessage].text}
-        </span>
+      <div className="animate-marquee whitespace-nowrap flex items-center">
+        {messages.map((msg, i) => (
+          <span key={i} className="flex items-center gap-2 mx-10">
+            <Heart className="w-4 h-4 fill-current" />
+            <span>{msg}</span>
+          </span>
+        ))}
+        {/* Duplicate for seamless loop */}
+        {messages.map((msg, i) => (
+          <span key={`dup-${i}`} className="flex items-center gap-2 mx-10">
+            <Heart className="w-4 h-4 fill-current" />
+            <span>{msg}</span>
+          </span>
+        ))}
       </div>
     </div>
   );
