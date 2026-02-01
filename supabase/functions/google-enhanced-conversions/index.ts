@@ -309,6 +309,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
     // LOG TO DATABASE
     // ========================================================================
 
+    // Classify attribution source for dashboard visibility
+    const attributionSource = eventData.gclid 
+      ? 'click_id' 
+      : eventData.email 
+        ? 'email_match' 
+        : 'unmatched';
+
     try {
       await supabase.from('google_purchase_events').insert({
         order_id: eventData.order_id,
@@ -321,8 +328,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
         send_status: sendStatus,
         response_status: responseStatus,
         error_message: errorMessage,
+        attribution_source: attributionSource,
       });
-      console.log("[Google EC] Event logged to database");
+      console.log("[Google EC] Event logged to database:", { attribution_source: attributionSource });
     } catch (logError: any) {
       console.warn("[Google EC] Failed to log event (non-blocking):", logError.message);
     }

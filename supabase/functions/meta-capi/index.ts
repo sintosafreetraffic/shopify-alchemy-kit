@@ -327,6 +327,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
         events_received: metaResult.events_received,
       });
 
+      // Classify attribution source for dashboard visibility
+      const attributionSource = eventData.fbc || eventData.fbp 
+        ? 'click_id' 
+        : eventData.email 
+          ? 'email_match' 
+          : 'unmatched';
+
       if (metaResponse.ok) {
         // Log successful event
         try {
@@ -340,6 +347,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
             send_status: 'sent',
             response_status: metaResponse.status,
             events_received: metaResult.events_received || 0,
+            attribution_source: attributionSource,
           });
         } catch (logError) {
           console.warn("[Meta CAPI] Failed to log event (non-blocking):", logError);
@@ -366,6 +374,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
             send_status: 'error',
             response_status: metaResponse.status,
             error_message: JSON.stringify(metaResult).slice(0, 500),
+            attribution_source: attributionSource,
           });
         } catch (logError) {
           console.warn("[Meta CAPI] Failed to log error (non-blocking):", logError);
