@@ -10,7 +10,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { ShoppingCart, Minus, Plus, Trash2, Lock, Loader2, Moon, RotateCcw, Shield, Gift, Truck, ChevronDown, Check, Sparkles, TrendingUp, Star } from "lucide-react";
+import { ShoppingCart, Minus, Plus, Trash2, Lock, Loader2, Moon, RotateCcw, Shield, Gift, Truck, ChevronDown, Check, Sparkles, TrendingUp, Star, Heart } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -46,12 +46,15 @@ import { useCheckoutStatus } from "@/hooks/useCheckoutStatus";
 import { createCheckoutWithResilience, openCheckoutUrl, isMobileDevice } from "@/lib/checkoutUtils";
 import { formatPrice, getCurrencySymbol } from "@/lib/formatPrice";
 import { getSmartRecommendations, getSocialProofBadge, getBundleOffer, getProductDisplayName } from "@/lib/upsellStrategy";
-import { variantIncludesMask, AB_PRODUCT_HANDLES } from "@/lib/abProductConfig";
+import { variantIncludesMask, AB_PRODUCT_HANDLES, getErgonomicPillowHandle } from "@/lib/abProductConfig";
 import { useIsVariantB } from "@/hooks/useABProduct";
+import { useValentinesOffer } from "@/hooks/useValentinesOffer";
+import { formatPrice as valentinesFormatPrice } from "@/lib/formatPrice";
 
 export const CartDrawer = () => {
   const [isOpen, setIsOpen] = useState(false);
   const isVariantB = useIsVariantB();
+  const valentinesOffer = useValentinesOffer();
   const [shouldBounce, setShouldBounce] = useState(false);
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
   const [openColorPickerIndex, setOpenColorPickerIndex] = useState<number | null>(null);
@@ -178,6 +181,29 @@ export const CartDrawer = () => {
   const totalErgonomicPillows = ergonomicPillowItems.reduce((sum, item) => sum + item.quantity, 0);
   const totalKneePillows = kneePillowItems.reduce((sum, item) => sum + item.quantity, 0);
   
+  // Get ergonomic pillow price for Valentine's calculations
+  const ergonomicPillowPrice = useMemo(() => {
+    if (ergonomicPillowItems.length > 0) {
+      return getItemPrice(ergonomicPillowItems[0]);
+    }
+    return 119.99; // Fallback
+  }, [ergonomicPillowItems, currentPrices]);
+  
+  // Valentine's 1+1 Deal: 2 pillows for the price of 1
+  // Applies automatically when 2+ ergonomic pillows are in cart
+  const valentinesDiscount = useMemo(() => {
+    if (!valentinesOffer.isActive) return 0;
+    if (totalErgonomicPillows >= 2) {
+      // For every pair of pillows, discount is the price of 1 pillow
+      const pairs = Math.floor(totalErgonomicPillows / 2);
+      return pairs * ergonomicPillowPrice;
+    }
+    return 0;
+  }, [valentinesOffer.isActive, totalErgonomicPillows, ergonomicPillowPrice]);
+  
+  // Check if user is eligible for 1+1 deal (has exactly 1 pillow)
+  const showValentines1Plus1Promo = valentinesOffer.isActive && totalErgonomicPillows === 1;
+  
   // Free gifts logic: 
   // - Ergonomic pillow: 1 mask per pillow (included with each pillow) - BUT NOT FOR VARIANT B
   // - Knee pillow: NO free masks included (removed)
@@ -186,8 +212,8 @@ export const CartDrawer = () => {
   const ergonomicMasks = includesMask ? totalErgonomicPillows : 0;
   const freeGifts = ergonomicMasks;
   
-  // No more BOGO discounts for any pillows
-  const totalDiscount = 0;
+  // Valentine's discount replaces the old BOGO logic
+  const totalDiscount = valentinesDiscount;
   
   // Get sleep mask price from Shopify data for free gift value calculation
   const sleepMaskPrice = useMemo(() => {
@@ -285,6 +311,22 @@ export const CartDrawer = () => {
     });
   };
 
+  // Handler to add another ergonomic pillow for Valentine's 1+1 deal
+  const handleAddAnotherPillow = () => {
+    if (ergonomicPillowItems.length > 0) {
+      const existingItem = ergonomicPillowItems[0];
+      updateQuantity(existingItem.variantId, existingItem.quantity + 1);
+      const toastId = toast.success("Valentine's Deal Activated!", {
+        description: "2 pillows for the price of 1 - you save " + valentinesFormatPrice(ergonomicPillowPrice, cartCurrency) + "!",
+        duration: 2000,
+        cancel: {
+          label: "✕",
+          onClick: () => toast.dismiss(toastId),
+        }
+      });
+    }
+  };
+
   const handleCheckout = async () => {
     // Prevent multiple simultaneous checkout attempts
     if (!startCheckout()) {
@@ -365,6 +407,41 @@ export const CartDrawer = () => {
           data-recommendations-panel
         >
           <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
+            
+            {/* Valentine's 1+1 Deal Promo - Show when user has 1 pillow */}
+            {showValentines1Plus1Promo && (
+              <div className="border-2 border-pink-400 rounded-lg p-4 bg-pink-50 relative overflow-hidden">
+                <div className="absolute top-0 right-0 text-[10px] font-bold text-white px-2 py-0.5 rounded-bl-lg bg-pink-500">
+                  BEST VALUE
+                </div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Heart className="w-5 h-5 text-pink-500 fill-current" />
+                  <span className="font-bold text-sm text-pink-600">Valentine's 1+1 Deal</span>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Add 1 more pillow and get 2 for the price of 1!
+                </p>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-lg font-bold text-pink-500">
+                    {valentinesFormatPrice(ergonomicPillowPrice, cartCurrency)}
+                  </span>
+                  <span className="text-xs line-through text-muted-foreground">
+                    {valentinesFormatPrice(ergonomicPillowPrice * 2, cartCurrency)}
+                  </span>
+                  <span className="text-xs font-semibold text-pink-500">
+                    Save {valentinesFormatPrice(ergonomicPillowPrice, cartCurrency)}
+                  </span>
+                </div>
+                <Button
+                  size="sm"
+                  className="w-full bg-pink-500 hover:bg-pink-600 text-white"
+                  onClick={handleAddAnotherPillow}
+                >
+                  <Heart className="w-4 h-4 mr-2 fill-current" />
+                  Add Another Pillow
+                </Button>
+              </div>
+            )}
             
             {smartRecommendations.map((product) => {
               const variant = product.node.variants.edges[0]?.node;
@@ -787,7 +864,37 @@ export const CartDrawer = () => {
                     <div className="pt-2 border-t mt-2 lg:hidden">
                       <h3 className="text-xs font-semibold mb-1.5 text-muted-foreground">You may also like</h3>
                       
-                      {/* Mobile Bundle Offer */}
+                      {/* Mobile Valentine's 1+1 Deal Promo */}
+                      {showValentines1Plus1Promo && (
+                        <div className="border-2 border-pink-400 rounded-lg p-3 bg-pink-50 mb-2 relative overflow-hidden">
+                          <div className="absolute top-0 right-0 text-[10px] font-bold text-white px-2 py-0.5 rounded-bl-lg bg-pink-500">
+                            BEST VALUE
+                          </div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <Heart className="w-4 h-4 text-pink-500 fill-current" />
+                            <span className="font-bold text-xs text-pink-600">Valentine's 1+1 Deal</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mb-2">
+                            Add 1 more pillow → 2 for {valentinesFormatPrice(ergonomicPillowPrice, cartCurrency)}
+                          </p>
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-xs line-through text-muted-foreground">
+                              {valentinesFormatPrice(ergonomicPillowPrice * 2, cartCurrency)}
+                            </span>
+                            <span className="text-xs font-semibold text-pink-500">
+                              Save {valentinesFormatPrice(ergonomicPillowPrice, cartCurrency)}
+                            </span>
+                          </div>
+                          <Button
+                            size="sm"
+                            className="w-full h-7 text-xs bg-pink-500 hover:bg-pink-600 text-white"
+                            onClick={handleAddAnotherPillow}
+                          >
+                            <Heart className="w-3 h-3 mr-1 fill-current" />
+                            Add Another Pillow
+                          </Button>
+                        </div>
+                      )}
                       
                       <div className="flex flex-col gap-2">
                         {smartRecommendations.map((product) => {
@@ -910,8 +1017,11 @@ export const CartDrawer = () => {
                   <div className="space-y-1 pt-1">
                     {totalDiscount > 0 && (
                       <div className="flex justify-between items-center text-sm">
-                        <span className="text-green-600 dark:text-green-400">Savings</span>
-                        <span className="text-green-600 dark:text-green-400 font-semibold">-{formatPrice(totalDiscount, cartCurrency)}</span>
+                        <span className="text-pink-500 flex items-center gap-1">
+                          <Heart className="w-3 h-3 fill-current" />
+                          Valentine's Deal
+                        </span>
+                        <span className="text-pink-500 font-semibold">-{formatPrice(totalDiscount, cartCurrency)}</span>
                       </div>
                     )}
                     
