@@ -108,7 +108,6 @@ export const ValentinesHeroSection = ({
             <div className="flex items-center gap-2 mb-1">
               <Gift className="w-4 h-4" style={{ color: style.accentColor }} />
               <span className="text-sm font-medium">2 Pillows</span>
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: style.accentColor, color: 'white' }}>1+1 FREE</span>
             </div>
             <div className="flex items-center gap-2">
               <p className="text-lg font-bold" style={{ color: style.accentColor }}>
@@ -118,12 +117,9 @@ export const ValentinesHeroSection = ({
                 {formatPrice(regularTwoPrice, currencyCode)}
               </span>
             </div>
-            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-              <p className="text-xs font-semibold" style={{ color: style.accentColor }}>
-                Save {formatPrice(savings, currencyCode)}
-              </p>
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">40% OFF</span>
-            </div>
+            <p className="text-xs font-semibold mt-0.5" style={{ color: style.accentColor }}>
+              Save {formatPrice(savings, currencyCode)}
+            </p>
           </button>
         </div>
 
