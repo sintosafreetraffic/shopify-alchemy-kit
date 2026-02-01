@@ -17,6 +17,7 @@ import { formatPrice } from "@/lib/formatPrice";
 import { trackATCClick } from "@/hooks/usePDPIntentTracking";
 // trackABEvent moved to cartStore for centralized ATC tracking
 import { useIsEU } from "@/hooks/useCurrencySymbol";
+import { useExchangeRate } from "@/hooks/useExchangeRate";
 import { mobileHeroConfig } from "@/config/mobileHeroConfig";
 import { useValentinesOffer } from "@/hooks/useValentinesOffer";
 import { ValentinesHeroSection } from "./ValentinesHeroSection";
@@ -64,6 +65,7 @@ export const Hero = () => {
   const headerHeight = useHeaderHeight();
   const isEU = useIsEU();
   const valentinesOffer = useValentinesOffer();
+  const { rate } = useExchangeRate();
 
   // Use centralized cached product data
   const { data: products, isLoading: productsLoading } = useShopifyProducts(10);
@@ -196,6 +198,10 @@ export const Hero = () => {
   const shopifyCurrency = variant?.price.currencyCode || 'USD';
   // Override to EUR for EU countries if Shopify returns USD
   const currencyCode = (isEU && shopifyCurrency === 'USD') ? 'EUR' : shopifyCurrency;
+  
+  // Base compare-at price in EUR, convert to USD for non-EU users
+  const baseCompareAtPriceEUR = 199.99;
+  const compareAtPrice = currencyCode === 'EUR' ? baseCompareAtPriceEUR : baseCompareAtPriceEUR / rate;
 
   return (
     <section className="pb-3 md:pb-6 bg-background overflow-x-hidden" style={{ paddingTop: Math.max(headerHeight - 80, 0) }}>
@@ -244,7 +250,7 @@ export const Hero = () => {
             {/* Mobile Price with Discount Badge */}
             <div className="flex items-center gap-2 mt-2 flex-wrap">
               <p className="text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
-              <span className="text-base line-through text-muted-foreground">{formatPrice(199.99, currencyCode)}</span>
+              <span className="text-base line-through text-muted-foreground">{formatPrice(compareAtPrice, currencyCode)}</span>
               <div className="inline-flex items-center gap-2.5 bg-primary/10 border border-primary/20 px-4 py-3 rounded-full">
                 <img src={moonIcon} alt="" className="w-6 h-6 shrink-0" />
                 <span className="text-base font-bold text-primary">40% OFF</span>
@@ -336,7 +342,7 @@ export const Hero = () => {
             {/* Price Display with Discount Badge - Desktop Only */}
             <div className="hidden md:flex items-center gap-3 mt-2 mb-3">
               <p className="text-xl md:text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
-              <span className="text-lg line-through text-muted-foreground">{formatPrice(199.99, currencyCode)}</span>
+              <span className="text-lg line-through text-muted-foreground">{formatPrice(compareAtPrice, currencyCode)}</span>
               <div className="inline-flex items-center gap-3 bg-primary/10 border border-primary/20 px-5 py-3.5 rounded-full shadow-sm">
                 <img src={moonIcon} alt="" className="w-7 h-7 shrink-0" />
                 <span className="text-lg font-bold text-primary">40% OFF</span>
