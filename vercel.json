@@ -1,4 +1,16 @@
 {
+  "redirects": [
+    {
+      "source": "/product/:path*",
+      "destination": "/products/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/product",
+      "destination": "/products",
+      "permanent": true
+    }
+  ],
   "headers": [
     {
       "source": "/assets/(.*)",
