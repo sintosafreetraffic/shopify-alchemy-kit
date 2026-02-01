@@ -21,37 +21,23 @@ export const UrgencyBanner = () => {
         isCartOpen ? "opacity-0 pointer-events-none" : "opacity-100"
       }`}
     >
-      <div className="animate-marquee-seamless whitespace-nowrap flex items-center">
-        {/* First copy */}
-        <span className="inline-flex items-center gap-8 px-8">
-          <span className="inline-flex items-center gap-2">
-            <Heart className="w-4 h-4 fill-current" />
-            <span>Valentine's Sale</span>
+      <div className="animate-marquee-seamless whitespace-nowrap inline-flex">
+        {[0, 1, 2, 3].map((i) => (
+          <span key={i} className="inline-flex items-center gap-12 px-12">
+            <span className="inline-flex items-center gap-2">
+              <Heart className="w-4 h-4 fill-current" />
+              <span>Valentine's Sale</span>
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <Gift className="w-4 h-4" />
+              <span>Buy 1 Get 1 Free</span>
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <Truck className="w-4 h-4" />
+              <span>Free Shipping above {shippingThreshold}</span>
+            </span>
           </span>
-          <span className="inline-flex items-center gap-2">
-            <Gift className="w-4 h-4" />
-            <span>Buy 1 Get 1 Free</span>
-          </span>
-          <span className="inline-flex items-center gap-2">
-            <Truck className="w-4 h-4" />
-            <span>Free Shipping above {shippingThreshold}</span>
-          </span>
-        </span>
-        {/* Second copy for seamless loop */}
-        <span className="inline-flex items-center gap-8 px-8">
-          <span className="inline-flex items-center gap-2">
-            <Heart className="w-4 h-4 fill-current" />
-            <span>Valentine's Sale</span>
-          </span>
-          <span className="inline-flex items-center gap-2">
-            <Gift className="w-4 h-4" />
-            <span>Buy 1 Get 1 Free</span>
-          </span>
-          <span className="inline-flex items-center gap-2">
-            <Truck className="w-4 h-4" />
-            <span>Free Shipping above {shippingThreshold}</span>
-          </span>
-        </span>
+        ))}
       </div>
     </div>
   );
