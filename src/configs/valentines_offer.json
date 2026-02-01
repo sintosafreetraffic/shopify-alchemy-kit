@@ -11,10 +11,10 @@
   },
   
   "pricing": {
-    "singlePillowPrice": 59.99,
-    "regularTwoPrice": 119.98,
-    "couplesDealPrice": 89.98,
-    "savingsAmount": 30,
+    "singlePillowPrice": 119.99,
+    "regularTwoPrice": 239.98,
+    "couplesDealPrice": 119.99,
+    "savingsAmount": 119.99,
     "currency": "EUR"
   },
   
