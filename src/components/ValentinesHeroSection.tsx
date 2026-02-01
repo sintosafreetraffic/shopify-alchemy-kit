@@ -12,7 +12,6 @@ import { ValentinesCountdown } from "./ValentinesCountdown";
 import { Button } from "@/components/ui/button";
 import { Heart, Package, Gift } from "lucide-react";
 import { formatPrice } from "@/lib/formatPrice";
-import { useExchangeRate } from "@/hooks/useExchangeRate";
 
 interface ValentinesHeroSectionProps {
   onAddSingle: () => void;
@@ -32,21 +31,15 @@ export const ValentinesHeroSection = ({
   const { isActive, messaging, urgency, style, deliveryText, isDeliveryDeadlinePassed } = useValentinesOffer();
   const stockCount = useValentinesStock();
   const [selectedQuantity, setSelectedQuantity] = useState<1 | 2>(2);
-  const { rate } = useExchangeRate();
 
   if (!isActive) return null;
 
-  // Base prices in EUR
-  const baseCompareAtPriceEUR = 199.99;
-  
-  // Convert EUR to USD if user is not in EU (inverse of USD->EUR rate)
-  const isEUR = currencyCode === 'EUR';
-  const convertPrice = (eurPrice: number) => isEUR ? eurPrice : eurPrice / rate;
+  // Fixed compare-at price - same numeric value for all regions (199.99)
+  const singleCompareAtPrice = 199.99;
 
-  // Dynamic pricing based on Shopify product price and location
+  // Dynamic pricing based on Shopify product price
   const singlePrice = productPrice;
   const couplesDealPrice = productPrice;
-  const singleCompareAtPrice = convertPrice(baseCompareAtPriceEUR);
   const regularTwoPrice = singleCompareAtPrice * 2;
   const savings = regularTwoPrice - couplesDealPrice;
 
