@@ -123,6 +123,7 @@ if (typeof window !== "undefined" && localStorage.getItem("DEBUG_TRACKING") === 
 // Eagerly loaded pages (core shopping experience)
 import Home from "./pages/Home";
 import ErgonomicPillowProduct from "./pages/ErgonomicPillowProductVariantB";
+import ErgonomicPillowProductPrevious from "./pages/ErgonomicPillowProductPrevious";
 import KneePillowProduct from "./pages/KneePillowProduct";
 import SleepMaskProduct from "./pages/SleepMaskProduct";
 import SleepBundleProduct from "./pages/SleepBundleProduct";
@@ -258,6 +259,7 @@ const AppContent = () => {
             {/* Product pages - /products/ is the industry standard (Shopify, Klaviyo compatible) */}
             <Route path="/products" element={<Products />} />
             <Route path="/products/ergonomic-pillow" element={<ErgonomicPillowProduct />} />
+            <Route path="/products/ergonomic-pillow-previous-one" element={<ErgonomicPillowProductPrevious />} />
             <Route path="/products/knee-pillow" element={<KneePillowProduct />} />
             <Route path="/products/sleep-mask" element={<SleepMaskProduct />} />
             <Route path="/products/sleep-bundle" element={<SleepBundleProduct />} />

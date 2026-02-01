@@ -18,6 +18,8 @@ import { trackATCClick } from "@/hooks/usePDPIntentTracking";
 // trackABEvent moved to cartStore for centralized ATC tracking
 import { useIsEU } from "@/hooks/useCurrencySymbol";
 import { mobileHeroConfig } from "@/config/mobileHeroConfig";
+import { useValentinesOffer } from "@/hooks/useValentinesOffer";
+import { ValentinesHeroSection } from "./ValentinesHeroSection";
 import {
   Popover,
   PopoverContent,
@@ -60,6 +62,7 @@ export const Hero = () => {
   const hasTrackedView = useRef(false);
   const headerHeight = useHeaderHeight();
   const isEU = useIsEU();
+  const valentinesOffer = useValentinesOffer();
 
   // Use centralized cached product data
   const { data: products, isLoading: productsLoading } = useShopifyProducts(10);
@@ -113,7 +116,7 @@ export const Hero = () => {
     }
   }, [product]);
 
-  const handleAddToCart = async () => {
+  const handleAddToCart = async (quantity: number = 1) => {
     if (!product) {
       toast.error("Product not available");
       return;
@@ -129,12 +132,19 @@ export const Hero = () => {
     setIsCheckingOut(true);
     try {
       const variant = product.node.variants.edges[0].node;
-      const quantity = 1;
       
       // Set the free mask selection before adding to cart
       const selectedMaskVariant = maskVariants.find(v => v.color === selectedMaskColor);
       if (selectedMaskVariant) {
-        setFreeMaskSelections([{ variantId: selectedMaskVariant.id, color: selectedMaskColor }]);
+        // For Valentine's couples deal, set mask selections for both pillows
+        if (quantity === 2) {
+          setFreeMaskSelections([
+            { variantId: selectedMaskVariant.id, color: selectedMaskColor },
+            { variantId: selectedMaskVariant.id, color: selectedMaskColor }
+          ]);
+        } else {
+          setFreeMaskSelections([{ variantId: selectedMaskVariant.id, color: selectedMaskColor }]);
+        }
       }
       
       const cartItem = {
@@ -148,9 +158,17 @@ export const Hero = () => {
       };
       
       addItem(cartItem);
-      const toastId = toast.success("Added to cart!", {
-        description: `${quantity} ${quantity === 1 ? 'pillow' : 'pillows'} added with ${selectedMaskColor} sleep mask.`,
-        duration: 1500,
+      
+      const message = quantity === 2 
+        ? "Valentine's Couple's Set added!" 
+        : "Added to cart!";
+      const description = quantity === 2
+        ? `2 pillows added with ${selectedMaskColor} sleep masks. You save €30!`
+        : `${quantity} pillow added with ${selectedMaskColor} sleep mask.`;
+      
+      const toastId = toast.success(message, {
+        description,
+        duration: 2000,
         cancel: {
           label: "✕",
           onClick: () => {
@@ -166,6 +184,10 @@ export const Hero = () => {
       setIsCheckingOut(false);
     }
   };
+
+  // Handlers for Valentine's section
+  const handleAddSingle = () => handleAddToCart(1);
+  const handleAddCouple = () => handleAddToCart(2);
 
   // Get product price from Shopify data
   const variant = product?.node.variants.edges[0]?.node;
@@ -227,7 +249,7 @@ export const Hero = () => {
                 <Button 
                   size="lg"
                   className="w-full text-lg py-6 font-bold shadow-lg hover:shadow-xl transition-all touch-manipulation animate-subtle-bounce bg-primary text-primary-foreground hover:bg-black hover:text-white relative overflow-hidden group" 
-                  onClick={handleAddToCart}
+                  onClick={() => handleAddToCart(1)}
                   disabled={isCheckingOut || !product}
                 >
                   {isCheckingOut ? (
@@ -324,8 +346,18 @@ export const Hero = () => {
               </div>
             </div>
 
-            {/* Included Items - Combined Section */}
-            <div className="rounded-xl py-3 px-3 sm:px-4 mb-4 border w-full max-w-full overflow-hidden" style={{ backgroundColor: 'rgba(59, 126, 237, 0.1)', borderColor: 'rgba(59, 126, 237, 0.3)' }}>
+            {/* Valentine's Day 1+1 Offer Section */}
+            {valentinesOffer.isActive && (
+              <ValentinesHeroSection
+                onAddSingle={handleAddSingle}
+                onAddCouple={handleAddCouple}
+                isAdding={isCheckingOut}
+                currencyCode={currencyCode}
+              />
+            )}
+
+            {/* Included Items - Combined Section (hidden during Valentine's offer) */}
+            <div className={`rounded-xl py-3 px-3 sm:px-4 mb-4 border w-full max-w-full overflow-hidden ${valentinesOffer.isActive ? 'hidden' : ''}`} style={{ backgroundColor: 'rgba(59, 126, 237, 0.1)', borderColor: 'rgba(59, 126, 237, 0.3)' }}>
               <p className="text-xs font-semibold mb-2" style={{ color: '#3b7eed' }}>Included with your pillow</p>
               <div className="flex items-center gap-3">
                 {/* Pillow Cover */}
@@ -412,12 +444,12 @@ export const Hero = () => {
               </div>
             </div>
 
-            {/* Desktop CTA always shows, Mobile CTA only if MOBILE_CTA_FIRST is false */}
-            <div className={mobileHeroConfig.MOBILE_CTA_FIRST ? "hidden md:block" : ""}>
+            {/* Desktop CTA - hidden during Valentine's offer (has its own CTA) */}
+            <div className={`${mobileHeroConfig.MOBILE_CTA_FIRST ? "hidden md:block" : ""} ${valentinesOffer.isActive ? "hidden" : ""}`}>
               <Button 
                 size="lg"
                 className="w-full text-lg md:text-xl py-6 font-bold shadow-lg hover:shadow-xl transition-all touch-manipulation animate-subtle-bounce bg-primary text-primary-foreground hover:bg-black hover:text-white relative overflow-hidden group" 
-                onClick={handleAddToCart}
+                onClick={() => handleAddToCart(1)}
                 disabled={isCheckingOut || !product}
               >
                 {isCheckingOut ? (

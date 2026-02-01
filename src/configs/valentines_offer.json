@@ -1,0 +1,51 @@
+{
+  "version": "1.0.0",
+  "offerName": "valentines_2025",
+  "description": "Valentine's Day 1+1 Couples Deal - Buy 2 pillows, save €30",
+  
+  "schedule": {
+    "startDate": "2026-02-01T00:00:00Z",
+    "endDate": "2026-02-14T23:59:59Z",
+    "deliveryDeadline": "2026-02-12T23:59:59Z",
+    "deliveryDeadlineText": "Order by Feb 12 → Arrives for Valentine's Day"
+  },
+  
+  "pricing": {
+    "singlePillowPrice": 59.99,
+    "regularTwoPrice": 119.98,
+    "couplesDealPrice": 89.98,
+    "savingsAmount": 30,
+    "currency": "EUR"
+  },
+  
+  "messaging": {
+    "bannerText": "💝 Valentine's Special: 2 Pillows, Save €30 → Ends Feb 14",
+    "heroHeadline": "Sleep Better, Together",
+    "heroSubheadline": "Give the gift of pain-free sleep — for both of you",
+    "ctaText": "Claim Your Couple's Set",
+    "singleCtaText": "Add to Cart",
+    "savingsBadge": "Save €30"
+  },
+  
+  "urgency": {
+    "showCountdown": true,
+    "countdownLabel": "Offer ends in",
+    "showStock": true,
+    "stockText": "Only {count} couple's sets at this price",
+    "initialStock": 47,
+    "minStock": 12
+  },
+  
+  "socialProof": {
+    "enabled": true,
+    "text": "🎁 {count} couples ordered today",
+    "minCount": 8,
+    "maxCount": 24
+  },
+  
+  "style": {
+    "accentColor": "#F472B6",
+    "backgroundColor": "rgba(244, 114, 182, 0.1)",
+    "borderColor": "rgba(244, 114, 182, 0.3)"
+  }
+}
