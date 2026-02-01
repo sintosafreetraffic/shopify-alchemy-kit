@@ -244,9 +244,9 @@ export const Hero = () => {
             <div className="flex items-center gap-2 mt-2 flex-wrap">
               <p className="text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
               <span className="text-base line-through text-muted-foreground">{formatPrice(199.99, currencyCode)}</span>
-              <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 px-3 py-2.5 rounded-full">
-                <img src="/assets/risebynight-logo.png" alt="Rise by Night" className="w-7 h-7 object-contain" />
-                <span className="text-sm font-bold text-primary">40% OFF</span>
+              <div className="inline-flex items-center gap-2.5 bg-primary/10 border border-primary/20 px-4 py-3 rounded-full">
+                <img src="/assets/risebynight-logo.png" alt="Rise by Night" className="w-10 h-10 object-contain" />
+                <span className="text-base font-bold text-primary">40% OFF</span>
               </div>
             </div>
             
@@ -336,9 +336,9 @@ export const Hero = () => {
             <div className="hidden md:flex items-center gap-3 mt-2 mb-3">
               <p className="text-xl md:text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
               <span className="text-lg line-through text-muted-foreground">{formatPrice(199.99, currencyCode)}</span>
-              <div className="inline-flex items-center gap-2.5 bg-primary/10 border border-primary/20 px-4 py-3 rounded-full shadow-sm">
-                <img src="/assets/risebynight-logo.png" alt="Rise by Night" className="w-9 h-9 object-contain" />
-                <span className="text-base font-bold text-primary">40% OFF</span>
+              <div className="inline-flex items-center gap-3 bg-primary/10 border border-primary/20 px-5 py-3.5 rounded-full shadow-sm">
+                <img src="/assets/risebynight-logo.png" alt="Rise by Night" className="w-12 h-12 object-contain" />
+                <span className="text-lg font-bold text-primary">40% OFF</span>
               </div>
             </div>
 
