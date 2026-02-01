@@ -27,6 +27,7 @@ export interface ValentinesOfferState {
   messaging: {
     bannerText: string;
     heroHeadline: string;
+    heroOfferLine: string;
     heroSubheadline: string;
     ctaText: string;
     singleCtaText: string;
@@ -94,6 +95,7 @@ export function useValentinesOffer(): ValentinesOfferState {
       messaging: {
         bannerText: valentinesConfig.messaging.bannerText,
         heroHeadline: valentinesConfig.messaging.heroHeadline,
+        heroOfferLine: (valentinesConfig.messaging as any).heroOfferLine || '',
         heroSubheadline: valentinesConfig.messaging.heroSubheadline,
         ctaText: valentinesConfig.messaging.ctaText,
         singleCtaText: valentinesConfig.messaging.singleCtaText,

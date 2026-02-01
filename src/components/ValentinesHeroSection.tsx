@@ -58,11 +58,16 @@ export const ValentinesHeroSection = ({
           borderColor: style.borderColor 
         }}
       >
-        <div className="flex items-center gap-2 mb-2">
-          <Heart className="w-5 h-5 fill-current" style={{ color: style.accentColor }} />
-          <span className="font-bold text-base" style={{ color: style.accentColor }}>
-            {messaging.heroHeadline}
-          </span>
+        <div className="mb-2">
+          <div className="flex items-center gap-2">
+            <Heart className="w-5 h-5 fill-current" style={{ color: style.accentColor }} />
+            <span className="font-bold text-base" style={{ color: style.accentColor }}>
+              {messaging.heroHeadline}
+            </span>
+          </div>
+          <p className="font-bold text-lg mt-1" style={{ color: style.accentColor }}>
+            {messaging.heroOfferLine}
+          </p>
         </div>
         <p className="text-sm text-muted-foreground mb-3">
           {messaging.heroSubheadline}
