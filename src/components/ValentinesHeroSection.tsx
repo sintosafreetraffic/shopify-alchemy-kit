@@ -3,14 +3,16 @@
  * 
  * Valentine's Day 1+1 couples deal section shown in Hero.
  * Adds quantity selector for couples deal and savings display.
+ * Prices are localized based on user location (EUR for EU, USD for others).
  */
 
 import { useState } from "react";
 import { useValentinesOffer, useValentinesStock } from "@/hooks/useValentinesOffer";
 import { ValentinesCountdown } from "./ValentinesCountdown";
 import { Button } from "@/components/ui/button";
-import { Heart, Package, Truck, Gift } from "lucide-react";
+import { Heart, Package, Gift } from "lucide-react";
 import { formatPrice } from "@/lib/formatPrice";
+import { useExchangeRate } from "@/hooks/useExchangeRate";
 
 interface ValentinesHeroSectionProps {
   onAddSingle: () => void;
@@ -30,15 +32,23 @@ export const ValentinesHeroSection = ({
   const { isActive, messaging, urgency, style, deliveryText, isDeliveryDeadlinePassed } = useValentinesOffer();
   const stockCount = useValentinesStock();
   const [selectedQuantity, setSelectedQuantity] = useState<1 | 2>(2);
+  const { rate } = useExchangeRate();
 
   if (!isActive) return null;
 
-  // Dynamic pricing based on Shopify product price
-  const singlePrice = productPrice; // €119.99 from Shopify
-  const couplesDealPrice = productPrice; // €119.99 selling price for 2
-  const singleCompareAtPrice = 199.99; // Regular single pillow price
-  const regularTwoPrice = singleCompareAtPrice * 2; // €399.98 for 2 at regular price
-  const savings = regularTwoPrice - couplesDealPrice; // €279.99 savings
+  // Base prices in EUR
+  const baseCompareAtPriceEUR = 199.99;
+  
+  // Convert EUR to USD if user is not in EU (inverse of USD->EUR rate)
+  const isEUR = currencyCode === 'EUR';
+  const convertPrice = (eurPrice: number) => isEUR ? eurPrice : eurPrice / rate;
+
+  // Dynamic pricing based on Shopify product price and location
+  const singlePrice = productPrice;
+  const couplesDealPrice = productPrice;
+  const singleCompareAtPrice = convertPrice(baseCompareAtPriceEUR);
+  const regularTwoPrice = singleCompareAtPrice * 2;
+  const savings = regularTwoPrice - couplesDealPrice;
 
   const handleAdd = () => {
     if (selectedQuantity === 2) {
