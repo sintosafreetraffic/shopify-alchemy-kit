@@ -22,6 +22,8 @@ import { formatPrice } from "@/lib/formatPrice";
 import { trackATCClick } from "@/hooks/usePDPIntentTracking";
 import { useIsEU } from "@/hooks/useCurrencySymbol";
 import { mobileHeroConfig } from "@/config/mobileHeroConfig";
+import { useValentinesOffer } from "@/hooks/useValentinesOffer";
+import { ValentinesHeroSection } from "@/components/ValentinesHeroSection";
 import testimonialAvatar from "@/assets/testimonial-new-updated.webp";
 import pillowCoverImage from "@/assets/pillow-cover-included.webp";
 
@@ -43,6 +45,7 @@ export const HeroVariantB = () => {
   const hasTrackedView = useRef(false);
   const headerHeight = useHeaderHeight();
   const isEU = useIsEU();
+  const valentinesOffer = useValentinesOffer();
 
   // Use A/B-aware product hook - automatically selects correct product for Variant B
   const { product, config, isLoading: productsLoading } = useABErgonomicPillow();
@@ -71,7 +74,7 @@ export const HeroVariantB = () => {
     }
   }, [product, variant]);
 
-  const handleAddToCart = async () => {
+  const handleAddToCart = async (quantity: number = 1) => {
     if (!product || !variant) {
       toast.error("Product not available");
       return;
@@ -82,8 +85,6 @@ export const HeroVariantB = () => {
 
     setIsCheckingOut(true);
     try {
-      const quantity = 1;
-      
       // VARIANT B: No free mask - just the pillow
       const cartItem = {
         product,
@@ -96,8 +97,11 @@ export const HeroVariantB = () => {
       };
       
       addItem(cartItem);
-      const toastId = toast.success("Added to cart!", {
-        description: `${quantity} pillow added to your cart.`,
+
+      const message = quantity === 2 ? "Valentine's Couple's Set added!" : "Added to cart!";
+      const description = quantity === 2 ? "2 pillows added to your cart." : "1 pillow added to your cart.";
+      const toastId = toast.success(message, {
+        description,
         duration: 1500,
         cancel: {
           label: "✕",
@@ -114,6 +118,9 @@ export const HeroVariantB = () => {
       setIsCheckingOut(false);
     }
   };
+
+  const handleAddSingle = () => handleAddToCart(1);
+  const handleAddCouple = () => handleAddToCart(2);
 
   // Get product price from the Pillow Only variant
   const productPrice = variant ? parseFloat(variant.price.amount) : 59.99;
@@ -174,7 +181,7 @@ export const HeroVariantB = () => {
                 <Button 
                   size="lg"
                   className="w-full text-lg py-6 font-bold shadow-lg hover:shadow-xl transition-all touch-manipulation animate-subtle-bounce bg-primary text-primary-foreground hover:bg-black hover:text-white relative overflow-hidden group" 
-                  onClick={handleAddToCart}
+                  onClick={() => handleAddToCart(1)}
                   disabled={isCheckingOut || !product}
                 >
                   {isCheckingOut ? (
@@ -271,8 +278,18 @@ export const HeroVariantB = () => {
               </div>
             </div>
 
+            {/* Valentine's Day 1+1 Offer Section */}
+            {valentinesOffer.isActive && (
+              <ValentinesHeroSection
+                onAddSingle={handleAddSingle}
+                onAddCouple={handleAddCouple}
+                isAdding={isCheckingOut}
+                currencyCode={currencyCode}
+              />
+            )}
+
             {/* Included Items - Pillow Cover ONLY (no mask in Variant B) */}
-            <div className="rounded-xl py-3 px-3 sm:px-4 mb-4 border w-full max-w-full overflow-hidden" style={{ backgroundColor: 'rgba(59, 126, 237, 0.1)', borderColor: 'rgba(59, 126, 237, 0.3)' }}>
+            <div className={`rounded-xl py-3 px-3 sm:px-4 mb-4 border w-full max-w-full overflow-hidden ${valentinesOffer.isActive ? 'hidden' : ''}`} style={{ backgroundColor: 'rgba(59, 126, 237, 0.1)', borderColor: 'rgba(59, 126, 237, 0.3)' }}>
               <p className="text-xs font-semibold mb-2" style={{ color: '#3b7eed' }}>Included with your pillow</p>
               <div className="flex items-center gap-3">
                 {/* Pillow Cover */}
@@ -289,11 +306,11 @@ export const HeroVariantB = () => {
             </div>
 
             {/* Desktop CTA always shows, Mobile CTA only if MOBILE_CTA_FIRST is false */}
-            <div className={mobileHeroConfig.MOBILE_CTA_FIRST ? "hidden md:block" : ""}>
+            <div className={`${mobileHeroConfig.MOBILE_CTA_FIRST ? "hidden md:block" : ""} ${valentinesOffer.isActive ? "hidden" : ""}`}>
               <Button 
                 size="lg"
                 className="w-full text-lg md:text-xl py-6 font-bold shadow-lg hover:shadow-xl transition-all touch-manipulation animate-subtle-bounce bg-primary text-primary-foreground hover:bg-black hover:text-white relative overflow-hidden group" 
-                onClick={handleAddToCart}
+                onClick={() => handleAddToCart(1)}
                 disabled={isCheckingOut || !product}
               >
                 {isCheckingOut ? (
