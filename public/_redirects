@@ -1,0 +1,10 @@
+# Server-side redirects for old /product/ paths
+# These execute BEFORE JavaScript loads, preventing React redirect latency
+
+# Product redirects - permanent 301 for SEO
+/product/ergonomic-pillow    /products/ergonomic-pillow    301
+/product/knee-pillow         /products/knee-pillow         301
+/product/sleep-mask          /products/sleep-mask          301
+/product/sleep-bundle        /products/sleep-bundle        301
+/product/*                   /products/:splat              301
+/product                     /products                     301
