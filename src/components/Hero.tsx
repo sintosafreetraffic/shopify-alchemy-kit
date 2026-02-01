@@ -17,7 +17,7 @@ import { formatPrice } from "@/lib/formatPrice";
 import { trackATCClick } from "@/hooks/usePDPIntentTracking";
 // trackABEvent moved to cartStore for centralized ATC tracking
 import { useIsEU } from "@/hooks/useCurrencySymbol";
-import { useExchangeRate } from "@/hooks/useExchangeRate";
+
 import { mobileHeroConfig } from "@/config/mobileHeroConfig";
 import { useValentinesOffer } from "@/hooks/useValentinesOffer";
 import { ValentinesHeroSection } from "./ValentinesHeroSection";
@@ -65,7 +65,7 @@ export const Hero = () => {
   const headerHeight = useHeaderHeight();
   const isEU = useIsEU();
   const valentinesOffer = useValentinesOffer();
-  const { rate } = useExchangeRate();
+  
 
   // Use centralized cached product data
   const { data: products, isLoading: productsLoading } = useShopifyProducts(10);
@@ -199,9 +199,8 @@ export const Hero = () => {
   // Override to EUR for EU countries if Shopify returns USD
   const currencyCode = (isEU && shopifyCurrency === 'USD') ? 'EUR' : shopifyCurrency;
   
-  // Base compare-at price in EUR, convert to USD for non-EU users
-  const baseCompareAtPriceEUR = 199.99;
-  const compareAtPrice = currencyCode === 'EUR' ? baseCompareAtPriceEUR : baseCompareAtPriceEUR / rate;
+  // Fixed compare-at price - same numeric value for all regions
+  const compareAtPrice = 199.99;
 
   return (
     <section className="pb-3 md:pb-6 bg-background overflow-x-hidden" style={{ paddingTop: Math.max(headerHeight - 80, 0) }}>
