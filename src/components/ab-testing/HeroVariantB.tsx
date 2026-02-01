@@ -179,7 +179,7 @@ export const HeroVariantB = () => {
                 <div className="inline-flex items-center gap-1.5 bg-gradient-to-r from-pink-50 to-rose-50 dark:from-pink-950/40 dark:to-rose-950/40 border border-pink-200 dark:border-pink-800 px-2.5 py-1 rounded-full">
                   <Heart className="w-3.5 h-3.5 text-pink-500 fill-pink-500 flex-shrink-0" />
                   <span className="text-[10px] font-semibold text-pink-600 dark:text-pink-400">
-                    1+1 Deal: <span className="line-through opacity-60">€{(productPrice * 2).toFixed(2)}</span> → €{valentinesOffer.pricing.couplesDealPrice.toFixed(2)}
+                    1+1 Deal: <span className="line-through opacity-60">€{(productPrice * 2).toFixed(2)}</span> → €119.99
                   </span>
                 </div>
               )}
@@ -274,7 +274,7 @@ export const HeroVariantB = () => {
                 <div className="inline-flex items-center gap-1.5 bg-gradient-to-r from-pink-50 to-rose-50 dark:from-pink-950/40 dark:to-rose-950/40 border border-pink-200 dark:border-pink-800 px-3 py-1.5 rounded-full shadow-sm">
                   <Heart className="w-4 h-4 text-pink-500 fill-pink-500 flex-shrink-0" />
                   <span className="text-xs font-semibold text-pink-600 dark:text-pink-400">
-                    1+1 Deal: <span className="line-through opacity-60">€{(productPrice * 2).toFixed(2)}</span> → €{valentinesOffer.pricing.couplesDealPrice.toFixed(2)}
+                    1+1 Deal: <span className="line-through opacity-60">€{(productPrice * 2).toFixed(2)}</span> → €119.99
                   </span>
                 </div>
               )}
