@@ -116,11 +116,42 @@ export function useValentinesOffer(): ValentinesOfferState {
   }, []);
 }
 
-// Real-time countdown hook with seconds precision
-export function useValentinesCountdown() {
-  const { isActive, endDate } = useValentinesOffer();
+// Get next midnight in Irish Time (Europe/Dublin)
+const getNextMidnightIrish = (): number => {
+  const dublinFormatter = new Intl.DateTimeFormat('en-IE', {
+    timeZone: 'Europe/Dublin',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
   
-  // For real-time updates, use useState + useEffect
+  const now = new Date();
+  const parts = dublinFormatter.formatToParts(now);
+  
+  const year = parseInt(parts.find(p => p.type === 'year')?.value || '2026');
+  const month = parseInt(parts.find(p => p.type === 'month')?.value || '1') - 1;
+  const day = parseInt(parts.find(p => p.type === 'day')?.value || '1');
+  
+  // Ireland is UTC+0 (GMT) or UTC+1 (IST - Irish Summer Time)
+  const jan = new Date(year, 0, 1);
+  const jul = new Date(year, 6, 1);
+  const stdOffset = Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset());
+  const isDST = now.getTimezoneOffset() < stdOffset;
+  
+  // Irish midnight = UTC midnight (GMT) or UTC-1 hour (IST)
+  const utcMidnightIrish = new Date(Date.UTC(year, month, day + 1, isDST ? -1 : 0, 0, 0, 0));
+  
+  return utcMidnightIrish.getTime();
+};
+
+// Real-time countdown hook - 24hr countdown to midnight Irish time
+export function useValentinesCountdown() {
+  const { isActive } = useValentinesOffer();
+  
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,
@@ -132,13 +163,20 @@ export function useValentinesCountdown() {
     if (!isActive) return;
     
     const updateCountdown = () => {
-      const now = new Date();
-      const remaining = Math.max(0, endDate.getTime() - now.getTime());
+      const now = Date.now();
+      const targetMidnight = getNextMidnightIrish();
+      let remaining = targetMidnight - now;
+      
+      // If negative, add 24 hours
+      if (remaining <= 0) {
+        remaining += 24 * 60 * 60 * 1000;
+      }
+      
       const totalSeconds = Math.floor(remaining / 1000);
       
       setTimeLeft({
-        days: Math.floor(totalSeconds / 86400),
-        hours: Math.floor((totalSeconds % 86400) / 3600),
+        days: 0, // Always 0 for 24hr countdown
+        hours: Math.floor(totalSeconds / 3600),
         minutes: Math.floor((totalSeconds % 3600) / 60),
         seconds: totalSeconds % 60,
       });
@@ -148,7 +186,23 @@ export function useValentinesCountdown() {
     const interval = setInterval(updateCountdown, 1000);
     
     return () => clearInterval(interval);
-  }, [isActive, endDate]);
+  }, [isActive]);
   
   return { isActive, ...timeLeft };
+}
+
+// Hook for decreasing stock count per user session
+export function useValentinesStock() {
+  const [stockCount, setStockCount] = useState(3);
+  
+  useEffect(() => {
+    // After 60 seconds, decrease to 2
+    const timer = setTimeout(() => {
+      setStockCount(2);
+    }, 60000);
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
+  return stockCount;
 }
