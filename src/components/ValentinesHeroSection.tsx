@@ -35,9 +35,11 @@ export const ValentinesHeroSection = ({
 
   // Dynamic pricing based on Shopify product price
   const singlePrice = productPrice; // €119.99 from Shopify
-  const regularTwoPrice = productPrice * 2; // €239.98 compare price
+  const compareAtPrice = 199.99; // Compare at price (was €199.99)
   const couplesDealPrice = productPrice; // €119.99 selling price for 2
+  const regularTwoPrice = productPrice * 2; // €239.98 for 2 at regular price
   const savings = regularTwoPrice - couplesDealPrice; // €119.99 savings
+  const discountPercent = Math.round(((compareAtPrice - couplesDealPrice) / compareAtPrice) * 100); // 40%
 
   const handleAdd = () => {
     if (selectedQuantity === 2) {
@@ -49,6 +51,22 @@ export const ValentinesHeroSection = ({
 
   return (
     <div className="space-y-3 mb-4">
+      {/* Price display with discount badge */}
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-3xl font-bold text-primary">
+          {formatPrice(couplesDealPrice, currencyCode)}
+        </span>
+        <span className="text-lg line-through text-muted-foreground">
+          {formatPrice(compareAtPrice, currencyCode)}
+        </span>
+        <span 
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold text-white"
+          style={{ backgroundColor: style.accentColor }}
+        >
+          <Heart className="w-3.5 h-3.5 fill-current" />
+          {discountPercent}% OFF
+        </span>
+      </div>
       {/* Valentine's headline */}
       <div 
         className="rounded-xl p-4 border"
