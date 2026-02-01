@@ -1026,6 +1026,16 @@ export const CartDrawer = () => {
 
                   {/* Price Summary */}
                   <div className="space-y-1 pt-1">
+                    {/* Valentine's 2 for €119.98 offer badge */}
+                    {valentinesOffer.isActive && (
+                      <div className="flex items-center justify-center gap-1.5 py-1.5 px-3 bg-pink-50 dark:bg-pink-950/30 rounded-md mb-2 border border-pink-200 dark:border-pink-900">
+                        <Heart className="w-3.5 h-3.5 text-pink-500 fill-pink-500" />
+                        <span className="text-sm font-semibold text-pink-600 dark:text-pink-400">
+                          2 for {formatPrice(valentinesOffer.pricing.couplesDealPrice, cartCurrency)}
+                        </span>
+                        <span className="text-xs text-pink-500">Save {formatPrice(valentinesOffer.pricing.savings, cartCurrency)}!</span>
+                      </div>
+                    )}
                     {totalDiscount > 0 && (
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-pink-500 flex items-center gap-1">
