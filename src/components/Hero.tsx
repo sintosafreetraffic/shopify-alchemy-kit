@@ -240,15 +240,14 @@ export const Hero = () => {
               The #1 Rated Ergonomic Pillow in the U.S.
             </p>
             
-            {/* Mobile Price with Valentine's Badge */}
+            {/* Mobile Price with Discount Badge */}
             <div className="flex items-center gap-2 mt-2 flex-wrap">
               <p className="text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
-              {valentinesOffer.isActive && (
-                <div className="inline-flex items-center gap-1.5 bg-gradient-to-r from-pink-50 to-rose-50 dark:from-pink-950/40 dark:to-rose-950/40 border border-pink-200 dark:border-pink-800 px-2.5 py-1 rounded-full">
-                  <Heart className="w-3.5 h-3.5 text-pink-500 fill-pink-500" />
-                  <span className="text-xs font-semibold text-pink-600 dark:text-pink-400">Valentine's Deal</span>
-                </div>
-              )}
+              <span className="text-base line-through text-muted-foreground">{formatPrice(199.99, currencyCode)}</span>
+              <div className="inline-flex items-center gap-1.5 bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-full">
+                <Moon className="w-3.5 h-3.5 text-primary" />
+                <span className="text-xs font-semibold text-primary">40% OFF</span>
+              </div>
             </div>
             
             {/* MOBILE CTA FIRST: Show CTA immediately after price when enabled */}
@@ -333,15 +332,14 @@ export const Hero = () => {
               The #1 Rated Ergonomic Pillow in the U.S.
             </p>
 
-            {/* Price Display with Valentine's Badge - Desktop Only */}
+            {/* Price Display with Discount Badge - Desktop Only */}
             <div className="hidden md:flex items-center gap-3 mt-2 mb-3">
               <p className="text-xl md:text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
-              {valentinesOffer.isActive && (
-                <div className="inline-flex items-center gap-1.5 bg-gradient-to-r from-pink-50 to-rose-50 dark:from-pink-950/40 dark:to-rose-950/40 border border-pink-200 dark:border-pink-800 px-3 py-1.5 rounded-full shadow-sm">
-                  <Heart className="w-4 h-4 text-pink-500 fill-pink-500" />
-                  <span className="text-sm font-semibold text-pink-600 dark:text-pink-400">Valentine's Deal</span>
-                </div>
-              )}
+              <span className="text-lg line-through text-muted-foreground">{formatPrice(199.99, currencyCode)}</span>
+              <div className="inline-flex items-center gap-1.5 bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-full shadow-sm">
+                <Moon className="w-4 h-4 text-primary" />
+                <span className="text-sm font-semibold text-primary">40% OFF</span>
+              </div>
             </div>
 
             {/* Benefit-Focused USPs Section - 3 Categories */}
