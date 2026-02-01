@@ -44,6 +44,11 @@ All colors MUST be HSL.
 
     --radius: 0.5rem;
 
+    /* Valentine's Theme */
+    --valentine-pink: 340 82% 65%;
+    --valentine-rose: 350 80% 60%;
+    --valentine-foreground: 0 0% 100%;
+
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 

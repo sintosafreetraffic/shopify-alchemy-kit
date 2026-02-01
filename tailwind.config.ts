@@ -60,6 +60,11 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        valentine: {
+          pink: "hsl(var(--valentine-pink))",
+          rose: "hsl(var(--valentine-rose))",
+          foreground: "hsl(var(--valentine-foreground))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -95,13 +100,18 @@ export default {
           "0%": { transform: "translateX(0%)" },
           "100%": { transform: "translateX(-50%)" },
         },
+        "marquee-rtl": {
+          "0%": { transform: "translateX(100%)" },
+          "100%": { transform: "translateX(-100%)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "slide-in-bottom": "slide-in-bottom 0.3s ease-out",
         "subtle-bounce": "subtle-bounce 0.4s ease-in-out",
-        "marquee": "marquee 20s linear infinite",
+        "marquee": "marquee 15s linear infinite",
+        "marquee-rtl": "marquee-rtl 12s linear infinite",
       },
     },
   },
