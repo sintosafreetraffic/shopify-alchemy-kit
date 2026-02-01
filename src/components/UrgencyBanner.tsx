@@ -10,12 +10,7 @@ import { Heart } from "lucide-react";
 export const UrgencyBanner = () => {
   const isCartOpen = useCartStore((state) => state.isCartOpen);
 
-  const messages = [
-    "💕 Valentine's Sale",
-    "Buy 1 Get 1 Free",
-    "💕 Valentine's Sale",
-    "Buy 1 Get 1 Free",
-  ];
+  const bannerText = "Valentine's Sale • Buy 1 Get 1 Free";
 
   return (
     <div
@@ -24,20 +19,11 @@ export const UrgencyBanner = () => {
         isCartOpen ? "opacity-0 pointer-events-none" : "opacity-100"
       }`}
     >
-      <div className="animate-marquee whitespace-nowrap flex items-center">
-        {messages.map((msg, i) => (
-          <span key={i} className="flex items-center gap-2 mx-10">
-            <Heart className="w-4 h-4 fill-current" />
-            <span>{msg}</span>
-          </span>
-        ))}
-        {/* Duplicate for seamless loop */}
-        {messages.map((msg, i) => (
-          <span key={`dup-${i}`} className="flex items-center gap-2 mx-10">
-            <Heart className="w-4 h-4 fill-current" />
-            <span>{msg}</span>
-          </span>
-        ))}
+      <div className="animate-marquee-rtl whitespace-nowrap flex items-center">
+        <span className="inline-flex items-center gap-2 px-10">
+          <Heart className="w-4 h-4 fill-current" />
+          <span>{bannerText}</span>
+        </span>
       </div>
     </div>
   );
