@@ -28,7 +28,7 @@ import {
 // Using WebP variants for better compression
 import testimonialAvatar from "@/assets/testimonial-new-updated.webp";
 import eyeMaskGift from "@/assets/eye-mask-gift-new.webp";
-import riseByNightLogo from "@/assets/risebynight-logo.png";
+import moonIcon from "@/assets/moon-icon-blue.png";
 import consumerChoiceBadge from "@/assets/consumer-choice-badge-transparent.png";
 import pillowCoverImage from "@/assets/pillow-cover-included.webp";
 
@@ -246,7 +246,7 @@ export const Hero = () => {
               <p className="text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
               <span className="text-base line-through text-muted-foreground">{formatPrice(199.99, currencyCode)}</span>
               <div className="inline-flex items-center gap-2.5 bg-primary/10 border border-primary/20 px-4 py-3 rounded-full">
-                <img src={riseByNightLogo} alt="Rise by Night" className="w-10 h-10 object-contain" />
+                <img src={moonIcon} alt="" className="w-6 h-6 shrink-0" />
                 <span className="text-base font-bold text-primary">40% OFF</span>
               </div>
             </div>
@@ -338,7 +338,7 @@ export const Hero = () => {
               <p className="text-xl md:text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
               <span className="text-lg line-through text-muted-foreground">{formatPrice(199.99, currencyCode)}</span>
               <div className="inline-flex items-center gap-3 bg-primary/10 border border-primary/20 px-5 py-3.5 rounded-full shadow-sm">
-                <img src={riseByNightLogo} alt="Rise by Night" className="w-12 h-12 object-contain" />
+                <img src={moonIcon} alt="" className="w-7 h-7 shrink-0" />
                 <span className="text-lg font-bold text-primary">40% OFF</span>
               </div>
             </div>

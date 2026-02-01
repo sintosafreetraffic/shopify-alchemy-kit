@@ -26,7 +26,7 @@ import { useValentinesOffer } from "@/hooks/useValentinesOffer";
 import { ValentinesHeroSection } from "@/components/ValentinesHeroSection";
 import testimonialAvatar from "@/assets/testimonial-new-updated.webp";
 import pillowCoverImage from "@/assets/pillow-cover-included.webp";
-import logoIcon from "@/assets/logo-icon.png";
+import moonIcon from "@/assets/moon-icon-blue.png";
 
 // Lazy load the image carousel to reduce initial bundle
 const ProductImageCarousel = lazy(() => 
@@ -178,7 +178,7 @@ export const HeroVariantB = () => {
               <p className="text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
               <span className="text-base line-through text-muted-foreground">{formatPrice(199.99, currencyCode)}</span>
               <div className="inline-flex items-center gap-1.5 bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-full">
-                <img src={logoIcon} alt="" className="w-3.5 h-3.5" />
+                <img src={moonIcon} alt="" className="w-6 h-6 shrink-0" />
                 <span className="text-xs font-semibold text-primary">40% OFF</span>
               </div>
             </div>
@@ -270,7 +270,7 @@ export const HeroVariantB = () => {
               <p className="text-xl md:text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
               <span className="text-lg line-through text-muted-foreground">{formatPrice(199.99, currencyCode)}</span>
               <div className="inline-flex items-center gap-1.5 bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-full shadow-sm">
-                <img src={logoIcon} alt="" className="w-4 h-4" />
+                <img src={moonIcon} alt="" className="w-7 h-7 shrink-0" />
                 <span className="text-sm font-semibold text-primary">40% OFF</span>
               </div>
             </div>
