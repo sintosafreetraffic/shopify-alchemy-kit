@@ -46,6 +46,11 @@ interface PlatformStats {
   events: number;
   value: number;
   color: string;
+  attributionBreakdown?: {
+    click_id: number;
+    email_match: number;
+    unmatched: number;
+  };
 }
 
 interface OverlapStats {
@@ -93,21 +98,28 @@ export const AttributionSourceTruthTab = () => {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - daysNum);
 
-      // Fetch all platform data in parallel (include order_id for overlap analysis)
+      // Fetch all platform data in parallel (include order_id and attribution_source for analysis)
       const [pinterestResult, metaResult, googleResult] = await Promise.all([
         supabase
           .from('pinterest_purchase_events')
-          .select('order_id, value, created_at, send_status, is_test')
+          .select('order_id, value, created_at, send_status, is_test, attribution_source')
           .gte('created_at', startDate.toISOString()),
         supabase
           .from('meta_purchase_events')
-          .select('order_id, value, created_at, send_status')
+          .select('order_id, value, created_at, send_status, attribution_source')
           .gte('created_at', startDate.toISOString()),
         supabase
           .from('google_purchase_events')
-          .select('order_id, value, created_at, send_status')
+          .select('order_id, value, created_at, send_status, attribution_source')
           .gte('created_at', startDate.toISOString()),
       ]);
+
+      // Helper to count attribution sources
+      const countAttributionSources = (events: any[]) => ({
+        click_id: events.filter((e: any) => e.attribution_source === 'click_id').length,
+        email_match: events.filter((e: any) => e.attribution_source === 'email_match').length,
+        unmatched: events.filter((e: any) => !e.attribution_source || e.attribution_source === 'unmatched').length,
+      });
 
       // Process Pinterest
       const pinterestEvents = (pinterestResult.data || []).filter(
@@ -115,16 +127,19 @@ export const AttributionSourceTruthTab = () => {
       );
       const pinterestValue = pinterestEvents.reduce((sum: number, e: any) => sum + (e.value || 0), 0);
       const pinterestOrderIds = new Set(pinterestEvents.map((e: any) => e.order_id));
+      const pinterestAttrBreakdown = countAttributionSources(pinterestEvents);
 
       // Process Meta
       const metaEvents = (metaResult.data || []).filter((e: any) => e.send_status === 'sent');
       const metaValue = metaEvents.reduce((sum: number, e: any) => sum + (e.value || 0), 0);
       const metaOrderIds = new Set(metaEvents.map((e: any) => e.order_id));
+      const metaAttrBreakdown = countAttributionSources(metaEvents);
 
       // Process Google
       const googleEvents = (googleResult.data || []).filter((e: any) => e.send_status?.includes('sent'));
       const googleValue = googleEvents.reduce((sum: number, e: any) => sum + (e.value || 0), 0);
       const googleOrderIds = new Set(googleEvents.map((e: any) => e.order_id));
+      const googleAttrBreakdown = countAttributionSources(googleEvents);
 
       // Calculate overlap statistics
       const allOrderIds = new Set([...pinterestOrderIds, ...metaOrderIds, ...googleOrderIds]);
@@ -180,9 +195,9 @@ export const AttributionSourceTruthTab = () => {
         totalEvents: pinterestEvents.length + metaEvents.length + googleEvents.length,
         totalValue: pinterestValue + metaValue + googleValue,
         platforms: [
-          { platform: 'Pinterest', events: pinterestEvents.length, value: pinterestValue, color: PLATFORM_COLORS.pinterest },
-          { platform: 'Meta', events: metaEvents.length, value: metaValue, color: PLATFORM_COLORS.meta },
-          { platform: 'Google', events: googleEvents.length, value: googleValue, color: PLATFORM_COLORS.google },
+          { platform: 'Pinterest', events: pinterestEvents.length, value: pinterestValue, color: PLATFORM_COLORS.pinterest, attributionBreakdown: pinterestAttrBreakdown },
+          { platform: 'Meta', events: metaEvents.length, value: metaValue, color: PLATFORM_COLORS.meta, attributionBreakdown: metaAttrBreakdown },
+          { platform: 'Google', events: googleEvents.length, value: googleValue, color: PLATFORM_COLORS.google, attributionBreakdown: googleAttrBreakdown },
         ],
         overlap: {
           uniqueOrders: allOrderIds.size,
@@ -395,6 +410,43 @@ export const AttributionSourceTruthTab = () => {
                   </div>
                 </Card>
               </div>
+
+              {/* Attribution Source Classification */}
+              <Card className="p-4">
+                <h3 className="text-sm font-medium mb-4">Attribution Source Classification</h3>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Shows how each platform can match conversions: <strong>click_id</strong> (best - has platform's click ID), 
+                  <strong> email_match</strong> (good - platform matches on PII), <strong>unmatched</strong> (minimal data)
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {combinedStats.platforms.map((p) => (
+                    <div key={p.platform} className="p-3 rounded-lg border" style={{ borderColor: p.color + '40' }}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: p.color }} />
+                        <span className="font-medium">{p.platform}</span>
+                      </div>
+                      {p.attributionBreakdown ? (
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">🎯 Click ID</span>
+                            <Badge variant="default" className="bg-green-600">{p.attributionBreakdown.click_id}</Badge>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">📧 Email Match</span>
+                            <Badge variant="secondary">{p.attributionBreakdown.email_match}</Badge>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">❓ Unmatched</span>
+                            <Badge variant="outline" className="text-muted-foreground">{p.attributionBreakdown.unmatched}</Badge>
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">No data</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </Card>
 
               {/* Platform Health Badges */}
               <Card className="p-4">

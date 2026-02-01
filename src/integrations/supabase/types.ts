@@ -1865,6 +1865,7 @@ export type Database = {
       }
       google_purchase_events: {
         Row: {
+          attribution_source: string | null
           created_at: string
           currency: string
           email_hash: string | null
@@ -1879,6 +1880,7 @@ export type Database = {
           value: number
         }
         Insert: {
+          attribution_source?: string | null
           created_at?: string
           currency?: string
           email_hash?: string | null
@@ -1893,6 +1895,7 @@ export type Database = {
           value: number
         }
         Update: {
+          attribution_source?: string | null
           created_at?: string
           currency?: string
           email_hash?: string | null
@@ -1949,6 +1952,7 @@ export type Database = {
       }
       meta_purchase_events: {
         Row: {
+          attribution_source: string | null
           created_at: string
           currency: string
           error_message: string | null
@@ -1963,6 +1967,7 @@ export type Database = {
           value: number
         }
         Insert: {
+          attribution_source?: string | null
           created_at?: string
           currency?: string
           error_message?: string | null
@@ -1977,6 +1982,7 @@ export type Database = {
           value: number
         }
         Update: {
+          attribution_source?: string | null
           created_at?: string
           currency?: string
           error_message?: string | null
