@@ -7,7 +7,7 @@
  */
 
 import { Button } from "@/components/ui/button";
-import { Check, Shield, Moon, Truck, Loader2, Star, ImageIcon, ChevronDown, Heart } from "lucide-react";
+import { Check, Shield, Truck, Loader2, Star, ImageIcon, ChevronDown, Heart } from "lucide-react";
 import { PaymentIcons } from "@/components/PaymentIcons";
 import { PolicyAccordion } from "@/components/PolicyAccordion";
 import { useState, useEffect, useRef, Suspense, lazy } from "react";
@@ -26,6 +26,7 @@ import { useValentinesOffer } from "@/hooks/useValentinesOffer";
 import { ValentinesHeroSection } from "@/components/ValentinesHeroSection";
 import testimonialAvatar from "@/assets/testimonial-new-updated.webp";
 import pillowCoverImage from "@/assets/pillow-cover-included.webp";
+import logoIcon from "@/assets/logo-icon.png";
 
 // Lazy load the image carousel to reduce initial bundle
 const ProductImageCarousel = lazy(() => 
@@ -177,7 +178,7 @@ export const HeroVariantB = () => {
               <p className="text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
               <span className="text-base line-through text-muted-foreground">{formatPrice(199.99, currencyCode)}</span>
               <div className="inline-flex items-center gap-1.5 bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-full">
-                <Moon className="w-3.5 h-3.5 text-primary" />
+                <img src={logoIcon} alt="" className="w-3.5 h-3.5" />
                 <span className="text-xs font-semibold text-primary">40% OFF</span>
               </div>
             </div>
@@ -269,7 +270,7 @@ export const HeroVariantB = () => {
               <p className="text-xl md:text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
               <span className="text-lg line-through text-muted-foreground">{formatPrice(199.99, currencyCode)}</span>
               <div className="inline-flex items-center gap-1.5 bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-full shadow-sm">
-                <Moon className="w-4 h-4 text-primary" />
+                <img src={logoIcon} alt="" className="w-4 h-4" />
                 <span className="text-sm font-semibold text-primary">40% OFF</span>
               </div>
             </div>
