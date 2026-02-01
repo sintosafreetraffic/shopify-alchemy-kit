@@ -150,13 +150,6 @@ export const ValentinesHeroSection = ({
           )}
         </Button>
 
-        {/* Delivery promise */}
-        {!isDeliveryDeadlinePassed && (
-          <div className="flex items-center justify-center gap-2 mt-2 text-xs text-muted-foreground">
-            <Truck className="w-3.5 h-3.5" />
-            <span>{deliveryText}</span>
-          </div>
-        )}
 
         {/* Countdown */}
         <div className="mt-3 flex justify-center">
