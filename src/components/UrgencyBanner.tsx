@@ -5,12 +5,14 @@
  */
 
 import { useCartStore } from "@/stores/cartStore";
-import { Heart } from "lucide-react";
+import { Heart, Truck, Gift } from "lucide-react";
+import { useCurrencySymbol } from "@/hooks/useCurrencySymbol";
 
 export const UrgencyBanner = () => {
   const isCartOpen = useCartStore((state) => state.isCartOpen);
-
-  const bannerText = "Valentine's Sale • Buy 1 Get 1 Free";
+  const currencySymbol = useCurrencySymbol();
+  
+  const shippingThreshold = currencySymbol === '€' ? '€50' : '$50';
 
   return (
     <div
@@ -19,10 +21,20 @@ export const UrgencyBanner = () => {
         isCartOpen ? "opacity-0 pointer-events-none" : "opacity-100"
       }`}
     >
-      <div className="animate-marquee-rtl whitespace-nowrap flex items-center">
-        <span className="inline-flex items-center gap-2 px-10">
-          <Heart className="w-4 h-4 fill-current" />
-          <span>{bannerText}</span>
+      <div className="animate-marquee-rtl-fast whitespace-nowrap flex items-center">
+        <span className="inline-flex items-center gap-6 px-10">
+          <span className="inline-flex items-center gap-2">
+            <Heart className="w-4 h-4 fill-current" />
+            <span>Valentine's Sale</span>
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <Gift className="w-4 h-4" />
+            <span>Buy 1 Get 1 Free</span>
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <Truck className="w-4 h-4" />
+            <span>Free Shipping above {shippingThreshold}</span>
+          </span>
         </span>
       </div>
     </div>

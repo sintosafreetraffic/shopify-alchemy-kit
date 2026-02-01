@@ -112,6 +112,7 @@ export default {
         "subtle-bounce": "subtle-bounce 0.4s ease-in-out",
         "marquee": "marquee 15s linear infinite",
         "marquee-rtl": "marquee-rtl 12s linear infinite",
+        "marquee-rtl-fast": "marquee-rtl 8s linear infinite",
       },
     },
   },
