@@ -438,7 +438,7 @@ export const CartDrawer = () => {
                   onClick={handleAddAnotherPillow}
                 >
                   <Heart className="w-4 h-4 mr-2 fill-current" />
-                  Add Another Pillow
+                  Add Free Pillow
                 </Button>
               </div>
             )}
