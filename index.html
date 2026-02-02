@@ -21,6 +21,9 @@
     <link rel="preconnect" href="https://a.klaviyo.com" crossorigin />
     <link rel="preconnect" href="https://cdn.shopify.com" crossorigin />
 
+    <!-- Preload LCP hero image for faster mobile paint -->
+    <link rel="preload" href="/src/assets/ergonomic-pillow-hero.webp" as="image" type="image/webp" fetchpriority="high" />
+
     <!-- Critical resource hints removed - Vite hashes filenames so static preloads don't work -->
     <!-- LCP optimization handled via fetchpriority="high" on actual img elements -->
 
