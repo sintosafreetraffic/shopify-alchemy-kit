@@ -49,11 +49,19 @@ const ProductImageCarousel = lazy(() =>
   import("./ProductImageCarousel").then(mod => ({ default: mod.ProductImageCarousel }))
 );
 
-// Carousel loading fallback
+// Carousel loading fallback - matches exact dimensions to prevent CLS
+// Mobile: full-width square image | Desktop: 1200x900 aspect ratio (4:3)
 const CarouselFallback = () => (
-  <div className="w-full aspect-square bg-muted/30 rounded-xl flex items-center justify-center animate-pulse">
-    <ImageIcon className="h-12 w-12 text-muted-foreground/40" />
-  </div>
+  <>
+    {/* Mobile fallback - square aspect ratio */}
+    <div className="md:hidden w-full aspect-square bg-muted/30 flex items-center justify-center">
+      <ImageIcon className="h-12 w-12 text-muted-foreground/40" />
+    </div>
+    {/* Desktop fallback - 4:3 aspect ratio matching actual images */}
+    <div className="hidden md:flex w-full aspect-[4/3] bg-muted/30 rounded-xl items-center justify-center">
+      <ImageIcon className="h-12 w-12 text-muted-foreground/40" />
+    </div>
+  </>
 );
 
 export const Hero = () => {
@@ -246,12 +254,12 @@ export const Hero = () => {
               The #1 Rated Ergonomic Pillow in the U.S.
             </p>
             
-            {/* Mobile Price with Discount Badge */}
-            <div className="flex items-center gap-2 mt-2 flex-wrap">
+            {/* Mobile Price with Discount Badge - min-height prevents CLS when price loads */}
+            <div className="flex items-center gap-2 mt-2 flex-wrap min-h-[44px]">
               <p className="text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
               <span className="text-base line-through text-muted-foreground">{formatPrice(compareAtPrice, currencyCode)}</span>
               <div className="inline-flex items-center gap-2.5 bg-primary/10 border border-primary/20 px-4 py-3 rounded-full">
-                <img src={moonIcon} alt="" className="w-6 h-6 shrink-0" />
+                <img src={moonIcon} alt="" className="w-6 h-6 shrink-0" width={24} height={24} />
                 <span className="text-base font-bold text-primary">40% OFF</span>
               </div>
             </div>

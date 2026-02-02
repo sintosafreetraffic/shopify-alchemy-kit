@@ -173,8 +173,8 @@ export const ProductImageCarousel = () => {
           />
         </Carousel>
         
-        {/* Carousel Thumbnail Indicators */}
-        <div className="flex justify-center gap-2 mt-3 px-4">
+        {/* Carousel Thumbnail Indicators - fixed height to prevent CLS */}
+        <div className="flex justify-center gap-2 mt-3 px-4 h-14">
           {mobileImages.map((item, index) => (
             <button
               key={index}
@@ -261,8 +261,8 @@ export const ProductImageCarousel = () => {
           />
         </Carousel>
         
-        {/* Desktop Thumbnail Indicators */}
-        <div className="flex gap-2 mt-4 max-w-full overflow-x-auto scrollbar-hide justify-start lg:justify-center px-3 py-1">
+        {/* Desktop Thumbnail Indicators - fixed height to prevent CLS */}
+        <div className="flex gap-2 mt-4 max-w-full overflow-x-auto scrollbar-hide justify-start lg:justify-center px-3 py-1 h-[72px]">
           {images.map((item, index) => (
             <button
               key={index}
