@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 // All images are already WebP format for optimal performance
 import pillowHeroNew from "@/assets/ergonomic-pillow-hero.webp";
 import pillowBundleNew from "@/assets/pillow-male-mask-new.webp";
+import pillowBeforeAfterSpine from "@/assets/pillow-before-after-spine.webp";
 import pillowDeeperSleep from "@/assets/pillow-deeper-sleep.webp";
 import pillowDeeperSleepBack from "@/assets/pillow-deeper-sleep-back.webp";
 import pillowCoupleNeckPain from "@/assets/pillow-couple-no-neck-pain.webp";
@@ -85,7 +86,7 @@ export const ProductImageCarousel = ({ pillowFocus = 'neck' }: ProductImageCarou
     { url: pillowTrusted, alt: "Rise By Night pillow - trusted by 100,000+ sleepers with customer reviews", type: "image" },
     { url: pillowCoverMask, alt: "Rise By Night pillow - removable cover and silk sleep mask", type: "image" },
     { url: pillowCoupleNeckPain, alt: "Happy couple with Rise By Night pillows - no more neck pain", type: "image" },
-    { url: pillowBundleNew, alt: "Rise By Night pillow bundle with mulberry silk sleep mask and extra pillow cover", type: "image" },
+    { url: pillowBeforeAfterSpine, alt: "Before and after spine alignment comparison - Rise By Night pillow vs regular pillow", type: "image" },
   ];
 
   // Get only image URLs (excluding videos) for the modal navigation
