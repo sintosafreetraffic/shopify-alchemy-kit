@@ -4023,14 +4023,10 @@ export type Database = {
       ab_quality_metrics: {
         Row: {
           ab_variant: string | null
-          cancel_count: number | null
           chargeback_amount: number | null
           chargeback_count: number | null
           refund_amount: number | null
           refund_count: number | null
-          return_count: number | null
-          support_ticket_count: number | null
-          total_quality_events: number | null
         }
         Relationships: []
       }
