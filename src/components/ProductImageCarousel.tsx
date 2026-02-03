@@ -152,7 +152,7 @@ export const ProductImageCarousel = () => {
                     <img
                       src={item.url}
                       alt={item.alt}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                       loading={index === 0 ? "eager" : "lazy"}
                       fetchPriority={index === 0 ? "high" : "low"}
                       decoding="async"
@@ -241,7 +241,7 @@ export const ProductImageCarousel = () => {
                     <img
                       src={item.url}
                       alt={item.alt}
-                      className="w-full h-full object-cover rounded-xl"
+                      className="w-full h-full object-contain rounded-xl"
                       loading={index === 0 ? "eager" : "lazy"}
                       fetchPriority={index === 0 ? "high" : "low"}
                       decoding="async"
