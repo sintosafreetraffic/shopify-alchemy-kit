@@ -240,15 +240,6 @@ export const Hero = () => {
                 <span className="text-sm font-semibold">6,247 verified product reviews</span>
               </div>
               
-              {/* Fixed height badge container prevents CLS */}
-              <div className="flex gap-1 flex-nowrap overflow-x-auto scrollbar-hide -mx-4 px-4 h-[26px]">
-                <div className="inline-flex items-center gap-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 px-2 py-1 rounded-md text-[10px] font-bold whitespace-nowrap flex-shrink-0">
-                  ✓ 98% Customer Satisfaction
-                </div>
-                <div className="inline-flex items-center gap-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded-md text-[10px] font-bold whitespace-nowrap flex-shrink-0">
-                  🔥 Frequently Purchased
-                </div>
-              </div>
             </div>
             
             {/* Mobile title - styled as heading but using p tag to avoid duplicate H1 */}
@@ -336,14 +327,6 @@ export const Hero = () => {
                   <span className="text-base font-semibold">6,247 verified product reviews</span>
                 </div>
                 
-                <div className="flex gap-1 sm:gap-1.5 flex-nowrap">
-                  <div className="inline-flex items-center gap-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 px-1.5 sm:px-2 md:px-3 py-0.5 sm:py-1 md:py-1.5 rounded-md text-[8px] sm:text-[9px] md:text-xs font-bold whitespace-nowrap">
-                    ✓ 98% Customer Satisfaction
-                  </div>
-                  <div className="inline-flex items-center gap-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 px-1.5 sm:px-2 md:px-3 py-0.5 sm:py-1 md:py-1.5 rounded-md text-[8px] sm:text-[9px] md:text-xs font-bold whitespace-nowrap">
-                    🔥 Frequently Purchased
-                  </div>
-                </div>
               </div>
             </div>
 
