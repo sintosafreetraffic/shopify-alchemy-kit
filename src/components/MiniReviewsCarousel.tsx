@@ -21,7 +21,7 @@ const miniReviews = [
     customer_name: "Margaret Williams",
     avatar: avatar2,
     rating: 5,
-    body: "I'm 61 from Minnesota and sleep on my side year round and my neck was stiff every single morning because my old pillows kept flattening out. This one actually keeps the height and I wake up way less crooked.",
+    body: "I'm 61 in Minnesota and I was waking with neck and shoulder pain most mornings. After a week on this pillow it's basically gone. I didn't think a pillow could do that but it did.",
     city: "Minneapolis, MN",
   },
   {
@@ -29,7 +29,7 @@ const miniReviews = [
     customer_name: "Robert Johnson",
     avatar: avatar3,
     rating: 5,
-    body: "I tried stacking two pillows for years because nothing was tall enough for my shoulders but then my neck would be bent funny. This finally hits the right height and my neck isn't screaming when I get up.",
+    body: "My neck pain was every day from side sleeping and my shoulders were tight too. This keeps my head level and the neck pain stopped. I still get normal aches sometimes but not that sharp morning neck thing.",
     city: "Los Angeles, CA",
   },
   {
@@ -37,7 +37,7 @@ const miniReviews = [
     customer_name: "Patricia Anderson",
     avatar: avatar4,
     rating: 5,
-    body: "I didn't want to spend real money on another pillow after the whole pillow graveyard situation but most of mine went flat or were too bulky in the middle. This one keeps my neck straight through the night.",
+    body: "I had that constant stiff neck feeling like I slept wrong. Since switching to this I wake up and my neck feels normal again. No more neck and shoulder pain first thing in the morning.",
     city: "St. Paul, MN",
   },
   {
@@ -45,7 +45,7 @@ const miniReviews = [
     customer_name: "David Patterson",
     avatar: avatar1,
     rating: 5,
-    body: "I sleep on my side and my neck pain always came from my head being pushed too high or sinking too low depending on the pillow. This one stays more even and that alone helped a lot.",
+    body: "I tried different pillows and nothing fixed it because they go flat. This one holds the height and my neck pain is gone like 90%. I can turn my head in the morning without wincing.",
     city: "New York, NY",
   },
   {
@@ -53,7 +53,7 @@ const miniReviews = [
     customer_name: "Susan Miller",
     avatar: avatar5,
     rating: 5,
-    body: "Took a couple nights to get used to because it's firmer than my old fluffy ones but once I settled in the neck pain eased up and I stopped waking stiff every morning.",
+    body: "I was skeptical but I don't wake up with the neck pain anymore. My shoulders aren't up by my ears all night either. It just keeps me lined up better on my side.",
     city: "Duluth, MN",
   },
 ];
