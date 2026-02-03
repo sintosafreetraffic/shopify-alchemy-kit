@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 // All images are already WebP format for optimal performance
 import pillowHeroNew from "@/assets/ergonomic-pillow-hero.webp";
+import pillowHeroNeckPain from "@/assets/pillow-hero-neck-pain.webp";
 import pillowBundleNew from "@/assets/pillow-male-mask-new.webp";
 import pillowBeforeAfterSpine from "@/assets/pillow-before-after-spine.webp";
 import pillowDeeperSleep from "@/assets/pillow-deeper-sleep.webp";
@@ -73,6 +74,12 @@ export const ProductImageCarousel = ({ pillowFocus = 'neck' }: ProductImageCarou
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [selectedVideoSrc, setSelectedVideoSrc] = useState<string | null>(null);
 
+  // Select image 1 based on pillow focus (neck pain vs back pain)
+  const image1 = pillowFocus === 'neck' ? pillowHeroNeckPain : pillowHeroNew;
+  const image1Alt = pillowFocus === 'neck' 
+    ? "Rise By Night ergonomic pillow - neck pain relief for side sleepers"
+    : "Rise By Night ergonomic pillow main view";
+
   // Select image 2 based on pillow focus (back pain vs neck pain)
   const image2 = pillowFocus === 'back' ? pillowDeeperSleepBack : pillowDeeperSleep;
   const image2Alt = pillowFocus === 'back' 
@@ -81,7 +88,7 @@ export const ProductImageCarousel = ({ pillowFocus = 'neck' }: ProductImageCarou
 
   // Multiple views of the Rise By Night pillow (desktop order)
   const images = [
-    { url: pillowHeroNew, alt: "Rise By Night ergonomic pillow main view", type: "image" },
+    { url: image1, alt: image1Alt, type: "image" },
     { url: image2, alt: image2Alt, type: "image" },
     { url: pillowTrusted, alt: "Rise By Night pillow - trusted by 100,000+ sleepers with customer reviews", type: "image" },
     { url: pillowCoverMask, alt: "Rise By Night pillow - removable cover and silk sleep mask", type: "image" },
