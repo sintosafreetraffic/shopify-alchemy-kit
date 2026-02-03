@@ -112,8 +112,9 @@ const BackPainPillowProduct = () => {
   useSEO({
     title: backPainContent.seo.title,
     description: backPainContent.seo.description,
-    canonical: '/products/back-pain-pillow',
-    ogImage: '/images/pillow-main-new.png',
+    canonical: 'https://shopify-alchemy-kit.lovable.app/products/back-pain-pillow',
+    ogType: 'product',
+    ogImage: 'https://shopify-alchemy-kit.lovable.app/images/pillow-main-new.png',
   });
   
   const [showReviewForm, setShowReviewForm] = useState(false);
@@ -128,7 +129,9 @@ const BackPainPillowProduct = () => {
       <ProductSchema
         name="RiseByNight Back Pain Relief Pillow"
         description={backPainContent.seo.description}
-        url="/products/back-pain-pillow"
+        url="https://shopify-alchemy-kit.lovable.app/products/back-pain-pillow"
+        image="https://shopify-alchemy-kit.lovable.app/images/pillow-main-new.png"
+        sku="RBN-BACK-PILLOW-001"
         price="59.99"
         ratingValue={4.8}
         reviewCount={6247}
