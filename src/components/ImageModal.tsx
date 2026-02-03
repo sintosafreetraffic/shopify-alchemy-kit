@@ -51,7 +51,7 @@ export const ImageModal = ({ imageUrl, onClose, images, currentIndex = 0, onNavi
 
   return (
     <div
-      className="fixed inset-0 z-[300] flex items-center justify-center bg-black/90 p-4 md:p-8 animate-in fade-in duration-200"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 p-4 md:p-8 animate-in fade-in duration-200"
       onClick={onClose}
     >
       {/* Navigation arrows */}
@@ -60,7 +60,7 @@ export const ImageModal = ({ imageUrl, onClose, images, currentIndex = 0, onNavi
           <button
             onClick={handlePrev}
             disabled={!hasPrev}
-            className={`fixed left-2 md:left-6 top-1/2 -translate-y-1/2 z-[310] bg-white/90 rounded-full p-2 md:p-3 shadow-lg transition-all ${
+            className={`fixed left-2 md:left-6 top-1/2 -translate-y-1/2 z-[10000] bg-white/90 rounded-full p-2 md:p-3 shadow-lg transition-all ${
               hasPrev ? 'hover:bg-white cursor-pointer opacity-100' : 'opacity-30 cursor-not-allowed'
             }`}
             aria-label="Previous image"
@@ -70,7 +70,7 @@ export const ImageModal = ({ imageUrl, onClose, images, currentIndex = 0, onNavi
           <button
             onClick={handleNext}
             disabled={!hasNext}
-            className={`fixed right-2 md:right-6 top-1/2 -translate-y-1/2 z-[310] bg-white/90 rounded-full p-2 md:p-3 shadow-lg transition-all ${
+            className={`fixed right-2 md:right-6 top-1/2 -translate-y-1/2 z-[10000] bg-white/90 rounded-full p-2 md:p-3 shadow-lg transition-all ${
               hasNext ? 'hover:bg-white cursor-pointer opacity-100' : 'opacity-30 cursor-not-allowed'
             }`}
             aria-label="Next image"
