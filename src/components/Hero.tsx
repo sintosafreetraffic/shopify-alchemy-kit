@@ -230,7 +230,7 @@ export const Hero = () => {
             <div className="space-y-2 mb-3 min-h-[52px]">
               <div 
                 className="flex items-center gap-2 flex-wrap cursor-pointer hover:opacity-80 transition-opacity min-h-[20px]"
-                onClick={() => document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' })}
+                onClick={() => document.getElementById('reviews-wall')?.scrollIntoView({ behavior: 'smooth' })}
               >
                 <div className="flex" style={{ width: '100px', height: '20px' }}>
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -317,7 +317,7 @@ export const Hero = () => {
               <div className="space-y-2">
                 <div 
                   className="flex items-center gap-3 flex-wrap cursor-pointer hover:opacity-80 transition-opacity"
-                  onClick={() => document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' })}
+                  onClick={() => document.getElementById('reviews-wall')?.scrollIntoView({ behavior: 'smooth' })}
                 >
                   <div className="flex">
                     {[1, 2, 3, 4, 5].map((star) => (
