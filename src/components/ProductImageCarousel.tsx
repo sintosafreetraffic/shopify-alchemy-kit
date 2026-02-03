@@ -128,10 +128,10 @@ export const ProductImageCarousel = () => {
   }, [desktopApi]);
   return (
     <>
-      {/* Mobile Carousel - full width edge-to-edge */}
-      <div className="md:hidden -mx-4 sm:-mx-6 lg:-mx-8">
+      {/* Mobile Carousel - full width edge-to-edge with calc to account for parent padding */}
+      <div className="md:hidden w-screen relative left-1/2 -translate-x-1/2">
         <Carousel className="w-full" setApi={setMobileApi}>
-          <CarouselContent className="-ml-0">
+          <CarouselContent className="ml-0">
             {mobileImages.map((item, index) => (
               <CarouselItem key={index} className="pl-0">
                 {/* Fixed aspect ratio container prevents CLS on image load */}
@@ -152,7 +152,7 @@ export const ProductImageCarousel = () => {
                     <img
                       src={item.url}
                       alt={item.alt}
-                      className="w-full h-full object-contain"
+                      className="w-full h-full object-cover"
                       loading={index === 0 ? "eager" : "lazy"}
                       fetchPriority={index === 0 ? "high" : "low"}
                       decoding="async"
