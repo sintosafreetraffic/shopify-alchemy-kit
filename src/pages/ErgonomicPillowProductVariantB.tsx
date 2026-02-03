@@ -145,14 +145,15 @@ const ErgonomicPillowProductVariantB = () => {
         onWriteReview={() => setShowReviewForm(true)} 
       />
 
-      <Suspense fallback={<SectionFallback />}>
+      {/* "See It In Action" video section - hidden per request */}
+      {/* <Suspense fallback={<SectionFallback />}>
         <VideoSection />
-      </Suspense>
+      </Suspense> */}
 
-      {/* Featured Customer Reviews Carousel */}
-      <Suspense fallback={<SectionFallback />}>
+      {/* Featured Customer Reviews Carousel - hidden per request */}
+      {/* <Suspense fallback={<SectionFallback />}>
         <ReviewsSection />
-      </Suspense>
+      </Suspense> */}
 
       <ProductFAQSection />
 
