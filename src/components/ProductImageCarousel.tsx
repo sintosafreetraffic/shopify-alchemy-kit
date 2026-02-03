@@ -10,6 +10,7 @@ import pillowBeforeAfterSpine from "@/assets/pillow-before-after-spine.webp";
 import pillowDeeperSleep from "@/assets/pillow-deeper-sleep.webp";
 import pillowDeeperSleepBack from "@/assets/pillow-deeper-sleep-back.webp";
 import pillowCoupleNeckPain from "@/assets/pillow-couple-no-neck-pain.webp";
+import pillowCoupleBackPain from "@/assets/pillow-couple-back-pain.webp";
 import pillowCoverMask from "@/assets/ergonomic-pillow-cover-mask.webp";
 import pillowTrusted from "@/assets/ergonomic-pillow-trusted.webp";
 import { PillowFocus } from "@/config/pillowFocusContent";
@@ -87,13 +88,19 @@ export const ProductImageCarousel = ({ pillowFocus = 'neck' }: ProductImageCarou
     ? "Rise By Night pillow - designed to remove back pain"
     : "Rise By Night pillow - engineered for deeper sleep with reduced neck and shoulder pressure";
 
+  // Select image 5 based on pillow focus (back pain vs neck pain)
+  const image5 = pillowFocus === 'back' ? pillowCoupleBackPain : pillowCoupleNeckPain;
+  const image5Alt = pillowFocus === 'back' 
+    ? "Happy couple with Rise By Night pillows - no more back pain"
+    : "Happy couple with Rise By Night pillows - no more neck pain";
+
   // Multiple views of the Rise By Night pillow (desktop order)
   const images = [
     { url: image1, alt: image1Alt, type: "image" },
     { url: image2, alt: image2Alt, type: "image" },
     { url: pillowTrusted, alt: "Rise By Night pillow - trusted by 100,000+ sleepers with customer reviews", type: "image" },
     { url: pillowCoverMask, alt: "Rise By Night pillow - removable cover and silk sleep mask", type: "image" },
-    { url: pillowCoupleNeckPain, alt: "Happy couple with Rise By Night pillows - no more neck pain", type: "image" },
+    { url: image5, alt: image5Alt, type: "image" },
     { url: pillowBeforeAfterSpine, alt: "Before and after spine alignment comparison - Rise By Night pillow vs regular pillow", type: "image" },
   ];
 
