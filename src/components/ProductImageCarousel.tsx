@@ -136,7 +136,7 @@ export const ProductImageCarousel = () => {
               <CarouselItem key={index} className="pl-0">
                 {/* Fixed aspect ratio container prevents CLS on image load */}
                 <div 
-                  className="overflow-hidden relative cursor-pointer hover:opacity-90 transition-opacity aspect-square bg-muted/10"
+                  className="overflow-hidden relative cursor-pointer hover:opacity-90 transition-opacity aspect-[4/3] bg-muted/10"
                   onClick={() => item.type === "image" && openImageModal(item.url, true)}
                 >
                   {item.type === "video" ? (
