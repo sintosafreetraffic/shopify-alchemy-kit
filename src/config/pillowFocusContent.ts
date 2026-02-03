@@ -57,7 +57,7 @@ export const PILLOW_FOCUS_CONTENT: Record<PillowFocus, PillowFocusContent> = {
     },
     hero: {
       title: 'Rise By Night™ Back Pain Relief Pillow',
-      subtitle: 'Support your spine while you sleep',
+      subtitle: 'Specifically designed for side sleepers',
       primaryBenefit: 'Wake up without back pain',
     },
     benefits: {
