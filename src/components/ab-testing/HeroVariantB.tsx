@@ -178,6 +178,10 @@ export const HeroVariantB = () => {
               Rise By Night™ Ergonomic Sleep Pillow
             </p>
             
+            <p className="text-sm text-muted-foreground mt-0.5">
+              The #1 Rated Ergonomic Pillow in the U.S.
+            </p>
+            
             {/* Mobile Price with Discount Badge - fixed height prevents CLS when price loads */}
             <div className="flex items-center gap-2 mt-2 flex-wrap h-[52px]">
               <p className="text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
@@ -260,6 +264,10 @@ export const HeroVariantB = () => {
             <h1 className="hidden md:block text-lg md:text-xl lg:text-2xl font-bold leading-tight tracking-tight">
               Rise By Night™ Ergonomic Sleep Pillow
             </h1>
+            
+            <p className="hidden md:block text-sm md:text-base text-muted-foreground mb-2">
+              The #1 Rated Ergonomic Pillow in the U.S.
+            </p>
 
             {/* Price Display with Discount Badge - Desktop Only */}
             <div className="hidden md:flex items-center gap-3 mt-2 mb-3">
