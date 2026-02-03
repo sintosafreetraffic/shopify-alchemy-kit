@@ -128,8 +128,8 @@ export const ProductImageCarousel = () => {
   }, [desktopApi]);
   return (
     <>
-      {/* Mobile Carousel - aspect-square container prevents CLS */}
-      <div className="md:hidden -mx-4">
+      {/* Mobile Carousel - full width edge-to-edge */}
+      <div className="md:hidden -mx-4 sm:-mx-6 lg:-mx-8">
         <Carousel className="w-full" setApi={setMobileApi}>
           <CarouselContent className="-ml-0">
             {mobileImages.map((item, index) => (
