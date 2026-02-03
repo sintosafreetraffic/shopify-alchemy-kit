@@ -5,9 +5,11 @@ import { useState, useEffect, useRef } from "react";
 import pillowHeroNew from "@/assets/ergonomic-pillow-hero.webp";
 import pillowBundleNew from "@/assets/pillow-male-mask-new.webp";
 import pillowDeeperSleep from "@/assets/pillow-deeper-sleep.webp";
+import pillowDeeperSleepBack from "@/assets/pillow-deeper-sleep-back.webp";
 import pillowMaleModel from "@/assets/ergonomic-pillow-male-model.png";
 import pillowCoverMask from "@/assets/ergonomic-pillow-cover-mask.webp";
 import pillowTrusted from "@/assets/ergonomic-pillow-trusted.webp";
+import { PillowFocus } from "@/config/pillowFocusContent";
 
 import {
   Carousel,
@@ -57,7 +59,11 @@ const VideoPoster = ({ posterSrc, alt, width, height, onPlayClick, className = "
   );
 };
 
-export const ProductImageCarousel = () => {
+interface ProductImageCarouselProps {
+  pillowFocus?: PillowFocus;
+}
+
+export const ProductImageCarousel = ({ pillowFocus = 'neck' }: ProductImageCarouselProps) => {
   const [expandedImageIndex, setExpandedImageIndex] = useState<number | null>(null);
   const [mobileApi, setMobileApi] = useState<CarouselApi>();
   const [desktopApi, setDesktopApi] = useState<CarouselApi>();
@@ -66,10 +72,16 @@ export const ProductImageCarousel = () => {
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [selectedVideoSrc, setSelectedVideoSrc] = useState<string | null>(null);
 
+  // Select image 2 based on pillow focus (back pain vs neck pain)
+  const image2 = pillowFocus === 'back' ? pillowDeeperSleepBack : pillowDeeperSleep;
+  const image2Alt = pillowFocus === 'back' 
+    ? "Rise By Night pillow - designed to remove back pain"
+    : "Rise By Night pillow - engineered for deeper sleep with reduced neck and shoulder pressure";
+
   // Multiple views of the Rise By Night pillow (desktop order)
   const images = [
     { url: pillowHeroNew, alt: "Rise By Night ergonomic pillow main view", type: "image" },
-    { url: pillowDeeperSleep, alt: "Rise By Night pillow - engineered for deeper sleep with reduced neck and shoulder pressure", type: "image" },
+    { url: image2, alt: image2Alt, type: "image" },
     { url: pillowTrusted, alt: "Rise By Night pillow - trusted by 100,000+ sleepers with customer reviews", type: "image" },
     { url: pillowCoverMask, alt: "Rise By Night pillow - removable cover and silk sleep mask", type: "image" },
     { url: pillowMaleModel, alt: "Rise By Night pillow - male model sleeping with ergonomic support", type: "image" },
