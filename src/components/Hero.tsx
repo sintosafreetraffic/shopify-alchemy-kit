@@ -219,15 +219,15 @@ export const Hero = () => {
             <ProductImageCarousel />
           </Suspense>
           
-          {/* Mobile Title Section */}
+          {/* Mobile Title Section - min heights prevent CLS */}
           <div className="space-y-0">
-            {/* Enhanced Social Proof */}
-            <div className="space-y-2 mb-3">
+            {/* Enhanced Social Proof - min height prevents CLS */}
+            <div className="space-y-2 mb-3 min-h-[52px]">
               <div 
-                className="flex items-center gap-2 flex-wrap cursor-pointer hover:opacity-80 transition-opacity"
+                className="flex items-center gap-2 flex-wrap cursor-pointer hover:opacity-80 transition-opacity min-h-[20px]"
                 onClick={() => document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' })}
               >
-                <div className="flex">
+                <div className="flex" style={{ width: '100px', height: '20px' }}>
                   {[1, 2, 3, 4, 5].map((star) => (
                     <Star key={star} className="w-5 h-5 fill-yellow-500 text-yellow-500" />
                   ))}
@@ -235,7 +235,8 @@ export const Hero = () => {
                 <span className="text-sm font-semibold">6,247 verified product reviews</span>
               </div>
               
-              <div className="flex gap-1 flex-nowrap overflow-x-auto scrollbar-hide -mx-4 px-4">
+              {/* Fixed height badge container prevents CLS */}
+              <div className="flex gap-1 flex-nowrap overflow-x-auto scrollbar-hide -mx-4 px-4 h-[26px]">
                 <div className="inline-flex items-center gap-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 px-2 py-1 rounded-md text-[10px] font-bold whitespace-nowrap flex-shrink-0">
                   ✓ 98% Customer Satisfaction
                 </div>
@@ -254,12 +255,12 @@ export const Hero = () => {
               The #1 Rated Ergonomic Pillow in the U.S.
             </p>
             
-            {/* Mobile Price with Discount Badge - min-height prevents CLS when price loads */}
-            <div className="flex items-center gap-2 mt-2 flex-wrap min-h-[44px]">
+            {/* Mobile Price with Discount Badge - fixed height prevents CLS when price loads */}
+            <div className="flex items-center gap-2 mt-2 flex-wrap h-[52px]">
               <p className="text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
               <span className="text-base line-through text-muted-foreground">{formatPrice(compareAtPrice, currencyCode)}</span>
-              <div className="inline-flex items-center gap-2.5 bg-primary/10 border border-primary/20 px-4 py-3 rounded-full">
-                <img src={moonIcon} alt="" className="w-6 h-6 shrink-0" width={24} height={24} />
+              <div className="inline-flex items-center gap-2.5 bg-primary/10 border border-primary/20 px-4 py-3 rounded-full h-[44px]">
+                <img src={moonIcon} alt="" className="w-6 h-6 shrink-0" width={24} height={24} loading="eager" decoding="sync" />
                 <span className="text-base font-bold text-primary">40% OFF</span>
               </div>
             </div>
