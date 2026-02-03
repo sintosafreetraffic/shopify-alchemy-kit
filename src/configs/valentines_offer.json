@@ -31,7 +31,7 @@
   "urgency": {
     "showCountdown": true,
     "countdownLabel": "Offer ends in",
-    "showStock": true,
+    "showStock": false,
     "stockText": "Only {count} couple's sets at this price",
     "initialStock": 47,
     "minStock": 12
