@@ -48,6 +48,9 @@ const defaultMaskImage = sleepMaskColorImages["Navy"];
 const ProductImageCarousel = lazy(() => 
   import("./ProductImageCarousel").then(mod => ({ default: mod.ProductImageCarousel }))
 );
+const MiniReviewsCarousel = lazy(() => 
+  import("./MiniReviewsCarousel").then(mod => ({ default: mod.MiniReviewsCarousel }))
+);
 
 // Carousel loading fallback - matches exact dimensions to prevent CLS
 // Mobile: full-width square image | Desktop: 1200x900 aspect ratio (4:3)
@@ -218,7 +221,9 @@ export const Hero = () => {
           <Suspense fallback={<CarouselFallback />}>
             <ProductImageCarousel />
           </Suspense>
-          
+          <Suspense fallback={<div className="h-32 bg-muted/30 rounded-xl animate-pulse" />}>
+            <MiniReviewsCarousel productHandle="ergonomic-pillow" autoPlayInterval={10000} />
+          </Suspense>
           {/* Mobile Title Section - min heights prevent CLS */}
           <div className="space-y-0">
             {/* Enhanced Social Proof - min height prevents CLS */}
@@ -303,9 +308,12 @@ export const Hero = () => {
         {/* Desktop Grid Layout */}
         <div className="grid md:grid-cols-2 gap-6 lg:gap-10 items-start">
           {/* Scrollable Product Images Column - Desktop Only */}
-          <div className="hidden md:block relative order-2 md:order-1">
+          <div className="hidden md:block relative order-2 md:order-1 space-y-4">
             <Suspense fallback={<CarouselFallback />}>
               <ProductImageCarousel />
+            </Suspense>
+            <Suspense fallback={<div className="h-32 bg-muted/30 rounded-xl animate-pulse" />}>
+              <MiniReviewsCarousel productHandle="ergonomic-pillow" autoPlayInterval={10000} />
             </Suspense>
           </div>
           
