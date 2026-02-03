@@ -158,7 +158,7 @@ export const HeroVariantB = () => {
           {/* Mobile Title Section - min heights prevent CLS */}
           <div className="space-y-0">
             {/* Enhanced Social Proof - min height prevents CLS */}
-            <div className="space-y-2 mb-3 min-h-[52px]">
+            <div className="min-h-[24px]">
               <div 
                 className="flex items-center gap-2 flex-wrap cursor-pointer hover:opacity-80 transition-opacity min-h-[20px]"
                 onClick={() => document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' })}
@@ -170,11 +170,10 @@ export const HeroVariantB = () => {
                 </div>
                 <span className="text-sm font-semibold">6,247 verified product reviews</span>
               </div>
-              
             </div>
             
             {/* Mobile title - styled as heading but using p tag to avoid duplicate H1 */}
-            <p className="text-lg font-bold leading-tight tracking-tight truncate mt-3" aria-label="Product title">
+            <p className="text-lg font-bold leading-tight tracking-tight truncate mt-1" aria-label="Product title">
               Rise By Night™ Ergonomic Sleep Pillow
             </p>
             
@@ -183,7 +182,7 @@ export const HeroVariantB = () => {
             </p>
             
             {/* Mobile Price with Discount Badge - fixed height prevents CLS when price loads */}
-            <div className="flex items-center gap-2 mt-2 flex-wrap h-[52px]">
+            <div className="flex items-center gap-2 mt-1 flex-wrap h-[40px]">
               <p className="text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
               <span className="text-base line-through text-muted-foreground">{formatPrice(compareAtPrice, currencyCode)}</span>
               <div className="inline-flex items-center gap-1.5 bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-full h-[32px]">
