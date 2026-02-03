@@ -6,7 +6,7 @@ import pillowHeroNew from "@/assets/ergonomic-pillow-hero.webp";
 import pillowBundleNew from "@/assets/pillow-male-mask-new.webp";
 import pillowDeeperSleep from "@/assets/pillow-deeper-sleep.webp";
 import pillowDeeperSleepBack from "@/assets/pillow-deeper-sleep-back.webp";
-import pillowMaleModel from "@/assets/ergonomic-pillow-male-model.png";
+import pillowCoupleNeckPain from "@/assets/pillow-couple-no-neck-pain.webp";
 import pillowCoverMask from "@/assets/ergonomic-pillow-cover-mask.webp";
 import pillowTrusted from "@/assets/ergonomic-pillow-trusted.webp";
 import { PillowFocus } from "@/config/pillowFocusContent";
@@ -84,7 +84,7 @@ export const ProductImageCarousel = ({ pillowFocus = 'neck' }: ProductImageCarou
     { url: image2, alt: image2Alt, type: "image" },
     { url: pillowTrusted, alt: "Rise By Night pillow - trusted by 100,000+ sleepers with customer reviews", type: "image" },
     { url: pillowCoverMask, alt: "Rise By Night pillow - removable cover and silk sleep mask", type: "image" },
-    { url: pillowMaleModel, alt: "Rise By Night pillow - male model sleeping with ergonomic support", type: "image" },
+    { url: pillowCoupleNeckPain, alt: "Happy couple with Rise By Night pillows - no more neck pain", type: "image" },
     { url: pillowBundleNew, alt: "Rise By Night pillow bundle with mulberry silk sleep mask and extra pillow cover", type: "image" },
   ];
 
