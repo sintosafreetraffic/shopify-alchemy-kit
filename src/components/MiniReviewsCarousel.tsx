@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Star, ChevronLeft, ChevronRight } from "lucide-react";
+import { Star, ChevronLeft, ChevronRight, Quote } from "lucide-react";
 import { useProductReviews } from "@/hooks/useProductReviews";
 import {
   Carousel,
@@ -7,6 +7,26 @@ import {
   CarouselItem,
   type CarouselApi,
 } from "@/components/ui/carousel";
+
+// Reviewer avatars for 55+ demographic
+import avatar1 from "@/assets/reviewer-avatar-1.jpg";
+import avatar2 from "@/assets/reviewer-avatar-2.jpg";
+import avatar3 from "@/assets/reviewer-avatar-3.jpg";
+import avatar4 from "@/assets/reviewer-avatar-4.jpg";
+
+const avatarMap: Record<string, string> = {
+  "Brian O'Connor": avatar1,
+  "Margaret Williams": avatar2,
+  "David Patterson": avatar3,
+  "Jennifer Walsh": avatar4,
+  "Michael Torres": avatar1,
+  "Susan Miller": avatar2,
+  "Robert Johnson": avatar3,
+  "Patricia Anderson": avatar4,
+};
+
+// Fallback avatars by index
+const avatarFallbacks = [avatar1, avatar2, avatar3, avatar4];
 
 interface MiniReviewsCarouselProps {
   productHandle?: string;
@@ -45,10 +65,14 @@ export const MiniReviewsCarousel = ({
   const scrollPrev = useCallback(() => api?.scrollPrev(), [api]);
   const scrollNext = useCallback(() => api?.scrollNext(), [api]);
 
+  const getAvatar = (name: string, index: number) => {
+    return avatarMap[name] || avatarFallbacks[index % avatarFallbacks.length];
+  };
+
   if (isLoading) {
     return (
-      <div className="bg-muted/30 rounded-xl p-4 animate-pulse">
-        <div className="h-20 bg-muted/50 rounded" />
+      <div className="bg-card rounded-xl p-5 animate-pulse border border-border/50">
+        <div className="h-24 bg-muted/50 rounded" />
       </div>
     );
   }
@@ -56,20 +80,24 @@ export const MiniReviewsCarousel = ({
   if (!reviews?.length) return null;
 
   return (
-    <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl p-4 border border-primary/10">
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-xs font-semibold text-primary">Customer Reviews</p>
+    <div className="bg-card rounded-xl border border-border/50 overflow-hidden shadow-sm">
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-3 border-b border-border/30">
+        <div className="flex items-center gap-2">
+          <Quote className="w-4 h-4 text-primary/60" />
+          <p className="text-sm font-medium text-foreground">What Customers Say</p>
+        </div>
         <div className="flex gap-1">
           <button
             onClick={scrollPrev}
-            className="p-1 rounded-full hover:bg-primary/10 transition-colors"
+            className="p-1.5 rounded-full hover:bg-muted transition-colors"
             aria-label="Previous review"
           >
             <ChevronLeft className="w-4 h-4 text-muted-foreground" />
           </button>
           <button
             onClick={scrollNext}
-            className="p-1 rounded-full hover:bg-primary/10 transition-colors"
+            className="p-1.5 rounded-full hover:bg-muted transition-colors"
             aria-label="Next review"
           >
             <ChevronRight className="w-4 h-4 text-muted-foreground" />
@@ -77,6 +105,7 @@ export const MiniReviewsCarousel = ({
         </div>
       </div>
 
+      {/* Carousel */}
       <Carousel 
         setApi={setApi} 
         opts={{ loop: true }}
@@ -85,33 +114,55 @@ export const MiniReviewsCarousel = ({
         <CarouselContent>
           {reviews.map((review, index) => (
             <CarouselItem key={review.id}>
-              <div className="space-y-2">
-                {/* Stars */}
-                <div className="flex gap-0.5">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
-                      key={star}
-                      className={`w-3.5 h-3.5 ${
-                        star <= review.rating
-                          ? "fill-yellow-500 text-yellow-500"
-                          : "fill-muted text-muted"
-                      }`}
+              <div className="p-5">
+                <div className="flex gap-4">
+                  {/* Avatar */}
+                  <div className="flex-shrink-0">
+                    <img
+                      src={getAvatar(review.customer_name, index)}
+                      alt={review.customer_name}
+                      className="w-14 h-14 rounded-full object-cover border-2 border-primary/10"
+                      loading="lazy"
                     />
-                  ))}
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    {/* Stars */}
+                    <div className="flex gap-0.5 mb-1.5">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`w-4 h-4 ${
+                            star <= review.rating
+                              ? "fill-yellow-400 text-yellow-400"
+                              : "fill-muted text-muted"
+                          }`}
+                        />
+                      ))}
+                    </div>
+
+                    {/* Review text */}
+                    <p className="text-sm text-foreground leading-relaxed line-clamp-3 mb-2">
+                      "{review.body}"
+                    </p>
+
+                    {/* Author */}
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-foreground">
+                        {review.customer_name}
+                      </p>
+                      {review.is_verified_purchase && (
+                        <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400 font-medium">
+                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                          Verified
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-
-                {/* Review text */}
-                <p className="text-sm text-foreground/90 line-clamp-3 leading-relaxed">
-                  "{review.body}"
-                </p>
-
-                {/* Author */}
-                <p className="text-xs text-muted-foreground font-medium">
-                  — {review.customer_name}
-                  {review.is_verified_purchase && (
-                    <span className="ml-1.5 text-green-600 dark:text-green-400">✓ Verified</span>
-                  )}
-                </p>
               </div>
             </CarouselItem>
           ))}
@@ -119,20 +170,19 @@ export const MiniReviewsCarousel = ({
       </Carousel>
 
       {/* Dot indicators */}
-      <div className="flex justify-center gap-1.5 mt-3">
-        {reviews.slice(0, 5).map((_, index) => (
+      <div className="flex justify-center gap-1.5 pb-4">
+        {reviews.slice(0, 6).map((_, index) => (
           <button
             key={index}
             onClick={() => api?.scrollTo(index)}
-            className={`w-1.5 h-1.5 rounded-full transition-colors ${
-              current === index ? "bg-primary" : "bg-primary/30"
+            className={`w-2 h-2 rounded-full transition-all ${
+              current === index 
+                ? "bg-primary w-4" 
+                : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
             }`}
             aria-label={`Go to review ${index + 1}`}
           />
         ))}
-        {reviews.length > 5 && (
-          <span className="text-[10px] text-muted-foreground ml-1">+{reviews.length - 5}</span>
-        )}
       </div>
     </div>
   );
