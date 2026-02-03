@@ -21,7 +21,7 @@ const miniReviews = [
     customer_name: "Margaret Williams",
     avatar: avatar2,
     rating: 5,
-    body: "I'm 65, always slept on my side and my old pillows were either too low or flattened by morning and I'd wake with the neck wrecked. This one actually keeps its shape.",
+    body: "I'm 61 from Minnesota and sleep on my side year round and my neck was stiff every single morning because my old pillows kept flattening out. This one actually keeps the height and I wake up way less crooked.",
     city: "Minneapolis, MN",
   },
   {
@@ -29,7 +29,7 @@ const miniReviews = [
     customer_name: "Robert Johnson",
     avatar: avatar3,
     rating: 5,
-    body: "I put off buying an expensive pillow for ages, felt like madness spending that on one pillow. But the pain in my neck and shoulder was every morning and this has helped a lot.",
+    body: "I tried stacking two pillows for years because nothing was tall enough for my shoulders but then my neck would be bent funny. This finally hits the right height and my neck isn't screaming when I get up.",
     city: "Los Angeles, CA",
   },
   {
@@ -37,7 +37,7 @@ const miniReviews = [
     customer_name: "Patricia Anderson",
     avatar: avatar4,
     rating: 5,
-    body: "I had one of those contour ones from IKEA and it just wasn't high enough for me. Kept waking stiff through the neck. This sits better for my shoulders.",
+    body: "I didn't want to spend real money on another pillow after the whole pillow graveyard situation but most of mine went flat or were too bulky in the middle. This one keeps my neck straight through the night.",
     city: "St. Paul, MN",
   },
   {
@@ -45,7 +45,7 @@ const miniReviews = [
     customer_name: "David Patterson",
     avatar: avatar1,
     rating: 5,
-    body: "I tried firm foam before and it was far too hard on me, like sleeping on wood. This is still supportive but not punishing on the neck.",
+    body: "I sleep on my side and my neck pain always came from my head being pushed too high or sinking too low depending on the pillow. This one stays more even and that alone helped a lot.",
     city: "New York, NY",
   },
   {
@@ -53,7 +53,7 @@ const miniReviews = [
     customer_name: "Susan Miller",
     avatar: avatar5,
     rating: 5,
-    body: "Took a couple nights to settle into it, not going to lie. But after that the neck and shoulders were far less tight when I got up.",
+    body: "Took a couple nights to get used to because it's firmer than my old fluffy ones but once I settled in the neck pain eased up and I stopped waking stiff every morning.",
     city: "Duluth, MN",
   },
 ];
