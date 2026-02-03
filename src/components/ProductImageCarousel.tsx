@@ -128,14 +128,15 @@ export const ProductImageCarousel = () => {
   }, [desktopApi]);
   return (
     <>
-      {/* Mobile Carousel */}
+      {/* Mobile Carousel - aspect-square container prevents CLS */}
       <div className="md:hidden -mx-4">
         <Carousel className="w-full" setApi={setMobileApi}>
           <CarouselContent className="-ml-0">
             {mobileImages.map((item, index) => (
               <CarouselItem key={index} className="pl-0">
+                {/* Fixed aspect ratio container prevents CLS on image load */}
                 <div 
-                  className="overflow-hidden relative cursor-pointer hover:opacity-90 transition-opacity"
+                  className="overflow-hidden relative cursor-pointer hover:opacity-90 transition-opacity aspect-square bg-muted/10"
                   onClick={() => item.type === "image" && openImageModal(item.url, true)}
                 >
                   {item.type === "video" ? (
@@ -151,12 +152,12 @@ export const ProductImageCarousel = () => {
                     <img
                       src={item.url}
                       alt={item.alt}
-                      className="w-full h-auto object-cover"
+                      className="w-full h-full object-cover"
                       loading={index === 0 ? "eager" : "lazy"}
                       fetchPriority={index === 0 ? "high" : "low"}
                       decoding="async"
-                      width="800"
-                      height="800"
+                      width={800}
+                      height={800}
                     />
                   )}
                 </div>
@@ -215,14 +216,15 @@ export const ProductImageCarousel = () => {
         </div>
       </div>
 
-      {/* Desktop Carousel */}
+      {/* Desktop Carousel - aspect-[4/3] container prevents CLS */}
       <div className="hidden md:block">
         <Carousel className="w-full" setApi={setDesktopApi}>
           <CarouselContent className="-ml-0">
             {images.map((item, index) => (
               <CarouselItem key={index} className="pl-0">
+                {/* Fixed aspect ratio container prevents CLS on image load */}
                 <div 
-                  className="overflow-hidden rounded-xl relative cursor-pointer hover:opacity-90 transition-opacity"
+                  className="overflow-hidden rounded-xl relative cursor-pointer hover:opacity-90 transition-opacity aspect-[4/3] bg-muted/10"
                   onClick={() => item.type === "image" && openImageModal(item.url, false)}
                 >
                   {item.type === "video" ? (
@@ -239,12 +241,12 @@ export const ProductImageCarousel = () => {
                     <img
                       src={item.url}
                       alt={item.alt}
-                      className="w-full h-auto object-cover rounded-xl"
+                      className="w-full h-full object-cover rounded-xl"
                       loading={index === 0 ? "eager" : "lazy"}
                       fetchPriority={index === 0 ? "high" : "low"}
                       decoding="async"
-                      width="1200"
-                      height="900"
+                      width={1200}
+                      height={900}
                     />
                   )}
                 </div>
