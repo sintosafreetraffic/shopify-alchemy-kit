@@ -161,7 +161,7 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
             <ProductImageCarousel />
           </Suspense>
           <Suspense fallback={<div className="h-32 bg-muted/30 rounded-xl animate-pulse" />}>
-            <MiniReviewsCarousel productHandle="ergonomic-pillow" autoPlayInterval={10000} />
+            <MiniReviewsCarousel productHandle="ergonomic-pillow" pillowFocus={pillowFocus} autoPlayInterval={10000} />
           </Suspense>
           {/* Mobile Title Section - min heights prevent CLS */}
           <div className="space-y-0">
@@ -247,7 +247,7 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
               <ProductImageCarousel />
             </Suspense>
             <Suspense fallback={<div className="h-32 bg-muted/30 rounded-xl animate-pulse" />}>
-              <MiniReviewsCarousel productHandle="ergonomic-pillow" autoPlayInterval={10000} />
+              <MiniReviewsCarousel productHandle="ergonomic-pillow" pillowFocus={pillowFocus} autoPlayInterval={10000} />
             </Suspense>
           </div>
           

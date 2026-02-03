@@ -6,6 +6,7 @@ import {
   CarouselItem,
   type CarouselApi,
 } from "@/components/ui/carousel";
+import type { PillowFocus } from "@/config/pillowFocusContent";
 
 // Reviewer avatars for 55+ demographic - 5 unique avatars
 import margaretAvatar from "@/assets/avatars/margaret-williams-avatar.webp";
@@ -14,10 +15,10 @@ import patriciaAvatar from "@/assets/avatars/patricia-anderson-avatar.webp";
 import davidAvatar from "@/assets/avatars/david-patterson-avatar.webp";
 import susanAvatar from "@/assets/avatars/susan-miller-avatar.webp";
 
-// Hardcoded mini reviews for neck pain - 5 different 55+ customers with unique avatars
-const miniReviews = [
+// Neck pain focused reviews
+const neckPainReviews = [
   {
-    id: "mini-1",
+    id: "mini-neck-1",
     customer_name: "Margaret Williams",
     avatar: margaretAvatar,
     rating: 5,
@@ -25,7 +26,7 @@ const miniReviews = [
     city: "Minneapolis, MN",
   },
   {
-    id: "mini-2",
+    id: "mini-neck-2",
     customer_name: "Robert Johnson",
     avatar: robertAvatar,
     rating: 5,
@@ -33,7 +34,7 @@ const miniReviews = [
     city: "Los Angeles, CA",
   },
   {
-    id: "mini-3",
+    id: "mini-neck-3",
     customer_name: "Patricia Anderson",
     avatar: patriciaAvatar,
     rating: 5,
@@ -41,7 +42,7 @@ const miniReviews = [
     city: "St. Paul, MN",
   },
   {
-    id: "mini-4",
+    id: "mini-neck-4",
     customer_name: "David Patterson",
     avatar: davidAvatar,
     rating: 5,
@@ -49,7 +50,7 @@ const miniReviews = [
     city: "New York, NY",
   },
   {
-    id: "mini-5",
+    id: "mini-neck-5",
     customer_name: "Susan Miller",
     avatar: susanAvatar,
     rating: 5,
@@ -58,15 +59,62 @@ const miniReviews = [
   },
 ];
 
+// Back pain focused reviews
+const backPainReviews = [
+  {
+    id: "mini-back-1",
+    customer_name: "Margaret Williams",
+    avatar: margaretAvatar,
+    rating: 5,
+    body: "I'm 64 in Minnesota and I used to wake up with lower back pain almost every morning. After a week on this pillow it's mostly gone. I didn't think a pillow could change that but here we are.",
+    city: "Minneapolis, MN",
+  },
+  {
+    id: "mini-back-2",
+    customer_name: "Robert Johnson",
+    avatar: robertAvatar,
+    rating: 5,
+    body: "Side sleeping always left my back sore when I got up. Since switching to this I wake up without that deep ache in my back anymore. Not perfect every day but a huge difference.",
+    city: "Los Angeles, CA",
+  },
+  {
+    id: "mini-back-3",
+    customer_name: "Patricia Anderson",
+    avatar: patriciaAvatar,
+    rating: 5,
+    body: "I had back pain for years and kept blaming the mattress. Turns out my pillow was throwing everything off. This keeps my body lined up and the back pain stopped.",
+    city: "St. Paul, MN",
+  },
+  {
+    id: "mini-back-4",
+    customer_name: "David Patterson",
+    avatar: davidAvatar,
+    rating: 5,
+    body: "I was stacking pillows and messing with my setup trying to fix my back pain. This one fixed it way faster than I expected. I wake up and my back just feels normal now.",
+    city: "New York, NY",
+  },
+  {
+    id: "mini-back-5",
+    customer_name: "Susan Miller",
+    avatar: susanAvatar,
+    rating: 5,
+    body: "Took a couple nights to get used to but I don't get that stiff back feeling in the morning anymore. I sleep on my side and this keeps me straighter through the night.",
+    city: "Duluth, MN",
+  },
+];
+
 interface MiniReviewsCarouselProps {
   productHandle?: string;
+  pillowFocus?: PillowFocus;
   autoPlayInterval?: number;
 }
 
 export const MiniReviewsCarousel = ({ 
   productHandle = "ergonomic-pillow",
+  pillowFocus = "neck",
   autoPlayInterval = 10000 
 }: MiniReviewsCarouselProps) => {
+  const reviews = pillowFocus === "back" ? backPainReviews : neckPainReviews;
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
 
@@ -103,7 +151,7 @@ export const MiniReviewsCarousel = ({
         className="w-full"
       >
         <CarouselContent>
-          {miniReviews.map((review) => (
+          {reviews.map((review) => (
             <CarouselItem key={review.id}>
               <div className="px-3 py-3">
                 {/* Review text - readable size for 55+, text flows under arrows */}
