@@ -1,7 +1,7 @@
 // Performance: Using WebP images with lazy loading for below-fold content
 // Carousel is lazy-loaded to reduce initial bundle size
 import { Button } from "@/components/ui/button";
-import { Check, Shield, Moon, Truck, Loader2, Star, ImageIcon, ChevronDown, Heart } from "lucide-react";
+import { Check, Shield, Moon, Truck, Loader2, Star, ImageIcon, ChevronDown, Heart, Package, ShieldCheck } from "lucide-react";
 import { PaymentIcons } from "./PaymentIcons";
 import { PolicyAccordion } from "./PolicyAccordion";
 import { useState, useEffect, useRef, Suspense, lazy, useMemo } from "react";
@@ -348,19 +348,19 @@ export const Hero = () => {
               </div>
             </div>
 
-            {/* Benefit-Focused USPs Section - 3 Categories */}
+            {/* USPs Section */}
             <div className="space-y-2 mb-3">
               <div className="flex items-center gap-2">
-                <Check className="w-5 h-5 sm:w-5 sm:h-5 text-primary shrink-0" />
-                <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight"><span className="font-semibold">Neck, back, shoulder, jaw & arm relief</span> – Ergonomic contours eliminate pressure points</p>
+                <div className="w-5 h-5 rounded-full bg-amber-400 shrink-0" />
+                <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight text-amber-600 font-medium">Only 3 left at this price!</p>
               </div>
               <div className="flex items-center gap-2">
-                <Check className="w-5 h-5 sm:w-5 sm:h-5 text-primary shrink-0" />
-                <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight"><span className="font-semibold">Deeper sleep, energized mornings</span> – Stay comfortable all night so your body fully recovers</p>
+                <Package className="w-5 h-5 text-muted-foreground shrink-0" />
+                <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight">Free shipping in <span className="font-semibold">US</span></p>
               </div>
               <div className="flex items-center gap-2">
-                <Check className="w-5 h-5 sm:w-5 sm:h-5 text-primary shrink-0" />
-                <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight"><span className="font-semibold">Clearer, younger-looking skin</span> – Proper alignment reduces puffiness and protects delicate skin</p>
+                <ShieldCheck className="w-5 h-5 text-muted-foreground shrink-0" />
+                <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight">100 days money-back guarantee</p>
               </div>
             </div>
 
