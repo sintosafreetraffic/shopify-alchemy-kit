@@ -7,13 +7,14 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel";
 
-// Reviewer avatars for 55+ demographic
+// Reviewer avatars for 55+ demographic - 5 unique avatars
 import avatar1 from "@/assets/reviewer-avatar-1.jpg";
 import avatar2 from "@/assets/reviewer-avatar-2.jpg";
 import avatar3 from "@/assets/reviewer-avatar-3.jpg";
 import avatar4 from "@/assets/reviewer-avatar-4.jpg";
+import avatar5 from "@/assets/reviewer-erik.webp";
 
-// Hardcoded mini reviews for neck pain - 5 different 55+ customers
+// Hardcoded mini reviews for neck pain - 5 different 55+ customers with unique avatars
 const miniReviews = [
   {
     id: "mini-1",
@@ -50,7 +51,7 @@ const miniReviews = [
   {
     id: "mini-5",
     customer_name: "Susan Miller",
-    avatar: avatar2,
+    avatar: avatar5,
     rating: 5,
     body: "Took a couple nights to settle into it, not going to lie. But after that the neck and shoulders were far less tight when I got up.",
     is_verified_purchase: true,
@@ -95,18 +96,6 @@ export const MiniReviewsCarousel = ({
 
   return (
     <div className="bg-card rounded-xl border border-border/50 overflow-hidden shadow-sm">
-      {/* Header row: Stars centered */}
-      <div className="flex items-center justify-center pt-4 pb-2">
-        <div className="flex gap-1">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <Star
-              key={star}
-              className="w-5 h-5 fill-yellow-400 text-yellow-400"
-            />
-          ))}
-        </div>
-      </div>
-
       {/* Carousel with side arrows */}
       <div className="flex items-stretch">
         {/* Left arrow */}
@@ -127,13 +116,13 @@ export const MiniReviewsCarousel = ({
           <CarouselContent>
             {miniReviews.map((review) => (
               <CarouselItem key={review.id}>
-                <div className="px-4 py-3">
+                <div className="px-4 py-4">
                   {/* Review text - readable size for 55+ */}
                   <p className="text-sm sm:text-base text-foreground leading-relaxed mb-3">
                     "{review.body}"
                   </p>
 
-                  {/* Author row with avatar */}
+                  {/* Author row with avatar, name, verified badge, and stars */}
                   <div className="flex items-center gap-3">
                     <img
                       src={review.avatar}
@@ -141,7 +130,7 @@ export const MiniReviewsCarousel = ({
                       className="w-10 h-10 rounded-full object-cover border border-primary/10 flex-shrink-0"
                       loading="lazy"
                     />
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                       <p className="text-sm font-semibold text-foreground">
                         {review.customer_name}
                       </p>
@@ -153,6 +142,19 @@ export const MiniReviewsCarousel = ({
                           Verified
                         </span>
                       )}
+                      {/* Stars - smaller, next to verified */}
+                      <div className="flex gap-0.5">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={`w-3.5 h-3.5 ${
+                              star <= review.rating
+                                ? "fill-yellow-400 text-yellow-400"
+                                : "fill-muted text-muted"
+                            }`}
+                          />
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
