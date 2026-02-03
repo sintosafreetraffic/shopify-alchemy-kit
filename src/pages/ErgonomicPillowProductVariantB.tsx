@@ -8,9 +8,10 @@
  * Traffic split is controlled via ab_traffic_split_percent_b in app_settings.
  */
 
-import { Suspense, lazy, useState } from "react";
+import { Suspense, lazy, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { HeroVariantB } from "@/components/ab-testing/HeroVariantB";
+import { setPillowFocusPreference } from "@/lib/pillowFocusPreference";
 import { ProductBenefitsSection } from "@/components/ProductBenefitsSection";
 import { GuaranteeSection } from "@/components/GuaranteeSection";
 import { Features } from "@/components/Features";
@@ -107,6 +108,11 @@ const InlineCTA = () => {
 const ErgonomicPillowProductVariantB = () => {
   useSEO(SEO_CONFIGS.ergonomicPillow);
   const [showReviewForm, setShowReviewForm] = useState(false);
+
+  // Capture neck pain preference on page load (first-touch model)
+  useEffect(() => {
+    setPillowFocusPreference('neck');
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
