@@ -248,7 +248,7 @@ export const Hero = () => {
             </p>
             
             <p className="text-sm text-muted-foreground mt-0.5">
-              The #1 Rated Ergonomic Pillow in the U.S.
+              Specifically designed for side sleepers
             </p>
             
             {/* Mobile Price with Discount Badge - fixed height prevents CLS when price loads */}
@@ -335,7 +335,7 @@ export const Hero = () => {
             </h1>
             
             <p className="hidden md:block text-sm md:text-base text-muted-foreground mb-2">
-              The #1 Rated Ergonomic Pillow in the U.S.
+              Specifically designed for side sleepers
             </p>
 
             {/* Price Display with Discount Badge - Desktop Only */}
