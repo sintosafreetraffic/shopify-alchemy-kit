@@ -12,7 +12,7 @@ import avatar1 from "@/assets/reviewer-avatar-1.jpg";
 import avatar2 from "@/assets/reviewer-avatar-2.jpg";
 import avatar3 from "@/assets/reviewer-avatar-3.jpg";
 import avatar4 from "@/assets/reviewer-avatar-4.jpg";
-import avatar5 from "@/assets/reviewer-erik.webp";
+import avatar5 from "@/assets/avatars/susan-miller-avatar.webp";
 
 // Hardcoded mini reviews for neck pain - 5 different 55+ customers with unique avatars
 const miniReviews = [
