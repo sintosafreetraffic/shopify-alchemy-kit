@@ -147,20 +147,20 @@ export const MiniReviewsCarousel = ({
         </CarouselContent>
       </Carousel>
 
-      {/* Overlay arrows - transparent, positioned on sides */}
+      {/* Overlay arrows - very transparent, positioned on sides */}
       <button
         onClick={scrollPrev}
-        className="absolute left-0 top-0 bottom-0 w-10 flex items-center justify-center bg-transparent hover:bg-muted/20 transition-colors z-10"
+        className="absolute left-0 top-0 bottom-0 w-8 flex items-center justify-center bg-transparent hover:bg-muted/10 transition-colors z-10"
         aria-label="Previous review"
       >
-        <ChevronLeft className="w-5 h-5 text-muted-foreground" />
+        <ChevronLeft className="w-4 h-4 text-muted-foreground/40" />
       </button>
       <button
         onClick={scrollNext}
-        className="absolute right-0 top-0 bottom-0 w-10 flex items-center justify-center bg-transparent hover:bg-muted/20 transition-colors z-10"
+        className="absolute right-0 top-0 bottom-0 w-8 flex items-center justify-center bg-transparent hover:bg-muted/10 transition-colors z-10"
         aria-label="Next review"
       >
-        <ChevronRight className="w-5 h-5 text-muted-foreground" />
+        <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
       </button>
     </div>
   );
