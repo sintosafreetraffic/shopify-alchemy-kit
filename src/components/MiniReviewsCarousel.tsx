@@ -95,12 +95,24 @@ export const MiniReviewsCarousel = ({
 
   return (
     <div className="bg-card rounded-xl border border-border/50 overflow-hidden shadow-sm">
+      {/* Header row: Stars centered */}
+      <div className="flex items-center justify-center pt-4 pb-2">
+        <div className="flex gap-1">
+          {[1, 2, 3, 4, 5].map((star) => (
+            <Star
+              key={star}
+              className="w-5 h-5 fill-yellow-400 text-yellow-400"
+            />
+          ))}
+        </div>
+      </div>
+
       {/* Carousel with side arrows */}
-      <div className="flex items-center">
+      <div className="flex items-stretch">
         {/* Left arrow */}
         <button
           onClick={scrollPrev}
-          className="flex-shrink-0 p-2 hover:bg-muted/50 transition-colors"
+          className="flex-shrink-0 w-10 flex items-center justify-center hover:bg-muted/30 transition-colors border-r border-border/30"
           aria-label="Previous review"
         >
           <ChevronLeft className="w-5 h-5 text-muted-foreground" />
@@ -115,47 +127,33 @@ export const MiniReviewsCarousel = ({
           <CarouselContent>
             {miniReviews.map((review) => (
               <CarouselItem key={review.id}>
-                <div className="py-3 px-1">
-                  {/* Top row: Stars + Avatar */}
-                  <div className="flex items-start justify-between mb-1.5">
-                    <div className="flex gap-0.5">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star
-                          key={star}
-                          className={`w-3.5 h-3.5 ${
-                            star <= review.rating
-                              ? "fill-yellow-400 text-yellow-400"
-                              : "fill-muted text-muted"
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <img
-                      src={review.avatar}
-                      alt={review.customer_name}
-                      className="w-10 h-10 rounded-full object-cover border border-primary/10"
-                      loading="lazy"
-                    />
-                  </div>
-
-                  {/* Review text - full width */}
-                  <p className="text-xs text-foreground leading-relaxed line-clamp-3 mb-1.5">
+                <div className="px-4 py-3">
+                  {/* Review text - readable size for 55+ */}
+                  <p className="text-sm sm:text-base text-foreground leading-relaxed mb-3">
                     "{review.body}"
                   </p>
 
-                  {/* Author */}
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-xs font-medium text-foreground">
-                      {review.customer_name}
-                    </p>
-                    {review.is_verified_purchase && (
-                      <span className="inline-flex items-center gap-0.5 text-[10px] text-green-600 dark:text-green-400 font-medium">
-                        <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        Verified
-                      </span>
-                    )}
+                  {/* Author row with avatar */}
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={review.avatar}
+                      alt={review.customer_name}
+                      className="w-10 h-10 rounded-full object-cover border border-primary/10 flex-shrink-0"
+                      loading="lazy"
+                    />
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+                      <p className="text-sm font-semibold text-foreground">
+                        {review.customer_name}
+                      </p>
+                      {review.is_verified_purchase && (
+                        <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400 font-medium">
+                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                          Verified
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CarouselItem>
@@ -166,7 +164,7 @@ export const MiniReviewsCarousel = ({
         {/* Right arrow */}
         <button
           onClick={scrollNext}
-          className="flex-shrink-0 p-2 hover:bg-muted/50 transition-colors"
+          className="flex-shrink-0 w-10 flex items-center justify-center hover:bg-muted/30 transition-colors border-l border-border/30"
           aria-label="Next review"
         >
           <ChevronRight className="w-5 h-5 text-muted-foreground" />
