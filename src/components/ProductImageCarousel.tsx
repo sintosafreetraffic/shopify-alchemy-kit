@@ -128,15 +128,15 @@ export const ProductImageCarousel = () => {
   }, [desktopApi]);
   return (
     <>
-      {/* Mobile Carousel - full width edge-to-edge with calc to account for parent padding */}
+      {/* Mobile Carousel - full width edge-to-edge with matching background */}
       <div className="md:hidden w-screen relative left-1/2 -translate-x-1/2">
         <Carousel className="w-full" setApi={setMobileApi}>
           <CarouselContent className="ml-0">
             {mobileImages.map((item, index) => (
               <CarouselItem key={index} className="pl-0">
-                {/* Fixed aspect ratio container prevents CLS on image load */}
+                {/* Full-width container with background matching product images */}
                 <div 
-                  className="overflow-hidden relative cursor-pointer hover:opacity-90 transition-opacity aspect-[4/3] bg-muted/10"
+                  className="overflow-hidden relative cursor-pointer hover:opacity-90 transition-opacity aspect-square bg-[#f5f5f7]"
                   onClick={() => item.type === "image" && openImageModal(item.url, true)}
                 >
                   {item.type === "video" ? (
