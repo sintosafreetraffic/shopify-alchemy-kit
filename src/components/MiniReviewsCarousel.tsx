@@ -105,21 +105,21 @@ export const MiniReviewsCarousel = ({
         <CarouselContent>
           {miniReviews.map((review) => (
             <CarouselItem key={review.id}>
-              <div className="px-10 py-4">
-                {/* Review text - readable size for 55+ */}
-                <p className="text-sm sm:text-base text-foreground leading-relaxed mb-3">
+              <div className="px-3 py-3">
+                {/* Review text - readable size for 55+, text flows under arrows */}
+                <p className="text-sm sm:text-base text-foreground leading-relaxed mb-2">
                   "{review.body}"
                 </p>
 
-                {/* Author row with avatar, name, city, and stars */}
-                <div className="flex items-center gap-3">
+                {/* Author row with avatar, name, city, and stars - compact */}
+                <div className="flex items-center gap-2">
                   <img
                     src={review.avatar}
                     alt={review.customer_name}
-                    className="w-10 h-10 rounded-full object-cover border border-primary/10 flex-shrink-0"
+                    className="w-9 h-9 rounded-full object-cover border border-primary/10 flex-shrink-0"
                     loading="lazy"
                   />
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                     <p className="text-sm font-semibold text-foreground">
                       {review.customer_name}
                     </p>
