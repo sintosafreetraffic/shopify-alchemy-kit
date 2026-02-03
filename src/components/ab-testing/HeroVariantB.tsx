@@ -180,7 +180,7 @@ export const HeroVariantB = () => {
             
             {/* Mobile title - styled as heading but using p tag to avoid duplicate H1 */}
             <p className="text-lg font-bold leading-tight tracking-tight truncate mt-1" aria-label="Product title">
-              Rise By Night™ Ergonomic Sleep Pillow
+              Rise By Night™ Neck Pain Relief Pillow
             </p>
             
             <p className="text-sm text-muted-foreground mt-0.5">
@@ -273,7 +273,7 @@ export const HeroVariantB = () => {
             </div>
 
             <h1 className="hidden md:block text-lg md:text-xl lg:text-2xl font-bold leading-tight tracking-tight">
-              Rise By Night™ Ergonomic Sleep Pillow
+              Rise By Night™ Neck Pain Relief Pillow
             </h1>
             
             <p className="hidden md:block text-sm md:text-base text-muted-foreground mb-2">
