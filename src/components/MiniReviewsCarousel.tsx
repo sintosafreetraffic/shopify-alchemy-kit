@@ -10,7 +10,7 @@ import {
 // Reviewer avatars for 55+ demographic - 5 unique avatars
 import margaretAvatar from "@/assets/avatars/margaret-williams-avatar.webp";
 import robertAvatar from "@/assets/avatars/robert-johnson-avatar.webp";
-import patriciaAvatar from "@/assets/reviewer-avatar-4.jpg";
+import patriciaAvatar from "@/assets/avatars/patricia-anderson-avatar.webp";
 import davidAvatar from "@/assets/avatars/david-patterson-avatar.webp";
 import susanAvatar from "@/assets/avatars/susan-miller-avatar.webp";
 
