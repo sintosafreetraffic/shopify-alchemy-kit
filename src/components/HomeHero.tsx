@@ -5,6 +5,7 @@ import { ArrowRight } from "lucide-react";
 import { getPersonaCookie, type PersonaCluster } from "@/lib/personaCookie";
 import { supabase } from "@/integrations/supabase/client";
 import { getSessionId } from "@/lib/abTesting";
+import { getPreferredPillowRoute } from "@/lib/pillowFocusPreference";
 
 // Hero images
 import heroDesktop from "@/assets/hero-cloud-sleep.webp";
@@ -118,7 +119,7 @@ const HomeHero = () => {
         {/* Hero CTA Button */}
         <div className="absolute inset-x-0 bottom-8 md:bottom-12 flex justify-center">
           <Button
-            onClick={() => navigate("/products/ergonomic-pillow")}
+            onClick={() => navigate(getPreferredPillowRoute())}
             size="lg"
             className="h-14 px-10 text-base font-medium rounded-full bg-white/95 text-foreground hover:bg-white shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm"
           >

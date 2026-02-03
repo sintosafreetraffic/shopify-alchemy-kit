@@ -4,6 +4,7 @@
  * Uses a SEPARATE Shopify product for the €59.99 pillow-only offer.
  * - NO sleep mask included
  * - Simplified "Included" section (pillow cover only)
+ * - Supports pillowFocus prop for neck/back pain variants
  */
 
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ import { ValentinesHeroSection } from "@/components/ValentinesHeroSection";
 import testimonialAvatar from "@/assets/testimonial-new-updated.webp";
 import pillowCoverImage from "@/assets/pillow-cover-included.webp";
 import moonIcon from "@/assets/moon-icon-blue.png";
+import { PillowFocus, getPillowContent } from "@/config/pillowFocusContent";
 
 // Lazy load the image carousel to reduce initial bundle
 const ProductImageCarousel = lazy(() => 
@@ -52,7 +54,13 @@ const CarouselFallback = () => (
   </>
 );
 
-export const HeroVariantB = () => {
+interface HeroVariantBProps {
+  pillowFocus?: PillowFocus;
+}
+
+export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
+  // Get content based on pillow focus (neck or back)
+  const focusContent = getPillowContent(pillowFocus);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { addItem, setCartOpen } = useCartStore();
   const hasTrackedView = useRef(false);
@@ -180,11 +188,11 @@ export const HeroVariantB = () => {
             
             {/* Mobile title - styled as heading but using p tag to avoid duplicate H1 */}
             <p className="text-lg font-bold leading-tight tracking-tight truncate mt-1" aria-label="Product title">
-              Rise By Night™ Neck Pain Relief Pillow
+              {focusContent.hero.title}
             </p>
             
             <p className="text-sm text-muted-foreground mt-0.5">
-              Specifically designed for side sleepers
+              {focusContent.hero.subtitle}
             </p>
             
             {/* Mobile Price with Discount Badge - fixed height prevents CLS when price loads */}
@@ -272,11 +280,11 @@ export const HeroVariantB = () => {
             </div>
 
             <h1 className="hidden md:block text-lg md:text-xl lg:text-2xl font-bold leading-tight tracking-tight">
-              Rise By Night™ Neck Pain Relief Pillow
+              {focusContent.hero.title}
             </h1>
             
             <p className="hidden md:block text-sm md:text-base text-muted-foreground mb-2">
-              Specifically designed for side sleepers
+              {focusContent.hero.subtitle}
             </p>
 
             {/* Price Display with Discount Badge - Desktop Only */}

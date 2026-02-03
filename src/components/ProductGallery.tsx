@@ -9,6 +9,7 @@ import OptimizedImage from "@/components/OptimizedImage";
 import { formatPrice } from "@/lib/formatPrice";
 import { useIsEU } from "@/hooks/useCurrencySymbol";
 import { useABErgonomicPillow } from "@/hooks/useABProduct";
+import { getPreferredPillowRoute } from "@/lib/pillowFocusPreference";
 // Using WebP variants where available for better performance
 import ergonomicPillowProduct from "@/assets/ergonomic-pillow-product.webp";
 import kneePillowMain from "@/assets/knee-pillow-main-new.webp";
@@ -81,7 +82,7 @@ export const ProductGallery = () => {
       image: ergonomicPillowProduct,
       features: ["Ergonomic contour design", "Cooling gel technology", "High-density memory foam", "3-5 year lifespan"],
       badge: abConfig.includesMask ? "Sleep Mask Included" : "",
-      link: "/products/ergonomic-pillow",
+      link: getPreferredPillowRoute(),
     },
     {
       id: 3,
