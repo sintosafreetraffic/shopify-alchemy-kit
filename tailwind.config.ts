@@ -96,6 +96,13 @@ export default {
           "0%, 100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(-4px)" },
         },
+        "attention-pulse": {
+          "0%, 92%": { transform: "scale(1) rotate(0deg)" },
+          "94%": { transform: "scale(1.02) rotate(-0.5deg)" },
+          "96%": { transform: "scale(1.02) rotate(0.5deg)" },
+          "98%": { transform: "scale(1.02) rotate(-0.5deg)" },
+          "100%": { transform: "scale(1) rotate(0deg)" },
+        },
         "marquee": {
           "0%": { transform: "translateX(0%)" },
           "100%": { transform: "translateX(-50%)" },
@@ -114,6 +121,7 @@ export default {
         "accordion-up": "accordion-up 0.2s ease-out",
         "slide-in-bottom": "slide-in-bottom 0.3s ease-in-out",
         "subtle-bounce": "subtle-bounce 0.4s ease-in-out",
+        "attention-pulse": "attention-pulse 4s ease-in-out infinite",
         "marquee": "marquee 15s linear infinite",
         "marquee-rtl": "marquee-rtl 12s linear infinite",
         "marquee-rtl-fast": "marquee-rtl 8s linear infinite",

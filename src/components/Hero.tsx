@@ -271,7 +271,7 @@ export const Hero = () => {
               <div className="mt-3">
                 <Button 
                   size="lg"
-                  className="w-full text-lg py-6 font-bold shadow-lg hover:shadow-xl transition-all touch-manipulation animate-subtle-bounce bg-primary text-primary-foreground hover:bg-black hover:text-white relative overflow-hidden group" 
+                  className="w-full text-lg py-6 font-bold shadow-lg hover:shadow-xl transition-all touch-manipulation animate-attention-pulse bg-primary text-primary-foreground hover:bg-black hover:text-white relative overflow-hidden group" 
                   onClick={() => handleAddToCart(1)}
                   disabled={isCheckingOut || !product}
                 >
@@ -477,7 +477,7 @@ export const Hero = () => {
             <div className={`${mobileHeroConfig.MOBILE_CTA_FIRST ? "hidden md:block" : ""} ${valentinesOffer.isActive ? "hidden" : ""}`}>
               <Button 
                 size="lg"
-                className="w-full text-lg md:text-xl py-6 font-bold shadow-lg hover:shadow-xl transition-all touch-manipulation animate-subtle-bounce bg-primary text-primary-foreground hover:bg-black hover:text-white relative overflow-hidden group" 
+                className="w-full text-lg md:text-xl py-6 font-bold shadow-lg hover:shadow-xl transition-all touch-manipulation animate-attention-pulse bg-primary text-primary-foreground hover:bg-black hover:text-white relative overflow-hidden group" 
                 onClick={() => handleAddToCart(1)}
                 disabled={isCheckingOut || !product}
               >
