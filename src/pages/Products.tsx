@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Star, Award, Truck } from "lucide-react";
+import { ArrowRight, Star, Award, Truck, ChevronDown, ChevronUp, TrendingUp } from "lucide-react";
 import OptimizedImage from "@/components/OptimizedImage";
 import { useShopifyProducts } from "@/hooks/useShopifyProducts";
 import { formatPrice } from "@/lib/formatPrice";
@@ -39,6 +40,16 @@ const PRODUCT_TAGLINES: Record<string, string> = {
   "rise-by-night™-complete-sleep-bundle": "Pillow + Knee Pillow + Sleep Mask",
 };
 
+// Sales data for scarcity messaging (weekly sold count)
+const PRODUCT_WEEKLY_SALES: Record<string, number> = {
+  "risebynight-ergonomic-sleep-pillow": 127,
+  "risebynight-ergonomic-sleep-pillow-copy": 127,
+  "risebynight-ergonomic-knee-pillow": 89,
+  "risebynight-silk-sleep-mask": 156,
+  "risebynight-silk-deep-sleep-mask": 156,
+  "rise-by-night™-complete-sleep-bundle": 64,
+};
+
 // Build product order dynamically based on A/B variant
 // This function returns the correct order with the right ergonomic pillow handle
 const getProductOrder = (ergonomicHandle: string) => [
@@ -51,6 +62,170 @@ const getProductOrder = (ergonomicHandle: string) => [
 // Alternate handles mapping (some products have multiple handles)
 const HANDLE_ALIASES: Record<string, string[]> = {
   "risebynight-silk-deep-sleep-mask": ["risebynight-silk-sleep-mask", "risebynight-silk-deep-sleep-mask"],
+};
+
+// SEO Content for category page
+const SEO_CONTENT = {
+  preview: "Discover our collection of chiropractor-designed sleep products, engineered for adults seeking relief from neck pain, back discomfort, and restless nights.",
+  full: `Discover our collection of chiropractor-designed sleep products, engineered for adults seeking relief from neck pain, back discomfort, and restless nights. Each Rise By Night product is developed in collaboration with spine health professionals to provide optimal cervical support and spinal alignment while you sleep.
+
+Our ergonomic sleep pillow features a contoured memory foam design that adapts to your unique head and neck shape, providing personalized support for side, back, and combination sleepers. Unlike traditional pillows that flatten over time, our medical-grade foam maintains its shape night after night, offering consistent support that promotes proper spinal alignment and reduces morning stiffness.
+
+For side sleepers experiencing hip or lower back pain, our ergonomic knee pillow creates ideal leg separation to align the hips and reduce pressure on the lumbar spine. This simple addition to your sleep setup can significantly reduce sciatic discomfort and improve overall sleep quality.
+
+Complete your sleep environment with our 100% pure mulberry silk sleep mask, designed to block light completely while remaining gentle on delicate facial skin. The breathable silk helps regulate temperature and prevents the friction that can cause sleep lines and irritation.
+
+All Rise By Night products come with our 100-night comfort guarantee—if you don't experience improved sleep quality, we'll provide a full refund. We also offer free shipping on all orders and responsive customer support from our sleep wellness team.
+
+Whether you're recovering from an injury, managing chronic pain, or simply seeking better sleep quality, our products are designed to help you wake up refreshed and pain-free. Join the thousands of customers aged 55 and older who have transformed their sleep with Rise By Night.`,
+};
+
+// Product Card with hover image swap
+const ProductCard = ({ 
+  product, 
+  routeHandle, 
+  reviewData, 
+  tagline, 
+  price, 
+  compareAtPrice, 
+  weeklySales 
+}: {
+  product: any;
+  routeHandle: string;
+  reviewData: { rating: number; reviews: string; badge?: string };
+  tagline: string;
+  price: string;
+  compareAtPrice: string | null;
+  weeklySales: number;
+}) => {
+  const [isHovered, setIsHovered] = useState(false);
+  
+  const images = product.node.images.edges;
+  const primaryImage = images[0]?.node?.url;
+  const secondaryImage = images[1]?.node?.url || primaryImage;
+  const currentImage = isHovered && secondaryImage ? secondaryImage : primaryImage;
+  const handle = product.node.handle;
+
+  return (
+    <Link
+      to={`/products/${routeHandle}`}
+      className="group"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div className="bg-card rounded-2xl overflow-hidden border border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300">
+        {/* Image with hover swap */}
+        <div className="relative aspect-[4/3] bg-secondary/10 overflow-hidden">
+          {currentImage && (
+            <OptimizedImage
+              src={currentImage}
+              alt={product.node.title}
+              className="w-full h-full object-contain group-hover:scale-105 transition-all duration-500 p-4"
+            />
+          )}
+          {/* Badges */}
+          <div className="absolute top-4 left-4 flex flex-col gap-2">
+            {reviewData.badge && (
+              <span className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-medium">
+                {reviewData.badge}
+              </span>
+            )}
+          </div>
+          {/* Weekly sales badge */}
+          <div className="absolute bottom-4 left-4">
+            <span className="inline-flex items-center gap-1.5 bg-background/90 backdrop-blur-sm text-foreground px-3 py-1.5 rounded-full text-xs font-medium border border-border/50">
+              <TrendingUp className="w-3 h-3 text-affirmative" />
+              {weeklySales} sold this week
+            </span>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-6">
+          {/* Rating - Yellow Stars with partial fill support */}
+          <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center">
+              {[...Array(5)].map((_, i) => {
+                const fillPercentage = Math.min(1, Math.max(0, reviewData.rating - i));
+                return (
+                  <div key={i} className="relative w-4 h-4">
+                    {/* Background star (empty) */}
+                    <Star className="absolute w-4 h-4 fill-muted text-muted" />
+                    {/* Foreground star (filled) with clip */}
+                    {fillPercentage > 0 && (
+                      <div 
+                        className="absolute overflow-hidden" 
+                        style={{ width: `${fillPercentage * 100}%` }}
+                      >
+                        <Star className="w-4 h-4 fill-warning text-warning" />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <span className="text-sm text-muted-foreground">
+              {reviewData.rating} ({reviewData.reviews} reviews)
+            </span>
+          </div>
+
+          {/* Title & Description */}
+          <h2 className="text-xl font-semibold mb-1 group-hover:text-primary transition-colors">
+            {product.node.title}
+          </h2>
+          <p className="text-muted-foreground mb-4">
+            {tagline}
+          </p>
+
+          {/* Price (Blue) & CTA */}
+          <div className="flex flex-col gap-4">
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-bold text-primary">{price}</span>
+              {compareAtPrice && (
+                <span className="text-muted-foreground line-through">
+                  {compareAtPrice}
+                </span>
+              )}
+            </div>
+            <Button 
+              className="w-full bg-primary text-primary-foreground hover:bg-black transition-colors px-6 py-2.5"
+            >
+              {handle.includes('bundle') ? 'Get the Bundle' : 'Improve your sleep'} <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+};
+
+// SEO Content Block with Read More
+const CategorySEOContent = () => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  return (
+    <div className="bg-muted/30 rounded-xl p-6 mb-8">
+      <div className="prose prose-sm max-w-none text-muted-foreground">
+        <p className="mb-0">
+          {isExpanded ? SEO_CONTENT.full : SEO_CONTENT.preview}
+        </p>
+      </div>
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+      >
+        {isExpanded ? (
+          <>
+            Read less <ChevronUp className="w-4 h-4" />
+          </>
+        ) : (
+          <>
+            Read more <ChevronDown className="w-4 h-4" />
+          </>
+        )}
+      </button>
+    </div>
+  );
 };
 
 const Products = () => {
@@ -123,6 +298,9 @@ const Products = () => {
       {/* Products Grid */}
       <section className="py-8 md:py-12 px-4">
         <div className="container mx-auto max-w-6xl">
+          {/* SEO Content Block */}
+          <CategorySEOContent />
+
           {isLoading ? (
             <div className="grid md:grid-cols-2 gap-4 md:gap-8">
               {[1, 2, 3, 4].map((i) => (
@@ -145,92 +323,24 @@ const Products = () => {
                 const routeHandle = PRODUCT_ROUTES[handle] || handle;
                 const reviewData = PRODUCT_REVIEWS[handle] || { rating: 4.5, reviews: "1,000+" };
                 const tagline = PRODUCT_TAGLINES[handle] || "";
+                const weeklySales = PRODUCT_WEEKLY_SALES[handle] || 50;
                 const variant = product.node.variants.edges[0]?.node;
                 const price = variant ? formatPrice(variant.price.amount, currencyCode) : "$0.00";
                 const compareAtPrice = variant?.compareAtPrice?.amount 
                   ? formatPrice(variant.compareAtPrice.amount, currencyCode) 
                   : null;
-                const image = product.node.images.edges[0]?.node?.url;
 
                 return (
-                  <Link
+                  <ProductCard
                     key={product.node.id}
-                    to={`/products/${routeHandle}`}
-                    className="group"
-                  >
-                    <div className="bg-card rounded-2xl overflow-hidden border border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300">
-                      {/* Image */}
-                      <div className="relative aspect-[4/3] bg-secondary/10 overflow-hidden">
-                        {image && (
-                          <OptimizedImage
-                            src={image}
-                            alt={product.node.title}
-                            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 p-4"
-                          />
-                        )}
-                        {reviewData.badge && (
-                          <span className="absolute top-4 left-4 bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-medium">
-                            {reviewData.badge}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Content */}
-                      <div className="p-6">
-                        {/* Rating - Yellow Stars with partial fill support */}
-                        <div className="flex items-center gap-2 mb-3">
-                          <div className="flex items-center">
-                            {[...Array(5)].map((_, i) => {
-                              const fillPercentage = Math.min(1, Math.max(0, reviewData.rating - i));
-                              return (
-                                <div key={i} className="relative w-4 h-4">
-                                  {/* Background star (empty) */}
-                                  <Star className="absolute w-4 h-4 fill-muted text-muted" />
-                                  {/* Foreground star (filled) with clip */}
-                                  {fillPercentage > 0 && (
-                                    <div 
-                                      className="absolute overflow-hidden" 
-                                      style={{ width: `${fillPercentage * 100}%` }}
-                                    >
-                                      <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                          <span className="text-sm text-muted-foreground">
-                            {reviewData.rating} ({reviewData.reviews} reviews)
-                          </span>
-                        </div>
-
-                        {/* Title & Description */}
-                        <h2 className="text-xl font-semibold mb-1 group-hover:text-primary transition-colors">
-                          {product.node.title}
-                        </h2>
-                        <p className="text-muted-foreground mb-4">
-                          {tagline}
-                        </p>
-
-                        {/* Price (Blue) & CTA */}
-                        <div className="flex flex-col gap-4">
-                          <div className="flex items-baseline gap-2">
-                            <span className="text-2xl font-bold text-primary">{price}</span>
-                            {compareAtPrice && (
-                              <span className="text-muted-foreground line-through">
-                                {compareAtPrice}
-                              </span>
-                            )}
-                          </div>
-                          <Button 
-                            className="w-full bg-primary text-primary-foreground hover:bg-black transition-colors px-6 py-2.5"
-                          >
-                            {handle.includes('bundle') ? 'Get the Bundle' : 'Improve your sleep'} <ArrowRight className="w-4 h-4 ml-2" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
+                    product={product}
+                    routeHandle={routeHandle}
+                    reviewData={reviewData}
+                    tagline={tagline}
+                    price={price}
+                    compareAtPrice={compareAtPrice}
+                    weeklySales={weeklySales}
+                  />
                 );
               })}
             </div>
