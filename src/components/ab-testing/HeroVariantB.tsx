@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Check, Shield, Truck, Loader2, Star, ImageIcon, ChevronDown, Heart, Package, ShieldCheck } from "lucide-react";
 import { PaymentIcons } from "@/components/PaymentIcons";
 import { PolicyAccordion } from "@/components/PolicyAccordion";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { useState, useEffect, useRef, Suspense, lazy } from "react";
 import { useCartStore } from "@/stores/cartStore";
 import { useABErgonomicPillow } from "@/hooks/useABProduct";
@@ -253,6 +254,13 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
           
           {/* Sticky Product Details Column - flush with image top */}
           <div className="space-y-2 order-1 md:order-2 md:sticky md:top-0 self-start">
+            
+            {/* Breadcrumbs - Desktop Only */}
+            <div className="hidden md:block mb-3">
+              <Breadcrumbs 
+                currentPageLabel={pillowFocus === 'back' ? 'Back Pain Relief Pillow' : 'Neck Pain Relief Pillow'} 
+              />
+            </div>
 
             {/* Desktop Social Proof - no extra wrappers to avoid whitespace */}
             <div 

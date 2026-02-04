@@ -14,6 +14,7 @@
 
 import { useEffect, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
+import { getPreferredPillowRoute } from "@/lib/pillowFocusPreference";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { 
@@ -52,11 +53,12 @@ import {
 
 // ============ PRODUCT DISPLAY ============
 
-const PRODUCT_DISPLAY: Record<string, { name: string; route: string; description: string }> = {
+const PRODUCT_DISPLAY: Record<string, { name: string; route: string; description: string; usePreference?: boolean }> = {
   ergonomic_pillow: {
     name: "Rise By Night™ Ergonomic Sleep Pillow",
-    route: "/products/ergonomic-pillow",
+    route: "/products/ergonomic-pillow", // Will be overridden by getPreferredPillowRoute() at runtime
     description: "Contoured memory foam designed for cervical support",
+    usePreference: true, // Flag to use user's stored preference
   },
   knee_pillow: {
     name: "Rise By Night™ Ergonomic Knee Pillow",

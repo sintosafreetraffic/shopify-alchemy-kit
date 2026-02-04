@@ -42,6 +42,7 @@ import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 import { ImageModal } from "./ImageModal";
 import { CheckoutLoadingOverlay } from "./CheckoutLoadingOverlay";
+import { EmptyCartCTA } from "./EmptyCartCTA";
 import { useCheckoutStatus } from "@/hooks/useCheckoutStatus";
 import { createCheckoutWithResilience, openCheckoutUrl, isMobileDevice } from "@/lib/checkoutUtils";
 import { formatPrice, getCurrencySymbol } from "@/lib/formatPrice";
@@ -593,12 +594,7 @@ export const CartDrawer = () => {
           )}
           
           {items.length === 0 ? (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center">
-                <ShoppingCart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">Your cart is empty</p>
-              </div>
-            </div>
+            <EmptyCartCTA onClose={() => setIsOpen(false)} />
           ) : (
             <>
               {/* Scrollable Cart Items + Trust Badges + Pricing */}

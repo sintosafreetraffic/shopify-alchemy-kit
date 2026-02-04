@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import moonIcon from "@/assets/moon-icon-blue.png";
+import { FooterTrustBadges } from "./FooterTrustBadges";
 
 export const Footer = () => {
   const [email, setEmail] = useState("");
@@ -192,6 +193,11 @@ export const Footer = () => {
               </li>
             </ul>
           </div>
+        </div>
+
+        {/* Trust Badges Section */}
+        <div className="border-t border-border mt-8 pt-8">
+          <FooterTrustBadges />
         </div>
 
         {/* Bottom Bar */}
