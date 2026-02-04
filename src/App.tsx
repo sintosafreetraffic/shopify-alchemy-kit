@@ -9,7 +9,7 @@ import { Footer } from "./components/Footer";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { UrgencyBanner } from "./components/UrgencyBanner";
 import { BackToTopButton } from "./components/BackToTopButton";
-import { CookieConsentBanner } from "./components/CookieConsentBanner";
+
 
 import { ExitIntentPopup } from "./components/ExitIntentPopup";
 import { trackPageView } from "./lib/analyticsRegistry";
@@ -338,8 +338,6 @@ const AppContent = () => {
       {/* Pinterest in-app browser prompt */}
       <PinterestBrowserPrompt />
       
-      {/* Cookie Consent Banner */}
-      <CookieConsentBanner />
     </div>
   );
 };
