@@ -13,6 +13,8 @@ interface ProductViewData {
   title: string;
   imageUrl: string;
   price: string;
+  compareAtPrice?: string;
+  isValentinesDeal?: boolean;
 }
 
 /**
@@ -31,6 +33,8 @@ export const useTrackProductView = (product: ProductViewData | null) => {
       title: product.title,
       imageUrl: product.imageUrl,
       price: product.price,
+      compareAtPrice: product.compareAtPrice,
+      isValentinesDeal: product.isValentinesDeal,
     });
   }, [product?.id]); // Only track when product ID changes
 };
@@ -46,7 +50,9 @@ export const STATIC_PRODUCT_DATA: Record<string, ProductViewData> = {
     handle: "ergonomic-pillow",
     title: "Ergonomic Cervical Pillow",
     imageUrl: ergonomicPillowHero,
-    price: "€59.99",
+    price: "€119.99",
+    compareAtPrice: "€199.99",
+    isValentinesDeal: true,
   },
   "knee-pillow": {
     id: "knee-pillow",
@@ -54,6 +60,7 @@ export const STATIC_PRODUCT_DATA: Record<string, ProductViewData> = {
     title: "Ergonomic Knee Pillow",
     imageUrl: kneePillowHero,
     price: "€39.99",
+    compareAtPrice: "€59.99",
   },
   "sleep-mask": {
     id: "sleep-mask",
@@ -61,12 +68,14 @@ export const STATIC_PRODUCT_DATA: Record<string, ProductViewData> = {
     title: "Silk Sleep Mask",
     imageUrl: sleepMaskHero,
     price: "€24.99",
+    compareAtPrice: "€39.99",
   },
   "sleep-bundle": {
     id: "sleep-bundle",
     handle: "sleep-bundle",
     title: "Complete Sleep Bundle",
     imageUrl: sleepBundleHero,
-    price: "€99.99",
+    price: "€109.99",
+    compareAtPrice: "€199.99",
   },
 };
