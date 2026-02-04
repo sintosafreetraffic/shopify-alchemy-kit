@@ -274,6 +274,9 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     {isPillowProduct ? (
                       <>
+                        <Badge className="bg-pink-500/20 text-pink-600 border-pink-500/30 text-[10px] px-1.5 py-0.5">
+                          1+1 Deal
+                        </Badge>
                         <div className="flex">
                           {[1, 2, 3, 4, 5].map((star) => (
                             <Star key={star} className="w-3 h-3 fill-yellow-500 text-yellow-500" />
@@ -483,7 +486,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                           )}
                         </div>
                         <div className="flex flex-col items-start">
-                          <span className="text-xs leading-none whitespace-nowrap">Add to Cart</span>
+                          <span className="text-xs leading-none whitespace-nowrap">{isPillowProduct ? "Buy it" : "Add to Cart"}</span>
                           <span className="font-bold leading-none whitespace-nowrap text-primary-foreground">{formatPrice(addToCartValue, currencyCode)}</span>
                         </div>
                       </span>
@@ -497,7 +500,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                           )}
                         </div>
                         <div className="flex flex-col items-start">
-                          <span className="text-xs leading-none whitespace-nowrap">Add to Cart</span>
+                          <span className="text-xs leading-none whitespace-nowrap">{isPillowProduct ? "Buy it" : "Add to Cart"}</span>
                           <span className="font-bold leading-none whitespace-nowrap text-primary-foreground">{formatPrice(addToCartValue, currencyCode)}</span>
                         </div>
                       </span>
