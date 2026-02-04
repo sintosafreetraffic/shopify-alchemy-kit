@@ -28,6 +28,7 @@ import { useABErgonomicPillow } from "@/hooks/useABProduct";
 import { useCartStore } from "@/stores/cartStore";
 import { useSEO, SEO_CONFIGS } from "@/hooks/useSEO";
 import { ProductSchema } from "@/components/seo/SEOSchemas";
+import { useTrackProductView, STATIC_PRODUCT_DATA } from "@/hooks/useTrackProductView";
 
 // Lazy load sections with carousels to reduce initial bundle
 const VideoSection = lazy(() => import("@/components/VideoSection").then((mod) => ({ default: mod.VideoSection })));
@@ -107,6 +108,7 @@ const InlineCTA = () => {
 
 const ErgonomicPillowProductVariantB = () => {
   useSEO(SEO_CONFIGS.ergonomicPillow);
+  useTrackProductView(STATIC_PRODUCT_DATA["ergonomic-pillow"]);
   const [showReviewForm, setShowReviewForm] = useState(false);
 
   // Capture neck pain preference on page load (first-touch model)
