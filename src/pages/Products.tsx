@@ -64,20 +64,20 @@ const HANDLE_ALIASES: Record<string, string[]> = {
   "risebynight-silk-deep-sleep-mask": ["risebynight-silk-sleep-mask", "risebynight-silk-deep-sleep-mask"],
 };
 
-// SEO Content for category page
+// SEO Content for category page - optimized keywords for search
 const SEO_CONTENT = {
-  preview: "Discover our collection of chiropractor-designed sleep products, engineered for adults seeking relief from neck pain, back discomfort, and restless nights.",
-  full: `Discover our collection of chiropractor-designed sleep products, engineered for adults seeking relief from neck pain, back discomfort, and restless nights. Each Rise By Night product is developed in collaboration with spine health professionals to provide optimal cervical support and spinal alignment while you sleep.
+  preview: "Explore our chiropractor-recommended ergonomic pillows and sleep accessories — designed for adults over 55 seeking lasting relief from neck pain, back discomfort, and poor sleep quality.",
+  full: `Explore our chiropractor-recommended ergonomic pillows and sleep accessories — designed for adults over 55 seeking lasting relief from neck pain, back discomfort, and poor sleep quality. Each Rise By Night product is developed in collaboration with spine health professionals to provide optimal cervical support and spinal alignment while you sleep.
 
-Our ergonomic sleep pillow features a contoured memory foam design that adapts to your unique head and neck shape, providing personalized support for side, back, and combination sleepers. Unlike traditional pillows that flatten over time, our medical-grade foam maintains its shape night after night, offering consistent support that promotes proper spinal alignment and reduces morning stiffness.
+Our best-selling ergonomic cervical pillow features a contoured memory foam design that adapts to your unique head and neck shape, providing personalized support for side sleepers, back sleepers, and combination sleepers. Unlike traditional pillows that flatten over time, our medical-grade foam maintains its shape night after night, offering consistent support that promotes proper spinal alignment and reduces morning stiffness.
 
-For side sleepers experiencing hip or lower back pain, our ergonomic knee pillow creates ideal leg separation to align the hips and reduce pressure on the lumbar spine. This simple addition to your sleep setup can significantly reduce sciatic discomfort and improve overall sleep quality.
+For side sleepers experiencing hip pain, sciatica, or lower back discomfort, our ergonomic knee pillow creates ideal leg separation to align the hips and reduce pressure on the lumbar spine. This orthopedic knee pillow can significantly reduce sciatic nerve pain and improve overall sleep quality.
 
-Complete your sleep environment with our 100% pure mulberry silk sleep mask, designed to block light completely while remaining gentle on delicate facial skin. The breathable silk helps regulate temperature and prevents the friction that can cause sleep lines and irritation.
+Complete your sleep environment with our 100% pure mulberry silk sleep mask, designed to block light completely while remaining gentle on delicate facial skin. The breathable silk helps regulate temperature and prevents the friction that can cause sleep lines and skin irritation.
 
-All Rise By Night products come with our 100-night comfort guarantee—if you don't experience improved sleep quality, we'll provide a full refund. We also offer free shipping on all orders and responsive customer support from our sleep wellness team.
+All Rise By Night sleep products come with our 100-night comfort guarantee — if you don't experience improved sleep quality, we'll provide a full refund. We also offer free shipping on all orders and responsive customer support from our sleep wellness team.
 
-Whether you're recovering from an injury, managing chronic pain, or simply seeking better sleep quality, our products are designed to help you wake up refreshed and pain-free. Join the thousands of customers aged 55 and older who have transformed their sleep with Rise By Night.`,
+Whether you're recovering from an injury, managing chronic pain, or simply seeking better sleep quality, our ergonomic sleep solutions are designed to help you wake up refreshed and pain-free. Join thousands of customers aged 55 and older who have transformed their sleep with Rise By Night.`,
 };
 
 // Product Card with hover image swap
@@ -199,31 +199,34 @@ const ProductCard = ({
   );
 };
 
-// SEO Content Block with Read More
+// SEO Content Block with Read More - styled with subtle border and icon
 const CategorySEOContent = () => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <div className="bg-muted/30 rounded-xl p-6 mb-8">
-      <div className="prose prose-sm max-w-none text-muted-foreground">
-        <p className="mb-0">
+    <div className="mt-12 border-t border-border pt-10">
+      <div className="max-w-3xl mx-auto">
+        <h2 className="text-lg font-semibold text-foreground mb-4">
+          About Our Sleep Collection
+        </h2>
+        <div className="text-muted-foreground leading-relaxed whitespace-pre-line">
           {isExpanded ? SEO_CONTENT.full : SEO_CONTENT.preview}
-        </p>
+        </div>
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors border border-primary/30 rounded-full px-4 py-2 hover:bg-primary/5"
+        >
+          {isExpanded ? (
+            <>
+              Read less <ChevronUp className="w-4 h-4" />
+            </>
+          ) : (
+            <>
+              Read more <ChevronDown className="w-4 h-4" />
+            </>
+          )}
+        </button>
       </div>
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-      >
-        {isExpanded ? (
-          <>
-            Read less <ChevronUp className="w-4 h-4" />
-          </>
-        ) : (
-          <>
-            Read more <ChevronDown className="w-4 h-4" />
-          </>
-        )}
-      </button>
     </div>
   );
 };
@@ -298,9 +301,6 @@ const Products = () => {
       {/* Products Grid */}
       <section className="py-8 md:py-12 px-4">
         <div className="container mx-auto max-w-6xl">
-          {/* SEO Content Block */}
-          <CategorySEOContent />
-
           {isLoading ? (
             <div className="grid md:grid-cols-2 gap-4 md:gap-8">
               {[1, 2, 3, 4].map((i) => (
@@ -315,35 +315,40 @@ const Products = () => {
               ))}
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 gap-4 md:gap-8">
-              {sortedProducts.map((product) => {
-                if (!product) return null;
-                
-                const handle = product.node.handle;
-                const routeHandle = PRODUCT_ROUTES[handle] || handle;
-                const reviewData = PRODUCT_REVIEWS[handle] || { rating: 4.5, reviews: "1,000+" };
-                const tagline = PRODUCT_TAGLINES[handle] || "";
-                const weeklySales = PRODUCT_WEEKLY_SALES[handle] || 50;
-                const variant = product.node.variants.edges[0]?.node;
-                const price = variant ? formatPrice(variant.price.amount, currencyCode) : "$0.00";
-                const compareAtPrice = variant?.compareAtPrice?.amount 
-                  ? formatPrice(variant.compareAtPrice.amount, currencyCode) 
-                  : null;
+            <>
+              <div className="grid md:grid-cols-2 gap-4 md:gap-8">
+                {sortedProducts.map((product) => {
+                  if (!product) return null;
+                  
+                  const handle = product.node.handle;
+                  const routeHandle = PRODUCT_ROUTES[handle] || handle;
+                  const reviewData = PRODUCT_REVIEWS[handle] || { rating: 4.5, reviews: "1,000+" };
+                  const tagline = PRODUCT_TAGLINES[handle] || "";
+                  const weeklySales = PRODUCT_WEEKLY_SALES[handle] || 50;
+                  const variant = product.node.variants.edges[0]?.node;
+                  const price = variant ? formatPrice(variant.price.amount, currencyCode) : "$0.00";
+                  const compareAtPrice = variant?.compareAtPrice?.amount 
+                    ? formatPrice(variant.compareAtPrice.amount, currencyCode) 
+                    : null;
 
-                return (
-                  <ProductCard
-                    key={product.node.id}
-                    product={product}
-                    routeHandle={routeHandle}
-                    reviewData={reviewData}
-                    tagline={tagline}
-                    price={price}
-                    compareAtPrice={compareAtPrice}
-                    weeklySales={weeklySales}
-                  />
-                );
-              })}
-            </div>
+                  return (
+                    <ProductCard
+                      key={product.node.id}
+                      product={product}
+                      routeHandle={routeHandle}
+                      reviewData={reviewData}
+                      tagline={tagline}
+                      price={price}
+                      compareAtPrice={compareAtPrice}
+                      weeklySales={weeklySales}
+                    />
+                  );
+                })}
+              </div>
+              
+              {/* SEO Content Block - Below Products */}
+              <CategorySEOContent />
+            </>
           )}
         </div>
       </section>
