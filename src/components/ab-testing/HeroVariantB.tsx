@@ -153,7 +153,7 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
   // Fixed compare-at price - same numeric value for all regions
   const compareAtPrice = 199.99;
   return (
-    <section className="pb-3 md:pb-6 bg-background overflow-x-hidden" style={{ paddingTop: Math.max(headerHeight - 80, 0) }}>
+    <section className="pb-3 md:pb-6 bg-background overflow-x-hidden">
       <div className="container mx-auto px-4 max-w-7xl overflow-x-hidden">
         {/* Mobile Layout: Carousel at top, then title */}
         <div className="md:hidden space-y-3 md:space-y-4 mb-0 md:mb-6">
@@ -242,7 +242,7 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
         {/* Desktop Grid Layout */}
         <div className="grid md:grid-cols-2 gap-6 lg:gap-10 items-start">
           {/* Scrollable Product Images Column - Desktop Only */}
-          <div className="hidden md:block relative order-2 md:order-1 space-y-4">
+          <div className="hidden md:block relative order-2 md:order-1 space-y-4 -ml-4 -mr-4 lg:-ml-0 lg:-mr-0 px-0 lg:px-0">
             <Suspense fallback={<CarouselFallback />}>
               <ProductImageCarousel pillowFocus={pillowFocus} />
             </Suspense>
