@@ -157,14 +157,17 @@ const BackPainPillowProduct = () => {
         onWriteReview={() => setShowReviewForm(true)} 
       />
 
+      {/* Hidden: See It In Action section
       <Suspense fallback={<SectionFallback />}>
         <VideoSection />
       </Suspense>
+      */}
 
-      {/* Featured Customer Reviews Carousel */}
+      {/* Hidden: Featured Customer Reviews Carousel
       <Suspense fallback={<SectionFallback />}>
         <ReviewsSection />
       </Suspense>
+      */}
 
       <ProductFAQSection />
 
