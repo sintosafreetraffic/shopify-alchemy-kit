@@ -30,7 +30,7 @@ export const Header = () => {
       className={`fixed ${headerTop} left-0 right-0 z-[75] border-b bg-background transition-transform duration-300 ease-out will-change-transform`}
       style={{ transform: shouldHide ? hiddenTransform : "translateY(0)" }}
     >
-      <div className="container mx-auto px-4 py-2 md:py-3 relative flex md:grid md:grid-cols-3 items-center">
+      <div className="container mx-auto px-4 py-2 relative flex md:grid md:grid-cols-3 items-center h-14 md:h-16">
         {/* Mobile Menu Button - Absolute Left on Mobile */}
         <div className="absolute left-4 md:static flex items-center md:hidden">
           <Sheet open={isMobileMenuOpen} onOpenChange={setMobileMenuOpen}>
@@ -164,29 +164,29 @@ export const Header = () => {
         </div>
 
         {/* Logo - Centered on Mobile, Left on Desktop */}
-        <Link to="/" className="flex items-center justify-center md:justify-start hover:opacity-80 transition-opacity mx-auto md:mx-0 h-12 md:h-14">
+        <Link to="/" className="flex items-center justify-center md:justify-start hover:opacity-80 transition-opacity mx-auto md:mx-0">
           <img 
             src={logo} 
             alt="Rise By Night - Ergonomic Sleep Pillow" 
             width={240}
             height={48}
-            className="h-full w-auto object-contain"
+            className="h-10 md:h-12 w-auto object-contain"
             loading="eager"
             fetchPriority="high"
             decoding="sync"
           />
         </Link>
         
-        {/* Desktop Navigation - explicitly match logo height for vertical centering */}
-        <nav className="hidden md:flex flex-nowrap items-center justify-center gap-8 lg:gap-10 whitespace-nowrap h-14">
+        {/* Desktop Navigation - centered in grid column */}
+        <nav className="hidden md:flex items-center justify-center gap-8 lg:gap-10 whitespace-nowrap">
           <NavLink to="/" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors">Home</NavLink>
           <NavLink to="/products" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors">Products</NavLink>
           <NavLink to="/about" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors">About Us</NavLink>
           <NavLink to="/track" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors">Track Your Order</NavLink>
         </nav>
         
-        {/* Cart - Absolute Right on Mobile, Right on Desktop - match height for alignment */}
-        <div className="absolute right-4 md:static flex items-center justify-end md:ml-auto h-12 md:h-14">
+        {/* Cart - Absolute Right on Mobile, Right on Desktop */}
+        <div className="absolute right-4 md:static flex items-center justify-end">
           <CartDrawer />
         </div>
       </div>
