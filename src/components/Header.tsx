@@ -164,14 +164,14 @@ export const Header = () => {
         </div>
 
         {/* Logo - Centered on Mobile, Left on Desktop */}
-        <Link to="/" className="flex items-center justify-center md:justify-start hover:opacity-80 transition-opacity mx-auto md:mx-0 h-10 md:h-14">
+        <Link to="/" className="flex items-center justify-center md:justify-start hover:opacity-80 transition-opacity mx-auto md:mx-0 h-10 md:h-11">
           <img 
             src={logo} 
             alt="Rise By Night - Ergonomic Sleep Pillow" 
-            width={240}
-            height={48}
-            style={{ width: 'auto', height: '48px', maxHeight: '48px' }}
-            className="md:h-14 md:max-h-14 object-contain"
+            width={200}
+            height={40}
+            style={{ width: 'auto', height: '40px', maxHeight: '40px' }}
+            className="md:h-11 md:max-h-11 object-contain"
             loading="eager"
             fetchPriority="high"
             decoding="sync"
@@ -179,7 +179,7 @@ export const Header = () => {
         </Link>
         
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex flex-nowrap items-center justify-center mt-5 gap-8 lg:gap-10 whitespace-nowrap">
+        <nav className="hidden md:flex flex-nowrap items-center justify-center gap-8 lg:gap-10 whitespace-nowrap">
           <NavLink to="/" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors">Home</NavLink>
           <NavLink to="/products" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors">Products</NavLink>
           <NavLink to="/about" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors">About Us</NavLink>
