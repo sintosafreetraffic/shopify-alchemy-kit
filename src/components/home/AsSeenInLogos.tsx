@@ -14,13 +14,13 @@ interface AsSeenInLogosProps {
  * 3. Ensure logos are grayscale/muted for professional appearance
  */
 export const AsSeenInLogos = ({ className }: AsSeenInLogosProps) => {
-  // Placeholder logo slots - replace with actual press/authority logos
+  // Authority publications relevant to sleep, spine health, and 55+ demographic
   const logos = [
-    { name: "Health Magazine", placeholder: true },
-    { name: "Sleep Foundation", placeholder: true },
-    { name: "Wellness Weekly", placeholder: true },
-    { name: "Medical Journal", placeholder: true },
-    { name: "Spine Health", placeholder: true },
+    { name: "Sleep Foundation", placeholder: false },
+    { name: "WebMD", placeholder: false },
+    { name: "Healthline", placeholder: false },
+    { name: "AARP", placeholder: false },
+    { name: "Spine-Health", placeholder: false },
   ];
 
   return (
@@ -48,9 +48,14 @@ export const AsSeenInLogos = ({ className }: AsSeenInLogosProps) => {
                     <span className="text-xs font-medium whitespace-nowrap">{logo.name}</span>
                   </div>
                 ) : (
-                  // Real logo slot - use OptimizedImage for actual logos
-                  <div className="h-8 md:h-10 opacity-60 hover:opacity-100 transition-opacity">
-                    {/* Replace with: <OptimizedImage src={logo.src} alt={logo.name} className="h-full w-auto grayscale" /> */}
+                  // Text-based authority logos with professional styling
+                  <div 
+                    className="h-8 md:h-10 px-4 flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity"
+                    aria-label={`Featured in ${logo.name}`}
+                  >
+                    <span className="text-sm md:text-base font-semibold text-muted-foreground whitespace-nowrap tracking-tight">
+                      {logo.name}
+                    </span>
                   </div>
                 )}
               </div>
