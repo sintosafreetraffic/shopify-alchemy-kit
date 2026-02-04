@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import OptimizedImage from "@/components/OptimizedImage";
-import { Clock } from "lucide-react";
+import { Clock, Heart } from "lucide-react";
+import { useValentinesOffer } from "@/hooks/useValentinesOffer";
 
 interface ViewedProduct {
   id: string;
@@ -10,6 +11,8 @@ interface ViewedProduct {
   title: string;
   imageUrl: string;
   price: string;
+  compareAtPrice?: string;
+  isValentinesDeal?: boolean;
   viewedAt: number;
 }
 
@@ -32,6 +35,7 @@ export const RecentlyViewedItems = ({
   maxItems = 4 
 }: RecentlyViewedItemsProps) => {
   const [viewedProducts, setViewedProducts] = useState<ViewedProduct[]>([]);
+  const valentinesOffer = useValentinesOffer();
 
   useEffect(() => {
     // Load recently viewed from localStorage
@@ -79,8 +83,18 @@ export const RecentlyViewedItems = ({
               <Link
                 key={product.id}
                 to={`/products/${product.handle}`}
-                className="group block bg-muted/20 rounded-lg overflow-hidden border border-border/50 hover:border-primary/30 transition-colors"
+                className="group block bg-muted/20 rounded-lg overflow-hidden border border-border/50 hover:border-primary/30 transition-colors relative"
               >
+                {/* Valentine's Badge */}
+                {product.isValentinesDeal && valentinesOffer.isActive && (
+                  <div className="absolute top-2 left-2 z-10">
+                    <div className="bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg">
+                      <Heart className="w-3 h-3 fill-white" />
+                      <span>1+1 FREE</span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Product image */}
                 <div className="aspect-square overflow-hidden bg-muted/30">
                   <OptimizedImage
@@ -92,12 +106,28 @@ export const RecentlyViewedItems = ({
 
                 {/* Product info */}
                 <div className="p-3">
-                  <h3 className="text-sm font-medium line-clamp-2 mb-1 group-hover:text-primary transition-colors">
+                  <h3 className="text-sm font-medium line-clamp-2 mb-1.5 group-hover:text-primary transition-colors">
                     {product.title}
                   </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {product.price}
-                  </p>
+                  
+                  {/* Price section with compare-at */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-semibold text-primary">
+                      {product.price}
+                    </span>
+                    {product.compareAtPrice && (
+                      <span className="text-xs text-muted-foreground line-through">
+                        {product.compareAtPrice}
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* Valentine's deal highlight */}
+                  {product.isValentinesDeal && valentinesOffer.isActive && (
+                    <p className="text-[10px] text-pink-600 font-medium mt-1">
+                      Buy 1, Get 1 Free!
+                    </p>
+                  )}
                 </div>
               </Link>
             ))}
