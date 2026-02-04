@@ -156,9 +156,9 @@ export const ProductImageCarousel = ({ pillowFocus = 'neck' }: ProductImageCarou
   }, [desktopApi]);
   return (
     <>
-      {/* Mobile Carousel - inset container; rounded corners apply to image viewport only */}
-      <div className="md:hidden w-[calc(100%-2rem)] mx-auto">
-        <div className="rounded-xl overflow-hidden bg-[#f5f5f7]">
+      {/* Mobile Carousel - full width edge-to-edge */}
+      <div className="md:hidden w-screen relative left-1/2 -translate-x-1/2">
+        <div className="bg-[#f5f5f7]">
           <Carousel className="w-full" setApi={setMobileApi}>
             <CarouselContent className="ml-0">
               {mobileImages.map((item, index) => (
