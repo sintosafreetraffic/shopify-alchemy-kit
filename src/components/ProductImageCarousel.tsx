@@ -157,7 +157,7 @@ export const ProductImageCarousel = ({ pillowFocus = 'neck' }: ProductImageCarou
   return (
     <>
       {/* Mobile Carousel - full width edge-to-edge with matching background */}
-      <div className="md:hidden w-screen relative left-1/2 -translate-x-1/2">
+      <div className="md:hidden w-[calc(100%-2rem)] mx-auto rounded-xl overflow-hidden">
         <Carousel className="w-full" setApi={setMobileApi}>
           <CarouselContent className="ml-0">
             {mobileImages.map((item, index) => (
