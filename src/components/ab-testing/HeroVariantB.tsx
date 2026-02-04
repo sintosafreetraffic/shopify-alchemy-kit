@@ -153,7 +153,10 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
   // Fixed compare-at price - same numeric value for all regions
   const compareAtPrice = 199.99;
   return (
-    <section className="pb-3 md:pb-6 bg-background overflow-x-hidden">
+    <section 
+      className="pb-3 md:pb-6 bg-background overflow-x-hidden"
+      style={{ paddingTop: `${headerHeight + 8}px` }}
+    >
       <div className="container mx-auto px-4 max-w-7xl overflow-x-hidden">
         {/* Mobile Layout: Carousel at top, then title */}
         <div className="md:hidden space-y-3 md:space-y-4 mb-0 md:mb-6">
@@ -251,8 +254,11 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
             </Suspense>
           </div>
           
-          {/* Sticky Product Details Column - offset accounts for fixed header (36px banner + ~64px header + padding) */}
-          <div className="space-y-2 order-1 md:order-2 md:sticky md:top-[120px] self-start">
+          {/* Sticky Product Details Column - use dynamic header height for proper offset */}
+          <div 
+            className="space-y-2 order-1 md:order-2 md:sticky self-start"
+            style={{ top: `${headerHeight + 16}px` }}
+          >
 
             {/* Desktop Title Section */}
             <div className="hidden md:flex flex-col gap-3">
