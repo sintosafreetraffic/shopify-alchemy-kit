@@ -156,51 +156,53 @@ export const ProductImageCarousel = ({ pillowFocus = 'neck' }: ProductImageCarou
   }, [desktopApi]);
   return (
     <>
-      {/* Mobile Carousel - full width edge-to-edge with matching background */}
-      <div className="md:hidden w-[calc(100%-2rem)] mx-auto rounded-xl overflow-hidden">
-        <Carousel className="w-full" setApi={setMobileApi}>
-          <CarouselContent className="ml-0">
-            {mobileImages.map((item, index) => (
-              <CarouselItem key={index} className="pl-0">
-                {/* Full-width container with background matching product images */}
-                <div 
-                  className="overflow-hidden relative cursor-pointer hover:opacity-90 transition-opacity aspect-square bg-[#f5f5f7]"
-                  onClick={() => item.type === "image" && openImageModal(item.url, true)}
-                >
-                  {item.type === "video" ? (
-                    <VideoPoster
-                      videoSrc={item.url}
-                      alt={item.alt}
-                      posterSrc={(item as any).poster || pillowHeroNew}
-                      width={800}
-                      height={800}
-                      onPlayClick={() => handleVideoClick(item.url)}
-                    />
-                  ) : (
-                    <img
-                      src={item.url}
-                      alt={item.alt}
-                      className="w-full h-full object-contain"
-                      loading={index === 0 ? "eager" : "lazy"}
-                      fetchPriority={index === 0 ? "high" : "low"}
-                      decoding="async"
-                      width={800}
-                      height={800}
-                    />
-                  )}
-                </div>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-          <CarouselPrevious
-            variant="ghost"
-            className="left-2 !bg-transparent hover:!bg-transparent !border-0 !shadow-none"
-          />
-          <CarouselNext
-            variant="ghost"
-            className="right-2 !bg-transparent hover:!bg-transparent !border-0 !shadow-none"
-          />
-        </Carousel>
+      {/* Mobile Carousel - inset container; rounded corners apply to image viewport only */}
+      <div className="md:hidden w-[calc(100%-2rem)] mx-auto">
+        <div className="rounded-xl overflow-hidden bg-[#f5f5f7]">
+          <Carousel className="w-full" setApi={setMobileApi}>
+            <CarouselContent className="ml-0">
+              {mobileImages.map((item, index) => (
+                <CarouselItem key={index} className="pl-0">
+                  {/* Fixed aspect ratio container prevents CLS on image load */}
+                  <div
+                    className="overflow-hidden relative cursor-pointer hover:opacity-90 transition-opacity aspect-square"
+                    onClick={() => item.type === "image" && openImageModal(item.url, true)}
+                  >
+                    {item.type === "video" ? (
+                      <VideoPoster
+                        videoSrc={item.url}
+                        alt={item.alt}
+                        posterSrc={(item as any).poster || pillowHeroNew}
+                        width={800}
+                        height={800}
+                        onPlayClick={() => handleVideoClick(item.url)}
+                      />
+                    ) : (
+                      <img
+                        src={item.url}
+                        alt={item.alt}
+                        className="w-full h-full object-contain"
+                        loading={index === 0 ? "eager" : "lazy"}
+                        fetchPriority={index === 0 ? "high" : "low"}
+                        decoding="async"
+                        width={800}
+                        height={800}
+                      />
+                    )}
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious
+              variant="ghost"
+              className="left-2 !bg-transparent hover:!bg-transparent !border-0 !shadow-none"
+            />
+            <CarouselNext
+              variant="ghost"
+              className="right-2 !bg-transparent hover:!bg-transparent !border-0 !shadow-none"
+            />
+          </Carousel>
+        </div>
         
         {/* Carousel Thumbnail Indicators - fixed height to prevent CLS */}
         <div className="flex justify-center gap-2 mt-3 px-4 h-14">
