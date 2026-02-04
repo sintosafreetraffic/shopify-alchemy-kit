@@ -245,7 +245,7 @@ export const ProductImageCarousel = ({ pillowFocus = 'neck' }: ProductImageCarou
       </div>
 
       {/* Desktop Carousel - edge-to-edge layout */}
-      <div className="hidden md:block w-[calc(100%+2rem)] relative -left-4">
+      <div className="hidden md:block w-[calc(100%+4rem)] relative -left-8">
         <Carousel className="w-full" setApi={setDesktopApi}>
           <CarouselContent className="-ml-0">
             {images.map((item, index) => (
