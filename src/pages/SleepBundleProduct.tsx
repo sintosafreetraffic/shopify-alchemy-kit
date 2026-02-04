@@ -9,9 +9,11 @@ import { ChiropractorEndorsement } from "@/components/ChiropractorEndorsement";
 import { ReviewsWall, ReviewSubmissionForm } from "@/components/reviews";
 import { useSEO, SEO_CONFIGS } from "@/hooks/useSEO";
 import { ProductSchema, BreadcrumbSchema } from "@/components/seo/SEOSchemas";
+import { useTrackProductView, STATIC_PRODUCT_DATA } from "@/hooks/useTrackProductView";
 
 const SleepBundleProduct = () => {
   useSEO(SEO_CONFIGS.sleepBundle);
+  useTrackProductView(STATIC_PRODUCT_DATA["sleep-bundle"]);
   const [showReviewForm, setShowReviewForm] = useState(false);
 
   return (

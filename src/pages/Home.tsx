@@ -21,6 +21,8 @@ import {
   UGCTestimonialGrid,
   ScienceSection,
   MissionSection,
+  AsSeenInLogos,
+  RecentlyViewedItems,
 } from "@/components/home";
 
 // Lazy load below-fold components
@@ -63,8 +65,14 @@ export default function Home() {
       {/* Science Section - Target for "Why this works" link */}
       <ScienceSection />
 
+      {/* As Seen In - Authority/Press logos for trust building */}
+      <AsSeenInLogos />
+
       {/* Mission Section - Brand story and values */}
       <MissionSection />
+
+      {/* Recently Viewed Items - For returning visitors */}
+      <RecentlyViewedItems />
 
       {/* Product Gallery - Lazy Loaded */}
       <Suspense fallback={<SectionFallback />}>

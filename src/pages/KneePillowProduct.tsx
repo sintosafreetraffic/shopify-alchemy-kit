@@ -12,6 +12,7 @@ import { KneePillowFAQ } from "@/components/KneePillowFAQ";
 import { ReviewsWall, ReviewSubmissionForm } from "@/components/reviews";
 import { useSEO, SEO_CONFIGS } from "@/hooks/useSEO";
 import { ProductSchema, BreadcrumbSchema } from "@/components/seo/SEOSchemas";
+import { useTrackProductView, STATIC_PRODUCT_DATA } from "@/hooks/useTrackProductView";
 
 // Lazy load sections with carousels to reduce initial bundle
 const KneePillowVideoSection = lazy(() => 
@@ -27,6 +28,7 @@ const SectionFallback = () => (
 
 const KneePillowProduct = () => {
   useSEO(SEO_CONFIGS.kneePillow);
+  useTrackProductView(STATIC_PRODUCT_DATA["knee-pillow"]);
   const [showReviewForm, setShowReviewForm] = useState(false);
 
   return (

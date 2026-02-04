@@ -11,6 +11,7 @@ import { SleepMaskFAQ } from "@/components/SleepMaskFAQ";
 import { ReviewsWall, ReviewSubmissionForm } from "@/components/reviews";
 import { useSEO, SEO_CONFIGS } from "@/hooks/useSEO";
 import { ProductSchema, BreadcrumbSchema } from "@/components/seo/SEOSchemas";
+import { useTrackProductView, STATIC_PRODUCT_DATA } from "@/hooks/useTrackProductView";
 
 // Fallback for lazy-loaded sections
 const SectionFallback = () => (
@@ -21,6 +22,7 @@ const SectionFallback = () => (
 
 const SleepMaskProduct = () => {
   useSEO(SEO_CONFIGS.sleepMask);
+  useTrackProductView(STATIC_PRODUCT_DATA["sleep-mask"]);
   const [showReviewForm, setShowReviewForm] = useState(false);
 
   return (
