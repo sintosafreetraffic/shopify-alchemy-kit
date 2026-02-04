@@ -526,7 +526,7 @@ export const CartDrawer = () => {
         <Button variant="outline" size="icon" className="relative h-9 w-9 md:h-10 md:w-10" aria-label="Open shopping cart">
           <ShoppingCart className="h-4 w-4 md:h-5 md:w-5" />
           {totalItems > 0 && (
-            <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
+            <Badge className="absolute -top-0.5 -right-1.5 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
               {totalItems}
             </Badge>
           )}
