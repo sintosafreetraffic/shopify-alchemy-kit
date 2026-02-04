@@ -64,7 +64,7 @@ export const ReviewCard = ({
   });
 
   return (
-    <div className="bg-card border rounded-xl overflow-hidden break-inside-avoid mb-4">
+    <div className="bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-800/30 rounded-xl overflow-hidden break-inside-avoid mb-4">
       {/* Media Section */}
       {hasMedia && (
         <div className="relative">

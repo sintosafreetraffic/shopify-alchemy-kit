@@ -8,7 +8,7 @@
  */
 
 import { Button } from "@/components/ui/button";
-import { Check, Shield, Truck, Loader2, Star, ImageIcon, ChevronDown, Heart, Package, ShieldCheck } from "lucide-react";
+import { Check, Shield, Truck, Loader2, Star, ImageIcon, ChevronDown, Heart, Package, ShieldCheck, ShoppingCart, CheckCircle } from "lucide-react";
 import { PaymentIcons } from "@/components/PaymentIcons";
 import { PolicyAccordion } from "@/components/PolicyAccordion";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -31,7 +31,8 @@ import testimonialAvatar from "@/assets/testimonial-new-updated.webp";
 import pillowCoverImage from "@/assets/pillow-cover-included.webp";
 import moonIcon from "@/assets/moon-icon-blue.png";
 import { PillowFocus, getPillowContent } from "@/config/pillowFocusContent";
-
+import { LiveViewerBadge } from "@/components/LiveViewerBadge";
+import { EmailContactLink } from "@/components/EmailContactLink";
 // Lazy load the image carousel to reduce initial bundle
 const ProductImageCarousel = lazy(() => 
   import("@/components/ProductImageCarousel").then(mod => ({ default: mod.ProductImageCarousel }))
@@ -63,6 +64,7 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
   // Get content based on pillow focus (neck or back)
   const focusContent = getPillowContent(pillowFocus);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [justAdded, setJustAdded] = useState(false);
   const { addItem, setCartOpen } = useCartStore();
   const hasTrackedView = useRef(false);
   const headerHeight = useHeaderHeight();
@@ -134,6 +136,10 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
         }
       });
       setCartOpen(true);
+      
+      // Show "Added" state briefly
+      setJustAdded(true);
+      setTimeout(() => setJustAdded(false), 2500);
     } catch (error) {
       console.error('Failed to add to cart:', error);
       toast.error("Failed to add to cart");
@@ -219,14 +225,15 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
                       <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                       Adding...
                     </>
+                  ) : justAdded ? (
+                    <>
+                      <CheckCircle className="w-5 h-5 mr-2" />
+                      Added – View Cart
+                    </>
                   ) : (
                     <>
-                      <span className="inline-block transition-all duration-300 group-hover:-translate-y-12 group-hover:opacity-0">
-                        ADD TO CART
-                      </span>
-                      <span className="absolute inset-0 flex items-center justify-center translate-y-12 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                        ADD TO CART
-                      </span>
+                      <ShoppingCart className="w-5 h-5 mr-2" />
+                      ADD TO CART
                     </>
                   )}
                 </Button>
@@ -234,6 +241,11 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
                 {/* Mobile Payment Icons - compact */}
                 <div className="pt-2">
                   <PaymentIcons />
+                </div>
+                
+                {/* Email contact link - mobile */}
+                <div className="pt-2 flex justify-center">
+                  <EmailContactLink />
                 </div>
               </div>
             )}
@@ -298,21 +310,24 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
               </div>
             </div>
 
-            {/* USPs Section */}
+            {/* USPs Section with Green Checkmarks */}
             <div className="space-y-2 mb-3">
               <div className="flex items-center gap-2">
-                <div className="w-5 h-5 rounded-full bg-amber-400 shrink-0" />
+                <CheckCircle className="w-5 h-5 text-affirmative shrink-0" />
                 <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight text-amber-600 font-medium">Only 3 left at this price!</p>
               </div>
               <div className="flex items-center gap-2">
-                <Package className="w-5 h-5 text-muted-foreground shrink-0" />
-                <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight">Free shipping in <span className="font-semibold">US</span></p>
+                <CheckCircle className="w-5 h-5 text-affirmative shrink-0" />
+                <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight">Free shipping in <span className="font-semibold">US</span> • Arrives in 3-5 days</p>
               </div>
               <div className="flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-muted-foreground shrink-0" />
+                <CheckCircle className="w-5 h-5 text-affirmative shrink-0" />
                 <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight">100 days money-back guarantee</p>
               </div>
             </div>
+            
+            {/* Live Viewer Badge */}
+            <LiveViewerBadge className="mb-3" />
 
             {/* Valentine's Day 1+1 Offer Section */}
             {valentinesOffer.isActive && (
@@ -346,7 +361,7 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
             <div className={`${mobileHeroConfig.MOBILE_CTA_FIRST ? "hidden md:block" : ""} ${valentinesOffer.isActive ? "hidden" : ""}`}>
               <Button 
                 size="lg"
-                className="w-full text-lg md:text-xl py-6 font-bold shadow-lg hover:shadow-xl transition-all touch-manipulation animate-attention-pulse bg-primary text-primary-foreground hover:bg-black hover:text-white relative overflow-hidden group" 
+                className="w-full text-lg md:text-xl py-6 font-bold shadow-lg hover:shadow-xl transition-all touch-manipulation animate-attention-pulse bg-primary text-primary-foreground hover:bg-black hover:text-white" 
                 onClick={() => handleAddToCart(1)}
                 disabled={isCheckingOut || !product}
               >
@@ -355,14 +370,15 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
                     <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                     Adding...
                   </>
+                ) : justAdded ? (
+                  <>
+                    <CheckCircle className="w-5 h-5 mr-2" />
+                    Added – View Cart
+                  </>
                 ) : (
                   <>
-                    <span className="inline-block transition-all duration-300 group-hover:-translate-y-12 group-hover:opacity-0">
-                      ADD TO CART
-                    </span>
-                    <span className="absolute inset-0 flex items-center justify-center translate-y-12 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                      ADD TO CART
-                    </span>
+                    <ShoppingCart className="w-5 h-5 mr-2" />
+                    ADD TO CART
                   </>
                 )}
               </Button>
@@ -370,6 +386,11 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
               {/* Payment Icons */}
               <div className="pt-2">
                 <PaymentIcons />
+              </div>
+              
+              {/* Email contact link - desktop */}
+              <div className="pt-2 flex justify-center">
+                <EmailContactLink />
               </div>
             </div>
 

@@ -28,6 +28,8 @@ import { useSEO } from "@/hooks/useSEO";
 import { ProductSchema } from "@/components/seo/SEOSchemas";
 import { setPillowFocusPreference } from "@/lib/pillowFocusPreference";
 import { getPillowContent } from "@/config/pillowFocusContent";
+import { AsSeenInLogos } from "@/components/home";
+import { HowToUseSection } from "@/components/HowToUseSection";
 
 // Lazy load sections with carousels to reduce initial bundle
 const VideoSection = lazy(() => import("@/components/VideoSection").then((mod) => ({ default: mod.VideoSection })));
@@ -142,11 +144,18 @@ const BackPainPillowProduct = () => {
       
       <Features />
       <ChiropractorEndorsement />
+      
+      {/* As Seen In - Authority logos for trust */}
+      <AsSeenInLogos />
+      
       <ProductBenefitsSection />
       <PainReliefSection />
       
       {/* Inline CTA after pain points */}
       <InlineCTA />
+      
+      {/* How to Use - 3 simple steps */}
+      <HowToUseSection />
       
       <LookInside />
 
