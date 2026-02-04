@@ -244,8 +244,8 @@ export const ProductImageCarousel = ({ pillowFocus = 'neck' }: ProductImageCarou
         </div>
       </div>
 
-      {/* Desktop Carousel - aspect-[4/3] container prevents CLS */}
-      <div className="hidden md:block">
+      {/* Desktop Carousel - edge-to-edge layout */}
+      <div className="hidden md:block w-[calc(100%+2rem)] relative -left-4">
         <Carousel className="w-full" setApi={setDesktopApi}>
           <CarouselContent className="-ml-0">
             {images.map((item, index) => (
