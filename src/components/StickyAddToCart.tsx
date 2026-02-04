@@ -7,7 +7,7 @@ import { fetchProducts } from "@/lib/shopify";
 import { getErgonomicPillowHandle } from "@/lib/abProductConfig";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
-import { ShoppingCart, Loader2, Plus, Minus, Check } from "lucide-react";
+import { ShoppingCart, Loader2, Plus, Minus, Check, Star } from "lucide-react";
 import eyeMaskGift from "@/assets/eye-mask-gift-new.webp";
 import { trackStickyATCClick } from "@/hooks/usePDPIntentTracking";
 // trackABEvent moved to cartStore for centralized ATC tracking
@@ -271,13 +271,22 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                   <h3 className="font-semibold text-sm line-clamp-1">
                     {product.node.title}
                   </h3>
-                  <p className="text-xs text-muted-foreground">
-                    {isSleepBundle
-                      ? `${selectedBundle === "1" ? "Single" : "Double"} Bundle`
-                      : isPillowProduct
-                        ? "1 Pillow"
-                        : "Sleep Mask"}
-                  </p>
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    {isPillowProduct ? (
+                      <>
+                        <div className="flex">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star key={star} className="w-3 h-3 fill-yellow-500 text-yellow-500" />
+                          ))}
+                        </div>
+                        <span>6,247 reviews</span>
+                      </>
+                    ) : isSleepBundle ? (
+                      <span>{selectedBundle === "1" ? "Single" : "Double"} Bundle</span>
+                    ) : (
+                      <span>Sleep Mask</span>
+                    )}
+                  </div>
                 </div>
               </div>
 
