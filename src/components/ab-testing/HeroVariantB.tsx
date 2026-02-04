@@ -251,8 +251,8 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
             </Suspense>
           </div>
           
-          {/* Sticky Product Details Column */}
-          <div className="space-y-2 order-1 md:order-2 md:sticky md:top-4 self-start">
+          {/* Sticky Product Details Column - offset accounts for fixed header (36px banner + ~64px header + padding) */}
+          <div className="space-y-2 order-1 md:order-2 md:sticky md:top-[120px] self-start">
 
             {/* Desktop Title Section */}
             <div className="hidden md:flex flex-col gap-3">
