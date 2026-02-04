@@ -254,29 +254,23 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
           {/* Sticky Product Details Column - fixed offset below header (~100px banner+header+padding) */}
           <div className="space-y-2 order-1 md:order-2 md:sticky md:top-[100px] self-start">
 
-            {/* Desktop Title Section */}
-            <div className="hidden md:flex flex-col gap-3">
-              {/* Enhanced Social Proof */}
-              <div className="space-y-2">
-                <div 
-                  className="flex items-center gap-3 flex-wrap cursor-pointer hover:opacity-80 transition-opacity"
-                  onClick={() => {
-                    const el = document.getElementById('reviews-wall');
-                    if (el) {
-                      const y = el.getBoundingClientRect().top + window.scrollY - 80;
-                      window.scrollTo({ top: y, behavior: 'smooth' });
-                    }
-                  }}
-                >
-                  <div className="flex">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star key={star} className="w-5 h-5 fill-yellow-500 text-yellow-500" />
-                    ))}
-                  </div>
-                  <span className="text-base font-semibold">6,247 verified product reviews</span>
-                </div>
-                
+            {/* Desktop Social Proof - no extra wrappers to avoid whitespace */}
+            <div 
+              className="hidden md:flex items-center gap-3 flex-wrap cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => {
+                const el = document.getElementById('reviews-wall');
+                if (el) {
+                  const y = el.getBoundingClientRect().top + window.scrollY - 80;
+                  window.scrollTo({ top: y, behavior: 'smooth' });
+                }
+              }}
+            >
+              <div className="flex">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star key={star} className="w-5 h-5 fill-yellow-500 text-yellow-500" />
+                ))}
               </div>
+              <span className="text-base font-semibold">6,247 verified product reviews</span>
             </div>
 
             <h1 className="hidden md:block text-lg md:text-xl lg:text-2xl font-bold leading-tight tracking-tight">
