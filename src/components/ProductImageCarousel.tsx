@@ -252,7 +252,7 @@ export const ProductImageCarousel = ({ pillowFocus = 'neck' }: ProductImageCarou
               <CarouselItem key={index} className="pl-0">
                 {/* Fixed aspect ratio container prevents CLS on image load */}
                 <div 
-                  className="overflow-hidden rounded-xl relative cursor-pointer hover:opacity-90 transition-opacity aspect-[4/3] bg-muted/10"
+                  className="overflow-hidden rounded-xl relative cursor-pointer hover:opacity-90 transition-opacity aspect-square bg-[#f5f5f7]"
                   onClick={() => item.type === "image" && openImageModal(item.url, false)}
                 >
                   {item.type === "video" ? (
@@ -261,7 +261,7 @@ export const ProductImageCarousel = ({ pillowFocus = 'neck' }: ProductImageCarou
                       alt={item.alt}
                       posterSrc={(item as any).poster || pillowHeroNew}
                       width={1200}
-                      height={900}
+                      height={1200}
                       onPlayClick={() => handleVideoClick(item.url)}
                       className="rounded-xl"
                     />
@@ -269,12 +269,12 @@ export const ProductImageCarousel = ({ pillowFocus = 'neck' }: ProductImageCarou
                     <img
                       src={item.url}
                       alt={item.alt}
-                      className="w-full h-full object-contain rounded-xl"
+                      className="w-full h-full object-cover rounded-xl"
                       loading={index === 0 ? "eager" : "lazy"}
                       fetchPriority={index === 0 ? "high" : "low"}
                       decoding="async"
                       width={1200}
-                      height={900}
+                      height={1200}
                     />
                   )}
                 </div>
