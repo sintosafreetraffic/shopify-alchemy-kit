@@ -251,8 +251,8 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
             </Suspense>
           </div>
           
-          {/* Sticky Product Details Column - fixed offset below header (~100px banner+header+padding) */}
-          <div className="space-y-2 order-1 md:order-2 md:sticky md:top-[100px] self-start">
+          {/* Sticky Product Details Column - reduced top offset for tighter alignment */}
+          <div className="space-y-2 order-1 md:order-2 md:sticky md:top-[76px] self-start">
 
             {/* Desktop Social Proof - no extra wrappers to avoid whitespace */}
             <div 
