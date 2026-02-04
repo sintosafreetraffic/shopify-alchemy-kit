@@ -30,7 +30,7 @@ export const Header = () => {
       className={`fixed ${headerTop} left-0 right-0 z-[75] border-b bg-background transition-transform duration-300 ease-out will-change-transform`}
       style={{ transform: shouldHide ? hiddenTransform : "translateY(0)" }}
     >
-      <div className="container mx-auto px-4 py-1 md:py-2 relative flex md:grid md:grid-cols-3 items-center">
+      <div className="container mx-auto px-4 py-0.5 md:py-1 relative flex md:grid md:grid-cols-3 items-center">
         {/* Mobile Menu Button - Absolute Left on Mobile */}
         <div className="absolute left-4 md:static flex items-center md:hidden">
           <Sheet open={isMobileMenuOpen} onOpenChange={setMobileMenuOpen}>
@@ -179,7 +179,7 @@ export const Header = () => {
         </Link>
         
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex flex-nowrap items-center justify-center mt-5 gap-8 lg:gap-10 whitespace-nowrap">
+        <nav className="hidden md:flex flex-nowrap items-center justify-center gap-8 lg:gap-10 whitespace-nowrap">
           <NavLink to="/" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors">Home</NavLink>
           <NavLink to="/products" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors">Products</NavLink>
           <NavLink to="/about" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors">About Us</NavLink>
