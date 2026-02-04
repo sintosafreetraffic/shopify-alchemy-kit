@@ -177,12 +177,12 @@ export const Header = () => {
           />
         </Link>
         
-        {/* Desktop Navigation - centered in grid column */}
-        <nav className="hidden md:flex items-center justify-center gap-8 lg:gap-10 whitespace-nowrap">
-          <NavLink to="/" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors">Home</NavLink>
-          <NavLink to="/products" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors">Products</NavLink>
-          <NavLink to="/about" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors">About Us</NavLink>
-          <NavLink to="/track" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors">Track Your Order</NavLink>
+        {/* Desktop Navigation - centered in grid column, full height for vertical alignment */}
+        <nav className="hidden md:flex items-center justify-center gap-8 lg:gap-10 whitespace-nowrap h-full">
+          <NavLink to="/" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors flex items-center h-full">Home</NavLink>
+          <NavLink to="/products" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors flex items-center h-full">Products</NavLink>
+          <NavLink to="/about" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors flex items-center h-full">About Us</NavLink>
+          <NavLink to="/track" className="text-base lg:text-lg text-foreground hover:text-primary transition-colors flex items-center h-full">Track Your Order</NavLink>
         </nav>
         
         {/* Cart - Absolute Right on Mobile, Right on Desktop */}
