@@ -8,7 +8,7 @@ import { getSessionId } from "@/lib/abTesting";
 import { getPreferredPillowRoute } from "@/lib/pillowFocusPreference";
 
 // Hero images
-import heroDesktop from "@/assets/hero-cloud-sleep.webp";
+import heroDesktop from "@/assets/hero-desktop-couple.webp";
 import heroMobile from "@/assets/hero-cloud-sleep.webp";
 
 // ============================================================================
