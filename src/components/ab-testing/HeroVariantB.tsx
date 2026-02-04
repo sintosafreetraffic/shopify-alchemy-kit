@@ -33,6 +33,9 @@ import moonIcon from "@/assets/moon-icon-blue.png";
 import { PillowFocus, getPillowContent } from "@/config/pillowFocusContent";
 import { LiveViewerBadge } from "@/components/LiveViewerBadge";
 import { EmailContactLink } from "@/components/EmailContactLink";
+import { RecentPurchasesBadge } from "@/components/RecentPurchasesBadge";
+import { ExpressPaymentIcons } from "@/components/ExpressPaymentIcons";
+import { InstallmentBadgeCompact } from "@/components/InstallmentBadge";
 // Lazy load the image carousel to reduce initial bundle
 const ProductImageCarousel = lazy(() => 
   import("@/components/ProductImageCarousel").then(mod => ({ default: mod.ProductImageCarousel }))
@@ -326,8 +329,14 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
               </div>
             </div>
             
-            {/* Live Viewer Badge */}
-            <LiveViewerBadge className="mb-3" />
+            {/* Social Proof Badges */}
+            <div className="flex flex-wrap items-center gap-3 mb-3">
+              <LiveViewerBadge />
+              <RecentPurchasesBadge variant="compact" />
+            </div>
+            
+            {/* Installment Badge */}
+            <InstallmentBadgeCompact price={productPrice} className="mb-3" />
 
             {/* Valentine's Day 1+1 Offer Section */}
             {valentinesOffer.isActive && (
@@ -386,6 +395,11 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
               {/* Payment Icons */}
               <div className="pt-2">
                 <PaymentIcons />
+              </div>
+              
+              {/* Express Payment Icons */}
+              <div className="pt-3">
+                <ExpressPaymentIcons size="sm" />
               </div>
               
               {/* Email contact link - desktop */}
