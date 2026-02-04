@@ -58,9 +58,9 @@ export const Breadcrumbs = ({ className, currentPageLabel }: BreadcrumbsProps) =
 
   return (
     <Breadcrumb className={className}>
-      <BreadcrumbList>
+      <BreadcrumbList className="items-center">
         {/* Home */}
-        <BreadcrumbItem>
+        <BreadcrumbItem className="flex items-center">
           <BreadcrumbLink asChild>
             <Link to="/" className="flex items-center gap-1 text-muted-foreground hover:text-foreground">
               <Home className="h-3.5 w-3.5" />
@@ -70,17 +70,17 @@ export const Breadcrumbs = ({ className, currentPageLabel }: BreadcrumbsProps) =
         </BreadcrumbItem>
 
         {breadcrumbItems.map(({ path, label, isLast }) => (
-          <BreadcrumbItem key={path}>
-            <BreadcrumbSeparator>
+          <BreadcrumbItem key={path} className="flex items-center">
+            <BreadcrumbSeparator className="flex items-center">
               <ChevronRight className="h-3.5 w-3.5" />
             </BreadcrumbSeparator>
             {isLast ? (
-              <BreadcrumbPage className="max-w-[200px] truncate">
+              <BreadcrumbPage className="max-w-[200px] truncate leading-none">
                 {label}
               </BreadcrumbPage>
             ) : (
               <BreadcrumbLink asChild>
-                <Link to={path} className="max-w-[150px] truncate">
+                <Link to={path} className="max-w-[150px] truncate leading-none">
                   {label}
                 </Link>
               </BreadcrumbLink>
