@@ -246,8 +246,8 @@ export const ProductImageCarousel = ({ pillowFocus = 'neck' }: ProductImageCarou
         </div>
       </div>
 
-      {/* Desktop Carousel - contained within grid column */}
-      <div className="hidden md:block w-full rounded-xl overflow-hidden">
+      {/* Desktop Carousel - contained within grid column, bottom-only rounding */}
+      <div className="hidden md:block w-full rounded-b-xl overflow-hidden">
         <Carousel className="w-full" setApi={setDesktopApi}>
           <CarouselContent className="-ml-0">
             {images.map((item, index) => (
