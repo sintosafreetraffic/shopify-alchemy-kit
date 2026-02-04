@@ -90,7 +90,7 @@ export const RecentlyViewedItems = ({
                   <div className="absolute top-2 left-2 z-10">
                     <div className="bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg">
                       <Heart className="w-3 h-3 fill-white" />
-                      <span>1+1 FREE</span>
+                      <span>1+1 FREE + 40%</span>
                     </div>
                   </div>
                 )}
@@ -110,22 +110,27 @@ export const RecentlyViewedItems = ({
                     {product.title}
                   </h3>
                   
-                  {/* Price section with compare-at */}
-                  <div className="flex items-center gap-2 flex-wrap">
+                  {/* Price section with compare-at and discount badge */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-sm font-semibold text-primary">
                       {product.price}
                     </span>
                     {product.compareAtPrice && (
-                      <span className="text-xs text-muted-foreground line-through">
-                        {product.compareAtPrice}
-                      </span>
+                      <>
+                        <span className="text-xs text-muted-foreground line-through">
+                          {product.compareAtPrice}
+                        </span>
+                        <span className="text-[10px] font-semibold text-white bg-primary px-1.5 py-0.5 rounded">
+                          40% OFF
+                        </span>
+                      </>
                     )}
                   </div>
                   
                   {/* Valentine's deal highlight */}
                   {product.isValentinesDeal && valentinesOffer.isActive && (
                     <p className="text-[10px] text-pink-600 font-medium mt-1">
-                      Buy 1, Get 1 Free!
+                      Buy 1, Get 1 Free + 40% Off!
                     </p>
                   )}
                 </div>
