@@ -8,6 +8,8 @@ import { Header } from "./components/Header";
 import { Footer } from "./components/Footer";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { UrgencyBanner } from "./components/UrgencyBanner";
+import { BackToTopButton } from "./components/BackToTopButton";
+import { CookieConsentBanner } from "./components/CookieConsentBanner";
 
 import { ExitIntentPopup } from "./components/ExitIntentPopup";
 import { trackPageView } from "./lib/analyticsRegistry";
@@ -327,12 +329,17 @@ const AppContent = () => {
       </main>
       <Footer />
       
+      {/* Back to Top Button */}
+      <BackToTopButton />
       
       {/* Exit intent modal - shows when leaving with items in cart */}
       <ExitIntentPopup />
       
       {/* Pinterest in-app browser prompt */}
       <PinterestBrowserPrompt />
+      
+      {/* Cookie Consent Banner */}
+      <CookieConsentBanner />
     </div>
   );
 };

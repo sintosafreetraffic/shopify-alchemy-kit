@@ -1,6 +1,8 @@
 import { Download, Clock, BookOpen, Moon, Sunrise, Thermometer, Volume2, Activity, Heart, Sparkles, Zap } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { getPreferredPillowRoute } from "@/lib/pillowFocusPreference";
 
 const guides = [
   {
@@ -323,9 +325,9 @@ const SleepGuides = () => {
               Experience the complete RiseByNight sleep transformation.
             </p>
             <Button asChild size="lg">
-              <a href="/products/ergonomic-pillow">
+              <Link to={getPreferredPillowRoute()}>
                 Explore Our Pillows
-              </a>
+              </Link>
             </Button>
           </div>
         </div>
