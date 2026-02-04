@@ -31,6 +31,10 @@ import { ProductSchema } from "@/components/seo/SEOSchemas";
 import { useTrackProductView, STATIC_PRODUCT_DATA } from "@/hooks/useTrackProductView";
 import { AsSeenInLogos } from "@/components/home";
 import { HowToUseSection } from "@/components/HowToUseSection";
+import { StickyProductNav } from "@/components/StickyProductNav";
+import { SocialMediaProof } from "@/components/SocialMediaProof";
+import { PostATCUpsellModal } from "@/components/PostATCUpsellModal";
+import { useUpsellStore } from "@/stores/upsellStore";
 
 // Lazy load sections with carousels to reduce initial bundle
 const VideoSection = lazy(() => import("@/components/VideoSection").then((mod) => ({ default: mod.VideoSection })));
@@ -64,6 +68,7 @@ const QuizCTA = ({ variant = "default" }: { variant?: "default" | "subtle" }) =>
 const InlineCTA = () => {
   const { product } = useABErgonomicPillow();
   const { addItem, setCartOpen } = useCartStore();
+  const { openUpsell } = useUpsellStore();
   const [isAdding, setIsAdding] = useState(false);
 
   const handleAddToCart = async () => {
@@ -82,7 +87,8 @@ const InlineCTA = () => {
         quantity: 1,
         selectedOptions: variant.selectedOptions || []
       });
-      setCartOpen(true);
+      // Show upsell modal instead of cart drawer
+      openUpsell(product.node.id);
     } finally {
       setIsAdding(false);
     }
@@ -112,6 +118,7 @@ const ErgonomicPillowProductVariantB = () => {
   useSEO(SEO_CONFIGS.ergonomicPillow);
   useTrackProductView(STATIC_PRODUCT_DATA["ergonomic-pillow"]);
   const [showReviewForm, setShowReviewForm] = useState(false);
+  const { isUpsellOpen, closeUpsell, triggerProductId } = useUpsellStore();
 
   // Capture neck pain preference on page load (first-touch model)
   useEffect(() => {
@@ -120,6 +127,9 @@ const ErgonomicPillowProductVariantB = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Sticky Navigation - appears on scroll up */}
+      <StickyProductNav />
+      
       <ProductSchema
         name="RiseByNight Ergonomic Cervical Pillow"
         description="Doctor-recommended contour memory foam pillow for neck and shoulder pain relief. Rated 4.8★ by 1000+ verified customers."
@@ -155,6 +165,9 @@ const ErgonomicPillowProductVariantB = () => {
         productName="Ergonomic Cervical Pillow"
         onWriteReview={() => setShowReviewForm(true)} 
       />
+      
+      {/* Social Media Proof - Customer posts */}
+      <SocialMediaProof />
 
       {/* "See It In Action" video section - hidden per request */}
       {/* <Suspense fallback={<SectionFallback />}>
@@ -181,6 +194,13 @@ const ErgonomicPillowProductVariantB = () => {
         open={showReviewForm}
         onOpenChange={setShowReviewForm}
         productHandle="ergonomic-pillow"
+      />
+      
+      {/* Post-ATC Upsell Modal */}
+      <PostATCUpsellModal
+        isOpen={isUpsellOpen}
+        onClose={closeUpsell}
+        triggerProductId={triggerProductId || undefined}
       />
     </div>
   );
