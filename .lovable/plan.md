@@ -1,27 +1,8 @@
 
-# Plan: Move Valentine's Offer Section Above the Fold on Mobile
+# Plan: Move Valentine's Offer Above the Fold on Mobile
 
-## The Issue
-Currently when `MOBILE_CTA_FIRST` is enabled and Valentine's offer is active, the mobile layout is:
-```
-Carousel → Reviews → Title → Price → [Top CTA to be hidden] → USPs → Badges → Installment → Valentine's Offer
-```
-
-If we hide the Top CTA during promotions, the Valentine's Offer (with its CTA) would be far below the fold.
-
-## Solution: Replace Top CTA with Valentine's Section on Mobile
-
-Instead of just hiding the Top CTA, we'll swap it with the Valentine's section during promotional periods.
-
-### New Mobile Layout During Promotions
-```
-Carousel → Reviews → Title → Price → Valentine's Offer (with CTA) → Payment Icons → USPs
-```
-
-### New Mobile Layout When No Promotion
-```
-Carousel → Reviews → Title → Price → Top CTA → Payment Icons → USPs
-```
+## Summary
+Replace the mobile Top CTA with the Valentine's offer section during promotional periods, ensuring the 1+1 deal is visible immediately after price. The desktop layout remains unchanged.
 
 ---
 
@@ -29,18 +10,18 @@ Carousel → Reviews → Title → Price → Top CTA → Payment Icons → USPs
 
 ### File: `src/components/ab-testing/HeroVariantB.tsx`
 
-**Change 1: Modify the mobile CTA section (lines 224-257)**
+**Change 1: Modify mobile CTA section (lines 224-257)**
 
-Replace the simple "hide during promo" logic with a conditional render:
-- When `valentinesOffer.isActive`: Show Valentine's section here (above fold)
-- When NOT active: Show standard Top CTA
+Replace the current mobile Top CTA with a conditional render:
+- When `valentinesOffer.isActive` is true → Show Valentine's section (above fold)
+- When `valentinesOffer.isActive` is false → Show standard Top CTA button
 
 ```tsx
-{/* MOBILE CTA FIRST: Show CTA immediately after price when enabled */}
+{/* MOBILE CTA FIRST: Show CTA or Valentine's offer immediately after price */}
 {mobileHeroConfig.MOBILE_CTA_FIRST && (
   <div className="mt-3">
     {valentinesOffer.isActive ? (
-      // Valentine's offer section - shown above fold on mobile
+      // Valentine's offer section - shown above fold on mobile during promotions
       <ValentinesHeroSection
         onAddSingle={handleAddSingle}
         onAddCouple={handleAddCouple}
@@ -49,7 +30,7 @@ Replace the simple "hide during promo" logic with a conditional render:
         productPrice={productPrice}
       />
     ) : (
-      // Standard CTA when no promotion
+      // Standard CTA when no promotion is active
       <>
         <Button ...>ADD TO CART</Button>
         <div className="pt-2">
@@ -61,12 +42,12 @@ Replace the simple "hide during promo" logic with a conditional render:
 )}
 ```
 
-**Change 2: Hide duplicate Valentine's section on mobile (around line 345)**
+**Change 2: Hide Valentine's section on mobile in desktop grid (lines 344-353)**
 
-Add `hidden md:block` to the desktop Valentine's section so it only shows on desktop:
+Add `hidden md:block` wrapper to prevent duplicate rendering on mobile:
 
 ```tsx
-{/* Valentine's Day 1+1 Offer Section - Desktop Only */}
+{/* Valentine's Day 1+1 Offer Section - Desktop Only (mobile shows above fold) */}
 {valentinesOffer.isActive && (
   <div className="hidden md:block">
     <ValentinesHeroSection ... />
@@ -76,31 +57,27 @@ Add `hidden md:block` to the desktop Valentine's section so it only shows on des
 
 ---
 
-## Result
+## Layout Result
 
 **Mobile During Promotion:**
 ```
-Carousel → Reviews → Title → Price → Valentine's Offer (ABOVE FOLD) → USPs
+Carousel → Reviews → Title → Price → Valentine's Offer (ABOVE FOLD with quantity selector) → USPs → Sticky CTA
 ```
-- One CTA in the Valentine's section (above fold)
-- Sticky CTA (on scroll)
-- Total: 2 CTAs
+- 2 CTAs total: Valentine's CTA (above fold) + Sticky CTA
 
 **Mobile Without Promotion:**
 ```
-Carousel → Reviews → Title → Price → Top CTA → Payment Icons → USPs
+Carousel → Reviews → Title → Price → Top CTA → Payment Icons → USPs → Sticky CTA
 ```
-- Standard Top CTA (above fold)
-- Sticky CTA (on scroll)
-- Total: 2 CTAs
+- 2 CTAs total: Top CTA (above fold) + Sticky CTA
 
 **Desktop (unchanged):**
-Valentine's section remains in its current position in the right column.
+Valentine's section remains in the right column in its current position.
 
 ---
 
 ## Benefits
-1. Valentine's offer is now **above the fold** on mobile during promotions
-2. Users see the quantity selector and savings immediately
-3. Clean 2-CTA pattern maintained (primary + sticky)
-4. Future-proof - works for renamed "1+1 Offer" after Valentine's Day
+1. **Valentine's offer visible above the fold** on mobile
+2. **Quantity selector accessible immediately** - users can choose 1 or 2 pillows
+3. **No duplicate CTAs** during promotions - clean 2-CTA pattern
+4. **Future-proof** - works when renamed to "1+1 Offer" after Valentine's Day
