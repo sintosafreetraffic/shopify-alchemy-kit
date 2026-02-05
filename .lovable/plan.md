@@ -1,60 +1,99 @@
 
-# Plan: Align Product Image with Breadcrumbs
+# Plan: Mobile CRO Optimizations
 
 ## Summary
-Adjust the product image carousel on the desktop layout so that it visually aligns at the same top level as the breadcrumbs in the right column.
+Implement three key conversion rate optimization changes to improve mobile product page performance:
+1. Enable "CTA First" on mobile to move Add to Cart above the fold
+2. Add Express Payment Icons (Apple Pay, Google Pay, PayPal) to mobile hero
+3. Display a specific delivery date instead of a generic range
 
-## Current Situation
-- **Left column** (images): Uses `space-y-4` for internal spacing
-- **Right column** (details with breadcrumbs): Has `mb-3` on the breadcrumb wrapper
-- Both columns use `items-start` on the parent grid, so they should theoretically start at the same top position
-- The section has `pt-2 md:pt-4` padding at the top
+---
 
-The visual misalignment happens because the breadcrumb area is relatively compact (small text), while the image carousel appears to have more visual weight, making them look slightly off.
+## Changes Overview
 
-## Proposed Solution
+### 1. Enable Mobile CTA First
+**File:** `src/config/mobileHeroConfig.ts`
 
-### Option A: Remove Breadcrumb Bottom Margin (Recommended)
-Remove the `mb-3` from the breadcrumb wrapper to bring the product info (stars, title) closer to the breadcrumbs. This won't move the image up, but will make the right column content start closer to the top.
+Change `MOBILE_CTA_FIRST` from `false` to `true`.
 
-### Option B: Add Negative Top Margin to Image Column
-Add a small negative top margin to the image column (e.g., `-mt-1` or `-mt-2`) to visually shift it up and align with the breadcrumb text baseline.
+This moves the "Add to Cart" button immediately after the price on mobile, placing it above the fold before the USPs and included items sections.
 
-### Option C: Reduce Section Top Padding
-Reduce the `pt-2 md:pt-4` section padding to `pt-0 md:pt-2` to bring everything up closer to the header.
+**New mobile layout:**
+Carousel → Reviews → Title → Price → **CTA** → USPs → Included Items
 
-## Recommended Approach
-**Combine Options A and B**: 
-1. Remove `mb-3` from the breadcrumb wrapper (line 274 in HeroVariantB.tsx)
-2. Add a small negative margin to the left image column to fine-tune alignment
+---
 
-## Technical Changes
+### 2. Add Express Payment Icons to Mobile
+**File:** `src/components/ab-testing/HeroVariantB.tsx`
 
-### File: `src/components/ab-testing/HeroVariantB.tsx`
+The `ExpressPaymentIcons` component currently only shows on desktop (lines 400-403). Add it to the mobile CTA section as well (around line 245-253).
 
-**Change 1**: Adjust breadcrumb wrapper margin (line 274)
-```tsx
-// Before
-<div className="hidden md:block mb-3">
+**Changes:**
+- Inside the `MOBILE_CTA_FIRST` conditional block, add `ExpressPaymentIcons` after `PaymentIcons`
+- Use compact styling (`size="sm"`)
 
-// After  
-<div className="hidden md:block mb-1">
+**Also sync to Variant A:**
+**File:** `src/components/Hero.tsx`
+- Add the same `ExpressPaymentIcons` to the mobile CTA section (around line 295-299)
+
+---
+
+### 3. Display Specific Delivery Date
+**File:** `src/components/ab-testing/HeroVariantB.tsx`
+
+Replace the generic "Arrives in 3-5 days" with a calculated specific date.
+
+**Current (line 324):**
+```
+Free shipping in US • Arrives in 3-5 days
 ```
 
-**Change 2**: Add subtle negative top margin to the left image column (line 261)
-```tsx
-// Before
-<div className="hidden md:block relative order-2 md:order-1 space-y-4 overflow-hidden">
-
-// After
-<div className="hidden md:block relative order-2 md:order-1 space-y-4 overflow-hidden -mt-1">
+**New approach:**
+Create a helper function to calculate a delivery date that's 5 days from today, then display:
+```
+Free shipping in US • Get it by [Month Day]
 ```
 
-This combination will:
-- Pull the image carousel up by 0.25rem (4px)
-- Reduce the gap between breadcrumbs and stars/title
-- Create a tighter, more aligned visual appearance
+Example: "Free shipping in US • Get it by Feb 10"
 
-## Notes
-- The Hero.tsx component (Variant A) may need similar adjustments if used
-- This is a desktop-only change; mobile layout is unaffected since breadcrumbs are hidden on mobile
+**Implementation:**
+- Add a `getDeliveryDate()` helper function (can be inline or in a utility)
+- Use `date-fns` format function (already installed) to display "Feb 10" style date
+- The calculation: `addDays(new Date(), 5)` for the estimated delivery
+
+**Also sync to Variant A:**
+**File:** `src/components/Hero.tsx`
+- Add the same delivery date logic and update the USP text
+
+---
+
+## Technical Implementation Details
+
+### Delivery Date Helper
+```typescript
+import { addDays, format } from 'date-fns';
+
+const getDeliveryDate = () => {
+  const deliveryDate = addDays(new Date(), 5);
+  return format(deliveryDate, 'MMM d'); // e.g., "Feb 10"
+};
+```
+
+### Files to Modify
+1. `src/config/mobileHeroConfig.ts` - Enable flag
+2. `src/components/ab-testing/HeroVariantB.tsx` - Express icons + delivery date
+3. `src/components/Hero.tsx` - Express icons + delivery date (for A/B sync)
+
+---
+
+## Visual Impact
+
+**Before (Mobile):**
+- CTA buried below the fold
+- No express checkout visibility on mobile
+- "Arrives in 3-5 days" (generic)
+
+**After (Mobile):**
+- CTA visible immediately after price
+- Apple Pay, Google Pay, PayPal badges visible on mobile
+- "Get it by Feb 10" (specific, creates urgency)
