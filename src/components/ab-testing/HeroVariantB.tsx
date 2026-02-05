@@ -204,7 +204,7 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
             </div>
             
             {/* Mobile title - styled as heading but using p tag to avoid duplicate H1 */}
-            <p className="text-lg font-bold leading-tight tracking-tight truncate mt-1" aria-label="Product title">
+            <p className="text-base font-bold leading-tight tracking-tight mt-1" aria-label="Product title">
               {focusContent.hero.title}
             </p>
             
