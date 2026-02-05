@@ -55,7 +55,6 @@ import { useValentinesOffer } from "@/hooks/useValentinesOffer";
 import { formatPrice as valentinesFormatPrice } from "@/lib/formatPrice";
 import { CartUrgencyBanner } from "@/components/cart/CartUrgencyBanner";
 import { DiscountCodeInput } from "@/components/cart/DiscountCodeInput";
-import { EmailContactLink } from "@/components/EmailContactLink";
 
 // Helper function for deterministic "stock" calculation based on variant ID
 const getStockCount = (variantId: string): number => {
@@ -1210,9 +1209,6 @@ export const CartDrawer = () => {
                     <span>Safe Payment</span>
                   </div>
                 </div>
-                
-                {/* Email Support Link */}
-                <EmailContactLink className="justify-center pt-1" />
               </div>
             </>
           )}
