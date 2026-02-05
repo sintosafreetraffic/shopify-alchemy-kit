@@ -233,6 +233,34 @@ export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
               </div>
             </div>
 
+            {/* Mobile: Klarna + Social Proof + USPs - between price and Valentine's offer */}
+            <div className="md:hidden mt-3">
+              <InstallmentBadgeCompact price={productPrice} className="mb-2" />
+              <div className="flex flex-wrap items-center gap-3 mb-2">
+                <LiveViewerBadge />
+                <RecentPurchasesBadge variant="compact" />
+              </div>
+              <div className="space-y-2 mb-4">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-affirmative shrink-0" />
+                  <p className="text-xs leading-tight text-amber-600 font-medium">
+                    Only 3 left at this price!
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-affirmative shrink-0" />
+                  <p className="text-xs leading-tight">
+                    Free shipping in <span className="font-semibold">US</span> • Get it by {getDeliveryDate()}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-affirmative shrink-0" />
+                  <p className="text-xs leading-tight">
+                    100 days money-back guarantee
+                  </p>
+                </div>
+              </div>
+            </div>
 
             {/* MOBILE CTA FIRST: Show Valentine's offer or standard CTA immediately after price */}
             {mobileHeroConfig.MOBILE_CTA_FIRST && (
@@ -347,17 +375,17 @@ export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
               </div>
             </div>
 
-            {/* Installment Badge - Immediately after price */}
-            <InstallmentBadgeCompact price={productPrice} className="mb-2" />
+            {/* Installment Badge - Desktop Only (mobile shows above Valentine's offer) */}
+            <InstallmentBadgeCompact price={productPrice} className="hidden md:block mb-2" />
 
-            {/* Social Proof Badges - After Klarna */}
-            <div className="flex flex-wrap items-center gap-3 mb-2">
+            {/* Social Proof Badges - Desktop Only (mobile shows above Valentine's offer) */}
+            <div className="hidden md:flex flex-wrap items-center gap-3 mb-2">
               <LiveViewerBadge />
               <RecentPurchasesBadge variant="compact" />
             </div>
 
-            {/* USPs Section with Green Checkmarks */}
-            <div className="space-y-2 mb-5">
+            {/* USPs Section with Green Checkmarks - Desktop Only (mobile shows above Valentine's offer) */}
+            <div className="hidden md:block space-y-2 mb-5">
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-affirmative shrink-0" />
                 <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight text-amber-600 font-medium">
