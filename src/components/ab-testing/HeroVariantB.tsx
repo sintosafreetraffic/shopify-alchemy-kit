@@ -1,6 +1,6 @@
 /**
  * Hero Section - Variant B (Price Test: Pillow Only at €59.99)
- * 
+ *
  * Uses a SEPARATE Shopify product for the €59.99 pillow-only offer.
  * - NO sleep mask included
  * - Simplified "Included" section (pillow cover only)
@@ -8,12 +8,25 @@
  */
 
 import { Button } from "@/components/ui/button";
-import { Check, Shield, Truck, Loader2, Star, ImageIcon, ChevronDown, Heart, Package, ShieldCheck, ShoppingCart, CheckCircle } from "lucide-react";
+import {
+  Check,
+  Shield,
+  Truck,
+  Loader2,
+  Star,
+  ImageIcon,
+  ChevronDown,
+  Heart,
+  Package,
+  ShieldCheck,
+  ShoppingCart,
+  CheckCircle,
+} from "lucide-react";
 import { PaymentIcons } from "@/components/PaymentIcons";
 import { PolicyAccordion } from "@/components/PolicyAccordion";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { useState, useEffect, useRef, Suspense, lazy } from "react";
-import { addDays, format } from 'date-fns';
+import { addDays, format } from "date-fns";
 import { useCartStore } from "@/stores/cartStore";
 import { useABErgonomicPillow } from "@/hooks/useABProduct";
 import { toast } from "sonner";
@@ -38,17 +51,17 @@ import { RecentPurchasesBadge } from "@/components/RecentPurchasesBadge";
 
 import { InstallmentBadgeCompact } from "@/components/InstallmentBadge";
 // Lazy load the image carousel to reduce initial bundle
-const ProductImageCarousel = lazy(() => 
-  import("@/components/ProductImageCarousel").then(mod => ({ default: mod.ProductImageCarousel }))
+const ProductImageCarousel = lazy(() =>
+  import("@/components/ProductImageCarousel").then((mod) => ({ default: mod.ProductImageCarousel })),
 );
-const MiniReviewsCarousel = lazy(() => 
-  import("@/components/MiniReviewsCarousel").then(mod => ({ default: mod.MiniReviewsCarousel }))
+const MiniReviewsCarousel = lazy(() =>
+  import("@/components/MiniReviewsCarousel").then((mod) => ({ default: mod.MiniReviewsCarousel })),
 );
 
 // Calculate delivery date (5 days from now)
 const getDeliveryDate = () => {
   const deliveryDate = addDays(new Date(), 5);
-  return format(deliveryDate, 'MMM d');
+  return format(deliveryDate, "MMM d");
 };
 
 // Carousel loading fallback - matches exact dimensions to prevent CLS
@@ -70,7 +83,7 @@ interface HeroVariantBProps {
   pillowFocus?: PillowFocus;
 }
 
-export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
+export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
   // Get content based on pillow focus (neck or back)
   const focusContent = getPillowContent(pillowFocus);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -80,11 +93,10 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
   const headerHeight = useHeaderHeight();
   const isEU = useIsEU();
   const valentinesOffer = useValentinesOffer();
-  
 
   // Use A/B-aware product hook - automatically selects correct product for Variant B
   const { product, config, isLoading: productsLoading } = useABErgonomicPillow();
-  
+
   // Get the first variant (Variant B product only has one variant)
   const variant = product?.node.variants.edges[0]?.node;
 
@@ -93,12 +105,12 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
     if (product && variant && !hasTrackedView.current) {
       hasTrackedView.current = true;
       trackPageVisit(product.node.id);
-      
+
       // Track Meta Pixel ViewContent
       const price = parseFloat(variant.price.amount || "0");
       const currency = variant.price.currencyCode || "EUR";
       trackMetaViewContent(product.node.id, product.node.title, price, currency);
-      
+
       trackViewedProduct({
         id: product.node.id,
         title: product.node.title,
@@ -114,7 +126,7 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
       toast.error("Product not available");
       return;
     }
-    
+
     // Track A/B intent event - fire and forget (never blocks UI)
     trackATCClick();
 
@@ -128,9 +140,9 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
         price: variant.price,
         compareAtPrice: variant.compareAtPrice,
         quantity,
-        selectedOptions: variant.selectedOptions || []
+        selectedOptions: variant.selectedOptions || [],
       };
-      
+
       addItem(cartItem);
 
       const message = quantity === 2 ? "Valentine's Couple's Set added!" : "Added to cart!";
@@ -142,16 +154,16 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
           label: "✕",
           onClick: () => {
             toast.dismiss(toastId);
-          }
-        }
+          },
+        },
       });
       setCartOpen(true);
-      
+
       // Show "Added" state briefly
       setJustAdded(true);
       setTimeout(() => setJustAdded(false), 2500);
     } catch (error) {
-      console.error('Failed to add to cart:', error);
+      console.error("Failed to add to cart:", error);
       toast.error("Failed to add to cart");
     } finally {
       setIsCheckingOut(false);
@@ -163,10 +175,10 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
 
   // Get product price from the Pillow Only variant
   const productPrice = variant ? parseFloat(variant.price.amount) : 59.99;
-  const shopifyCurrency = variant?.price.currencyCode || 'USD';
+  const shopifyCurrency = variant?.price.currencyCode || "USD";
   // Override to EUR for EU countries if Shopify returns USD
-  const currencyCode = (isEU && shopifyCurrency === 'USD') ? 'EUR' : shopifyCurrency;
-  
+  const currencyCode = isEU && shopifyCurrency === "USD" ? "EUR" : shopifyCurrency;
+
   // Fixed compare-at price - same numeric value for all regions
   const compareAtPrice = 199.99;
   return (
@@ -184,17 +196,17 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
           <div className="space-y-0">
             {/* Enhanced Social Proof - min height prevents CLS */}
             <div className="min-h-[24px]">
-              <div 
+              <div
                 className="flex items-center gap-2 flex-wrap cursor-pointer hover:opacity-80 transition-opacity min-h-[20px]"
                 onClick={() => {
-                  const el = document.getElementById('reviews-wall');
+                  const el = document.getElementById("reviews-wall");
                   if (el) {
                     const y = el.getBoundingClientRect().top + window.scrollY - 80;
-                    window.scrollTo({ top: y, behavior: 'smooth' });
+                    window.scrollTo({ top: y, behavior: "smooth" });
                   }
                 }}
               >
-                <div className="flex" style={{ width: '100px', height: '20px' }}>
+                <div className="flex" style={{ width: "100px", height: "20px" }}>
                   {[1, 2, 3, 4, 5].map((star) => (
                     <Star key={star} className="w-5 h-5 fill-yellow-500 text-yellow-500" />
                   ))}
@@ -202,50 +214,52 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
                 <span className="text-sm font-semibold">6,247 verified product reviews</span>
               </div>
             </div>
-            
+
             {/* Mobile title - styled as heading but using p tag to avoid duplicate H1 */}
             <p className="text-base font-bold leading-tight tracking-tight mt-1" aria-label="Product title">
               {focusContent.hero.title}
             </p>
-            
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {focusContent.hero.subtitle}
-            </p>
-            
+
+            <p className="text-sm text-muted-foreground mt-0.5">{focusContent.hero.subtitle}</p>
+
             {/* Mobile Price with Discount Badge - fixed height prevents CLS when price loads */}
             <div className="flex items-center gap-2 mt-1 flex-wrap h-[40px]">
               <p className="text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
-              <span className="text-base line-through text-muted-foreground">{formatPrice(compareAtPrice, currencyCode)}</span>
+              <span className="text-base line-through text-muted-foreground">
+                {formatPrice(compareAtPrice, currencyCode)}
+              </span>
               <div className="inline-flex items-center gap-1.5 bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-full h-[32px]">
                 <span className="text-xs font-semibold text-primary">40% OFF</span>
               </div>
             </div>
-            
+
             {/* Mobile: Klarna installment - right after price */}
             <InstallmentBadgeCompact price={productPrice} className="mt-1" />
-            
+
             {/* Mobile: Social proof badges */}
-            <div className="flex flex-wrap items-center gap-3 mt-2 pl-6">
+            <div className="flex flex-wrap items-center gap-3 mt-2">
               <LiveViewerBadge />
               <RecentPurchasesBadge variant="compact" />
             </div>
-            
+
             {/* Mobile: USPs */}
-            <div className="space-y-2 mt-4 mb-3">
+            <div className="space-y-1.5 mt-2">
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-affirmative shrink-0" />
                 <p className="text-xs leading-tight text-amber-600 font-medium">Only 3 left at this price!</p>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-affirmative shrink-0" />
-                <p className="text-xs leading-tight">Free shipping in <span className="font-semibold">US</span> • Get it by {getDeliveryDate()}</p>
+                <p className="text-xs leading-tight">
+                  Free shipping in <span className="font-semibold">US</span> • Get it by {getDeliveryDate()}
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-affirmative shrink-0" />
                 <p className="text-xs leading-tight">100 days money-back guarantee</p>
               </div>
             </div>
-            
+
             {/* MOBILE CTA FIRST: Show Valentine's offer or standard CTA immediately after price */}
             {mobileHeroConfig.MOBILE_CTA_FIRST && (
               <div className="mt-3">
@@ -261,9 +275,9 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
                 ) : (
                   // Standard CTA when no promotion is active
                   <>
-                    <Button 
+                    <Button
                       size="lg"
-                      className="w-full text-lg py-6 font-bold shadow-lg hover:shadow-xl transition-all touch-manipulation animate-attention-pulse bg-primary text-primary-foreground hover:bg-black hover:text-white relative overflow-hidden group" 
+                      className="w-full text-lg py-6 font-bold shadow-lg hover:shadow-xl transition-all touch-manipulation animate-attention-pulse bg-primary text-primary-foreground hover:bg-black hover:text-white relative overflow-hidden group"
                       onClick={() => handleAddToCart(1)}
                       disabled={isCheckingOut || !product}
                     >
@@ -284,7 +298,7 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
                         </>
                       )}
                     </Button>
-                    
+
                     {/* Mobile Payment Icons - compact */}
                     <div className="pt-2">
                       <PaymentIcons />
@@ -304,28 +318,31 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
               <ProductImageCarousel pillowFocus={pillowFocus} />
             </Suspense>
             <Suspense fallback={<div className="h-32 bg-muted/30 rounded-xl animate-pulse" />}>
-              <MiniReviewsCarousel productHandle="ergonomic-pillow" pillowFocus={pillowFocus} autoPlayInterval={10000} />
+              <MiniReviewsCarousel
+                productHandle="ergonomic-pillow"
+                pillowFocus={pillowFocus}
+                autoPlayInterval={10000}
+              />
             </Suspense>
           </div>
-          
+
           {/* Sticky Product Details Column - flush with image top */}
           <div className="space-y-2 order-1 md:order-2 md:sticky md:top-0 self-start">
-            
             {/* Breadcrumbs - Desktop Only */}
             <div className="hidden md:block mb-1">
-              <Breadcrumbs 
-                currentPageLabel={pillowFocus === 'back' ? 'Back Pain Relief Pillow' : 'Neck Pain Relief Pillow'} 
+              <Breadcrumbs
+                currentPageLabel={pillowFocus === "back" ? "Back Pain Relief Pillow" : "Neck Pain Relief Pillow"}
               />
             </div>
 
             {/* Desktop Social Proof - no extra wrappers to avoid whitespace */}
-            <div 
+            <div
               className="hidden md:flex items-center gap-3 flex-wrap cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => {
-                const el = document.getElementById('reviews-wall');
+                const el = document.getElementById("reviews-wall");
                 if (el) {
                   const y = el.getBoundingClientRect().top + window.scrollY - 80;
-                  window.scrollTo({ top: y, behavior: 'smooth' });
+                  window.scrollTo({ top: y, behavior: "smooth" });
                 }
               }}
             >
@@ -340,7 +357,7 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
             <h1 className="hidden md:block text-lg md:text-xl lg:text-2xl font-bold leading-tight tracking-tight">
               {focusContent.hero.title}
             </h1>
-            
+
             <p className="hidden md:block text-sm md:text-base text-muted-foreground mb-2">
               {focusContent.hero.subtitle}
             </p>
@@ -348,34 +365,42 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
             {/* Price Display with Discount Badge - Desktop Only */}
             <div className="hidden md:flex items-center gap-3 mt-2 mb-2">
               <p className="text-xl md:text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
-              <span className="text-lg line-through text-muted-foreground">{formatPrice(compareAtPrice, currencyCode)}</span>
+              <span className="text-lg line-through text-muted-foreground">
+                {formatPrice(compareAtPrice, currencyCode)}
+              </span>
               <div className="inline-flex items-center gap-1.5 bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-full shadow-sm">
                 <span className="text-sm font-semibold text-primary">40% OFF</span>
               </div>
             </div>
-            
+
             {/* Installment Badge - Immediately after price */}
-            <InstallmentBadgeCompact price={productPrice} className="hidden md:block mb-2" />
-            
+            <InstallmentBadgeCompact price={productPrice} className="mb-2" />
+
             {/* Social Proof Badges - After Klarna */}
-            <div className="hidden md:flex flex-wrap items-center gap-3 mb-2 pl-7">
+            <div className="flex flex-wrap items-center gap-3 mb-2">
               <LiveViewerBadge />
               <RecentPurchasesBadge variant="compact" />
             </div>
 
             {/* USPs Section with Green Checkmarks */}
-            <div className="hidden md:block space-y-2 mb-3">
+            <div className="space-y-2 mb-5">
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-affirmative shrink-0" />
-                <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight text-amber-600 font-medium">Only 3 left at this price!</p>
+                <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight text-amber-600 font-medium">
+                  Only 3 left at this price!
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-affirmative shrink-0" />
-                <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight">Free shipping in <span className="font-semibold">US</span> • Get it by {getDeliveryDate()}</p>
+                <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight">
+                  Free shipping in <span className="font-semibold">US</span> • Get it by {getDeliveryDate()}
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-affirmative shrink-0" />
-                <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight">100 days money-back guarantee</p>
+                <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight">
+                  100 days money-back guarantee
+                </p>
               </div>
             </div>
 
@@ -393,17 +418,29 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
             )}
 
             {/* Included Items - Pillow Cover ONLY (no mask in Variant B) */}
-            <div className={`rounded-xl py-3 px-3 sm:px-4 mb-4 border w-full max-w-full overflow-hidden ${valentinesOffer.isActive ? 'hidden' : ''}`} style={{ backgroundColor: 'rgba(59, 126, 237, 0.1)', borderColor: 'rgba(59, 126, 237, 0.3)' }}>
-              <p className="text-xs font-semibold mb-2" style={{ color: '#3b7eed' }}>Included with your pillow</p>
+            <div
+              className={`rounded-xl py-3 px-3 sm:px-4 mb-4 border w-full max-w-full overflow-hidden ${valentinesOffer.isActive ? "hidden" : ""}`}
+              style={{ backgroundColor: "rgba(59, 126, 237, 0.1)", borderColor: "rgba(59, 126, 237, 0.3)" }}
+            >
+              <p className="text-xs font-semibold mb-2" style={{ color: "#3b7eed" }}>
+                Included with your pillow
+              </p>
               <div className="flex items-center gap-3">
                 {/* Pillow Cover */}
                 <div className="flex items-center gap-2 flex-1">
-                  <div className="w-10 h-10 rounded flex items-center justify-center overflow-hidden flex-shrink-0" style={{ backgroundColor: 'rgba(59, 126, 237, 0.15)' }}>
+                  <div
+                    className="w-10 h-10 rounded flex items-center justify-center overflow-hidden flex-shrink-0"
+                    style={{ backgroundColor: "rgba(59, 126, 237, 0.15)" }}
+                  >
                     <img src={pillowCoverImage} alt="Pillow cover" className="w-full h-full object-cover" />
                   </div>
                   <div className="text-left min-w-0">
-                    <p className="text-xs font-medium" style={{ color: '#3b7eed' }}>Breathable Pillow Cover</p>
-                    <p className="text-[10px]" style={{ color: 'rgba(59, 126, 237, 0.8)' }}>Premium quality, machine washable</p>
+                    <p className="text-xs font-medium" style={{ color: "#3b7eed" }}>
+                      Breathable Pillow Cover
+                    </p>
+                    <p className="text-[10px]" style={{ color: "rgba(59, 126, 237, 0.8)" }}>
+                      Premium quality, machine washable
+                    </p>
                   </div>
                 </div>
               </div>
@@ -411,10 +448,12 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
 
             {/* Desktop CTA always shows, Mobile CTA only if MOBILE_CTA_FIRST is false */}
             {/* Standard Add to Cart - ONLY shown when Valentine's offer is NOT active */}
-            <div className={`${mobileHeroConfig.MOBILE_CTA_FIRST ? "hidden md:block" : ""} ${valentinesOffer.isActive ? "hidden md:hidden" : ""}`}>
-              <Button 
+            <div
+              className={`${mobileHeroConfig.MOBILE_CTA_FIRST ? "hidden md:block" : ""} ${valentinesOffer.isActive ? "hidden md:hidden" : ""}`}
+            >
+              <Button
                 size="lg"
-                className="w-full text-lg md:text-xl py-6 font-bold shadow-lg hover:shadow-xl transition-all touch-manipulation animate-attention-pulse bg-primary text-primary-foreground hover:bg-black hover:text-white" 
+                className="w-full text-lg md:text-xl py-6 font-bold shadow-lg hover:shadow-xl transition-all touch-manipulation animate-attention-pulse bg-primary text-primary-foreground hover:bg-black hover:text-white"
                 onClick={() => handleAddToCart(1)}
                 disabled={isCheckingOut || !product}
               >
@@ -464,11 +503,10 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
             <div className="hidden md:block">
               <PolicyAccordion />
             </div>
-
           </div>
         </div>
       </div>
-      
+
       {/* Policy Accordion - Mobile Only (full width) */}
       <div className="md:hidden">
         <PolicyAccordion />
