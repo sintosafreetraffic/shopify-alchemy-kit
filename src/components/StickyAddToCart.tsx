@@ -21,6 +21,7 @@ import sleepMaskGold from "@/assets/sleep-mask-gold.webp";
 import sleepMaskSilver from "@/assets/sleep-mask-silver.webp";
 import sleepMaskBlack from "@/assets/sleep-mask-black.webp";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useValentinesOffer } from "@/hooks/useValentinesOffer";
 // A/B test concluded - always using pillow-only (Variant B)
 
 const colors = [
@@ -53,11 +54,12 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [product, setProduct] = useState<ShopifyProduct | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [isAddingDeal, setIsAddingDeal] = useState(false);
   const { addItem, setCartOpen, isCartOpen, items } = useCartStore();
   const { isMobileMenuOpen } = useUIStore();
   const isMobile = useIsMobile();
   const isEU = useIsEU();
-  
+  const valentinesOffer = useValentinesOffer();
   // Calculate cart totals
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   const cartTotal = items.reduce((sum, item) => sum + (parseFloat(item.price.amount) * item.quantity), 0);
@@ -187,6 +189,45 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
       toast.error("Failed to add to cart");
     } finally {
       setIsCheckingOut(false);
+    }
+  };
+
+  // Handler for 1+1 Deal (adds 2 pillows)
+  const handleAddDeal = async () => {
+    if (!product) {
+      toast.error("Product not available");
+      return;
+    }
+
+    trackStickyATCClick();
+    setIsAddingDeal(true);
+    try {
+      const variant = product.node.variants.edges[0].node;
+      if (!variant) {
+        toast.error("Product not available");
+        return;
+      }
+
+      addItem({
+        product,
+        variantId: variant.id,
+        variantTitle: variant.title,
+        price: variant.price,
+        compareAtPrice: variant.compareAtPrice,
+        quantity: 2,
+        selectedOptions: variant.selectedOptions || [],
+      });
+
+      toast.success("1+1 Deal added!", {
+        description: "2 pillows added to your cart.",
+        duration: 1500,
+      });
+      setCartOpen(true);
+    } catch (error) {
+      console.error('Failed to add deal:', error);
+      toast.error("Failed to add deal");
+    } finally {
+      setIsAddingDeal(false);
     }
   };
 
@@ -353,31 +394,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                   </div>
                 )}
 
-                {/* Pillow Quantity Selector */}
-                {isPillowProduct && (
-                  <div className="flex items-center gap-1 bg-primary/10 rounded-lg p-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      disabled={quantity <= 1}
-                      aria-label="Decrease quantity"
-                    >
-                      <Minus className="w-3 h-3" />
-                    </Button>
-                    <span className="text-sm font-semibold min-w-[2rem] text-center" aria-live="polite">{quantity}</span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={() => setQuantity(quantity + 1)}
-                      aria-label="Increase quantity"
-                    >
-                      <Plus className="w-3 h-3" />
-                    </Button>
-                  </div>
-                )}
+                {/* Pillow: No quantity selector - using two CTAs instead */}
 
                 {isSleepMask && (
                   <div className="flex items-center gap-2">
@@ -463,50 +480,89 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                   </div>
                 )}
 
-                {/* Cart Button with Totals */}
-                <Button 
-                  onClick={handleAddToCart}
-                  disabled={isCheckingOut}
-                  className="min-w-[140px] sm:flex-initial bg-primary text-primary-foreground hover:bg-black hover:text-white transition-all relative overflow-hidden group"
-                >
-                  {isCheckingOut ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      <span className="whitespace-nowrap">Adding...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="inline-flex items-center gap-2 transition-all duration-300 group-hover:-translate-y-12 group-hover:opacity-0">
-                        <div className="relative">
-                          <ShoppingCart className="w-4 h-4" />
-                          {totalItems > 0 && (
-                            <Badge className="absolute -top-2 -right-2 h-4 w-4 rounded-full p-0 flex items-center justify-center text-[10px]">
-                              {totalItems}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex flex-col items-start">
-                          <span className="text-xs leading-none whitespace-nowrap">{isPillowProduct ? "Buy it" : "Add to Cart"}</span>
-                          <span className="font-bold leading-none whitespace-nowrap text-primary-foreground">{formatPrice(addToCartValue, currencyCode)}</span>
-                        </div>
-                      </span>
-                      <span className="absolute inset-0 flex items-center justify-center gap-2 translate-y-12 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                        <div className="relative">
-                          <ShoppingCart className="w-4 h-4" />
-                          {totalItems > 0 && (
-                            <Badge className="absolute -top-2 -right-2 h-4 w-4 rounded-full p-0 flex items-center justify-center text-[10px]">
-                              {totalItems}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex flex-col items-start">
-                          <span className="text-xs leading-none whitespace-nowrap">{isPillowProduct ? "Buy it" : "Add to Cart"}</span>
-                          <span className="font-bold leading-none whitespace-nowrap text-primary-foreground">{formatPrice(addToCartValue, currencyCode)}</span>
-                        </div>
-                      </span>
-                    </>
-                  )}
-                </Button>
+                {/* For pillow products with Valentine's offer: Show two CTAs */}
+                {isPillowProduct && valentinesOffer.isActive ? (
+                  <div className="flex items-center gap-2">
+                    {/* Single Pillow Button */}
+                    <Button 
+                      onClick={handleAddToCart}
+                      disabled={isCheckingOut}
+                      variant="outline"
+                      className="min-w-[90px] sm:min-w-[120px] text-xs sm:text-sm font-semibold"
+                    >
+                      {isCheckingOut ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          <ShoppingCart className="w-4 h-4 mr-1" />
+                          <span className="hidden sm:inline">Add 1 •</span> {formatPrice(productPrice, currencyCode)}
+                        </>
+                      )}
+                    </Button>
+                    
+                    {/* 1+1 Deal Button - Pink */}
+                    <Button 
+                      onClick={handleAddDeal}
+                      disabled={isAddingDeal}
+                      className="min-w-[100px] sm:min-w-[140px] text-xs sm:text-sm font-semibold bg-pink-500 hover:bg-pink-600 text-white"
+                    >
+                      {isAddingDeal ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          <ShoppingCart className="w-4 h-4 mr-1" />
+                          <span className="hidden sm:inline">1+1 Deal •</span>
+                          <span className="sm:hidden">1+1</span> {formatPrice(productPrice, currencyCode)}
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                ) : (
+                  /* Standard Cart Button */
+                  <Button 
+                    onClick={handleAddToCart}
+                    disabled={isCheckingOut}
+                    className="min-w-[140px] sm:flex-initial bg-primary text-primary-foreground hover:bg-black hover:text-white transition-all relative overflow-hidden group"
+                  >
+                    {isCheckingOut ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        <span className="whitespace-nowrap">Adding...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="inline-flex items-center gap-2 transition-all duration-300 group-hover:-translate-y-12 group-hover:opacity-0">
+                          <div className="relative">
+                            <ShoppingCart className="w-4 h-4" />
+                            {totalItems > 0 && (
+                              <Badge className="absolute -top-2 -right-2 h-4 w-4 rounded-full p-0 flex items-center justify-center text-[10px]">
+                                {totalItems}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex flex-col items-start">
+                            <span className="text-xs leading-none whitespace-nowrap">Add to Cart</span>
+                            <span className="font-bold leading-none whitespace-nowrap text-primary-foreground">{formatPrice(addToCartValue, currencyCode)}</span>
+                          </div>
+                        </span>
+                        <span className="absolute inset-0 flex items-center justify-center gap-2 translate-y-12 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                          <div className="relative">
+                            <ShoppingCart className="w-4 h-4" />
+                            {totalItems > 0 && (
+                              <Badge className="absolute -top-2 -right-2 h-4 w-4 rounded-full p-0 flex items-center justify-center text-[10px]">
+                                {totalItems}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex flex-col items-start">
+                            <span className="text-xs leading-none whitespace-nowrap">Add to Cart</span>
+                            <span className="font-bold leading-none whitespace-nowrap text-primary-foreground">{formatPrice(addToCartValue, currencyCode)}</span>
+                          </div>
+                        </span>
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             </div>
           </>
