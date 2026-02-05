@@ -5,7 +5,7 @@
  * Uses first-touch model: only sets preference if not already stored.
  * 
  * This ensures consistent user journey:
- * - User lands on /products/back-pain-pillow → preference set to "back"
+ * - User lands on /products/no-numbness-pillow → preference set to "back"
  * - User navigates to homepage, clicks pillow → returns to back pain variant
  */
 
@@ -59,5 +59,5 @@ export function clearPillowFocusPreference(): void {
  */
 export function getPreferredPillowRoute(): string {
   const focus = getPillowFocusPreference();
-  return focus === 'back' ? '/products/back-pain-pillow' : '/products/ergonomic-pillow';
+  return focus === 'back' ? '/products/no-numbness-pillow' : '/products/ergonomic-pillow';
 }

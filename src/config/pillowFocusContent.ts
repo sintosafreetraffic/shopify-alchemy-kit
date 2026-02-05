@@ -50,7 +50,7 @@ export const PILLOW_FOCUS_CONTENT: Record<PillowFocus, PillowFocusContent> = {
   },
   back: {
     focus: 'back',
-    route: '/products/back-pain-pillow',
+    route: '/products/no-numbness-pillow',
     seo: {
       title: 'Rise By Night™ Back Pain Relief Pillow | Ergonomic Memory Foam',
       description: 'Ergonomic contour pillow that supports proper spinal alignment to relieve back pain. Wake up refreshed, not stiff. 100-day trial, free shipping.',

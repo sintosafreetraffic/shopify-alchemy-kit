@@ -8,3 +8,6 @@
 /product/sleep-bundle        /products/sleep-bundle        301
 /product/*                   /products/:splat              301
 /product                     /products                     301
+
+# Back pain pillow renamed to no-numbness-pillow
+/products/back-pain-pillow   /products/no-numbness-pillow  301

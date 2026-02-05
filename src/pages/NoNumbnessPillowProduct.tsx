@@ -1,10 +1,10 @@
 /**
- * Back Pain Pillow Product Page
+ * No Numbness Pillow Product Page
  * 
- * Same Shopify product as ergonomic-pillow, but with messaging focused on back pain relief.
+ * Same Shopify product as ergonomic-pillow, but with messaging focused on arm numbness relief.
  * Uses the shared pillowFocusContent config for content and captures user preference.
  * 
- * Route: /products/back-pain-pillow
+ * Route: /products/no-numbness-pillow
  */
 
 import { Suspense, lazy, useState, useEffect } from "react";
@@ -106,15 +106,15 @@ const InlineCTA = () => {
   );
 };
 
-// Get back pain specific content
-const backPainContent = getPillowContent('back');
+// Get no-numbness specific content (uses 'back' focus config)
+const noNumbnessContent = getPillowContent('back');
 
-const BackPainPillowProduct = () => {
-  // Set SEO for back pain variant
+const NoNumbnessPillowProduct = () => {
+  // Set SEO for no-numbness variant
   useSEO({
-    title: backPainContent.seo.title,
-    description: backPainContent.seo.description,
-    canonical: 'https://shopify-alchemy-kit.lovable.app/products/back-pain-pillow',
+    title: noNumbnessContent.seo.title,
+    description: noNumbnessContent.seo.description,
+    canonical: 'https://shopify-alchemy-kit.lovable.app/products/no-numbness-pillow',
     ogType: 'product',
     ogImage: 'https://shopify-alchemy-kit.lovable.app/images/pillow-main-new.png',
   });
@@ -129,11 +129,11 @@ const BackPainPillowProduct = () => {
   return (
     <div className="min-h-screen bg-background">
       <ProductSchema
-        name="RiseByNight Back Pain Relief Pillow"
-        description={backPainContent.seo.description}
-        url="https://shopify-alchemy-kit.lovable.app/products/back-pain-pillow"
+        name="RiseByNight No Numbness Pillow"
+        description={noNumbnessContent.seo.description}
+        url="https://shopify-alchemy-kit.lovable.app/products/no-numbness-pillow"
         image="https://shopify-alchemy-kit.lovable.app/images/pillow-main-new.png"
-        sku="RBN-BACK-PILLOW-001"
+        sku="RBN-NO-NUMBNESS-001"
         price="59.99"
         ratingValue={4.8}
         reviewCount={6247}
@@ -197,4 +197,4 @@ const BackPainPillowProduct = () => {
   );
 };
 
-export default BackPainPillowProduct;
+export default NoNumbnessPillowProduct;
