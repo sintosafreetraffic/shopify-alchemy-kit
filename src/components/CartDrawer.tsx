@@ -11,6 +11,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { ShoppingCart, Minus, Plus, Trash2, Lock, Loader2, Moon, RotateCcw, Shield, Gift, Truck, ChevronDown, Check, Sparkles, TrendingUp, Star, Heart, AlertTriangle } from "lucide-react";
+import { CreditCard } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   Popover,
@@ -54,6 +55,7 @@ import { useValentinesOffer } from "@/hooks/useValentinesOffer";
 import { formatPrice as valentinesFormatPrice } from "@/lib/formatPrice";
 import { CartUrgencyBanner } from "@/components/cart/CartUrgencyBanner";
 import { DiscountCodeInput } from "@/components/cart/DiscountCodeInput";
+import { EmailContactLink } from "@/components/EmailContactLink";
 
 // Helper function for deterministic "stock" calculation based on variant ID
 const getStockCount = (variantId: string): number => {
@@ -1195,6 +1197,22 @@ export const CartDrawer = () => {
                   {/* Klarna */}
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-auto" width="48" height="30" viewBox="0 0 240 150" fill="none"><g clipPath="url(#klarna__a)"><path fill="#FFB3C7" fillRule="evenodd" d="M221.053 0H18.947C8.211 0 0 8.125 0 18.75v112.5C0 141.875 8.842 150 18.947 150h202.106c10.736 0 18.947-8.125 18.947-18.75V18.75C240 8.125 231.158 0 221.053 0Z" clipRule="evenodd"></path><path fill="#FFB3C7" fillRule="evenodd" d="M221.333 6C228.3 6 234 11.646 234 18.546v112.909c0 6.9-5.7 12.545-12.667 12.545H18.667C11.7 144 6 138.355 6 131.455V18.545C6 11.646 11.7 6 18.667 6h202.666Z" clipRule="evenodd"></path><path fill="#0A0B09" d="M215.476 83.266c-3.076 0-5.571 2.527-5.571 5.634 0 3.114 2.495 5.64 5.571 5.64 3.082 0 5.577-2.526 5.577-5.64a5.61 5.61 0 0 0-5.577-5.634Zm-18.335-4.357c0-4.27-3.6-7.725-8.046-7.725-4.447 0-8.047 3.455-8.047 7.718s3.6 7.724 8.047 7.724c4.446 0 8.046-3.46 8.046-7.724v.007Zm.032-15.007h8.88v30h-8.88V91.99a15.452 15.452 0 0 1-8.805 2.747c-8.646 0-15.65-7.086-15.65-15.834 0-8.74 7.01-15.827 15.65-15.827 3.266 0 6.291 1.01 8.805 2.747v-1.92Zm-71.072 3.91v-3.91h-9.095v30h9.114V79.9c0-4.73 5.065-7.263 8.583-7.263h.101v-8.728c-3.6 0-6.922 1.56-8.703 3.903Zm-22.648 11.09c0-4.263-3.6-7.718-8.047-7.718-4.44 0-8.046 3.455-8.046 7.718s3.6 7.724 8.046 7.724c4.447 0 8.047-3.46 8.047-7.724Zm.031-15h8.88v30h-8.88V91.99a15.446 15.446 0 0 1-8.81 2.747c-8.64 0-15.65-7.086-15.65-15.834 0-8.74 7.01-15.827 15.65-15.827a15.4 15.4 0 0 1 8.804 2.747l.006-1.92Zm53.451-.808c-3.543 0-6.903 1.118-9.145 4.187v-3.379h-8.843v30h8.95V78.138c0-4.56 3.025-6.796 6.663-6.796 3.903 0 6.145 2.362 6.145 6.733v15.834h8.874v-19.08c0-6.986-5.495-11.735-12.644-11.735Zm-90.84 30.82h9.297V50.526h-9.297v43.39Zm-40.832 0h9.84V50.526h-9.84v43.39Zm34.421-43.389a34.717 34.717 0 0 1-10.06 24.632l13.603 18.758H51.07L36.283 73.527l3.815-2.892a25.012 25.012 0 0 0 9.96-20.11h9.625Z"></path></g><defs><clipPath id="klarna__a"><path fill="#fff" d="M0 0h240v150H0z"></path></clipPath></defs></svg>
                 </div>
+                
+                {/* Trust & Security Indicators */}
+                <div className="flex items-center justify-center gap-4 pt-1">
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Shield className="w-3.5 h-3.5 text-primary" />
+                    <span>SSL Secured</span>
+                  </div>
+                  <div className="h-3 w-px bg-border" />
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <CreditCard className="w-3.5 h-3.5" />
+                    <span>Safe Payment</span>
+                  </div>
+                </div>
+                
+                {/* Email Support Link */}
+                <EmailContactLink className="justify-center pt-1" />
               </div>
             </>
           )}
