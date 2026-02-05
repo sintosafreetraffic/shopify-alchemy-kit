@@ -33,7 +33,7 @@ import pillowCoverImage from "@/assets/pillow-cover-included.webp";
 import moonIcon from "@/assets/moon-icon-blue.png";
 import { PillowFocus, getPillowContent } from "@/config/pillowFocusContent";
 import { LiveViewerBadge } from "@/components/LiveViewerBadge";
-import { EmailContactLink } from "@/components/EmailContactLink";
+
 import { RecentPurchasesBadge } from "@/components/RecentPurchasesBadge";
 
 import { InstallmentBadgeCompact } from "@/components/InstallmentBadge";
@@ -253,11 +253,6 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
                   <PaymentIcons />
                 </div>
                 
-                
-                {/* Email contact link - mobile */}
-                <div className="pt-2 flex justify-center">
-                  <EmailContactLink />
-                </div>
               </div>
             )}
           </div>
@@ -403,12 +398,6 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
               {/* Payment Icons */}
               <div className="pt-2">
                 <PaymentIcons />
-              </div>
-              
-              
-              {/* Email contact link - desktop */}
-              <div className="pt-2 flex justify-center">
-                <EmailContactLink />
               </div>
             </div>
 
