@@ -258,7 +258,7 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
         {/* Desktop Grid Layout */}
         <div className="grid md:grid-cols-2 gap-6 lg:gap-10 items-start">
           {/* Scrollable Product Images Column - Desktop Only */}
-          <div className="hidden md:block relative order-2 md:order-1 space-y-4 overflow-hidden -mt-2">
+          <div className="hidden md:block relative order-2 md:order-1 space-y-4 overflow-hidden -mt-4">
             <Suspense fallback={<CarouselFallback />}>
               <ProductImageCarousel pillowFocus={pillowFocus} />
             </Suspense>
