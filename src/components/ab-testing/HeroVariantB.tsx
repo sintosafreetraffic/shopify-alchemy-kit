@@ -221,38 +221,51 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
               </div>
             </div>
             
-            {/* MOBILE CTA FIRST: Show CTA immediately after price when enabled */}
+            {/* MOBILE CTA FIRST: Show Valentine's offer or standard CTA immediately after price */}
             {mobileHeroConfig.MOBILE_CTA_FIRST && (
               <div className="mt-3">
-                <Button 
-                  size="lg"
-                  className="w-full text-lg py-6 font-bold shadow-lg hover:shadow-xl transition-all touch-manipulation animate-attention-pulse bg-primary text-primary-foreground hover:bg-black hover:text-white relative overflow-hidden group" 
-                  onClick={() => handleAddToCart(1)}
-                  disabled={isCheckingOut || !product}
-                >
-                  {isCheckingOut ? (
-                    <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Adding...
-                    </>
-                  ) : justAdded ? (
-                    <>
-                      <CheckCircle className="w-5 h-5 mr-2" />
-                      Added – View Cart
-                    </>
-                  ) : (
-                    <>
-                      <ShoppingCart className="w-5 h-5 mr-2" />
-                      ADD TO CART
-                    </>
-                  )}
-                </Button>
-                
-                {/* Mobile Payment Icons - compact */}
-                <div className="pt-2">
-                  <PaymentIcons />
-                </div>
-                
+                {valentinesOffer.isActive ? (
+                  // Valentine's offer section - shown above fold on mobile during promotions
+                  <ValentinesHeroSection
+                    onAddSingle={handleAddSingle}
+                    onAddCouple={handleAddCouple}
+                    isAdding={isCheckingOut}
+                    currencyCode={currencyCode}
+                    productPrice={productPrice}
+                  />
+                ) : (
+                  // Standard CTA when no promotion is active
+                  <>
+                    <Button 
+                      size="lg"
+                      className="w-full text-lg py-6 font-bold shadow-lg hover:shadow-xl transition-all touch-manipulation animate-attention-pulse bg-primary text-primary-foreground hover:bg-black hover:text-white relative overflow-hidden group" 
+                      onClick={() => handleAddToCart(1)}
+                      disabled={isCheckingOut || !product}
+                    >
+                      {isCheckingOut ? (
+                        <>
+                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                          Adding...
+                        </>
+                      ) : justAdded ? (
+                        <>
+                          <CheckCircle className="w-5 h-5 mr-2" />
+                          Added – View Cart
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingCart className="w-5 h-5 mr-2" />
+                          ADD TO CART
+                        </>
+                      )}
+                    </Button>
+                    
+                    {/* Mobile Payment Icons - compact */}
+                    <div className="pt-2">
+                      <PaymentIcons />
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -341,15 +354,17 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
             {/* Installment Badge */}
             <InstallmentBadgeCompact price={productPrice} className="mb-3" />
 
-            {/* Valentine's Day 1+1 Offer Section */}
+            {/* Valentine's Day 1+1 Offer Section - Desktop Only (mobile shows above fold) */}
             {valentinesOffer.isActive && (
-              <ValentinesHeroSection
-                onAddSingle={handleAddSingle}
-                onAddCouple={handleAddCouple}
-                isAdding={isCheckingOut}
-                currencyCode={currencyCode}
-                productPrice={productPrice}
-              />
+              <div className="hidden md:block">
+                <ValentinesHeroSection
+                  onAddSingle={handleAddSingle}
+                  onAddCouple={handleAddCouple}
+                  isAdding={isCheckingOut}
+                  currencyCode={currencyCode}
+                  productPrice={productPrice}
+                />
+              </div>
             )}
 
             {/* Included Items - Pillow Cover ONLY (no mask in Variant B) */}
