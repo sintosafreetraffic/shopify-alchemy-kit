@@ -1,80 +1,162 @@
 
-Goal
-- Fix the breadcrumb visual misalignment so “Products” sits on the exact same baseline as the other crumbs (e.g., “Home” and the current page label).
+# Cart CRO Enhancements Implementation Plan
 
-What I audited (and what the previous attempts missed)
-1) The breadcrumb UI primitives (src/components/ui/breadcrumb.tsx)
-- We already forced a single-row breadcrumb (flex-nowrap + whitespace-nowrap + horizontal scroll). That addresses wrapping, not vertical alignment.
-- The primitives do not currently enforce a consistent “display/line-height” for all crumbs.
+## Overview
+This plan implements 5 key CRO improvements identified in the cart audit to boost conversion rates by adding urgency triggers, a discount code input, delivery estimates, a "Continue Shopping" button, and per-product scarcity indicators.
 
-2) The breadcrumb composer (src/components/Breadcrumbs.tsx)
-- “Home” crumb is rendered as a flex container:
-  - Link className includes: "flex items-center ..."
-- “Products” crumb is rendered as a normal text link (no flex/inline-flex on the <Link> itself).
-- We also introduced `leading-none` only on the non-Home crumbs (Products/current page), which can create subtle baseline differences.
+---
 
-3) Global CSS affecting anchors (src/index.css) — root cause amplifier
-- There is a global rule:
-  - `button, a, input, select, textarea { min-height: 44px; min-width: 44px; }`
-- Important nuance: CSS min-height/min-width do not affect inline elements in the way people expect, but they do affect elements once they become flex/inline-flex/block.
-- Result in our breadcrumb:
-  - The Home link becomes `display:flex` (due to `flex` class) → it is forced to be at least 44px tall.
-  - The “Products” link remains effectively inline → it’s not forced to that same height.
-  - Inside a flex breadcrumb row, mixing a “tall flex link” with “inline text links” produces the visual misalignment you’re still seeing (the centering math differs per item).
+## Changes Summary
 
-Why the previous fixes didn’t work
-- We fixed wrapping (“Products” dropping to its own line) and invalid <li> nesting (separator placement).
-- But the remaining issue is baseline/vertical alignment, driven by inconsistent link display modes + a global touch-target CSS rule that only “kicks in” for some crumbs.
+### 1. Urgency Triggers (Reservation Timer + Shipping Cutoff)
 
-Implementation approach (make alignment deterministic)
-A) Normalize how every breadcrumb link is laid out
-- Update src/components/ui/breadcrumb.tsx:
-  - Make BreadcrumbLink always render as `inline-flex items-center` (instead of a plain inline anchor), and enforce consistent line-height.
-  - Explicitly override the global touch-target minimums for breadcrumbs only:
-    - add `min-h-0 min-w-0` to BreadcrumbLink
-  - Add `leading-none` (or a single consistent leading value) in the primitive so every crumb shares the same text metrics.
-  - Do the same for BreadcrumbPage (span) so the current page label matches the link crumbs.
+**What it does:**
+- Displays "Items reserved for 10 minutes" countdown timer at the top of the cart when items are present
+- Shows "Order within X:XX for delivery by [date]" based on a shipping cutoff time (e.g., 2 PM)
 
-Concretely, in BreadcrumbLink classes, include (exact final set may vary slightly):
-- `inline-flex items-center leading-none min-h-0 min-w-0 whitespace-nowrap transition-colors hover:text-foreground`
+**Implementation:**
+- Create a new component `CartUrgencyBanner.tsx` with:
+  - A 10-minute countdown that starts when items are added
+  - Shipping cutoff logic: if before 2 PM local time, show "Order within X hours X minutes for delivery by [estimated date]"
+- Timer state stored in sessionStorage (resets per session, not persistent)
+- Add to `CartDrawer.tsx` just below the free shipping progress bar
 
-And in BreadcrumbPage classes, include:
-- `inline-flex items-center leading-none ...`
+---
 
-B) Stop giving “Home” special layout rules that conflict with the rest
-- Update src/components/Breadcrumbs.tsx:
-  - Remove `flex items-center` from the Home <Link> (or keep it minimal), because the primitive will now handle layout consistently.
-  - If we still want icon + label spacing, use `gap-1` but keep display consistent (rely on BreadcrumbLink’s `inline-flex items-center`).
-  - Ensure truncation/width constraints are applied consistently:
-    - Prefer putting truncation classes on BreadcrumbLink/BreadcrumbPage (where possible) rather than mixing between Slot + child Link, to avoid any class merge edge cases.
+### 2. Collapsible Discount Code Input
 
-Verification steps (to ensure it’s truly fixed)
-1) Desktop
-- Go to /products/ergonomic-pillow
-- Confirm breadcrumb row reads: Home > Products > Neck Pain Relief Pillow
-- Visually verify:
-  - “Products” baseline matches “Home” and the current page label.
-  - Chevron separators are centered relative to text.
+**What it does:**
+- Adds a "Have a promo code?" link that expands to reveal an input field
+- Stays hidden by default to prevent customers from leaving to search for codes
+- Input field with "Apply" button; validates codes (placeholder for now)
 
-2) Narrow widths
-- Shrink viewport until crumbs would normally wrap
-- Confirm it remains one line and horizontally scrolls (no mid-crumb wrap).
+**Implementation:**
+- Create a new component `DiscountCodeInput.tsx`
+  - Collapsible design using `Collapsible` from Radix UI
+  - Input + Apply button styling matching cart aesthetic
+  - State for code input, loading, and error/success messages
+- Place in the pricing summary section of `CartDrawer.tsx`, before the subtotal
 
-3) Regression checks
-- Check any other page rendering <Breadcrumbs /> (if any get added later) still looks correct.
-- Confirm breadcrumb links remain clickable (desktop-only in the hero, but still functional).
+---
 
-Files to change (when you approve)
-- src/components/ui/breadcrumb.tsx
-  - Normalize BreadcrumbLink + BreadcrumbPage display/line-height
-  - Add `min-h-0 min-w-0` to opt breadcrumbs out of the global 44px min touch target rule
-- src/components/Breadcrumbs.tsx
-  - Simplify Home link classes to match the standardized primitive behavior
-  - Apply truncation/leading consistently across crumbs
+### 3. Estimated Delivery Date per Product
 
-Expected outcome
-- “Products” will align perfectly in the breadcrumb line because every crumb (including Home) will share:
-  - the same display mode (inline-flex),
-  - the same vertical centering (items-center),
-  - the same line-height,
-  - and the global min-size rule will no longer distort only some crumbs.
+**What it does:**
+- Shows "Estimated delivery: 3-5 business days" below each product in the cart
+- Uses the same logic already present on product pages
+
+**Implementation:**
+- Add a small delivery estimate line in the cart item rendering (around line 681-731 in `CartDrawer.tsx`)
+- Display text: "Delivery: 3-5 business days" with a small truck icon
+- Style: muted text, small font size to keep the cart clean
+
+---
+
+### 4. "Continue Shopping" Secondary Button
+
+**What it does:**
+- Adds a secondary CTA "Continue Shopping" that links to `/products`
+- Currently only shown in the empty cart state; this adds it when cart has items too
+
+**Implementation:**
+- Add a secondary outline button below the main checkout button in `CartDrawer.tsx`
+- Style: `variant="outline"` with shopping cart icon
+- Links to `/products` and closes the cart drawer
+
+---
+
+### 5. Per-Product Scarcity Indicators
+
+**What it does:**
+- Shows "Only X left in stock" warning when inventory is low
+- Leverages the existing `StockIndicator` logic from `UrgencyElements.tsx`
+
+**Implementation:**
+- Create a `CartItemScarcity` component or inline logic
+- Use a static/deterministic calculation (similar to `StockIndicator`) since we don't have real-time inventory data from Shopify Storefront API
+- Show scarcity badge in orange/red when stock count is below threshold (e.g., < 8)
+- Add to each cart item display
+
+---
+
+## File Changes
+
+### New Files
+1. `src/components/cart/CartUrgencyBanner.tsx` - Reservation timer + shipping cutoff
+2. `src/components/cart/DiscountCodeInput.tsx` - Collapsible promo code input
+
+### Modified Files
+1. `src/components/CartDrawer.tsx`:
+   - Import and add `CartUrgencyBanner` below free shipping progress bar
+   - Import and add `DiscountCodeInput` in pricing summary section
+   - Add delivery estimate text to each cart item
+   - Add "Continue Shopping" button below checkout button
+   - Add scarcity indicator to each cart item
+
+---
+
+## Technical Details
+
+### CartUrgencyBanner Component
+```text
+- Uses useState + useEffect for countdown timer
+- sessionStorage key: 'cart-reservation-timestamp'
+- Resets when cart is emptied
+- Displays: "Your items are reserved for MM:SS"
+- Secondary line: "Order within X:XX to get it by [date]"
+```
+
+### DiscountCodeInput Component
+```text
+- Uses Collapsible from Radix
+- State: isOpen, code, isLoading, error, success
+- Apply button validates against a list (can be extended later to check Shopify)
+- Shows success checkmark or error message
+```
+
+### Delivery Estimate
+```text
+- Simple static text: "Delivery: 3-5 business days"
+- Truck icon from Lucide
+- Positioned below product variant info
+```
+
+### Scarcity Indicator
+```text
+- Calculation: deterministic based on product ID hash or date-based decrement
+- Threshold: Show when stock < 8
+- Display: "Only X left!" in orange/red
+- Package or AlertTriangle icon
+```
+
+---
+
+## Verification Steps
+
+1. **Urgency Timer**
+   - Add item to cart, verify 10-minute countdown appears
+   - Wait or manually advance time, verify countdown updates
+   - Empty cart, verify timer resets on next add
+
+2. **Discount Code**
+   - Open cart, verify "Have a promo code?" link is visible
+   - Click to expand, enter code, verify UI feedback
+   - Test invalid code shows error state
+
+3. **Delivery Estimate**
+   - Add item to cart, verify "Delivery: 3-5 business days" appears per item
+
+4. **Continue Shopping**
+   - With items in cart, verify "Continue Shopping" button appears
+   - Click it, verify navigation to /products and cart closes
+
+5. **Scarcity**
+   - Add items to cart, verify scarcity badge appears on applicable items
+   - Verify styling matches orange/red warning aesthetic
+
+---
+
+## Files to Create/Modify
+- Create: `src/components/cart/CartUrgencyBanner.tsx`
+- Create: `src/components/cart/DiscountCodeInput.tsx`
+- Modify: `src/components/CartDrawer.tsx`
