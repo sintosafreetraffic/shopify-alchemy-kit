@@ -182,7 +182,7 @@ export const StickyProductNav = ({
             {/* Single Pillow Button */}
             <Button
               size="sm"
-              variant="outline"
+              variant="default"
               className="font-semibold text-xs"
               onClick={handleAddSingle}
               disabled={isAddingSingle || !product}

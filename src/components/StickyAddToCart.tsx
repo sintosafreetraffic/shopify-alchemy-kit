@@ -487,7 +487,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                     <Button 
                       onClick={handleAddToCart}
                       disabled={isCheckingOut}
-                      variant="outline"
+                      variant="default"
                       className="min-w-[90px] sm:min-w-[120px] text-xs sm:text-sm font-semibold"
                     >
                       {isCheckingOut ? (
