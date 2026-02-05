@@ -13,6 +13,7 @@ import pillowDeeperSleepBack from "@/assets/pillow-deeper-sleep-back.webp";
 import pillowCoupleNeckPain from "@/assets/pillow-couple-no-neck-pain.webp";
 import pillowCoupleBackPain from "@/assets/pillow-couple-back-pain.webp";
 import pillowCoverMask from "@/assets/ergonomic-pillow-cover-mask.webp";
+import pillowMachineWashable from "@/assets/ergonomic-pillow-machine-washable-removable-cover.webp";
 import pillowTrusted from "@/assets/ergonomic-pillow-trusted.webp";
 import { PillowFocus } from "@/config/pillowFocusContent";
 
@@ -98,6 +99,7 @@ export const ProductImageCarousel = ({ pillowFocus = 'neck' }: ProductImageCarou
   // Multiple views of the Rise By Night pillow (desktop order)
   const images = [
     { url: image1, alt: image1Alt, type: "image" },
+    { url: pillowMachineWashable, alt: "Ergonomic pillow with machine washable removable cover - cooling fabric and fits standard pillowcases", type: "image" },
     { url: image2, alt: image2Alt, type: "image" },
     { url: pillowTrusted, alt: "Rise By Night pillow - trusted by 100,000+ sleepers with customer reviews", type: "image" },
     { url: pillowCoverMask, alt: "Rise By Night pillow - removable cover and silk sleep mask", type: "image" },
@@ -108,14 +110,15 @@ export const ProductImageCarousel = ({ pillowFocus = 'neck' }: ProductImageCarou
   // Get only image URLs (excluding videos) for the modal navigation
   const imageOnlyUrls = images.filter(img => img.type === "image").map(img => img.url);
 
-  // Mobile order - same product images as desktop, excluding pillowMaleMask (image 7)
+  // Mobile order - same product images as desktop
   const mobileImages = [
-    images[0], // pillowHeroNew
-    images[1], // pillowDeeperSleep
-    images[2], // pillowTrusted
-    images[3], // pillowCoverMask
-    images[4], // pillowMaleModel
-    images[5], // pillowBundleNew
+    images[0], // hero image
+    images[1], // machine washable
+    images[2], // deeper sleep
+    images[3], // pillowTrusted
+    images[4], // pillowCoverMask
+    images[5], // couple image
+    images[6], // spine alignment
   ];
   
   // Get only image URLs for mobile (excluding videos) for the modal navigation
