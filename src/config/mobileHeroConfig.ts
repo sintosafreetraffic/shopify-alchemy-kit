@@ -8,12 +8,12 @@
  * New layout:      Carousel → Social Proof → Title → Price → CTA → USPs → Included Items
  */
 
-export const mobileHeroConfig = {
-  /**
-   * When true: CTA button appears immediately after price on mobile (above the fold)
-   * When false: CTA button appears after USPs and included items (previous behavior)
-   */
-  MOBILE_CTA_FIRST: false,
+ export const mobileHeroConfig = {
+   /**
+    * When true: CTA button appears immediately after price on mobile (above the fold)
+    * When false: CTA button appears after USPs and included items (previous behavior)
+    */
+   MOBILE_CTA_FIRST: true,
   
   /**
    * When true: Simplifies mobile hero by hiding included items section on mobile

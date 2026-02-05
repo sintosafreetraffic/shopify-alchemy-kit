@@ -5,6 +5,7 @@ import { Check, Shield, Moon, Truck, Loader2, Star, ImageIcon, ChevronDown, Hear
 import { PaymentIcons } from "./PaymentIcons";
 import { PolicyAccordion } from "./PolicyAccordion";
 import { useState, useEffect, useRef, Suspense, lazy, useMemo } from "react";
+import { addDays, format } from 'date-fns';
 import { useCartStore } from "@/stores/cartStore";
 import { useShopifyProducts, useFreeGiftMaskProduct } from "@/hooks/useShopifyProducts";
 import type { ShopifyProduct } from "@/lib/shopify";
@@ -18,6 +19,7 @@ import { trackATCClick } from "@/hooks/usePDPIntentTracking";
 // trackABEvent moved to cartStore for centralized ATC tracking
 import { useIsEU } from "@/hooks/useCurrencySymbol";
 
+import { ExpressPaymentIcons } from "./ExpressPaymentIcons";
 import { mobileHeroConfig } from "@/config/mobileHeroConfig";
 import { useValentinesOffer } from "@/hooks/useValentinesOffer";
 import { ValentinesHeroSection } from "./ValentinesHeroSection";
@@ -51,6 +53,12 @@ const ProductImageCarousel = lazy(() =>
 const MiniReviewsCarousel = lazy(() => 
   import("./MiniReviewsCarousel").then(mod => ({ default: mod.MiniReviewsCarousel }))
 );
+
+// Calculate delivery date (5 days from now)
+const getDeliveryDate = () => {
+  const deliveryDate = addDays(new Date(), 5);
+  return format(deliveryDate, 'MMM d');
+};
 
 // Carousel loading fallback - matches exact dimensions to prevent CLS
 // Mobile: full-width square image | Desktop: 1200x900 aspect ratio (4:3)
@@ -296,6 +304,11 @@ export const Hero = () => {
                 <div className="pt-2">
                   <PaymentIcons />
                 </div>
+                
+                {/* Mobile Express Payment Icons */}
+                <div className="pt-2">
+                  <ExpressPaymentIcons size="sm" />
+                </div>
               </div>
             )}
           </div>
@@ -366,7 +379,7 @@ export const Hero = () => {
               </div>
               <div className="flex items-center gap-2">
                 <Package className="w-5 h-5 text-muted-foreground shrink-0" />
-                <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight">Free shipping in <span className="font-semibold">US</span></p>
+                <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight">Free shipping in <span className="font-semibold">US</span> • Get it by {getDeliveryDate()}</p>
               </div>
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-5 h-5 text-muted-foreground shrink-0" />
