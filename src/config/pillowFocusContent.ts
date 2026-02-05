@@ -34,7 +34,7 @@ export const PILLOW_FOCUS_CONTENT: Record<PillowFocus, PillowFocusContent> = {
       description: 'Doctor-recommended contour memory foam pillow for neck and shoulder pain relief. Specifically designed for side sleepers. 100-day trial, free shipping.',
     },
     hero: {
-      title: 'Rise By Night™ Neck Pain Relief Pillow',
+      title: 'Rise By Night™ Ergonomic Pillow — Neck Pain Relief for Side Sleepers',
       subtitle: 'Specifically designed for side sleepers',
       primaryBenefit: 'Wake up without neck pain',
     },
