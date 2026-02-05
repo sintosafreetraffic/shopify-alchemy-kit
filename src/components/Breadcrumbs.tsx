@@ -1,5 +1,6 @@
+import * as React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ChevronRight, Home } from "lucide-react";
+import { Home } from "lucide-react";
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -70,22 +71,23 @@ export const Breadcrumbs = ({ className, currentPageLabel }: BreadcrumbsProps) =
         </BreadcrumbItem>
 
         {breadcrumbItems.map(({ path, label, isLast }) => (
-          <BreadcrumbItem key={path} className="flex items-center">
-            <BreadcrumbSeparator className="flex items-center">
-              <ChevronRight className="h-3.5 w-3.5" />
-            </BreadcrumbSeparator>
-            {isLast ? (
-              <BreadcrumbPage className="max-w-[200px] truncate leading-none">
-                {label}
-              </BreadcrumbPage>
-            ) : (
-              <BreadcrumbLink asChild>
-                <Link to={path} className="max-w-[150px] truncate leading-none">
+          <React.Fragment key={path}>
+            {/* Separator must be a sibling <li> in the <ol>, not nested inside another <li> */}
+            <BreadcrumbSeparator />
+            <BreadcrumbItem className="flex items-center">
+              {isLast ? (
+                <BreadcrumbPage className="max-w-[200px] truncate leading-none">
                   {label}
-                </Link>
-              </BreadcrumbLink>
-            )}
-          </BreadcrumbItem>
+                </BreadcrumbPage>
+              ) : (
+                <BreadcrumbLink asChild>
+                  <Link to={path} className="max-w-[150px] truncate leading-none">
+                    {label}
+                  </Link>
+                </BreadcrumbLink>
+              )}
+            </BreadcrumbItem>
+          </React.Fragment>
         ))}
       </BreadcrumbList>
     </Breadcrumb>
