@@ -231,7 +231,7 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
             </div>
             
             {/* Mobile: USPs */}
-            <div className="space-y-1.5 mt-3">
+            <div className="space-y-2.5 mt-3">
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-affirmative shrink-0" />
                 <p className="text-xs leading-tight text-amber-600 font-medium">Only 3 left at this price!</p>
