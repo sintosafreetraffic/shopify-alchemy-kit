@@ -221,6 +221,31 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
               </div>
             </div>
             
+            {/* Mobile: Klarna installment - right after price */}
+            <InstallmentBadgeCompact price={productPrice} className="mt-1" />
+            
+            {/* Mobile: Social proof badges */}
+            <div className="flex flex-wrap items-center gap-3 mt-2">
+              <LiveViewerBadge />
+              <RecentPurchasesBadge variant="compact" />
+            </div>
+            
+            {/* Mobile: USPs */}
+            <div className="space-y-1.5 mt-2">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-affirmative shrink-0" />
+                <p className="text-xs leading-tight text-amber-600 font-medium">Only 3 left at this price!</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-affirmative shrink-0" />
+                <p className="text-xs leading-tight">Free shipping in <span className="font-semibold">US</span> • Get it by {getDeliveryDate()}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-affirmative shrink-0" />
+                <p className="text-xs leading-tight">100 days money-back guarantee</p>
+              </div>
+            </div>
+            
             {/* MOBILE CTA FIRST: Show Valentine's offer or standard CTA immediately after price */}
             {mobileHeroConfig.MOBILE_CTA_FIRST && (
               <div className="mt-3">
@@ -321,12 +346,21 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
             </p>
 
             {/* Price Display with Discount Badge - Desktop Only */}
-            <div className="hidden md:flex items-center gap-3 mt-2 mb-3">
+            <div className="hidden md:flex items-center gap-3 mt-2 mb-2">
               <p className="text-xl md:text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
               <span className="text-lg line-through text-muted-foreground">{formatPrice(compareAtPrice, currencyCode)}</span>
               <div className="inline-flex items-center gap-1.5 bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-full shadow-sm">
                 <span className="text-sm font-semibold text-primary">40% OFF</span>
               </div>
+            </div>
+            
+            {/* Installment Badge - Immediately after price */}
+            <InstallmentBadgeCompact price={productPrice} className="mb-2" />
+            
+            {/* Social Proof Badges - After Klarna */}
+            <div className="flex flex-wrap items-center gap-3 mb-2">
+              <LiveViewerBadge />
+              <RecentPurchasesBadge variant="compact" />
             </div>
 
             {/* USPs Section with Green Checkmarks */}
@@ -344,15 +378,6 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
                 <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight">100 days money-back guarantee</p>
               </div>
             </div>
-            
-            {/* Social Proof Badges */}
-            <div className="flex flex-wrap items-center gap-3 mb-3">
-              <LiveViewerBadge />
-              <RecentPurchasesBadge variant="compact" />
-            </div>
-            
-            {/* Installment Badge */}
-            <InstallmentBadgeCompact price={productPrice} className="mb-3" />
 
             {/* Valentine's Day 1+1 Offer Section - Desktop Only (mobile shows above fold) */}
             {valentinesOffer.isActive && (
