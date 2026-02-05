@@ -258,7 +258,7 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
         {/* Desktop Grid Layout */}
         <div className="grid md:grid-cols-2 gap-6 lg:gap-10 items-start">
           {/* Scrollable Product Images Column - Desktop Only */}
-          <div className="hidden md:block relative order-2 md:order-1 space-y-4 overflow-hidden">
+          <div className="hidden md:block relative order-2 md:order-1 space-y-4 overflow-hidden -mt-1">
             <Suspense fallback={<CarouselFallback />}>
               <ProductImageCarousel pillowFocus={pillowFocus} />
             </Suspense>
@@ -271,7 +271,7 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
           <div className="space-y-2 order-1 md:order-2 md:sticky md:top-0 self-start">
             
             {/* Breadcrumbs - Desktop Only */}
-            <div className="hidden md:block mb-3">
+            <div className="hidden md:block mb-1">
               <Breadcrumbs 
                 currentPageLabel={pillowFocus === 'back' ? 'Back Pain Relief Pillow' : 'Neck Pain Relief Pillow'} 
               />
