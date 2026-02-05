@@ -1,99 +1,68 @@
 
-# Plan: Mobile CRO Optimizations
+# Plan: Consolidate Express Payment Icons into PaymentIcons
 
 ## Summary
-Implement three key conversion rate optimization changes to improve mobile product page performance:
-1. Enable "CTA First" on mobile to move Add to Cart above the fold
-2. Add Express Payment Icons (Apple Pay, Google Pay, PayPal) to mobile hero
-3. Display a specific delivery date instead of a generic range
+Remove the separate `ExpressPaymentIcons` component usage from both hero sections and add Google Pay and Apple Pay directly to the existing `PaymentIcons` component.
 
 ---
 
 ## Changes Overview
 
-### 1. Enable Mobile CTA First
-**File:** `src/config/mobileHeroConfig.ts`
+### 1. Remove ExpressPaymentIcons from HeroVariantB.tsx
 
-Change `MOBILE_CTA_FIRST` from `false` to `true`.
+**Lines to remove:**
+- Line 38: Remove import statement
+- Lines 256-259: Remove mobile express payment section
+- Lines 412-415: Remove desktop express payment section
 
-This moves the "Add to Cart" button immediately after the price on mobile, placing it above the fold before the USPs and included items sections.
+### 2. Remove ExpressPaymentIcons from Hero.tsx
 
-**New mobile layout:**
-Carousel → Reviews → Title → Price → **CTA** → USPs → Included Items
+**Lines to remove:**
+- Line 22: Remove import statement  
+- Lines 308-311: Remove mobile express payment section
 
----
+### 3. Add Google Pay and Apple Pay to PaymentIcons.tsx
 
-### 2. Add Express Payment Icons to Mobile
-**File:** `src/components/ab-testing/HeroVariantB.tsx`
+**File:** `src/components/PaymentIcons.tsx`
 
-The `ExpressPaymentIcons` component currently only shows on desktop (lines 400-403). Add it to the mobile CTA section as well (around line 245-253).
+Add Google Pay and Apple Pay SVG icons to the existing payment icons row (after Klarna). This consolidates all payment methods into one clean component.
 
-**Changes:**
-- Inside the `MOBILE_CTA_FIRST` conditional block, add `ExpressPaymentIcons` after `PaymentIcons`
-- Use compact styling (`size="sm"`)
-
-**Also sync to Variant A:**
-**File:** `src/components/Hero.tsx`
-- Add the same `ExpressPaymentIcons` to the mobile CTA section (around line 295-299)
+**New icons to add:**
+- Google Pay icon (with Google colors)
+- Apple Pay icon (black/white)
 
 ---
 
-### 3. Display Specific Delivery Date
-**File:** `src/components/ab-testing/HeroVariantB.tsx`
+## Technical Details
 
-Replace the generic "Arrives in 3-5 days" with a calculated specific date.
+### PaymentIcons.tsx Changes
 
-**Current (line 324):**
+Add these two icons after the existing Klarna icon (line 27):
+
+```tsx
+{/* Google Pay */}
+<svg xmlns="http://www.w3.org/2000/svg" className={iconClassName} width="48" height="30" viewBox="0 0 240 150" fill="none">
+  {/* Google Pay SVG paths */}
+</svg>
+
+{/* Apple Pay */}
+<svg xmlns="http://www.w3.org/2000/svg" className={iconClassName} width="48" height="30" viewBox="0 0 240 150" fill="none">
+  {/* Apple Pay SVG - already exists in ExpressPaymentIcons, will reuse */}
+</svg>
 ```
-Free shipping in US • Arrives in 3-5 days
-```
 
-**New approach:**
-Create a helper function to calculate a delivery date that's 5 days from today, then display:
-```
-Free shipping in US • Get it by [Month Day]
-```
-
-Example: "Free shipping in US • Get it by Feb 10"
-
-**Implementation:**
-- Add a `getDeliveryDate()` helper function (can be inline or in a utility)
-- Use `date-fns` format function (already installed) to display "Feb 10" style date
-- The calculation: `addDays(new Date(), 5)` for the estimated delivery
-
-**Also sync to Variant A:**
-**File:** `src/components/Hero.tsx`
-- Add the same delivery date logic and update the USP text
+Note: The Apple Pay icon is already present in `PaymentIcons.tsx` (line 24), so only Google Pay needs to be added.
 
 ---
 
-## Technical Implementation Details
+## Result
 
-### Delivery Date Helper
-```typescript
-import { addDays, format } from 'date-fns';
+**Before:**
+- PaymentIcons: Visa, Mastercard, Amex, PayPal, Apple Pay, Klarna
+- ExpressPaymentIcons (separate): Apple Pay, Google Pay, PayPal, Cards
 
-const getDeliveryDate = () => {
-  const deliveryDate = addDays(new Date(), 5);
-  return format(deliveryDate, 'MMM d'); // e.g., "Feb 10"
-};
-```
+**After:**
+- PaymentIcons: Visa, Mastercard, Amex, PayPal, Apple Pay, Klarna, **Google Pay**
+- ExpressPaymentIcons: Removed from hero sections
 
-### Files to Modify
-1. `src/config/mobileHeroConfig.ts` - Enable flag
-2. `src/components/ab-testing/HeroVariantB.tsx` - Express icons + delivery date
-3. `src/components/Hero.tsx` - Express icons + delivery date (for A/B sync)
-
----
-
-## Visual Impact
-
-**Before (Mobile):**
-- CTA buried below the fold
-- No express checkout visibility on mobile
-- "Arrives in 3-5 days" (generic)
-
-**After (Mobile):**
-- CTA visible immediately after price
-- Apple Pay, Google Pay, PayPal badges visible on mobile
-- "Get it by Feb 10" (specific, creates urgency)
+This eliminates redundancy and keeps all payment trust signals in one consolidated row.
