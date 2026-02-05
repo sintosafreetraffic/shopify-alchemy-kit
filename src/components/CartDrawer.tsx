@@ -77,6 +77,13 @@ export const CartDrawer = () => {
   // Track selected colors for sleep mask recommendations (keyed by product ID)
   const [recommendationColors, setRecommendationColors] = useState<Record<string, string>>({});
   const isEU = useIsEU();
+   
+   // Discount code state
+   const [appliedDiscount, setAppliedDiscount] = useState<{
+     code: string;
+     type: "percentage" | "fixed";
+     value: number;
+   } | null>(null);
   
   const { 
     items, 
@@ -236,6 +243,15 @@ export const CartDrawer = () => {
   
   // Valentine's discount replaces the old BOGO logic
   const totalDiscount = valentinesDiscount;
+   
+   // Calculate promo code discount
+   const promoCodeDiscount = useMemo(() => {
+     if (!appliedDiscount) return 0;
+     if (appliedDiscount.type === "percentage") {
+       return (subtotal - totalDiscount) * (appliedDiscount.value / 100);
+     }
+     return appliedDiscount.value;
+   }, [appliedDiscount, subtotal, totalDiscount]);
   
   // Get sleep mask price from Shopify data for free gift value calculation
   const sleepMaskPrice = useMemo(() => {
@@ -247,7 +263,7 @@ export const CartDrawer = () => {
   // FREEMASKSFORYOU discount: 100% off free gift masks (already calculated)
   const freeGiftValue = freeGifts * sleepMaskPrice;
   
-  const totalPrice = subtotal - totalDiscount;
+   const totalPrice = subtotal - totalDiscount - promoCodeDiscount;
   
   // Shipping calculation
   const SHIPPING_COST = 14.99;
@@ -1070,7 +1086,11 @@ export const CartDrawer = () => {
 
                   {/* Discount Code Input */}
                   <div className="pt-2 border-t">
-                    <DiscountCodeInput />
+                     <DiscountCodeInput 
+                       appliedDiscount={appliedDiscount}
+                       onApply={(discount) => setAppliedDiscount(discount)}
+                       onRemove={() => setAppliedDiscount(null)}
+                     />
                   </div>
 
                   {/* Price Summary */}
@@ -1084,6 +1104,15 @@ export const CartDrawer = () => {
                         <span className="text-pink-500 font-semibold">-{formatPrice(totalDiscount, cartCurrency)}</span>
                       </div>
                     )}
+                     
+                     {promoCodeDiscount > 0 && appliedDiscount && (
+                       <div className="flex justify-between items-center text-sm">
+                         <span className="text-green-600 dark:text-green-400 flex items-center gap-1">
+                           Promo: {appliedDiscount.code}
+                         </span>
+                         <span className="text-green-600 dark:text-green-400 font-semibold">-{formatPrice(promoCodeDiscount, cartCurrency)}</span>
+                       </div>
+                     )}
                     
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-muted-foreground">Shipping</span>
