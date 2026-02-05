@@ -19,7 +19,7 @@ import { trackATCClick } from "@/hooks/usePDPIntentTracking";
 // trackABEvent moved to cartStore for centralized ATC tracking
 import { useIsEU } from "@/hooks/useCurrencySymbol";
 
-import { ExpressPaymentIcons } from "./ExpressPaymentIcons";
+
 import { mobileHeroConfig } from "@/config/mobileHeroConfig";
 import { useValentinesOffer } from "@/hooks/useValentinesOffer";
 import { ValentinesHeroSection } from "./ValentinesHeroSection";
@@ -305,10 +305,6 @@ export const Hero = () => {
                   <PaymentIcons />
                 </div>
                 
-                {/* Mobile Express Payment Icons */}
-                <div className="pt-2">
-                  <ExpressPaymentIcons size="sm" />
-                </div>
               </div>
             )}
           </div>
