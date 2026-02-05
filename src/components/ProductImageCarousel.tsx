@@ -15,6 +15,7 @@ import pillowCoupleBackPain from "@/assets/pillow-couple-back-pain.webp";
 import pillowCoverMask from "@/assets/ergonomic-pillow-cover-mask.webp";
 import pillowMachineWashable from "@/assets/ergonomic-pillow-machine-washable-removable-cover.webp";
 import pillowTrusted from "@/assets/ergonomic-pillow-trusted.webp";
+import noNumbnessSocialProof from "/images/no-numbness-social-proof.webp";
 import { PillowFocus } from "@/config/pillowFocusContent";
 
 import {
@@ -90,6 +91,12 @@ export const ProductImageCarousel = ({ pillowFocus = 'neck' }: ProductImageCarou
     ? "Rise By Night pillow - designed to remove back pain"
     : "Rise By Night pillow - engineered for deeper sleep with reduced neck and shoulder pressure";
 
+  // Select image 4 based on pillow focus (back pain vs neck pain)
+  const image4 = pillowFocus === 'back' ? noNumbnessSocialProof : pillowTrusted;
+  const image4Alt = pillowFocus === 'back' 
+    ? "Rise By Night pillow - trusted by 20,000+ sleepers with customer reviews for arm numbness and shoulder pain relief"
+    : "Rise By Night pillow - trusted by 100,000+ sleepers with customer reviews";
+
   // Select image 5 based on pillow focus (back pain vs neck pain)
   const image5 = pillowFocus === 'back' ? pillowCoupleBackPain : pillowCoupleNeckPain;
   const image5Alt = pillowFocus === 'back' 
@@ -101,7 +108,7 @@ export const ProductImageCarousel = ({ pillowFocus = 'neck' }: ProductImageCarou
     { url: image1, alt: image1Alt, type: "image" },
     { url: pillowMachineWashable, alt: "Ergonomic pillow with machine washable removable cover - cooling fabric and fits standard pillowcases", type: "image" },
     { url: image2, alt: image2Alt, type: "image" },
-    { url: pillowTrusted, alt: "Rise By Night pillow - trusted by 100,000+ sleepers with customer reviews", type: "image" },
+    { url: image4, alt: image4Alt, type: "image" },
     { url: pillowCoverMask, alt: "Rise By Night pillow - removable cover and silk sleep mask", type: "image" },
     { url: image5, alt: image5Alt, type: "image" },
     { url: pillowBeforeAfterSpine, alt: "Before and after spine alignment comparison - Rise By Night pillow vs regular pillow", type: "image" },
