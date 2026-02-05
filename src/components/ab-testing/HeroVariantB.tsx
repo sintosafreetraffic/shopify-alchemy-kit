@@ -35,7 +35,7 @@ import { PillowFocus, getPillowContent } from "@/config/pillowFocusContent";
 import { LiveViewerBadge } from "@/components/LiveViewerBadge";
 import { EmailContactLink } from "@/components/EmailContactLink";
 import { RecentPurchasesBadge } from "@/components/RecentPurchasesBadge";
-import { ExpressPaymentIcons } from "@/components/ExpressPaymentIcons";
+
 import { InstallmentBadgeCompact } from "@/components/InstallmentBadge";
 // Lazy load the image carousel to reduce initial bundle
 const ProductImageCarousel = lazy(() => 
@@ -253,10 +253,6 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
                   <PaymentIcons />
                 </div>
                 
-                {/* Mobile Express Payment Icons */}
-                <div className="pt-2">
-                  <ExpressPaymentIcons size="sm" />
-                </div>
                 
                 {/* Email contact link - mobile */}
                 <div className="pt-2 flex justify-center">
@@ -409,10 +405,6 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
                 <PaymentIcons />
               </div>
               
-              {/* Express Payment Icons */}
-              <div className="pt-3">
-                <ExpressPaymentIcons size="sm" />
-              </div>
               
               {/* Email contact link - desktop */}
               <div className="pt-2 flex justify-center">
