@@ -61,9 +61,9 @@ export const Breadcrumbs = ({ className, currentPageLabel }: BreadcrumbsProps) =
     <Breadcrumb className={className}>
       <BreadcrumbList className="items-center">
         {/* Home */}
-        <BreadcrumbItem className="flex items-center">
+        <BreadcrumbItem>
           <BreadcrumbLink asChild>
-            <Link to="/" className="flex items-center gap-1 text-muted-foreground hover:text-foreground">
+            <Link to="/" className="gap-1 text-muted-foreground hover:text-foreground">
               <Home className="h-3.5 w-3.5" />
               <span className="sr-only sm:not-sr-only">Home</span>
             </Link>
@@ -74,14 +74,14 @@ export const Breadcrumbs = ({ className, currentPageLabel }: BreadcrumbsProps) =
           <React.Fragment key={path}>
             {/* Separator must be a sibling <li> in the <ol>, not nested inside another <li> */}
             <BreadcrumbSeparator />
-            <BreadcrumbItem className="flex items-center">
+            <BreadcrumbItem>
               {isLast ? (
-                <BreadcrumbPage className="max-w-[200px] truncate leading-none">
+                <BreadcrumbPage className="max-w-[200px] truncate">
                   {label}
                 </BreadcrumbPage>
               ) : (
                 <BreadcrumbLink asChild>
-                  <Link to={path} className="max-w-[150px] truncate leading-none">
+                  <Link to={path} className="max-w-[150px] truncate">
                     {label}
                   </Link>
                 </BreadcrumbLink>
