@@ -56,7 +56,7 @@ export const PILLOW_FOCUS_CONTENT: Record<PillowFocus, PillowFocusContent> = {
       description: 'Ergonomic contour pillow that supports proper spinal alignment to relieve back pain. Wake up refreshed, not stiff. 100-day trial, free shipping.',
     },
     hero: {
-      title: 'Rise By Night™ Back Pain Relief Pillow',
+      title: 'Rise By Night™ Ergonomic Pillow — Stop Waking Up With a Numb Arm',
       subtitle: '',
       primaryBenefit: 'Wake up without back pain',
     },
