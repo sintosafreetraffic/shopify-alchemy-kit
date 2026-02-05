@@ -13,6 +13,7 @@ import { PaymentIcons } from "@/components/PaymentIcons";
 import { PolicyAccordion } from "@/components/PolicyAccordion";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { useState, useEffect, useRef, Suspense, lazy } from "react";
+import { addDays, format } from 'date-fns';
 import { useCartStore } from "@/stores/cartStore";
 import { useABErgonomicPillow } from "@/hooks/useABProduct";
 import { toast } from "sonner";
@@ -43,6 +44,12 @@ const ProductImageCarousel = lazy(() =>
 const MiniReviewsCarousel = lazy(() => 
   import("@/components/MiniReviewsCarousel").then(mod => ({ default: mod.MiniReviewsCarousel }))
 );
+
+// Calculate delivery date (5 days from now)
+const getDeliveryDate = () => {
+  const deliveryDate = addDays(new Date(), 5);
+  return format(deliveryDate, 'MMM d');
+};
 
 // Carousel loading fallback - matches exact dimensions to prevent CLS
 // Mobile: full-width square image | Desktop: 1200x900 aspect ratio (4:3)
@@ -246,6 +253,11 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
                   <PaymentIcons />
                 </div>
                 
+                {/* Mobile Express Payment Icons */}
+                <div className="pt-2">
+                  <ExpressPaymentIcons size="sm" />
+                </div>
+                
                 {/* Email contact link - mobile */}
                 <div className="pt-2 flex justify-center">
                   <EmailContactLink />
@@ -321,7 +333,7 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-affirmative shrink-0" />
-                <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight">Free shipping in <span className="font-semibold">US</span> • Arrives in 3-5 days</p>
+                <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight">Free shipping in <span className="font-semibold">US</span> • Get it by {getDeliveryDate()}</p>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-affirmative shrink-0" />
