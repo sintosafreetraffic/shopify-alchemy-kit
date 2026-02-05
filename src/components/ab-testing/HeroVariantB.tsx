@@ -233,32 +233,6 @@ export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
               </div>
             </div>
 
-            {/* Mobile: Klarna installment - right after price */}
-            <InstallmentBadgeCompact price={productPrice} className="mt-1" />
-
-            {/* Mobile: Social proof badges */}
-            <div className="flex flex-wrap items-center gap-3 mt-2">
-              <LiveViewerBadge />
-              <RecentPurchasesBadge variant="compact" />
-            </div>
-
-            {/* Mobile: USPs */}
-            <div className="space-y-2 mt-4 mb-5">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-affirmative shrink-0" />
-                <p className="text-xs leading-tight text-amber-600 font-medium">Only 3 left at this price!</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-affirmative shrink-0" />
-                <p className="text-xs leading-tight">
-                  Free shipping in <span className="font-semibold">US</span> • Get it by {getDeliveryDate()}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-affirmative shrink-0" />
-                <p className="text-xs leading-tight">100 days money-back guarantee</p>
-              </div>
-            </div>
 
             {/* MOBILE CTA FIRST: Show Valentine's offer or standard CTA immediately after price */}
             {mobileHeroConfig.MOBILE_CTA_FIRST && (
