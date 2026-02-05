@@ -399,7 +399,9 @@ export const CartDrawer = () => {
       const result = await createCheckoutWithResilience(
         checkoutData.items,
         checkoutData.freeMaskVariants,
-        checkoutData.discountCodes
+        appliedDiscount 
+          ? [...checkoutData.discountCodes, appliedDiscount.code]
+          : checkoutData.discountCodes
       );
 
       if (result.success && result.checkoutUrl) {
