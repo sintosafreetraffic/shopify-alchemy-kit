@@ -1,37 +1,52 @@
 
-## Fix Spacing Between USPs and Valentine's Offer
+
+## Consolidate USPs Section: One Version for Both Mobile and Desktop
 
 ### Problem
-The spacing changes aren't working because I was modifying the wrong section. The mobile USPs container (line 246) has no bottom margin, and the Valentine's offer only has `mt-5` which may not be enough.
+There are currently two separate sections for Klarna, social proof badges, and USPs:
+- Mobile-only section (lines 236-261) with smaller styling
+- Desktop section (lines 377-405) that shows on both breakpoints, causing duplication
 
 ### Solution
 
 **File: `src/components/ab-testing/HeroVariantB.tsx`**
 
-1. **Fix Mobile USPs container spacing** (line 246)
-   - Change from `space-y-1.5 mt-2` to `space-y-2 mt-4 mb-5`
-   - This adds proper spacing between USP items, more top margin, and bottom margin before Valentine's offer
+1. **Remove the mobile-specific section entirely** (lines 236-261)
+   - Delete the `{/* Mobile: Klarna installment */}`, `{/* Mobile: Social proof badges */}`, and `{/* Mobile: USPs */}` sections
 
-2. **Increase Valentine's offer top margin** (line 265)
-   - Keep or slightly increase the `mt-5` to ensure proper separation
+2. **Keep the unified section** (lines 377-405) that already has responsive text sizing (`text-xs sm:text-sm lg:text-sm xl:text-base`)
+
+3. **Add spacing to the unified section** to match the mobile spacing requirements
+   - Ensure `mb-5` on the USPs container for proper spacing before Valentine's offer
 
 ### Technical Details
 
-**Change 1** - Line 246:
+**Lines to Remove** (236-261):
 ```tsx
-// Before
-<div className="space-y-1.5 mt-2">
+// DELETE these entire sections:
+{/* Mobile: Klarna installment - right after price */}
+<InstallmentBadgeCompact price={productPrice} className="mt-1" />
 
-// After  
+{/* Mobile: Social proof badges */}
+<div className="flex flex-wrap items-center gap-3 mt-2">
+  <LiveViewerBadge />
+  <RecentPurchasesBadge variant="compact" />
+</div>
+
+{/* Mobile: USPs */}
 <div className="space-y-2 mt-4 mb-5">
+  ... (all 3 USP items)
+</div>
 ```
 
-This matches the pattern from the stack overflow solution and ensures:
-- `space-y-2`: Proper spacing between USP items
-- `mt-4`: More space above the USPs (after social proof badges)
-- `mb-5`: Space below USPs before Valentine's offer
+**Keep** the unified section (lines 377-405) which already has:
+- Responsive icon sizes (`w-5 h-5`)
+- Responsive text sizing (`text-xs sm:text-sm lg:text-sm xl:text-base`)
+- Proper `mb-5` spacing before Valentine's offer
 
-### Summary
-- USP items will have `space-y-2` vertical spacing
-- More breathing room above (`mt-4`) and below (`mb-5`) the USPs section
-- Clear visual separation from the Valentine's promotional block
+### Result
+- Single source of truth for Klarna, social proof, and USPs
+- Works on both mobile and desktop with responsive sizing
+- No duplication
+- Proper spacing maintained above Valentine's offer
+
