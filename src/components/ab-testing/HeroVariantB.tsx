@@ -226,19 +226,13 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
               <div className="mt-3">
                 {valentinesOffer.isActive ? (
                   // Valentine's offer section - shown above fold on mobile during promotions
-                  <>
-                    <ValentinesHeroSection
-                      onAddSingle={handleAddSingle}
-                      onAddCouple={handleAddCouple}
-                      isAdding={isCheckingOut}
-                      currencyCode={currencyCode}
-                      productPrice={productPrice}
-                    />
-                    {/* Payment Icons below Valentine's CTA */}
-                    <div className="pt-2">
-                      <PaymentIcons />
-                    </div>
-                  </>
+                  <ValentinesHeroSection
+                    onAddSingle={handleAddSingle}
+                    onAddCouple={handleAddCouple}
+                    isAdding={isCheckingOut}
+                    currencyCode={currencyCode}
+                    productPrice={productPrice}
+                  />
                 ) : (
                   // Standard CTA when no promotion is active
                   <>

@@ -12,6 +12,7 @@ import { ValentinesCountdown } from "./ValentinesCountdown";
 import { Button } from "@/components/ui/button";
 import { Heart, Package, Gift } from "lucide-react";
 import { formatPrice } from "@/lib/formatPrice";
+import { PaymentIcons } from "@/components/PaymentIcons";
 
 interface ValentinesHeroSectionProps {
   onAddSingle: () => void;
@@ -165,7 +166,10 @@ export const ValentinesHeroSection = ({
           )}
         </Button>
 
-
+        {/* Payment Icons */}
+        <div className="pt-3">
+          <PaymentIcons />
+        </div>
         {/* Countdown */}
         <div className="mt-3 flex justify-center">
           <ValentinesCountdown variant="inline" />
