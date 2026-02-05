@@ -385,7 +385,8 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
             </div>
 
             {/* Desktop CTA always shows, Mobile CTA only if MOBILE_CTA_FIRST is false */}
-            <div className={`${mobileHeroConfig.MOBILE_CTA_FIRST ? "hidden md:block" : ""} ${valentinesOffer.isActive ? "hidden" : ""}`}>
+            {/* Standard Add to Cart - ONLY shown when Valentine's offer is NOT active */}
+            <div className={`${mobileHeroConfig.MOBILE_CTA_FIRST ? "hidden md:block" : ""} ${valentinesOffer.isActive ? "hidden md:hidden" : ""}`}>
               <Button 
                 size="lg"
                 className="w-full text-lg md:text-xl py-6 font-bold shadow-lg hover:shadow-xl transition-all touch-manipulation animate-attention-pulse bg-primary text-primary-foreground hover:bg-black hover:text-white" 
