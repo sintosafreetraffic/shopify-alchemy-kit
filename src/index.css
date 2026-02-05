@@ -44,6 +44,10 @@ All colors MUST be HSL.
 
     --radius: 0.5rem;
 
+    /* Star Rating */
+    --star: 38 92% 50%;
+    --star-foreground: 38 92% 50%;
+
     /* Valentine's Theme */
     --valentine-pink: 340 82% 65%;
     --valentine-rose: 350 80% 60%;

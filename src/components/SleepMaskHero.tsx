@@ -192,7 +192,7 @@ export const SleepMaskHero = () => {
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
-                      className="w-5 h-5 fill-yellow-500 text-yellow-500"
+                      className="w-5 h-5 fill-[hsl(var(--star))] text-[hsl(var(--star))]"
                     />
                   ))}
                 </div>
@@ -239,7 +239,7 @@ export const SleepMaskHero = () => {
                     {[...Array(5)].map((_, i) => (
                       <Star
                         key={i}
-                        className="w-5 h-5 fill-yellow-500 text-yellow-500"
+                        className="w-5 h-5 fill-[hsl(var(--star))] text-[hsl(var(--star))]"
                       />
                     ))}
                   </div>

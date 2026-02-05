@@ -138,7 +138,7 @@ export const ReviewCard = ({
               key={i}
               className={`w-4 h-4 ${
                 i < review.rating
-                  ? "fill-yellow-500 text-yellow-500"
+                  ? "fill-[hsl(var(--star))] text-[hsl(var(--star))]"
                   : "fill-muted text-muted"
               }`}
             />

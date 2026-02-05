@@ -208,7 +208,7 @@ export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
               >
                 <div className="flex" style={{ width: "100px", height: "20px" }}>
                   {[1, 2, 3, 4, 5].map((star) => (
-                    <Star key={star} className="w-5 h-5 fill-yellow-500 text-yellow-500" />
+                    <Star key={star} className="w-5 h-5 fill-[hsl(var(--star))] text-[hsl(var(--star))]" />
                   ))}
                 </div>
                 <span className="text-sm font-semibold">6,247 verified product reviews</span>
@@ -350,7 +350,7 @@ export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
             >
               <div className="flex">
                 {[1, 2, 3, 4, 5].map((star) => (
-                  <Star key={star} className="w-5 h-5 fill-yellow-500 text-yellow-500" />
+                  <Star key={star} className="w-5 h-5 fill-[hsl(var(--star))] text-[hsl(var(--star))]" />
                 ))}
               </div>
               <span className="text-base font-semibold">6,247 verified product reviews</span>

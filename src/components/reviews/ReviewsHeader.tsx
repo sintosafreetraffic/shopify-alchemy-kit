@@ -55,7 +55,7 @@ export const ReviewsHeader = ({
                 key={i}
                 className={`w-4 h-4 ${
                   i < Math.round(averageRating)
-                    ? "fill-yellow-500 text-yellow-500"
+                    ? "fill-[hsl(var(--star))] text-[hsl(var(--star))]"
                     : "fill-muted text-muted"
                 }`}
               />
@@ -88,7 +88,7 @@ export const ReviewsHeader = ({
                 }`}
               >
                 <span>{rating}</span>
-                <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
+                <Star className="w-3 h-3 fill-[hsl(var(--star))] text-[hsl(var(--star))]" />
               </button>
             );
           })}

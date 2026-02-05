@@ -401,7 +401,7 @@ const AdminReviews = () => {
                             key={i}
                             className={`h-4 w-4 ${
                               i < review.rating
-                                ? "fill-yellow-500 text-yellow-500"
+                                ? "fill-[hsl(var(--star))] text-[hsl(var(--star))]"
                                 : "fill-muted text-muted"
                             }`}
                           />

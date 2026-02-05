@@ -237,7 +237,7 @@ export default function RefLandingPage() {
           <div className="text-center mb-10">
             <div className="flex items-center justify-center gap-1 mb-3">
               {[1, 2, 3, 4, 5].map((i) => (
-                <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                <Star key={i} className="h-5 w-5 fill-[hsl(var(--star))] text-[hsl(var(--star))]" />
               ))}
             </div>
             <h2 className="text-2xl font-display font-light mb-2">

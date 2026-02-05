@@ -44,7 +44,7 @@ export const FeaturedTestimonials = () => {
                 <Star
                   key={i}
                   className={`w-5 h-5 ${
-                    i < 5 ? "fill-yellow-500 text-yellow-500" : "fill-muted text-muted"
+                    i < 5 ? "fill-[hsl(var(--star))] text-[hsl(var(--star))]" : "fill-muted text-muted"
                   }`}
                 />
               ))}
@@ -93,7 +93,7 @@ export const FeaturedTestimonials = () => {
                 {[...Array(5)].map((_, i) => (
                   <Star
                     key={i}
-                    className="w-4 h-4 fill-yellow-500 text-yellow-500"
+                    className="w-4 h-4 fill-[hsl(var(--star))] text-[hsl(var(--star))]"
                   />
                 ))}
               </div>
