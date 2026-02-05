@@ -1,162 +1,180 @@
 
-# Cart CRO Enhancements Implementation Plan
+
+# Cart CRO Enhancements Implementation
 
 ## Overview
-This plan implements 5 key CRO improvements identified in the cart audit to boost conversion rates by adding urgency triggers, a discount code input, delivery estimates, a "Continue Shopping" button, and per-product scarcity indicators.
+Implementing 5 key CRO improvements to the cart drawer with the corrected delivery estimate of **5-7 working days**.
 
 ---
 
-## Changes Summary
+## Changes to Implement
 
-### 1. Urgency Triggers (Reservation Timer + Shipping Cutoff)
+### 1. Cart Urgency Banner (New Component)
+**File:** `src/components/cart/CartUrgencyBanner.tsx`
 
-**What it does:**
-- Displays "Items reserved for 10 minutes" countdown timer at the top of the cart when items are present
-- Shows "Order within X:XX for delivery by [date]" based on a shipping cutoff time (e.g., 2 PM)
+Creates a new component displaying:
+- **Reservation timer:** "Your items are reserved for 09:45" - 10-minute countdown stored in sessionStorage
+- **Shipping cutoff:** "Order within 2h 30m for delivery by [estimated date]" - based on 2 PM cutoff time
 
-**Implementation:**
-- Create a new component `CartUrgencyBanner.tsx` with:
-  - A 10-minute countdown that starts when items are added
-  - Shipping cutoff logic: if before 2 PM local time, show "Order within X hours X minutes for delivery by [estimated date]"
-- Timer state stored in sessionStorage (resets per session, not persistent)
-- Add to `CartDrawer.tsx` just below the free shipping progress bar
+Features:
+- Timer resets when cart becomes empty
+- Uses sessionStorage so timer persists across page refreshes but not browser sessions
+- Clock and Truck icons from Lucide for visual appeal
+- Amber/orange warning colors for urgency
 
 ---
 
-### 2. Collapsible Discount Code Input
+### 2. Collapsible Discount Code Input (New Component)
+**File:** `src/components/cart/DiscountCodeInput.tsx`
 
-**What it does:**
-- Adds a "Have a promo code?" link that expands to reveal an input field
-- Stays hidden by default to prevent customers from leaving to search for codes
-- Input field with "Apply" button; validates codes (placeholder for now)
-
-**Implementation:**
-- Create a new component `DiscountCodeInput.tsx`
-  - Collapsible design using `Collapsible` from Radix UI
-  - Input + Apply button styling matching cart aesthetic
-  - State for code input, loading, and error/success messages
-- Place in the pricing summary section of `CartDrawer.tsx`, before the subtotal
+Creates a collapsible promo code section:
+- Shows "Have a promo code?" link by default (collapsed)
+- Expands to reveal input field + "Apply" button when clicked
+- Uses Radix UI Collapsible component
+- Placeholder validation (can be extended for Shopify discount codes later)
+- Shows success/error states
 
 ---
 
 ### 3. Estimated Delivery Date per Product
+**File:** `src/components/CartDrawer.tsx` (modification)
 
-**What it does:**
-- Shows "Estimated delivery: 3-5 business days" below each product in the cart
-- Uses the same logic already present on product pages
-
-**Implementation:**
-- Add a small delivery estimate line in the cart item rendering (around line 681-731 in `CartDrawer.tsx`)
-- Display text: "Delivery: 3-5 business days" with a small truck icon
-- Style: muted text, small font size to keep the cart clean
+Adds delivery estimate below each cart item:
+- Text: **"Delivery: 5-7 working days"**
+- Small Truck icon
+- Muted styling to keep cart clean
+- Positioned below the product title/variant info
 
 ---
 
-### 4. "Continue Shopping" Secondary Button
+### 4. "Continue Shopping" Button
+**File:** `src/components/CartDrawer.tsx` (modification)
 
-**What it does:**
-- Adds a secondary CTA "Continue Shopping" that links to `/products`
-- Currently only shown in the empty cart state; this adds it when cart has items too
-
-**Implementation:**
-- Add a secondary outline button below the main checkout button in `CartDrawer.tsx`
-- Style: `variant="outline"` with shopping cart icon
-- Links to `/products` and closes the cart drawer
+Adds secondary CTA in the checkout footer section:
+- Outline variant button with "Continue Shopping" text
+- Links to `/products` page
+- Closes the cart drawer on click
+- Positioned below the main checkout button
 
 ---
 
 ### 5. Per-Product Scarcity Indicators
+**File:** `src/components/CartDrawer.tsx` (modification)
 
-**What it does:**
-- Shows "Only X left in stock" warning when inventory is low
-- Leverages the existing `StockIndicator` logic from `UrgencyElements.tsx`
-
-**Implementation:**
-- Create a `CartItemScarcity` component or inline logic
-- Use a static/deterministic calculation (similar to `StockIndicator`) since we don't have real-time inventory data from Shopify Storefront API
-- Show scarcity badge in orange/red when stock count is below threshold (e.g., < 8)
-- Add to each cart item display
+Adds low-stock warnings to cart items:
+- Shows "Only X left!" when stock is low (threshold < 8)
+- Uses deterministic calculation based on product ID hash
+- Orange/amber warning color with AlertTriangle icon
+- Positioned near the product title
 
 ---
 
-## File Changes
+## Files to Create
 
-### New Files
-1. `src/components/cart/CartUrgencyBanner.tsx` - Reservation timer + shipping cutoff
-2. `src/components/cart/DiscountCodeInput.tsx` - Collapsible promo code input
+### `src/components/cart/CartUrgencyBanner.tsx`
+```
+- useState for countdown timer
+- useEffect for interval updates
+- sessionStorage for persistence
+- Calculates shipping cutoff (2 PM local time)
+- Renders reservation timer + shipping deadline
+```
 
-### Modified Files
-1. `src/components/CartDrawer.tsx`:
-   - Import and add `CartUrgencyBanner` below free shipping progress bar
-   - Import and add `DiscountCodeInput` in pricing summary section
-   - Add delivery estimate text to each cart item
-   - Add "Continue Shopping" button below checkout button
-   - Add scarcity indicator to each cart item
+### `src/components/cart/DiscountCodeInput.tsx`
+```
+- Uses Collapsible from @radix-ui/react-collapsible
+- useState for isOpen, code, isLoading, error, success
+- Input + Apply button
+- Placeholder validation logic
+```
+
+---
+
+## Files to Modify
+
+### `src/components/CartDrawer.tsx`
+Changes:
+1. Import new components (`CartUrgencyBanner`, `DiscountCodeInput`)
+2. Import `Link` from react-router-dom
+3. Import `AlertTriangle` icon from lucide-react
+4. Add `CartUrgencyBanner` below the free shipping progress bar
+5. Add delivery estimate line (5-7 working days) in each cart item
+6. Add scarcity indicator to each cart item
+7. Add `DiscountCodeInput` in the pricing summary section
+8. Add "Continue Shopping" button below checkout button
+
+---
+
+## Component Placement in Cart
+
+```
+┌─────────────────────────────────────┐
+│ Cart Header + Close                  │
+├─────────────────────────────────────┤
+│ Free Shipping Progress Bar          │
+├─────────────────────────────────────┤
+│ 🕐 URGENCY BANNER (NEW)             │
+│ • Items reserved for 09:45          │
+│ • Order within 2h 30m for delivery  │
+├─────────────────────────────────────┤
+│ Cart Items (scrollable)             │
+│ ┌─────────────────────────────────┐ │
+│ │ [IMG] Product Title             │ │
+│ │       Variant info              │ │
+│ │       🚚 Delivery: 5-7 days     │ │
+│ │       ⚠️ Only 3 left! (NEW)     │ │
+│ │       Price    [- 1 +]          │ │
+│ └─────────────────────────────────┘ │
+├─────────────────────────────────────┤
+│ Trust Badges (100-Night, Returns)   │
+├─────────────────────────────────────┤
+│ 💳 DISCOUNT CODE INPUT (NEW)        │
+│ "Have a promo code?" [expand]       │
+├─────────────────────────────────────┤
+│ Pricing Summary                     │
+│ Shipping: FREE                      │
+│ Total: €119.99                      │
+├─────────────────────────────────────┤
+│ [CHECKOUT - €119.99]                │
+│ [Continue Shopping] (NEW)           │
+│ Payment icons                       │
+└─────────────────────────────────────┘
+```
 
 ---
 
 ## Technical Details
 
-### CartUrgencyBanner Component
-```text
-- Uses useState + useEffect for countdown timer
-- sessionStorage key: 'cart-reservation-timestamp'
-- Resets when cart is emptied
-- Displays: "Your items are reserved for MM:SS"
-- Secondary line: "Order within X:XX to get it by [date]"
-```
+### Urgency Timer Logic
+- On first cart item add: store timestamp in `sessionStorage('cart-reservation-timestamp')`
+- Calculate remaining time from 10 minutes
+- Display MM:SS format
+- When timer expires: show "Items may sell out soon"
+- When cart empties: clear sessionStorage key
 
-### DiscountCodeInput Component
-```text
-- Uses Collapsible from Radix
-- State: isOpen, code, isLoading, error, success
-- Apply button validates against a list (can be extended later to check Shopify)
-- Shows success checkmark or error message
-```
+### Shipping Cutoff Logic
+- Define cutoff time: 2 PM (14:00) local time
+- If current time < 2 PM: calculate hours/minutes until cutoff
+- Add 5-7 working days to estimate delivery date
+- If current time > 2 PM: show "Order tomorrow by 2 PM for..."
 
-### Delivery Estimate
-```text
-- Simple static text: "Delivery: 3-5 business days"
-- Truck icon from Lucide
-- Positioned below product variant info
-```
-
-### Scarcity Indicator
-```text
-- Calculation: deterministic based on product ID hash or date-based decrement
-- Threshold: Show when stock < 8
-- Display: "Only X left!" in orange/red
-- Package or AlertTriangle icon
-```
+### Scarcity Calculation
+- Use product variant ID hash to generate deterministic "stock" number
+- Formula: `(hashCode(variantId) % 10) + 2` (gives 2-11 range)
+- Show warning if calculated stock < 8
+- Ensures same product always shows same stock level
 
 ---
 
-## Verification Steps
+## Verification Checklist
+- [ ] Urgency timer starts when items added to cart
+- [ ] Timer persists across page refreshes (sessionStorage)
+- [ ] Timer resets when cart is emptied
+- [ ] Discount code input is collapsed by default
+- [ ] Discount code expands when clicked
+- [ ] Delivery estimate shows "5-7 working days" for each item
+- [ ] Scarcity badge appears on applicable items
+- [ ] "Continue Shopping" button navigates to /products
+- [ ] Cart drawer closes when "Continue Shopping" is clicked
+- [ ] All new elements are properly styled and responsive
 
-1. **Urgency Timer**
-   - Add item to cart, verify 10-minute countdown appears
-   - Wait or manually advance time, verify countdown updates
-   - Empty cart, verify timer resets on next add
-
-2. **Discount Code**
-   - Open cart, verify "Have a promo code?" link is visible
-   - Click to expand, enter code, verify UI feedback
-   - Test invalid code shows error state
-
-3. **Delivery Estimate**
-   - Add item to cart, verify "Delivery: 3-5 business days" appears per item
-
-4. **Continue Shopping**
-   - With items in cart, verify "Continue Shopping" button appears
-   - Click it, verify navigation to /products and cart closes
-
-5. **Scarcity**
-   - Add items to cart, verify scarcity badge appears on applicable items
-   - Verify styling matches orange/red warning aesthetic
-
----
-
-## Files to Create/Modify
-- Create: `src/components/cart/CartUrgencyBanner.tsx`
-- Create: `src/components/cart/DiscountCodeInput.tsx`
-- Modify: `src/components/CartDrawer.tsx`
