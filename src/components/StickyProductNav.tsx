@@ -169,7 +169,7 @@ export const StickyProductNav = ({
                 )}
                 <div className="flex">
                   {[1, 2, 3, 4, 5].map((star) => (
-                    <Star key={star} className="w-3 h-3 fill-yellow-500 text-yellow-500" />
+                    <Star key={star} className="w-3 h-3 fill-[hsl(var(--star))] text-[hsl(var(--star))]" />
                   ))}
                 </div>
                 <span className="text-xs text-muted-foreground hidden sm:inline">6,247 reviews</span>

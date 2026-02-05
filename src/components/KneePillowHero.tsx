@@ -128,7 +128,7 @@ export const KneePillowHero = () => {
               >
                 <div className="flex">
                   {[1, 2, 3, 4, 5].map((star) => (
-                    <Star key={star} className="w-5 h-5 fill-yellow-500 text-yellow-500" />
+                    <Star key={star} className="w-5 h-5 fill-[hsl(var(--star))] text-[hsl(var(--star))]" />
                   ))}
                 </div>
                 <span className="text-sm font-semibold">5,100+ verified reviews</span>
@@ -212,7 +212,7 @@ export const KneePillowHero = () => {
                 >
                   <div className="flex">
                     {[1, 2, 3, 4, 5].map((star) => (
-                      <Star key={star} className="w-5 h-5 fill-yellow-500 text-yellow-500" />
+                      <Star key={star} className="w-5 h-5 fill-[hsl(var(--star))] text-[hsl(var(--star))]" />
                     ))}
                   </div>
                   <span className="text-base font-semibold">5,100+ verified reviews</span>

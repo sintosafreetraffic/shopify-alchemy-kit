@@ -24,7 +24,7 @@ export const EmptyCartCTA = ({ onClose }: EmptyCartCTAProps) => {
       {/* Social Proof */}
       <div className="flex items-center gap-3 mb-6 text-xs text-muted-foreground">
         <div className="flex items-center gap-1">
-          <Star className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500" />
+          <Star className="h-3.5 w-3.5 text-[hsl(var(--star))] fill-[hsl(var(--star))]" />
           <span>4.8/5 rating</span>
         </div>
         <span className="text-border">•</span>

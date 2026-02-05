@@ -241,7 +241,7 @@ export const ReviewSubmissionForm = ({
                         <Star
                           className={`w-8 h-8 ${
                             star <= (hoverRating || selectedRating)
-                              ? "fill-yellow-500 text-yellow-500"
+                              ? "fill-[hsl(var(--star))] text-[hsl(var(--star))]"
                               : "fill-muted text-muted-foreground"
                           }`}
                         />

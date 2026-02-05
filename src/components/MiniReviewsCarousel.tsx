@@ -181,7 +181,7 @@ export const MiniReviewsCarousel = ({
                           key={star}
                           className={`w-3.5 h-3.5 ${
                             star <= review.rating
-                              ? "fill-yellow-400 text-yellow-400"
+                              ? "fill-[hsl(var(--star))] text-[hsl(var(--star))]"
                               : "fill-muted text-muted"
                           }`}
                         />

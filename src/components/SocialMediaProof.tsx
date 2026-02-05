@@ -119,7 +119,7 @@ export const SocialMediaProof = ({ className = "", limit = 4 }: SocialMediaProof
               {post.rating && (
                 <div className="flex mb-2">
                   {Array.from({ length: post.rating }).map((_, i) => (
-                    <Star key={i} className="w-3 h-3 fill-yellow-500 text-yellow-500" />
+                    <Star key={i} className="w-3 h-3 fill-[hsl(var(--star))] text-[hsl(var(--star))]" />
                   ))}
                 </div>
               )}

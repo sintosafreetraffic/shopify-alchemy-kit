@@ -55,7 +55,7 @@ export const StreakDisplay = ({ streak, className }: StreakDisplayProps) => {
                 animationDuration: `${0.5 + Math.random() * 0.5}s`,
               }}
             >
-              <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+              <Star className="h-4 w-4 text-[hsl(var(--star))] fill-[hsl(var(--star))]" />
             </div>
           ))}
         </div>

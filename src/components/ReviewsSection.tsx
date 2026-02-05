@@ -71,7 +71,7 @@ export const ReviewsSection = () => {
           <div className="inline-flex items-center gap-2 mb-2">
             <div className="flex">
               {[1, 2, 3, 4, 5].map((star) => (
-                <Star key={star} className="w-4 h-4 md:w-5 md:h-5 fill-yellow-500 text-yellow-500" />
+                <Star key={star} className="w-4 h-4 md:w-5 md:h-5 fill-[hsl(var(--star))] text-[hsl(var(--star))]" />
               ))}
             </div>
             <span className="text-lg md:text-xl font-bold">4.8/5</span>
@@ -112,7 +112,7 @@ export const ReviewsSection = () => {
                   </div>
                   <div className="flex justify-center mb-2">
                     {[...Array(review.rating)].map((_, i) => (
-                      <Star key={i} className="w-3 h-3 md:w-4 md:h-4 fill-yellow-500 text-yellow-500" />
+                      <Star key={i} className="w-3 h-3 md:w-4 md:h-4 fill-[hsl(var(--star))] text-[hsl(var(--star))]" />
                     ))}
                   </div>
                   <p className="text-xs md:text-sm text-muted-foreground leading-relaxed line-clamp-4 md:line-clamp-none">{review.review}</p>
