@@ -225,13 +225,13 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
             <InstallmentBadgeCompact price={productPrice} className="mt-1" />
             
             {/* Mobile: Social proof badges */}
-            <div className="flex flex-wrap items-center gap-3 mt-2">
+            <div className="flex flex-wrap items-center gap-3 mt-2 pl-6">
               <LiveViewerBadge />
               <RecentPurchasesBadge variant="compact" />
             </div>
             
             {/* Mobile: USPs */}
-            <div className="space-y-1.5 mt-2">
+            <div className="space-y-1.5 mt-3">
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-affirmative shrink-0" />
                 <p className="text-xs leading-tight text-amber-600 font-medium">Only 3 left at this price!</p>
@@ -355,16 +355,16 @@ export const HeroVariantB = ({ pillowFocus = 'neck' }: HeroVariantBProps) => {
             </div>
             
             {/* Installment Badge - Immediately after price */}
-            <InstallmentBadgeCompact price={productPrice} className="mb-2" />
+            <InstallmentBadgeCompact price={productPrice} className="hidden md:block mb-2" />
             
             {/* Social Proof Badges - After Klarna */}
-            <div className="flex flex-wrap items-center gap-3 mb-2">
+            <div className="hidden md:flex flex-wrap items-center gap-3 mb-2 pl-7">
               <LiveViewerBadge />
               <RecentPurchasesBadge variant="compact" />
             </div>
 
             {/* USPs Section with Green Checkmarks */}
-            <div className="space-y-2 mb-3">
+            <div className="hidden md:block space-y-2 mb-3">
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-affirmative shrink-0" />
                 <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight text-amber-600 font-medium">Only 3 left at this price!</p>
