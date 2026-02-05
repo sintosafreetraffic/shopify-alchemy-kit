@@ -14,7 +14,7 @@ import {
 const routeLabels: Record<string, string> = {
   "products": "Products",
   "ergonomic-pillow": "Neck Pain Relief Pillow",
-  "back-pain-pillow": "Back Pain Relief Pillow",
+  "no-numbness-pillow": "No Numbness Pillow",
   "knee-pillow": "Knee Pillow",
   "sleep-mask": "Sleep Mask",
   "sleep-bundle": "Complete Sleep Bundle",

@@ -126,7 +126,7 @@ if (typeof window !== "undefined" && localStorage.getItem("DEBUG_TRACKING") === 
 import Home from "./pages/Home";
 import ErgonomicPillowProduct from "./pages/ErgonomicPillowProductVariantB";
 import ErgonomicPillowProductPrevious from "./pages/ErgonomicPillowProductPrevious";
-import BackPainPillowProduct from "./pages/BackPainPillowProduct";
+import NoNumbnessPillowProduct from "./pages/NoNumbnessPillowProduct";
 import KneePillowProduct from "./pages/KneePillowProduct";
 import SleepMaskProduct from "./pages/SleepMaskProduct";
 import SleepBundleProduct from "./pages/SleepBundleProduct";
@@ -263,7 +263,7 @@ const AppContent = () => {
             {/* Product pages - /products/ is the industry standard (Shopify, Klaviyo compatible) */}
             <Route path="/products" element={<Products />} />
             <Route path="/products/ergonomic-pillow" element={<ErgonomicPillowProduct />} />
-            <Route path="/products/back-pain-pillow" element={<BackPainPillowProduct />} />
+            <Route path="/products/no-numbness-pillow" element={<NoNumbnessPillowProduct />} />
             <Route path="/products/ergonomic-pillow-previous-one" element={<ErgonomicPillowProductPrevious />} />
             <Route path="/products/knee-pillow" element={<KneePillowProduct />} />
             <Route path="/products/sleep-mask" element={<SleepMaskProduct />} />
