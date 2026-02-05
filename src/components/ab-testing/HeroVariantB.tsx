@@ -262,7 +262,7 @@ export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
 
             {/* MOBILE CTA FIRST: Show Valentine's offer or standard CTA immediately after price */}
             {mobileHeroConfig.MOBILE_CTA_FIRST && (
-              <div className="mt-3">
+              <div className="mt-5">
                 {valentinesOffer.isActive ? (
                   // Valentine's offer section - shown above fold on mobile during promotions
                   <ValentinesHeroSection
