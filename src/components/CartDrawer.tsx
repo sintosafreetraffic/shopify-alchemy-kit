@@ -10,7 +10,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { ShoppingCart, Minus, Plus, Trash2, Lock, Loader2, Moon, RotateCcw, Shield, Gift, Truck, ChevronDown, Check, Sparkles, TrendingUp, Star, Heart } from "lucide-react";
+import { ShoppingCart, Minus, Plus, Trash2, Lock, Loader2, Moon, RotateCcw, Shield, Gift, Truck, ChevronDown, Check, Sparkles, TrendingUp, Star, Heart, AlertTriangle } from "lucide-react";
+import { Link } from "react-router-dom";
 import {
   Popover,
   PopoverContent,
@@ -51,6 +52,20 @@ import { variantIncludesMask, AB_PRODUCT_HANDLES, getErgonomicPillowHandle } fro
 import { useIsVariantB } from "@/hooks/useABProduct";
 import { useValentinesOffer } from "@/hooks/useValentinesOffer";
 import { formatPrice as valentinesFormatPrice } from "@/lib/formatPrice";
+import { CartUrgencyBanner } from "@/components/cart/CartUrgencyBanner";
+import { DiscountCodeInput } from "@/components/cart/DiscountCodeInput";
+
+// Helper function for deterministic "stock" calculation based on variant ID
+const getStockCount = (variantId: string): number => {
+  let hash = 0;
+  for (let i = 0; i < variantId.length; i++) {
+    const char = variantId.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  // Return a number between 2 and 11
+  return Math.abs(hash % 10) + 2;
+};
 
 export const CartDrawer = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -597,6 +612,11 @@ export const CartDrawer = () => {
             <EmptyCartCTA onClose={() => setIsOpen(false)} />
           ) : (
             <>
+              {/* Urgency Banner - Reservation Timer & Shipping Cutoff */}
+              <div className="mb-2 px-1">
+                <CartUrgencyBanner hasItems={items.length > 0} />
+              </div>
+              
               {/* Scrollable Cart Items + Trust Badges + Pricing */}
               <div className="flex-1 overflow-y-auto overflow-x-hidden pr-2 min-h-0 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
                 <div className="space-y-2">
@@ -665,6 +685,26 @@ export const CartDrawer = () => {
                                   <span className="text-xs text-muted-foreground">{colorOption.value}</span>
                                 </div>
                               );
+                            })()}
+                            
+                            {/* Delivery Estimate */}
+                            <div className="flex items-center gap-1 mt-1">
+                              <Truck className="w-3 h-3 text-muted-foreground" />
+                              <span className="text-xs text-muted-foreground">Delivery: 5-7 working days</span>
+                            </div>
+                            
+                            {/* Scarcity Indicator */}
+                            {(() => {
+                              const stockCount = getStockCount(item.variantId);
+                              if (stockCount < 8) {
+                                return (
+                                  <div className="flex items-center gap-1 mt-1">
+                                    <AlertTriangle className="w-3 h-3 text-amber-500" />
+                                    <span className="text-xs font-medium text-amber-600">Only {stockCount} left!</span>
+                                  </div>
+                                );
+                              }
+                              return null;
                             })()}
                           </div>
                           <Button
@@ -1028,6 +1068,11 @@ export const CartDrawer = () => {
                     </div>
                   </div>
 
+                  {/* Discount Code Input */}
+                  <div className="pt-2 border-t">
+                    <DiscountCodeInput />
+                  </div>
+
                   {/* Price Summary */}
                   <div className="space-y-1 pt-1">
                     {totalDiscount > 0 && (
@@ -1084,6 +1129,20 @@ export const CartDrawer = () => {
                       </span>
                     </>
                   )}
+                </Button>
+                
+                {/* Continue Shopping Button */}
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  size="default"
+                  asChild
+                  onClick={() => setIsOpen(false)}
+                >
+                  <Link to="/products">
+                    <ShoppingCart className="w-4 h-4 mr-2" />
+                    Continue Shopping
+                  </Link>
                 </Button>
                 
                 <div className="flex items-center justify-center gap-3 flex-wrap">
