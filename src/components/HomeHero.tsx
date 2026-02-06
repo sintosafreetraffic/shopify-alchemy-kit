@@ -130,7 +130,7 @@ const HomeHero = () => {
       </div>
 
       {/* Content Section */}
-      <div className="relative bg-[#F5F6F7] py-8 md:py-16">
+      <div className="relative bg-surface-subtle py-8 md:py-16">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto text-center space-y-5 md:space-y-8">
             {/* Main Headline */}

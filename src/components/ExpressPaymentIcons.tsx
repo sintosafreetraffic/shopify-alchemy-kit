@@ -48,7 +48,7 @@ export const ExpressPaymentIcons = ({
         </div>
         
         {/* PayPal */}
-        <div className={`${iconSize} px-2 bg-[#FFC439] rounded flex items-center justify-center`}>
+        <div className={`${iconSize} px-2 bg-paypal rounded flex items-center justify-center`}>
           <svg className="h-3" viewBox="0 0 100 26">
             <path fill="#003087" d="M13.7 24.7H7.2c-.4 0-.8-.3-.8-.7l2.8-17.7c0-.3.3-.5.6-.5h6.5c2.2 0 3.7.4 4.8 1.3 1 .9 1.4 2.1 1.2 3.8-.4 2.3-1.5 3.9-3.3 4.9-1.8 1-4 1.4-6.7 1.4h-1.7c-.4 0-.8.3-.8.7l-.9 5.6c0 .6-.5 1.2-1.2 1.2z"/>
             <path fill="#0070E0" d="M38.4 6.8H32c-.4 0-.7.3-.8.6l-2.5 16c0 .3.2.5.5.5h3.4c.3 0 .5-.2.5-.4l.7-4.5c0-.3.4-.6.8-.6h1.8c3.8 0 6-1.8 6.5-5.5.2-1.6 0-2.9-.7-3.8-.8-1-2.3-1.5-4.4-1.5-.4.2-.4.2-.4.2zm.7 5.4c-.3 2-1.8 2-3.3 2h-.8l.6-3.8c0-.2.2-.3.4-.3h.4c1 0 1.9 0 2.4.6.3.3.4.9.3 1.5z"/>

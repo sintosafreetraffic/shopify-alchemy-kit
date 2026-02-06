@@ -25,7 +25,7 @@ export const InstallmentBadge = ({
         <span className="font-semibold text-foreground">{installments}x €{installmentAmount}</span>
         <span>interest-free with</span>
         {/* Klarna-style badge */}
-        <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-[#FFB3C7] text-black text-xs font-bold">
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-klarna text-black text-xs font-bold">
           Klarna
         </span>
       </div>
@@ -46,7 +46,7 @@ export const InstallmentBadgeCompact = ({
   return (
     <div className={`inline-flex items-center gap-1 text-xs text-muted-foreground ${className}`}>
       <span>or {installments}x €{installmentAmount}</span>
-      <span className="px-1 py-0.5 rounded bg-[#FFB3C7] text-black text-[10px] font-bold">
+      <span className="px-1 py-0.5 rounded bg-klarna text-black text-[10px] font-bold">
         Klarna
       </span>
     </div>

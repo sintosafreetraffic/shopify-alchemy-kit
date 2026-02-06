@@ -23,7 +23,7 @@ const PILLARS = [
 
 export function MissionSection() {
   return (
-    <section className="py-8 md:py-16 bg-[#FAF9F7]">
+    <section className="py-8 md:py-16 bg-surface-subtle">
       <div className="container mx-auto px-4">
         <div className="max-w-5xl mx-auto">
           {/* Header */}
