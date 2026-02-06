@@ -2,7 +2,7 @@ import { CartDrawer } from "./CartDrawer";
 import { NavLink } from "./NavLink";
 import { Link } from "react-router-dom";
 import { Mail, MapPin } from "lucide-react";
-import logo from "@/assets/risebynight-logo-official.png";
+import { Logo } from "@/components/brand/Logo";
 import { Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -165,16 +165,7 @@ export const Header = () => {
 
         {/* Logo - Centered on Mobile, Left on Desktop */}
         <Link to="/" className="flex items-center justify-center md:justify-start hover:opacity-80 transition-opacity mx-auto md:mx-0">
-          <img 
-            src={logo} 
-            alt="Rise By Night - Ergonomic Sleep Pillow" 
-            width={240}
-            height={48}
-            className="h-10 md:h-12 w-auto object-contain"
-            loading="eager"
-            fetchPriority="high"
-            decoding="sync"
-          />
+          <Logo variant="full" size="md" alt="Rise By Night - Ergonomic Sleep Pillow" />
         </Link>
         
         {/* Desktop Navigation - centered in grid column, full height for vertical alignment */}

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import moonIcon from "@/assets/moon-icon-blue.png";
+import { Logo } from "@/components/brand/Logo";
 import { FooterTrustBadges } from "./FooterTrustBadges";
 
 export const Footer = () => {
@@ -88,7 +88,7 @@ export const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand Column */}
           <div className="space-y-4">
-            <img src={moonIcon} alt="Rise By Night" className="w-12 h-12 object-contain" />
+            <Logo variant="icon" size="lg" />
             <p className="text-sm text-muted-foreground leading-relaxed">
               Science-backed sleep solutions designed to help you wake refreshed and perform at your best.
             </p>

@@ -65,6 +65,23 @@ export default {
           rose: "hsl(var(--valentine-rose))",
           foreground: "hsl(var(--valentine-foreground))",
         },
+        // Brand Design Tokens
+        surface: {
+          subtle: "hsl(var(--surface-subtle))",
+          muted: "hsl(var(--surface-muted))",
+          elevated: "hsl(var(--surface-elevated))",
+        },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
+        star: "hsl(var(--star))",
+        klarna: "hsl(var(--klarna-pink))",
+        paypal: "hsl(var(--paypal-yellow))",
       },
       borderRadius: {
         lg: "var(--radius)",

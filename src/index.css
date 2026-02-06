@@ -53,6 +53,38 @@ All colors MUST be HSL.
     --valentine-rose: 350 80% 60%;
     --valentine-foreground: 0 0% 100%;
 
+    /* === BRAND DESIGN TOKENS === */
+    
+    /* Surface Colors - Replace hardcoded grays */
+    --surface-subtle: 0 0% 97%;           /* #F7F7F6, #F5F6F7, #FAF9F7 */
+    --surface-muted: 0 0% 96%;            /* Aligns with --muted */
+    --surface-elevated: 0 0% 100%;        /* White cards on gray bg */
+    
+    /* Brand Accents */
+    --accent-urgency: 38 92% 50%;         /* Amber for scarcity/stars */
+    --accent-success: 142 76% 36%;        /* Green for positive signals */
+    --accent-info: 217 91% 50%;           /* Blue for links/CTAs */
+    
+    /* Third-party Brand Colors (exceptions) */
+    --klarna-pink: 340 82% 76%;           /* #FFB3C7 */
+    --paypal-yellow: 45 100% 62%;         /* #FFC439 */
+    
+    /* Typography Scale */
+    --font-size-h1: 1.875rem;             /* 30px */
+    --font-size-h2: 1.5rem;               /* 24px */
+    --font-size-h3: 1.125rem;             /* 18px */
+    --font-size-body: 1rem;               /* 16px */
+    --font-size-caption: 0.875rem;        /* 14px */
+    
+    /* Spacing Scale (4px base) */
+    --space-1: 0.25rem;                   /* 4px */
+    --space-2: 0.5rem;                    /* 8px */
+    --space-3: 0.75rem;                   /* 12px */
+    --space-4: 1rem;                      /* 16px */
+    --space-6: 1.5rem;                    /* 24px */
+    --space-8: 2rem;                      /* 32px */
+    --space-12: 3rem;                     /* 48px */
+
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 

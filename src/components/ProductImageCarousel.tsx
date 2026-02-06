@@ -169,7 +169,7 @@ export const ProductImageCarousel = ({ pillowFocus = 'neck' }: ProductImageCarou
     <>
       {/* Mobile Carousel - full width edge-to-edge */}
       <div className="md:hidden w-screen relative left-1/2 -translate-x-1/2">
-        <div className="bg-[#f5f5f7]">
+        <div className="bg-surface-subtle">
           <Carousel className="w-full" setApi={setMobileApi}>
             <CarouselContent className="ml-0">
               {mobileImages.map((item, index) => (
@@ -265,7 +265,7 @@ export const ProductImageCarousel = ({ pillowFocus = 'neck' }: ProductImageCarou
               <CarouselItem key={index} className="pl-0">
                 {/* Fixed aspect ratio container prevents CLS on image load */}
                 <div 
-                  className="overflow-hidden relative cursor-pointer hover:opacity-90 transition-opacity aspect-square bg-[#f5f5f7]"
+                  className="overflow-hidden relative cursor-pointer hover:opacity-90 transition-opacity aspect-square bg-surface-subtle"
                   onClick={() => item.type === "image" && openImageModal(item.url, false)}
                 >
                   {item.type === "video" ? (

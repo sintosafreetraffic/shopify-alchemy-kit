@@ -182,8 +182,8 @@ function SleepLogFormMinimal({ email, onSubmit, loading }: SleepLogFormMinimalPr
         {/* Sleep Quality */}
         <div>
           <div className="flex justify-between items-baseline mb-4">
-            <label className="text-sm font-medium" style={{ color: '#2D2B29' }}>How restorative did last night feel?</label>
-            <span className="text-lg font-semibold" style={{ color: 'rgba(60, 131, 246, 0.85)' }}>{sleepQuality}/10</span>
+            <label className="text-sm font-medium text-foreground">How restorative did last night feel?</label>
+            <span className="text-lg font-semibold text-primary">{sleepQuality}/10</span>
           </div>
           <Slider
             value={[sleepQuality]}
@@ -191,9 +191,9 @@ function SleepLogFormMinimal({ email, onSubmit, loading }: SleepLogFormMinimalPr
             min={1}
             max={10}
             step={1}
-            className="w-full [&_[role=slider]]:bg-[rgba(60,131,246,0.85)] [&_[role=slider]]:border-0 [&_.relative]:bg-[#E6E6E4] [&_[data-orientation=horizontal]>[data-orientation=horizontal]]:bg-[rgba(60,131,246,0.80)]"
+            className="w-full [&_[role=slider]]:bg-primary [&_[role=slider]]:border-0 [&_.relative]:bg-muted [&_[data-orientation=horizontal]>[data-orientation=horizontal]]:bg-primary/80"
           />
-          <div className="flex justify-between text-xs mt-2" style={{ color: '#A7A29C' }}>
+          <div className="flex justify-between text-xs mt-2 text-muted-foreground">
             <span>Less restorative</span>
             <span>Deeply restorative</span>
           </div>
@@ -202,8 +202,8 @@ function SleepLogFormMinimal({ email, onSubmit, loading }: SleepLogFormMinimalPr
         {/* Morning Comfort */}
         <div>
           <div className="flex justify-between items-baseline mb-4">
-            <label className="text-sm font-medium" style={{ color: '#2D2B29' }}>Morning comfort level</label>
-            <span className="text-lg font-semibold" style={{ color: 'rgba(60, 131, 246, 0.85)' }}>{comfortLevel}/10</span>
+            <label className="text-sm font-medium text-foreground">Morning comfort level</label>
+            <span className="text-lg font-semibold text-primary">{comfortLevel}/10</span>
           </div>
           <Slider
             value={[comfortLevel]}
@@ -211,9 +211,9 @@ function SleepLogFormMinimal({ email, onSubmit, loading }: SleepLogFormMinimalPr
             min={1}
             max={10}
             step={1}
-            className="w-full [&_[role=slider]]:bg-[rgba(60,131,246,0.85)] [&_[role=slider]]:border-0 [&_.relative]:bg-[#E6E6E4] [&_[data-orientation=horizontal]>[data-orientation=horizontal]]:bg-[rgba(60,131,246,0.80)]"
+            className="w-full [&_[role=slider]]:bg-primary [&_[role=slider]]:border-0 [&_.relative]:bg-muted [&_[data-orientation=horizontal]>[data-orientation=horizontal]]:bg-primary/80"
           />
-          <div className="flex justify-between text-xs mt-2" style={{ color: '#A7A29C' }}>
+          <div className="flex justify-between text-xs mt-2 text-muted-foreground">
             <span>Higher tension</span>
             <span>Fully comfortable</span>
           </div>
