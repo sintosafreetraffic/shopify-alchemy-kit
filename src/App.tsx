@@ -149,7 +149,7 @@ import SleepGuides from "./pages/SleepGuides";
 import Products from "./pages/Products";
 import { ProductRedirect, ProductIndexRedirect } from "./components/ProductRedirect";
 import { DynamicProductRoute } from "./components/DynamicProductRoute";
-import { PinterestBrowserPrompt } from "./components/PinterestBrowserPrompt";
+
 
 // Lazily loaded pages (heavy dashboards & features)
 const SleepQuiz = React.lazy(() => import("./pages/SleepQuiz"));
@@ -335,8 +335,6 @@ const AppContent = () => {
       {/* Exit intent modal - shows when leaving with items in cart */}
       <ExitIntentPopup />
       
-      {/* Pinterest in-app browser prompt */}
-      <PinterestBrowserPrompt />
       
     </div>
   );
