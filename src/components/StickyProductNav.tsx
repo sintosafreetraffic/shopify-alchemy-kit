@@ -8,8 +8,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Loader2, CheckCircle, Star } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { ShoppingCart, Loader2, CheckCircle } from "lucide-react";
 import { useCartStore } from "@/stores/cartStore";
 import { useABErgonomicPillow } from "@/hooks/useABProduct";
 import { useValentinesOffer } from "@/hooks/useValentinesOffer";
@@ -147,9 +146,9 @@ export const StickyProductNav = ({
     >
       <div className="container mx-auto px-3 sm:px-4 py-2 max-w-7xl">
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Product Image - hidden on very small screens to save space */}
+          {/* Product Image */}
           {displayImage && (
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg overflow-hidden bg-muted/30 flex-shrink-0 hidden xs:block">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg overflow-hidden bg-muted/30 flex-shrink-0">
               <img
                 src={displayImage}
                 alt={displayTitle}
@@ -158,23 +157,6 @@ export const StickyProductNav = ({
               />
             </div>
           )}
-
-          {/* Product Info - compact on mobile */}
-          <div className="min-w-0 flex-shrink-1">
-            <div className="flex items-center gap-1.5">
-              {valentinesOffer.isActive && (
-                <Badge className="bg-pink-500/20 text-pink-600 border-pink-500/30 text-[9px] px-1 py-0 flex-shrink-0 leading-tight">
-                  1+1
-                </Badge>
-              )}
-              <div className="flex flex-shrink-0">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Star key={star} className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-[hsl(var(--star))] text-[hsl(var(--star))]" />
-                ))}
-              </div>
-              <span className="text-[10px] text-muted-foreground hidden sm:inline">6,247</span>
-            </div>
-          </div>
 
           {/* CTAs - take remaining space */}
           <div className="flex items-center gap-1.5 sm:gap-2 ml-auto flex-shrink-0">
