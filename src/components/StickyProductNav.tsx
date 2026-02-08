@@ -145,60 +145,55 @@ export const StickyProductNav = ({
         isVisible ? "translate-y-0" : "-translate-y-full"
       }`}
     >
-      <div className="container mx-auto px-4 py-2 max-w-7xl">
-        <div className="flex items-center justify-between gap-3">
-          {/* Product Info */}
-          <div className="flex items-center gap-3 min-w-0 flex-1">
-            {displayImage && (
-              <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted/30 flex-shrink-0">
-                <img
-                  src={displayImage}
-                  alt={displayTitle}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
+      <div className="container mx-auto px-3 sm:px-4 py-2 max-w-7xl">
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Product Image - hidden on very small screens to save space */}
+          {displayImage && (
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg overflow-hidden bg-muted/30 flex-shrink-0 hidden xs:block">
+              <img
+                src={displayImage}
+                alt={displayTitle}
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            </div>
+          )}
+
+          {/* Product Info - compact on mobile */}
+          <div className="min-w-0 flex-shrink-1">
+            <div className="flex items-center gap-1.5">
+              {valentinesOffer.isActive && (
+                <Badge className="bg-pink-500/20 text-pink-600 border-pink-500/30 text-[9px] px-1 py-0 flex-shrink-0 leading-tight">
+                  1+1
+                </Badge>
+              )}
+              <div className="flex flex-shrink-0">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star key={star} className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-[hsl(var(--star))] text-[hsl(var(--star))]" />
+                ))}
               </div>
-            )}
-            <div className="min-w-0 flex-1">
-              <h3 className="text-sm font-semibold truncate">{displayTitle}</h3>
-              <div className="flex items-center gap-2">
-                {valentinesOffer.isActive && (
-                  <Badge className="bg-pink-500/20 text-pink-600 border-pink-500/30 text-[10px] px-1.5 py-0.5">
-                    1+1 Deal
-                  </Badge>
-                )}
-                <div className="flex">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star key={star} className="w-3 h-3 fill-[hsl(var(--star))] text-[hsl(var(--star))]" />
-                  ))}
-                </div>
-                <span className="text-xs text-muted-foreground hidden sm:inline">6,247 reviews</span>
-              </div>
+              <span className="text-[10px] text-muted-foreground hidden sm:inline">6,247</span>
             </div>
           </div>
 
-          {/* Two CTAs */}
-          <div className="flex items-center gap-2 flex-shrink-0">
+          {/* CTAs - take remaining space */}
+          <div className="flex items-center gap-1.5 sm:gap-2 ml-auto flex-shrink-0">
             {/* Single Pillow Button */}
             <Button
               size="sm"
               variant="default"
-              className="font-semibold text-xs"
+              className="font-semibold text-[11px] sm:text-xs h-8 px-2.5 sm:px-3"
               onClick={handleAddSingle}
               disabled={isAddingSingle || !product}
             >
               {isAddingSingle ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
               ) : justAddedSingle ? (
-                <>
-                  <CheckCircle className="w-4 h-4 mr-1" />
-                  <span className="hidden sm:inline">Added</span>
-                </>
+                <CheckCircle className="w-3.5 h-3.5" />
               ) : (
                 <>
-                  <ShoppingCart className="w-4 h-4 mr-1" />
-                  <span className="hidden sm:inline">Add 1 • {formatPrice(productPrice, currencyCode)}</span>
-                  <span className="sm:hidden">{formatPrice(productPrice, currencyCode)}</span>
+                  <ShoppingCart className="w-3.5 h-3.5 mr-1" />
+                  {formatPrice(productPrice, currencyCode)}
                 </>
               )}
             </Button>
@@ -207,22 +202,18 @@ export const StickyProductNav = ({
             {valentinesOffer.isActive && (
               <Button
                 size="sm"
-                className="font-semibold text-xs bg-pink-500 hover:bg-pink-600 text-white"
+                className="font-semibold text-[11px] sm:text-xs bg-pink-500 hover:bg-pink-600 text-white h-8 px-2.5 sm:px-3"
                 onClick={handleAddDeal}
                 disabled={isAddingDeal || !product}
               >
                 {isAddingDeal ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : justAddedDeal ? (
-                  <>
-                    <CheckCircle className="w-4 h-4 mr-1" />
-                    <span className="hidden sm:inline">Added</span>
-                  </>
+                  <CheckCircle className="w-3.5 h-3.5" />
                 ) : (
                   <>
-                    <ShoppingCart className="w-4 h-4 mr-1" />
-                    <span className="hidden sm:inline">1+1 Deal • {formatPrice(bogoPrice, currencyCode)}</span>
-                    <span className="sm:hidden">1+1 {formatPrice(bogoPrice, currencyCode)}</span>
+                    <ShoppingCart className="w-3.5 h-3.5 mr-1" />
+                    <span>1+1 {formatPrice(bogoPrice, currencyCode)}</span>
                   </>
                 )}
               </Button>
