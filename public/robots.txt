@@ -14,4 +14,4 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://shopify-alchemy-kit.lovable.app/sitemap.xml
+Sitemap: https://risebynight.com/sitemap.xml
