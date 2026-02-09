@@ -110,7 +110,6 @@ export const ProductImageCarousel = ({ pillowFocus = 'neck' }: ProductImageCarou
     { url: pillowMachineWashable, alt: "Ergonomic pillow with machine washable removable cover - cooling fabric and fits standard pillowcases", type: "image" },
     { url: image2, alt: image2Alt, type: "image" },
     { url: image4, alt: image4Alt, type: "image" },
-    { url: pillowCoverMask, alt: "Rise By Night pillow - removable cover and silk sleep mask", type: "image" },
     { url: image5, alt: image5Alt, type: "image" },
     { url: pillowFocus === 'back' ? noNumbnessBeforeAfterSpine : pillowBeforeAfterSpine, alt: pillowFocus === 'back' ? "Reduces shoulder pressure and arm numbness while side sleeping - before and after comparison" : "Before and after spine alignment comparison - Rise By Night pillow vs regular pillow", type: "image" },
   ];
@@ -124,9 +123,8 @@ export const ProductImageCarousel = ({ pillowFocus = 'neck' }: ProductImageCarou
     images[1], // machine washable
     images[2], // deeper sleep
     images[3], // pillowTrusted
-    images[4], // pillowCoverMask
-    images[5], // couple image
-    images[6], // spine alignment
+    images[4], // couple image
+    images[5], // spine alignment
   ];
   
   // Get only image URLs for mobile (excluding videos) for the modal navigation
