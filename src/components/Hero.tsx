@@ -375,7 +375,7 @@ export const Hero = () => {
               </div>
               <div className="flex items-center gap-2">
                 <Package className="w-5 h-5 text-muted-foreground shrink-0" />
-                <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight">Free shipping in <span className="font-semibold">US</span> • Get it by {getDeliveryDate()}</p>
+                <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight">Free shipping in <span className="font-semibold">US</span></p>
               </div>
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-5 h-5 text-muted-foreground shrink-0" />
