@@ -157,7 +157,7 @@ const ProductCard = ({
                         className="absolute overflow-hidden" 
                         style={{ width: `${fillPercentage * 100}%` }}
                       >
-                        <Star className="w-4 h-4 fill-warning text-warning" />
+                        <Star className="w-4 h-4 fill-[hsl(var(--star))] text-[hsl(var(--star))]" />
                       </div>
                     )}
                   </div>
