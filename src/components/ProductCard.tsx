@@ -59,7 +59,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
         <div className="p-4">
           <div className="flex items-center gap-1 mb-2">
             {[...Array(5)].map((_, i) => (
-              <Star key={i} className="w-4 h-4 fill-primary text-primary" />
+              <Star key={i} className="w-4 h-4 fill-[hsl(var(--star))] text-[hsl(var(--star))]" />
             ))}
             <span className="text-sm text-muted-foreground ml-1">(500+ reviews)</span>
           </div>
