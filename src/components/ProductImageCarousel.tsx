@@ -7,7 +7,7 @@ import pillowHeroNeckPain from "@/assets/pillow-hero-neck-pain.webp";
 import pillowHeroBackPain from "@/assets/pillow-hero-back-pain.webp";
 import backPainHero1 from "@/assets/back-pain-hero-1.webp";
 import pillowBundleNew from "@/assets/pillow-male-mask-new.webp";
-import pillowBeforeAfterSpine from "@/assets/pillow-before-after-spine.webp";
+import pillowBeforeAfterSpine from "@/assets/neck-alignment-side-sleepers.webp";
 import pillowDeeperSleep from "@/assets/pillow-deeper-sleep.webp";
 import pillowDeeperSleepBack from "@/assets/pillow-deeper-sleep-back.webp";
 import pillowCoupleNeckPain from "@/assets/pillow-couple-no-neck-pain.webp";
