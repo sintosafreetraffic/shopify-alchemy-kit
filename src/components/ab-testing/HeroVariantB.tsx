@@ -252,7 +252,7 @@ export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-affirmative shrink-0" />
                   <p className="text-xs leading-tight">
-                    Free shipping in <span className="font-semibold">US</span> • Get it by {getDeliveryDate()}
+                    Free shipping in <span className="font-semibold">US</span>
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -396,7 +396,7 @@ export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-affirmative shrink-0" />
                 <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight">
-                  Free shipping in <span className="font-semibold">US</span> • Get it by {getDeliveryDate()}
+                  Free shipping in <span className="font-semibold">US</span>
                 </p>
               </div>
               <div className="flex items-center gap-2">
