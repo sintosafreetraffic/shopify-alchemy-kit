@@ -8,6 +8,7 @@ import pillowHeroBackPain from "@/assets/pillow-hero-back-pain.webp";
 import backPainHero1 from "@/assets/back-pain-hero-1.webp";
 import pillowBundleNew from "@/assets/pillow-male-mask-new.webp";
 import pillowBeforeAfterSpine from "@/assets/neck-alignment-side-sleepers.webp";
+import noNumbnessBeforeAfterSpine from "@/assets/no-numbness-before-after-spine.webp";
 import pillowDeeperSleep from "@/assets/pillow-deeper-sleep.webp";
 import pillowDeeperSleepBack from "@/assets/pillow-deeper-sleep-back.webp";
 import pillowCoupleNeckPain from "@/assets/pillow-couple-no-neck-pain.webp";
@@ -111,7 +112,7 @@ export const ProductImageCarousel = ({ pillowFocus = 'neck' }: ProductImageCarou
     { url: image4, alt: image4Alt, type: "image" },
     { url: pillowCoverMask, alt: "Rise By Night pillow - removable cover and silk sleep mask", type: "image" },
     { url: image5, alt: image5Alt, type: "image" },
-    { url: pillowBeforeAfterSpine, alt: "Before and after spine alignment comparison - Rise By Night pillow vs regular pillow", type: "image" },
+    { url: pillowFocus === 'back' ? noNumbnessBeforeAfterSpine : pillowBeforeAfterSpine, alt: pillowFocus === 'back' ? "Reduces shoulder pressure and arm numbness while side sleeping - before and after comparison" : "Before and after spine alignment comparison - Rise By Night pillow vs regular pillow", type: "image" },
   ];
 
   // Get only image URLs (excluding videos) for the modal navigation
