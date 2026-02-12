@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
-const BASE_URL = "https://shopify-alchemy-kit.lovable.app";
+const BASE_URL = "https://risebynight.com";
 const DEFAULT_TITLE = "RiseByNight™ - Ergonomic Sleep Pillow";
 const DEFAULT_DESCRIPTION =
   "The #1 rated orthopedic pillow. Scientifically proven to reduce neck pain and improve sleep quality. 120-day money-back guarantee.";
