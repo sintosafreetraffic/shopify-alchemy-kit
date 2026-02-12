@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 
-const BASE_URL = "https://shopify-alchemy-kit.lovable.app";
+const BASE_URL = "https://risebynight.com";
 
 interface ProductSchemaProps {
   name: string;
