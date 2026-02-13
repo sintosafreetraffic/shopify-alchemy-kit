@@ -12,7 +12,7 @@ export const UrgencyBanner = () => {
   const isCartOpen = useCartStore((state) => state.isCartOpen);
   const currencySymbol = useCurrencySymbol();
   
-  const shippingThreshold = currencySymbol === '€' ? '€50' : '$50';
+  const shippingThreshold = `${currencySymbol}50`;
 
   return (
     <div

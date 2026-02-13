@@ -31,7 +31,7 @@ interface CachedCountry {
  */
 const SUPPORTED_COUNTRIES: readonly string[] = [
   ...EUROZONE_COUNTRIES,
-  'US', 'GB', 'CA', 'AU'
+  'US', 'GB', 'CA', 'AU', 'NZ', 'SE', 'NO', 'DK'
 ];
 
 /**
@@ -131,6 +131,11 @@ function inferCountryFromBrowser(): CountryCode | null {
       'Europe/Helsinki': 'FI',
       'Europe/Athens': 'GR',
       'Europe/Luxembourg': 'LU',
+      // Non-Eurozone but supported
+      'Europe/London': 'GB',
+      'Australia/Sydney': 'AU',
+      'Australia/Melbourne': 'AU',
+      'Pacific/Auckland': 'NZ',
     };
     
     if (euTimezoneMap[tz]) {
