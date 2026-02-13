@@ -218,8 +218,8 @@ export const Hero = () => {
   // Override to EUR for EU countries if Shopify returns USD
   const currencyCode = (isEU && shopifyCurrency === 'USD') ? 'EUR' : shopifyCurrency;
   
-  // Fixed compare-at price - same numeric value for all regions
-  const compareAtPrice = 199.99;
+  // Dynamic compare-at price from Shopify (localized via @inContext)
+  const compareAtPrice = variant?.compareAtPrice?.amount ? parseFloat(variant.compareAtPrice.amount) : 199.99;
 
   return (
     <section className="pb-3 md:pb-6 bg-background overflow-x-hidden" style={{ paddingTop: Math.max(headerHeight - 80, 0) }}>
@@ -391,6 +391,7 @@ export const Hero = () => {
                 isAdding={isCheckingOut}
                 currencyCode={currencyCode}
                 productPrice={productPrice}
+                compareAtPrice={compareAtPrice}
               />
             )}
 
