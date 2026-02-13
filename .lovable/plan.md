@@ -1,52 +1,59 @@
 
 
-## Consolidate USPs Section: One Version for Both Mobile and Desktop
+# Fix: UK visitors seeing `$` instead of `£`
 
-### Problem
-There are currently two separate sections for Klarna, social proof badges, and USPs:
-- Mobile-only section (lines 236-261) with smaller styling
-- Desktop section (lines 377-405) that shows on both breakpoints, causing duplication
+## Root Cause
 
-### Solution
+The `useCurrencySymbol` hook (used by `UrgencyBanner` and available for other components) has a binary return type: `€` or `$`. UK visitors are not in the EU list, so they get `$`.
 
-**File: `src/components/ab-testing/HeroVariantB.tsx`**
+The `useIsEU` hook used across 12 components is a separate concern -- it's used to override Shopify's currency code when Shopify returns USD for EU users. UK users are correctly handled by Shopify's `@inContext` directive (returns GBP), so `useIsEU` doesn't cause the pound issue.
 
-1. **Remove the mobile-specific section entirely** (lines 236-261)
-   - Delete the `{/* Mobile: Klarna installment */}`, `{/* Mobile: Social proof badges */}`, and `{/* Mobile: USPs */}` sections
+The bug is specifically in `useCurrencySymbol` and any component that uses it directly.
 
-2. **Keep the unified section** (lines 377-405) that already has responsive text sizing (`text-xs sm:text-sm lg:text-sm xl:text-base`)
+## Affected Components
 
-3. **Add spacing to the unified section** to match the mobile spacing requirements
-   - Ensure `mb-5` on the USPs container for proper spacing before Valentine's offer
+- **`UrgencyBanner.tsx`** -- Shows "Free Shipping above $50" to UK users instead of "£50"
+- Any future component that calls `useCurrencySymbol()`
 
-### Technical Details
+## Changes
 
-**Lines to Remove** (236-261):
-```tsx
-// DELETE these entire sections:
-{/* Mobile: Klarna installment - right after price */}
-<InstallmentBadgeCompact price={productPrice} className="mt-1" />
+### 1. `src/hooks/useCurrencySymbol.ts`
 
-{/* Mobile: Social proof badges */}
-<div className="flex flex-wrap items-center gap-3 mt-2">
-  <LiveViewerBadge />
-  <RecentPurchasesBadge variant="compact" />
-</div>
+Expand the hook to return the actual currency symbol instead of just `€` or `$`:
 
-{/* Mobile: USPs */}
-<div className="space-y-2 mt-4 mb-5">
-  ... (all 3 USP items)
-</div>
-```
+- Change return type from `'€' | '$'` to `string`
+- Import `getCurrencyForCountry` from `countryCode.ts` and `getCurrencySymbol` from `formatPrice.ts`
+- Replace the binary EU check with: `getCurrencySymbol(getCurrencyForCountry(country))`
+- This means UK users get `£`, AU users get `A$`, CA users get `C$`, etc.
+- Keep `useIsEU` unchanged (it serves a different purpose)
 
-**Keep** the unified section (lines 377-405) which already has:
-- Responsive icon sizes (`w-5 h-5`)
-- Responsive text sizing (`text-xs sm:text-sm lg:text-sm xl:text-base`)
-- Proper `mb-5` spacing before Valentine's offer
+### 2. `src/components/UrgencyBanner.tsx`
 
-### Result
-- Single source of truth for Klarna, social proof, and USPs
-- Works on both mobile and desktop with responsive sizing
-- No duplication
-- Proper spacing maintained above Valentine's offer
+Update the shipping threshold logic:
+
+- Currently: `currencySymbol === '€' ? '€50' : '$50'`
+- Change to: `${currencySymbol}50` so it dynamically shows `£50`, `A$50`, `C$50`, etc.
+
+### 3. `src/lib/buyerContext.ts`
+
+Add `Europe/London` to the timezone map so UK users are correctly detected even when IP geolocation is blocked:
+
+- Add `'Europe/London': 'GB'` to the timezone fallback map (currently only EU timezones are mapped, so UK users with blocked IP fall back to US)
+
+## What stays the same
+
+- `formatPrice.ts` -- already has GBP/£ mapping, no changes needed
+- `countryCode.ts` -- already has GB mapped to GBP, no changes needed
+- All 12 components using `useIsEU` -- they work correctly as-is for the EU/USD override logic
+- Shopify `@inContext` queries -- already pass GB correctly and return GBP prices
+
+## Expected result
+
+| Visitor from | Before | After |
+|---|---|---|
+| UK | "Free Shipping above $50" | "Free Shipping above £50" |
+| Australia | "Free Shipping above $50" | "Free Shipping above A$50" |
+| Canada | "Free Shipping above $50" | "Free Shipping above C$50" |
+| EU | "Free Shipping above €50" | "Free Shipping above €50" (unchanged) |
+| US | "Free Shipping above $50" | "Free Shipping above $50" (unchanged) |
 
