@@ -12,6 +12,10 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
   GBP: '£',
   CAD: 'C$',
   AUD: 'A$',
+  NZD: 'NZ$',
+  SEK: 'kr',
+  NOK: 'kr',
+  DKK: 'kr',
 };
 
 /**

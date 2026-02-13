@@ -2,13 +2,13 @@
  * Currency Symbol Hook
  * 
  * Returns the appropriate currency symbol based on buyer's country.
- * EU countries → € (Euro)
- * All other countries → $ (USD default)
+ * Uses the full currency mapping from countryCode + formatPrice utilities.
  */
 
 import { useState, useEffect } from 'react';
 import { getBuyerCountry, getBuyerCountrySync } from '@/lib/buyerContext';
-import { EUROZONE_COUNTRIES } from '@/lib/countryCode';
+import { EUROZONE_COUNTRIES, getCurrencyForCountry } from '@/lib/countryCode';
+import { getCurrencySymbol } from '@/lib/formatPrice';
 
 // Extended EU list (includes non-Eurozone EU members that should still see EUR)
 const EU_COUNTRIES = [
@@ -26,23 +26,21 @@ export function isEUCountry(country: string): boolean {
   return EU_COUNTRIES.includes(country);
 }
 
-export function getCurrencySymbolForCountry(country: string): '€' | '$' {
-  return isEUCountry(country) ? '€' : '$';
+export function getCurrencySymbolForCountry(country: string): string {
+  return getCurrencySymbol(getCurrencyForCountry(country));
 }
 
 /**
  * Hook that returns the currency symbol based on buyer's location
- * Returns '$' by default, '€' for EU countries
+ * Returns the actual symbol for the buyer's currency (£, €, A$, C$, etc.)
  */
-export function useCurrencySymbol(): '€' | '$' {
-  // Try to get cached country synchronously for faster initial render
+export function useCurrencySymbol(): string {
   const cachedCountry = getBuyerCountrySync();
   const initialSymbol = cachedCountry ? getCurrencySymbolForCountry(cachedCountry) : '$';
   
-  const [symbol, setSymbol] = useState<'€' | '$'>(initialSymbol);
+  const [symbol, setSymbol] = useState<string>(initialSymbol);
 
   useEffect(() => {
-    // Only fetch if we don't have a cached value
     if (!cachedCountry) {
       getBuyerCountry().then((country) => {
         setSymbol(getCurrencySymbolForCountry(country));

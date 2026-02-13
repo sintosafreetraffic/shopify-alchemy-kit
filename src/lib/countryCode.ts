@@ -31,7 +31,7 @@ export const EUROZONE_COUNTRIES = [
 export type EurozoneCountryCode = typeof EUROZONE_COUNTRIES[number];
 
 // Non-Euro markets we explicitly support
-export type OtherCountryCode = 'US' | 'GB' | 'CA' | 'AU';
+export type OtherCountryCode = 'US' | 'GB' | 'CA' | 'AU' | 'NZ' | 'SE' | 'NO' | 'DK';
 
 // All supported country codes
 export type CountryCode = EurozoneCountryCode | OtherCountryCode;
@@ -48,6 +48,10 @@ export function getCurrencyForCountry(country: string): string {
     case 'GB': return 'GBP';
     case 'CA': return 'CAD';
     case 'AU': return 'AUD';
+    case 'NZ': return 'NZD';
+    case 'SE': return 'SEK';
+    case 'NO': return 'NOK';
+    case 'DK': return 'DKK';
     case 'US':
     default: return 'USD';
   }
@@ -88,4 +92,8 @@ export const COUNTRY_NAMES: Record<string, string> = {
   SK: 'Slovakia',
   SI: 'Slovenia',
   ES: 'Spain',
+  NZ: 'New Zealand',
+  SE: 'Sweden',
+  NO: 'Norway',
+  DK: 'Denmark',
 };
