@@ -20,6 +20,7 @@ interface ValentinesHeroSectionProps {
   isAdding: boolean;
   currencyCode: string;
   productPrice: number; // Dynamic price from Shopify
+  compareAtPrice?: number; // Dynamic compare-at price from Shopify
 }
 
 export const ValentinesHeroSection = ({
@@ -28,6 +29,7 @@ export const ValentinesHeroSection = ({
   isAdding,
   currencyCode,
   productPrice,
+  compareAtPrice: compareAtPriceProp,
 }: ValentinesHeroSectionProps) => {
   const { isActive, messaging, urgency, style, deliveryText, isDeliveryDeadlinePassed } = useValentinesOffer();
   const stockCount = useValentinesStock();
@@ -35,8 +37,8 @@ export const ValentinesHeroSection = ({
 
   if (!isActive) return null;
 
-  // Fixed compare-at price - same numeric value for all regions (199.99)
-  const singleCompareAtPrice = 199.99;
+  // Dynamic compare-at price from Shopify (localized via @inContext)
+  const singleCompareAtPrice = compareAtPriceProp ?? 199.99;
 
   // Dynamic pricing based on Shopify product price
   const singlePrice = productPrice;

@@ -179,8 +179,8 @@ export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
   // Override to EUR for EU countries if Shopify returns USD
   const currencyCode = isEU && shopifyCurrency === "USD" ? "EUR" : shopifyCurrency;
 
-  // Fixed compare-at price - same numeric value for all regions
-  const compareAtPrice = 199.99;
+  // Dynamic compare-at price from Shopify (localized via @inContext)
+  const compareAtPrice = variant?.compareAtPrice?.amount ? parseFloat(variant.compareAtPrice.amount) : 199.99;
   return (
     <section className="pb-3 md:pb-6 bg-background overflow-x-hidden pt-2 md:pt-4">
       <div className="container mx-auto px-4 max-w-7xl overflow-x-hidden">
@@ -275,6 +275,7 @@ export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
                     isAdding={isCheckingOut}
                     currencyCode={currencyCode}
                     productPrice={productPrice}
+                    compareAtPrice={compareAtPrice}
                   />
                 ) : (
                   // Standard CTA when no promotion is active
@@ -416,6 +417,7 @@ export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
                   isAdding={isCheckingOut}
                   currencyCode={currencyCode}
                   productPrice={productPrice}
+                  compareAtPrice={compareAtPrice}
                 />
               </div>
             )}
