@@ -1,59 +1,55 @@
 
 
-# Fix: UK visitors seeing `$` instead of `£`
+# Fix: Make Compare-At Prices Currency-Dynamic
 
-## Root Cause
+## Problem
 
-The `useCurrencySymbol` hook (used by `UrgencyBanner` and available for other components) has a binary return type: `€` or `$`. UK visitors are not in the EU list, so they get `$`.
+Several components hardcode the compare-at price as a fixed number (e.g. `199.99`) or a Euro string (`"€199.99"`), so visitors in the UK see "£199.99" (wrong conversion) or Denmark sees the same number when DKK prices should be much higher. Shopify already returns the correct localized compare-at price via `@inContext`, but the code ignores it in multiple places.
 
-The `useIsEU` hook used across 12 components is a separate concern -- it's used to override Shopify's currency code when Shopify returns USD for EU users. UK users are correctly handled by Shopify's `@inContext` directive (returns GBP), so `useIsEU` doesn't cause the pound issue.
+## Where Hardcoded Values Exist
 
-The bug is specifically in `useCurrencySymbol` and any component that uses it directly.
-
-## Affected Components
-
-- **`UrgencyBanner.tsx`** -- Shows "Free Shipping above $50" to UK users instead of "£50"
-- Any future component that calls `useCurrencySymbol()`
+| File | Hardcoded Value | What It Should Use |
+|---|---|---|
+| `src/components/Hero.tsx` (line 222) | `const compareAtPrice = 199.99` | Shopify variant's `compareAtPrice.amount` |
+| `src/components/ab-testing/HeroVariantB.tsx` (line 183) | `const compareAtPrice = 199.99` | Shopify variant's `compareAtPrice.amount` |
+| `src/components/ValentinesHeroSection.tsx` (line 39) | `const singleCompareAtPrice = 199.99` | Shopify variant's `compareAtPrice.amount` |
+| `src/hooks/useTrackProductView.ts` (lines 53-79) | `"€199.99"`, `"€59.99"`, `"€39.99"` | These are static tracking data -- less critical but should also reflect the buyer's currency |
 
 ## Changes
 
-### 1. `src/hooks/useCurrencySymbol.ts`
+### 1. `src/components/Hero.tsx`
+- Replace the hardcoded `const compareAtPrice = 199.99` with reading from the Shopify variant: `variant?.compareAtPrice?.amount ? parseFloat(variant.compareAtPrice.amount) : 199.99`
+- The variant already contains localized `compareAtPrice` data from the `@inContext` query, so a UK visitor will get the GBP value and a DKK visitor will get the DKK value
+- The `199.99` remains only as a fallback if Shopify data isn't loaded yet
 
-Expand the hook to return the actual currency symbol instead of just `€` or `$`:
+### 2. `src/components/ab-testing/HeroVariantB.tsx`
+- Same fix as Hero.tsx: read `compareAtPrice` from the Shopify variant instead of hardcoding `199.99`
 
-- Change return type from `'€' | '$'` to `string`
-- Import `getCurrencyForCountry` from `countryCode.ts` and `getCurrencySymbol` from `formatPrice.ts`
-- Replace the binary EU check with: `getCurrencySymbol(getCurrencyForCountry(country))`
-- This means UK users get `£`, AU users get `A$`, CA users get `C$`, etc.
-- Keep `useIsEU` unchanged (it serves a different purpose)
+### 3. `src/components/ValentinesHeroSection.tsx`
+- Currently receives `productPrice` as a prop but not the compare-at price
+- Add a new prop `compareAtPrice: number` and pass it from the parent (Hero.tsx)
+- Replace `const singleCompareAtPrice = 199.99` with the prop value (fallback to `199.99`)
+- This makes the Valentine's savings calculation ("You save X") also correct per currency
 
-### 2. `src/components/UrgencyBanner.tsx`
+### 4. `src/hooks/useTrackProductView.ts`
+- The `STATIC_PRODUCT_DATA` has hardcoded `"€119.99"` / `"€199.99"` etc. These are used for recently-viewed tracking
+- Update to not hardcode currency: either remove the static prices (they're overridden when actual Shopify data loads) or make them currency-aware using the buyer's detected currency
+- Lower priority since this is tracking/display data, not purchase-critical
 
-Update the shipping threshold logic:
+## How It Works After the Fix
 
-- Currently: `currencySymbol === '€' ? '€50' : '$50'`
-- Change to: `${currencySymbol}50` so it dynamically shows `£50`, `A$50`, `C$50`, etc.
+Shopify's `@inContext(country: $country)` directive already returns localized compare-at prices. The GraphQL query already fetches `compareAtPrice { amount, currencyCode }` on each variant. The fix simply reads these values instead of ignoring them.
 
-### 3. `src/lib/buyerContext.ts`
+Example for a product with EUR compare-at of 199.99:
+- **UK visitor**: Shopify returns `compareAtPrice: { amount: "159.99", currencyCode: "GBP" }` -- displayed as `£159.99`
+- **DK visitor**: Shopify returns `compareAtPrice: { amount: "1499.00", currencyCode: "DKK" }` -- displayed as `kr1499.00`
+- **AU visitor**: Shopify returns `compareAtPrice: { amount: "299.99", currencyCode: "AUD" }` -- displayed as `A$299.99`
 
-Add `Europe/London` to the timezone map so UK users are correctly detected even when IP geolocation is blocked:
+The actual conversion rates are controlled in **Shopify Admin > Settings > Markets** -- no code changes needed for rate adjustments.
 
-- Add `'Europe/London': 'GB'` to the timezone fallback map (currently only EU timezones are mapped, so UK users with blocked IP fall back to US)
+## Files to Modify
 
-## What stays the same
-
-- `formatPrice.ts` -- already has GBP/£ mapping, no changes needed
-- `countryCode.ts` -- already has GB mapped to GBP, no changes needed
-- All 12 components using `useIsEU` -- they work correctly as-is for the EU/USD override logic
-- Shopify `@inContext` queries -- already pass GB correctly and return GBP prices
-
-## Expected result
-
-| Visitor from | Before | After |
-|---|---|---|
-| UK | "Free Shipping above $50" | "Free Shipping above £50" |
-| Australia | "Free Shipping above $50" | "Free Shipping above A$50" |
-| Canada | "Free Shipping above $50" | "Free Shipping above C$50" |
-| EU | "Free Shipping above €50" | "Free Shipping above €50" (unchanged) |
-| US | "Free Shipping above $50" | "Free Shipping above $50" (unchanged) |
-
+1. `src/components/Hero.tsx` -- Read compareAtPrice from variant
+2. `src/components/ab-testing/HeroVariantB.tsx` -- Same
+3. `src/components/ValentinesHeroSection.tsx` -- Accept compareAtPrice as prop
+4. `src/hooks/useTrackProductView.ts` -- Remove hardcoded EUR prices (low priority)
