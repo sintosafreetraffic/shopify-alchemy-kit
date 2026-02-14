@@ -234,7 +234,7 @@ export const Hero = () => {
             <ProductImageCarousel />
           </Suspense>
           <Suspense fallback={<div className="h-32 bg-muted/30 rounded-xl animate-pulse" />}>
-            <MiniReviewsCarousel productHandle="ergonomic-pillow" autoPlayInterval={10000} />
+            <MiniReviewsCarousel productHandle="ergonomic-pillow" autoPlayInterval={10000} buyerCountry={buyerCountry} />
           </Suspense>
           {/* Mobile Title Section - min heights prevent CLS */}
           <div className="space-y-0">
@@ -318,7 +318,7 @@ export const Hero = () => {
               <ProductImageCarousel />
             </Suspense>
             <Suspense fallback={<div className="h-32 bg-muted/30 rounded-xl animate-pulse" />}>
-              <MiniReviewsCarousel productHandle="ergonomic-pillow" autoPlayInterval={10000} />
+              <MiniReviewsCarousel productHandle="ergonomic-pillow" autoPlayInterval={10000} buyerCountry={buyerCountry} />
             </Suspense>
           </div>
           
@@ -371,7 +371,7 @@ export const Hero = () => {
               </div>
               <div className="flex items-center gap-2">
                 <Package className="w-5 h-5 text-muted-foreground shrink-0" />
-                <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight">Free shipping in <span className="font-semibold">{buyerCountryName}</span></p>
+                <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight">Free shipping in {buyerCountry === 'NL' ? 'the ' : ''}<span className="font-semibold">{buyerCountryName}</span></p>
               </div>
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-5 h-5 text-muted-foreground shrink-0" />

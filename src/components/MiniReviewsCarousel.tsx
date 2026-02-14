@@ -103,18 +103,108 @@ const backPainReviews = [
   },
 ];
 
+// Country-specific reviewer overrides for first 3 slots (name + city)
+const COUNTRY_REVIEWERS: Record<string, Array<{ name: string; city: string }>> = {
+  NL: [
+    { name: "Marijke de Vries", city: "Amsterdam" },
+    { name: "Henk Bakker", city: "Rotterdam" },
+    { name: "Anneke van Dijk", city: "Utrecht" },
+  ],
+  GB: [
+    { name: "Margaret Thompson", city: "London" },
+    { name: "Robert Clarke", city: "Manchester" },
+    { name: "Patricia Hughes", city: "Edinburgh" },
+  ],
+  AU: [
+    { name: "Margaret Thompson", city: "Sydney" },
+    { name: "Robert Clarke", city: "Melbourne" },
+    { name: "Patricia Hughes", city: "Brisbane" },
+  ],
+  NZ: [
+    { name: "Margaret Thompson", city: "Auckland" },
+    { name: "Robert Clarke", city: "Wellington" },
+    { name: "Patricia Hughes", city: "Christchurch" },
+  ],
+  SE: [
+    { name: "Margareta Lindqvist", city: "Stockholm" },
+    { name: "Robert Eriksson", city: "Gothenburg" },
+    { name: "Patricia Nilsson", city: "Malmö" },
+  ],
+  NO: [
+    { name: "Margareta Haugen", city: "Oslo" },
+    { name: "Robert Bakke", city: "Bergen" },
+    { name: "Patricia Larsen", city: "Trondheim" },
+  ],
+  DK: [
+    { name: "Margarete Jensen", city: "Copenhagen" },
+    { name: "Robert Nielsen", city: "Aarhus" },
+    { name: "Patricia Madsen", city: "Odense" },
+  ],
+  DE: [
+    { name: "Margarete Fischer", city: "Berlin" },
+    { name: "Robert Müller", city: "Munich" },
+    { name: "Patricia Weber", city: "Hamburg" },
+  ],
+  FR: [
+    { name: "Marguerite Dupont", city: "Paris" },
+    { name: "Robert Martin", city: "Lyon" },
+    { name: "Patricia Bernard", city: "Marseille" },
+  ],
+  CA: [
+    { name: "Margaret Thompson", city: "Toronto" },
+    { name: "Robert Clarke", city: "Vancouver" },
+    { name: "Patricia Hughes", city: "Calgary" },
+  ],
+};
+
+// Apply Eurozone countries that share the same set as their closest match
+const EUROZONE_REVIEWER_FALLBACKS: Record<string, string> = {
+  AT: 'DE', BE: 'NL', HR: 'DE', CY: 'DE', EE: 'DE',
+  FI: 'SE', GR: 'DE', IE: 'GB', IT: 'FR', LV: 'DE',
+  LT: 'DE', LU: 'DE', MT: 'GB', PT: 'ES', SK: 'DE',
+  SI: 'DE', ES: 'FR',
+};
+
+function getLocalizedReviews(
+  baseReviews: typeof neckPainReviews,
+  buyerCountry?: string
+): typeof neckPainReviews {
+  if (!buyerCountry || buyerCountry === 'US') return baseReviews;
+
+  const countryKey = COUNTRY_REVIEWERS[buyerCountry]
+    ? buyerCountry
+    : EUROZONE_REVIEWER_FALLBACKS[buyerCountry] || null;
+
+  if (!countryKey || !COUNTRY_REVIEWERS[countryKey]) return baseReviews;
+
+  const overrides = COUNTRY_REVIEWERS[countryKey];
+  return baseReviews.map((review, i) => {
+    if (i < 3 && overrides[i]) {
+      return {
+        ...review,
+        customer_name: overrides[i].name,
+        city: overrides[i].city,
+      };
+    }
+    return review;
+  });
+}
+
 interface MiniReviewsCarouselProps {
   productHandle?: string;
   pillowFocus?: PillowFocus;
   autoPlayInterval?: number;
+  buyerCountry?: string;
 }
 
 export const MiniReviewsCarousel = ({ 
   productHandle = "ergonomic-pillow",
   pillowFocus = "neck",
-  autoPlayInterval = 10000 
+  autoPlayInterval = 10000,
+  buyerCountry,
 }: MiniReviewsCarouselProps) => {
-  const reviews = pillowFocus === "back" ? backPainReviews : neckPainReviews;
+  const baseReviews = pillowFocus === "back" ? backPainReviews : neckPainReviews;
+  const reviews = getLocalizedReviews(baseReviews, buyerCountry);
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
 

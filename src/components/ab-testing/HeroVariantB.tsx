@@ -197,7 +197,7 @@ export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
             <ProductImageCarousel pillowFocus={pillowFocus} />
           </Suspense>
           <Suspense fallback={<div className="h-32 bg-muted/30 rounded-xl animate-pulse" />}>
-            <MiniReviewsCarousel productHandle="ergonomic-pillow" pillowFocus={pillowFocus} autoPlayInterval={10000} />
+            <MiniReviewsCarousel productHandle="ergonomic-pillow" pillowFocus={pillowFocus} autoPlayInterval={10000} buyerCountry={buyerCountry} />
           </Suspense>
           {/* Mobile Title Section - min heights prevent CLS */}
           <div className="space-y-0">
@@ -260,7 +260,7 @@ export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-affirmative shrink-0" />
                   <p className="text-xs leading-tight">
-                    Free shipping in <span className="font-semibold">{buyerCountryName}</span>
+                    Free shipping in {buyerCountry === 'NL' ? 'the ' : ''}<span className="font-semibold">{buyerCountryName}</span>
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -335,6 +335,7 @@ export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
                 productHandle="ergonomic-pillow"
                 pillowFocus={pillowFocus}
                 autoPlayInterval={10000}
+                buyerCountry={buyerCountry}
               />
             </Suspense>
           </div>
@@ -406,7 +407,7 @@ export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-affirmative shrink-0" />
                 <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight">
-                  Free shipping in <span className="font-semibold">{buyerCountryName}</span>
+                  Free shipping in {buyerCountry === 'NL' ? 'the ' : ''}<span className="font-semibold">{buyerCountryName}</span>
                 </p>
               </div>
               <div className="flex items-center gap-2">
