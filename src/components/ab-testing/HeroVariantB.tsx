@@ -37,6 +37,9 @@ import { useHeaderHeight } from "@/hooks/useHeaderHeight";
 import { formatPrice } from "@/lib/formatPrice";
 import { trackATCClick } from "@/hooks/usePDPIntentTracking";
 import { useIsEU } from "@/hooks/useCurrencySymbol";
+import { getCompareAtFromRatio } from "@/lib/compareAtPriceRatios";
+import { getBuyerCountrySync } from "@/lib/buyerContext";
+import { COUNTRY_NAMES } from "@/lib/countryCode";
 
 import { mobileHeroConfig } from "@/config/mobileHeroConfig";
 import { useValentinesOffer } from "@/hooks/useValentinesOffer";
@@ -86,6 +89,8 @@ interface HeroVariantBProps {
 export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
   // Get content based on pillow focus (neck or back)
   const focusContent = getPillowContent(pillowFocus);
+  const buyerCountry = getBuyerCountrySync() || 'US';
+  const buyerCountryName = COUNTRY_NAMES[buyerCountry] || 'your country';
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
   const { addItem, setCartOpen } = useCartStore();
@@ -179,8 +184,10 @@ export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
   // Override to EUR for EU countries if Shopify returns USD
   const currencyCode = isEU && shopifyCurrency === "USD" ? "EUR" : shopifyCurrency;
 
-  // Dynamic compare-at price from Shopify (localized via @inContext)
-  const compareAtPrice = variant?.compareAtPrice?.amount ? parseFloat(variant.compareAtPrice.amount) : 199.99;
+  // Dynamic compare-at price: use Shopify data, or ratio-based fallback for non-US markets
+  const shopifyCompareAt = variant?.compareAtPrice?.amount ? parseFloat(variant.compareAtPrice.amount) : 0;
+  const ratioCompareAt = getCompareAtFromRatio('risebynight-ergonomic-sleep-pillow-copy', variant?.price.amount);
+  const compareAtPrice = shopifyCompareAt > 0 ? shopifyCompareAt : (ratioCompareAt ? parseFloat(ratioCompareAt) : productPrice * 2);
   return (
     <section className="pb-3 md:pb-6 bg-background overflow-x-hidden pt-2 md:pt-4">
       <div className="container mx-auto px-4 max-w-7xl overflow-x-hidden">
@@ -211,7 +218,7 @@ export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
                     <Star key={star} className="w-5 h-5 fill-[hsl(var(--star))] text-[hsl(var(--star))]" />
                   ))}
                 </div>
-                <span className="text-sm font-semibold">6,247 verified product reviews</span>
+                <span className="text-sm font-normal">6,247 verified product reviews</span>
               </div>
             </div>
 
@@ -228,9 +235,6 @@ export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
               <span className="text-base line-through text-muted-foreground">
                 {formatPrice(compareAtPrice, currencyCode)}
               </span>
-              <div className="inline-flex items-center gap-1.5 bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-full h-[32px]">
-                <span className="text-xs font-semibold text-primary">40% OFF</span>
-              </div>
             </div>
 
             {/* Mobile: Klarna + Social Proof + USPs - between price and Valentine's offer */}
@@ -252,7 +256,7 @@ export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-affirmative shrink-0" />
                   <p className="text-xs leading-tight">
-                    Free shipping in <span className="font-semibold">US</span>
+                    Free shipping in <span className="font-semibold">{buyerCountryName}</span>
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -356,7 +360,7 @@ export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
                   <Star key={star} className="w-5 h-5 fill-[hsl(var(--star))] text-[hsl(var(--star))]" />
                 ))}
               </div>
-              <span className="text-base font-semibold">6,247 verified product reviews</span>
+              <span className="text-base font-normal">6,247 verified product reviews</span>
             </div>
 
             <h1 className="hidden md:block text-lg md:text-xl lg:text-2xl font-bold leading-tight tracking-tight">
@@ -373,9 +377,6 @@ export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
               <span className="text-lg line-through text-muted-foreground">
                 {formatPrice(compareAtPrice, currencyCode)}
               </span>
-              <div className="inline-flex items-center gap-1.5 bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-full shadow-sm">
-                <span className="text-sm font-semibold text-primary">40% OFF</span>
-              </div>
             </div>
 
             {/* Temporarily disabled: Klarna + Social Proof badges (Desktop)
@@ -397,7 +398,7 @@ export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-affirmative shrink-0" />
                 <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight">
-                  Free shipping in <span className="font-semibold">US</span>
+                  Free shipping in <span className="font-semibold">{buyerCountryName}</span>
                 </p>
               </div>
               <div className="flex items-center gap-2">

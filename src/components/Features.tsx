@@ -1,6 +1,6 @@
 // Performance: Using OptimizedImage for lazy loading
 import { Check } from "lucide-react";
-import testimonial from "@/assets/pillow-reviews-hero.webp";
+import testimonial from "@/assets/happy-sleepers-pillow.webp";
 import comparisonChart from "@/assets/pillow-comparison-new.webp";
 import OptimizedImage from "@/components/OptimizedImage";
 
