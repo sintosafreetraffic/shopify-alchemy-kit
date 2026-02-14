@@ -11,7 +11,7 @@ import { SleepMaskFAQ } from "@/components/SleepMaskFAQ";
 import { ReviewsWall, ReviewSubmissionForm } from "@/components/reviews";
 import { useSEO, SEO_CONFIGS } from "@/hooks/useSEO";
 import { ProductSchema, BreadcrumbSchema } from "@/components/seo/SEOSchemas";
-import { useTrackProductView, STATIC_PRODUCT_DATA } from "@/hooks/useTrackProductView";
+import { useTrackProductView, getStaticProductData } from "@/hooks/useTrackProductView";
 import { useShopifyProducts } from "@/hooks/useShopifyProducts";
 import { formatPrice, parseLocalizedNumber } from "@/lib/formatPrice";
 import sleepMaskHeroImg from "@/assets/sleep-mask-product-shot-new.png";
@@ -48,7 +48,7 @@ const SleepMaskProduct = () => {
         currencyCode,
       };
     }
-    return STATIC_PRODUCT_DATA["sleep-mask"];
+    return getStaticProductData("sleep-mask");
   }, [products]);
 
   useTrackProductView(trackingData);

@@ -327,7 +327,7 @@ const Products = () => {
                   const tagline = PRODUCT_TAGLINES[handle] || "";
                   const weeklySales = PRODUCT_WEEKLY_SALES[handle] || 50;
                   const variant = product.node.variants.edges[0]?.node;
-                  const price = variant ? formatPrice(variant.price.amount, currencyCode) : "$0.00";
+                  const price = variant ? formatPrice(variant.price.amount, currencyCode) : formatPrice(0, currencyCode);
                   // Only show compare-at price for ergonomic pillow and sleep bundle
                   const COMPARE_AT_WHITELIST = [
                     "risebynight-ergonomic-sleep-pillow",

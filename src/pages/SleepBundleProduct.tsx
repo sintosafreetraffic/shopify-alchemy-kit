@@ -9,7 +9,7 @@ import { ChiropractorEndorsement } from "@/components/ChiropractorEndorsement";
 import { ReviewsWall, ReviewSubmissionForm } from "@/components/reviews";
 import { useSEO, SEO_CONFIGS } from "@/hooks/useSEO";
 import { ProductSchema, BreadcrumbSchema } from "@/components/seo/SEOSchemas";
-import { useTrackProductView, STATIC_PRODUCT_DATA } from "@/hooks/useTrackProductView";
+import { useTrackProductView, getStaticProductData } from "@/hooks/useTrackProductView";
 import { useShopifyProducts } from "@/hooks/useShopifyProducts";
 import { formatPrice } from "@/lib/formatPrice";
 import sleepBundleHero from "@/assets/complete-sleep-bundle-new.webp";
@@ -43,7 +43,7 @@ const SleepBundleProduct = () => {
           : undefined,
       };
     }
-    return STATIC_PRODUCT_DATA["sleep-bundle"];
+    return getStaticProductData("sleep-bundle");
   }, [products]);
 
   useTrackProductView(trackingData);
