@@ -22,7 +22,7 @@ const neckPainReviews = [
     customer_name: "Margaret Williams",
     avatar: margaretAvatar,
     rating: 5,
-    body: "I'm 61 in Minnesota and I was waking with neck and shoulder pain most mornings. After a week on this pillow it's basically gone. I didn't think a pillow could do that but it did.",
+    body: "I'm 61 and was waking with neck and shoulder pain most mornings. After a week on this pillow it's basically gone. I didn't think a pillow could do that.",
     city: "Minneapolis, MN",
   },
   {
@@ -30,7 +30,7 @@ const neckPainReviews = [
     customer_name: "Robert Johnson",
     avatar: robertAvatar,
     rating: 5,
-    body: "My neck pain was every day from side sleeping and my shoulders were tight too. This keeps my head level and the neck pain stopped. I still get normal aches sometimes but not that sharp morning neck thing.",
+    body: "My neck pain was every day from side sleeping. This keeps my head level and the neck pain stopped. No more sharp morning neck thing.",
     city: "Los Angeles, CA",
   },
   {
@@ -111,18 +111,18 @@ const COUNTRY_REVIEWERS: Record<string, Array<{ name: string; city: string; neck
     { name: "Anneke van Dijk", city: "Utrecht", neckBody: "Ik had constant een stijf gevoel in mijn nek, alsof ik verkeerd had geslapen. Sinds ik dit kussen gebruik, voel ik me 's ochtends weer normaal. Geen nek- en schouderpijn meer.", backBody: "Mijn kussen drukte mijn schouder de hele nacht samen. Dit kussen houdt mijn schouder vrij en de gevoelloosheid is gestopt." },
   ],
   GB: [
-    { name: "Margaret Thompson", city: "London", neckBody: "I'm 62 and was waking with neck and shoulder pain most mornings. After a week on this pillow it's basically gone. I didn't think a pillow could do that, but it did.", backBody: "I used to wake up with a completely numb arm. After a week on this pillow it's basically gone." },
-    { name: "Robert Clarke", city: "Manchester", neckBody: "My neck pain was every day from side sleeping, and my shoulders were tight too. This keeps my head level and the neck pain stopped. I still get normal aches, but not that sharp morning neck thing.", backBody: "Side sleeping gave me a dead arm every morning. This pillow stops the shoulder compression — numbness gone." },
+    { name: "Margaret Thompson", city: "London", neckBody: "I'm 62 and was waking with neck and shoulder pain most mornings. After a week on this pillow it's basically gone. I didn't think a pillow could do that.", backBody: "I used to wake up with a completely numb arm. After a week on this pillow it's basically gone." },
+    { name: "Robert Clarke", city: "Manchester", neckBody: "My neck pain was every day from side sleeping. This keeps my head level and the neck pain stopped. No more sharp morning neck thing.", backBody: "Side sleeping gave me a dead arm every morning. This pillow stops the shoulder compression — numbness gone." },
     { name: "Patricia Hughes", city: "Edinburgh", neckBody: "I had that constant stiff neck feeling, like I'd slept wrong. Since switching to this, I wake up and my neck feels normal again. No more neck and shoulder pain first thing.", backBody: "My old pillow was crushing my shoulder all night. This one takes the pressure off and the arm numbness stopped." },
   ],
   AU: [
-    { name: "Margaret Thompson", city: "Sydney", neckBody: "I'm 61 and was waking with neck and shoulder pain most mornings. After a week on this pillow it's basically gone. Didn't think a pillow could make that much difference.", backBody: "I used to wake up with a completely numb arm. After a week on this pillow it's basically gone." },
-    { name: "Robert Clarke", city: "Melbourne", neckBody: "My neck pain was every day from side sleeping. This keeps my head level and the neck pain stopped. I still get normal aches sometimes, but not that sharp morning neck thing.", backBody: "Side sleeping gave me a dead arm every morning. This pillow fixed it — no more pins and needles." },
+    { name: "Margaret Thompson", city: "Sydney", neckBody: "I'm 61 and was waking with neck and shoulder pain most mornings. After a week on this pillow it's basically gone. I didn't think a pillow could do that.", backBody: "I used to wake up with a completely numb arm. After a week on this pillow it's basically gone." },
+    { name: "Robert Clarke", city: "Melbourne", neckBody: "My neck pain was every day from side sleeping. This keeps my head level and the neck pain stopped. No more sharp morning neck thing.", backBody: "Side sleeping gave me a dead arm every morning. This pillow fixed it — no more pins and needles." },
     { name: "Patricia Hughes", city: "Brisbane", neckBody: "Had that constant stiff neck feeling, like I'd slept wrong. Since switching to this, I wake up and my neck feels normal again. No more neck and shoulder pain first thing.", backBody: "My pillow was compressing my shoulder all night. This one takes the pressure off and the numbness is gone." },
   ],
   NZ: [
-    { name: "Margaret Thompson", city: "Auckland", neckBody: "I'm 62 and was waking with neck and shoulder pain most mornings. After a week on this pillow it's basically gone. Didn't think a pillow could do that.", backBody: "I used to wake up with a numb arm and tingling fingers. After a week on this pillow it's basically gone." },
-    { name: "Robert Clarke", city: "Wellington", neckBody: "My neck pain was every day from side sleeping. This keeps my head level and the neck pain stopped. I still get normal aches, but that sharp morning neck thing is gone.", backBody: "Side sleeping gave me a dead arm. This pillow stops the shoulder compression — numbness and tingling gone." },
+    { name: "Margaret Thompson", city: "Auckland", neckBody: "I'm 62 and was waking with neck and shoulder pain most mornings. After a week on this pillow it's basically gone. I didn't think a pillow could do that.", backBody: "I used to wake up with a numb arm and tingling fingers. After a week on this pillow it's basically gone." },
+    { name: "Robert Clarke", city: "Wellington", neckBody: "My neck pain was every day from side sleeping. This keeps my head level and the neck pain stopped. No more sharp morning neck thing.", backBody: "Side sleeping gave me a dead arm. This pillow stops the shoulder compression — numbness and tingling gone." },
     { name: "Patricia Hughes", city: "Christchurch", neckBody: "Had that constant stiff neck feeling. Since switching to this, I wake up and my neck feels normal again. No more neck and shoulder pain first thing in the morning.", backBody: "My pillow was compressing my shoulder all night. This one takes the pressure off and the numbness stopped." },
   ],
   SE: [
@@ -151,8 +151,8 @@ const COUNTRY_REVIEWERS: Record<string, Array<{ name: string; city: string; neck
     { name: "Patricia Bernard", city: "Marseille", neckBody: "J'avais cette sensation constante de raideur dans le cou, comme si j'avais mal dormi. Depuis que j'utilise cet oreiller, mon cou est redevenu normal le matin.", backBody: "Mon oreiller comprimait mon épaule toute la nuit. Celui-ci maintient l'épaule libre et l'engourdissement a cessé." },
   ],
   CA: [
-    { name: "Margaret Thompson", city: "Toronto", neckBody: "I'm 62 and was waking with neck and shoulder pain most mornings. After a week on this pillow it's basically gone. I didn't think a pillow could do that, but it did.", backBody: "I used to wake up with a completely numb arm. After a week on this pillow it's basically gone." },
-    { name: "Robert Clarke", city: "Vancouver", neckBody: "My neck pain was every day from side sleeping, and my shoulders were tight too. This keeps my head level and the neck pain stopped. I still get normal aches, but not that sharp morning neck thing.", backBody: "Side sleeping gave me a dead arm every morning. This pillow stops the compression — numbness and tingling gone." },
+    { name: "Margaret Thompson", city: "Toronto", neckBody: "I'm 62 and was waking with neck and shoulder pain most mornings. After a week on this pillow it's basically gone. I didn't think a pillow could do that.", backBody: "I used to wake up with a completely numb arm. After a week on this pillow it's basically gone." },
+    { name: "Robert Clarke", city: "Vancouver", neckBody: "My neck pain was every day from side sleeping. This keeps my head level and the neck pain stopped. No more sharp morning neck thing.", backBody: "Side sleeping gave me a dead arm every morning. This pillow stops the compression — numbness and tingling gone." },
     { name: "Patricia Hughes", city: "Calgary", neckBody: "I had that constant stiff neck feeling, like I'd slept wrong. Since switching to this, I wake up and my neck feels normal again. No more neck and shoulder pain first thing.", backBody: "My pillow was crushing my shoulder all night. This one takes the pressure off and the numbness stopped." },
   ],
 };
@@ -247,7 +247,7 @@ export const MiniReviewsCarousel = ({
             <CarouselItem key={review.id}>
               <div className="px-3 py-3">
                 {/* Review text - readable size for 55+, text flows under arrows */}
-                <p className="text-sm sm:text-base text-foreground leading-relaxed mb-2 line-clamp-4">
+                <p className="text-sm sm:text-base text-foreground leading-relaxed mb-2">
                   "{review.body}"
                 </p>
 
