@@ -1,65 +1,52 @@
 
-# Add "the" for Netherlands Shipping + Localize Mini Review Names
+# Arm Numbness Focus for No-Numbness Pillow Page
 
-## 1. Shipping Text: "Free shipping in the Netherlands"
+## 1. Rewrite "back" reviews to focus on arm numbness
 
-Only the Netherlands needs the article "the" prepended. 
+### File: `src/components/MiniReviewsCarousel.tsx`
 
-### Files: `src/components/ab-testing/HeroVariantB.tsx` and `src/components/Hero.tsx`
+The `backPainReviews` array (lines 63-104) currently talks about "back pain" and "lower back pain." These will be rewritten to focus on **arm numbness, dead arm, and shoulder compression** -- matching the page's "Stop Waking Up With a Numb Arm" positioning.
 
-Update the shipping text rendering logic. Instead of:
+Example rewrites:
+- "I used to wake up with lower back pain" --> "I used to wake up with a completely numb arm and tingling fingers"
+- "back sore when I got up" --> "dead arm every morning from side sleeping"
+- "back pain stopped" --> "arm numbness is gone"
+
+The `backBody` strings in the `COUNTRY_REVIEWERS` localization map (all 10 countries) will also be updated to match the arm numbness theme, translated appropriately per language.
+
+## 2. Change image sequence for "back" focus to 1-6-2-4-3-5
+
+### File: `src/components/ProductImageCarousel.tsx`
+
+Current sequence (both desktop and mobile): 1-2-3-4-5-6
 ```
-Free shipping in {buyerCountryName}
+images[0] = Hero
+images[1] = Deeper sleep
+images[2] = Machine washable
+images[3] = Spine alignment
+images[4] = Social proof
+images[5] = Couple image
 ```
-Use a helper or inline check:
+
+New sequence for `back` focus: **1-6-2-4-3-5**
 ```
-Free shipping in {buyerCountry === 'NL' ? 'the ' : ''}{buyerCountryName}
+images[0] = Hero (stays first)
+images[5] = Couple image (moves to 2nd)
+images[1] = Deeper sleep (moves to 3rd)
+images[3] = Spine alignment (moves to 4th)
+images[2] = Machine washable (moves to 5th)
+images[4] = Social proof (moves to 6th)
 ```
 
-This affects 3 locations:
-- `HeroVariantB.tsx` mobile (line 263) and desktop (line 409)
-- `Hero.tsx` desktop (line 374)
+The `mobileImages` array (lines 121-128) will be updated with the same reordered sequence when `pillowFocus === 'back'`. The desktop `images` array will also be conditionally reordered.
 
----
+### Technical approach
 
-## 2. Localize Mini Review Carousel Reviewers
+After building the `images` array, add a conditional reorder block for "back" focus:
+```typescript
+const orderedImages = pillowFocus === 'back'
+  ? [images[0], images[5], images[1], images[3], images[2], images[4]]
+  : images;
+```
 
-Currently all 5 reviewers are US-based (Minneapolis, LA, St. Paul, New York, Duluth). The requirement is that at least 50% (3 out of 5) should have names and cities matching the buyer's country.
-
-### Approach
-
-Update `MiniReviewsCarousel.tsx` to:
-- Accept `buyerCountry` as a prop
-- Define country-specific reviewer overrides for the first 3 reviewers (names + cities typical for that country)
-- Keep reviewers 4 and 5 as the existing US-based ones (David Patterson, Susan Miller)
-- Default to all US reviewers for US visitors
-
-### Country-specific reviewer sets (3 per country, both neck and back variants):
-
-| Country | Name 1 | City 1 | Name 2 | City 2 | Name 3 | City 3 |
-|---------|--------|--------|--------|--------|--------|--------|
-| NL | Marijke de Vries | Amsterdam | Henk Bakker | Rotterdam | Anneke van Dijk | Utrecht |
-| GB | Margaret Thompson | London | Robert Clarke | Manchester | Patricia Hughes | Edinburgh |
-| AU | Margaret Thompson | Sydney | Robert Clarke | Melbourne | Patricia Hughes | Brisbane |
-| NZ | Margaret Thompson | Auckland | Robert Clarke | Wellington | Patricia Hughes | Christchurch |
-| SE | Margareta Lindqvist | Stockholm | Robert Eriksson | Gothenburg | Patricia Nilsson | Malmo |
-| NO | Margareta Haugen | Oslo | Robert Bakke | Bergen | Patricia Larsen | Trondheim |
-| DK | Margarete Jensen | Copenhagen | Robert Nielsen | Aarhus | Patricia Madsen | Odense |
-| DE | Margarete Fischer | Berlin | Robert Muller | Munich | Patricia Weber | Hamburg |
-| FR | Marguerite Dupont | Paris | Robert Martin | Lyon | Patricia Bernard | Marseille |
-| CA | Margaret Thompson | Toronto | Robert Clarke | Vancouver | Patricia Hughes | Calgary |
-
-The existing avatars (margaret, robert, patricia) are reused for these 3 slots since they are generic enough.
-
-### Files affected:
-- `src/components/MiniReviewsCarousel.tsx` -- add `buyerCountry` prop, add country reviewer map, swap first 3 reviewers
-- `src/components/ab-testing/HeroVariantB.tsx` -- pass `buyerCountry` to MiniReviewsCarousel
-- `src/components/Hero.tsx` -- pass `buyerCountry` to MiniReviewsCarousel
-
-### Technical details
-
-The component will build its review list dynamically:
-1. Look up country-specific overrides for positions 1-3
-2. If found, replace names and cities in the first 3 review objects (keeping the same review body text and avatars)
-3. Keep positions 4-5 unchanged (US-based: David Patterson + Susan Miller)
-4. If no override exists for the country, use the original US set
+Then use `orderedImages` for both desktop rendering and mobile `mobileImages`.
