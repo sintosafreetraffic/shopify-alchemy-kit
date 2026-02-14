@@ -1,31 +1,25 @@
 
-
-# Update Sleep Mask Image and Verify Compare-at Pricing
+# Cart Drawer Cleanup and Best Value Badge Enhancement
 
 ## Changes
 
-### 1. Replace Sleep Mask Image for Recently Viewed
-Copy the uploaded image (`user-uploads://image-11.png`) to `src/assets/` as the new sleep mask product shot. Then update `src/hooks/useTrackProductView.ts` to import this new image for the `sleep-mask` static entry. Bump the cache version in `RecentlyViewedItems.tsx` from 3 to 4 so all users see the new image.
+### 1. Remove "Delivery: 5-7 working days" from cart items
+Remove the delivery estimate line shown under each product in the cart (the truck icon + "Delivery: 5-7 working days" text).
 
-### 2. Replace Sleep Mask Image on the Product Page
-Update `src/components/SleepMaskHero.tsx` (or the relevant image carousel component) to use this new image as the primary hero/product shot for the sleep mask, replacing the current `sleep-mask-product-shot.webp`.
+**File: `src/components/CartDrawer.tsx`**
+- Remove lines 709-713 (the delivery estimate div with Truck icon and "5-7 working days" text)
 
-### 3. Replace Sleep Mask Image on the Products Listing Page
-The `/products` page pulls images from Shopify. The first image shown is the Shopify product image. If the Shopify image should also change, that needs to be done in Shopify admin. However, if a static override is needed, we can map the sleep mask handle to use this new local image instead.
+### 2. Remove "Order within...for delivery by" from urgency banner
+Remove the shipping cutoff countdown from the CartUrgencyBanner, keeping only the "Items may sell out soon" / reservation timer message.
 
-### 4. Verify Compare-at Pricing on Individual Product Pages
-The ergonomic pillow (`HeroVariantB`) and sleep bundle (`SleepBundleHero`) already display compare-at prices dynamically from Shopify with a strikethrough. No changes needed there. The `/products` listing page also already shows compare-at prices for these two products via the whitelist. This will be confirmed with no code changes required.
+**File: `src/components/cart/CartUrgencyBanner.tsx`**
+- Remove lines 126-138 (the shipping cutoff section with Truck icon and "Order within X for delivery by Y")
+- Remove the shipping cutoff calculation logic (lines 48-92) and the `shippingInfo` state (line 15) since they are no longer needed
+- Remove unused imports (`Truck`, `addBusinessDays`, `format`)
 
----
+### 3. Make "Best Value" badge more prominent on the sleep bundle recommendation
+The current badge for the sleep bundle in the recommendations section uses `text-[10px]` with subtle background colors. Make it stand out more with bolder styling.
 
-## Technical Details
-
-**Files to modify:**
-
-1. **Copy image**: `user-uploads://image-11.png` to `src/assets/sleep-mask-product-shot-new.webp` (or `.png`)
-2. **`src/hooks/useTrackProductView.ts`**: Update the sleep-mask entry's image import to use the new asset
-3. **`src/components/home/RecentlyViewedItems.tsx`**: Bump `CURRENT_VERSION` from 3 to 4
-4. **`src/components/SleepMaskHero.tsx`** or **`src/components/SleepMaskImageCarousel.tsx`**: Update primary product image reference to the new asset
-
-**No changes needed for compare-at prices** -- the ergonomic pillow and sleep bundle product pages already show dynamic Shopify compare-at prices with strikethrough styling.
-
+**File: `src/components/CartDrawer.tsx`**
+- For the mobile recommendation badge (around line 1010): when `badge.variant === 'value'`, apply a more prominent style -- larger text (`text-xs`), bold font, and a stronger color scheme (e.g., `bg-pink-500 text-white` to match the Valentine's promo styling already used elsewhere in the cart)
+- This targets only the "Best Value" badge on the sleep bundle recommendation card, keeping other badges (Most Popular, Recommended) at their current size
