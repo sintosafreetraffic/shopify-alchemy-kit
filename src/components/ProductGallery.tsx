@@ -170,7 +170,7 @@ export const ProductGallery = () => {
                           <Star
                             key={i}
                             className={`w-5 h-5 ${
-                              i < 5 ? "fill-primary text-primary" : "text-muted"
+                              i < 5 ? "fill-[hsl(var(--star))] text-[hsl(var(--star))]" : "text-muted"
                             }`}
                           />
                         ))}
@@ -268,7 +268,7 @@ export const ProductGallery = () => {
                         <Star
                           key={i}
                           className={`w-4 h-4 ${
-                            i < Math.floor(product.rating) ? "fill-primary text-primary" : "text-muted"
+                            i < Math.floor(product.rating) ? "fill-[hsl(var(--star))] text-[hsl(var(--star))]" : "text-muted"
                           }`}
                         />
                       ))}
