@@ -28,7 +28,8 @@ import sleepMaskPink from "@/assets/sleep-mask-pink.webp";
 import sleepMaskGold from "@/assets/sleep-mask-gold.webp";
 import sleepMaskSilver from "@/assets/sleep-mask-silver.webp";
 import sleepMaskBlack from "@/assets/sleep-mask-black.webp";
-import { useIsEU } from "@/hooks/useCurrencySymbol";
+import { getBuyerCountrySync } from "@/lib/buyerContext";
+import { getCurrencyForCountry } from "@/lib/countryCode";
 import { useShippingConfig } from "@/hooks/useShippingConfig";
 
 // Image mapping for sleep mask colors
@@ -78,7 +79,8 @@ export const CartDrawer = () => {
   const [openColorPickerIndex, setOpenColorPickerIndex] = useState<number | null>(null);
   // Track selected colors for sleep mask recommendations (keyed by product ID)
   const [recommendationColors, setRecommendationColors] = useState<Record<string, string>>({});
-  const isEU = useIsEU();
+  const buyerCountry = getBuyerCountrySync() || 'US';
+  const buyerCurrency = getCurrencyForCountry(buyerCountry);
    
    // Discount code state
    const [appliedDiscount, setAppliedDiscount] = useState<{
@@ -176,7 +178,7 @@ export const CartDrawer = () => {
     (items[0] ? currentPrices[items[0].variantId]?.currencyCode : undefined) ||
     items[0]?.price.currencyCode ||
     'USD';
-  const cartCurrency = isEU && shopifyCurrency === 'USD' ? 'EUR' : shopifyCurrency;
+  const cartCurrency = shopifyCurrency === 'USD' ? buyerCurrency : shopifyCurrency;
 
   // Use current prices from Shopify if available, fallback to stored prices
   // During Valentine's offer, override ergonomic pillow price to €119.99 (1+1 deal base)

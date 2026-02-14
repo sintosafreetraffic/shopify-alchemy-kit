@@ -14,7 +14,8 @@ import { trackViewContent as trackMetaViewContent } from "@/lib/meta-pixel";
 import { trackViewedProduct } from "@/lib/klaviyo";
 import { formatPrice } from "@/lib/formatPrice";
 import { PaymentIcons } from "./PaymentIcons";
-import { useIsEU } from "@/hooks/useCurrencySymbol";
+import { getBuyerCountrySync } from "@/lib/buyerContext";
+import { getCurrencyForCountry } from "@/lib/countryCode";
 import sleepMaskNavy from "@/assets/sleep-mask-navy.webp";
 import sleepMaskTurquoise from "@/assets/sleep-mask-turquoise.webp";
 import sleepMaskPink from "@/assets/sleep-mask-pink.webp";
@@ -49,7 +50,8 @@ export const SleepMaskHero = () => {
   const { selectedColor, setSelectedColor } = useSleepMaskColorStore();
   const [product, setProduct] = useState<ShopifyProduct | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const isEU = useIsEU();
+  const buyerCountry = getBuyerCountrySync() || 'US';
+  const buyerCurrency = getCurrencyForCountry(buyerCountry);
   const { addItem } = useCartStore();
   const hasTrackedView = useRef(false);
 
@@ -167,8 +169,7 @@ export const SleepMaskHero = () => {
 
   const pricePerMask = basePriceVariant ? parseFloat(basePriceVariant.price.amount) : 29.99;
   const shopifyCurrency = basePriceVariant?.price.currencyCode || 'USD';
-  // Override to EUR for EU countries if Shopify returns USD
-  const currencyCode = (isEU && shopifyCurrency === 'USD') ? 'EUR' : shopifyCurrency;
+  const currencyCode = shopifyCurrency === 'USD' ? buyerCurrency : shopifyCurrency;
   const totalPrice = pricePerMask * quantity;
 
   return (

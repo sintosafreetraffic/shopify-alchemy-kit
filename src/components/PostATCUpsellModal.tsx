@@ -12,7 +12,8 @@ import { useState, useEffect } from "react";
 import { useCartStore } from "@/stores/cartStore";
 import { useShopifyProducts } from "@/hooks/useShopifyProducts";
 import { formatPrice } from "@/lib/formatPrice";
-import { useIsEU } from "@/hooks/useCurrencySymbol";
+import { getBuyerCountrySync } from "@/lib/buyerContext";
+import { getCurrencyForCountry } from "@/lib/countryCode";
 import { toast } from "sonner";
 import kneePillowImage from "@/assets/knee-pillow-main-new.webp";
 import sleepMaskImage from "@/assets/sleep-mask-navy.webp";
@@ -32,7 +33,8 @@ export const PostATCUpsellModal = ({
   const [countdown, setCountdown] = useState(300); // 5 minutes
   const { addItem, setCartOpen, items } = useCartStore();
   const { data: products = [] } = useShopifyProducts(10);
-  const isEU = useIsEU();
+  const buyerCountry = getBuyerCountrySync() || 'US';
+  const buyerCurrency = getCurrencyForCountry(buyerCountry);
 
   // Find upsell product (knee pillow or sleep mask based on what's not in cart)
   const cartHasKneePillow = items.some(item => 
@@ -57,8 +59,8 @@ export const PostATCUpsellModal = ({
   const originalPrice = variant ? parseFloat(variant.price.amount) : 39.99;
   const discountPercent = 20;
   const discountedPrice = originalPrice * (1 - discountPercent / 100);
-  const shopifyCurrency = variant?.price.currencyCode || 'EUR';
-  const currencyCode = (isEU && shopifyCurrency === 'USD') ? 'EUR' : shopifyCurrency;
+  const shopifyCurrency = variant?.price.currencyCode || 'USD';
+  const currencyCode = shopifyCurrency === 'USD' ? buyerCurrency : shopifyCurrency;
 
   // Countdown timer
   useEffect(() => {

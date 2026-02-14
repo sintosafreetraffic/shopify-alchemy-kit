@@ -17,7 +17,7 @@ import { useHeaderHeight } from "@/hooks/useHeaderHeight";
 import { formatPrice } from "@/lib/formatPrice";
 import { trackATCClick } from "@/hooks/usePDPIntentTracking";
 // trackABEvent moved to cartStore for centralized ATC tracking
-import { useIsEU } from "@/hooks/useCurrencySymbol";
+import { getCurrencyForCountry } from "@/lib/countryCode";
 import { getBuyerCountrySync } from "@/lib/buyerContext";
 import { COUNTRY_NAMES } from "@/lib/countryCode";
 
@@ -84,9 +84,9 @@ export const Hero = () => {
   const { addItem, setCartOpen, setFreeMaskSelections } = useCartStore();
   const hasTrackedView = useRef(false);
   const headerHeight = useHeaderHeight();
-  const isEU = useIsEU();
   const valentinesOffer = useValentinesOffer();
   const buyerCountry = getBuyerCountrySync() || 'US';
+  const buyerCurrency = getCurrencyForCountry(buyerCountry);
   const buyerCountryName = COUNTRY_NAMES[buyerCountry] || 'your country';
 
 
@@ -106,8 +106,7 @@ export const Hero = () => {
   // Use currency from main product variant since they share the same localized context
   const mainVariant = product?.node.variants.edges[0]?.node;
   const shopifySleepMaskCurrency = sleepMaskVariant?.price.currencyCode || mainVariant?.price.currencyCode || 'USD';
-  // Override to EUR for EU countries if Shopify returns USD
-  const sleepMaskCurrency = (isEU && shopifySleepMaskCurrency === 'USD') ? 'EUR' : shopifySleepMaskCurrency;
+  const sleepMaskCurrency = shopifySleepMaskCurrency === 'USD' ? buyerCurrency : shopifySleepMaskCurrency;
   
   // Get mask variants for color selection
   const maskVariants = useMemo(() => {
@@ -222,8 +221,7 @@ export const Hero = () => {
   const variant = product?.node.variants.edges[0]?.node;
   const productPrice = variant ? parseFloat(variant.price.amount) : 59.99;
   const shopifyCurrency = variant?.price.currencyCode || 'USD';
-  // Override to EUR for EU countries if Shopify returns USD
-  const currencyCode = (isEU && shopifyCurrency === 'USD') ? 'EUR' : shopifyCurrency;
+  const currencyCode = shopifyCurrency === 'USD' ? buyerCurrency : shopifyCurrency;
   
   // Dynamic compare-at price from Shopify (localized via @inContext)
   const compareAtPrice = variant?.compareAtPrice?.amount ? parseFloat(variant.compareAtPrice.amount) : 199.99;

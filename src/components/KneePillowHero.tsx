@@ -15,7 +15,8 @@ import { trackViewContent as trackMetaViewContent } from "@/lib/meta-pixel";
 import { trackViewedProduct } from "@/lib/klaviyo";
 import { CountdownTimerDisplay } from "./CountdownTimer";
 import { formatPrice } from "@/lib/formatPrice";
-import { useIsEU } from "@/hooks/useCurrencySymbol";
+import { getBuyerCountrySync } from "@/lib/buyerContext";
+import { getCurrencyForCountry } from "@/lib/countryCode";
 import { mobileHeroConfig } from "@/config/mobileHeroConfig";
 
 
@@ -35,7 +36,8 @@ export const KneePillowHero = () => {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { addItem, setCartOpen } = useCartStore();
   const hasTrackedView = useRef(false);
-  const isEU = useIsEU();
+  const buyerCountry = getBuyerCountrySync() || 'US';
+  const buyerCurrency = getCurrencyForCountry(buyerCountry);
 
   // Use centralized cached product data
   const { data: products, isLoading: productsLoading } = useShopifyProducts(10);
@@ -106,8 +108,7 @@ export const KneePillowHero = () => {
   const variant = product?.node.variants.edges[0]?.node;
   const productPrice = variant ? parseFloat(variant.price.amount) : 39.99;
   const shopifyCurrency = variant?.price.currencyCode || 'USD';
-  // Override to EUR for EU countries if Shopify returns USD
-  const currencyCode = (isEU && shopifyCurrency === 'USD') ? 'EUR' : shopifyCurrency;
+  const currencyCode = shopifyCurrency === 'USD' ? buyerCurrency : shopifyCurrency;
 
   return (
     <section className="pt-0 pb-3 md:pb-6 bg-background overflow-visible">

@@ -9,7 +9,8 @@ import { fetchProducts, type ShopifyProduct } from "@/lib/shopify";
 import OptimizedImage from "@/components/OptimizedImage";
 import { formatPrice } from "@/lib/formatPrice";
 import { getCompareAtFromRatio } from "@/lib/compareAtPriceRatios";
-import { useIsEU } from "@/hooks/useCurrencySymbol";
+import { getBuyerCountrySync } from "@/lib/buyerContext";
+import { getCurrencyForCountry } from "@/lib/countryCode";
 import { useABErgonomicPillow } from "@/hooks/useABProduct";
 import { getPreferredPillowRoute } from "@/lib/pillowFocusPreference";
 import { useValentinesOffer } from "@/hooks/useValentinesOffer";
@@ -22,7 +23,8 @@ import completeSleepBundle from "@/assets/complete-sleep-bundle-updated.webp";
 export const ProductGallery = () => {
   const [shopifyProducts, setShopifyProducts] = useState<ShopifyProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const isEU = useIsEU();
+  const buyerCountry = getBuyerCountrySync() || 'US';
+  const buyerCurrency = getCurrencyForCountry(buyerCountry);
   
   // Get A/B tested ergonomic pillow product
   const { product: abErgonomicPillow, config: abConfig } = useABErgonomicPillow();
@@ -58,8 +60,7 @@ export const ProductGallery = () => {
   // Get currency from first available product
   const shopifyCurrency = ergonomicPillowShopify?.node.variants.edges[0]?.node.price.currencyCode || 
                        bundleProduct?.node.variants.edges[0]?.node.price.currencyCode || 'USD';
-  // Override to EUR for EU countries if Shopify returns USD
-  const currencyCode = (isEU && shopifyCurrency === 'USD') ? 'EUR' : shopifyCurrency;
+  const currencyCode = shopifyCurrency === 'USD' ? buyerCurrency : shopifyCurrency;
 
   // Helper to get formatted price from Shopify product
   const getProductPrice = (product: ShopifyProduct | undefined, fallback: string) => {
