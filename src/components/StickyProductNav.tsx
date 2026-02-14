@@ -158,6 +158,11 @@ export const StickyProductNav = ({
             </div>
           )}
 
+          {/* Product Title */}
+          <span className="font-semibold text-xs sm:text-sm line-clamp-1 min-w-0 flex-shrink">
+            RiseByNight Ergonomic Sleep Pillow
+          </span>
+
           {/* Star ratings - compact on mobile */}
           <div className="flex items-center gap-1 flex-shrink-0">
             <div className="flex">
