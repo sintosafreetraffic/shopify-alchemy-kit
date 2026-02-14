@@ -1,29 +1,29 @@
 
 
-# Fix Sticky Add to Cart Layout
+# Fix Sticky Add to Cart - Keep Single Row, Prevent Overflow
 
 ## Problem
-The sticky bottom bar currently renders the product title and star ratings side-by-side in a single row, which causes the bar to overflow/fall off on smaller screens. The title should be stacked **above** the stars.
+The sticky bar content overflows on narrow screens because the title, stars, and CTAs all compete for horizontal space with `flex-shrink-0`.
 
 ## Solution
 
 ### File: `src/components/StickyAddToCart.tsx` (lines 311-327)
 
-Wrap the product title and star ratings in a vertical flex container (`flex-col`) instead of rendering them as siblings in the horizontal row:
+Change the pillow product block to match the efficient pattern already used by non-pillow products (lines 329-341): wrap title and stars in a single `min-w-0 flex-shrink` container so they can shrink gracefully instead of forcing overflow.
 
-**Current structure (flat row):**
-```text
-[Image] [Title] [Stars + Count] [CTAs]
+**Changes:**
+1. Replace the fragment (`<>...</>`) with a `div` using `min-w-0 flex-shrink` (allows the text block to shrink)
+2. Keep title on one line with `line-clamp-1` and add `truncate` for safety
+3. Move stars below the title (as a second line inside the same div), matching the non-pillow layout
+4. Remove `flex-shrink-0` from both the title and the stars row so they yield space to CTAs
+
+**Result:** Everything stays in one horizontal row -- `[Image] [Title + Stars stacked] [CTAs]` -- but the title/stars block shrinks instead of pushing CTAs off-screen.
+
+```
+Before: [Image] [Title(no-shrink)] [Stars(no-shrink)] [CTAs]  --> overflows
+
+After:  [Image] [ Title (truncates) ] [CTAs]
+                 [ Stars + Count     ]
 ```
 
-**New structure (title above stars):**
-```text
-[Image] [ Title          ] [CTAs]
-         [ Stars + Count ]
-```
-
-Specifically, replace the current `isPillowProduct` block (lines 312-327) with a `div` wrapper using `flex flex-col` that contains:
-1. The product title (`span`)
-2. The star rating row (`div` with stars + count)
-
-This matches the non-pillow product layout pattern already used at lines 329-341 and prevents horizontal overflow on narrow viewports.
+This is the same pattern already working for the non-pillow sticky bar (lines 329-341), just applied to the pillow variant.
