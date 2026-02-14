@@ -114,18 +114,16 @@ export const ProductImageCarousel = ({ pillowFocus = 'neck' }: ProductImageCarou
     { url: image5, alt: image5Alt, type: "image" },
   ];
 
-  // Get only image URLs (excluding videos) for the modal navigation
-  const imageOnlyUrls = images.filter(img => img.type === "image").map(img => img.url);
+  // Reorder for back focus: 1-6-2-4-3-5
+  const orderedImages = pillowFocus === 'back'
+    ? [images[0], images[5], images[1], images[3], images[2], images[4]]
+    : images;
 
-  // Mobile order - same product images as desktop
-  const mobileImages = [
-    images[0], // hero image
-    images[1], // deeper sleep
-    images[2], // machine washable
-    images[3], // spine alignment
-    images[4], // pillowTrusted
-    images[5], // couple image
-  ];
+  // Get only image URLs (excluding videos) for the modal navigation
+  const imageOnlyUrls = orderedImages.filter(img => img.type === "image").map(img => img.url);
+
+  // Mobile order - same as desktop (respects focus reorder)
+  const mobileImages = orderedImages;
   
   // Get only image URLs for mobile (excluding videos) for the modal navigation
   const mobileImageOnlyUrls = mobileImages.filter(img => img.type === "image").map(img => img.url);
@@ -260,7 +258,7 @@ export const ProductImageCarousel = ({ pillowFocus = 'neck' }: ProductImageCarou
       <div className="hidden md:block w-full rounded-b-xl overflow-hidden">
         <Carousel className="w-full" setApi={setDesktopApi}>
           <CarouselContent className="-ml-0">
-            {images.map((item, index) => (
+            {orderedImages.map((item, index) => (
               <CarouselItem key={index} className="pl-0">
                 {/* Fixed aspect ratio container prevents CLS on image load */}
                 <div 
@@ -304,7 +302,7 @@ export const ProductImageCarousel = ({ pillowFocus = 'neck' }: ProductImageCarou
         
         {/* Desktop Thumbnail Indicators - fixed height to prevent CLS */}
         <div className="flex gap-2 mt-4 max-w-full overflow-x-auto scrollbar-hide justify-start lg:justify-center px-3 py-1 h-[72px]">
-          {images.map((item, index) => (
+          {orderedImages.map((item, index) => (
             <button
               key={index}
               onClick={() => desktopApi?.scrollTo(index)}
