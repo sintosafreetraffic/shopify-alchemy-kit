@@ -1,26 +1,16 @@
 
 
-# Knee Pillow Page Updates
+# Knee Pillow Page: Remove Guarantees + Fix Thumbnail Borders
 
-## 1. Remove images 3 and 7 from the gallery
+## 1. Remove the guarantees grid from the hero
 
-**File: `src/components/KneePillowImageCarousel.tsx`**
+**File: `src/components/KneePillowHero.tsx`** (lines 296-309)
 
-Remove two images from the `images` array:
-- Image 3 (index 2): `kneePillowMain` ("knee-pillow-main-new.webp")
-- Image 7 (index 6): `kneePillowDesignFeatures` ("knee-pillow-design-features.webp")
+Remove the entire `grid grid-cols-3` block containing "2-Year Warranty", "100 nights risk free trial", and "Easy Returns" icons and text.
 
-This leaves 6 images. The desktop gallery layout (large-2up-large-2up) will be adjusted to work with 6 images instead of 8. Remove the unused imports as well.
+## 2. Fix thumbnail image borders
 
-## 2. Add contour/border around small thumbnail images
+**File: `src/components/KneePillowImageCarousel.tsx`** (line 90)
 
-**File: `src/components/KneePillowImageCarousel.tsx`**
-
-Add a visible border/outline around each thumbnail indicator in the mobile carousel (the small images at the bottom). Currently only the active thumbnail has a ring. The change adds a subtle border (`border border-gray-200 rounded-lg`) to all thumbnails so they each have a visible contour, matching the reference screenshot.
-
-## 3. Remove the Guarantees section
-
-**File: `src/pages/KneePillowProduct.tsx`**
-
-Remove the `<GuaranteeSection />` component from the knee pillow page (line 62). This removes the "Free Shipping", "100 nights risk free", and "Easy Returns" icons section from the bottom of the page.
+The border on the button is visible but the image inside overflows the rounded corners. Add `rounded-lg` to the `<img>` element so the image respects the button's border radius. This ensures the contour is fully visible around each thumbnail.
 
