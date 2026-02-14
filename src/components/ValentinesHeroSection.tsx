@@ -43,7 +43,7 @@ export const ValentinesHeroSection = ({
   // Dynamic pricing based on Shopify product price
   const singlePrice = productPrice;
   const couplesDealPrice = productPrice;
-  const regularTwoPrice = singleCompareAtPrice * 2;
+  const regularTwoPrice = productPrice * 2;
   const savings = regularTwoPrice - couplesDealPrice;
 
   const handleAdd = () => {
@@ -94,14 +94,9 @@ export const ValentinesHeroSection = ({
               <Package className="w-4 h-4 text-muted-foreground" />
               <span className="text-sm font-medium">1 Pillow</span>
             </div>
-            <div className="flex items-center gap-2">
-              <p className="text-lg font-bold">
-                {formatPrice(singlePrice, currencyCode)}
-              </p>
-              <span className="text-xs line-through text-muted-foreground">
-                {formatPrice(singleCompareAtPrice, currencyCode)}
-              </span>
-            </div>
+            <p className="text-lg font-bold">
+              {formatPrice(singlePrice, currencyCode)}
+            </p>
           </button>
 
           {/* Couples deal option */}
