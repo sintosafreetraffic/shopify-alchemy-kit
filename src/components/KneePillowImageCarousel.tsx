@@ -87,7 +87,7 @@ export const KneePillowImageCarousel = () => {
               <img
                 src={item.url}
                 alt={`Thumbnail ${index + 1}`}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover rounded-lg"
                 loading="lazy"
                 width={48}
                 height={48}

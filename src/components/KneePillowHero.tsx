@@ -293,20 +293,6 @@ export const KneePillowHero = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3 py-3 border-t text-center">
-              <div className="flex flex-col items-center">
-                <Shield className="w-5 h-5 mb-1.5 text-primary" />
-                <p className="text-xs font-medium leading-tight">2-Year Warranty</p>
-              </div>
-              <div className="flex flex-col items-center">
-                <Moon className="w-5 h-5 mb-1.5 text-primary" />
-                <p className="text-xs font-medium leading-tight">100 nights risk free trial</p>
-              </div>
-              <div className="flex flex-col items-center">
-                <Truck className="w-5 h-5 mb-1.5 text-primary" />
-                <p className="text-xs font-medium leading-tight">Easy Returns</p>
-              </div>
-            </div>
           </div>
         </div>
       </div>
