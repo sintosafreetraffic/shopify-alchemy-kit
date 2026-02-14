@@ -1,55 +1,37 @@
 
 
-# Fix: Make Compare-At Prices Currency-Dynamic
+# Fix: Sleep Mask Image and Fractional Star Ratings
 
-## Problem
+## Problem 1: Wrong Sleep Mask Image
+The homepage product gallery shows a marketing banner image (with text overlay like "The power to feel your best again...") for the Silk Sleep Mask. It should show a clean product-only photo.
 
-Several components hardcode the compare-at price as a fixed number (e.g. `199.99`) or a Euro string (`"€199.99"`), so visitors in the UK see "£199.99" (wrong conversion) or Denmark sees the same number when DKK prices should be much higher. Shopify already returns the correct localized compare-at price via `@inContext`, but the code ignores it in multiple places.
+**Root cause**: `ProductGallery.tsx` imports `eye-mask-gift-new.webp` (a marketing banner) instead of `sleep-mask-product-shot.webp` (a clean product photo).
 
-## Where Hardcoded Values Exist
+**Fix**: Change the import on line 18 from `eye-mask-gift-new.webp` to `sleep-mask-product-shot.webp`.
 
-| File | Hardcoded Value | What It Should Use |
-|---|---|---|
-| `src/components/Hero.tsx` (line 222) | `const compareAtPrice = 199.99` | Shopify variant's `compareAtPrice.amount` |
-| `src/components/ab-testing/HeroVariantB.tsx` (line 183) | `const compareAtPrice = 199.99` | Shopify variant's `compareAtPrice.amount` |
-| `src/components/ValentinesHeroSection.tsx` (line 39) | `const singleCompareAtPrice = 199.99` | Shopify variant's `compareAtPrice.amount` |
-| `src/hooks/useTrackProductView.ts` (lines 53-79) | `"€199.99"`, `"€59.99"`, `"€39.99"` | These are static tracking data -- less critical but should also reflect the buyer's currency |
+---
 
-## Changes
+## Problem 2: Stars Only Show 3 Filled Instead of 4.8
+The fractional star rendering is broken -- a 4.8 rating displays as roughly 3 filled stars.
 
-### 1. `src/components/Hero.tsx`
-- Replace the hardcoded `const compareAtPrice = 199.99` with reading from the Shopify variant: `variant?.compareAtPrice?.amount ? parseFloat(variant.compareAtPrice.amount) : 199.99`
-- The variant already contains localized `compareAtPrice` data from the `@inContext` query, so a UK visitor will get the GBP value and a DKK visitor will get the DKK value
-- The `199.99` remains only as a fallback if Shopify data isn't loaded yet
+**Root cause**: The `StarRating` component places a lucide `Star` component (which renders its own `<svg>` element) inside a parent `<svg>`. This nested-SVG situation causes the `clipPath` to not apply correctly, resulting in broken rendering.
 
-### 2. `src/components/ab-testing/HeroVariantB.tsx`
-- Same fix as Hero.tsx: read `compareAtPrice` from the Shopify variant instead of hardcoding `199.99`
+**Fix**: Replace the nested lucide `Star` components in the partial-star branch with raw SVG `<path>` elements using the actual star path data (`d` attribute from the lucide star icon). This avoids nested SVGs and allows the `clipPath` to work correctly.
 
-### 3. `src/components/ValentinesHeroSection.tsx`
-- Currently receives `productPrice` as a prop but not the compare-at price
-- Add a new prop `compareAtPrice: number` and pass it from the parent (Hero.tsx)
-- Replace `const singleCompareAtPrice = 199.99` with the prop value (fallback to `199.99`)
-- This makes the Valentine's savings calculation ("You save X") also correct per currency
+For full and empty stars (non-partial), the existing lucide `Star` component works fine and can stay as-is.
 
-### 4. `src/hooks/useTrackProductView.ts`
-- The `STATIC_PRODUCT_DATA` has hardcoded `"€119.99"` / `"€199.99"` etc. These are used for recently-viewed tracking
-- Update to not hardcode currency: either remove the static prices (they're overridden when actual Shopify data loads) or make them currency-aware using the buyer's detected currency
-- Lower priority since this is tracking/display data, not purchase-critical
+---
 
-## How It Works After the Fix
+## Files to Change
 
-Shopify's `@inContext(country: $country)` directive already returns localized compare-at prices. The GraphQL query already fetches `compareAtPrice { amount, currencyCode }` on each variant. The fix simply reads these values instead of ignoring them.
+1. **`src/components/ProductGallery.tsx`** -- Update the sleep mask image import
+2. **`src/components/ui/star-rating.tsx`** -- Fix the partial star rendering by using raw SVG path instead of nested lucide `Star` components
 
-Example for a product with EUR compare-at of 199.99:
-- **UK visitor**: Shopify returns `compareAtPrice: { amount: "159.99", currencyCode: "GBP" }` -- displayed as `£159.99`
-- **DK visitor**: Shopify returns `compareAtPrice: { amount: "1499.00", currencyCode: "DKK" }` -- displayed as `kr1499.00`
-- **AU visitor**: Shopify returns `compareAtPrice: { amount: "299.99", currencyCode: "AUD" }` -- displayed as `A$299.99`
+## Technical Details
 
-The actual conversion rates are controlled in **Shopify Admin > Settings > Markets** -- no code changes needed for rate adjustments.
+The lucide star path data is: `M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z`
 
-## Files to Modify
-
-1. `src/components/Hero.tsx` -- Read compareAtPrice from variant
-2. `src/components/ab-testing/HeroVariantB.tsx` -- Same
-3. `src/components/ValentinesHeroSection.tsx` -- Accept compareAtPrice as prop
-4. `src/hooks/useTrackProductView.ts` -- Remove hardcoded EUR prices (low priority)
+For partial stars, the component will render a single `<svg>` containing:
+- A background path (gray/muted fill for the empty portion)
+- A `<clipPath>` with a `<rect>` sized to `width = 24 * fillFraction`
+- A foreground path clipped to show only the filled portion in amber/yellow
