@@ -272,10 +272,6 @@ export const Hero = () => {
             {/* Mobile Price with Discount Badge - fixed height prevents CLS when price loads */}
             <div className="flex items-center gap-2 mt-2 flex-wrap h-[52px]">
               <p className="text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
-              <span className="text-base line-through text-muted-foreground">{formatPrice(compareAtPrice, currencyCode)}</span>
-              <div className="inline-flex items-center gap-2.5 bg-primary/10 border border-primary/20 px-4 py-3 rounded-full h-[44px]">
-                <span className="text-base font-bold text-primary">40% OFF</span>
-              </div>
             </div>
             
             {/* MOBILE CTA FIRST: Show CTA immediately after price when enabled */}
@@ -365,10 +361,6 @@ export const Hero = () => {
             {/* Price Display with Discount Badge - Desktop Only */}
             <div className="hidden md:flex items-center gap-3 mt-2 mb-3">
               <p className="text-xl md:text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
-              <span className="text-lg line-through text-muted-foreground">{formatPrice(compareAtPrice, currencyCode)}</span>
-              <div className="inline-flex items-center gap-3 bg-primary/10 border border-primary/20 px-5 py-3.5 rounded-full shadow-sm">
-                <span className="text-lg font-bold text-primary">40% OFF</span>
-              </div>
             </div>
 
             {/* USPs Section */}
