@@ -1,24 +1,33 @@
 
+# Redesign Sticky Add to Cart — Single Floating CTA Button
 
-# Shorten Mini Reviews for No-Numbness Pillow Page
+## Overview
+Replace the current multi-element sticky bar (image + title + stars + two buttons) with a single floating "1+1" deal button at the bottom of the screen, styled with rounded corners like the reference screenshot.
 
-## Problem
-The review texts in the `backPainReviews` array are too long, causing them to overflow or get clipped (via `line-clamp-4`) in the mini reviews carousel on the `/products/no-numbness-pillow` page.
+## Changes
 
-## Solution
+### File: `src/components/StickyAddToCart.tsx`
 
-### File: `src/components/MiniReviewsCarousel.tsx`
+**For pillow products only** (the `isPillowProduct` path):
 
-Shorten all 5 `backPainReviews` body texts to fit comfortably within the 4-line clamp. Each review will be trimmed to roughly 1-2 concise sentences while keeping the arm numbness focus intact.
+1. **Remove** the full-width bar layout (product image, title, stars, single-pillow CTA)
+2. **Replace** with a single floating button centered at the bottom with:
+   - Pink background (`bg-pink-500 hover:bg-pink-600`)
+   - Fully rounded corners (`rounded-full`)
+   - Larger size for easy tapping (`h-12 px-8`)
+   - Text: "1+1 Deal — €119.99" (or dynamic price)
+   - Bottom margin so it floats above the edge (`bottom-4`)
+   - Centered horizontally (`left-1/2 -translate-x-1/2` or `mx-auto`)
+3. **Outer wrapper** for pillow products changes from full-width bar to a floating container:
+   - Remove `border-t`, `bg-background`, full-width styling
+   - Use `w-auto` centered positioning with `rounded-full` and shadow
 
-**Revised review texts:**
+**Non-pillow products** (bundles, sleep mask) remain unchanged — they keep the current full-width bar.
 
-1. **Margaret Williams**: "I used to wake up with a completely numb arm and tingling fingers. After a week on this pillow it's basically gone."
-2. **Robert Johnson**: "Side sleeping gave me a dead arm every morning. This pillow stops the shoulder compression — no more shaking my hand to get feeling back."
-3. **Patricia Anderson**: "Turns out my old pillow was compressing my shoulder all night. This one takes the pressure off and the arm numbness is gone."
-4. **David Patterson**: "I was stacking pillows trying to stop the dead arm. This one fixed it fast — no more pins and needles in the morning."
-5. **Susan Miller**: "I sleep on my side and don't wake up with a numb arm anymore. This pillow keeps my shoulder from getting crushed all night."
+### Technical Details
 
-### Localized reviews (COUNTRY_REVIEWERS)
-
-The `backBody` strings for all 10 locales (NL, GB, AU, NZ, SE, NO, DK, DE, FR, CA) will also be shortened to match the same concise length, preserving the translated arm-numbness messaging.
+- Lines 276-283: Conditionally render a floating wrapper (no border-t, no full-width bg) when `isPillowProduct` is true
+- Lines 289-324: Remove the image + title + stars block for pillow products
+- Lines 487-523: Replace the two-button CTA section with a single full-width rounded button
+- The button calls the existing `handleAddDeal` function
+- Keep all existing show/hide logic (`shouldHide`, transitions)
