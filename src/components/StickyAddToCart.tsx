@@ -273,8 +273,17 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
   // Desktop: transform-based hide/show
   const shouldHide = isCartOpen || isMobileMenuOpen;
 
-  // Pillow products: floating single CTA button
-  if (isPillowProduct) {
+  // Pillow products & sleep mask: floating CTA button
+  if (isPillowProduct || isSleepMask) {
+    // Get sleep mask price for the selected color variant
+    const sleepMaskVariant = isSleepMask 
+      ? product?.node.variants.edges.find(v => {
+          const colorOpt = v.node.selectedOptions.find(opt => opt.name === "Color");
+          return colorOpt?.value === selectedColor;
+        })?.node || product?.node.variants.edges[0]?.node
+      : null;
+    const sleepMaskPrice = sleepMaskVariant ? parseFloat(sleepMaskVariant.price.amount) : productPrice;
+
     return (
       <div 
         className={`fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] ${
@@ -284,20 +293,79 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
         }`}
       >
         {product ? (
-          <Button 
-            onClick={isErgonomicPillow ? handleAddDeal : handleAddToCart}
-            disabled={isErgonomicPillow ? isAddingDeal : isCheckingOut}
-            className="rounded-full h-12 px-8 bg-pink-500 hover:bg-pink-600 text-white font-semibold text-sm shadow-lg"
-          >
-            {(isErgonomicPillow ? isAddingDeal : isCheckingOut) ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <>
-                <ShoppingCart className="w-4 h-4 mr-2" />
-                <span>{isErgonomicPillow ? `1+1 Deal — ${formatPrice(productPrice, currencyCode)}` : 'ADD TO CART'}</span>
-              </>
+          <div className="flex items-center gap-2">
+            {/* Color picker for sleep mask */}
+            {isSleepMask && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowColorPicker(!showColorPicker)}
+                  aria-label={`Select color, currently ${selectedColor}`}
+                  aria-expanded={showColorPicker}
+                  className="rounded-full h-12 w-12 bg-background border border-border shadow-lg flex items-center justify-center hover:bg-muted transition-colors"
+                >
+                  <img 
+                    src={colors.find(c => c.name === selectedColor)?.image || colors[0].image} 
+                    alt={selectedColor}
+                    className="w-8 h-8 object-contain"
+                  />
+                </button>
+
+                {showColorPicker && (
+                  <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-background border border-border rounded-xl shadow-lg p-3 z-[110] w-[280px] max-w-[calc(100vw-2rem)]">
+                    <div className="grid grid-cols-3 gap-3">
+                      {colors.map((color) => (
+                        <button
+                          key={color.value}
+                          onClick={() => {
+                            setSelectedColor(color.name);
+                            setShowColorPicker(false);
+                          }}
+                          className={`flex flex-col items-center gap-1.5 p-2 rounded-lg hover:bg-primary/10 transition-colors ${
+                            selectedColor === color.name ? "bg-primary/20 ring-2 ring-primary" : ""
+                          }`}
+                        >
+                          <div className="w-14 h-14 rounded-lg border-2 border-border overflow-hidden bg-background flex items-center justify-center relative">
+                            <img 
+                              src={color.image} 
+                              alt={color.name}
+                              className="w-full h-full object-contain p-1"
+                            />
+                            {selectedColor === color.name && (
+                              <div className="absolute inset-0 bg-primary/10 flex items-center justify-center">
+                                <Check className="w-5 h-5 text-primary" />
+                              </div>
+                            )}
+                          </div>
+                          <span className="text-xs font-medium text-center">{color.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
-          </Button>
+
+            <Button 
+              onClick={isErgonomicPillow ? handleAddDeal : handleAddToCart}
+              disabled={isErgonomicPillow ? isAddingDeal : isCheckingOut}
+              className="rounded-full h-12 px-8 bg-pink-500 hover:bg-pink-600 text-white font-semibold text-sm shadow-lg"
+            >
+              {(isErgonomicPillow ? isAddingDeal : isCheckingOut) ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  <ShoppingCart className="w-4 h-4 mr-2" />
+                  <span>
+                    {isErgonomicPillow 
+                      ? `1+1 Deal — ${formatPrice(productPrice, currencyCode)}` 
+                      : isSleepMask
+                        ? `ADD TO CART — ${formatPrice(sleepMaskPrice, currencyCode)}`
+                        : 'ADD TO CART'}
+                  </span>
+                </>
+              )}
+            </Button>
+          </div>
         ) : (
           <div className="text-center text-sm text-muted-foreground">Loading...</div>
         )}
