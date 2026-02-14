@@ -1,29 +1,24 @@
 
 
-# Fix Sticky Add to Cart - Keep Single Row, Prevent Overflow
+# Shorten Mini Reviews for No-Numbness Pillow Page
 
 ## Problem
-The sticky bar content overflows on narrow screens because the title, stars, and CTAs all compete for horizontal space with `flex-shrink-0`.
+The review texts in the `backPainReviews` array are too long, causing them to overflow or get clipped (via `line-clamp-4`) in the mini reviews carousel on the `/products/no-numbness-pillow` page.
 
 ## Solution
 
-### File: `src/components/StickyAddToCart.tsx` (lines 311-327)
+### File: `src/components/MiniReviewsCarousel.tsx`
 
-Change the pillow product block to match the efficient pattern already used by non-pillow products (lines 329-341): wrap title and stars in a single `min-w-0 flex-shrink` container so they can shrink gracefully instead of forcing overflow.
+Shorten all 5 `backPainReviews` body texts to fit comfortably within the 4-line clamp. Each review will be trimmed to roughly 1-2 concise sentences while keeping the arm numbness focus intact.
 
-**Changes:**
-1. Replace the fragment (`<>...</>`) with a `div` using `min-w-0 flex-shrink` (allows the text block to shrink)
-2. Keep title on one line with `line-clamp-1` and add `truncate` for safety
-3. Move stars below the title (as a second line inside the same div), matching the non-pillow layout
-4. Remove `flex-shrink-0` from both the title and the stars row so they yield space to CTAs
+**Revised review texts:**
 
-**Result:** Everything stays in one horizontal row -- `[Image] [Title + Stars stacked] [CTAs]` -- but the title/stars block shrinks instead of pushing CTAs off-screen.
+1. **Margaret Williams**: "I used to wake up with a completely numb arm and tingling fingers. After a week on this pillow it's basically gone."
+2. **Robert Johnson**: "Side sleeping gave me a dead arm every morning. This pillow stops the shoulder compression — no more shaking my hand to get feeling back."
+3. **Patricia Anderson**: "Turns out my old pillow was compressing my shoulder all night. This one takes the pressure off and the arm numbness is gone."
+4. **David Patterson**: "I was stacking pillows trying to stop the dead arm. This one fixed it fast — no more pins and needles in the morning."
+5. **Susan Miller**: "I sleep on my side and don't wake up with a numb arm anymore. This pillow keeps my shoulder from getting crushed all night."
 
-```
-Before: [Image] [Title(no-shrink)] [Stars(no-shrink)] [CTAs]  --> overflows
+### Localized reviews (COUNTRY_REVIEWERS)
 
-After:  [Image] [ Title (truncates) ] [CTAs]
-                 [ Stars + Count     ]
-```
-
-This is the same pattern already working for the non-pillow sticky bar (lines 329-341), just applied to the pillow variant.
+The `backBody` strings for all 10 locales (NL, GB, AU, NZ, SE, NO, DK, DE, FR, CA) will also be shortened to match the same concise length, preserving the translated arm-numbness messaging.
