@@ -116,14 +116,9 @@ export const RecentlyViewedItems = ({
                       {product.price}
                     </span>
                     {product.compareAtPrice && (
-                      <>
-                        <span className="text-xs text-muted-foreground line-through">
-                          {product.compareAtPrice}
-                        </span>
-                        <span className="text-[10px] font-semibold text-white bg-primary px-1.5 py-0.5 rounded">
-                          40% OFF
-                        </span>
-                      </>
+                      <span className="text-xs text-muted-foreground line-through">
+                        {product.compareAtPrice}
+                      </span>
                     )}
                   </div>
                   
