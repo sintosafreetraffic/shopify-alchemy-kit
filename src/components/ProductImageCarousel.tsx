@@ -1,5 +1,4 @@
 // Performance: All images use WebP format for better compression
-import homepageMobileHero from "@/assets/homepage-hero-mobile-couple.jpeg";
 // Product demo video uses image-first poster with click-to-play
 import { useState, useEffect, useRef } from "react";
 // All images are already WebP format for optimal performance
@@ -70,10 +69,9 @@ const VideoPoster = ({ posterSrc, alt, width, height, onPlayClick, className = "
 
 interface ProductImageCarouselProps {
   pillowFocus?: PillowFocus;
-  mobileFirstImage?: { url: string; alt: string };
 }
 
-export const ProductImageCarousel = ({ pillowFocus = 'neck', mobileFirstImage }: ProductImageCarouselProps) => {
+export const ProductImageCarousel = ({ pillowFocus = 'neck' }: ProductImageCarouselProps) => {
   const [expandedImageIndex, setExpandedImageIndex] = useState<number | null>(null);
   const [mobileApi, setMobileApi] = useState<CarouselApi>();
   const [desktopApi, setDesktopApi] = useState<CarouselApi>();
@@ -124,10 +122,8 @@ export const ProductImageCarousel = ({ pillowFocus = 'neck', mobileFirstImage }:
   // Get only image URLs (excluding videos) for the modal navigation
   const imageOnlyUrls = orderedImages.filter(img => img.type === "image").map(img => img.url);
 
-  // Mobile order - same as desktop but with optional first image override
-  const mobileImages = mobileFirstImage 
-    ? [{ url: mobileFirstImage.url, alt: mobileFirstImage.alt, type: "image" }, ...orderedImages.slice(1)]
-    : orderedImages;
+  // Mobile order - same as desktop (respects focus reorder)
+  const mobileImages = orderedImages;
   
   // Get only image URLs for mobile (excluding videos) for the modal navigation
   const mobileImageOnlyUrls = mobileImages.filter(img => img.type === "image").map(img => img.url);

@@ -1,6 +1,5 @@
 // Performance: Using WebP images with lazy loading for below-fold content
 // Carousel is lazy-loaded to reduce initial bundle size
-import homepageMobileHero from "@/assets/homepage-hero-mobile-couple.jpeg";
 import { Button } from "@/components/ui/button";
 import { Check, Shield, Moon, Truck, Loader2, Star, ImageIcon, ChevronDown, Heart, Package, ShieldCheck } from "lucide-react";
 import { PaymentIcons } from "./PaymentIcons";
@@ -232,7 +231,7 @@ export const Hero = () => {
         {/* Mobile Layout: Carousel at top, then title */}
         <div className="md:hidden space-y-3 md:space-y-4 mb-0 md:mb-6">
           <Suspense fallback={<CarouselFallback />}>
-            <ProductImageCarousel mobileFirstImage={{ url: homepageMobileHero, alt: "Happy couple with Rise By Night ergonomic pillows" }} />
+            <ProductImageCarousel />
           </Suspense>
           <Suspense fallback={<div className="h-32 bg-muted/30 rounded-xl animate-pulse" />}>
             <MiniReviewsCarousel productHandle="ergonomic-pillow" autoPlayInterval={10000} buyerCountry={buyerCountry} />
