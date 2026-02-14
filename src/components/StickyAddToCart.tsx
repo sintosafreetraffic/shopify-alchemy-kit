@@ -311,7 +311,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
               {isPillowProduct ? (
                 <>
                   {/* Product Title */}
-                  <span className="font-semibold text-xs sm:text-sm line-clamp-1 min-w-0 flex-shrink">
+                  <span className="font-semibold text-[11px] sm:text-sm line-clamp-1 flex-shrink-0">
                     RiseByNight Ergonomic Sleep Pillow
                   </span>
 
