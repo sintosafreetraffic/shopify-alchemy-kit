@@ -13,7 +13,8 @@ import { useCartStore } from "@/stores/cartStore";
 import { useABErgonomicPillow } from "@/hooks/useABProduct";
 import { useValentinesOffer } from "@/hooks/useValentinesOffer";
 import { formatPrice } from "@/lib/formatPrice";
-import { useIsEU } from "@/hooks/useCurrencySymbol";
+import { getBuyerCountrySync } from "@/lib/buyerContext";
+import { getCurrencyForCountry } from "@/lib/countryCode";
 import { toast } from "sonner";
 
 interface StickyProductNavProps {
@@ -36,13 +37,14 @@ export const StickyProductNav = ({
   const { addItem, setCartOpen } = useCartStore();
   const { product } = useABErgonomicPillow();
   const valentinesOffer = useValentinesOffer();
-  const isEU = useIsEU();
+  const buyerCountry = getBuyerCountrySync() || 'US';
+  const buyerCurrency = getCurrencyForCountry(buyerCountry);
 
   // Get variant and pricing for single pillow
   const variant = product?.node.variants.edges[0]?.node;
   const productPrice = variant ? parseFloat(variant.price.amount) : 59.99;
   const shopifyCurrency = variant?.price.currencyCode || 'USD';
-  const currencyCode = (isEU && shopifyCurrency === 'USD') ? 'EUR' : shopifyCurrency;
+  const currencyCode = shopifyCurrency === 'USD' ? buyerCurrency : shopifyCurrency;
 
   // BOGO deal: 2 pillows for the price shown (same product, quantity 2)
   const bogoPrice = productPrice; // Same price for 2 pillows

@@ -24,7 +24,8 @@ import { Loader2, ArrowRight, Check, Star, Shield, Award, Gem, Crown, Moon, Spar
 import { useShopifyProducts } from "@/hooks/useShopifyProducts";
 import { formatPrice } from "@/lib/formatPrice";
 import { getCompareAtFromRatio } from "@/lib/compareAtPriceRatios";
-import { useIsEU } from "@/hooks/useCurrencySymbol";
+import { getBuyerCountrySync } from "@/lib/buyerContext";
+import { getCurrencyForCountry } from "@/lib/countryCode";
 
 interface AffiliateInfo {
   referral_code: string;
@@ -82,14 +83,15 @@ export default function RefLandingPage() {
   const [loading, setLoading] = useState(true);
   const [affiliate, setAffiliate] = useState<AffiliateInfo | null>(null);
   const [error, setError] = useState(false);
-  const isEU = useIsEU();
+  const buyerCountry = getBuyerCountrySync() || 'US';
+  const buyerCurrency = getCurrencyForCountry(buyerCountry);
 
   // Fetch live Shopify product data for localized pricing
   const { data: products } = useShopifyProducts(10);
   const shopifyProduct = products?.find(p => p.node.handle === PRODUCT.handle);
   const variant = shopifyProduct?.node.variants.edges[0]?.node;
   const shopifyCurrency = variant?.price.currencyCode || 'USD';
-  const currencyCode = (isEU && shopifyCurrency === 'USD') ? 'EUR' : shopifyCurrency;
+  const currencyCode = shopifyCurrency === 'USD' ? buyerCurrency : shopifyCurrency;
   const productPrice = variant ? parseFloat(variant.price.amount) : 59.99;
   const compareAtRaw = variant?.compareAtPrice?.amount ? variant.compareAtPrice.amount : getCompareAtFromRatio(PRODUCT.handle, variant?.price.amount);
   const compareAtPrice = compareAtRaw ? parseFloat(compareAtRaw) : null;

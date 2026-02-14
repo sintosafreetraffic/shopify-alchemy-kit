@@ -13,7 +13,8 @@ import { trackStickyATCClick } from "@/hooks/usePDPIntentTracking";
 // trackABEvent moved to cartStore for centralized ATC tracking
 import { Badge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/formatPrice";
-import { useIsEU } from "@/hooks/useCurrencySymbol";
+import { getBuyerCountrySync } from "@/lib/buyerContext";
+import { getCurrencyForCountry } from "@/lib/countryCode";
 import sleepMaskNavy from "@/assets/sleep-mask-navy.webp";
 import sleepMaskTurquoise from "@/assets/sleep-mask-turquoise.webp";
 import sleepMaskPink from "@/assets/sleep-mask-pink.webp";
@@ -58,7 +59,8 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
   const { addItem, setCartOpen, isCartOpen, items } = useCartStore();
   const { isMobileMenuOpen } = useUIStore();
   const isMobile = useIsMobile();
-  const isEU = useIsEU();
+  const buyerCountry = getBuyerCountrySync() || 'US';
+  const buyerCurrency = getCurrencyForCountry(buyerCountry);
   const valentinesOffer = useValentinesOffer();
   // Calculate cart totals
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -237,8 +239,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
   // Product is already A/B-aware (loaded via getErgonomicPillowHandle for ergonomic pillow)
   const productVariant = product?.node.variants.edges[0]?.node;
   const shopifyCurrency = productVariant?.price.currencyCode || 'USD';
-  // Override to EUR for EU countries if Shopify returns USD
-  const currencyCode = (isEU && shopifyCurrency === 'USD') ? 'EUR' : shopifyCurrency;
+  const currencyCode = shopifyCurrency === 'USD' ? buyerCurrency : shopifyCurrency;
   const productPrice = isErgonomicPillow 
     ? parseFloat(productVariant?.price.amount || "59.99")
     : isKneePillow 
