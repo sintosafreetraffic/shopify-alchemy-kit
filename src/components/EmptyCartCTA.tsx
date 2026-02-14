@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { ShoppingBag, Star, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getPreferredPillowRoute } from "@/lib/pillowFocusPreference";
+import { useShippingConfig } from "@/hooks/useShippingConfig";
 
 interface EmptyCartCTAProps {
   onClose?: () => void;
@@ -9,6 +10,7 @@ interface EmptyCartCTAProps {
 
 export const EmptyCartCTA = ({ onClose }: EmptyCartCTAProps) => {
   const preferredRoute = getPreferredPillowRoute();
+  const { formattedThreshold } = useShippingConfig();
 
   return (
     <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
@@ -51,7 +53,7 @@ export const EmptyCartCTA = ({ onClose }: EmptyCartCTAProps) => {
       {/* Trust Signal */}
       <p className="text-[10px] text-muted-foreground mt-4 flex items-center gap-1">
         <span className="inline-block w-2 h-2 bg-green-500 rounded-full"></span>
-        Free shipping on orders over €50
+        Free shipping on orders over {formattedThreshold}
       </p>
     </div>
   );

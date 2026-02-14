@@ -6,13 +6,13 @@
 
 import { useCartStore } from "@/stores/cartStore";
 import { Heart, Truck, Gift } from "lucide-react";
-import { useCurrencySymbol } from "@/hooks/useCurrencySymbol";
+import { useShippingConfig } from "@/hooks/useShippingConfig";
 
 export const UrgencyBanner = () => {
   const isCartOpen = useCartStore((state) => state.isCartOpen);
-  const currencySymbol = useCurrencySymbol();
+  const { formattedThreshold } = useShippingConfig();
   
-  const shippingThreshold = `${currencySymbol}50`;
+  const shippingThreshold = formattedThreshold;
 
   return (
     <div
