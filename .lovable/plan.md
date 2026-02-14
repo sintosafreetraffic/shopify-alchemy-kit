@@ -1,64 +1,60 @@
 
 
-## Full Price Localization Audit -- Remaining Issues
+## Fix: Broken Currency Override Pattern Across 9 Files
 
-After a thorough scan of the codebase, here are the remaining hardcoded or non-converting price/text values that need fixing:
+### Root Cause
 
----
+Every component that displays prices uses this pattern to determine currency:
 
-### Issue 1: FooterTrustBadges -- Hardcoded "On orders EUR50+"
-**File:** `src/components/FooterTrustBadges.tsx` (line 24)
-**Problem:** The shipping threshold sublabel is hardcoded as `"On orders EUR50+"` instead of using the localized `useShippingConfig()` hook.
-**Fix:** Import `useShippingConfig` and display `On orders {formattedThreshold}+` so visitors in Sweden see "On orders 500 kr+" and UK visitors see "On orders GBP50+", etc.
+```
+const currencyCode = (isEU && shopifyCurrency === 'USD') ? 'EUR' : shopifyCurrency;
+```
 
----
+This is broken because:
+- **UK (GB)**: GB is not in the `EU_COUNTRIES` list, so `isEU` is `false`. If Shopify returns USD (which it often does for non-US visitors), it stays as USD instead of becoming GBP.
+- **Denmark (DK)**: DK is in `EU_COUNTRIES`, so `isEU` is `true`. The override converts USD to EUR -- but Denmark uses DKK, not EUR.
+- **Sweden (SE)**: Same problem as Denmark -- gets EUR instead of SEK.
 
-### Issue 2: PolicyAccordion -- Hardcoded "within the United States"
-**File:** `src/components/PolicyAccordion.tsx` (line 18)
-**Problem:** Shipping policy text says "within the United States" regardless of the visitor's country.
-**Fix:** Use buyer country detection to dynamically insert the country name (e.g., "within Sweden", "within the United Kingdom"), matching the pattern already used in `Hero.tsx` with `buyerCountryName`.
+Meanwhile, components like the announcement bar, footer trust badges, and shipping config work correctly because they use `getCurrencyForCountry(buyerCountry)` which properly maps each country to its actual currency (GB to GBP, DK to DKK, SE to SEK, etc.).
 
----
+### The Fix
 
-### Issue 3: InstallmentBadge -- Hardcoded EUR symbol
-**File:** `src/components/InstallmentBadge.tsx` (lines 25, 48)
-**Problem:** Klarna installment amounts always show `EUR` symbol (e.g., "4x EUR14.99") regardless of the buyer's currency. The component receives a numeric `price` but has no currency awareness.
-**Fix:** Add an optional `currencyCode` prop (defaulting to buyer's detected currency). Use `formatPrice(installmentAmount, currencyCode)` instead of the hardcoded `EUR{amount}` string.
+Replace the broken `isEU` override pattern in all 9 files with a proper buyer-country-aware currency resolution:
 
----
+```
+const buyerCountry = getBuyerCountrySync() || 'US';
+const buyerCurrency = getCurrencyForCountry(buyerCountry);
+const currencyCode = shopifyCurrency === 'USD' ? buyerCurrency : shopifyCurrency;
+```
 
-### Issue 4: Products.tsx -- Hardcoded "$0.00" fallback
-**File:** `src/pages/Products.tsx` (line 330)
-**Problem:** If a variant is missing, the fallback price is hardcoded `"$0.00"` instead of using `formatPrice(0, currencyCode)`.
-**Fix:** Replace `"$0.00"` with `formatPrice(0, currencyCode)` for consistency.
+This means: if Shopify returns the correct localized currency, use it. If Shopify returns USD (fallback), use the currency we know the buyer should see based on their detected country.
 
----
+### Files to Update
 
-### Issue 5: Deprecated STATIC_PRODUCT_DATA still exported
-**File:** `src/hooks/useTrackProductView.ts` (lines 109-149)
-**Problem:** The deprecated `STATIC_PRODUCT_DATA` constant with hardcoded `"$59.99"`, `"$39.99"`, etc. is still exported and imported by all product pages (used as fallback). While `getStaticProductData()` now exists, the old constant is still actively referenced as a fallback.
-**Fix:** Update the product pages to use `getStaticProductData(handle, currencyCode)` as fallback instead of the deprecated `STATIC_PRODUCT_DATA[handle]`. This ensures even the fallback path is localized.
+All 9 files that use the `(isEU && shopifyCurrency === 'USD') ? 'EUR' : shopifyCurrency` pattern:
 
----
+| # | File | Current (broken) | After fix |
+|---|------|-------------------|-----------|
+| 1 | `StickyAddToCart.tsx` | `isEU && shopifyCurrency === 'USD'` overrides to EUR | Uses `getCurrencyForCountry` for proper GBP/DKK/SEK |
+| 2 | `StickyProductNav.tsx` | Same broken pattern | Same fix |
+| 3 | `ProductGallery.tsx` | Same broken pattern | Same fix |
+| 4 | `SleepMaskHero.tsx` | Same broken pattern | Same fix |
+| 5 | `PostATCUpsellModal.tsx` | Same broken pattern | Same fix |
+| 6 | `RefLandingPage.tsx` | Same broken pattern | Same fix |
+| 7 | `Hero.tsx` | Same broken pattern | Same fix |
+| 8 | `CartDrawer.tsx` | Same broken pattern | Same fix |
+| 9 | `KneePillowHero.tsx` | Same broken pattern | Same fix |
 
-### Summary of files to modify:
+### What stays the same
+- `useIsEU` hook itself is fine and can remain for non-currency logic
+- `getCurrencyForCountry` already handles all country-to-currency mappings correctly
+- `getBuyerCountrySync` is already imported in several of these files
 
-| File | Issue | Fix |
-|------|-------|-----|
-| `FooterTrustBadges.tsx` | "On orders EUR50+" hardcoded | Use `useShippingConfig().formattedThreshold` |
-| `PolicyAccordion.tsx` | "within the United States" hardcoded | Use buyer country name dynamically |
-| `InstallmentBadge.tsx` | EUR symbol hardcoded in Klarna text | Add `currencyCode` prop, use `formatPrice` |
-| `Products.tsx` | `"$0.00"` fallback | Use `formatPrice(0, currencyCode)` |
-| `SleepMaskProduct.tsx` | Fallback uses `STATIC_PRODUCT_DATA` | Use `getStaticProductData("sleep-mask", currencyCode)` |
-| `KneePillowProduct.tsx` | Fallback uses `STATIC_PRODUCT_DATA` | Use `getStaticProductData("knee-pillow", currencyCode)` |
-| `ErgonomicPillowProductVariantB.tsx` | Fallback uses `STATIC_PRODUCT_DATA` | Use `getStaticProductData("ergonomic-pillow", currencyCode)` |
-| `SleepBundleProduct.tsx` | Fallback uses `STATIC_PRODUCT_DATA` | Use `getStaticProductData("sleep-bundle", currencyCode)` |
-| `useTrackProductView.ts` | Remove deprecated `STATIC_PRODUCT_DATA` export | Clean up after all references updated |
-
-**Not flagged** (acceptable):
-- `ai-brain.ts` edge function: USD prices in AI prompt context are fine (not user-facing)
-- `compareAtPriceRatios.ts`: USD comment is documentation only
-- `WeeklyReviewTab.tsx`: Internal dashboard, "$0.00" is acceptable
-- `CartDrawer.tsx` comments referencing EUR: These are code comments, not displayed
-- `Hero.tsx` / `HeroVariantB.tsx`: Already properly localized with `buyerCountryName`
+### Expected Results After Fix
+- **UK**: All prices in GBP (pounds)
+- **Denmark**: All prices in DKK (kr)
+- **Sweden**: All prices in SEK (kr)
+- **Germany/Ireland**: All prices in EUR (unchanged, still works)
+- **USA**: All prices in USD (unchanged)
+- **Australia/NZ/Canada**: Correct local currencies
 
