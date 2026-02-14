@@ -25,19 +25,60 @@ export function StarRating({
 }: StarRatingProps) {
   return (
     <div className={cn("flex", className)}>
-      {Array.from({ length: maxRating }).map((_, i) => (
-        <Star
-          key={i}
-          className={cn(
-            sizeClasses[size],
-            i < rating
-              ? "fill-[hsl(var(--star))] text-[hsl(var(--star))]"
-              : showEmpty
-                ? "fill-muted text-muted"
-                : "fill-[hsl(var(--star))] text-[hsl(var(--star))]"
-          )}
-        />
-      ))}
+      {Array.from({ length: maxRating }).map((_, i) => {
+        const fill = Math.min(1, Math.max(0, rating - i)); // 0 to 1 for this star
+        const isFull = fill >= 1;
+        const isPartial = fill > 0 && fill < 1;
+        const isEmpty = fill <= 0;
+        const clipId = `star-clip-${i}-${Math.random().toString(36).slice(2, 7)}`;
+
+        if (isPartial) {
+          return (
+            <svg
+              key={i}
+              className={cn(sizeClasses[size])}
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <defs>
+                <clipPath id={clipId}>
+                  <rect x="0" y="0" width={24 * fill} height="24" />
+                </clipPath>
+              </defs>
+              {/* Filled portion */}
+              <Star
+                className="text-[hsl(var(--star))]"
+                style={{ clipPath: `url(#${clipId})` }}
+                fill="hsl(var(--star))"
+                stroke="hsl(var(--star))"
+                strokeWidth={2}
+              />
+              {/* Empty portion (outline) */}
+              <Star
+                className={showEmpty ? "text-muted" : "text-[hsl(var(--star))]"}
+                fill={showEmpty ? "currentColor" : "none"}
+                stroke="currentColor"
+                strokeWidth={2}
+              />
+            </svg>
+          );
+        }
+
+        return (
+          <Star
+            key={i}
+            className={cn(
+              sizeClasses[size],
+              isFull
+                ? "fill-[hsl(var(--star))] text-[hsl(var(--star))]"
+                : showEmpty
+                  ? "fill-muted text-muted"
+                  : "fill-[hsl(var(--star))] text-[hsl(var(--star))]"
+            )}
+          />
+        );
+      })}
     </div>
   );
 }

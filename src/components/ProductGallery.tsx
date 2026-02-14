@@ -1,7 +1,8 @@
 // Performance: Updated images to use WebP variants + OptimizedImage component
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowRight, Star, Heart } from "lucide-react";
+import { ArrowRight, Heart } from "lucide-react";
+import { StarRating } from "@/components/ui/star-rating";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { fetchProducts, type ShopifyProduct } from "@/lib/shopify";
@@ -165,16 +166,7 @@ export const ProductGallery = () => {
 
                   <div className="p-6 md:p-8 flex flex-col justify-center">
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="flex">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`w-5 h-5 ${
-                              i < 5 ? "fill-[hsl(var(--star))] text-[hsl(var(--star))]" : "text-muted"
-                            }`}
-                          />
-                        ))}
-                      </div>
+                      <StarRating rating={4.9} size="lg" showEmpty />
                       <span className="text-base font-semibold">4.9</span>
                       <span className="text-sm text-muted-foreground">(2,100+ reviews)</span>
                     </div>
@@ -263,16 +255,7 @@ export const ProductGallery = () => {
 
                 <div className="p-6">
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="flex">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`w-4 h-4 ${
-                            i < Math.floor(product.rating) ? "fill-[hsl(var(--star))] text-[hsl(var(--star))]" : "text-muted"
-                          }`}
-                        />
-                      ))}
-                    </div>
+                    <StarRating rating={product.rating} size="md" showEmpty />
                     <span className="text-sm font-medium">{product.rating}</span>
                     <span className="text-sm text-muted-foreground">({product.reviews} reviews)</span>
                   </div>
