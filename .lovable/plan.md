@@ -1,25 +1,35 @@
 
-# Cart Drawer Cleanup and Best Value Badge Enhancement
+# Add Compare-at Price Fallback to Sleep Bundle Product Page
+
+## Problem
+The Sleep Bundle product page (`SleepBundleHero.tsx`) only checks `variant.compareAtPrice` for displaying the strikethrough price. When the Storefront API returns `null` for variant-level `compareAtPrice` (even though it exists in Shopify Admin), no strikethrough price is shown.
+
+This was already fixed on the homepage `ProductGallery.tsx` by adding a fallback to `compareAtPriceRange` at the product level. The same fix needs to be applied here.
 
 ## Changes
 
-### 1. Remove "Delivery: 5-7 working days" from cart items
-Remove the delivery estimate line shown under each product in the cart (the truck icon + "Delivery: 5-7 working days" text).
+### File: `src/components/SleepBundleHero.tsx`
 
-**File: `src/components/CartDrawer.tsx`**
-- Remove lines 709-713 (the delivery estimate div with Truck icon and "5-7 working days" text)
+**Single Bundle price section (lines 188-192):**
+Replace the simple `compareAtPrice` check with a fallback that also checks `product.node.compareAtPriceRange`:
 
-### 2. Remove "Order within...for delivery by" from urgency banner
-Remove the shipping cutoff countdown from the CartUrgencyBanner, keeping only the "Items may sell out soon" / reservation timer message.
+```
+// Before: only checks variant compareAtPrice
+{product?.node.variants.edges[0]?.node.compareAtPrice && (...)}
 
-**File: `src/components/cart/CartUrgencyBanner.tsx`**
-- Remove lines 126-138 (the shipping cutoff section with Truck icon and "Order within X for delivery by Y")
-- Remove the shipping cutoff calculation logic (lines 48-92) and the `shippingInfo` state (line 15) since they are no longer needed
-- Remove unused imports (`Truck`, `addBusinessDays`, `format`)
+// After: also falls back to compareAtPriceRange
+{(() => {
+  const variantCompare = product?.node.variants.edges[0]?.node.compareAtPrice?.amount;
+  const rangeCompare = product?.node.compareAtPriceRange?.minVariantPrice?.amount;
+  const compareAmount = (variantCompare && parseFloat(variantCompare) > 0)
+    ? variantCompare
+    : (rangeCompare && parseFloat(rangeCompare) > 0)
+    ? rangeCompare : null;
+  return compareAmount ? (<strikethrough price>) : null;
+})()}
+```
 
-### 3. Make "Best Value" badge more prominent on the sleep bundle recommendation
-The current badge for the sleep bundle in the recommendations section uses `text-[10px]` with subtle background colors. Make it stand out more with bolder styling.
+**Double Bundle price section (lines 218-222):**
+Same pattern for the second variant.
 
-**File: `src/components/CartDrawer.tsx`**
-- For the mobile recommendation badge (around line 1010): when `badge.variant === 'value'`, apply a more prominent style -- larger text (`text-xs`), bold font, and a stronger color scheme (e.g., `bg-pink-500 text-white` to match the Valentine's promo styling already used elsewhere in the cart)
-- This targets only the "Best Value" badge on the sleep bundle recommendation card, keeping other badges (Most Popular, Recommended) at their current size
+This matches the approach already working in `ProductGallery.tsx`.
