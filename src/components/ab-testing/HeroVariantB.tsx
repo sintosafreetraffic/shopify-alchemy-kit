@@ -232,6 +232,13 @@ export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
             {/* Mobile Price with Discount Badge - fixed height prevents CLS when price loads */}
             <div className="flex items-center gap-2 mt-1 flex-wrap h-[40px]">
               <p className="text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
+              {compareAtPrice && compareAtPrice > productPrice && (
+                <span className="text-sm text-muted-foreground line-through">{formatPrice(compareAtPrice, currencyCode)}</span>
+              )}
+              <span className="inline-flex items-center gap-1 rounded-full bg-pink-100 text-pink-700 px-2 py-0.5 text-xs font-semibold">
+                <Heart className="w-3 h-3 fill-pink-500 text-pink-500" />
+                1+1
+              </span>
             </div>
 
             {/* Mobile: Klarna + Social Proof + USPs - between price and Valentine's offer */}
@@ -371,6 +378,13 @@ export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
             {/* Price Display with Discount Badge - Desktop Only */}
             <div className="hidden md:flex items-center gap-3 mt-2 mb-2">
               <p className="text-xl md:text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
+              {compareAtPrice && compareAtPrice > productPrice && (
+                <span className="text-sm text-muted-foreground line-through">{formatPrice(compareAtPrice, currencyCode)}</span>
+              )}
+              <span className="inline-flex items-center gap-1 rounded-full bg-pink-100 text-pink-700 px-2.5 py-0.5 text-xs font-semibold">
+                <Heart className="w-3 h-3 fill-pink-500 text-pink-500" />
+                1+1
+              </span>
             </div>
 
             {/* Temporarily disabled: Klarna + Social Proof badges (Desktop)
