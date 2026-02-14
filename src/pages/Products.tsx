@@ -5,6 +5,7 @@ import { ArrowRight, Star, Award, Truck, ChevronDown, ChevronUp, TrendingUp } fr
 import OptimizedImage from "@/components/OptimizedImage";
 import { useShopifyProducts } from "@/hooks/useShopifyProducts";
 import { formatPrice } from "@/lib/formatPrice";
+import { getCompareAtFromRatio } from "@/lib/compareAtPriceRatios";
 import { useIsEU } from "@/hooks/useCurrencySymbol";
 import { useSEO, SEO_CONFIGS } from "@/hooks/useSEO";
 import { BreadcrumbSchema } from "@/components/seo/SEOSchemas";
@@ -333,8 +334,15 @@ const Products = () => {
                     "risebynight-ergonomic-sleep-pillow-copy",
                     "rise-by-night™-complete-sleep-bundle",
                   ];
-                  const compareAtPrice = COMPARE_AT_WHITELIST.includes(handle) && variant?.compareAtPrice?.amount 
-                    ? formatPrice(variant.compareAtPrice.amount, currencyCode) 
+                  const variantCompareAt = variant?.compareAtPrice?.amount;
+                  const rangeCompareAt = product.node.compareAtPriceRange?.minVariantPrice?.amount;
+                  const ratioCompareAt = getCompareAtFromRatio(handle, variant?.price?.amount, 0);
+                  const rawCompareAt = (variantCompareAt && parseFloat(variantCompareAt) > 0)
+                    ? variantCompareAt
+                    : (rangeCompareAt && parseFloat(rangeCompareAt) > 0) ? rangeCompareAt
+                    : ratioCompareAt;
+                  const compareAtPrice = COMPARE_AT_WHITELIST.includes(handle) && rawCompareAt
+                    ? formatPrice(rawCompareAt, currencyCode)
                     : null;
 
                   return (

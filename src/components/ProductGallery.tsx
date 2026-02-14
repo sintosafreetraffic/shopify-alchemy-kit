@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import { fetchProducts, type ShopifyProduct } from "@/lib/shopify";
 import OptimizedImage from "@/components/OptimizedImage";
 import { formatPrice } from "@/lib/formatPrice";
+import { getCompareAtFromRatio } from "@/lib/compareAtPriceRatios";
 import { useIsEU } from "@/hooks/useCurrencySymbol";
 import { useABErgonomicPillow } from "@/hooks/useABProduct";
 import { getPreferredPillowRoute } from "@/lib/pillowFocusPreference";
@@ -80,6 +81,15 @@ export const ProductGallery = () => {
     const rangeAmount = product?.node.compareAtPriceRange?.minVariantPrice?.amount;
     if (rangeAmount && parseFloat(rangeAmount) > 0) {
       return formatPrice(rangeAmount, currencyCode);
+    }
+    // Ratio-based fallback for non-US markets
+    const handle = product?.node.handle;
+    const localPrice = variant?.price?.amount;
+    if (handle && localPrice) {
+      const ratioCompareAt = getCompareAtFromRatio(handle, localPrice, 0);
+      if (ratioCompareAt) {
+        return formatPrice(ratioCompareAt, currencyCode);
+      }
     }
     return undefined;
   };
