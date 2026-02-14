@@ -1,36 +1,17 @@
 
-# Align Bottom Sticky ATC with Upper Sticky Layout
-
-## Goal
-Make the bottom sticky bar (StickyAddToCart) match the upper sticky bar (StickyProductNav) layout: everything on one single line with product image, title, 1+1 badge, stars, reviews, and two CTA buttons. Also add the product title to the upper sticky bar.
+# Remove Top Sticky ATC & Fix Bottom Sticky Product Title
 
 ## Changes
 
-### 1. `src/components/StickyAddToCart.tsx` (pillow product section, lines 289-335)
-Restructure the pillow product layout to match StickyProductNav's single-line format:
+### 1. Remove StickyProductNav (top sticky bar)
+**File: `src/pages/ErgonomicPillowProductVariantB.tsx`**
+- Remove the import of `StickyProductNav`
+- Remove the `<StickyProductNav />` component from the JSX
 
-**Current layout (two rows):**
-- Row 1: Image + title + badge/stars/reviews
-- Row 2: Two CTA buttons (full width on mobile)
+The `src/components/StickyProductNav.tsx` file itself will be kept in the codebase (it may be used elsewhere in the future), but it will no longer render on the ergonomic pillow page.
 
-**New layout (one row, matching upper sticky):**
-- Image (w-9 h-9) | Title "RiseByNight Ergonomic Sleep Pillow" | 1+1 Deal badge | Stars | "6,247 reviews" | [Add single CTA] [1+1 Deal CTA]
-
-Key changes:
-- Remove `flex-wrap` from the outer container and use `flex-nowrap`
-- Show product title as `text-sm font-semibold line-clamp-1`
-- Keep badge, stars, reviews inline
-- Move CTAs to `ml-auto` like StickyProductNav
-- Size buttons to match upper sticky (h-8, text-[11px] sm:text-xs)
-
-### 2. `src/components/StickyProductNav.tsx` (line 138-168)
-Add the product title "RiseByNight Ergonomic Sleep Pillow" between the image and star ratings:
-
-- Add `<span className="font-semibold text-sm line-clamp-1 hidden sm:block">RiseByNight Ergonomic Sleep Pillow</span>` after the image
-- On mobile, the title will be hidden to keep things compact (image + stars + CTAs is enough)
-- Actually, looking at the screenshot reference, the title IS shown on mobile too in the upper sticky. So show it on all screens with truncation.
-
-## Visual Result (both bars)
-```
-[img] RiseByNight Ergonomic Sleep Pillow  [1+1 Deal] ★★★★★ 6,247  [€119.99] [1+1 €119.99]
-```
+### 2. Verify bottom sticky (StickyAddToCart) shows product title
+**File: `src/components/StickyAddToCart.tsx`**
+- The product title "RiseByNight Ergonomic Sleep Pillow" is already present at line 314-316
+- However, it may be getting truncated or hidden on mobile due to `flex-shrink` and `line-clamp-1` combined with all the other elements competing for space
+- Increase the title's minimum width slightly and ensure it renders visibly by giving it `flex-shrink-0` on mobile or adjusting the text size to `text-[11px] sm:text-sm` so it fits within the single-line layout without being crushed to zero width
