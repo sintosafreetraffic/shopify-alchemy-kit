@@ -2,11 +2,9 @@
 import { useState, useEffect } from "react";
 import kneePillowHeroMain from "@/assets/knee-pillow-main-hero.webp";
 import kneePillowFeaturesCallout from "@/assets/knee-pillow-features-callout.webp";
-import kneePillowMain from "@/assets/knee-pillow-main-new.webp";
 import kneePillowMaterials from "@/assets/knee-pillow-materials.webp";
 import kneePillowErgonomic from "@/assets/knee-pillow-ergonomic-design.webp";
 import kneePillowSleepingPositions from "@/assets/knee-pillow-sleeping-positions.webp";
-import kneePillowDesignFeatures from "@/assets/knee-pillow-design-features.webp";
 import kneePillowMemoryFoam from "@/assets/knee-pillow-memory-foam-core.webp";
 import {
   Carousel,
@@ -26,11 +24,9 @@ export const KneePillowImageCarousel = () => {
   const images = [
     { url: kneePillowHeroMain, alt: "Rise By Night ergonomic knee pillow main product view", type: "image" },
     { url: kneePillowFeaturesCallout, alt: "Rise By Night ergonomic knee pillow features - ergonomic contour, memory foam support, breathable cover, secure strap", type: "image" },
-    { url: kneePillowMain, alt: "Rise By Night ergonomic knee pillow main view", type: "image" },
     { url: kneePillowMaterials, alt: "Rise By Night knee pillow high quality materials", type: "image" },
     { url: kneePillowErgonomic, alt: "Rise By Night knee pillow ergonomic design", type: "image" },
     { url: kneePillowSleepingPositions, alt: "Rise By Night knee pillow for multiple sleeping positions", type: "image" },
-    { url: kneePillowDesignFeatures, alt: "Rise By Night knee pillow design features and construction", type: "image" },
     { url: kneePillowMemoryFoam, alt: "Rise By Night knee pillow memory foam core technology", type: "image" },
   ];
 
@@ -81,7 +77,7 @@ export const KneePillowImageCarousel = () => {
             <button
               key={index}
               onClick={() => api?.scrollTo(index)}
-              className={`relative w-12 h-12 rounded-lg overflow-hidden transition-all ${
+              className={`relative w-12 h-12 rounded-lg overflow-hidden transition-all border border-gray-200 ${
                 current === index 
                   ? 'ring-2 ring-primary ring-offset-1' 
                   : 'opacity-60 hover:opacity-100'
@@ -158,7 +154,7 @@ export const KneePillowImageCarousel = () => {
 
         {/* Last two images side by side */}
         <div className="grid grid-cols-2 gap-0">
-          <div className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setExpandedImage(images[4].url)}>
+          <div className="overflow-hidden aspect-square cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setExpandedImage(images[4].url)}>
             <img
               src={images[4].url}
               alt={images[4].alt}
@@ -169,7 +165,7 @@ export const KneePillowImageCarousel = () => {
               height="600"
             />
           </div>
-          <div className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setExpandedImage(images[5].url)}>
+          <div className="overflow-hidden aspect-square cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setExpandedImage(images[5].url)}>
             <img
               src={images[5].url}
               alt={images[5].alt}
