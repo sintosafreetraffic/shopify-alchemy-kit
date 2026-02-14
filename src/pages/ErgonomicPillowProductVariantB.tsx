@@ -31,6 +31,7 @@ import { ProductSchema } from "@/components/seo/SEOSchemas";
 import { useTrackProductView, STATIC_PRODUCT_DATA } from "@/hooks/useTrackProductView";
 import { useShopifyProducts } from "@/hooks/useShopifyProducts";
 import { formatPrice } from "@/lib/formatPrice";
+import { getCompareAtFromRatio } from "@/lib/compareAtPriceRatios";
 import ergonomicPillowHeroImg from "@/assets/ergonomic-pillow-hero.webp";
 import { AsSeenInLogos } from "@/components/home";
 import { HowToUseSection } from "@/components/HowToUseSection";
@@ -137,9 +138,13 @@ const ErgonomicPillowProductVariantB = () => {
         title: "Ergonomic Sleep Pillow",
         imageUrl: ergonomicPillowHeroImg,
         price: formatPrice(variant?.price?.amount || "59.99", currencyCode),
-        compareAtPrice: variant?.compareAtPrice?.amount
-          ? formatPrice(variant.compareAtPrice.amount, currencyCode)
-          : undefined,
+        compareAtPrice: (() => {
+          const variantCA = variant?.compareAtPrice?.amount;
+          if (variantCA && parseFloat(variantCA) > 0) return formatPrice(variantCA, currencyCode);
+          const ratioCA = getCompareAtFromRatio(pillowProduct.node.handle, variant?.price?.amount, 0);
+          if (ratioCA) return formatPrice(ratioCA, currencyCode);
+          return undefined;
+        })(),
         isValentinesDeal: true,
       };
     }

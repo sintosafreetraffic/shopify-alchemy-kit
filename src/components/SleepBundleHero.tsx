@@ -12,6 +12,7 @@ import { trackViewContent as trackMetaViewContent } from "@/lib/meta-pixel";
 import { trackPageVisit } from "@/lib/pinterest";
 import OptimizedImage from "@/components/OptimizedImage";
 import { formatPrice } from "@/lib/formatPrice";
+import { getCompareAtFromRatio } from "@/lib/compareAtPriceRatios";
 import { useIsEU } from "@/hooks/useCurrencySymbol";
 
 export const SleepBundleHero = () => {
@@ -188,9 +189,12 @@ export const SleepBundleHero = () => {
                     {(() => {
                       const variantCompare = product?.node.variants.edges[0]?.node.compareAtPrice?.amount;
                       const rangeCompare = product?.node.compareAtPriceRange?.minVariantPrice?.amount;
+                      const localPrice = product?.node.variants.edges[0]?.node.price?.amount;
+                      const ratioCompare = product?.node.handle ? getCompareAtFromRatio(product.node.handle, localPrice, 0) : null;
                       const compareAmount = (variantCompare && parseFloat(variantCompare) > 0)
                         ? variantCompare
-                        : (rangeCompare && parseFloat(rangeCompare) > 0) ? rangeCompare : null;
+                        : (rangeCompare && parseFloat(rangeCompare) > 0) ? rangeCompare 
+                        : ratioCompare;
                       const currency = getCurrency(product?.node.variants.edges[0]?.node.compareAtPrice?.currencyCode || product?.node.variants.edges[0]?.node.price.currencyCode);
                       return compareAmount ? (
                         <p className="text-xs text-muted-foreground line-through">
@@ -226,9 +230,12 @@ export const SleepBundleHero = () => {
                     {(() => {
                       const variantCompare = product?.node.variants.edges[1]?.node.compareAtPrice?.amount;
                       const rangeCompare = (product?.node.compareAtPriceRange as any)?.maxVariantPrice?.amount || product?.node.compareAtPriceRange?.minVariantPrice?.amount;
+                      const localPrice = product?.node.variants.edges[1]?.node.price?.amount;
+                      const ratioCompare = product?.node.handle ? getCompareAtFromRatio(product.node.handle, localPrice, 1) : null;
                       const compareAmount = (variantCompare && parseFloat(variantCompare) > 0)
                         ? variantCompare
-                        : (rangeCompare && parseFloat(rangeCompare) > 0) ? rangeCompare : null;
+                        : (rangeCompare && parseFloat(rangeCompare) > 0) ? rangeCompare 
+                        : ratioCompare;
                       const currency = getCurrency(product?.node.variants.edges[1]?.node.compareAtPrice?.currencyCode || product?.node.variants.edges[1]?.node.price.currencyCode);
                       return compareAmount ? (
                         <p className="text-xs text-muted-foreground line-through">
