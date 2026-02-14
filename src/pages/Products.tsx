@@ -27,7 +27,7 @@ const PRODUCT_REVIEWS: Record<string, { rating: number; reviews: string; badge?:
   "risebynight-ergonomic-knee-pillow": { rating: 4.7, reviews: "5,100+" },
   "risebynight-silk-sleep-mask": { rating: 4.9, reviews: "3,200+" },
   "risebynight-silk-deep-sleep-mask": { rating: 4.9, reviews: "3,200+" },
-  "rise-by-night™-complete-sleep-bundle": { rating: 4.9, reviews: "2,100+", badge: "Save 20%" },
+  "rise-by-night™-complete-sleep-bundle": { rating: 4.9, reviews: "2,100+", badge: "Best Offer" },
 };
 
 // Taglines for products
@@ -115,12 +115,12 @@ const ProductCard = ({
     >
       <div className="bg-card rounded-2xl overflow-hidden border border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300">
         {/* Image with hover swap */}
-        <div className="relative aspect-[4/3] bg-secondary/10 overflow-hidden">
+        <div className="relative aspect-square bg-secondary/10 overflow-hidden">
           {currentImage && (
             <OptimizedImage
               src={currentImage}
               alt={product.node.title}
-              className="w-full h-full object-contain group-hover:scale-105 transition-all duration-500 p-4"
+              className="w-full h-full object-contain group-hover:scale-105 transition-all duration-500 p-2"
             />
           )}
           {/* Badges */}
@@ -327,7 +327,13 @@ const Products = () => {
                   const weeklySales = PRODUCT_WEEKLY_SALES[handle] || 50;
                   const variant = product.node.variants.edges[0]?.node;
                   const price = variant ? formatPrice(variant.price.amount, currencyCode) : "$0.00";
-                  const compareAtPrice = variant?.compareAtPrice?.amount 
+                  // Only show compare-at price for ergonomic pillow and sleep bundle
+                  const COMPARE_AT_WHITELIST = [
+                    "risebynight-ergonomic-sleep-pillow",
+                    "risebynight-ergonomic-sleep-pillow-copy",
+                    "rise-by-night™-complete-sleep-bundle",
+                  ];
+                  const compareAtPrice = COMPARE_AT_WHITELIST.includes(handle) && variant?.compareAtPrice?.amount 
                     ? formatPrice(variant.compareAtPrice.amount, currencyCode) 
                     : null;
 
