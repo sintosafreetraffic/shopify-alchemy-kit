@@ -1,52 +1,29 @@
 
-# Arm Numbness Focus for No-Numbness Pillow Page
 
-## 1. Rewrite "back" reviews to focus on arm numbness
+# Fix Sticky Add to Cart Layout
 
-### File: `src/components/MiniReviewsCarousel.tsx`
+## Problem
+The sticky bottom bar currently renders the product title and star ratings side-by-side in a single row, which causes the bar to overflow/fall off on smaller screens. The title should be stacked **above** the stars.
 
-The `backPainReviews` array (lines 63-104) currently talks about "back pain" and "lower back pain." These will be rewritten to focus on **arm numbness, dead arm, and shoulder compression** -- matching the page's "Stop Waking Up With a Numb Arm" positioning.
+## Solution
 
-Example rewrites:
-- "I used to wake up with lower back pain" --> "I used to wake up with a completely numb arm and tingling fingers"
-- "back sore when I got up" --> "dead arm every morning from side sleeping"
-- "back pain stopped" --> "arm numbness is gone"
+### File: `src/components/StickyAddToCart.tsx` (lines 311-327)
 
-The `backBody` strings in the `COUNTRY_REVIEWERS` localization map (all 10 countries) will also be updated to match the arm numbness theme, translated appropriately per language.
+Wrap the product title and star ratings in a vertical flex container (`flex-col`) instead of rendering them as siblings in the horizontal row:
 
-## 2. Change image sequence for "back" focus to 1-6-2-4-3-5
-
-### File: `src/components/ProductImageCarousel.tsx`
-
-Current sequence (both desktop and mobile): 1-2-3-4-5-6
-```
-images[0] = Hero
-images[1] = Deeper sleep
-images[2] = Machine washable
-images[3] = Spine alignment
-images[4] = Social proof
-images[5] = Couple image
+**Current structure (flat row):**
+```text
+[Image] [Title] [Stars + Count] [CTAs]
 ```
 
-New sequence for `back` focus: **1-6-2-4-3-5**
-```
-images[0] = Hero (stays first)
-images[5] = Couple image (moves to 2nd)
-images[1] = Deeper sleep (moves to 3rd)
-images[3] = Spine alignment (moves to 4th)
-images[2] = Machine washable (moves to 5th)
-images[4] = Social proof (moves to 6th)
+**New structure (title above stars):**
+```text
+[Image] [ Title          ] [CTAs]
+         [ Stars + Count ]
 ```
 
-The `mobileImages` array (lines 121-128) will be updated with the same reordered sequence when `pillowFocus === 'back'`. The desktop `images` array will also be conditionally reordered.
+Specifically, replace the current `isPillowProduct` block (lines 312-327) with a `div` wrapper using `flex flex-col` that contains:
+1. The product title (`span`)
+2. The star rating row (`div` with stars + count)
 
-### Technical approach
-
-After building the `images` array, add a conditional reorder block for "back" focus:
-```typescript
-const orderedImages = pillowFocus === 'back'
-  ? [images[0], images[5], images[1], images[3], images[2], images[4]]
-  : images;
-```
-
-Then use `orderedImages` for both desktop rendering and mobile `mobileImages`.
+This matches the non-pillow product layout pattern already used at lines 329-341 and prevents horizontal overflow on narrow viewports.
