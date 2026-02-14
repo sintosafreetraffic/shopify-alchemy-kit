@@ -23,7 +23,7 @@ interface RecentlyViewedItemsProps {
 
 const STORAGE_KEY = "rbn_recently_viewed";
 const STORAGE_VERSION_KEY = "rbn_recently_viewed_v";
-const CURRENT_VERSION = 2; // Bump to invalidate cached entries
+const CURRENT_VERSION = 3; // Bump to invalidate cached entries
 const MAX_STORED_ITEMS = 10;
 const EXPIRY_DAYS = 30;
 
@@ -100,7 +100,7 @@ export const RecentlyViewedItems = ({
                   <div className="absolute top-2 left-2 z-10">
                     <div className="bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg">
                       <Heart className="w-3 h-3 fill-white" />
-                      <span>1+1 FREE + 40%</span>
+                      <span>1+1 FREE</span>
                     </div>
                   </div>
                 )}
@@ -135,7 +135,7 @@ export const RecentlyViewedItems = ({
                   {/* Valentine's deal highlight */}
                   {product.isValentinesDeal && valentinesOffer.isActive && (
                     <p className="text-[10px] text-pink-600 font-medium mt-1">
-                      Buy 1, Get 1 Free + 40% Off!
+                      Buy 1, Get 1 Free!
                     </p>
                   )}
                 </div>

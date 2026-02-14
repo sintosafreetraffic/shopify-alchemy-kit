@@ -50,8 +50,7 @@ export const STATIC_PRODUCT_DATA: Record<string, ProductViewData> = {
     handle: "ergonomic-pillow",
     title: "Ergonomic Sleep Pillow",
     imageUrl: ergonomicPillowHero,
-    price: "119.99",
-    compareAtPrice: "199.99",
+    price: "59.99",
     isValentinesDeal: true,
   },
   "knee-pillow": {
@@ -73,7 +72,7 @@ export const STATIC_PRODUCT_DATA: Record<string, ProductViewData> = {
     handle: "sleep-bundle",
     title: "Complete Sleep Bundle",
     imageUrl: sleepBundleHero,
-    price: "109.99",
-    compareAtPrice: "199.99",
+    price: "149.99",
+    compareAtPrice: "190.00",
   },
 };

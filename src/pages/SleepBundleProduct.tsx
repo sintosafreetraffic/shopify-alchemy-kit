@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { SleepBundleHero } from "@/components/SleepBundleHero";
 import { SleepBundleFeatures } from "@/components/SleepBundleFeatures";
 import { SleepBundleBenefits } from "@/components/SleepBundleBenefits";
@@ -10,11 +10,38 @@ import { ReviewsWall, ReviewSubmissionForm } from "@/components/reviews";
 import { useSEO, SEO_CONFIGS } from "@/hooks/useSEO";
 import { ProductSchema, BreadcrumbSchema } from "@/components/seo/SEOSchemas";
 import { useTrackProductView, STATIC_PRODUCT_DATA } from "@/hooks/useTrackProductView";
+import { useShopifyProducts } from "@/hooks/useShopifyProducts";
+import { formatPrice } from "@/lib/formatPrice";
+import sleepBundleHero from "@/assets/complete-sleep-bundle-new.webp";
 
 const SleepBundleProduct = () => {
   useSEO(SEO_CONFIGS.sleepBundle);
-  useTrackProductView(STATIC_PRODUCT_DATA["sleep-bundle"]);
   const [showReviewForm, setShowReviewForm] = useState(false);
+
+  // Fetch live Shopify data for dynamic pricing in Recently Viewed
+  const { data: products } = useShopifyProducts();
+  const trackingData = useMemo(() => {
+    const bundleProduct = products?.find(
+      (p) => p.node.handle === "rise-by-night™-complete-sleep-bundle"
+    );
+    if (bundleProduct) {
+      const variant = bundleProduct.node.variants.edges[0]?.node;
+      const currencyCode = variant?.price?.currencyCode || "USD";
+      return {
+        id: "sleep-bundle",
+        handle: "sleep-bundle",
+        title: "Complete Sleep Bundle",
+        imageUrl: sleepBundleHero,
+        price: formatPrice(variant?.price?.amount || "149.99", currencyCode),
+        compareAtPrice: variant?.compareAtPrice?.amount
+          ? formatPrice(variant.compareAtPrice.amount, currencyCode)
+          : undefined,
+      };
+    }
+    return STATIC_PRODUCT_DATA["sleep-bundle"];
+  }, [products]);
+
+  useTrackProductView(trackingData);
 
   return (
     <div className="min-h-screen bg-background">
