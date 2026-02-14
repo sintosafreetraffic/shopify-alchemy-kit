@@ -21,6 +21,10 @@ import { captureAttribution } from "@/lib/attribution";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, ArrowRight, Check, Star, Shield, Award, Gem, Crown, Moon, Sparkles, Package, Clock, BadgeCheck } from "lucide-react";
+import { useShopifyProducts } from "@/hooks/useShopifyProducts";
+import { formatPrice } from "@/lib/formatPrice";
+import { getCompareAtFromRatio } from "@/lib/compareAtPriceRatios";
+import { useIsEU } from "@/hooks/useCurrencySymbol";
 
 interface AffiliateInfo {
   referral_code: string;
@@ -38,13 +42,11 @@ const tierConfig: Record<string, { Icon: React.ElementType; color: string; bgCol
   diamond: { Icon: Crown, color: "text-sky-600", bgColor: "bg-sky-50", label: "Diamond Partner" },
 };
 
-// Product info
+// Product info (prices are fetched dynamically from Shopify)
 const PRODUCT = {
   handle: "ergonomic-pillow",
   title: "Ergonomic Sleep Pillow",
   tagline: "Wake up without pain. Sleep aligned.",
-  price: "$89",
-  comparePrice: "$129",
   benefits: [
     { text: "Cervical support for side and back sleepers", icon: Moon },
     { text: "Memory foam that adapts to your shape", icon: Sparkles },
@@ -80,6 +82,20 @@ export default function RefLandingPage() {
   const [loading, setLoading] = useState(true);
   const [affiliate, setAffiliate] = useState<AffiliateInfo | null>(null);
   const [error, setError] = useState(false);
+  const isEU = useIsEU();
+
+  // Fetch live Shopify product data for localized pricing
+  const { data: products } = useShopifyProducts(10);
+  const shopifyProduct = products?.find(p => p.node.handle === PRODUCT.handle);
+  const variant = shopifyProduct?.node.variants.edges[0]?.node;
+  const shopifyCurrency = variant?.price.currencyCode || 'USD';
+  const currencyCode = (isEU && shopifyCurrency === 'USD') ? 'EUR' : shopifyCurrency;
+  const productPrice = variant ? parseFloat(variant.price.amount) : 59.99;
+  const compareAtRaw = variant?.compareAtPrice?.amount ? variant.compareAtPrice.amount : getCompareAtFromRatio(PRODUCT.handle, variant?.price.amount);
+  const compareAtPrice = compareAtRaw ? parseFloat(compareAtRaw) : null;
+  const formattedPrice = formatPrice(productPrice, currencyCode);
+  const formattedComparePrice = compareAtPrice ? formatPrice(compareAtPrice, currencyCode) : null;
+  const savingsPercent = compareAtPrice ? Math.round((1 - productPrice / compareAtPrice) * 100) : 31;
 
   useEffect(() => {
     // Capture attribution on mount (stores ref code)
@@ -186,10 +202,12 @@ export default function RefLandingPage() {
               </div>
               <h3 className="text-xl font-medium mb-2">{PRODUCT.title}</h3>
               <div className="flex items-center justify-center gap-3">
-                <span className="text-3xl font-bold text-foreground">{PRODUCT.price}</span>
-                <span className="text-lg text-muted-foreground line-through">{PRODUCT.comparePrice}</span>
+                <span className="text-3xl font-bold text-foreground">{formattedPrice}</span>
+                {formattedComparePrice && (
+                  <span className="text-lg text-muted-foreground line-through">{formattedComparePrice}</span>
+                )}
                 <span className="text-sm font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded">
-                  Save 31%
+                  Save {savingsPercent}%
                 </span>
               </div>
             </CardContent>

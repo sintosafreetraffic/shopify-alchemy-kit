@@ -78,7 +78,7 @@ export function ExitIntentPopup({ onClaim }: ExitIntentPopupProps) {
             </h3>
             <p className="text-muted-foreground">
               Complete your order now and receive a premium silk sleep mask 
-              (worth $29.99) absolutely FREE.
+              absolutely FREE.
             </p>
           </div>
           

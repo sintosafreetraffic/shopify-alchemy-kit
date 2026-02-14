@@ -188,8 +188,11 @@ export const Hero = () => {
       const message = quantity === 2 
         ? "Valentine's Couple's Set added!" 
         : "Added to cart!";
+      const savingsAmount = quantity === 2 && compareAtPrice > 0
+        ? formatPrice((compareAtPrice - productPrice) * 2, currencyCode)
+        : null;
       const description = quantity === 2
-        ? `2 pillows added with ${selectedMaskColor} sleep masks. You save €30!`
+        ? `2 pillows added with ${selectedMaskColor} sleep masks.${savingsAmount ? ` You save ${savingsAmount}!` : ''}`
         : `${quantity} pillow added with ${selectedMaskColor} sleep mask.`;
       
       const toastId = toast.success(message, {
