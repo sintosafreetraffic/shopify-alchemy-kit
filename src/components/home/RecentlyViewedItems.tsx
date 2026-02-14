@@ -22,6 +22,8 @@ interface RecentlyViewedItemsProps {
 }
 
 const STORAGE_KEY = "rbn_recently_viewed";
+const STORAGE_VERSION_KEY = "rbn_recently_viewed_v";
+const CURRENT_VERSION = 2; // Bump to invalidate cached entries
 const MAX_STORED_ITEMS = 10;
 const EXPIRY_DAYS = 30;
 
@@ -38,6 +40,14 @@ export const RecentlyViewedItems = ({
   const valentinesOffer = useValentinesOffer();
 
   useEffect(() => {
+    // Check version — clear stale data if outdated
+    const storedVersion = localStorage.getItem(STORAGE_VERSION_KEY);
+    if (!storedVersion || parseInt(storedVersion) < CURRENT_VERSION) {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.setItem(STORAGE_VERSION_KEY, String(CURRENT_VERSION));
+      return;
+    }
+
     // Load recently viewed from localStorage
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
