@@ -286,10 +286,9 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
           <div className="text-center text-sm text-muted-foreground">Loading...</div>
         ) : (
           <>
-            <div className="flex flex-row flex-wrap items-center justify-between gap-3 w-full">
-              {/* Product Info */}
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-secondary/30 rounded-lg overflow-hidden flex-shrink-0">
+            <div className="flex items-center gap-2 sm:gap-3 w-full flex-nowrap">
+              {/* Product Image */}
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-secondary/30 rounded-lg overflow-hidden flex-shrink-0">
                 {isSleepMask ? (
                     <img
                       src={colors.find(c => c.name === selectedColor || c.value === selectedColor)?.image || colors[0].image}
@@ -307,35 +306,42 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                       decoding="async"
                     />
                   )}
-                </div>
-                <div className="text-left min-w-0">
+              </div>
+
+              {isPillowProduct ? (
+                <>
+                  {/* Product Title */}
+                  <span className="font-semibold text-xs sm:text-sm line-clamp-1 min-w-0 flex-shrink">
+                    RiseByNight Ergonomic Sleep Pillow
+                  </span>
+
+                  {/* Star ratings */}
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <div className="flex">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star key={star} className="w-3 h-3 fill-[hsl(var(--star))] text-[hsl(var(--star))]" />
+                      ))}
+                    </div>
+                    <span className="text-[10px] sm:text-xs text-muted-foreground">6,247</span>
+                  </div>
+                </>
+              ) : (
+                <div className="text-left min-w-0 flex-shrink">
                   <h3 className="font-semibold text-sm line-clamp-1">
                     {product.node.title}
                   </h3>
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    {isPillowProduct ? (
-                      <>
-                        <Badge className="bg-pink-500/20 text-pink-600 border-pink-500/30 text-[10px] px-1.5 py-0.5">
-                          1+1 Deal
-                        </Badge>
-                        <div className="flex">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <Star key={star} className="w-3 h-3 fill-[hsl(var(--star))] text-[hsl(var(--star))]" />
-                          ))}
-                        </div>
-                        <span>6,247 reviews</span>
-                      </>
-                    ) : isSleepBundle ? (
+                    {isSleepBundle ? (
                       <span>{selectedBundle === "1" ? "Single" : "Double"} Bundle</span>
                     ) : (
                       <span>Sleep Mask</span>
                     )}
                   </div>
                 </div>
-              </div>
+              )}
 
-              {/* Bundle Selection & Add to Cart */}
-              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-center sm:justify-end lg:flex-nowrap">
+              {/* CTAs - right aligned */}
+              <div className="flex items-center gap-1.5 sm:gap-2 ml-auto flex-shrink-0">
                 {/* Bundle Selector - Only show for sleep bundle, NOT pillows */}
                 {isSleepBundle && (
                   <div className="flex gap-2">
@@ -482,41 +488,42 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
 
                 {/* For pillow products with Valentine's offer: Show two CTAs */}
                 {isPillowProduct && valentinesOffer.isActive ? (
-                  <div className="flex items-center gap-2">
-                    {/* Single Pillow Button */}
+                  <>
+                    {/* Single Pillow Button - matches upper sticky */}
                     <Button 
                       onClick={handleAddToCart}
                       disabled={isCheckingOut}
                       variant="default"
-                      className="min-w-[90px] sm:min-w-[120px] text-xs sm:text-sm font-semibold"
+                      size="sm"
+                      className="font-semibold text-[11px] sm:text-xs h-8 px-2.5 sm:px-3"
                     >
                       {isCheckingOut ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       ) : (
                         <>
-                          <ShoppingCart className="w-4 h-4 mr-1" />
-                          <span className="hidden sm:inline">Add 1 •</span> {formatPrice(productPrice, currencyCode)}
+                          <ShoppingCart className="w-3.5 h-3.5 mr-1" />
+                          {formatPrice(productPrice, currencyCode)}
                         </>
                       )}
                     </Button>
                     
-                    {/* 1+1 Deal Button - Pink */}
+                    {/* 1+1 Deal Button - Pink, matches upper sticky */}
                     <Button 
                       onClick={handleAddDeal}
                       disabled={isAddingDeal}
-                      className="min-w-[100px] sm:min-w-[140px] text-xs sm:text-sm font-semibold bg-pink-500 hover:bg-pink-600 text-white"
+                      size="sm"
+                      className="font-semibold text-[11px] sm:text-xs bg-pink-500 hover:bg-pink-600 text-white h-8 px-2.5 sm:px-3"
                     >
                       {isAddingDeal ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       ) : (
                         <>
-                          <ShoppingCart className="w-4 h-4 mr-1" />
-                          <span className="hidden sm:inline">1+1 Deal •</span>
-                          <span className="sm:hidden">1+1</span> {formatPrice(productPrice, currencyCode)}
+                          <ShoppingCart className="w-3.5 h-3.5 mr-1" />
+                          <span>1+1 {formatPrice(productPrice, currencyCode)}</span>
                         </>
                       )}
                     </Button>
-                  </div>
+                  </>
                 ) : (
                   /* Standard Cart Button */
                   <Button 
