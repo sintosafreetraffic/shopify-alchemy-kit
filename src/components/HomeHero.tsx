@@ -108,7 +108,7 @@ const HomeHero = () => {
           <img
             src={heroDesktop}
             alt="Peaceful sleep environment"
-            className="w-full h-full object-cover object-[center_20%] md:object-top"
+            className="w-full h-full object-cover object-[center_10%] md:object-top"
             loading="eager"
             fetchPriority="high"
           />
