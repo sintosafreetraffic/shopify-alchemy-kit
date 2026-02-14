@@ -1,65 +1,64 @@
 
-## Price Localization Audit -- Full Fix Plan
 
-### Issues Found
+## Full Price Localization Audit -- Remaining Issues
 
-**1. Recently Viewed: Hardcoded USD prices, no currency symbol**
-In `src/hooks/useTrackProductView.ts`, the `STATIC_PRODUCT_DATA` stores raw numbers like `"24.99"` without any currency formatting. The `RecentlyViewedItems.tsx` component renders `{product.price}` directly, producing "24.99" instead of "kr24.99" or equivalent.
-
-This is the issue visible in screenshot 4 where the Sleep Mask shows just "24.99" with no "kr" prefix.
-
-**2. Recently Viewed stores stale prices at view-time**
-When a product page is visited, `addToRecentlyViewed` saves the price string to localStorage. If the user later returns from a different country/currency context, the old cached price/symbol displays incorrectly.
-
-**3. Products collection page uses single currency for all products**
-In `src/pages/Products.tsx` line 267, the currency is derived once from the first product, then applied to all products. This works in practice (Shopify returns same currency per session), but the EU override logic (`isEU ? 'EUR'`) should use each product's own variant currency as a base check.
+After a thorough scan of the codebase, here are the remaining hardcoded or non-converting price/text values that need fixing:
 
 ---
 
-### Fix Plan
-
-#### File 1: `src/hooks/useTrackProductView.ts`
-- Make `STATIC_PRODUCT_DATA` a function that accepts a `currencyCode` parameter
-- Instead of storing raw price strings like `"24.99"`, store them as formatted strings using `formatPrice(24.99, currencyCode)`
-- Or better: store only numeric values and format at render time
-
-**Recommended approach**: Change the `price` field in `STATIC_PRODUCT_DATA` to be formatted with `formatPrice()` at call time. Since `useTrackProductView` is a hook called in product pages where we already know the currency, pass the live currency code through.
-
-#### File 2: `src/components/home/RecentlyViewedItems.tsx`
-- The component already renders `{product.price}` which will now contain the formatted string (with currency symbol)
-- No changes needed if we fix the data at the source
-
-#### File 3: Product pages that call `useTrackProductView`
-Update all product pages to pass live Shopify prices instead of static data:
-- `SleepMaskProduct.tsx` -- pass live price from Shopify variant with correct currency
-- `ErgonomicPillowProductVariantB.tsx` -- same
-- `KneePillowProduct.tsx` -- same  
-- `SleepBundleProduct.tsx` -- same
-
-Each page already fetches Shopify data. The fix is to compute the formatted price from live data and pass it to `useTrackProductView` instead of using `STATIC_PRODUCT_DATA`.
+### Issue 1: FooterTrustBadges -- Hardcoded "On orders EUR50+"
+**File:** `src/components/FooterTrustBadges.tsx` (line 24)
+**Problem:** The shipping threshold sublabel is hardcoded as `"On orders EUR50+"` instead of using the localized `useShippingConfig()` hook.
+**Fix:** Import `useShippingConfig` and display `On orders {formattedThreshold}+` so visitors in Sweden see "On orders 500 kr+" and UK visitors see "On orders GBP50+", etc.
 
 ---
 
-### Technical Details
+### Issue 2: PolicyAccordion -- Hardcoded "within the United States"
+**File:** `src/components/PolicyAccordion.tsx` (line 18)
+**Problem:** Shipping policy text says "within the United States" regardless of the visitor's country.
+**Fix:** Use buyer country detection to dynamically insert the country name (e.g., "within Sweden", "within the United Kingdom"), matching the pattern already used in `Hero.tsx` with `buyerCountryName`.
 
-**Step 1**: Update `useTrackProductView.ts`
-- Keep `STATIC_PRODUCT_DATA` as fallback but add `formatPrice` to format the prices
-- Export a helper `getProductViewData(handle, variant, currencyCode)` that builds the tracking data from live Shopify data with proper formatting
+---
 
-**Step 2**: Update each product page
-- In `SleepMaskProduct.tsx`, `SleepMaskHero.tsx` already has the variant and currency. Lift the tracking call to include live price data.
-- Same pattern for other product pages.
+### Issue 3: InstallmentBadge -- Hardcoded EUR symbol
+**File:** `src/components/InstallmentBadge.tsx` (lines 25, 48)
+**Problem:** Klarna installment amounts always show `EUR` symbol (e.g., "4x EUR14.99") regardless of the buyer's currency. The component receives a numeric `price` but has no currency awareness.
+**Fix:** Add an optional `currencyCode` prop (defaulting to buyer's detected currency). Use `formatPrice(installmentAmount, currencyCode)` instead of the hardcoded `EUR{amount}` string.
 
-**Step 3**: Handle localStorage staleness
-- Add `currencyCode` to the stored `ViewedProduct` interface
-- On render in `RecentlyViewedItems`, if the stored currency doesn't match the current buyer's currency, either hide the price or re-format using the stored numeric amount
+---
 
-**Simplest robust fix**: Store both the raw numeric price and currency code in localStorage, then format at render time using `formatPrice()` in `RecentlyViewedItems.tsx`. This ensures returning visitors always see correctly localized prices regardless of when they last visited.
+### Issue 4: Products.tsx -- Hardcoded "$0.00" fallback
+**File:** `src/pages/Products.tsx` (line 330)
+**Problem:** If a variant is missing, the fallback price is hardcoded `"$0.00"` instead of using `formatPrice(0, currencyCode)`.
+**Fix:** Replace `"$0.00"` with `formatPrice(0, currencyCode)` for consistency.
 
-### Files to modify:
-1. `src/hooks/useTrackProductView.ts` -- add `rawPrice` (number) and `currencyCode` fields; format with `formatPrice` at call time
-2. `src/components/home/RecentlyViewedItems.tsx` -- update interface to include `rawPrice`/`currencyCode`; render using `formatPrice()` instead of raw string; bump `CURRENT_VERSION` to invalidate stale cache
-3. `src/pages/SleepMaskProduct.tsx` -- pass live Shopify price data to tracking hook
-4. `src/pages/ErgonomicPillowProductVariantB.tsx` -- pass live Shopify price data to tracking hook
-5. `src/pages/KneePillowProduct.tsx` -- pass live Shopify price data to tracking hook (if using static data)
-6. `src/pages/SleepBundleProduct.tsx` -- pass live Shopify price data to tracking hook (if using static data)
+---
+
+### Issue 5: Deprecated STATIC_PRODUCT_DATA still exported
+**File:** `src/hooks/useTrackProductView.ts` (lines 109-149)
+**Problem:** The deprecated `STATIC_PRODUCT_DATA` constant with hardcoded `"$59.99"`, `"$39.99"`, etc. is still exported and imported by all product pages (used as fallback). While `getStaticProductData()` now exists, the old constant is still actively referenced as a fallback.
+**Fix:** Update the product pages to use `getStaticProductData(handle, currencyCode)` as fallback instead of the deprecated `STATIC_PRODUCT_DATA[handle]`. This ensures even the fallback path is localized.
+
+---
+
+### Summary of files to modify:
+
+| File | Issue | Fix |
+|------|-------|-----|
+| `FooterTrustBadges.tsx` | "On orders EUR50+" hardcoded | Use `useShippingConfig().formattedThreshold` |
+| `PolicyAccordion.tsx` | "within the United States" hardcoded | Use buyer country name dynamically |
+| `InstallmentBadge.tsx` | EUR symbol hardcoded in Klarna text | Add `currencyCode` prop, use `formatPrice` |
+| `Products.tsx` | `"$0.00"` fallback | Use `formatPrice(0, currencyCode)` |
+| `SleepMaskProduct.tsx` | Fallback uses `STATIC_PRODUCT_DATA` | Use `getStaticProductData("sleep-mask", currencyCode)` |
+| `KneePillowProduct.tsx` | Fallback uses `STATIC_PRODUCT_DATA` | Use `getStaticProductData("knee-pillow", currencyCode)` |
+| `ErgonomicPillowProductVariantB.tsx` | Fallback uses `STATIC_PRODUCT_DATA` | Use `getStaticProductData("ergonomic-pillow", currencyCode)` |
+| `SleepBundleProduct.tsx` | Fallback uses `STATIC_PRODUCT_DATA` | Use `getStaticProductData("sleep-bundle", currencyCode)` |
+| `useTrackProductView.ts` | Remove deprecated `STATIC_PRODUCT_DATA` export | Clean up after all references updated |
+
+**Not flagged** (acceptable):
+- `ai-brain.ts` edge function: USD prices in AI prompt context are fine (not user-facing)
+- `compareAtPriceRatios.ts`: USD comment is documentation only
+- `WeeklyReviewTab.tsx`: Internal dashboard, "$0.00" is acceptable
+- `CartDrawer.tsx` comments referencing EUR: These are code comments, not displayed
+- `Hero.tsx` / `HeroVariantB.tsx`: Already properly localized with `buyerCountryName`
+
