@@ -23,7 +23,7 @@ interface RecentlyViewedItemsProps {
 
 const STORAGE_KEY = "rbn_recently_viewed";
 const STORAGE_VERSION_KEY = "rbn_recently_viewed_v";
-const CURRENT_VERSION = 3; // Bump to invalidate cached entries
+const CURRENT_VERSION = 4; // Bump to invalidate cached entries
 const MAX_STORED_ITEMS = 10;
 const EXPIRY_DAYS = 30;
 
