@@ -35,7 +35,7 @@ import { getCompareAtFromRatio } from "@/lib/compareAtPriceRatios";
 import ergonomicPillowHeroImg from "@/assets/ergonomic-pillow-hero.webp";
 import { AsSeenInLogos } from "@/components/home";
 import { HowToUseSection } from "@/components/HowToUseSection";
-import { StickyProductNav } from "@/components/StickyProductNav";
+
 import { SocialMediaProof } from "@/components/SocialMediaProof";
 import { PostATCUpsellModal } from "@/components/PostATCUpsellModal";
 import { useUpsellStore } from "@/stores/upsellStore";
@@ -160,8 +160,6 @@ const ErgonomicPillowProductVariantB = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Sticky Navigation - appears on scroll up */}
-      <StickyProductNav />
       
       <ProductSchema
         name="RiseByNight Ergonomic Cervical Pillow"
