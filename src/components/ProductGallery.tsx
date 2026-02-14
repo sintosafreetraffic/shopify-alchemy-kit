@@ -1,7 +1,7 @@
 // Performance: Updated images to use WebP variants + OptimizedImage component
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowRight, Star } from "lucide-react";
+import { ArrowRight, Star, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { fetchProducts, type ShopifyProduct } from "@/lib/shopify";
@@ -10,6 +10,7 @@ import { formatPrice } from "@/lib/formatPrice";
 import { useIsEU } from "@/hooks/useCurrencySymbol";
 import { useABErgonomicPillow } from "@/hooks/useABProduct";
 import { getPreferredPillowRoute } from "@/lib/pillowFocusPreference";
+import { useValentinesOffer } from "@/hooks/useValentinesOffer";
 // Using WebP variants where available for better performance
 import ergonomicPillowProduct from "@/assets/ergonomic-pillow-product.webp";
 import kneePillowMain from "@/assets/knee-pillow-main-new.webp";
@@ -67,6 +68,17 @@ export const ProductGallery = () => {
     return fallback;
   };
 
+  // Helper to get formatted compare-at price from Shopify product
+  const getCompareAtPrice = (product: ShopifyProduct | undefined): string | undefined => {
+    const variant = product?.node.variants.edges[0]?.node;
+    if (variant?.compareAtPrice?.amount) {
+      return formatPrice(variant.compareAtPrice.amount, currencyCode);
+    }
+    return undefined;
+  };
+
+  const valentinesOffer = useValentinesOffer();
+
   // Use A/B tested product for ergonomic pillow (falls back to standard if not loaded)
   const ergonomicPillowForDisplay = abErgonomicPillow || ergonomicPillowShopify;
   
@@ -76,20 +88,21 @@ export const ProductGallery = () => {
       name: "Rise By Night™ Ergonomic Pillow",
       tagline: "The #1 Rated Orthopedic Pillow",
       price: getProductPrice(ergonomicPillowForDisplay, formatPrice(abConfig.price.toString(), currencyCode)),
-      originalPrice: undefined,
+      originalPrice: getCompareAtPrice(ergonomicPillowForDisplay),
       rating: 4.8,
       reviews: "6,247",
       image: ergonomicPillowProduct,
       features: ["Ergonomic contour design", "Cooling gel technology", "High-density memory foam", "3-5 year lifespan"],
       badge: abConfig.includesMask ? "Sleep Mask Included" : "",
       link: getPreferredPillowRoute(),
+      isValentinesDeal: true,
     },
     {
       id: 3,
       name: "Rise By Night™ Ergonomic Knee Pillow",
       tagline: "Perfect Support for Side Sleepers",
       price: getProductPrice(kneePillowShopify, formatPrice("39.99", currencyCode)),
-      originalPrice: undefined,
+      originalPrice: getCompareAtPrice(kneePillowShopify),
       rating: 4.7,
       reviews: "5,100+",
       image: kneePillowMain,
@@ -101,19 +114,21 @@ export const ProductGallery = () => {
       ],
       badge: "",
       link: "/products/knee-pillow",
+      isValentinesDeal: false,
     },
     {
       id: 4,
       name: "Rise By Night™ Silk Deep Sleep Mask",
       tagline: "100% Pure Mulberry Silk",
       price: getProductPrice(sleepMaskShopify, formatPrice("29.99", currencyCode)),
-      originalPrice: undefined,
+      originalPrice: getCompareAtPrice(sleepMaskShopify),
       rating: 4.9,
       reviews: "3,200+",
       image: eyeMaskGift,
       features: ["Blocks 100% of light", "Gentle on skin & eyelashes", "Contoured eye design", "Hypoallergenic silk"],
       badge: "",
       link: "/products/sleep-mask",
+      isValentinesDeal: false,
     },
   ];
 
@@ -222,7 +237,15 @@ export const ProductGallery = () => {
             {products.map((product) => (
               <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                 <div className="relative">
-                  {product.badge && (
+                  {product.isValentinesDeal && valentinesOffer.isActive && (
+                    <div className="absolute top-4 left-4 z-10">
+                      <div className="bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg">
+                        <Heart className="w-3.5 h-3.5 fill-white" />
+                        <span>1+1 FREE</span>
+                      </div>
+                    </div>
+                  )}
+                  {product.badge && !product.isValentinesDeal && (
                     <div className="absolute top-4 left-4 z-10">
                       <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
                         product.badge.toLowerCase().includes('included') 
