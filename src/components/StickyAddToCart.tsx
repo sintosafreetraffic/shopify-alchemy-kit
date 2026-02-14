@@ -294,61 +294,39 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
       >
         {product ? (
           <div className="flex items-center gap-2">
-            {/* Color picker for sleep mask */}
+            {/* Color swatches for sleep mask */}
             {isSleepMask && (
-              <div className="relative">
-                <button
-                  onClick={() => setShowColorPicker(!showColorPicker)}
-                  aria-label={`Select color, currently ${selectedColor}`}
-                  aria-expanded={showColorPicker}
-                  className="rounded-full h-12 w-12 bg-background border border-border shadow-lg flex items-center justify-center hover:bg-muted transition-colors"
-                >
-                  <img 
-                    src={colors.find(c => c.name === selectedColor)?.image || colors[0].image} 
-                    alt={selectedColor}
-                    className="w-8 h-8 object-contain"
-                  />
-                </button>
-
-                {showColorPicker && (
-                  <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-background border border-border rounded-xl shadow-lg p-3 z-[110] w-[280px] max-w-[calc(100vw-2rem)]">
-                    <div className="grid grid-cols-3 gap-3">
-                      {colors.map((color) => (
-                        <button
-                          key={color.value}
-                          onClick={() => {
-                            setSelectedColor(color.name);
-                            setShowColorPicker(false);
-                          }}
-                          className={`flex flex-col items-center gap-1.5 p-2 rounded-lg hover:bg-primary/10 transition-colors ${
-                            selectedColor === color.name ? "bg-primary/20 ring-2 ring-primary" : ""
-                          }`}
-                        >
-                          <div className="w-14 h-14 rounded-lg border-2 border-border overflow-hidden bg-background flex items-center justify-center relative">
-                            <img 
-                              src={color.image} 
-                              alt={color.name}
-                              className="w-full h-full object-contain p-1"
-                            />
-                            {selectedColor === color.name && (
-                              <div className="absolute inset-0 bg-primary/10 flex items-center justify-center">
-                                <Check className="w-5 h-5 text-primary" />
-                              </div>
-                            )}
-                          </div>
-                          <span className="text-xs font-medium text-center">{color.name}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+              <div className="flex items-center gap-1 bg-background rounded-full shadow-lg px-2 py-1.5 border border-border">
+                {colors.map((color) => (
+                  <button
+                    key={color.value}
+                    onClick={() => setSelectedColor(color.name)}
+                    aria-label={`Select ${color.name}`}
+                    aria-pressed={selectedColor === color.name}
+                    className={`w-8 h-8 rounded-full overflow-hidden border-2 transition-all flex-shrink-0 ${
+                      selectedColor === color.name 
+                        ? "border-primary ring-1 ring-primary scale-110" 
+                        : "border-transparent hover:border-muted-foreground/30"
+                    }`}
+                  >
+                    <img 
+                      src={color.image} 
+                      alt={color.name}
+                      className="w-full h-full object-contain p-0.5"
+                    />
+                  </button>
+                ))}
               </div>
             )}
 
             <Button 
               onClick={isErgonomicPillow ? handleAddDeal : handleAddToCart}
               disabled={isErgonomicPillow ? isAddingDeal : isCheckingOut}
-              className="rounded-full h-12 px-8 bg-pink-500 hover:bg-pink-600 text-white font-semibold text-sm shadow-lg"
+              className={`rounded-full h-12 px-8 font-semibold text-sm shadow-lg ${
+                isErgonomicPillow 
+                  ? "bg-pink-500 hover:bg-pink-600 text-white" 
+                  : "bg-primary hover:bg-primary/90 text-primary-foreground"
+              }`}
             >
               {(isErgonomicPillow ? isAddingDeal : isCheckingOut) ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
