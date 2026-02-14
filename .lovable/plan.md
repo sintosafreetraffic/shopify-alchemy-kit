@@ -1,16 +1,17 @@
 
 
-# Knee Pillow Page: Remove Guarantees + Fix Thumbnail Borders
+# Fix Knee Pillow Thumbnail Borders
 
-## 1. Remove the guarantees grid from the hero
+## Problem
+The `overflow-hidden` on the thumbnail button clips the active state `ring-2 ring-primary ring-offset-1`, causing the blue selection border to be cut off. But removing `overflow-hidden` causes the image to overflow the rounded corners.
 
-**File: `src/components/KneePillowHero.tsx`** (lines 296-309)
+## Solution
 
-Remove the entire `grid grid-cols-3` block containing "2-Year Warranty", "100 nights risk free trial", and "Easy Returns" icons and text.
+**File: `src/components/KneePillowImageCarousel.tsx`** (lines 80-84)
 
-## 2. Fix thumbnail image borders
+Replace the `ring` approach with `outline` for the active state, since CSS `outline` is not clipped by `overflow-hidden`:
 
-**File: `src/components/KneePillowImageCarousel.tsx`** (line 90)
-
-The border on the button is visible but the image inside overflows the rounded corners. Add `rounded-lg` to the `<img>` element so the image respects the button's border radius. This ensures the contour is fully visible around each thumbnail.
+- Keep `overflow-hidden` on the button (needed to clip the image to rounded corners)
+- Replace `ring-2 ring-primary ring-offset-1` with `outline outline-2 outline-offset-1 outline-primary`
+- This achieves the same visual effect without being clipped
 
