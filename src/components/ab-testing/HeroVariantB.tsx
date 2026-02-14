@@ -232,9 +232,6 @@ export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
             {/* Mobile Price with Discount Badge - fixed height prevents CLS when price loads */}
             <div className="flex items-center gap-2 mt-1 flex-wrap h-[40px]">
               <p className="text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
-              <span className="text-base line-through text-muted-foreground">
-                {formatPrice(compareAtPrice, currencyCode)}
-              </span>
             </div>
 
             {/* Mobile: Klarna + Social Proof + USPs - between price and Valentine's offer */}
@@ -374,9 +371,6 @@ export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
             {/* Price Display with Discount Badge - Desktop Only */}
             <div className="hidden md:flex items-center gap-3 mt-2 mb-2">
               <p className="text-xl md:text-2xl font-bold text-primary">{formatPrice(productPrice, currencyCode)}</p>
-              <span className="text-lg line-through text-muted-foreground">
-                {formatPrice(compareAtPrice, currencyCode)}
-              </span>
             </div>
 
             {/* Temporarily disabled: Klarna + Social Proof badges (Desktop)
