@@ -311,8 +311,8 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                 </button>
 
                 {showColorPicker && (
-                  <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-background border border-border rounded-xl shadow-lg p-3 z-[110] w-[280px] max-w-[calc(100vw-2rem)]">
-                    <div className="grid grid-cols-3 gap-3">
+                  <div className="absolute bottom-full mb-2 left-0 bg-background border border-border rounded-xl shadow-lg p-2 z-[110]">
+                    <div className="flex items-center gap-1.5">
                       {colors.map((color) => (
                         <button
                           key={color.value}
@@ -320,23 +320,18 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                             setSelectedColor(color.name);
                             setShowColorPicker(false);
                           }}
-                          className={`flex flex-col items-center gap-1.5 p-2 rounded-lg hover:bg-primary/10 transition-colors ${
-                            selectedColor === color.name ? "bg-primary/20 ring-2 ring-primary" : ""
+                          aria-label={`Select ${color.name}`}
+                          className={`w-10 h-10 rounded-full overflow-hidden border-2 transition-all flex-shrink-0 ${
+                            selectedColor === color.name 
+                              ? "border-primary ring-1 ring-primary" 
+                              : "border-border hover:border-muted-foreground/50"
                           }`}
                         >
-                          <div className="w-14 h-14 rounded-lg border-2 border-border overflow-hidden bg-background flex items-center justify-center relative">
-                            <img 
-                              src={color.image} 
-                              alt={color.name}
-                              className="w-full h-full object-contain p-1"
-                            />
-                            {selectedColor === color.name && (
-                              <div className="absolute inset-0 bg-primary/10 flex items-center justify-center">
-                                <Check className="w-5 h-5 text-primary" />
-                              </div>
-                            )}
-                          </div>
-                          <span className="text-xs font-medium text-center">{color.name}</span>
+                          <img 
+                            src={color.image} 
+                            alt={color.name}
+                            className="w-full h-full object-contain p-0.5"
+                          />
                         </button>
                       ))}
                     </div>
