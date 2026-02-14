@@ -1,30 +1,44 @@
 
 
-# Fix Products Page: Image Container, Compare-at Prices, and Bundle Badge
+# Fix Recently Viewed: Dynamic Pricing and Remove "40% Off" Text
 
 ## Changes
 
-### 1. Tighter Image Container
-The current product card image area uses `aspect-[4/3]` which creates a wide, tall container. Change it to `aspect-square` and reduce the inner padding from `p-4` to `p-2`, so the container hugs the product image more closely, resulting in a cleaner, more compact look.
+### 1. Make Sleep Bundle and Ergonomic Pillow Prices Dynamic (from Shopify)
+Currently, `STATIC_PRODUCT_DATA` in `useTrackProductView.ts` hardcodes prices (e.g., sleep bundle at 109.99/199.99), but Shopify has different values (149.99/190). Instead of updating hardcoded values again, the product pages should fetch live Shopify data and pass it to `useTrackProductView`, ensuring correct prices in all currencies.
 
-### 2. Restrict Compare-at Price to Two Products Only
-Currently, the compare-at price is pulled from Shopify data for every product. Add a whitelist so only the ergonomic pillow and the sleep bundle display the strikethrough price. The knee pillow and sleep mask will show only the current price.
+**Approach**: On the product detail pages (`SleepBundleProduct.tsx` and `ErgonomicPillowProductVariantB.tsx`), fetch the Shopify product data using the existing `useShopifyProducts` hook, then pass the live price and compareAtPrice to `useTrackProductView` instead of using `STATIC_PRODUCT_DATA`. For the knee pillow and sleep mask pages (which already work correctly with static data and have no compareAtPrice), keep using `STATIC_PRODUCT_DATA`.
 
-**Whitelist handles:**
-- `risebynight-ergonomic-sleep-pillow` (and its variant B copy)
-- `rise-by-night™-complete-sleep-bundle`
+**File: `src/hooks/useTrackProductView.ts`**
+- Update the `sleep-bundle` static entry to use fallback prices matching Shopify (149.99 / 190) instead of 109.99 / 199.99
+- Update the `ergonomic-pillow` static entry to match current Shopify pricing as well
+- These static values serve as fallbacks only; the real fix is dynamic fetching on the product pages
 
-### 3. Change Sleep Bundle Badge from "Save 20%" to "Best Offer"
-Update the `PRODUCT_REVIEWS` static data entry for the sleep bundle handle, changing the `badge` value from `"Save 20%"` to `"Best Offer"`.
+**File: `src/pages/SleepBundleProduct.tsx`**
+- Import `useShopifyProducts` hook and `formatPrice`
+- Find the sleep bundle product from Shopify data
+- Build a dynamic `ProductViewData` object with live price/compareAtPrice
+- Pass it to `useTrackProductView` instead of `STATIC_PRODUCT_DATA["sleep-bundle"]`
+
+**File: `src/pages/ErgonomicPillowProductVariantB.tsx`**
+- Same approach: fetch Shopify data, find the ergonomic pillow product, pass dynamic pricing to `useTrackProductView`
+
+### 2. Remove "40% Off" from Recently Viewed for Ergonomic Sleep Pillow
+The ergonomic pillow currently shows a pink "1+1 FREE + 40%" badge and "Buy 1, Get 1 Free + 40% Off!" text in the Recently Viewed section. Remove the "+ 40%" from the badge and the "+ 40% Off!" from the subtitle text.
+
+**File: `src/components/home/RecentlyViewedItems.tsx`**
+- Line 103: Change badge text from `1+1 FREE + 40%` to `1+1 FREE`
+- Line 138: Change subtitle from `Buy 1, Get 1 Free + 40% Off!` to `Buy 1, Get 1 Free!`
+
+### 3. Bump Cache Version
+Increment `CURRENT_VERSION` from 2 to 3 in `RecentlyViewedItems.tsx` so all users get fresh data with corrected prices on their next visit.
 
 ---
 
-## Technical Details
+## Files to Change
 
-**File: `src/pages/Products.tsx`**
-
-- **Line 30**: Change `badge: "Save 20%"` to `badge: "Best Offer"` in `PRODUCT_REVIEWS`.
-- **Line 118**: Change `aspect-[4/3]` to `aspect-square` on the image container div.
-- **Line 123**: Reduce padding from `p-4` to `p-2` on the image element.
-- **Lines 330-332**: Add a handle-based whitelist check so `compareAtPrice` is only passed for the two eligible products. For all others, force it to `null`.
+1. **`src/hooks/useTrackProductView.ts`** -- Update static fallback prices for sleep-bundle and ergonomic-pillow
+2. **`src/pages/SleepBundleProduct.tsx`** -- Fetch Shopify data and pass dynamic pricing to tracking hook
+3. **`src/pages/ErgonomicPillowProductVariantB.tsx`** -- Fetch Shopify data and pass dynamic pricing to tracking hook
+4. **`src/components/home/RecentlyViewedItems.tsx`** -- Remove "+ 40%" from badge and text; bump cache version to 3
 
