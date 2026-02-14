@@ -33,6 +33,7 @@ export function StarRating({
         const clipId = `star-clip-${i}-${Math.random().toString(36).slice(2, 7)}`;
 
         if (isPartial) {
+          const starPath = "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z";
           return (
             <svg
               key={i}
@@ -46,20 +47,24 @@ export function StarRating({
                   <rect x="0" y="0" width={24 * fill} height="24" />
                 </clipPath>
               </defs>
-              {/* Filled portion */}
-              <Star
-                className="text-[hsl(var(--star))]"
-                style={{ clipPath: `url(#${clipId})` }}
+              {/* Empty background */}
+              <path
+                d={starPath}
+                fill={showEmpty ? "hsl(var(--muted))" : "none"}
+                stroke={showEmpty ? "hsl(var(--muted))" : "hsl(var(--star))"}
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              {/* Filled portion clipped */}
+              <path
+                d={starPath}
                 fill="hsl(var(--star))"
                 stroke="hsl(var(--star))"
                 strokeWidth={2}
-              />
-              {/* Empty portion (outline) */}
-              <Star
-                className={showEmpty ? "text-muted" : "text-[hsl(var(--star))]"}
-                fill={showEmpty ? "currentColor" : "none"}
-                stroke="currentColor"
-                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                clipPath={`url(#${clipId})`}
               />
             </svg>
           );
