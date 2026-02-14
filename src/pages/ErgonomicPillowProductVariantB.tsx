@@ -8,7 +8,7 @@
  * Traffic split is controlled via ab_traffic_split_percent_b in app_settings.
  */
 
-import { Suspense, lazy, useState, useEffect } from "react";
+import { Suspense, lazy, useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { HeroVariantB } from "@/components/ab-testing/HeroVariantB";
 import { setPillowFocusPreference } from "@/lib/pillowFocusPreference";
@@ -29,6 +29,9 @@ import { useCartStore } from "@/stores/cartStore";
 import { useSEO, SEO_CONFIGS } from "@/hooks/useSEO";
 import { ProductSchema } from "@/components/seo/SEOSchemas";
 import { useTrackProductView, STATIC_PRODUCT_DATA } from "@/hooks/useTrackProductView";
+import { useShopifyProducts } from "@/hooks/useShopifyProducts";
+import { formatPrice } from "@/lib/formatPrice";
+import ergonomicPillowHeroImg from "@/assets/ergonomic-pillow-hero.webp";
 import { AsSeenInLogos } from "@/components/home";
 import { HowToUseSection } from "@/components/HowToUseSection";
 import { StickyProductNav } from "@/components/StickyProductNav";
@@ -116,9 +119,34 @@ const InlineCTA = () => {
 
 const ErgonomicPillowProductVariantB = () => {
   useSEO(SEO_CONFIGS.ergonomicPillow);
-  useTrackProductView(STATIC_PRODUCT_DATA["ergonomic-pillow"]);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const { isUpsellOpen, closeUpsell, triggerProductId } = useUpsellStore();
+
+  // Fetch live Shopify data for dynamic pricing in Recently Viewed
+  const { data: products } = useShopifyProducts();
+  const trackingData = useMemo(() => {
+    const pillowProduct = products?.find(
+      (p) => p.node.handle === "risebynight-ergonomic-sleep-pillow-copy"
+    );
+    if (pillowProduct) {
+      const variant = pillowProduct.node.variants.edges[0]?.node;
+      const currencyCode = variant?.price?.currencyCode || "USD";
+      return {
+        id: "ergonomic-pillow",
+        handle: "ergonomic-pillow",
+        title: "Ergonomic Sleep Pillow",
+        imageUrl: ergonomicPillowHeroImg,
+        price: formatPrice(variant?.price?.amount || "59.99", currencyCode),
+        compareAtPrice: variant?.compareAtPrice?.amount
+          ? formatPrice(variant.compareAtPrice.amount, currencyCode)
+          : undefined,
+        isValentinesDeal: true,
+      };
+    }
+    return STATIC_PRODUCT_DATA["ergonomic-pillow"];
+  }, [products]);
+
+  useTrackProductView(trackingData);
 
   // Capture neck pain preference on page load (first-touch model)
   useEffect(() => {
