@@ -273,6 +273,39 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
   // Desktop: transform-based hide/show
   const shouldHide = isCartOpen || isMobileMenuOpen;
 
+  // Pillow products: floating single CTA button
+  if (isPillowProduct) {
+    return (
+      <div 
+        className={`fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] ${
+          isMobile
+            ? `transition-opacity duration-200 ${shouldHide ? "opacity-0 pointer-events-none" : "opacity-100"}`
+            : `transition-all duration-200 ${shouldHide ? "translate-y-[calc(100%+2rem)] opacity-0 pointer-events-none" : "opacity-100"}`
+        }`}
+      >
+        {product ? (
+          <Button 
+            onClick={handleAddDeal}
+            disabled={isAddingDeal}
+            className="rounded-full h-12 px-8 bg-pink-500 hover:bg-pink-600 text-white font-semibold text-sm shadow-lg"
+          >
+            {isAddingDeal ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <>
+                <ShoppingCart className="w-4 h-4 mr-2" />
+                <span>1+1 Deal — {formatPrice(productPrice, currencyCode)}</span>
+              </>
+            )}
+          </Button>
+        ) : (
+          <div className="text-center text-sm text-muted-foreground">Loading...</div>
+        )}
+      </div>
+    );
+  }
+
+  // Non-pillow products: keep existing full-width bar
   return (
     <div 
       className={`fixed bottom-0 left-0 right-0 z-[100] bg-background border-t shadow-lg max-w-[100vw] overflow-x-clip ${
@@ -308,100 +341,59 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                   )}
               </div>
 
-              {isPillowProduct ? (
-                <div className="min-w-0 flex-shrink">
-                  <span className="font-semibold text-[10px] sm:text-xs line-clamp-1 truncate block">
-                    RiseByNight™ Pillow
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <div className="flex">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star key={star} className="w-3 h-3 fill-[hsl(var(--star))] text-[hsl(var(--star))]" />
-                      ))}
-                    </div>
-                    <span className="text-[10px] sm:text-xs text-muted-foreground">6,247</span>
-                  </div>
+              <div className="text-left min-w-0 flex-shrink">
+                <h3 className="font-semibold text-sm line-clamp-1">
+                  {product.node.title}
+                </h3>
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  {isSleepBundle ? (
+                    <span>{selectedBundle === "1" ? "Single" : "Double"} Bundle</span>
+                  ) : (
+                    <span>Sleep Mask</span>
+                  )}
                 </div>
-              ) : (
-                <div className="text-left min-w-0 flex-shrink">
-                  <h3 className="font-semibold text-sm line-clamp-1">
-                    {product.node.title}
-                  </h3>
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    {isSleepBundle ? (
-                      <span>{selectedBundle === "1" ? "Single" : "Double"} Bundle</span>
-                    ) : (
-                      <span>Sleep Mask</span>
-                    )}
-                  </div>
-                </div>
-              )}
+              </div>
 
               {/* CTAs - right aligned */}
               <div className="flex items-center gap-1.5 sm:gap-2 ml-auto flex-shrink-0">
-                {/* Bundle Selector - Only show for sleep bundle, NOT pillows */}
+                {/* Bundle Selector - Only show for sleep bundle */}
                 {isSleepBundle && (
                   <div className="flex gap-2">
                     <button
                       onClick={() => setSelectedBundle("1")}
-                      aria-label={isSleepBundle ? "Select single bundle" : "Select 1 pillow"}
+                      aria-label="Select single bundle"
                       aria-pressed={selectedBundle === "1"}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors relative overflow-hidden group ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                         selectedBundle === "1"
                           ? "bg-primary text-primary-foreground"
                           : "bg-primary/20 hover:bg-primary/40 text-foreground"
                       }`}
                     >
-                      <span className="flex items-center gap-1 transition-all duration-300 group-hover:-translate-y-8 group-hover:opacity-0">
+                      <span className="flex items-center gap-1">
                         <Plus className="w-3 h-3" aria-hidden="true" />
-                        {isSleepBundle ? "Single Bundle" : "1 Pillow"}
-                      </span>
-                      <span className="absolute inset-0 flex items-center justify-center gap-1 translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100" aria-hidden="true">
-                        <Plus className="w-3 h-3" />
-                        {isSleepBundle ? "Single Bundle" : "1 Pillow"}
+                        Single Bundle
                       </span>
                     </button>
                     <button
                       onClick={() => setSelectedBundle("2")}
-                      aria-label={isSleepBundle ? "Select double bundle" : "Select 2 pillows with free gift"}
+                      aria-label="Select double bundle"
                       aria-pressed={selectedBundle === "2"}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors relative overflow-hidden group ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                         selectedBundle === "2"
                           ? "bg-primary text-primary-foreground"
                           : "bg-primary/20 hover:bg-primary/40 text-foreground"
                       }`}
                     >
-                      <span className="flex items-center gap-1 transition-all duration-300 group-hover:-translate-y-8 group-hover:opacity-0">
+                      <span className="flex items-center gap-1">
                         <Plus className="w-3 h-3" aria-hidden="true" />
-                        {isSleepBundle ? (
-                          "Double Bundle"
-                        ) : (
-                          <>
-                            <span>2 Pillows + FREE GIFT 2X</span>
-                            <img src={eyeMaskGift} alt="Free gift" className="w-6 h-6 object-contain" loading="lazy" decoding="async" />
-                          </>
-                        )}
-                      </span>
-                      <span className="absolute inset-0 flex items-center justify-center gap-1 translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100" aria-hidden="true">
-                        <Plus className="w-3 h-3" />
-                        {isSleepBundle ? (
-                          "Double Bundle"
-                        ) : (
-                          <>
-                            <span>2 Pillows + FREE GIFT 2X</span>
-                            <img src={eyeMaskGift} alt="Free gift" className="w-6 h-6 object-contain" loading="lazy" decoding="async" />
-                          </>
-                        )}
+                        Double Bundle
                       </span>
                     </button>
                   </div>
                 )}
 
-                {/* Pillow: No quantity selector - using two CTAs instead */}
-
                 {isSleepMask && (
                   <div className="flex items-center gap-2">
-                    {/* Quantity Selector */}
                     <div className="flex items-center gap-1 bg-primary/10 rounded-lg p-1">
                       <Button
                         variant="ghost"
@@ -425,7 +417,6 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                       </Button>
                     </div>
 
-                    {/* Color Selector */}
                     <div className="relative">
                       <button
                         onClick={() => setShowColorPicker(!showColorPicker)}
@@ -446,7 +437,6 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                         </span>
                       </button>
 
-                      {/* Color Picker Dropdown */}
                       {showColorPicker && (
                         <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-background border border-border rounded-lg shadow-lg p-3 z-[110] w-[280px] max-w-[calc(100vw-2rem)]">
                           <div className="grid grid-cols-3 gap-3">
@@ -483,90 +473,50 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                   </div>
                 )}
 
-                {/* For pillow products with Valentine's offer: Show two CTAs */}
-                {isPillowProduct && valentinesOffer.isActive ? (
-                  <>
-                    {/* Single Pillow Button - matches upper sticky */}
-                    <Button 
-                      onClick={handleAddToCart}
-                      disabled={isCheckingOut}
-                      variant="default"
-                      size="sm"
-                      className="font-semibold text-[10px] sm:text-xs h-7 px-2 sm:px-2.5"
-                    >
-                      {isCheckingOut ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <>
-                          <ShoppingCart className="w-3.5 h-3.5 mr-1" />
-                          {formatPrice(productPrice, currencyCode)}
-                        </>
-                      )}
-                    </Button>
-                    
-                    {/* 1+1 Deal Button - Pink, matches upper sticky */}
-                    <Button 
-                      onClick={handleAddDeal}
-                      disabled={isAddingDeal}
-                      size="sm"
-                      className="font-semibold text-[10px] sm:text-xs bg-pink-500 hover:bg-pink-600 text-white h-7 px-2 sm:px-2.5"
-                    >
-                      {isAddingDeal ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <>
-                          <ShoppingCart className="w-3.5 h-3.5 mr-1" />
-                          <span>1+1 {formatPrice(productPrice, currencyCode)}</span>
-                        </>
-                      )}
-                    </Button>
-                  </>
-                ) : (
-                  /* Standard Cart Button */
-                  <Button 
-                    onClick={handleAddToCart}
-                    disabled={isCheckingOut}
-                    className="min-w-[140px] sm:flex-initial bg-primary text-primary-foreground hover:bg-black hover:text-white transition-all relative overflow-hidden group"
-                  >
-                    {isCheckingOut ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        <span className="whitespace-nowrap">Adding...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="inline-flex items-center gap-2 transition-all duration-300 group-hover:-translate-y-12 group-hover:opacity-0">
-                          <div className="relative">
-                            <ShoppingCart className="w-4 h-4" />
-                            {totalItems > 0 && (
-                              <Badge className="absolute -top-2 -right-2 h-4 w-4 rounded-full p-0 flex items-center justify-center text-[10px]">
-                                {totalItems}
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="flex flex-col items-start">
-                            <span className="text-xs leading-none whitespace-nowrap">Add to Cart</span>
-                            <span className="font-bold leading-none whitespace-nowrap text-primary-foreground">{formatPrice(addToCartValue, currencyCode)}</span>
-                          </div>
-                        </span>
-                        <span className="absolute inset-0 flex items-center justify-center gap-2 translate-y-12 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                          <div className="relative">
-                            <ShoppingCart className="w-4 h-4" />
-                            {totalItems > 0 && (
-                              <Badge className="absolute -top-2 -right-2 h-4 w-4 rounded-full p-0 flex items-center justify-center text-[10px]">
-                                {totalItems}
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="flex flex-col items-start">
-                            <span className="text-xs leading-none whitespace-nowrap">Add to Cart</span>
-                            <span className="font-bold leading-none whitespace-nowrap text-primary-foreground">{formatPrice(addToCartValue, currencyCode)}</span>
-                          </div>
-                        </span>
-                      </>
-                    )}
-                  </Button>
-                )}
+                {/* Standard Cart Button */}
+                <Button 
+                  onClick={handleAddToCart}
+                  disabled={isCheckingOut}
+                  className="min-w-[140px] sm:flex-initial bg-primary text-primary-foreground hover:bg-black hover:text-white transition-all relative overflow-hidden group"
+                >
+                  {isCheckingOut ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <span className="whitespace-nowrap">Adding...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="inline-flex items-center gap-2 transition-all duration-300 group-hover:-translate-y-12 group-hover:opacity-0">
+                        <div className="relative">
+                          <ShoppingCart className="w-4 h-4" />
+                          {totalItems > 0 && (
+                            <Badge className="absolute -top-2 -right-2 h-4 w-4 rounded-full p-0 flex items-center justify-center text-[10px]">
+                              {totalItems}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex flex-col items-start">
+                          <span className="text-xs leading-none whitespace-nowrap">Add to Cart</span>
+                          <span className="font-bold leading-none whitespace-nowrap text-primary-foreground">{formatPrice(addToCartValue, currencyCode)}</span>
+                        </div>
+                      </span>
+                      <span className="absolute inset-0 flex items-center justify-center gap-2 translate-y-12 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                        <div className="relative">
+                          <ShoppingCart className="w-4 h-4" />
+                          {totalItems > 0 && (
+                            <Badge className="absolute -top-2 -right-2 h-4 w-4 rounded-full p-0 flex items-center justify-center text-[10px]">
+                              {totalItems}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex flex-col items-start">
+                          <span className="text-xs leading-none whitespace-nowrap">Add to Cart</span>
+                          <span className="font-bold leading-none whitespace-nowrap text-primary-foreground">{formatPrice(addToCartValue, currencyCode)}</span>
+                        </div>
+                      </span>
+                    </>
+                  )}
+                </Button>
               </div>
             </div>
           </>
