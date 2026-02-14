@@ -1,29 +1,45 @@
 
-## Ensure Mini Reviews Fit Without Truncation
+
+## Fix Free Shipping Threshold for Currency Localization
 
 ### Problem
-The MiniReviewsCarousel component (`src/components/MiniReviewsCarousel.tsx`, line 250) uses `line-clamp-4` CSS, which truncates review text with "..." if it exceeds 4 lines. On some screen sizes (especially at the `sm:text-base` breakpoint at 640px+), the longer reviews can get cut off.
+The "Free Shipping above X" amount is hardcoded as "50" everywhere, which is incorrect for currencies like SEK, NOK, DKK (where 50 is far too low -- should be ~500), and doesn't show the correct currency symbol in several places. There are also spots with hardcoded "euro50" text.
+
+### Affected Files
+
+| File | Issue |
+|------|-------|
+| `src/components/UrgencyBanner.tsx` | Shows `${symbol}50` -- correct symbol but wrong amount for Scandinavian currencies |
+| `src/components/CartDrawer.tsx` | `FREE_SHIPPING_THRESHOLD = 50` and `SHIPPING_COST = 14.99` hardcoded |
+| `src/components/EmptyCartCTA.tsx` | Hardcoded string "Free shipping on orders over euro50" |
+| `src/pages/Home.tsx` | Hardcoded "Free Shipping on euro50+" in trust bar |
 
 ### Solution
-Two changes to guarantee reviews always display fully:
 
-1. **Remove `line-clamp-4`** from line 250 in `MiniReviewsCarousel.tsx` so text is never artificially truncated.
+**1. Create `src/lib/shippingThresholds.ts`** -- a shared utility mapping currency codes to the correct free-shipping threshold and shipping cost:
 
-2. **Shorten the two longest neck-pain reviews** to keep the carousel cards compact:
+| Currency | Threshold | Shipping Cost |
+|----------|-----------|---------------|
+| USD, EUR, GBP, CAD, AUD, NZD | 50 | 14.99 |
+| SEK | 500 | 149 |
+| NOK | 500 | 149 |
+| DKK | 350 | 99 |
 
-   - **Robert Johnson** (line 33): Currently ~200 chars. Shorten to:  
-     *"My neck pain was every day from side sleeping. This keeps my head level and the neck pain stopped. No more sharp morning neck thing."*
+Export a `getShippingConfig(currencyCode)` function returning `{ threshold, shippingCost }`.
 
-   - **Margaret Williams** (line 25): Currently ~195 chars. Shorten to:  
-     *"I'm 61 and was waking with neck and shoulder pain most mornings. After a week on this pillow it's basically gone. I didn't think a pillow could do that."*
+**2. Create `src/hooks/useShippingConfig.ts`** -- a hook that combines buyer country detection with the threshold utility, returning the localized threshold and shipping cost.
 
-   Back-pain reviews are already short enough and need no changes.
+**3. Update `src/components/UrgencyBanner.tsx`** -- use the new hook to get the correct threshold amount instead of hardcoded "50".
 
-3. **Update matching localized review texts** (GB, AU, NZ, CA country overrides) to keep them similarly concise.
+**4. Update `src/components/CartDrawer.tsx`** -- replace the hardcoded `SHIPPING_COST` and `FREE_SHIPPING_THRESHOLD` constants with values from the shipping config, based on the cart's currency.
+
+**5. Update `src/components/EmptyCartCTA.tsx`** -- replace the hardcoded "euro50" string with a dynamic value using `useCurrencySymbol()` and the shipping threshold hook.
+
+**6. Update `src/pages/Home.tsx`** -- replace "Free Shipping on euro50+" with a dynamically formatted string using the buyer's currency symbol and threshold.
 
 ### Technical Details
-- File: `src/components/MiniReviewsCarousel.tsx`
-- Line 250: Remove `line-clamp-4` from the paragraph class
-- Lines 25, 33: Shorten the `body` text for neck reviews 1 and 2
-- Lines 114-156: Trim corresponding `neckBody` strings in country overrides (GB, AU, NZ, CA) to match
-- No layout or structural changes needed
+
+- The shipping config hook will use `getBuyerCountrySync()` / `getBuyerCountry()` to determine the country, then `getCurrencyForCountry()` to get the currency code, and finally `getShippingConfig()` to get the correct numbers.
+- `formatPrice()` will be used where a fully formatted price string is needed (e.g., in the cart drawer progress bar).
+- Simple `${symbol}${threshold}` concatenation will be used for short display strings (banner, trust bar).
+
