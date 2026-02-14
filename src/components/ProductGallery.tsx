@@ -15,7 +15,7 @@ import { useValentinesOffer } from "@/hooks/useValentinesOffer";
 // Using WebP variants where available for better performance
 import ergonomicPillowProduct from "@/assets/ergonomic-pillow-product.webp";
 import kneePillowMain from "@/assets/knee-pillow-main-new.webp";
-import eyeMaskGift from "@/assets/sleep-mask-product-shot.webp";
+import eyeMaskGift from "@/assets/sleep-mask-product-shot-new.png";
 import completeSleepBundle from "@/assets/complete-sleep-bundle-updated.webp";
 
 export const ProductGallery = () => {

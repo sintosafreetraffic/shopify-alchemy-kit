@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import sleepMaskLifestyleHero from "@/assets/sleep-mask-lifestyle-hero.webp";
+import sleepMaskLifestyleHero from "@/assets/sleep-mask-product-shot-new.png";
 import sleepMaskLifestyleReading from "@/assets/sleep-mask-lifestyle-reading.webp";
 import sleepMaskHeroBenefits from "@/assets/sleep-mask-hero-benefits.webp";
 import sleepMaskBenefitsNew from "@/assets/sleep-mask-benefits-new.webp";
