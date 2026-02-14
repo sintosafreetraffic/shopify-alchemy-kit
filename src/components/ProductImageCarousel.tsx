@@ -107,11 +107,11 @@ export const ProductImageCarousel = ({ pillowFocus = 'neck' }: ProductImageCarou
   // Multiple views of the Rise By Night pillow (desktop order)
   const images = [
     { url: image1, alt: image1Alt, type: "image" },
-    { url: pillowMachineWashable, alt: "Ergonomic pillow with machine washable removable cover - cooling fabric and fits standard pillowcases", type: "image" },
     { url: image2, alt: image2Alt, type: "image" },
+    { url: pillowMachineWashable, alt: "Ergonomic pillow with machine washable removable cover - cooling fabric and fits standard pillowcases", type: "image" },
+    { url: pillowFocus === 'back' ? noNumbnessBeforeAfterSpine : pillowBeforeAfterSpine, alt: pillowFocus === 'back' ? "Reduces shoulder pressure and arm numbness while side sleeping - before and after comparison" : "Before and after spine alignment comparison - Rise By Night pillow vs regular pillow", type: "image" },
     { url: image4, alt: image4Alt, type: "image" },
     { url: image5, alt: image5Alt, type: "image" },
-    { url: pillowFocus === 'back' ? noNumbnessBeforeAfterSpine : pillowBeforeAfterSpine, alt: pillowFocus === 'back' ? "Reduces shoulder pressure and arm numbness while side sleeping - before and after comparison" : "Before and after spine alignment comparison - Rise By Night pillow vs regular pillow", type: "image" },
   ];
 
   // Get only image URLs (excluding videos) for the modal navigation
@@ -120,11 +120,11 @@ export const ProductImageCarousel = ({ pillowFocus = 'neck' }: ProductImageCarou
   // Mobile order - same product images as desktop
   const mobileImages = [
     images[0], // hero image
-    images[1], // machine washable
-    images[2], // deeper sleep
-    images[3], // pillowTrusted
-    images[4], // couple image
-    images[5], // spine alignment
+    images[1], // deeper sleep
+    images[2], // machine washable
+    images[3], // spine alignment
+    images[4], // pillowTrusted
+    images[5], // couple image
   ];
   
   // Get only image URLs for mobile (excluding videos) for the modal navigation

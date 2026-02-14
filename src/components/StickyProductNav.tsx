@@ -8,7 +8,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Loader2, CheckCircle } from "lucide-react";
+import { ShoppingCart, Loader2, CheckCircle, Star } from "lucide-react";
 import { useCartStore } from "@/stores/cartStore";
 import { useABErgonomicPillow } from "@/hooks/useABProduct";
 import { useValentinesOffer } from "@/hooks/useValentinesOffer";
@@ -140,13 +140,13 @@ export const StickyProductNav = ({
 
   return (
     <div
-      className={`fixed top-0 left-0 right-0 z-[90] bg-background/95 backdrop-blur-sm border-b shadow-sm transition-transform duration-300 ${
+      className={`fixed top-[92px] left-0 right-0 z-[90] bg-background/95 backdrop-blur-sm border-b shadow-sm transition-transform duration-300 ${
         isVisible ? "translate-y-0" : "-translate-y-full"
       }`}
     >
       <div className="container mx-auto px-3 sm:px-4 py-2 max-w-7xl">
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Product Image */}
+          {/* Product Image - visible on all screens */}
           {displayImage && (
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg overflow-hidden bg-muted/30 flex-shrink-0">
               <img
@@ -157,6 +157,16 @@ export const StickyProductNav = ({
               />
             </div>
           )}
+
+          {/* Star ratings - compact on mobile */}
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <div className="flex">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star key={star} className="w-3 h-3 fill-[hsl(var(--star))] text-[hsl(var(--star))]" />
+              ))}
+            </div>
+            <span className="text-[10px] sm:text-xs text-muted-foreground">6,247</span>
+          </div>
 
           {/* CTAs - take remaining space */}
           <div className="flex items-center gap-1.5 sm:gap-2 ml-auto flex-shrink-0">

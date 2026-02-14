@@ -155,7 +155,7 @@ export const MiniReviewsCarousel = ({
             <CarouselItem key={review.id}>
               <div className="px-3 py-3">
                 {/* Review text - readable size for 55+, text flows under arrows */}
-                <p className="text-sm sm:text-base text-foreground leading-relaxed mb-2">
+                <p className="text-sm sm:text-base text-foreground leading-relaxed mb-2 line-clamp-4">
                   "{review.body}"
                 </p>
 

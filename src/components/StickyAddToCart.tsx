@@ -289,7 +289,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
             <div className="flex flex-row flex-wrap items-center justify-between gap-3 w-full">
               {/* Product Info */}
               <div className="flex items-center gap-3">
-                <div className="hidden sm:block w-12 h-12 bg-secondary/30 rounded-lg overflow-hidden flex-shrink-0">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-secondary/30 rounded-lg overflow-hidden flex-shrink-0">
                 {isSleepMask ? (
                     <img
                       src={colors.find(c => c.name === selectedColor || c.value === selectedColor)?.image || colors[0].image}
@@ -308,7 +308,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                     />
                   )}
                 </div>
-                <div className="text-left hidden sm:block min-w-0">
+                <div className="text-left min-w-0">
                   <h3 className="font-semibold text-sm line-clamp-1">
                     {product.node.title}
                   </h3>

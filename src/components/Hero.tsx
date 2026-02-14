@@ -18,6 +18,8 @@ import { formatPrice } from "@/lib/formatPrice";
 import { trackATCClick } from "@/hooks/usePDPIntentTracking";
 // trackABEvent moved to cartStore for centralized ATC tracking
 import { useIsEU } from "@/hooks/useCurrencySymbol";
+import { getBuyerCountrySync } from "@/lib/buyerContext";
+import { COUNTRY_NAMES } from "@/lib/countryCode";
 
 
 import { mobileHeroConfig } from "@/config/mobileHeroConfig";
@@ -84,7 +86,9 @@ export const Hero = () => {
   const headerHeight = useHeaderHeight();
   const isEU = useIsEU();
   const valentinesOffer = useValentinesOffer();
-  
+  const buyerCountry = getBuyerCountrySync() || 'US';
+  const buyerCountryName = COUNTRY_NAMES[buyerCountry] || 'your country';
+
 
   // Use centralized cached product data
   const { data: products, isLoading: productsLoading } = useShopifyProducts(10);
@@ -375,7 +379,7 @@ export const Hero = () => {
               </div>
               <div className="flex items-center gap-2">
                 <Package className="w-5 h-5 text-muted-foreground shrink-0" />
-                <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight">Free shipping in <span className="font-semibold">US</span></p>
+                <p className="text-xs sm:text-sm lg:text-sm xl:text-base leading-tight">Free shipping in <span className="font-semibold">{buyerCountryName}</span></p>
               </div>
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-5 h-5 text-muted-foreground shrink-0" />
