@@ -1004,7 +1004,7 @@ export const CartDrawer = () => {
                                   {badge && (
                                     <div className={`inline-flex items-center gap-0.5 rounded-full mb-0.5 ${
                                       badge.variant === 'popular' ? 'text-[10px] font-medium px-1.5 py-0.5 bg-primary/10 text-primary' :
-                                      badge.variant === 'value' ? 'text-xs font-bold px-2 py-0.5 bg-pink-500 text-white shadow-sm' :
+                                      badge.variant === 'value' ? 'text-xs font-bold px-2 py-0.5 bg-primary/15 text-primary shadow-sm' :
                                       'text-[10px] font-medium px-1.5 py-0.5 bg-secondary text-secondary-foreground'
                                     }`}>
                                       {badge.variant === 'popular' && <TrendingUp className="w-2.5 h-2.5" />}
