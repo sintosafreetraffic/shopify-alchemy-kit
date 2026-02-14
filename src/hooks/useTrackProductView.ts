@@ -4,7 +4,7 @@ import { addToRecentlyViewed } from "@/components/home/RecentlyViewedItems";
 // Import product hero images for static tracking
 import ergonomicPillowHero from "@/assets/ergonomic-pillow-hero.webp";
 import kneePillowHero from "@/assets/knee-pillow-main-hero.webp";
-import sleepMaskHero from "@/assets/sleep-mask-hero-main.png";
+import sleepMaskHero from "@/assets/sleep-mask-product-shot.webp";
 import sleepBundleHero from "@/assets/complete-sleep-bundle-new.webp";
 
 interface ProductViewData {
