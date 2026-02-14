@@ -1,44 +1,31 @@
 
 
-# Fix Recently Viewed: Dynamic Pricing and Remove "40% Off" Text
+# Update Sleep Mask Image and Verify Compare-at Pricing
 
 ## Changes
 
-### 1. Make Sleep Bundle and Ergonomic Pillow Prices Dynamic (from Shopify)
-Currently, `STATIC_PRODUCT_DATA` in `useTrackProductView.ts` hardcodes prices (e.g., sleep bundle at 109.99/199.99), but Shopify has different values (149.99/190). Instead of updating hardcoded values again, the product pages should fetch live Shopify data and pass it to `useTrackProductView`, ensuring correct prices in all currencies.
+### 1. Replace Sleep Mask Image for Recently Viewed
+Copy the uploaded image (`user-uploads://image-11.png`) to `src/assets/` as the new sleep mask product shot. Then update `src/hooks/useTrackProductView.ts` to import this new image for the `sleep-mask` static entry. Bump the cache version in `RecentlyViewedItems.tsx` from 3 to 4 so all users see the new image.
 
-**Approach**: On the product detail pages (`SleepBundleProduct.tsx` and `ErgonomicPillowProductVariantB.tsx`), fetch the Shopify product data using the existing `useShopifyProducts` hook, then pass the live price and compareAtPrice to `useTrackProductView` instead of using `STATIC_PRODUCT_DATA`. For the knee pillow and sleep mask pages (which already work correctly with static data and have no compareAtPrice), keep using `STATIC_PRODUCT_DATA`.
+### 2. Replace Sleep Mask Image on the Product Page
+Update `src/components/SleepMaskHero.tsx` (or the relevant image carousel component) to use this new image as the primary hero/product shot for the sleep mask, replacing the current `sleep-mask-product-shot.webp`.
 
-**File: `src/hooks/useTrackProductView.ts`**
-- Update the `sleep-bundle` static entry to use fallback prices matching Shopify (149.99 / 190) instead of 109.99 / 199.99
-- Update the `ergonomic-pillow` static entry to match current Shopify pricing as well
-- These static values serve as fallbacks only; the real fix is dynamic fetching on the product pages
+### 3. Replace Sleep Mask Image on the Products Listing Page
+The `/products` page pulls images from Shopify. The first image shown is the Shopify product image. If the Shopify image should also change, that needs to be done in Shopify admin. However, if a static override is needed, we can map the sleep mask handle to use this new local image instead.
 
-**File: `src/pages/SleepBundleProduct.tsx`**
-- Import `useShopifyProducts` hook and `formatPrice`
-- Find the sleep bundle product from Shopify data
-- Build a dynamic `ProductViewData` object with live price/compareAtPrice
-- Pass it to `useTrackProductView` instead of `STATIC_PRODUCT_DATA["sleep-bundle"]`
-
-**File: `src/pages/ErgonomicPillowProductVariantB.tsx`**
-- Same approach: fetch Shopify data, find the ergonomic pillow product, pass dynamic pricing to `useTrackProductView`
-
-### 2. Remove "40% Off" from Recently Viewed for Ergonomic Sleep Pillow
-The ergonomic pillow currently shows a pink "1+1 FREE + 40%" badge and "Buy 1, Get 1 Free + 40% Off!" text in the Recently Viewed section. Remove the "+ 40%" from the badge and the "+ 40% Off!" from the subtitle text.
-
-**File: `src/components/home/RecentlyViewedItems.tsx`**
-- Line 103: Change badge text from `1+1 FREE + 40%` to `1+1 FREE`
-- Line 138: Change subtitle from `Buy 1, Get 1 Free + 40% Off!` to `Buy 1, Get 1 Free!`
-
-### 3. Bump Cache Version
-Increment `CURRENT_VERSION` from 2 to 3 in `RecentlyViewedItems.tsx` so all users get fresh data with corrected prices on their next visit.
+### 4. Verify Compare-at Pricing on Individual Product Pages
+The ergonomic pillow (`HeroVariantB`) and sleep bundle (`SleepBundleHero`) already display compare-at prices dynamically from Shopify with a strikethrough. No changes needed there. The `/products` listing page also already shows compare-at prices for these two products via the whitelist. This will be confirmed with no code changes required.
 
 ---
 
-## Files to Change
+## Technical Details
 
-1. **`src/hooks/useTrackProductView.ts`** -- Update static fallback prices for sleep-bundle and ergonomic-pillow
-2. **`src/pages/SleepBundleProduct.tsx`** -- Fetch Shopify data and pass dynamic pricing to tracking hook
-3. **`src/pages/ErgonomicPillowProductVariantB.tsx`** -- Fetch Shopify data and pass dynamic pricing to tracking hook
-4. **`src/components/home/RecentlyViewedItems.tsx`** -- Remove "+ 40%" from badge and text; bump cache version to 3
+**Files to modify:**
+
+1. **Copy image**: `user-uploads://image-11.png` to `src/assets/sleep-mask-product-shot-new.webp` (or `.png`)
+2. **`src/hooks/useTrackProductView.ts`**: Update the sleep-mask entry's image import to use the new asset
+3. **`src/components/home/RecentlyViewedItems.tsx`**: Bump `CURRENT_VERSION` from 3 to 4
+4. **`src/components/SleepMaskHero.tsx`** or **`src/components/SleepMaskImageCarousel.tsx`**: Update primary product image reference to the new asset
+
+**No changes needed for compare-at prices** -- the ergonomic pillow and sleep bundle product pages already show dynamic Shopify compare-at prices with strikethrough styling.
 
