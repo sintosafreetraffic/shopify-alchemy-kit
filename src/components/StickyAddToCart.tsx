@@ -285,16 +285,16 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
       >
         {product ? (
           <Button 
-            onClick={handleAddDeal}
-            disabled={isAddingDeal}
+            onClick={isErgonomicPillow ? handleAddDeal : handleAddToCart}
+            disabled={isErgonomicPillow ? isAddingDeal : isCheckingOut}
             className="rounded-full h-12 px-8 bg-pink-500 hover:bg-pink-600 text-white font-semibold text-sm shadow-lg"
           >
-            {isAddingDeal ? (
+            {(isErgonomicPillow ? isAddingDeal : isCheckingOut) ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <>
                 <ShoppingCart className="w-4 h-4 mr-2" />
-                <span>1+1 Deal — {formatPrice(productPrice, currencyCode)}</span>
+                <span>{isErgonomicPillow ? `1+1 Deal — ${formatPrice(productPrice, currencyCode)}` : 'ADD TO CART'}</span>
               </>
             )}
           </Button>
