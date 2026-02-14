@@ -114,9 +114,9 @@ export const ProductImageCarousel = ({ pillowFocus = 'neck' }: ProductImageCarou
     { url: image5, alt: image5Alt, type: "image" },
   ];
 
-  // Reorder for back focus: 1-6-2-4-3-5
+  // Reorder for back focus: 1-4-5-3-6-2
   const orderedImages = pillowFocus === 'back'
-    ? [images[0], images[5], images[1], images[3], images[2], images[4]]
+    ? [images[0], images[3], images[4], images[2], images[5], images[1]]
     : images;
 
   // Get only image URLs (excluding videos) for the modal navigation
