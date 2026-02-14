@@ -1,5 +1,5 @@
 // Performance: Heavy sections with carousels are lazy-loaded
-import { Suspense, lazy, useState } from "react";
+import { Suspense, lazy, useState, useMemo } from "react";
 
 import { StickyAddToCart } from "@/components/StickyAddToCart";
 import { KneePillowHero } from "@/components/KneePillowHero";
@@ -13,6 +13,9 @@ import { ReviewsWall, ReviewSubmissionForm } from "@/components/reviews";
 import { useSEO, SEO_CONFIGS } from "@/hooks/useSEO";
 import { ProductSchema, BreadcrumbSchema } from "@/components/seo/SEOSchemas";
 import { useTrackProductView, STATIC_PRODUCT_DATA } from "@/hooks/useTrackProductView";
+import { useShopifyProducts } from "@/hooks/useShopifyProducts";
+import { formatPrice, parseLocalizedNumber } from "@/lib/formatPrice";
+import kneePillowHeroImg from "@/assets/knee-pillow-main-hero.webp";
 
 // Lazy load sections with carousels to reduce initial bundle
 const KneePillowVideoSection = lazy(() => 
@@ -28,8 +31,32 @@ const SectionFallback = () => (
 
 const KneePillowProduct = () => {
   useSEO(SEO_CONFIGS.kneePillow);
-  useTrackProductView(STATIC_PRODUCT_DATA["knee-pillow"]);
   const [showReviewForm, setShowReviewForm] = useState(false);
+
+  // Fetch live Shopify data for dynamic pricing in Recently Viewed
+  const { data: products } = useShopifyProducts();
+  const trackingData = useMemo(() => {
+    const kneeProduct = products?.find(
+      (p) => p.node.title.toLowerCase().includes('knee')
+    );
+    if (kneeProduct) {
+      const variant = kneeProduct.node.variants.edges[0]?.node;
+      const currencyCode = variant?.price?.currencyCode || "USD";
+      const rawPrice = parseLocalizedNumber(variant?.price?.amount || "39.99");
+      return {
+        id: "knee-pillow",
+        handle: "knee-pillow",
+        title: "Ergonomic Knee Pillow",
+        imageUrl: kneePillowHeroImg,
+        price: formatPrice(rawPrice, currencyCode),
+        rawPrice,
+        currencyCode,
+      };
+    }
+    return STATIC_PRODUCT_DATA["knee-pillow"];
+  }, [products]);
+
+  useTrackProductView(trackingData);
 
   return (
     <div className="min-h-screen bg-background">
