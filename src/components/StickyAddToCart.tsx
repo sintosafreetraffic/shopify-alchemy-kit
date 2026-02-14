@@ -309,14 +309,11 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
               </div>
 
               {isPillowProduct ? (
-                <>
-                  {/* Product Title */}
-                  <span className="font-semibold text-[11px] sm:text-sm line-clamp-1 flex-shrink-0">
+                <div className="min-w-0 flex-shrink">
+                  <span className="font-semibold text-[11px] sm:text-sm line-clamp-1 truncate block">
                     RiseByNight Ergonomic Sleep Pillow
                   </span>
-
-                  {/* Star ratings */}
-                  <div className="flex items-center gap-1 flex-shrink-0">
+                  <div className="flex items-center gap-1">
                     <div className="flex">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <Star key={star} className="w-3 h-3 fill-[hsl(var(--star))] text-[hsl(var(--star))]" />
@@ -324,7 +321,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
                     </div>
                     <span className="text-[10px] sm:text-xs text-muted-foreground">6,247</span>
                   </div>
-                </>
+                </div>
               ) : (
                 <div className="text-left min-w-0 flex-shrink">
                   <h3 className="font-semibold text-sm line-clamp-1">
