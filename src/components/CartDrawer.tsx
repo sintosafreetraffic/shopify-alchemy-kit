@@ -706,11 +706,6 @@ export const CartDrawer = () => {
                               );
                             })()}
                             
-                            {/* Delivery Estimate */}
-                            <div className="flex items-center gap-1 mt-1">
-                              <Truck className="w-3 h-3 text-muted-foreground" />
-                              <span className="text-xs text-muted-foreground">Delivery: 5-7 working days</span>
-                            </div>
                             
                             {/* Scarcity Indicator */}
                             {(() => {
@@ -1007,13 +1002,13 @@ export const CartDrawer = () => {
                                 <div className="flex-1 min-w-0">
                                   {/* Mobile Social Proof Badge */}
                                   {badge && (
-                                    <div className={`inline-flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full mb-0.5 ${
-                                      badge.variant === 'popular' ? 'bg-primary/10 text-primary' :
-                                      badge.variant === 'value' ? 'bg-accent/20 text-accent-foreground' :
-                                      'bg-secondary text-secondary-foreground'
+                                    <div className={`inline-flex items-center gap-0.5 rounded-full mb-0.5 ${
+                                      badge.variant === 'popular' ? 'text-[10px] font-medium px-1.5 py-0.5 bg-primary/10 text-primary' :
+                                      badge.variant === 'value' ? 'text-xs font-bold px-2 py-0.5 bg-pink-500 text-white shadow-sm' :
+                                      'text-[10px] font-medium px-1.5 py-0.5 bg-secondary text-secondary-foreground'
                                     }`}>
                                       {badge.variant === 'popular' && <TrendingUp className="w-2.5 h-2.5" />}
-                                      {badge.variant === 'value' && <Star className="w-2.5 h-2.5" />}
+                                      {badge.variant === 'value' && <Star className="w-3 h-3" />}
                                       {badge.label}
                                     </div>
                                   )}
