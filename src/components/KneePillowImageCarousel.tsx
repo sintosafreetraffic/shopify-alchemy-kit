@@ -77,7 +77,7 @@ export const KneePillowImageCarousel = () => {
             <button
               key={index}
               onClick={() => api?.scrollTo(index)}
-              className={`relative w-12 h-12 rounded-lg transition-all border border-gray-200 ${
+              className={`relative w-12 h-12 rounded-lg overflow-hidden transition-all border border-gray-200 ${
                 current === index 
                   ? 'ring-2 ring-primary ring-offset-1' 
                   : 'opacity-60 hover:opacity-100'
