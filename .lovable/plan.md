@@ -1,27 +1,23 @@
 
-# Fix Compare Price Logic in ValentinesHeroSection
-
-## Problem
-The 1 Pillow option still shows a strikethrough compare-at price (e.g., EUR 239.98). Per the requirement:
-- **1 Pillow**: No compare price, just the selling price
-- **2 Pillows**: Compare price = 2x the selling price (e.g., EUR 239.98 for EUR 119.99 each)
+# Add Compare Price and 1+1 Badge to Price Display
 
 ## Changes
 
-### File: `src/components/ValentinesHeroSection.tsx`
+### File: `src/components/ab-testing/HeroVariantB.tsx`
 
-**Pricing logic (lines 40-47):**
-- Change `regularTwoPrice` from `singleCompareAtPrice * 2` to `productPrice * 2` (dynamic from Shopify)
-- Update savings: `savings = (productPrice * 2) - couplesDealPrice`
+**Mobile price display (lines 233-235):**
+- Add the strikethrough compare-at price (`compareAtPrice`) next to the selling price
+- Add a small badge with a Heart icon + "1+1" text, styled in the Valentine's pink accent color
 
-**1 Pillow card (lines 97-104):**
-- Remove the strikethrough compare-at price span (lines 101-103)
-- Keep only the selling price
+**Desktop price display (lines 372-374):**
+- Same changes: strikethrough compare-at price + Heart "1+1" badge
 
-**2 Pillows card (lines 128-135):**
-- The strikethrough price stays, but now uses `productPrice * 2` instead of `singleCompareAtPrice * 2`
-- This ensures it's always dynamic from Shopify (e.g., EUR 119.99 x 2 = EUR 239.98)
+The compare-at price is already dynamically calculated from Shopify at line 190 (`compareAtPrice`), so this just needs to be rendered in the UI.
 
 ### Result
-- 1 Pillow: **EUR 119.99** (no strikethrough)
-- 2 Pillows: **EUR 119.99** ~~EUR 239.98~~ Save EUR 119.99
+The price area will look like:
+
+**€119.99** ~~€239.98~~ `[Heart] 1+1`
+
+- Strikethrough price uses `text-muted-foreground line-through text-sm`
+- Badge uses Valentine's pink styling with the existing `Heart` icon from lucide-react (already imported at line 19)
