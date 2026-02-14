@@ -185,11 +185,19 @@ export const SleepBundleHero = () => {
                     <p className="text-2xl font-bold text-primary">
                       {formatPrice(product?.node.variants.edges[0]?.node.price.amount || "109.99", getCurrency(product?.node.variants.edges[0]?.node.price.currencyCode))}
                     </p>
-                    {product?.node.variants.edges[0]?.node.compareAtPrice && (
-                      <p className="text-xs text-muted-foreground line-through">
-                        {formatPrice(product.node.variants.edges[0].node.compareAtPrice.amount, getCurrency(product.node.variants.edges[0].node.compareAtPrice.currencyCode))}
-                      </p>
-                    )}
+                    {(() => {
+                      const variantCompare = product?.node.variants.edges[0]?.node.compareAtPrice?.amount;
+                      const rangeCompare = product?.node.compareAtPriceRange?.minVariantPrice?.amount;
+                      const compareAmount = (variantCompare && parseFloat(variantCompare) > 0)
+                        ? variantCompare
+                        : (rangeCompare && parseFloat(rangeCompare) > 0) ? rangeCompare : null;
+                      const currency = getCurrency(product?.node.variants.edges[0]?.node.compareAtPrice?.currencyCode || product?.node.variants.edges[0]?.node.price.currencyCode);
+                      return compareAmount ? (
+                        <p className="text-xs text-muted-foreground line-through">
+                          {formatPrice(compareAmount, currency)}
+                        </p>
+                      ) : null;
+                    })()}
                     <p className="text-xs text-muted-foreground">1 of each product</p>
                   </div>
                 </button>
@@ -215,11 +223,19 @@ export const SleepBundleHero = () => {
                     <p className="text-2xl font-bold text-primary">
                       {formatPrice(product?.node.variants.edges[1]?.node.price.amount || "199.99", getCurrency(product?.node.variants.edges[1]?.node.price.currencyCode))}
                     </p>
-                    {product?.node.variants.edges[1]?.node.compareAtPrice && (
-                      <p className="text-xs text-muted-foreground line-through">
-                        {formatPrice(product.node.variants.edges[1].node.compareAtPrice.amount, getCurrency(product.node.variants.edges[1].node.compareAtPrice.currencyCode))}
-                      </p>
-                    )}
+                    {(() => {
+                      const variantCompare = product?.node.variants.edges[1]?.node.compareAtPrice?.amount;
+                      const rangeCompare = (product?.node.compareAtPriceRange as any)?.maxVariantPrice?.amount || product?.node.compareAtPriceRange?.minVariantPrice?.amount;
+                      const compareAmount = (variantCompare && parseFloat(variantCompare) > 0)
+                        ? variantCompare
+                        : (rangeCompare && parseFloat(rangeCompare) > 0) ? rangeCompare : null;
+                      const currency = getCurrency(product?.node.variants.edges[1]?.node.compareAtPrice?.currencyCode || product?.node.variants.edges[1]?.node.price.currencyCode);
+                      return compareAmount ? (
+                        <p className="text-xs text-muted-foreground line-through">
+                          {formatPrice(compareAmount, currency)}
+                        </p>
+                      ) : null;
+                    })()}
                     <p className="text-xs text-muted-foreground">2 of each product</p>
                   </div>
                 </button>
