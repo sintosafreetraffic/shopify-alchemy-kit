@@ -33,8 +33,13 @@ const SleepBundleProduct = () => {
         title: "Complete Sleep Bundle",
         imageUrl: sleepBundleHero,
         price: formatPrice(variant?.price?.amount || "149.99", currencyCode),
+        rawPrice: parseFloat(variant?.price?.amount || "149.99"),
+        currencyCode,
         compareAtPrice: variant?.compareAtPrice?.amount
           ? formatPrice(variant.compareAtPrice.amount, currencyCode)
+          : undefined,
+        rawCompareAtPrice: variant?.compareAtPrice?.amount
+          ? parseFloat(variant.compareAtPrice.amount)
           : undefined,
       };
     }

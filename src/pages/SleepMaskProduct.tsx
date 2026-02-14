@@ -1,5 +1,5 @@
 // Performance: Heavy sections with carousels/videos are lazy-loaded
-import { Suspense, lazy, useState } from "react";
+import { Suspense, lazy, useState, useMemo } from "react";
 import { GuaranteeSection } from "@/components/GuaranteeSection";
 import { StickyAddToCart } from "@/components/StickyAddToCart";
 import { SleepMaskHero } from "@/components/SleepMaskHero";
@@ -12,6 +12,9 @@ import { ReviewsWall, ReviewSubmissionForm } from "@/components/reviews";
 import { useSEO, SEO_CONFIGS } from "@/hooks/useSEO";
 import { ProductSchema, BreadcrumbSchema } from "@/components/seo/SEOSchemas";
 import { useTrackProductView, STATIC_PRODUCT_DATA } from "@/hooks/useTrackProductView";
+import { useShopifyProducts } from "@/hooks/useShopifyProducts";
+import { formatPrice, parseLocalizedNumber } from "@/lib/formatPrice";
+import sleepMaskHeroImg from "@/assets/sleep-mask-product-shot-new.png";
 
 // Fallback for lazy-loaded sections
 const SectionFallback = () => (
@@ -22,8 +25,33 @@ const SectionFallback = () => (
 
 const SleepMaskProduct = () => {
   useSEO(SEO_CONFIGS.sleepMask);
-  useTrackProductView(STATIC_PRODUCT_DATA["sleep-mask"]);
   const [showReviewForm, setShowReviewForm] = useState(false);
+
+  // Fetch live Shopify data for dynamic pricing in Recently Viewed
+  const { data: products } = useShopifyProducts();
+  const trackingData = useMemo(() => {
+    const maskProduct = products?.find(
+      (p) => p.node.handle === "risebynight-3d-deep-sleep-mask" || 
+             p.node.title.toLowerCase().includes('sleep mask')
+    );
+    if (maskProduct) {
+      const variant = maskProduct.node.variants.edges[0]?.node;
+      const currencyCode = variant?.price?.currencyCode || "USD";
+      const rawPrice = parseLocalizedNumber(variant?.price?.amount || "24.99");
+      return {
+        id: "sleep-mask",
+        handle: "sleep-mask",
+        title: "Silk Sleep Mask",
+        imageUrl: sleepMaskHeroImg,
+        price: formatPrice(rawPrice, currencyCode),
+        rawPrice,
+        currencyCode,
+      };
+    }
+    return STATIC_PRODUCT_DATA["sleep-mask"];
+  }, [products]);
+
+  useTrackProductView(trackingData);
 
   return (
     <div className="min-h-screen bg-background">

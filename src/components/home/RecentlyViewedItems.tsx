@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import OptimizedImage from "@/components/OptimizedImage";
 import { Clock, Heart } from "lucide-react";
 import { useValentinesOffer } from "@/hooks/useValentinesOffer";
+import { formatPrice } from "@/lib/formatPrice";
 
 interface ViewedProduct {
   id: string;
@@ -11,7 +12,10 @@ interface ViewedProduct {
   title: string;
   imageUrl: string;
   price: string;
+  rawPrice?: number;
+  currencyCode?: string;
   compareAtPrice?: string;
+  rawCompareAtPrice?: number;
   isValentinesDeal?: boolean;
   viewedAt: number;
 }
@@ -23,7 +27,7 @@ interface RecentlyViewedItemsProps {
 
 const STORAGE_KEY = "rbn_recently_viewed";
 const STORAGE_VERSION_KEY = "rbn_recently_viewed_v";
-const CURRENT_VERSION = 4; // Bump to invalidate cached entries
+const CURRENT_VERSION = 5; // Bump to invalidate cached entries (v5: rawPrice + currencyCode)
 const MAX_STORED_ITEMS = 10;
 const EXPIRY_DAYS = 30;
 
@@ -123,11 +127,15 @@ export const RecentlyViewedItems = ({
                   {/* Price section with compare-at and discount badge */}
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-sm font-semibold text-primary">
-                      {product.price}
+                      {product.rawPrice && product.currencyCode
+                        ? formatPrice(product.rawPrice, product.currencyCode)
+                        : product.price}
                     </span>
-                    {product.compareAtPrice && (
+                    {(product.rawCompareAtPrice || product.compareAtPrice) && (
                       <span className="text-xs text-muted-foreground line-through">
-                        {product.compareAtPrice}
+                        {product.rawCompareAtPrice && product.currencyCode
+                          ? formatPrice(product.rawCompareAtPrice, product.currencyCode)
+                          : product.compareAtPrice}
                       </span>
                     )}
                   </div>

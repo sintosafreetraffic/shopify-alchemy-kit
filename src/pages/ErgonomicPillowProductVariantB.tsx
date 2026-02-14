@@ -138,11 +138,20 @@ const ErgonomicPillowProductVariantB = () => {
         title: "Ergonomic Sleep Pillow",
         imageUrl: ergonomicPillowHeroImg,
         price: formatPrice(variant?.price?.amount || "59.99", currencyCode),
+        rawPrice: parseFloat(variant?.price?.amount || "59.99"),
+        currencyCode,
         compareAtPrice: (() => {
           const variantCA = variant?.compareAtPrice?.amount;
           if (variantCA && parseFloat(variantCA) > 0) return formatPrice(variantCA, currencyCode);
           const ratioCA = getCompareAtFromRatio(pillowProduct.node.handle, variant?.price?.amount, 0);
           if (ratioCA) return formatPrice(ratioCA, currencyCode);
+          return undefined;
+        })(),
+        rawCompareAtPrice: (() => {
+          const variantCA = variant?.compareAtPrice?.amount;
+          if (variantCA && parseFloat(variantCA) > 0) return parseFloat(variantCA);
+          const ratioCA = getCompareAtFromRatio(pillowProduct.node.handle, variant?.price?.amount, 0);
+          if (ratioCA) return parseFloat(ratioCA);
           return undefined;
         })(),
         isValentinesDeal: true,
