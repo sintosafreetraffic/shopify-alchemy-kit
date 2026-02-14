@@ -29,6 +29,7 @@ import sleepMaskGold from "@/assets/sleep-mask-gold.webp";
 import sleepMaskSilver from "@/assets/sleep-mask-silver.webp";
 import sleepMaskBlack from "@/assets/sleep-mask-black.webp";
 import { useIsEU } from "@/hooks/useCurrencySymbol";
+import { useShippingConfig } from "@/hooks/useShippingConfig";
 
 // Image mapping for sleep mask colors
 const sleepMaskColorImages: Record<string, string> = {
@@ -266,10 +267,9 @@ export const CartDrawer = () => {
   
    const totalPrice = subtotal - totalDiscount - promoCodeDiscount;
   
-  // Shipping calculation
-  const SHIPPING_COST = 14.99;
-  const FREE_SHIPPING_THRESHOLD = 50;
-  const shippingCost = totalPrice >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
+  // Shipping calculation - currency-aware
+  const shippingConfig = useShippingConfig();
+  const shippingCost = totalPrice >= shippingConfig.threshold ? 0 : shippingConfig.shippingCost;
   const finalTotal = totalPrice + shippingCost;
 
   // Get available mask variants for color selection
@@ -594,7 +594,7 @@ export const CartDrawer = () => {
           {items.length > 0 && (
             <div className="mb-1 px-1">
               <div className="space-y-2">
-                {totalPrice >= FREE_SHIPPING_THRESHOLD ? (
+                {totalPrice >= shippingConfig.threshold ? (
                   <>
                     <div className="flex items-center gap-2 text-primary font-semibold text-sm justify-center">
                       <Truck className="w-4 h-4" />
@@ -611,14 +611,14 @@ export const CartDrawer = () => {
                   <>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">
-                        Add {formatPrice(FREE_SHIPPING_THRESHOLD - totalPrice, cartCurrency)} more for free shipping
+                        Add {formatPrice(shippingConfig.threshold - totalPrice, cartCurrency)} more for free shipping
                       </span>
                       <Truck className="w-4 h-4 text-muted-foreground" />
                     </div>
                     <div className="w-full bg-secondary rounded-full h-2">
                       <div 
                         className="bg-primary h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${Math.min((totalPrice / FREE_SHIPPING_THRESHOLD) * 100, 100)}%` }}
+                        style={{ width: `${Math.min((totalPrice / shippingConfig.threshold) * 100, 100)}%` }}
                       />
                     </div>
                   </>

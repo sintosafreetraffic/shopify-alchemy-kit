@@ -10,6 +10,7 @@ import moonIcon from "@/assets/moon-icon-blue.png";
 import HomeHero from "@/components/HomeHero";
 import { fetchProducts, getBuyerCountrySync } from "@/lib/shopify";
 import { useSEO, SEO_CONFIGS } from "@/hooks/useSEO";
+import { useShippingConfig } from "@/hooks/useShippingConfig";
 import { OrganizationSchema, WebsiteSchema } from "@/components/seo/SEOSchemas";
 
 // New homepage sections
@@ -39,6 +40,7 @@ const SectionFallback = () => (
 
 export default function Home() {
   const queryClient = useQueryClient();
+  const { formattedThreshold } = useShippingConfig();
 
   // SEO meta tags
   useSEO(SEO_CONFIGS.home);
@@ -230,7 +232,7 @@ export default function Home() {
 
             <div className="mt-6 md:mt-8 pt-4 md:pt-6 border-t border-primary-foreground/20">
               <p className="text-sm font-medium opacity-80 tracking-wide">
-                Free Shipping on €50+ • 100-Night Trial • 2-Year Warranty
+                Free Shipping on {formattedThreshold}+ • 100-Night Trial • 2-Year Warranty
               </p>
             </div>
           </div>
