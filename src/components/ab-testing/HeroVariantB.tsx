@@ -7,6 +7,7 @@
  * - Supports pillowFocus prop for neck/back pain variants
  */
 
+import homepageMobileHero from "@/assets/homepage-hero-mobile-couple.jpeg";
 import { Button } from "@/components/ui/button";
 import {
   Check,
@@ -194,7 +195,7 @@ export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
         {/* Mobile Layout: Carousel at top, then title */}
         <div className="md:hidden space-y-3 md:space-y-4 mb-0 md:mb-6">
           <Suspense fallback={<CarouselFallback />}>
-            <ProductImageCarousel pillowFocus={pillowFocus} />
+            <ProductImageCarousel pillowFocus={pillowFocus} mobileFirstImage={{ url: homepageMobileHero, alt: "Happy couple with Rise By Night ergonomic pillows" }} />
           </Suspense>
           <Suspense fallback={<div className="h-32 bg-muted/30 rounded-xl animate-pulse" />}>
             <MiniReviewsCarousel productHandle="ergonomic-pillow" pillowFocus={pillowFocus} autoPlayInterval={10000} buyerCountry={buyerCountry} />
