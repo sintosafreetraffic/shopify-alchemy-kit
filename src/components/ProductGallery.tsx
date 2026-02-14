@@ -71,9 +71,15 @@ export const ProductGallery = () => {
 
   // Helper to get formatted compare-at price from Shopify product
   const getCompareAtPrice = (product: ShopifyProduct | undefined): string | undefined => {
+    // First try variant-level compareAtPrice
     const variant = product?.node.variants.edges[0]?.node;
-    if (variant?.compareAtPrice?.amount) {
+    if (variant?.compareAtPrice?.amount && parseFloat(variant.compareAtPrice.amount) > 0) {
       return formatPrice(variant.compareAtPrice.amount, currencyCode);
+    }
+    // Fallback to product-level compareAtPriceRange
+    const rangeAmount = product?.node.compareAtPriceRange?.minVariantPrice?.amount;
+    if (rangeAmount && parseFloat(rangeAmount) > 0) {
+      return formatPrice(rangeAmount, currencyCode);
     }
     return undefined;
   };
@@ -178,11 +184,16 @@ export const ProductGallery = () => {
                       <span className="text-3xl md:text-4xl font-bold text-primary">
                         {formatPrice(bundleProduct.node.variants.edges[0]?.node.price.amount || "0", currencyCode)}
                       </span>
-                      {bundleProduct.node.variants.edges[0]?.node.compareAtPrice?.amount && (
-                        <span className="text-xl text-muted-foreground line-through">
-                          {formatPrice(bundleProduct.node.variants.edges[0].node.compareAtPrice.amount, bundleProduct.node.variants.edges[0].node.compareAtPrice.currencyCode)}
-                        </span>
-                      )}
+                      {(() => {
+                        const variantCompare = bundleProduct.node.variants.edges[0]?.node.compareAtPrice?.amount;
+                        const rangeCompare = bundleProduct.node.compareAtPriceRange?.minVariantPrice?.amount;
+                        const compareAmount = (variantCompare && parseFloat(variantCompare) > 0) ? variantCompare : (rangeCompare && parseFloat(rangeCompare) > 0) ? rangeCompare : null;
+                        return compareAmount ? (
+                          <span className="text-xl text-muted-foreground line-through">
+                            {formatPrice(compareAmount, currencyCode)}
+                          </span>
+                        ) : null;
+                      })()}
                     </div>
 
                     <ul className="space-y-3 mb-8">
