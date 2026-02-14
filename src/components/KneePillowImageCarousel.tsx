@@ -79,7 +79,7 @@ export const KneePillowImageCarousel = () => {
               onClick={() => api?.scrollTo(index)}
               className={`relative w-12 h-12 rounded-lg overflow-hidden transition-all border border-gray-200 ${
                 current === index 
-                  ? 'ring-2 ring-primary ring-offset-1' 
+                  ? 'outline outline-2 outline-offset-1 outline-primary' 
                   : 'opacity-60 hover:opacity-100'
               }`}
               aria-label={`Go to slide ${index + 1}`}
