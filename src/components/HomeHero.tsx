@@ -9,7 +9,7 @@ import { getPreferredPillowRoute } from "@/lib/pillowFocusPreference";
 
 // Hero images
 import heroDesktop from "@/assets/hero-desktop-couple.webp";
-import heroMobile from "@/assets/homepage-hero-mobile.jpeg";
+import heroMobile from "@/assets/home-hero-mobile.jpeg";
 
 // ============================================================================
 // HERO HEADLINE VARIANTS (Persona-based A/B Testing)
