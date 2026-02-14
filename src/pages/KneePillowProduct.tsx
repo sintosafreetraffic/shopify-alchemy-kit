@@ -12,7 +12,7 @@ import { KneePillowFAQ } from "@/components/KneePillowFAQ";
 import { ReviewsWall, ReviewSubmissionForm } from "@/components/reviews";
 import { useSEO, SEO_CONFIGS } from "@/hooks/useSEO";
 import { ProductSchema, BreadcrumbSchema } from "@/components/seo/SEOSchemas";
-import { useTrackProductView, STATIC_PRODUCT_DATA } from "@/hooks/useTrackProductView";
+import { useTrackProductView, getStaticProductData } from "@/hooks/useTrackProductView";
 import { useShopifyProducts } from "@/hooks/useShopifyProducts";
 import { formatPrice, parseLocalizedNumber } from "@/lib/formatPrice";
 import kneePillowHeroImg from "@/assets/knee-pillow-main-hero.webp";
@@ -53,7 +53,7 @@ const KneePillowProduct = () => {
         currencyCode,
       };
     }
-    return STATIC_PRODUCT_DATA["knee-pillow"];
+    return getStaticProductData("knee-pillow");
   }, [products]);
 
   useTrackProductView(trackingData);

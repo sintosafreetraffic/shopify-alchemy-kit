@@ -1,12 +1,15 @@
 import { ShieldCheck, RefreshCcw, Truck, Lock } from "lucide-react";
 import { PaymentIcons } from "./PaymentIcons";
 import { cn } from "@/lib/utils";
+import { useShippingConfig } from "@/hooks/useShippingConfig";
 
 interface FooterTrustBadgesProps {
   className?: string;
 }
 
 export const FooterTrustBadges = ({ className }: FooterTrustBadgesProps) => {
+  const { formattedThreshold } = useShippingConfig();
+
   const trustBadges = [
     {
       icon: ShieldCheck,
@@ -21,7 +24,7 @@ export const FooterTrustBadges = ({ className }: FooterTrustBadgesProps) => {
     {
       icon: Truck,
       label: "Free Shipping",
-      sublabel: "On orders €50+",
+      sublabel: `On orders ${formattedThreshold}+`,
     },
     {
       icon: RefreshCcw,

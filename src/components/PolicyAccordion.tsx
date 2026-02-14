@@ -5,8 +5,10 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Moon, Truck, RotateCcw, Star } from "lucide-react";
+import { getBuyerCountrySync } from "@/lib/buyerContext";
+import { COUNTRY_NAMES } from "@/lib/countryCode";
 
-const policies = [
+const getPolicies = (countryName: string) => [
   {
     icon: Moon,
     title: "100 nights risk free trial",
@@ -15,7 +17,7 @@ const policies = [
   {
     icon: Truck,
     title: "Free Shipping & Delivery",
-    content: "Enjoy free shipping on all orders containing pillows within the United States. Orders are typically processed within 1-2 business days and delivered within 5-7 business days. Track your order every step of the way with our real-time tracking system."
+    content: `Enjoy free shipping on all orders containing pillows within ${countryName}. Orders are typically processed within 1-2 business days and delivered within 5-7 business days. Track your order every step of the way with our real-time tracking system.`
   },
   {
     icon: RotateCcw,
@@ -47,6 +49,12 @@ const policies = [
 ];
 
 export const PolicyAccordion = () => {
+  const buyerCountry = getBuyerCountrySync() || 'US';
+  const countryName = buyerCountry === 'NL' 
+    ? `the ${COUNTRY_NAMES[buyerCountry] || 'your country'}`
+    : COUNTRY_NAMES[buyerCountry] || 'your country';
+  const policies = getPolicies(countryName);
+
   return (
     <section className="py-6 bg-background">
       <div className="container mx-auto px-4 max-w-3xl">

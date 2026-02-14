@@ -28,7 +28,7 @@ import { useABErgonomicPillow } from "@/hooks/useABProduct";
 import { useCartStore } from "@/stores/cartStore";
 import { useSEO, SEO_CONFIGS } from "@/hooks/useSEO";
 import { ProductSchema } from "@/components/seo/SEOSchemas";
-import { useTrackProductView, STATIC_PRODUCT_DATA } from "@/hooks/useTrackProductView";
+import { useTrackProductView, getStaticProductData } from "@/hooks/useTrackProductView";
 import { useShopifyProducts } from "@/hooks/useShopifyProducts";
 import { formatPrice } from "@/lib/formatPrice";
 import { getCompareAtFromRatio } from "@/lib/compareAtPriceRatios";
@@ -157,7 +157,7 @@ const ErgonomicPillowProductVariantB = () => {
         isValentinesDeal: true,
       };
     }
-    return STATIC_PRODUCT_DATA["ergonomic-pillow"];
+    return getStaticProductData("ergonomic-pillow");
   }, [products]);
 
   useTrackProductView(trackingData);
