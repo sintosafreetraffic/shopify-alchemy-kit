@@ -4,7 +4,8 @@ import kneePillowMain from "@/assets/knee-pillow-new.png";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
 import { fetchProducts, type ShopifyProduct } from "@/lib/shopify";
 import { formatPrice } from "@/lib/formatPrice";
-import { useIsEU } from "@/hooks/useCurrencySymbol";
+import { getBuyerCountrySync } from "@/lib/buyerContext";
+import { getCurrencyForCountry } from "@/lib/countryCode";
 
 export const SleepBundleBenefits = () => {
   const [bundleProduct, setBundleProduct] = useState<ShopifyProduct | null>(null);
@@ -13,7 +14,8 @@ export const SleepBundleBenefits = () => {
     kneePillow: ShopifyProduct | null;
     sleepMask: ShopifyProduct | null;
   }>({ pillow: null, kneePillow: null, sleepMask: null });
-  const isEU = useIsEU();
+  const buyerCountry = getBuyerCountrySync() || 'US';
+  const buyerCurrency = getCurrencyForCountry(buyerCountry);
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -42,10 +44,10 @@ export const SleepBundleBenefits = () => {
     loadProducts();
   }, []);
 
-  // Helper to get currency with EU override
+  // Helper to get currency with buyer-country-aware override
   const getCurrency = (shopifyCurrency: string | undefined) => {
     const currency = shopifyCurrency || 'USD';
-    return (isEU && currency === 'USD') ? 'EUR' : currency;
+    return currency === 'USD' ? buyerCurrency : currency;
   };
 
   // Calculate prices from Shopify data

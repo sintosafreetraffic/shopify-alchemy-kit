@@ -36,7 +36,7 @@ import { trackViewedProduct } from "@/lib/klaviyo";
 import { useHeaderHeight } from "@/hooks/useHeaderHeight";
 import { formatPrice } from "@/lib/formatPrice";
 import { trackATCClick } from "@/hooks/usePDPIntentTracking";
-import { useIsEU } from "@/hooks/useCurrencySymbol";
+import { getCurrencyForCountry } from "@/lib/countryCode";
 import { getCompareAtFromRatio } from "@/lib/compareAtPriceRatios";
 import { getBuyerCountrySync } from "@/lib/buyerContext";
 import { COUNTRY_NAMES } from "@/lib/countryCode";
@@ -96,7 +96,7 @@ export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
   const { addItem, setCartOpen } = useCartStore();
   const hasTrackedView = useRef(false);
   const headerHeight = useHeaderHeight();
-  const isEU = useIsEU();
+  const buyerCurrency = getCurrencyForCountry(buyerCountry);
   const valentinesOffer = useValentinesOffer();
 
   // Use A/B-aware product hook - automatically selects correct product for Variant B
@@ -181,8 +181,7 @@ export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
   // Get product price from the Pillow Only variant
   const productPrice = variant ? parseFloat(variant.price.amount) : 59.99;
   const shopifyCurrency = variant?.price.currencyCode || "USD";
-  // Override to EUR for EU countries if Shopify returns USD
-  const currencyCode = isEU && shopifyCurrency === "USD" ? "EUR" : shopifyCurrency;
+  const currencyCode = shopifyCurrency === "USD" ? buyerCurrency : shopifyCurrency;
 
   // Dynamic compare-at price: use Shopify data, or ratio-based fallback for non-US markets
   const shopifyCompareAt = variant?.compareAtPrice?.amount ? parseFloat(variant.compareAtPrice.amount) : 0;
