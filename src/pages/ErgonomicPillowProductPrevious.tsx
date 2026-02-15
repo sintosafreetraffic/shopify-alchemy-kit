@@ -124,7 +124,7 @@ const ErgonomicPillowProductPrevious = () => {
       <ProductBenefitsSection />
       <PainReliefSection />
       
-      <InlineCTA />
+      {/* Inline CTA removed - redundant with sticky ATC and 1+1 deal */}
       
       <LookInside />
 
