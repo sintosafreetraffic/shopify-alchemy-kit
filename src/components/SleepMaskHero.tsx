@@ -6,8 +6,8 @@ import { PolicyAccordion } from "./PolicyAccordion";
 import { useState, useEffect, useRef, Suspense, lazy } from "react";
 import { useCartStore } from "@/stores/cartStore";
 import { useSleepMaskColorStore } from "@/stores/sleepMaskColorStore";
-import { fetchProducts } from "@/lib/shopify";
 import type { ShopifyProduct } from "@/lib/shopify";
+import { useShopifyProducts } from "@/hooks/useShopifyProducts";
 import { toast } from "sonner";
 import { trackPageVisit } from "@/lib/pinterest";
 import { trackViewContent as trackMetaViewContent } from "@/lib/meta-pixel";
@@ -48,53 +48,40 @@ const colorImages: Record<string, string> = {
 export const SleepMaskHero = () => {
   const [quantity, setQuantity] = useState(1);
   const { selectedColor, setSelectedColor } = useSleepMaskColorStore();
-  const [product, setProduct] = useState<ShopifyProduct | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const buyerCountry = getBuyerCountrySync() || 'US';
   const buyerCurrency = getCurrencyForCountry(buyerCountry);
   const { addItem } = useCartStore();
   const hasTrackedView = useRef(false);
 
+  const { data: allProducts } = useShopifyProducts(10);
+  const product: ShopifyProduct | null = allProducts?.find(p => p.node.title.toLowerCase().includes('silk deep sleep mask') && !p.node.title.toLowerCase().includes('free gift')) || null;
+
+  // Track views when product loads
   useEffect(() => {
-    const loadProduct = async () => {
-      try {
-        const products = await fetchProducts(10);
-        const sleepMask = products.find(p => p.node.title.toLowerCase().includes('silk deep sleep mask') && !p.node.title.toLowerCase().includes('free gift'));
-        if (sleepMask) {
-          setProduct(sleepMask);
-          // Track Pinterest PageVisit with product ID
-          trackPageVisit(sleepMask.node.id);
-          
-          // Track Klaviyo Viewed Product (only once per page load)
-          if (!hasTrackedView.current) {
-            hasTrackedView.current = true;
-            
-            // Track Meta Pixel ViewContent
-            const price = parseFloat(sleepMask.node.variants.edges[0]?.node.price.amount || "0");
-            const currency = sleepMask.node.variants.edges[0]?.node.price.currencyCode || buyerCurrency;
-            trackMetaViewContent(sleepMask.node.id, sleepMask.node.title, price, currency);
-            
-            trackViewedProduct({
-              id: sleepMask.node.id,
-              title: sleepMask.node.title,
-              price: price,
-              sku: sleepMask.node.variants.edges[0]?.node.id || "",
-              imageUrl: sleepMask.node.images?.edges?.[0]?.node?.url || "",
-            });
-          }
-          
-          // Set default color to the first available color
-          const colorOption = sleepMask.node.options.find(opt => opt.name === "Color");
-          if (colorOption && colorOption.values.length > 0) {
-            setSelectedColor(colorOption.values[0]);
-          }
-        }
-      } catch (error) {
-        console.error("Error loading product:", error);
-      }
-    };
-    loadProduct();
-  }, []);
+    if (!product || hasTrackedView.current) return;
+    hasTrackedView.current = true;
+    
+    trackPageVisit(product.node.id);
+    
+    const price = parseFloat(product.node.variants.edges[0]?.node.price.amount || "0");
+    const currency = product.node.variants.edges[0]?.node.price.currencyCode || buyerCurrency;
+    trackMetaViewContent(product.node.id, product.node.title, price, currency);
+    
+    trackViewedProduct({
+      id: product.node.id,
+      title: product.node.title,
+      price: price,
+      sku: product.node.variants.edges[0]?.node.id || "",
+      imageUrl: product.node.images?.edges?.[0]?.node?.url || "",
+    });
+    
+    // Set default color to the first available color
+    const colorOption = product.node.options.find(opt => opt.name === "Color");
+    if (colorOption && colorOption.values.length > 0 && !selectedColor) {
+      setSelectedColor(colorOption.values[0]);
+    }
+  }, [product]);
 
   const handleAddToCart = async () => {
     if (!product) {

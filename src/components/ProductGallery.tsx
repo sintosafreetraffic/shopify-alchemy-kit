@@ -4,8 +4,8 @@ import { Card } from "@/components/ui/card";
 import { ArrowRight, Heart } from "lucide-react";
 import { StarRating } from "@/components/ui/star-rating";
 import { Link } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { fetchProducts, type ShopifyProduct } from "@/lib/shopify";
+import type { ShopifyProduct } from "@/lib/shopify";
+import { useShopifyProducts } from "@/hooks/useShopifyProducts";
 import OptimizedImage from "@/components/OptimizedImage";
 import { formatPrice } from "@/lib/formatPrice";
 import { getCompareAtFromRatio } from "@/lib/compareAtPriceRatios";
@@ -21,27 +21,13 @@ import eyeMaskGift from "@/assets/sleep-mask-product-shot-new.png";
 import completeSleepBundle from "@/assets/complete-sleep-bundle-updated.webp";
 
 export const ProductGallery = () => {
-  const [shopifyProducts, setShopifyProducts] = useState<ShopifyProduct[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const buyerCountry = getBuyerCountrySync() || 'US';
   const buyerCurrency = getCurrencyForCountry(buyerCountry);
   
   // Get A/B tested ergonomic pillow product
   const { product: abErgonomicPillow, config: abConfig } = useABErgonomicPillow();
 
-  useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        const products = await fetchProducts();
-        setShopifyProducts(products);
-      } catch (error) {
-        console.error("Failed to load products:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadProducts();
-  }, []);
+  const { data: shopifyProducts = [], isLoading } = useShopifyProducts();
 
   // Find Shopify products by handle
   const bundleProduct = shopifyProducts.find(
