@@ -4,10 +4,10 @@
   "description": "Valentine's Day 1+1 Couples Deal - Buy 2 pillows, save €30",
   
   "schedule": {
-    "startDate": "2026-01-01T00:00:00Z",
-    "endDate": "2026-02-14T23:59:59Z",
-    "deliveryDeadline": "2026-02-12T23:59:59Z",
-    "deliveryDeadlineText": "Order by Feb 12 → Arrives for Valentine's Day"
+    "startDate": "2024-01-01T00:00:00Z",
+    "endDate": "2099-12-31T23:59:59Z",
+    "deliveryDeadline": "2099-12-31T23:59:59Z",
+    "deliveryDeadlineText": "Free shipping on all orders"
   },
   
   "pricing": {
