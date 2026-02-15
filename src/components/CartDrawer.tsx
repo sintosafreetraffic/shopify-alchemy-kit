@@ -1097,11 +1097,11 @@ export const CartDrawer = () => {
                   <div className="space-y-1 pt-1">
                     {totalDiscount > 0 && (
                       <div className="flex justify-between items-center text-sm">
-                        <span className="text-pink-500 flex items-center gap-1">
+                         <span className="text-primary flex items-center gap-1">
                           <Heart className="w-3 h-3 fill-current" />
-                          Valentine's Deal
+                          1+1 Deal
                         </span>
-                        <span className="text-pink-500 font-semibold">-{formatPrice(totalDiscount, cartCurrency)}</span>
+                        <span className="text-primary font-semibold">-{formatPrice(totalDiscount, cartCurrency)}</span>
                       </div>
                     )}
                      

@@ -201,7 +201,7 @@ export const StickyProductNav = ({
             {valentinesOffer.isActive && (
               <Button
                 size="sm"
-                className="font-semibold text-[11px] sm:text-xs bg-pink-500 hover:bg-pink-600 text-white h-8 px-2.5 sm:px-3"
+                className="font-semibold text-[11px] sm:text-xs bg-primary hover:bg-primary/90 text-primary-foreground h-8 px-2.5 sm:px-3"
                 onClick={handleAddDeal}
                 disabled={isAddingDeal || !product}
               >
