@@ -234,8 +234,8 @@ export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
               {compareAtPrice && compareAtPrice > productPrice && (
                 <span className="text-sm text-muted-foreground line-through">{formatPrice(compareAtPrice, currencyCode)}</span>
               )}
-              <span className="inline-flex items-center gap-1 rounded-full bg-pink-100 text-pink-700 px-2 py-0.5 text-xs font-semibold">
-                <Heart className="w-3 h-3 fill-pink-500 text-pink-500" />
+               <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-xs font-semibold">
+                <Heart className="w-3 h-3 fill-primary text-primary" />
                 1+1
               </span>
             </div>
@@ -381,8 +381,8 @@ export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
               {compareAtPrice && compareAtPrice > productPrice && (
                 <span className="text-sm text-muted-foreground line-through">{formatPrice(compareAtPrice, currencyCode)}</span>
               )}
-              <span className="inline-flex items-center gap-1 rounded-full bg-pink-100 text-pink-700 px-2.5 py-0.5 text-xs font-semibold">
-                <Heart className="w-3 h-3 fill-pink-500 text-pink-500" />
+               <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2.5 py-0.5 text-xs font-semibold">
+                <Heart className="w-3 h-3 fill-primary text-primary" />
                 1+1
               </span>
             </div>

@@ -325,11 +325,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
             <Button 
               onClick={isErgonomicPillow ? handleAddDeal : handleAddToCart}
               disabled={isErgonomicPillow ? isAddingDeal : isCheckingOut}
-              className={`rounded-full h-12 px-8 font-semibold text-sm shadow-lg ${
-                isErgonomicPillow 
-                  ? "bg-pink-500 hover:bg-pink-600 text-white" 
-                  : "bg-primary hover:bg-primary/90 text-primary-foreground"
-              }`}
+              className="rounded-full h-12 px-8 font-semibold text-sm shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               {(isErgonomicPillow ? isAddingDeal : isCheckingOut) ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
