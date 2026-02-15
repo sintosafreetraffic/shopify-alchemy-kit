@@ -9,7 +9,7 @@ import { useShopifyProducts } from "@/hooks/useShopifyProducts";
 import OptimizedImage from "@/components/OptimizedImage";
 import { formatPrice } from "@/lib/formatPrice";
 import { getCompareAtFromRatio } from "@/lib/compareAtPriceRatios";
-import { getBuyerCountrySync } from "@/lib/buyerContext";
+import { useBuyerCountry } from "@/hooks/useBuyerCountry";
 import { getCurrencyForCountry } from "@/lib/countryCode";
 import { useABErgonomicPillow } from "@/hooks/useABProduct";
 import { getPreferredPillowRoute } from "@/lib/pillowFocusPreference";
@@ -21,7 +21,7 @@ import eyeMaskGift from "@/assets/sleep-mask-product-shot-new.png";
 import completeSleepBundle from "@/assets/complete-sleep-bundle-updated.webp";
 
 export const ProductGallery = () => {
-  const buyerCountry = getBuyerCountrySync() || 'US';
+  const { country: buyerCountry } = useBuyerCountry();
   const buyerCurrency = getCurrencyForCountry(buyerCountry);
   
   // Get A/B tested ergonomic pillow product

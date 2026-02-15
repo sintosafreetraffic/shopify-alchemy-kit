@@ -13,7 +13,7 @@ import { trackStickyATCClick } from "@/hooks/usePDPIntentTracking";
 // trackABEvent moved to cartStore for centralized ATC tracking
 import { Badge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/formatPrice";
-import { getBuyerCountrySync } from "@/lib/buyerContext";
+import { useBuyerCountry } from "@/hooks/useBuyerCountry";
 import { getCurrencyForCountry } from "@/lib/countryCode";
 import sleepMaskNavy from "@/assets/sleep-mask-navy.webp";
 import sleepMaskTurquoise from "@/assets/sleep-mask-turquoise.webp";
@@ -59,7 +59,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
   const { addItem, setCartOpen, isCartOpen, items } = useCartStore();
   const { isMobileMenuOpen } = useUIStore();
   const isMobile = useIsMobile();
-  const buyerCountry = getBuyerCountrySync() || 'US';
+  const { country: buyerCountry } = useBuyerCountry();
   const buyerCurrency = getCurrencyForCountry(buyerCountry);
   const valentinesOffer = useValentinesOffer();
   // Calculate cart totals

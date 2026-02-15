@@ -15,7 +15,7 @@ import { trackViewContent as trackMetaViewContent } from "@/lib/meta-pixel";
 import { trackViewedProduct } from "@/lib/klaviyo";
 import { CountdownTimerDisplay } from "./CountdownTimer";
 import { formatPrice } from "@/lib/formatPrice";
-import { getBuyerCountrySync } from "@/lib/buyerContext";
+import { useBuyerCountry } from "@/hooks/useBuyerCountry";
 import { getCurrencyForCountry } from "@/lib/countryCode";
 import { mobileHeroConfig } from "@/config/mobileHeroConfig";
 
@@ -36,7 +36,7 @@ export const KneePillowHero = () => {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { addItem, setCartOpen } = useCartStore();
   const hasTrackedView = useRef(false);
-  const buyerCountry = getBuyerCountrySync() || 'US';
+  const { country: buyerCountry } = useBuyerCountry();
   const buyerCurrency = getCurrencyForCountry(buyerCountry);
 
   // Use centralized cached product data
