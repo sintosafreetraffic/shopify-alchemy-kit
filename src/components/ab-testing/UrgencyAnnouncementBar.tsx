@@ -8,16 +8,16 @@ import { Heart } from 'lucide-react';
 
 export function UrgencyAnnouncementBar() {
   const messages = [
-    "💕 Valentine's Sale",
     "Buy 1 Get 1 Free",
-    "💕 Valentine's Sale",
+    "Buy 1 Get 1 Free",
+    "Buy 1 Get 1 Free",
     "Buy 1 Get 1 Free",
   ];
   
   return (
     <div
       data-header-banner
-      className="fixed top-0 left-0 right-0 h-9 bg-gradient-to-r from-valentine-pink via-valentine-rose to-valentine-pink text-valentine-foreground text-center text-sm font-semibold z-[80] flex items-center overflow-hidden"
+      className="fixed top-0 left-0 right-0 h-9 bg-black text-white text-center text-sm font-semibold z-[80] flex items-center overflow-hidden"
     >
       <div className="animate-marquee whitespace-nowrap flex items-center">
         {messages.map((msg, i) => (

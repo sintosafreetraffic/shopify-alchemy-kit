@@ -17,17 +17,13 @@ export const UrgencyBanner = () => {
   return (
     <div
       data-header-banner
-      className={`fixed top-0 left-0 right-0 h-9 bg-gradient-to-r from-valentine-pink via-valentine-rose to-valentine-pink text-valentine-foreground text-sm font-semibold z-[80] flex items-center overflow-hidden transition-opacity ${
+      className={`fixed top-0 left-0 right-0 h-9 bg-black text-white text-sm font-semibold z-[80] flex items-center overflow-hidden transition-opacity ${
         isCartOpen ? "opacity-0 pointer-events-none" : "opacity-100"
       }`}
     >
       <div className="animate-marquee-seamless whitespace-nowrap inline-flex">
         {[0, 1, 2, 3].map((i) => (
           <span key={i} className="inline-flex items-center gap-12 px-12">
-            <span className="inline-flex items-center gap-2">
-              <Heart className="w-4 h-4 fill-current" />
-              <span>Valentine's Sale</span>
-            </span>
             <span className="inline-flex items-center gap-2">
               <Gift className="w-4 h-4" />
               <span>Buy 1 Get 1 Free</span>
