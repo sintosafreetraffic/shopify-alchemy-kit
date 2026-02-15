@@ -1,60 +1,63 @@
 
 
-## Fix: Broken Currency Override Pattern Across 9 Files
+## Full Currency Audit Results
 
-### Root Cause
+After scanning every file in the codebase, here is the current status:
 
-Every component that displays prices uses this pattern to determine currency:
+---
 
-```
-const currencyCode = (isEU && shopifyCurrency === 'USD') ? 'EUR' : shopifyCurrency;
-```
+### Already Fixed (no action needed)
+All 10 files that previously used the broken `isEU` pattern now correctly use the `buyerCurrency = getCurrencyForCountry(buyerCountry)` resolution. This covers:
+- StickyAddToCart, StickyProductNav, ProductGallery, Hero, HeroVariantB, CartDrawer, SleepMaskHero, KneePillowHero, PostATCUpsellModal, RefLandingPage, SleepBundleHero, SleepBundleBenefits, Products.tsx
 
-This is broken because:
-- **UK (GB)**: GB is not in the `EU_COUNTRIES` list, so `isEU` is `false`. If Shopify returns USD (which it often does for non-US visitors), it stays as USD instead of becoming GBP.
-- **Denmark (DK)**: DK is in `EU_COUNTRIES`, so `isEU` is `true`. The override converts USD to EUR -- but Denmark uses DKK, not EUR.
-- **Sweden (SE)**: Same problem as Denmark -- gets EUR instead of SEK.
+---
 
-Meanwhile, components like the announcement bar, footer trust badges, and shipping config work correctly because they use `getCurrencyForCountry(buyerCountry)` which properly maps each country to its actual currency (GB to GBP, DK to DKK, SE to SEK, etc.).
+### Remaining Issues Found
 
-### The Fix
+#### Issue 1: SleepBundleBenefits -- Hardcoded EUR fallback
+**File:** `src/components/SleepBundleBenefits.tsx` (line 57)
+**Problem:** When Shopify data is unavailable, the fallback is `formatPrice("109.99", "EUR")` -- a UK visitor would see a EUR price instead of GBP.
+**Fix:** Change to `formatPrice("109.99", buyerCurrency)` so the fallback also respects the detected country.
 
-Replace the broken `isEU` override pattern in all 9 files with a proper buyer-country-aware currency resolution:
+#### Issue 2: Meta Pixel tracking -- EUR fallback in 5 files
+**Files:**
+- `src/components/Hero.tsx` (line 131)
+- `src/components/ab-testing/HeroVariantB.tsx` (line 116)
+- `src/components/SleepMaskHero.tsx` (line 74)
+- `src/components/KneePillowHero.tsx` (line 54)
+- `src/components/SleepBundleHero.tsx` (line 47)
 
-```
-const buyerCountry = getBuyerCountrySync() || 'US';
-const buyerCurrency = getCurrencyForCountry(buyerCountry);
-const currencyCode = shopifyCurrency === 'USD' ? buyerCurrency : shopifyCurrency;
-```
+**Problem:** The Meta Pixel `ViewContent` event uses `currencyCode || "EUR"` as fallback. If Shopify returns no currency, a UK visitor's conversion would be tracked as EUR instead of GBP. This does not affect what users see, but it does skew Meta ad reporting (ROAS calculations, revenue attribution).
+**Fix:** Change fallback from `"EUR"` to `buyerCurrency` in all 5 files. Since `buyerCurrency` is already computed in each of these components, this is a one-word change per file.
 
-This means: if Shopify returns the correct localized currency, use it. If Shopify returns USD (fallback), use the currency we know the buyer should see based on their detected country.
+#### Issue 3: InstallmentBadge -- EUR default (low priority)
+**File:** `src/components/InstallmentBadge.tsx` (lines 21, 47)
+**Problem:** The default `currencyCode` prop is `"EUR"`. If any caller forgets to pass currency, it defaults to EUR. Currently the component is commented out / disabled in usage, so this is cosmetic.
+**Fix:** Change default from `"EUR"` to `"USD"` (standard fallback) for safety, though it has no current impact since the badge is disabled.
 
-### Files to Update
+#### Issue 4: SEO ProductSchema -- Hardcoded USD prices (acceptable)
+**Files:** All product pages pass hardcoded prices like `price="59.99"` and `currency` defaults to `"USD"`.
+**Verdict:** This is **acceptable** and should NOT be changed. Google structured data / Schema.org prices should be in a single consistent currency. Changing this per-visitor would create invalid/fluctuating structured data.
 
-All 9 files that use the `(isEU && shopifyCurrency === 'USD') ? 'EUR' : shopifyCurrency` pattern:
+---
 
-| # | File | Current (broken) | After fix |
-|---|------|-------------------|-----------|
-| 1 | `StickyAddToCart.tsx` | `isEU && shopifyCurrency === 'USD'` overrides to EUR | Uses `getCurrencyForCountry` for proper GBP/DKK/SEK |
-| 2 | `StickyProductNav.tsx` | Same broken pattern | Same fix |
-| 3 | `ProductGallery.tsx` | Same broken pattern | Same fix |
-| 4 | `SleepMaskHero.tsx` | Same broken pattern | Same fix |
-| 5 | `PostATCUpsellModal.tsx` | Same broken pattern | Same fix |
-| 6 | `RefLandingPage.tsx` | Same broken pattern | Same fix |
-| 7 | `Hero.tsx` | Same broken pattern | Same fix |
-| 8 | `CartDrawer.tsx` | Same broken pattern | Same fix |
-| 9 | `KneePillowHero.tsx` | Same broken pattern | Same fix |
+### Summary of Changes
 
-### What stays the same
-- `useIsEU` hook itself is fine and can remain for non-currency logic
-- `getCurrencyForCountry` already handles all country-to-currency mappings correctly
-- `getBuyerCountrySync` is already imported in several of these files
+| # | File | Change | Impact |
+|---|------|--------|--------|
+| 1 | `SleepBundleBenefits.tsx` | `formatPrice("109.99", "EUR")` to `formatPrice("109.99", buyerCurrency)` | User-facing fallback price |
+| 2 | `Hero.tsx` | `currencyCode \|\| "EUR"` to `currencyCode \|\| buyerCurrency` | Meta Pixel accuracy |
+| 3 | `HeroVariantB.tsx` | Same as above | Meta Pixel accuracy |
+| 4 | `SleepMaskHero.tsx` | Same as above | Meta Pixel accuracy |
+| 5 | `KneePillowHero.tsx` | Same as above | Meta Pixel accuracy |
+| 6 | `SleepBundleHero.tsx` | Same as above | Meta Pixel accuracy |
+| 7 | `InstallmentBadge.tsx` | Default `"EUR"` to `"USD"` (2 places) | Safety net only (badge disabled) |
 
-### Expected Results After Fix
-- **UK**: All prices in GBP (pounds)
-- **Denmark**: All prices in DKK (kr)
-- **Sweden**: All prices in SEK (kr)
-- **Germany/Ireland**: All prices in EUR (unchanged, still works)
-- **USA**: All prices in USD (unchanged)
-- **Australia/NZ/Canada**: Correct local currencies
+All 7 changes are single-line fixes. No architectural changes needed.
 
+### Not flagged (acceptable)
+- `SEOSchemas.tsx`: Hardcoded USD prices for Google structured data -- correct behavior
+- `WeeklyReviewTab.tsx`: Internal dashboard, `$0.00` is fine
+- `EntityPerformanceTable.tsx` / `AdsReportingSection.tsx` / `EndTestDialog.tsx`: Internal admin tools with hardcoded EUR -- not customer-facing
+- `UrgencyAnnouncementBar.tsx`: No prices, just text
+- Code comments referencing specific prices/currencies: Not displayed to users
