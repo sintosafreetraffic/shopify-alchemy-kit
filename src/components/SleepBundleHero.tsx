@@ -44,7 +44,7 @@ export const SleepBundleHero = () => {
             
             // Track Meta Pixel ViewContent
             const price = parseFloat(bundleProduct.node.variants.edges[0]?.node.price.amount || "0");
-            const currency = bundleProduct.node.variants.edges[0]?.node.price.currencyCode || "EUR";
+            const currency = bundleProduct.node.variants.edges[0]?.node.price.currencyCode || buyerCurrency;
             trackMetaViewContent(bundleProduct.node.id, bundleProduct.node.title, price, currency);
             
             trackViewedProduct({

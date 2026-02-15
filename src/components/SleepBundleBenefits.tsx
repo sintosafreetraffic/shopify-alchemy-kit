@@ -54,7 +54,7 @@ export const SleepBundleBenefits = () => {
   const bundlePrice = bundleProduct?.node.variants.edges[0]?.node.price;
   const bundlePriceFormatted = bundlePrice 
     ? formatPrice(bundlePrice.amount, getCurrency(bundlePrice.currencyCode))
-    : formatPrice("109.99", "EUR");
+    : formatPrice("109.99", buyerCurrency);
 
   // Calculate "regular price" (sum of individual products)
   const pillowPrice = individualProducts.pillow?.node.variants.edges[0]?.node.price;
