@@ -104,8 +104,8 @@ export const ValentinesHeroSection = ({
             onClick={() => setSelectedQuantity(2)}
             className={`p-3 rounded-lg border-2 text-left transition-all relative overflow-hidden ${
               selectedQuantity === 2 
-                ? 'border-pink-500 bg-pink-50 dark:bg-pink-950/30' 
-                : 'border-muted hover:border-pink-300'
+                ? 'border-primary bg-primary/5 dark:bg-primary/10' 
+                : 'border-muted hover:border-primary/40'
             }`}
           >
             {/* Best value badge */}
