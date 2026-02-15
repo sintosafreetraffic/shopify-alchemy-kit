@@ -239,7 +239,7 @@ export const ProductGallery = () => {
                 <div className="relative">
                   {product.isValentinesDeal && valentinesOffer.isActive && (
                     <div className="absolute top-4 left-4 z-10">
-                      <div className="bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg">
+                       <div className="bg-primary text-primary-foreground text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg">
                         <Heart className="w-3.5 h-3.5 fill-white" />
                         <span>1+1 FREE</span>
                       </div>
