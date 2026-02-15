@@ -191,8 +191,7 @@ const ErgonomicPillowProductVariantB = () => {
       <ProductBenefitsSection />
       <PainReliefSection />
       
-      {/* Inline CTA after pain points */}
-      <InlineCTA />
+      {/* Inline CTA removed - redundant with sticky ATC and 1+1 deal */}
       
       {/* How to Use - 3 simple steps */}
       <HowToUseSection />
