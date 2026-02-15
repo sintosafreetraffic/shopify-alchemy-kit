@@ -12,7 +12,7 @@ import { useState, useEffect } from "react";
 import { useCartStore } from "@/stores/cartStore";
 import { useShopifyProducts } from "@/hooks/useShopifyProducts";
 import { formatPrice } from "@/lib/formatPrice";
-import { getBuyerCountrySync } from "@/lib/buyerContext";
+import { useBuyerCountry } from "@/hooks/useBuyerCountry";
 import { getCurrencyForCountry } from "@/lib/countryCode";
 import { toast } from "sonner";
 import kneePillowImage from "@/assets/knee-pillow-main-new.webp";
@@ -33,7 +33,7 @@ export const PostATCUpsellModal = ({
   const [countdown, setCountdown] = useState(300); // 5 minutes
   const { addItem, setCartOpen, items } = useCartStore();
   const { data: products = [] } = useShopifyProducts(10);
-  const buyerCountry = getBuyerCountrySync() || 'US';
+  const { country: buyerCountry } = useBuyerCountry();
   const buyerCurrency = getCurrencyForCountry(buyerCountry);
 
   // Find upsell product (knee pillow or sleep mask based on what's not in cart)

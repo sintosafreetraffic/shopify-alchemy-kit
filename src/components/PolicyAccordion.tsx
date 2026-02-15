@@ -5,7 +5,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Moon, Truck, RotateCcw, Star } from "lucide-react";
-import { getBuyerCountrySync } from "@/lib/buyerContext";
+import { useBuyerCountry } from "@/hooks/useBuyerCountry";
 import { COUNTRY_NAMES } from "@/lib/countryCode";
 
 const getPolicies = (countryName: string) => [
@@ -49,7 +49,7 @@ const getPolicies = (countryName: string) => [
 ];
 
 export const PolicyAccordion = () => {
-  const buyerCountry = getBuyerCountrySync() || 'US';
+  const { country: buyerCountry } = useBuyerCountry();
   const countryName = buyerCountry === 'NL' 
     ? `the ${COUNTRY_NAMES[buyerCountry] || 'your country'}`
     : COUNTRY_NAMES[buyerCountry] || 'your country';

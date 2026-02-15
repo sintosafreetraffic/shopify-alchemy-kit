@@ -28,7 +28,7 @@ import sleepMaskPink from "@/assets/sleep-mask-pink.webp";
 import sleepMaskGold from "@/assets/sleep-mask-gold.webp";
 import sleepMaskSilver from "@/assets/sleep-mask-silver.webp";
 import sleepMaskBlack from "@/assets/sleep-mask-black.webp";
-import { getBuyerCountrySync } from "@/lib/buyerContext";
+import { useBuyerCountry } from "@/hooks/useBuyerCountry";
 import { getCurrencyForCountry } from "@/lib/countryCode";
 import { useShippingConfig } from "@/hooks/useShippingConfig";
 
@@ -79,7 +79,7 @@ export const CartDrawer = () => {
   const [openColorPickerIndex, setOpenColorPickerIndex] = useState<number | null>(null);
   // Track selected colors for sleep mask recommendations (keyed by product ID)
   const [recommendationColors, setRecommendationColors] = useState<Record<string, string>>({});
-  const buyerCountry = getBuyerCountrySync() || 'US';
+  const { country: buyerCountry } = useBuyerCountry();
   const buyerCurrency = getCurrencyForCountry(buyerCountry);
    
    // Discount code state

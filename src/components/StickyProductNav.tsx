@@ -13,7 +13,7 @@ import { useCartStore } from "@/stores/cartStore";
 import { useABErgonomicPillow } from "@/hooks/useABProduct";
 import { useValentinesOffer } from "@/hooks/useValentinesOffer";
 import { formatPrice } from "@/lib/formatPrice";
-import { getBuyerCountrySync } from "@/lib/buyerContext";
+import { useBuyerCountry } from "@/hooks/useBuyerCountry";
 import { getCurrencyForCountry } from "@/lib/countryCode";
 import { toast } from "sonner";
 
@@ -37,7 +37,7 @@ export const StickyProductNav = ({
   const { addItem, setCartOpen } = useCartStore();
   const { product } = useABErgonomicPillow();
   const valentinesOffer = useValentinesOffer();
-  const buyerCountry = getBuyerCountrySync() || 'US';
+  const { country: buyerCountry } = useBuyerCountry();
   const buyerCurrency = getCurrencyForCountry(buyerCountry);
 
   // Get variant and pricing for single pillow

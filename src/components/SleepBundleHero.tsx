@@ -14,7 +14,7 @@ import { trackPageVisit } from "@/lib/pinterest";
 import OptimizedImage from "@/components/OptimizedImage";
 import { formatPrice } from "@/lib/formatPrice";
 import { getCompareAtFromRatio } from "@/lib/compareAtPriceRatios";
-import { getBuyerCountrySync } from "@/lib/buyerContext";
+import { useBuyerCountry } from "@/hooks/useBuyerCountry";
 import { getCurrencyForCountry } from "@/lib/countryCode";
 
 export const SleepBundleHero = () => {
@@ -22,7 +22,7 @@ export const SleepBundleHero = () => {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { addItem, setCartOpen } = useCartStore();
   const hasTrackedView = useRef(false);
-  const buyerCountry = getBuyerCountrySync() || 'US';
+  const { country: buyerCountry } = useBuyerCountry();
   const buyerCurrency = getCurrencyForCountry(buyerCountry);
 
   const { data: allProducts } = useShopifyProducts();

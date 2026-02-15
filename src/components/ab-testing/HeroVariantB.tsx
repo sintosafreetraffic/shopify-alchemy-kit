@@ -38,7 +38,7 @@ import { formatPrice } from "@/lib/formatPrice";
 import { trackATCClick } from "@/hooks/usePDPIntentTracking";
 import { getCurrencyForCountry } from "@/lib/countryCode";
 import { getCompareAtFromRatio } from "@/lib/compareAtPriceRatios";
-import { getBuyerCountrySync } from "@/lib/buyerContext";
+import { useBuyerCountry } from "@/hooks/useBuyerCountry";
 import { COUNTRY_NAMES } from "@/lib/countryCode";
 
 import { mobileHeroConfig } from "@/config/mobileHeroConfig";
@@ -89,7 +89,7 @@ interface HeroVariantBProps {
 export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
   // Get content based on pillow focus (neck or back)
   const focusContent = getPillowContent(pillowFocus);
-  const buyerCountry = getBuyerCountrySync() || 'US';
+  const { country: buyerCountry } = useBuyerCountry();
   const buyerCountryName = COUNTRY_NAMES[buyerCountry] || 'your country';
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [justAdded, setJustAdded] = useState(false);

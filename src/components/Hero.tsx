@@ -18,7 +18,7 @@ import { formatPrice } from "@/lib/formatPrice";
 import { trackATCClick } from "@/hooks/usePDPIntentTracking";
 // trackABEvent moved to cartStore for centralized ATC tracking
 import { getCurrencyForCountry } from "@/lib/countryCode";
-import { getBuyerCountrySync } from "@/lib/buyerContext";
+import { useBuyerCountry } from "@/hooks/useBuyerCountry";
 import { COUNTRY_NAMES } from "@/lib/countryCode";
 
 
@@ -85,7 +85,7 @@ export const Hero = () => {
   const hasTrackedView = useRef(false);
   const headerHeight = useHeaderHeight();
   const valentinesOffer = useValentinesOffer();
-  const buyerCountry = getBuyerCountrySync() || 'US';
+  const { country: buyerCountry } = useBuyerCountry();
   const buyerCurrency = getCurrencyForCountry(buyerCountry);
   const buyerCountryName = COUNTRY_NAMES[buyerCountry] || 'your country';
 

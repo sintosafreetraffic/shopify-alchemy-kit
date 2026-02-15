@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchProducts, ShopifyProduct, getBuyerCountrySync } from "@/lib/shopify";
+import { fetchProducts, ShopifyProduct } from "@/lib/shopify";
+import { useBuyerCountry } from "./useBuyerCountry";
 
 // Stale time: keep prices reasonably fresh so Shopify changes reflect quickly
 const STALE_TIME = 60 * 1000; // 1 minute
@@ -12,7 +13,7 @@ const GC_TIME = 30 * 60 * 1000;
  */
 export function useShopifyProducts(limit = 50, query?: string) {
   // IMPORTANT: include buyer country in the cache key so EUR/USD switches re-fetch.
-  const country = getBuyerCountrySync() ?? "unknown";
+  const { country } = useBuyerCountry();
 
   return useQuery({
     queryKey: ["shopify-products", country, limit, query],
