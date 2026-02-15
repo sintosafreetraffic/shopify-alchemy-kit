@@ -1,48 +1,26 @@
-import { useState, useEffect } from "react";
 import pillowMain from "@/assets/optisleep-pillow-main.png";
 import kneePillowMain from "@/assets/knee-pillow-new.png";
 import eyeMaskGift from "@/assets/eye-mask-gift-transparent.png";
-import { fetchProducts, type ShopifyProduct } from "@/lib/shopify";
+import type { ShopifyProduct } from "@/lib/shopify";
+import { useShopifyProducts } from "@/hooks/useShopifyProducts";
 import { formatPrice } from "@/lib/formatPrice";
 import { getBuyerCountrySync } from "@/lib/buyerContext";
 import { getCurrencyForCountry } from "@/lib/countryCode";
 
 export const SleepBundleBenefits = () => {
-  const [bundleProduct, setBundleProduct] = useState<ShopifyProduct | null>(null);
-  const [individualProducts, setIndividualProducts] = useState<{
-    pillow: ShopifyProduct | null;
-    kneePillow: ShopifyProduct | null;
-    sleepMask: ShopifyProduct | null;
-  }>({ pillow: null, kneePillow: null, sleepMask: null });
   const buyerCountry = getBuyerCountrySync() || 'US';
   const buyerCurrency = getCurrencyForCountry(buyerCountry);
 
-  useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        const products = await fetchProducts();
-        
-        const bundle = products.find(
-          (p: ShopifyProduct) => p.node.handle === "rise-by-night™-complete-sleep-bundle"
-        );
-        const pillow = products.find(
-          (p: ShopifyProduct) => p.node.handle === "risebynight-ergonomic-sleep-pillow"
-        );
-        const kneePillow = products.find(
-          (p: ShopifyProduct) => p.node.handle === "risebynight-ergonomic-knee-pillow"
-        );
-        const sleepMask = products.find(
-          (p: ShopifyProduct) => p.node.handle === "risebynight-silk-deep-sleep-mask"
-        );
-        
-        setBundleProduct(bundle || null);
-        setIndividualProducts({ pillow: pillow || null, kneePillow: kneePillow || null, sleepMask: sleepMask || null });
-      } catch (error) {
-        console.error("Failed to load products:", error);
-      }
-    };
-    loadProducts();
-  }, []);
+  const { data: allProducts } = useShopifyProducts();
+  
+  const bundleProduct = allProducts?.find(
+    (p: ShopifyProduct) => p.node.handle === "rise-by-night™-complete-sleep-bundle"
+  ) || null;
+  const individualProducts = {
+    pillow: allProducts?.find((p: ShopifyProduct) => p.node.handle === "risebynight-ergonomic-sleep-pillow") || null,
+    kneePillow: allProducts?.find((p: ShopifyProduct) => p.node.handle === "risebynight-ergonomic-knee-pillow") || null,
+    sleepMask: allProducts?.find((p: ShopifyProduct) => p.node.handle === "risebynight-silk-deep-sleep-mask") || null,
+  };
 
   // Helper to get currency with buyer-country-aware override
   const getCurrency = (shopifyCurrency: string | undefined) => {

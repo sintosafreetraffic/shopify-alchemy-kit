@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Check, ShoppingCart, Shield, Moon, Truck } from "lucide-react";
 import { useCartStore } from "@/stores/cartStore";
 import bundleImage from "@/assets/complete-sleep-bundle-updated.webp";
-import { fetchProducts, type ShopifyProduct } from "@/lib/shopify";
+import type { ShopifyProduct } from "@/lib/shopify";
+import { useShopifyProducts } from "@/hooks/useShopifyProducts";
 import { toast } from "sonner";
 import { trackViewedProduct } from "@/lib/klaviyo";
 import { trackViewContent as trackMetaViewContent } from "@/lib/meta-pixel";
@@ -18,50 +19,36 @@ import { getCurrencyForCountry } from "@/lib/countryCode";
 
 export const SleepBundleHero = () => {
   const [selectedBundle, setSelectedBundle] = useState<"single" | "double">("single");
-  const [product, setProduct] = useState<ShopifyProduct | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { addItem, setCartOpen } = useCartStore();
   const hasTrackedView = useRef(false);
   const buyerCountry = getBuyerCountrySync() || 'US';
   const buyerCurrency = getCurrencyForCountry(buyerCountry);
 
+  const { data: allProducts } = useShopifyProducts();
+  const product: ShopifyProduct | null = allProducts?.find(
+    (p: ShopifyProduct) => p.node.handle === "rise-by-night™-complete-sleep-bundle"
+  ) || null;
+
+  // Track views when product loads
   useEffect(() => {
-    const loadProduct = async () => {
-      try {
-        const products = await fetchProducts();
-        const bundleProduct = products.find(
-          (p: ShopifyProduct) => p.node.handle === "rise-by-night™-complete-sleep-bundle"
-        );
-        if (bundleProduct) {
-          setProduct(bundleProduct);
-          
-          // Track Klaviyo Viewed Product (only once per page load)
-          if (!hasTrackedView.current) {
-            hasTrackedView.current = true;
-            
-            // Track Pinterest PageVisit
-            trackPageVisit(bundleProduct.node.id);
-            
-            // Track Meta Pixel ViewContent
-            const price = parseFloat(bundleProduct.node.variants.edges[0]?.node.price.amount || "0");
-            const currency = bundleProduct.node.variants.edges[0]?.node.price.currencyCode || buyerCurrency;
-            trackMetaViewContent(bundleProduct.node.id, bundleProduct.node.title, price, currency);
-            
-            trackViewedProduct({
-              id: bundleProduct.node.id,
-              title: bundleProduct.node.title,
-              price: price,
-              sku: bundleProduct.node.variants.edges[0]?.node.id || "",
-              imageUrl: bundleProduct.node.images?.edges?.[0]?.node?.url || "",
-            });
-          }
-        }
-      } catch (error) {
-        console.error("Failed to load bundle product:", error);
-      }
-    };
-    loadProduct();
-  }, []);
+    if (!product || hasTrackedView.current) return;
+    hasTrackedView.current = true;
+    
+    trackPageVisit(product.node.id);
+    
+    const price = parseFloat(product.node.variants.edges[0]?.node.price.amount || "0");
+    const currency = product.node.variants.edges[0]?.node.price.currencyCode || buyerCurrency;
+    trackMetaViewContent(product.node.id, product.node.title, price, currency);
+    
+    trackViewedProduct({
+      id: product.node.id,
+      title: product.node.title,
+      price: price,
+      sku: product.node.variants.edges[0]?.node.id || "",
+      imageUrl: product.node.images?.edges?.[0]?.node?.url || "",
+    });
+  }, [product]);
 
   // Helper to get currency with buyer-country-aware override
   const getCurrency = (shopifyCurrency: string | undefined) => {

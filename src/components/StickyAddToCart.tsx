@@ -1,11 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useCartStore } from "@/stores/cartStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useSleepMaskColorStore } from "@/stores/sleepMaskColorStore";
-import { fetchProducts } from "@/lib/shopify";
 import { getErgonomicPillowHandle } from "@/lib/abProductConfig";
 import type { ShopifyProduct } from "@/lib/shopify";
+import { useShopifyProducts } from "@/hooks/useShopifyProducts";
 import { toast } from "sonner";
 import { ShoppingCart, Loader2, Plus, Minus, Check, Star } from "lucide-react";
 import eyeMaskGift from "@/assets/eye-mask-gift-new.webp";
@@ -53,7 +53,7 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
   const selectedColor = isSleepMask ? (sharedColor || "Navy") : localColor;
   const setSelectedColor = isSleepMask ? setSharedColor : setLocalColor;
   const [showColorPicker, setShowColorPicker] = useState(false);
-  const [product, setProduct] = useState<ShopifyProduct | null>(null);
+  const { data: allProducts } = useShopifyProducts(20);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [isAddingDeal, setIsAddingDeal] = useState(false);
   const { addItem, setCartOpen, isCartOpen, items } = useCartStore();
@@ -66,41 +66,22 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   const cartTotal = items.reduce((sum, item) => sum + (parseFloat(item.price.amount) * item.quantity), 0);
 
-  useEffect(() => {
-    const loadProduct = async () => {
-      try {
-        const products = await fetchProducts(20);
-        let selectedProduct: ShopifyProduct | undefined;
-        
-        if (productType === "knee-pillow") {
-          selectedProduct = products.find(p => p.node.title.toLowerCase().includes('knee'));
-        } else if (productType === "sleep-mask") {
-          selectedProduct = products.find(p => p.node.title.toLowerCase().includes('mask'));
-        } else if (productType === "sleep-bundle") {
-          selectedProduct = products.find(p => p.node.title.toLowerCase().includes('bundle'));
-        } else {
-          // Ergonomic pillow: use A/B-aware product handle
-          const targetHandle = getErgonomicPillowHandle();
-          selectedProduct = products.find(p => p.node.handle === targetHandle);
-          
-          // Fallback to any ergonomic pillow if specific handle not found
-          if (!selectedProduct) {
-            selectedProduct = products.find(p => 
-              p.node.title.toLowerCase().includes('ergonomic') && 
-              !p.node.title.toLowerCase().includes('knee')
-            );
-          }
-        }
-        
-        if (selectedProduct) {
-          setProduct(selectedProduct);
-        }
-      } catch (error) {
-        console.error("Error loading product:", error);
-      }
-    };
-    loadProduct();
-  }, [productType]);
+  // Derive the correct product from cached data
+  const product: ShopifyProduct | null = (() => {
+    if (!allProducts) return null;
+    if (productType === "knee-pillow") {
+      return allProducts.find(p => p.node.title.toLowerCase().includes('knee')) || null;
+    } else if (productType === "sleep-mask") {
+      return allProducts.find(p => p.node.title.toLowerCase().includes('mask')) || null;
+    } else if (productType === "sleep-bundle") {
+      return allProducts.find(p => p.node.title.toLowerCase().includes('bundle')) || null;
+    } else {
+      const targetHandle = getErgonomicPillowHandle();
+      return allProducts.find(p => p.node.handle === targetHandle) 
+        || allProducts.find(p => p.node.title.toLowerCase().includes('ergonomic') && !p.node.title.toLowerCase().includes('knee'))
+        || null;
+    }
+  })();
 
   const handleAddToCart = async () => {
     if (!product) {
