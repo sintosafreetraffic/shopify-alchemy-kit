@@ -13,7 +13,8 @@ import { trackPageVisit } from "@/lib/pinterest";
 import OptimizedImage from "@/components/OptimizedImage";
 import { formatPrice } from "@/lib/formatPrice";
 import { getCompareAtFromRatio } from "@/lib/compareAtPriceRatios";
-import { useIsEU } from "@/hooks/useCurrencySymbol";
+import { getBuyerCountrySync } from "@/lib/buyerContext";
+import { getCurrencyForCountry } from "@/lib/countryCode";
 
 export const SleepBundleHero = () => {
   const [selectedBundle, setSelectedBundle] = useState<"single" | "double">("single");
@@ -21,7 +22,8 @@ export const SleepBundleHero = () => {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { addItem, setCartOpen } = useCartStore();
   const hasTrackedView = useRef(false);
-  const isEU = useIsEU();
+  const buyerCountry = getBuyerCountrySync() || 'US';
+  const buyerCurrency = getCurrencyForCountry(buyerCountry);
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -61,10 +63,10 @@ export const SleepBundleHero = () => {
     loadProduct();
   }, []);
 
-  // Helper to get currency with EU override
+  // Helper to get currency with buyer-country-aware override
   const getCurrency = (shopifyCurrency: string | undefined) => {
     const currency = shopifyCurrency || 'USD';
-    return (isEU && currency === 'USD') ? 'EUR' : currency;
+    return currency === 'USD' ? buyerCurrency : currency;
   };
 
   const handleAddToCart = async () => {

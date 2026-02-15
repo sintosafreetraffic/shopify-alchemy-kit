@@ -6,7 +6,8 @@ import OptimizedImage from "@/components/OptimizedImage";
 import { useShopifyProducts } from "@/hooks/useShopifyProducts";
 import { formatPrice } from "@/lib/formatPrice";
 import { getCompareAtFromRatio } from "@/lib/compareAtPriceRatios";
-import { useIsEU } from "@/hooks/useCurrencySymbol";
+import { getBuyerCountrySync } from "@/lib/buyerContext";
+import { getCurrencyForCountry } from "@/lib/countryCode";
 import { useSEO, SEO_CONFIGS } from "@/hooks/useSEO";
 import { BreadcrumbSchema } from "@/components/seo/SEOSchemas";
 import { getErgonomicPillowHandle, AB_PRODUCT_HANDLES } from "@/lib/abProductConfig";
@@ -236,7 +237,8 @@ const Products = () => {
   useSEO(SEO_CONFIGS.products);
   
   const { data: shopifyProducts, isLoading } = useShopifyProducts(10);
-  const isEU = useIsEU();
+  const buyerCountry = getBuyerCountrySync() || 'US';
+  const buyerCurrency = getCurrencyForCountry(buyerCountry);
   
   // Get the correct ergonomic pillow handle based on A/B variant
   const ergonomicPillowHandle = getErgonomicPillowHandle();
@@ -264,7 +266,8 @@ const Products = () => {
     .filter(Boolean);
 
   // Get currency code from products or default
-  const currencyCode = isEU ? 'EUR' : (shopifyProducts?.[0]?.node.variants.edges[0]?.node.price.currencyCode || 'USD');
+  const shopifyCurrency = shopifyProducts?.[0]?.node.variants.edges[0]?.node.price.currencyCode || 'USD';
+  const currencyCode = shopifyCurrency === 'USD' ? buyerCurrency : shopifyCurrency;
 
   return (
     <div className="min-h-screen bg-background">
