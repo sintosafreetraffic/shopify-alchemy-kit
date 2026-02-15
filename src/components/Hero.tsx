@@ -128,7 +128,7 @@ export const Hero = () => {
       
       // Track Meta Pixel ViewContent
       const price = parseFloat(product.node.variants.edges[0]?.node.price.amount || "0");
-      const currency = product.node.variants.edges[0]?.node.price.currencyCode || "EUR";
+      const currency = product.node.variants.edges[0]?.node.price.currencyCode || buyerCurrency;
       trackMetaViewContent(product.node.id, product.node.title, price, currency);
       
       trackViewedProduct({

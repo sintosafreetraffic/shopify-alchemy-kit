@@ -18,7 +18,7 @@ export const InstallmentBadge = ({
   price, 
   className = "",
   installments = 4,
-  currencyCode = "EUR"
+  currencyCode = "USD"
 }: InstallmentBadgeProps) => {
   const installmentAmount = price / installments;
 
@@ -44,7 +44,7 @@ export const InstallmentBadgeCompact = ({
   price, 
   className = "",
   installments = 4,
-  currencyCode = "EUR"
+  currencyCode = "USD"
 }: InstallmentBadgeProps) => {
   const installmentAmount = price / installments;
 

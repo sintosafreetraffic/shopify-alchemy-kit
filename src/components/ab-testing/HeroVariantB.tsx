@@ -113,7 +113,7 @@ export const HeroVariantB = ({ pillowFocus = "neck" }: HeroVariantBProps) => {
 
       // Track Meta Pixel ViewContent
       const price = parseFloat(variant.price.amount || "0");
-      const currency = variant.price.currencyCode || "EUR";
+      const currency = variant.price.currencyCode || buyerCurrency;
       trackMetaViewContent(product.node.id, product.node.title, price, currency);
 
       trackViewedProduct({

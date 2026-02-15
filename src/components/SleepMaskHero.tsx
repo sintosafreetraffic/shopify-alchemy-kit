@@ -71,7 +71,7 @@ export const SleepMaskHero = () => {
             
             // Track Meta Pixel ViewContent
             const price = parseFloat(sleepMask.node.variants.edges[0]?.node.price.amount || "0");
-            const currency = sleepMask.node.variants.edges[0]?.node.price.currencyCode || "EUR";
+            const currency = sleepMask.node.variants.edges[0]?.node.price.currencyCode || buyerCurrency;
             trackMetaViewContent(sleepMask.node.id, sleepMask.node.title, price, currency);
             
             trackViewedProduct({
