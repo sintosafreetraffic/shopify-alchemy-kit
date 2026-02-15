@@ -1,55 +1,90 @@
 
-
-## Fix: Price Discrepancy Between Product Page and Sticky ATC
+## Fix: Reactive Buyer Country Detection
 
 ### Root Cause
+`getBuyerCountrySync()` reads from sessionStorage but is not reactive. On first visit, components render before country detection completes, fetch USD prices from Shopify, then apply the wrong currency symbol (e.g., A$119.99 instead of A$174.00). Nothing triggers a re-fetch once the real country is detected.
 
-The Hero component (product page price) uses `useShopifyProducts()` -- a React Query hook that includes the buyer's country in its cache key. When the country is detected asynchronously, React Query re-fetches with the correct country, getting properly localized prices from Shopify (e.g., A$174.00 for Australia).
+### Solution: Create a `useBuyerCountry` hook
 
-The StickyAddToCart (and several other components) uses `fetchProducts(20)` directly inside a `useEffect`. This runs once on mount. At that moment, `getBuyerCountrySync()` may still return `null` (country not yet detected), so `fetchProducts` falls back to `'US'` and gets USD prices (e.g., $59.99). The currency symbol override then slaps "A$" onto the USD amount, producing "A$119.99" (which is 2x $59.99 for the 1+1 deal) instead of the correct AUD-localized price.
+Add a small reactive hook that:
+1. Returns the cached country immediately (if available)
+2. Subscribes to the async detection result
+3. Triggers a React state update when country is resolved, causing `useShopifyProducts` to re-run with the correct cache key
 
-In short: **same product, two different API calls, one gets AUD prices, the other gets USD prices with an AUD symbol.**
+### Changes
 
-### The Fix
+**1. New file: `src/hooks/useBuyerCountry.ts`**
+- A hook that calls `getBuyerCountrySync()` for instant cached value
+- Runs `getBuyerCountry()` (async) on mount and updates state when resolved
+- Returns `{ country, isDetecting }` so components can optionally show loading states
 
-Replace direct `fetchProducts()` calls with the centralized `useShopifyProducts()` hook in all 5 affected components. This ensures:
+**2. Update: `src/hooks/useShopifyProducts.ts`**
+- Replace `getBuyerCountrySync() ?? "unknown"` with `useBuyerCountry()`
+- When the hook's country changes from `null`/`"unknown"` to `"AU"`, React Query automatically sees a new cache key and re-fetches with the correct country
+- This cascades to ALL components using `useShopifyProducts`
 
-1. All components share the same cached product data (single source of truth)
-2. When the country is detected, React Query re-fetches and all components update together
-3. Prices are always consistent across the page
+**3. Update: Components that read `buyerCountry` directly**
+These components call `getBuyerCountrySync()` for currency symbol formatting. They also need to use the reactive hook so the currency symbol updates in sync with the price:
+- `StickyAddToCart.tsx` (line 62)
+- `Hero.tsx`
+- `HeroVariantB.tsx`
+- `CartDrawer.tsx`
+- `SleepMaskHero.tsx`
+- `KneePillowHero.tsx`
+- `SleepBundleHero.tsx`
+- `SleepBundleBenefits.tsx`
+- `ProductGallery.tsx`
+- `PostATCUpsellModal.tsx`
 
-Additionally, since Shopify returns the correct localized currency via `@inContext`, the manual `shopifyCurrency === 'USD' ? buyerCurrency : shopifyCurrency` override becomes a safety net only -- the API should already return AUD for Australian visitors.
+In each file, replace:
+```
+const buyerCountry = getBuyerCountrySync() || 'US';
+```
+with:
+```
+const { country: buyerCountry } = useBuyerCountry();
+```
 
-### Files to Update
+### How It Works
 
-| # | File | Current | After |
-|---|------|---------|-------|
-| 1 | `StickyAddToCart.tsx` | `fetchProducts(20)` in useEffect, manages own state | `useShopifyProducts(20)` hook, removes local product-fetching state |
-| 2 | `SleepMaskHero.tsx` | `fetchProducts(10)` in useEffect | `useShopifyProducts(10)` hook |
-| 3 | `SleepBundleHero.tsx` | `fetchProducts()` in useEffect | `useShopifyProducts()` hook |
-| 4 | `SleepBundleBenefits.tsx` | `fetchProducts()` in useEffect | `useShopifyProducts()` hook |
-| 5 | `ProductGallery.tsx` | `fetchProducts()` in useEffect | `useShopifyProducts()` hook |
+```text
+First Visit Timeline (BEFORE fix):
+  t=0ms   Component renders → getBuyerCountrySync() = null → fetch with US → USD prices
+  t=2000ms  initializeBuyerContext() completes → AU cached → nothing happens
+  Result: A$119.99 (USD price with AUD symbol)
 
-### What Changes in Each File
+First Visit Timeline (AFTER fix):
+  t=0ms   Component renders → useBuyerCountry() = "US" (default) → fetch with US → USD prices
+  t=2000ms  useBuyerCountry() detects AU → state update → re-render → new cache key "AU" → fetch with AU → AUD prices
+  Result: A$174.00 (correct AUD price)
+```
 
-For each file, the pattern is the same:
+### Technical Details
 
-**Remove:**
-- The `fetchProducts` import
-- The `useState` for product(s)
-- The `useEffect` that calls `fetchProducts`
+The `useBuyerCountry` hook implementation:
 
-**Add:**
-- Import `useShopifyProducts` from `@/hooks/useShopifyProducts`
-- Use the hook directly: `const { data: products } = useShopifyProducts(20);`
-- Derive the specific product from the cached data using `useMemo` or inline find
+```typescript
+import { useState, useEffect } from 'react';
+import { getBuyerCountry, getBuyerCountrySync } from '@/lib/buyerContext';
+import type { CountryCode } from '@/lib/countryCode';
 
-### Why This Works
+export function useBuyerCountry() {
+  const [country, setCountry] = useState<CountryCode>(
+    getBuyerCountrySync() || 'US'
+  );
 
-The `useShopifyProducts` hook already:
-- Includes `getBuyerCountrySync()` in its React Query cache key
-- Calls `fetchProducts()` under the hood (same API)
-- Re-fetches when the country changes
-- Caches results for 1 minute (stale) / 30 minutes (gc)
+  useEffect(() => {
+    let cancelled = false;
+    getBuyerCountry().then((detected) => {
+      if (!cancelled && detected !== country) {
+        setCountry(detected);
+      }
+    });
+    return () => { cancelled = true; };
+  }, []); // runs once on mount
 
-So all components will share one API call and always display the same localized prices.
+  return { country };
+}
+```
+
+This is a minimal change -- one new 20-line hook file, one line changed in `useShopifyProducts`, and a simple import swap in ~10 components. No architectural changes needed.
