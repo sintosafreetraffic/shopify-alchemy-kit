@@ -133,6 +133,10 @@ function inferCountryFromBrowser(): CountryCode | null {
       'Europe/Luxembourg': 'LU',
       // Non-Eurozone but supported
       'Europe/London': 'GB',
+      // Scandinavian countries (non-Euro, own currencies)
+      'Europe/Stockholm': 'SE',
+      'Europe/Oslo': 'NO',
+      'Europe/Copenhagen': 'DK',
       'Australia/Sydney': 'AU',
       'Australia/Melbourne': 'AU',
       'Pacific/Auckland': 'NZ',
