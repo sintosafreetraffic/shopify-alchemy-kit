@@ -1,90 +1,58 @@
 
-## Fix: Reactive Buyer Country Detection
+## Fix: Swedish (and Scandinavian) Currency Detection
+
+### Problem
+A visitor from Sweden sees **"kr"** in the announcement bar (shipping threshold) but **"$119.99"** as the product price. The announcement bar works because `useShippingConfig` has its own timezone-based fallback, but the main price system fails to detect Sweden because `Europe/Stockholm` is missing from the timezone map in `buyerContext.ts`.
+
+Without detecting `SE`, the system defaults to `US`, sends `@inContext(country: US)` to Shopify, and gets USD prices back. The `shopifyCurrency === 'USD' ? buyerCurrency : shopifyCurrency` fallback then keeps it as USD since the buyer country is also detected as US.
 
 ### Root Cause
-`getBuyerCountrySync()` reads from sessionStorage but is not reactive. On first visit, components render before country detection completes, fetch USD prices from Shopify, then apply the wrong currency symbol (e.g., A$119.99 instead of A$174.00). Nothing triggers a re-fetch once the real country is detected.
+In `src/lib/buyerContext.ts`, the `euTimezoneMap` object (line ~120) maps European timezones to country codes but is **missing all Scandinavian timezones**:
+- `Europe/Stockholm` (Sweden)
+- `Europe/Oslo` (Norway)  
+- `Europe/Copenhagen` (Denmark)
 
-### Solution: Create a `useBuyerCountry` hook
+### Fix
+Add the three missing Scandinavian timezone entries to the `euTimezoneMap` in `buyerContext.ts`:
 
-Add a small reactive hook that:
-1. Returns the cached country immediately (if available)
-2. Subscribes to the async detection result
-3. Triggers a React state update when country is resolved, causing `useShopifyProducts` to re-run with the correct cache key
-
-### Changes
-
-**1. New file: `src/hooks/useBuyerCountry.ts`**
-- A hook that calls `getBuyerCountrySync()` for instant cached value
-- Runs `getBuyerCountry()` (async) on mount and updates state when resolved
-- Returns `{ country, isDetecting }` so components can optionally show loading states
-
-**2. Update: `src/hooks/useShopifyProducts.ts`**
-- Replace `getBuyerCountrySync() ?? "unknown"` with `useBuyerCountry()`
-- When the hook's country changes from `null`/`"unknown"` to `"AU"`, React Query automatically sees a new cache key and re-fetches with the correct country
-- This cascades to ALL components using `useShopifyProducts`
-
-**3. Update: Components that read `buyerCountry` directly**
-These components call `getBuyerCountrySync()` for currency symbol formatting. They also need to use the reactive hook so the currency symbol updates in sync with the price:
-- `StickyAddToCart.tsx` (line 62)
-- `Hero.tsx`
-- `HeroVariantB.tsx`
-- `CartDrawer.tsx`
-- `SleepMaskHero.tsx`
-- `KneePillowHero.tsx`
-- `SleepBundleHero.tsx`
-- `SleepBundleBenefits.tsx`
-- `ProductGallery.tsx`
-- `PostATCUpsellModal.tsx`
-
-In each file, replace:
 ```
-const buyerCountry = getBuyerCountrySync() || 'US';
-```
-with:
-```
-const { country: buyerCountry } = useBuyerCountry();
+'Europe/Stockholm': 'SE',
+'Europe/Oslo': 'NO',
+'Europe/Copenhagen': 'DK',
 ```
 
-### How It Works
+This is a **one-file, three-line fix**. Once `SE` is detected:
+1. `useBuyerCountry()` returns `SE`
+2. `useShopifyProducts` cache key changes to `SE`
+3. `fetchProducts` sends `@inContext(country: SE)` to Shopify
+4. Shopify returns prices in SEK (e.g., 1,299 kr)
+5. All components show `kr` symbol via the existing `formatPrice` logic
 
-```text
-First Visit Timeline (BEFORE fix):
-  t=0ms   Component renders → getBuyerCountrySync() = null → fetch with US → USD prices
-  t=2000ms  initializeBuyerContext() completes → AU cached → nothing happens
-  Result: A$119.99 (USD price with AUD symbol)
+### Countries and Currencies Currently Supported
 
-First Visit Timeline (AFTER fix):
-  t=0ms   Component renders → useBuyerCountry() = "US" (default) → fetch with US → USD prices
-  t=2000ms  useBuyerCountry() detects AU → state update → re-render → new cache key "AU" → fetch with AU → AUD prices
-  Result: A$174.00 (correct AUD price)
-```
+| Country | Currency | Symbol | Detection |
+|---------|----------|--------|-----------|
+| United States | USD | $ | Timezone (America/*) |
+| Eurozone (20 countries) | EUR | euro sign | Timezone + IP |
+| United Kingdom | GBP | pound sign | Europe/London |
+| Australia | AUD | A$ | Australia/Sydney, Melbourne |
+| New Zealand | NZD | NZ$ | Pacific/Auckland |
+| Canada | CAD | C$ | IP only (no timezone mapping) |
+| **Sweden** | **SEK** | **kr** | **Will add Europe/Stockholm** |
+| **Norway** | **NOK** | **kr** | **Will add Europe/Oslo** |
+| **Denmark** | **DKK** | **kr** | **Will add Europe/Copenhagen** |
 
 ### Technical Details
 
-The `useBuyerCountry` hook implementation:
+**File changed:** `src/lib/buyerContext.ts`
+
+Add three lines to the `euTimezoneMap` object (around line 138), after the existing `'Europe/London': 'GB'` entry:
 
 ```typescript
-import { useState, useEffect } from 'react';
-import { getBuyerCountry, getBuyerCountrySync } from '@/lib/buyerContext';
-import type { CountryCode } from '@/lib/countryCode';
-
-export function useBuyerCountry() {
-  const [country, setCountry] = useState<CountryCode>(
-    getBuyerCountrySync() || 'US'
-  );
-
-  useEffect(() => {
-    let cancelled = false;
-    getBuyerCountry().then((detected) => {
-      if (!cancelled && detected !== country) {
-        setCountry(detected);
-      }
-    });
-    return () => { cancelled = true; };
-  }, []); // runs once on mount
-
-  return { country };
-}
+// Scandinavian countries (non-Euro, own currencies)
+'Europe/Stockholm': 'SE',
+'Europe/Oslo': 'NO',
+'Europe/Copenhagen': 'DK',
 ```
 
-This is a minimal change -- one new 20-line hook file, one line changed in `useShopifyProducts`, and a simple import swap in ~10 components. No architectural changes needed.
+No other files need changes -- the existing reactive system (`useBuyerCountry` hook, `@inContext` directive, `formatPrice` with SEK/NOK/DKK support, shipping thresholds) already handles Scandinavian currencies correctly once the country is detected.
