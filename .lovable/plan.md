@@ -1,58 +1,28 @@
 
-## Fix: Swedish (and Scandinavian) Currency Detection
+
+## Fix: Meta CAPI Purchase Tracking Failure
 
 ### Problem
-A visitor from Sweden sees **"kr"** in the announcement bar (shipping threshold) but **"$119.99"** as the product price. The announcement bar works because `useShippingConfig` has its own timezone-based fallback, but the main price system fails to detect Sweden because `Europe/Stockholm` is missing from the timezone map in `buyerContext.ts`.
+Every Meta CAPI purchase event fails with this error:
+> Object with ID ' 1419388323215799' does not exist
 
-Without detecting `SE`, the system defaults to `US`, sends `@inContext(country: US)` to Shopify, and gets USD prices back. The `shopifyCurrency === 'USD' ? buyerCurrency : shopifyCurrency` fallback then keeps it as USD since the buyer country is also detected as US.
+The `META_PIXEL_ID` secret currently stores the **removed** pixel ID `1419388323215799` (with a leading space). This causes all server-side purchase tracking to Meta to fail.
 
-### Root Cause
-In `src/lib/buyerContext.ts`, the `euTimezoneMap` object (line ~120) maps European timezones to country codes but is **missing all Scandinavian timezones**:
-- `Europe/Stockholm` (Sweden)
-- `Europe/Oslo` (Norway)  
-- `Europe/Copenhagen` (Denmark)
+### Evidence
+- **Feb 19 order** (6874136641756): Failed with "Object does not exist"
+- **Feb 11 order** (6848817266908): Same failure
+- **Jan 27 order** (6823221035228): Succeeded (no error) -- meaning the pixel was changed/removed between Jan 27 and Feb 11
 
 ### Fix
-Add the three missing Scandinavian timezone entries to the `euTimezoneMap` in `buyerContext.ts`:
+Update the `META_PIXEL_ID` secret to the correct, active pixel ID: **785246637951871** (already used by the client-side Meta Pixel).
 
-```
-'Europe/Stockholm': 'SE',
-'Europe/Oslo': 'NO',
-'Europe/Copenhagen': 'DK',
-```
+No code changes are needed. The edge function (`supabase/functions/meta-capi/index.ts`) correctly reads from `Deno.env.get("META_PIXEL_ID")` -- only the stored secret value is wrong.
 
-This is a **one-file, three-line fix**. Once `SE` is detected:
-1. `useBuyerCountry()` returns `SE`
-2. `useShopifyProducts` cache key changes to `SE`
-3. `fetchProducts` sends `@inContext(country: SE)` to Shopify
-4. Shopify returns prices in SEK (e.g., 1,299 kr)
-5. All components show `kr` symbol via the existing `formatPrice` logic
+### Steps
+1. Update the `META_PIXEL_ID` secret to `785246637951871`
+2. Verify by checking the next purchase event logs
 
-### Countries and Currencies Currently Supported
-
-| Country | Currency | Symbol | Detection |
-|---------|----------|--------|-----------|
-| United States | USD | $ | Timezone (America/*) |
-| Eurozone (20 countries) | EUR | euro sign | Timezone + IP |
-| United Kingdom | GBP | pound sign | Europe/London |
-| Australia | AUD | A$ | Australia/Sydney, Melbourne |
-| New Zealand | NZD | NZ$ | Pacific/Auckland |
-| Canada | CAD | C$ | IP only (no timezone mapping) |
-| **Sweden** | **SEK** | **kr** | **Will add Europe/Stockholm** |
-| **Norway** | **NOK** | **kr** | **Will add Europe/Oslo** |
-| **Denmark** | **DKK** | **kr** | **Will add Europe/Copenhagen** |
-
-### Technical Details
-
-**File changed:** `src/lib/buyerContext.ts`
-
-Add three lines to the `euTimezoneMap` object (around line 138), after the existing `'Europe/London': 'GB'` entry:
-
-```typescript
-// Scandinavian countries (non-Euro, own currencies)
-'Europe/Stockholm': 'SE',
-'Europe/Oslo': 'NO',
-'Europe/Copenhagen': 'DK',
-```
-
-No other files need changes -- the existing reactive system (`useBuyerCountry` hook, `@inContext` directive, `formatPrice` with SEK/NOK/DKK support, shipping thresholds) already handles Scandinavian currencies correctly once the country is detected.
+### What This Fixes
+- All future purchases will be correctly sent to Meta via server-side CAPI
+- Attribution classification will work (click_id / email_match tracking)
+- Meta Ads Manager will receive conversion data for campaign optimization
