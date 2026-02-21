@@ -11,6 +11,7 @@ import {
   PackageCheck,
   Info
 } from "lucide-react";
+import { useSEO, SEO_CONFIGS } from "@/hooks/useSEO";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -72,6 +73,7 @@ const TIMELINE_STEPS = [
 ];
 
 export default function TrackOrder() {
+  useSEO(SEO_CONFIGS.trackOrder);
   const [orderNumber, setOrderNumber] = useState("");
   const [email, setEmail] = useState("");
   const [isSearching, setIsSearching] = useState(false);
