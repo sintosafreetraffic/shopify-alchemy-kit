@@ -1,6 +1,8 @@
 import { Scale, FileText, ShieldAlert, AlertCircle } from "lucide-react";
+import { useSEO, SEO_CONFIGS } from "@/hooks/useSEO";
 
 export default function TermsConditions() {
+  useSEO(SEO_CONFIGS.termsConditions);
   return (
     <div className="min-h-screen py-16">
       <div className="container mx-auto px-4 max-w-4xl">
