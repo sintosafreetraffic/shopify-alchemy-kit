@@ -1,28 +1,45 @@
 
 
-## Fix: Meta CAPI Purchase Tracking Failure
+## Fix: Cart pricing bug for non-EUR visitors
 
 ### Problem
-Every Meta CAPI purchase event fails with this error:
-> Object with ID ' 1419388323215799' does not exist
+Two locations in `CartDrawer.tsx` hardcode `119.99` (an EUR value) for the ergonomic pillow price. For non-EUR visitors (UK, AUS, NZ, Scandinavia), this EUR number gets displayed with the local currency symbol (e.g., "£119.99" instead of "£91").
 
-The `META_PIXEL_ID` secret currently stores the **removed** pixel ID `1419388323215799` (with a leading space). This causes all server-side purchase tracking to Meta to fail.
+### Root Cause
+The Valentine's/BOGO override in `getItemPrice()` bypasses Shopify's localized pricing and returns a fixed EUR number.
 
-### Evidence
-- **Feb 19 order** (6874136641756): Failed with "Object does not exist"
-- **Feb 11 order** (6848817266908): Same failure
-- **Jan 27 order** (6823221035228): Succeeded (no error) -- meaning the pixel was changed/removed between Jan 27 and Feb 11
+### Changes (single file: `src/components/CartDrawer.tsx`)
 
-### Fix
-Update the `META_PIXEL_ID` secret to the correct, active pixel ID: **785246637951871** (already used by the client-side Meta Pixel).
+**1. Fix `getItemPrice` function (lines 185-190)**
+Replace the hardcoded `return 119.99` with the actual Shopify-localized price:
+```ts
+if (valentinesOffer.isActive && 
+    item.product.node.title.toLowerCase().includes('ergonomic sleep pillow')) {
+  // Use Shopify's localized price (already currency-correct for UK/AUS/etc.)
+  const currentPrice = currentPrices[item.variantId];
+  return currentPrice ? parseFloat(currentPrice.price) : parseFloat(item.price.amount);
+}
+```
+This removes the EUR override entirely. The 1+1 deal discount logic downstream already handles "buy 2 pay for 1" by subtracting one pillow's price -- it just needs that price to be the correct localized one.
 
-No code changes are needed. The edge function (`supabase/functions/meta-capi/index.ts`) correctly reads from `Deno.env.get("META_PIXEL_ID")` -- only the stored secret value is wrong.
+**2. Fix `ergonomicPillowPrice` fallback (line 222)**
+Replace `return 119.99` with the localized price from `currentPrices` or the cart item's stored price:
+```ts
+// Try to get price from currentPrices for any ergonomic pillow variant
+const ergoPriceEntry = Object.entries(currentPrices).find(([_, p]) => 
+  items.some(i => i.variantId === _ && 
+    i.product.node.title.toLowerCase().includes('ergonomic sleep pillow'))
+);
+if (ergoPriceEntry) return parseFloat(ergoPriceEntry[1].price);
+return parseFloat(items[0]?.price.amount || '0');
+```
 
-### Steps
-1. Update the `META_PIXEL_ID` secret to `785246637951871`
-2. Verify by checking the next purchase event logs
+### How the 1+1 deal still works
+The Valentine's discount calculation (lines 227-235) computes `pairs * ergonomicPillowPrice`. With the fix, `ergonomicPillowPrice` will be ~91 for GBP visitors, so the discount correctly subtracts £91 (not €119.99). The customer sees:
+- Subtotal: 2 x £91 = £182
+- 1+1 Discount: -£91
+- Total: £91
 
-### What This Fixes
-- All future purchases will be correctly sent to Meta via server-side CAPI
-- Attribution classification will work (click_id / email_match tracking)
-- Meta Ads Manager will receive conversion data for campaign optimization
+### No other files affected
+The search confirmed `119.99` only appears as a pricing value in `CartDrawer.tsx`. The `compareAtPriceRatios.ts` file uses it only in comments for ratio documentation.
+
