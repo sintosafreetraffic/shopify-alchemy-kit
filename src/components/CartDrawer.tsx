@@ -268,8 +268,13 @@ export const CartDrawer = () => {
   const sleepMaskPrice = useMemo(() => {
     if (!freeGiftMaskProduct) return 29.99;
     const variant = freeGiftMaskProduct.node.variants.edges[0]?.node;
-    return variant ? parseFloat(variant.price.amount) : 29.99;
-  }, [freeGiftMaskProduct]);
+    if (!variant) return 29.99;
+    const variantId = variant.id;
+    if (variantId && currentPrices[variantId]) {
+      return parseFloat(currentPrices[variantId].price);
+    }
+    return parseFloat(variant.price.amount);
+  }, [freeGiftMaskProduct, currentPrices]);
   
   // FREEMASKSFORYOU discount: 100% off free gift masks (already calculated)
   const freeGiftValue = freeGifts * sleepMaskPrice;
@@ -541,7 +546,7 @@ export const CartDrawer = () => {
                   <div className="flex items-center justify-between gap-2">
                     {variant && (
                       <p className="text-lg font-bold text-primary">
-                        {formatPrice(variant.price.amount, variant.price.currencyCode)}
+                        {formatPrice(currentPrices[variant.id]?.price ?? variant.price.amount, cartCurrency)}
                       </p>
                     )}
                     <Button
@@ -1026,7 +1031,7 @@ export const CartDrawer = () => {
                                   </h4>
                                   {variant && (
                                     <p className="text-xs font-semibold text-primary">
-                                      {formatPrice(variant.price.amount, variant.price.currencyCode)}
+                                      {formatPrice(currentPrices[variant.id]?.price ?? variant.price.amount, cartCurrency)}
                                     </p>
                                   )}
                                 </div>
