@@ -1,45 +1,42 @@
 
 
-## Fix: Cart pricing bug for non-EUR visitors
+## Fix: All products showing EUR/wrong currency in slide cart
 
 ### Problem
-Two locations in `CartDrawer.tsx` hardcode `119.99` (an EUR value) for the ergonomic pillow price. For non-EUR visitors (UK, AUS, NZ, Scandinavia), this EUR number gets displayed with the local currency symbol (e.g., "£119.99" instead of "£91").
+Two issues remain in `CartDrawer.tsx`:
 
-### Root Cause
-The Valentine's/BOGO override in `getItemPrice()` bypasses Shopify's localized pricing and returns a fixed EUR number.
+1. **Recommendation products (lines 544, 1029)** use `variant.price.currencyCode` directly from Shopify's raw response, which sometimes returns `USD` even for non-US visitors. The rest of the cart correctly uses `cartCurrency` (which applies the `shopifyCurrency === 'USD' ? buyerCurrency : shopifyCurrency` fix). This means recommendations can show "$92.56" instead of "£92.56" for UK visitors.
+
+2. **Sleep mask price fallback (line 269, 271)** hardcodes `29.99` (EUR). If the free gift mask product isn't found, UK visitors would see "£29.99" instead of the correct GBP value.
+
+3. **Price amounts from Shopify conversion**: The `@inContext(country)` directive makes Shopify return converted prices (e.g., GBP equivalent of EUR 119.99 = ~£92.56). This is Shopify's automatic currency conversion -- the amounts are correct for the currency, but they may look "odd" compared to round EUR prices. This is expected behavior from Shopify's multi-currency feature and can only be changed by setting specific GBP prices in Shopify's Markets settings.
 
 ### Changes (single file: `src/components/CartDrawer.tsx`)
 
-**1. Fix `getItemPrice` function (lines 185-190)**
-Replace the hardcoded `return 119.99` with the actual Shopify-localized price:
+**1. Desktop recommendation prices (line 544)**
+Replace `variant.price.currencyCode` with `cartCurrency`, and use `currentPrices` lookup for amount:
+```
+Before: {formatPrice(variant.price.amount, variant.price.currencyCode)}
+After:  {formatPrice(currentPrices[variant.id]?.price ?? variant.price.amount, cartCurrency)}
+```
+
+**2. Mobile recommendation prices (line 1029)**  
+Same fix as desktop.
+
+**3. Sleep mask price (lines 268-272)**
+Use `currentPrices` lookup for the mask variant instead of raw `variant.price.amount`, and update the `29.99` fallback to pull from localized data:
 ```ts
-if (valentinesOffer.isActive && 
-    item.product.node.title.toLowerCase().includes('ergonomic sleep pillow')) {
-  // Use Shopify's localized price (already currency-correct for UK/AUS/etc.)
-  const currentPrice = currentPrices[item.variantId];
-  return currentPrice ? parseFloat(currentPrice.price) : parseFloat(item.price.amount);
+const variant = freeGiftMaskProduct.node.variants.edges[0]?.node;
+const variantId = variant?.id;
+if (variantId && currentPrices[variantId]) {
+  return parseFloat(currentPrices[variantId].price);
 }
-```
-This removes the EUR override entirely. The 1+1 deal discount logic downstream already handles "buy 2 pay for 1" by subtracting one pillow's price -- it just needs that price to be the correct localized one.
-
-**2. Fix `ergonomicPillowPrice` fallback (line 222)**
-Replace `return 119.99` with the localized price from `currentPrices` or the cart item's stored price:
-```ts
-// Try to get price from currentPrices for any ergonomic pillow variant
-const ergoPriceEntry = Object.entries(currentPrices).find(([_, p]) => 
-  items.some(i => i.variantId === _ && 
-    i.product.node.title.toLowerCase().includes('ergonomic sleep pillow'))
-);
-if (ergoPriceEntry) return parseFloat(ergoPriceEntry[1].price);
-return parseFloat(items[0]?.price.amount || '0');
+return variant ? parseFloat(variant.price.amount) : 29.99;
 ```
 
-### How the 1+1 deal still works
-The Valentine's discount calculation (lines 227-235) computes `pairs * ergonomicPillowPrice`. With the fix, `ergonomicPillowPrice` will be ~91 for GBP visitors, so the discount correctly subtracts £91 (not €119.99). The customer sees:
-- Subtotal: 2 x £91 = £182
-- 1+1 Discount: -£91
-- Total: £91
+### About the £92.56 "odd" price
+The ~£92.56 GBP price (instead of a round £91 or £90) comes from Shopify's automatic currency conversion of EUR 119.99 at the current exchange rate. To get round GBP prices, you'd need to set manual GBP prices in Shopify's Markets settings rather than relying on auto-conversion. This is a Shopify configuration change, not a code fix.
 
-### No other files affected
-The search confirmed `119.99` only appears as a pricing value in `CartDrawer.tsx`. The `compareAtPriceRatios.ts` file uses it only in comments for ratio documentation.
+### Impact
+After these changes, every price in the slide cart (items, recommendations, free gift values, discount text) will consistently use the correct localized currency symbol and the Shopify-converted amount for the visitor's region.
 
