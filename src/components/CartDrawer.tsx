@@ -183,10 +183,11 @@ export const CartDrawer = () => {
   // Use current prices from Shopify if available, fallback to stored prices
   // During Valentine's offer, override ergonomic pillow price to €119.99 (1+1 deal base)
   const getItemPrice = (item: typeof items[0]) => {
-    // Valentine's override: Ergonomic pillow shows at €119.99 (the 1+1 deal price)
+    // Valentine's 1+1 deal: use Shopify's localized price (currency-correct for UK/AUS/etc.)
     if (valentinesOffer.isActive && 
         item.product.node.title.toLowerCase().includes('ergonomic sleep pillow')) {
-      return 119.99;
+      const currentPrice = currentPrices[item.variantId];
+      return currentPrice ? parseFloat(currentPrice.price) : parseFloat(item.price.amount);
     }
     const currentPrice = currentPrices[item.variantId];
     return currentPrice ? parseFloat(currentPrice.price) : parseFloat(item.price.amount);
@@ -219,7 +220,13 @@ export const CartDrawer = () => {
     if (ergonomicPillowItems.length > 0) {
       return getItemPrice(ergonomicPillowItems[0]);
     }
-    return 119.99; // Fallback
+    // Fallback: try to get localized price from currentPrices for any ergonomic pillow variant
+    const ergoPriceEntry = Object.entries(currentPrices).find(([variantId]) => 
+      items.some(i => i.variantId === variantId && 
+        i.product.node.title.toLowerCase().includes('ergonomic sleep pillow'))
+    );
+    if (ergoPriceEntry) return parseFloat(ergoPriceEntry[1].price);
+    return parseFloat(items[0]?.price.amount || '0');
   }, [ergonomicPillowItems, currentPrices]);
   
   // Valentine's 1+1 Deal: 2 pillows for the price of 1
