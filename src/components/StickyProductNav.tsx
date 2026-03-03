@@ -42,7 +42,7 @@ export const StickyProductNav = ({
 
   // Get variant and pricing for single pillow
   const variant = product?.node.variants.edges[0]?.node;
-  const productPrice = variant ? parseFloat(variant.price.amount) : 59.99;
+  const productPrice = variant ? parseFloat(variant.price.amount) : 119.99;
   const shopifyCurrency = variant?.price.currencyCode || 'USD';
   const currencyCode = shopifyCurrency === 'USD' ? buyerCurrency : shopifyCurrency;
 

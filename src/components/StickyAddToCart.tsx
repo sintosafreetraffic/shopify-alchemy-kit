@@ -222,16 +222,16 @@ export const StickyAddToCart = ({ productType }: StickyAddToCartProps) => {
   const shopifyCurrency = productVariant?.price.currencyCode || 'USD';
   const currencyCode = shopifyCurrency === 'USD' ? buyerCurrency : shopifyCurrency;
   const productPrice = isErgonomicPillow 
-    ? parseFloat(productVariant?.price.amount || "59.99")
+    ? parseFloat(productVariant?.price.amount || "119.99")
     : isKneePillow 
       ? parseFloat(productVariant?.price.amount || "39.99") 
-      : (product ? parseFloat(product.node.variants.edges[0].node.price.amount) : 129.99);
+      : (product ? parseFloat(product.node.variants.edges[0].node.price.amount) : 149.99);
   
   // Calculate the value being added to cart (not current cart total)
   const addToCartValue = isSleepBundle
     ? (selectedBundle === "2" 
-        ? parseFloat(product?.node.variants.edges[1]?.node.price.amount || "199.99")
-        : parseFloat(product?.node.variants.edges[0]?.node.price.amount || "109.99"))
+        ? parseFloat(product?.node.variants.edges[1]?.node.price.amount || "299.98")
+        : parseFloat(product?.node.variants.edges[0]?.node.price.amount || "149.99"))
     : isPillowProduct
       ? productPrice // Always single pillow now (no more bundles)
       : (productPrice * quantity);

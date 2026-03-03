@@ -233,12 +233,12 @@ export const useCartStore = create<CartStore>()(
               quantity: item.quantity,
               price: item.price,
             })),
-            items[0]?.price.currencyCode || 'EUR'
+            items[0]?.price.currencyCode || 'GBP'
           )).catch(() => {});
           
           // Non-blocking: Klaviyo Started Checkout tracking
           const totalValue = items.reduce((sum, item) => sum + parseFloat(item.price.amount) * item.quantity, 0);
-          const currencyCode = items[0]?.price.currencyCode || 'EUR';
+          const currencyCode = items[0]?.price.currencyCode || 'GBP';
           
           Promise.resolve().then(() => trackKlaviyoStartedCheckout({
             items: items.map(item => ({
