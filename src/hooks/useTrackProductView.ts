@@ -59,7 +59,7 @@ export function getStaticProductData(handle: string, currencyCode: string = 'USD
       handle: "ergonomic-pillow",
       title: "Ergonomic Sleep Pillow",
       imageUrl: ergonomicPillowHero,
-      basePrice: 59.99,
+      basePrice: 119.99,
       isValentinesDeal: true,
     },
     "knee-pillow": {

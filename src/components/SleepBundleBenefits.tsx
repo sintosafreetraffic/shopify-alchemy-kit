@@ -32,7 +32,7 @@ export const SleepBundleBenefits = () => {
   const bundlePrice = bundleProduct?.node.variants.edges[0]?.node.price;
   const bundlePriceFormatted = bundlePrice 
     ? formatPrice(bundlePrice.amount, getCurrency(bundlePrice.currencyCode))
-    : formatPrice("109.99", buyerCurrency);
+    : formatPrice("149.99", buyerCurrency);
 
   // Calculate "regular price" (sum of individual products)
   const pillowPrice = individualProducts.pillow?.node.variants.edges[0]?.node.price;
@@ -40,12 +40,12 @@ export const SleepBundleBenefits = () => {
   const sleepMaskPrice = individualProducts.sleepMask?.node.variants.edges[0]?.node.price;
   
   const regularPriceTotal = (
-    (pillowPrice ? parseFloat(pillowPrice.amount) : 79.99) +
+    (pillowPrice ? parseFloat(pillowPrice.amount) : 119.99) +
     (kneePillowPrice ? parseFloat(kneePillowPrice.amount) : 39.99) +
     (sleepMaskPrice ? parseFloat(sleepMaskPrice.amount) : 29.99)
   );
   
-  const bundlePriceNum = bundlePrice ? parseFloat(bundlePrice.amount) : 109.99;
+  const bundlePriceNum = bundlePrice ? parseFloat(bundlePrice.amount) : 149.99;
   const savings = Math.round(regularPriceTotal - bundlePriceNum);
   
   const currency = getCurrency(bundlePrice?.currencyCode);

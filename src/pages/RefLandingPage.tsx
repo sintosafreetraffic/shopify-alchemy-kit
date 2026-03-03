@@ -92,7 +92,7 @@ export default function RefLandingPage() {
   const variant = shopifyProduct?.node.variants.edges[0]?.node;
   const shopifyCurrency = variant?.price.currencyCode || 'USD';
   const currencyCode = shopifyCurrency === 'USD' ? buyerCurrency : shopifyCurrency;
-  const productPrice = variant ? parseFloat(variant.price.amount) : 59.99;
+  const productPrice = variant ? parseFloat(variant.price.amount) : 119.99;
   const compareAtRaw = variant?.compareAtPrice?.amount ? variant.compareAtPrice.amount : getCompareAtFromRatio(PRODUCT.handle, variant?.price.amount);
   const compareAtPrice = compareAtRaw ? parseFloat(compareAtRaw) : null;
   const formattedPrice = formatPrice(productPrice, currencyCode);

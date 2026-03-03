@@ -38,7 +38,7 @@ export const ValentinesHeroSection = ({
   if (!isActive) return null;
 
   // Dynamic compare-at price from Shopify (localized via @inContext)
-  const singleCompareAtPrice = compareAtPriceProp ?? 199.99;
+  const singleCompareAtPrice = compareAtPriceProp ?? 239.98;
 
   // Dynamic pricing based on Shopify product price
   const singlePrice = productPrice;

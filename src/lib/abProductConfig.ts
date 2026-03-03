@@ -21,14 +21,14 @@ export const AB_PRODUCT_CONFIG = {
   A: {
     handle: 'risebynight-ergonomic-sleep-pillow-copy',
     includesMask: false,
-    price: 59.99,
+    price: 119.99,
     description: '1 Pillow',
     discountCode: null,
   },
   B: {
     handle: 'risebynight-ergonomic-sleep-pillow-copy',
     includesMask: false,
-    price: 59.99,
+    price: 119.99,
     description: '1 Pillow',
     discountCode: null,
   },

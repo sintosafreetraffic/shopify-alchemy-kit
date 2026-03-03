@@ -102,7 +102,7 @@ export const Hero = () => {
     (p: ShopifyProduct) => p.node.handle === "risebynight-silk-deep-sleep-mask"
   );
   const sleepMaskVariant = sleepMaskProduct?.node.variants.edges[0]?.node;
-  const sleepMaskPrice = sleepMaskVariant ? parseFloat(sleepMaskVariant.price.amount) : 29.99;
+  const sleepMaskPrice = sleepMaskVariant ? parseFloat(sleepMaskVariant.price.amount) : 29.99; // GBP base price
   // Use currency from main product variant since they share the same localized context
   const mainVariant = product?.node.variants.edges[0]?.node;
   const shopifySleepMaskCurrency = sleepMaskVariant?.price.currencyCode || mainVariant?.price.currencyCode || 'USD';
@@ -219,12 +219,12 @@ export const Hero = () => {
 
   // Get product price from Shopify data
   const variant = product?.node.variants.edges[0]?.node;
-  const productPrice = variant ? parseFloat(variant.price.amount) : 59.99;
+  const productPrice = variant ? parseFloat(variant.price.amount) : 119.99;
   const shopifyCurrency = variant?.price.currencyCode || 'USD';
   const currencyCode = shopifyCurrency === 'USD' ? buyerCurrency : shopifyCurrency;
   
   // Dynamic compare-at price from Shopify (localized via @inContext)
-  const compareAtPrice = variant?.compareAtPrice?.amount ? parseFloat(variant.compareAtPrice.amount) : 199.99;
+  const compareAtPrice = variant?.compareAtPrice?.amount ? parseFloat(variant.compareAtPrice.amount) : 239.98;
 
   return (
     <section className="pb-3 md:pb-6 bg-background overflow-x-hidden" style={{ paddingTop: Math.max(headerHeight - 80, 0) }}>

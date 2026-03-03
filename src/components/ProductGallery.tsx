@@ -105,7 +105,7 @@ export const ProductGallery = () => {
       id: 3,
       name: "Rise By Night™ Ergonomic Knee Pillow",
       tagline: "Perfect Support for Side Sleepers",
-      price: getProductPrice(kneePillowShopify, formatPrice("39.99", currencyCode)),
+      price: getProductPrice(kneePillowShopify, formatPrice("39.99", currencyCode)),  // GBP base price
       originalPrice: getCompareAtPrice(kneePillowShopify),
       rating: 4.7,
       reviews: "5,100+",
@@ -124,7 +124,7 @@ export const ProductGallery = () => {
       id: 4,
       name: "Rise By Night™ Silk Deep Sleep Mask",
       tagline: "100% Pure Mulberry Silk",
-      price: getProductPrice(sleepMaskShopify, formatPrice("29.99", currencyCode)),
+      price: getProductPrice(sleepMaskShopify, formatPrice("29.99", currencyCode)),  // GBP base price
       originalPrice: getCompareAtPrice(sleepMaskShopify),
       rating: 4.9,
       reviews: "3,200+",
