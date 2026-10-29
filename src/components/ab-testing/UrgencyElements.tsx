@@ -263,7 +263,7 @@ export function SocialProofToast({ className }: SocialProofToastProps) {
   useEffect(() => {
     if (!config.enabled || !config.showRecentPurchases) return;
     
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: ReturnType<typeof setTimeout>;
     
     const showToast = () => {
       const randomCity = config.cities[Math.floor(Math.random() * config.cities.length)];
