@@ -211,7 +211,7 @@ export default function FirstTestChecklist() {
   
   // Auto-refresh state
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
-  const autoRefreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const autoRefreshIntervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // Previous successful results (shown when connection fails)
   const [lastSuccessfulResults, setLastSuccessfulResults] = useState<Record<string, CheckResult>>({});

@@ -39,7 +39,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
  * Edge function URL
  * Uses environment variable or defaults to production
  */
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://ofryballwrjrgivokzln.supabase.co';
+const SUPABASE_URL = (globalThis as any).process?.env?.SUPABASE_URL || 'https://ofryballwrjrgivokzln.supabase.co';
 const EDGE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/analyze-sleep-quiz`;
 
 // ============ TYPE DEFINITIONS ============
